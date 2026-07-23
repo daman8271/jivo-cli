@@ -1,0 +1,3535 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "JIVO EXIM",
+    "version": "1.3.0",
+    "description": "JIVO EXIM read-only surface. Write and sync-import endpoints are excluded."
+  },
+  "servers": [
+    {
+      "url": "https://eximbe.jivo.in"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "x-auth-env-vars": [
+          "EXIM_TOKEN"
+        ]
+      }
+    }
+  },
+  "paths": {
+    "/account/users/": {
+      "get": {
+        "operationId": "get_account_users",
+        "summary": "List of application user accounts (id, name, email).",
+        "tags": [
+          "account"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 23,
+                    "name": "Karishma Soni",
+                    "email": "karishma@exim.com"
+                  },
+                  {
+                    "id": 26,
+                    "name": "Factory User",
+                    "email": "factory@exim.com"
+                  },
+                  "...(+10 more of 12)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/daily-price/db-list/": {
+      "get": {
+        "operationId": "get_daily_price_db_list",
+        "summary": "Historical daily commodity factory-price records (optionally for a date).",
+        "tags": [
+          "daily-price"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 2631,
+                    "commodity_name": "Soya DO",
+                    "factory_price": "147.40",
+                    "packing_cost_kg": "161.40",
+                    "with_gst_kg": "169.47",
+                    "with_gst_ltr": "154.22",
+                    "date": "2026-07-17",
+                    "created_by": "System"
+                  },
+                  {
+                    "id": 2632,
+                    "commodity_name": "Soya Refined",
+                    "factory_price": "147.30",
+                    "packing_cost_kg": "161.30",
+                    "with_gst_kg": "169.37",
+                    "with_gst_ltr": "154.12",
+                    "date": "2026-07-17",
+                    "created_by": "System"
+                  },
+                  "...(+10 more of 12)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/daily-price/highest-lowest/": {
+      "get": {
+        "operationId": "get_daily_price_highest_lowest",
+        "summary": "Highest & lowest commodity prices over a date range.",
+        "tags": [
+          "daily-price"
+        ],
+        "parameters": [
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "end_date filter"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "start_date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "highest": {
+                    "id": 2603,
+                    "commodity_name": "Sunflower",
+                    "factory_price": "171.50",
+                    "packing_cost_kg": "185.50",
+                    "with_gst_kg": "194.78",
+                    "with_gst_ltr": "177.25",
+                    "date": "2026-07-14",
+                    "created_by": "System"
+                  },
+                  "lowest": {
+                    "id": 2382,
+                    "commodity_name": "Ricebran DO",
+                    "factory_price": "137.28",
+                    "packing_cost_kg": "151.28",
+                    "with_gst_kg": "158.84",
+                    "with_gst_ltr": "144.54",
+                    "date": "2026-06-25",
+                    "created_by": "System"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/daily-price/trends/": {
+      "get": {
+        "operationId": "get_daily_price_trends",
+        "summary": "Daily-price trend series (labels + datasets) for charting over a range.",
+        "tags": [
+          "daily-price"
+        ],
+        "parameters": [
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "end_date filter"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "start_date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "labels": [
+                    "Jun 18",
+                    "Jun 20",
+                    "...(+26 more of 28)"
+                  ],
+                  "datasets": [
+                    {
+                      "label": "Soya DO",
+                      "data": [
+                        145.1,
+                        145.1,
+                        "...(+26 more of 28)"
+                      ]
+                    },
+                    {
+                      "label": "Soya Refined",
+                      "data": [
+                        146.0,
+                        146.0,
+                        "...(+26 more of 28)"
+                      ]
+                    },
+                    "...(+10 more of 12)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dc/": {
+      "get": {
+        "operationId": "get_dc",
+        "summary": "Domestic contracts by FY (re-listed).",
+        "tags": [
+          "dc"
+        ],
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "year filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 304,
+                    "product_name": "SOYABEAN REFINED LOOSE OIL",
+                    "vendor_name": "AWL AGRI BUSINESS LIMITED",
+                    "status": "CONTRACT",
+                    "product_code": "RM0000025",
+                    "vendor_code": "VENDA000224",
+                    "po_number": "220526051",
+                    "po_date": "2026-05-13",
+                    "contract_qty": "250.00",
+                    "contract_rate": "149500.00",
+                    "contract_total": "37375000.00",
+                    "load_qty": null,
+                    "basic_amount": null,
+                    "unload_qty": null,
+                    "shortage": null,
+                    "allow_shortage": null,
+                    "deduction_qty": null,
+                    "deduction_amount": null,
+                    "transporter_code": null,
+                    "transporter_name": null,
+                    "bility_number": null,
+                    "bility_date": null,
+                    "frieght_rate": null,
+                    "freight_amount": null,
+                    "grpo_date": null,
+                    "grpo_number": null,
+                    "brokerage_amount": null,
+                    "vehicle_number": null,
+                    "invoice_number": null,
+                    "created_by": "",
+                    "created_at": "2026-05-14T07:01:03.588019Z",
+                    "deleted": 0,
+                    "Completed": 0
+                  },
+                  {
+                    "id": 307,
+                    "product_name": "MUSTARD LOOSE OIL",
+                    "vendor_name": "AWL AGRI BUSINESS LIMITED",
+                    "status": "CONTRACT",
+                    "product_code": "RM0000003",
+                    "vendor_code": "VENDA000224",
+                    "po_number": "220526066",
+                    "po_date": "2026-05-13",
+                    "contract_qty": "250.00",
+                    "contract_rate": "149500.00",
+                    "contract_total": "37375000.00",
+                    "load_qty": null,
+                    "basic_amount": null,
+                    "unload_qty": null,
+                    "shortage": null,
+                    "allow_shortage": null,
+                    "deduction_qty": null,
+                    "deduction_amount": null,
+                    "transporter_code": null,
+                    "transporter_name": null,
+                    "bility_number": null,
+                    "bility_date": null,
+                    "frieght_rate": null,
+                    "freight_amount": null,
+                    "grpo_date": null,
+                    "grpo_number": null,
+                    "brokerage_amount": null,
+                    "vehicle_number": null,
+                    "invoice_number": null,
+                    "created_by": "",
+                    "created_at": "2026-05-19T08:16:01.134274Z",
+                    "deleted": 0,
+                    "Completed": 0
+                  },
+                  "...(+45 more of 47)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/director-inventorty/": {
+      "get": {
+        "operationId": "get_director_inventorty",
+        "summary": "Director rollup: finished + at-factory + in-transit inventory by litre/MT.",
+        "tags": [
+          "director-inventorty"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "finished": {
+                    "total": {
+                      "liter": 577771.0,
+                      "mts": 526
+                    },
+                    "BH-EC": {
+                      "liter": 12714.0,
+                      "mts": 12
+                    },
+                    "GP-FG": {
+                      "liter": 565057.0,
+                      "mts": 514
+                    }
+                  },
+                  "at_factory": {
+                    "total": {
+                      "total_lts": 1007088.0,
+                      "total_mts": 916.0
+                    },
+                    "in_tank": {
+                      "liter": {
+                        "total_liter": 892500.0
+                      },
+                      "mts": 812
+                    },
+                    "outside_factory": {
+                      "liter": 114588.0,
+                      "mts": 104.0
+                    }
+                  },
+                  "otw": {
+                    "liter": 266588.0,
+                    "mts": 243.0
+                  },
+                  "under_loading": {
+                    "liter": 46154.0,
+                    "mts": 42.0
+                  },
+                  "at_refinery": {
+                    "liter": 171933.0,
+                    "mts": 156.0
+                  },
+                  "mundra_port": {
+                    "liter": 0.0,
+                    "mts": 0.0
+                  },
+                  "on_the_sea": {
+                    "liter": 48352.0,
+                    "mts": 44.0
+                  },
+                  "in_contract": {
+                    "liter": 797560.0,
+                    "mts": 726.0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/exim-rates/fetch/": {
+      "get": {
+        "operationId": "get_exim_rates_fetch",
+        "summary": "Fetch/refresh custom exchange (EXIM) rates.",
+        "tags": [
+          "exim-rates"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "currency": "Australian Dollar",
+                      "import": "66.50 ",
+                      "export": "63.60",
+                      "date": "2026-07-15T00:00:00.000Z",
+                      "notification_no": "20/2026"
+                    },
+                    {
+                      "currency": "Bahraini Dinar",
+                      "import": "266.20 ",
+                      "export": "236.30",
+                      "date": "2026-07-15T00:00:00.000Z",
+                      "notification_no": "20/2026"
+                    },
+                    "...(+21 more of 23)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/fg/": {
+      "get": {
+        "operationId": "get_items_fg",
+        "summary": "Finished-goods item master (SAP-synced).",
+        "tags": [
+          "items"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "count": 331,
+                  "items": [
+                    {
+                      "id": 48746,
+                      "item_code": "FG0000424",
+                      "item_name": "COLD PRESS SUNFLOWER 1 LTR 24 PCS",
+                      "category": "OIL",
+                      "sal_factor2": "24.000000",
+                      "u_tax_rate": 5,
+                      "deleted": "N",
+                      "u_variety": "SUNFLOWER",
+                      "sal_pack_un": "1.000000",
+                      "u_brand": "JIVO",
+                      "u_unit": "OIL",
+                      "u_sub_group": "1203007- DOCK TIN SHED (GUPTA GODOWN)"
+                    },
+                    {
+                      "id": 44271,
+                      "item_code": "FG0000375",
+                      "item_name": "SO OLIVE OIL 5LTR TIN 4 PCS",
+                      "category": "OIL",
+                      "sal_factor2": "4.000000",
+                      "u_tax_rate": 5,
+                      "deleted": "N",
+                      "u_variety": "OLIVE",
+                      "sal_pack_un": "5.000000",
+                      "u_brand": "JIVO",
+                      "u_unit": "OIL",
+                      "u_sub_group": "BLENDED"
+                    },
+                    "...(+329 more of 331)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/rm/": {
+      "get": {
+        "operationId": "get_items_rm",
+        "summary": "Raw-material item master (SAP-synced).",
+        "tags": [
+          "items"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "count": 23,
+                  "items": [
+                    {
+                      "id": 689,
+                      "item_code": "RM0000001",
+                      "item_name": "LOOSE REFINED OLIVE OIL",
+                      "category": "OIL",
+                      "sal_factor2": "1.000000",
+                      "u_tax_rate": 5,
+                      "deleted": "N",
+                      "u_variety": "POMACE",
+                      "sal_pack_un": "1.000000",
+                      "u_brand": "JIVO",
+                      "u_unit": "OIL",
+                      "u_sub_group": "OLIVE",
+                      "total_trans_value": "4808.215100",
+                      "total_in_qty": "7894035.196000",
+                      "total_out_qty": "7894001.173300",
+                      "total_qty": "34.022700",
+                      "rate": "141.000000"
+                    },
+                    {
+                      "id": 43,
+                      "item_code": "RM0000002",
+                      "item_name": "CANOLA COLD PRESS LOOSE OIL OLD",
+                      "category": "OIL",
+                      "sal_factor2": "1.000000",
+                      "u_tax_rate": 0,
+                      "deleted": "N",
+                      "u_variety": "COLD PRESS",
+                      "sal_pack_un": "1.000000",
+                      "u_brand": "JIVO",
+                      "u_unit": "OIL",
+                      "u_sub_group": "CANOLA",
+                      "total_trans_value": "2279043.754900",
+                      "total_in_qty": "12222299.642900",
+                      "total_out_qty": "12206016.667300",
+                      "total_qty": "16282.975600",
+                      "rate": "139.000000"
+                    },
+                    "...(+21 more of 23)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/rm/summary/": {
+      "get": {
+        "operationId": "get_items_rm_summary",
+        "summary": "Aggregate summary of raw-material items (counts, qty, value).",
+        "tags": [
+          "items"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "summary": {
+                    "total_count": 23,
+                    "total_qty": 610957.2899,
+                    "avg_rate": 350.74,
+                    "total_trans_value": 93912353.0541
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/items/rm/varieties/": {
+      "get": {
+        "operationId": "get_items_rm_varieties",
+        "summary": "Distinct raw-material varieties.",
+        "tags": [
+          "items"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "varieties": [
+                    "COLD PRESS",
+                    "CRUDE",
+                    "...(+11 more of 13)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/license/advance-license-headers/": {
+      "get": {
+        "operationId": "get_license_advance_license_headers",
+        "summary": "Advance Authorisation licenses with nested import/export lines.",
+        "tags": [
+          "license"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "license_no": "511015224",
+                    "import_lines": [
+                      {
+                        "id": 2,
+                        "boe_No": "3131526",
+                        "boe_value_usd": "418666.250",
+                        "boe_date": "2022-11-02",
+                        "import_in_mts": "241.952",
+                        "license_no": "511015224"
+                      }
+                    ],
+                    "export_lines": [
+                      {
+                        "id": 5,
+                        "linked_import_line": null,
+                        "linked_import_line_id": null,
+                        "shipping_bill_no": "6611229",
+                        "sb_value_usd": "111365.650",
+                        "sb_date": "2024-01-08",
+                        "export_in_mts": "106.570",
+                        "license_no": "511015224"
+                      },
+                      {
+                        "id": 6,
+                        "linked_import_line": null,
+                        "linked_import_line_id": null,
+                        "shipping_bill_no": "8361972",
+                        "sb_value_usd": "293108.200",
+                        "sb_date": "2024-03-15",
+                        "export_in_mts": "135.950",
+                        "license_no": "511015224"
+                      }
+                    ],
+                    "issue_date": "2022-10-11",
+                    "import_validity": "2023-10-11",
+                    "export_validity": "2024-04-11",
+                    "cif_value_inr": "37500000.000",
+                    "cif_value_usd": "466417.910",
+                    "cif_exchange_rate": "80.400",
+                    "fob_value_inr": "45000000.000",
+                    "fob_value_usd": "575447.570",
+                    "fob_exhange_rate": "78.200",
+                    "status": "CLOSE",
+                    "total_import_quantity": "258.000",
+                    "total_import": "241.952",
+                    "total_export": "242.520",
+                    "to_be_exported": "250.002",
+                    "balance": "7.482"
+                  },
+                  {
+                    "license_no": "511007116",
+                    "import_lines": [
+                      {
+                        "id": 1,
+                        "boe_No": "6907664",
+                        "boe_value_usd": "1392500.000",
+                        "boe_date": "2021-12-31",
+                        "import_in_mts": "500.000",
+                        "license_no": "511007116"
+                      }
+                    ],
+                    "export_lines": [
+                      {
+                        "id": 4,
+                        "linked_import_line": null,
+                        "linked_import_line_id": null,
+                        "shipping_bill_no": "6829939",
+                        "sb_value_usd": "187093.400",
+                        "sb_date": "2023-01-09",
+                        "export_in_mts": "121.695",
+                        "license_no": "511007116"
+                      },
+                      {
+                        "id": 3,
+                        "linked_import_line": null,
+                        "linked_import_line_id": null,
+                        "shipping_bill_no": "8500238",
+                        "sb_value_usd": "142538.000",
+                        "sb_date": "2023-03-15",
+                        "export_in_mts": "66.860",
+                        "license_no": "511007116"
+                      },
+                      "...(+2 more of 4)"
+                    ],
+                    "issue_date": "2021-12-22",
+                    "import_validity": "2022-12-22",
+                    "export_validity": "2023-06-22",
+                    "cif_value_inr": "54500000.000",
+                    "cif_value_usd": "718050.066",
+                    "cif_exchange_rate": "75.900",
+                    "fob_value_inr": "65500000.000",
+                    "fob_value_usd": "882749.326",
+                    "fob_exhange_rate": "74.200",
+                    "status": "CLOSE",
+                    "total_import_quantity": "516.000",
+                    "total_import": "500.000",
+                    "total_export": "400.174",
+                    "to_be_exported": "500.004",
+                    "balance": "99.830"
+                  },
+                  "...(+2 more of 4)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/license/dfia-license-header/list/": {
+      "get": {
+        "operationId": "get_license_dfia_license_header_list",
+        "summary": "DFIA license headers list.",
+        "tags": [
+          "license"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/parties/": {
+      "get": {
+        "operationId": "get_parties",
+        "summary": "Business partners (vendors + customers) master from SAP.",
+        "tags": [
+          "parties"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "count": 137,
+                  "parties": [
+                    {
+                      "id": 11,
+                      "card_code": "VENDA000102",
+                      "card_name": "A. L. BADA ENGINEERING",
+                      "state": "GJ",
+                      "u_main_group": "EXPORT",
+                      "country": "IN"
+                    },
+                    {
+                      "id": 12,
+                      "card_code": "VENDA000161",
+                      "card_name": "AASHIRWAD OIL & AGRO INDUSTRIES",
+                      "state": "HR",
+                      "u_main_group": "PURCHASE OIL",
+                      "country": "IN"
+                    },
+                    "...(+135 more of 137)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rates/basic-rate/": {
+      "get": {
+        "operationId": "get_rates_basic_rate",
+        "summary": "Basic (our) rate rows over a date range.",
+        "tags": [
+          "rates"
+        ],
+        "parameters": [
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "end_date filter"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "start_date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "basic_rates": [
+                    {
+                      "id": 1,
+                      "basic_price_ltr": 145.8731458731459,
+                      "basic_price_kg": "160.300",
+                      "date": "2026-07-18",
+                      "packing_type": 1,
+                      "market_rate": 1
+                    },
+                    {
+                      "id": 2,
+                      "basic_price_ltr": 149.5131495131495,
+                      "basic_price_kg": "164.300",
+                      "date": "2026-07-18",
+                      "packing_type": 2,
+                      "market_rate": 1
+                    },
+                    "...(+10 more of 12)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rates/commodity/": {
+      "get": {
+        "operationId": "get_rates_commodity",
+        "summary": "Commodity master with margin rates.",
+        "tags": [
+          "rates"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "commodity": "Soya DO",
+                    "margin_rate": null,
+                    "created_by": "super@exim.com"
+                  },
+                  {
+                    "id": 2,
+                    "commodity": "Soya Refined",
+                    "margin_rate": "3.00",
+                    "created_by": "super@exim.com"
+                  },
+                  "...(+10 more of 12)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rates/market-rate/get/": {
+      "get": {
+        "operationId": "get_rates_market_rate_get",
+        "summary": "Market rate rows over a date range.",
+        "tags": [
+          "rates"
+        ],
+        "parameters": [
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "end_date filter"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "start_date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "commodity": 2,
+                    "factory_kg": "147.30",
+                    "with_packing": 161.3,
+                    "with_gst_kg": 169.365,
+                    "with_gst_ltr": 154.12230412230412,
+                    "date": "2026-07-18"
+                  },
+                  {
+                    "id": 2,
+                    "commodity": 1,
+                    "factory_kg": "147.40",
+                    "with_packing": 161.4,
+                    "with_gst_kg": 169.47,
+                    "with_gst_ltr": 154.2178542178542,
+                    "date": "2026-07-18"
+                  },
+                  "...(+10 more of 12)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rates/market-rate/latest/": {
+      "get": {
+        "operationId": "get_rates_market_rate_latest",
+        "summary": "Latest market rate per commodity.",
+        "tags": [
+          "rates"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 2,
+                    "commodity": 1,
+                    "factory_kg": "147.40",
+                    "with_packing": 161.4,
+                    "with_gst_kg": 169.47,
+                    "with_gst_ltr": 154.2178542178542,
+                    "date": "2026-07-18"
+                  },
+                  {
+                    "id": 1,
+                    "commodity": 2,
+                    "factory_kg": "147.30",
+                    "with_packing": 161.3,
+                    "with_gst_kg": 169.365,
+                    "with_gst_ltr": 154.12230412230412,
+                    "date": "2026-07-18"
+                  },
+                  "...(+10 more of 12)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rates/packing/": {
+      "get": {
+        "operationId": "get_rates_packing",
+        "summary": "Packing types with packing margins.",
+        "tags": [
+          "rates"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "packing_name": "Pouch",
+                    "packing_margin": "10.00000",
+                    "created_by": "super@exim"
+                  },
+                  {
+                    "id": 2,
+                    "packing_name": "Tin",
+                    "packing_margin": "14.00000",
+                    "created_by": "super@exim"
+                  },
+                  "...(+1 more of 3)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rates/rate-table/latest/": {
+      "get": {
+        "operationId": "get_rates_rate_table_latest",
+        "summary": "Composite latest rate table (commodities + rows).",
+        "tags": [
+          "rates"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "commodities": [
+                    "Soya Refined",
+                    "Cottonseed Refined",
+                    "...(+2 more of 4)"
+                  ],
+                  "rows": [
+                    {
+                      "pack_size": "Pouch 1 Ltr",
+                      "rates": {
+                        "Soya Refined": 145.87,
+                        "Ricebran Refined": 149.49,
+                        "Mustard Refined": 166.08
+                      }
+                    },
+                    {
+                      "pack_size": "Pouch 750 Gm",
+                      "rates": {
+                        "Soya Refined": 120.23
+                      }
+                    },
+                    "...(+5 more of 7)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/balance-sheet/": {
+      "get": {
+        "operationId": "get_sap_sync_balance_sheet",
+        "summary": "Oil Dr/Cr outstanding balance sheet (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "balance_sheet": [
+                    {
+                      "CardCode": "VENDA001347",
+                      "CardName": "INDRANI FOODS",
+                      "Balance": -50604960.0,
+                      "Last Transaction Date": "2025-12-17T00:00:00",
+                      "Last Transanction Amount": 1000000.0
+                    },
+                    {
+                      "CardCode": "VENDA001490",
+                      "CardName": "MAHA MAYA FOOD PRODUCTS PRIVATE LIMITED",
+                      "Balance": -45000004.0,
+                      "Last Transaction Date": "2026-01-23T00:00:00",
+                      "Last Transanction Amount": 4975700.0
+                    },
+                    "...(+21 more of 23)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/custa/balance-sheet/": {
+      "get": {
+        "operationId": "get_sap_sync_custa_balance_sheet",
+        "summary": "Customer (custa) outstanding balance sheet (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "CardCode": "CUSTA001101",
+                      "CardName": "VARNAY CO GOODS WHOLESALERS CO. L.L.C",
+                      "SlpName": "GURPREET SINGH",
+                      "Outstanding Amount": -1350280.75,
+                      "Outstanding After 1-Apr-26": 0.0,
+                      "DocNum": 626027401,
+                      "InvoiceDate": "2026-02-28T00:00:00",
+                      "Since_Last_Invoice": 140,
+                      "InvoiceAmount": 4270133.0,
+                      "Transaction_Date": "2026-02-03T00:00:00",
+                      "Transaction_Amount": 1350280.75,
+                      "Since_Last_Transaction": 165
+                    },
+                    {
+                      "CardCode": "CUSTA001124",
+                      "CardName": "DELHI SIKH GURDWARA MANAGEMENT COMMITTEE",
+                      "SlpName": "GAGANDEEP SINGH FACTORY",
+                      "Outstanding Amount": -240000.0,
+                      "Outstanding After 1-Apr-26": 0.0,
+                      "DocNum": 626038207,
+                      "InvoiceDate": "2026-03-30T00:00:00",
+                      "Since_Last_Invoice": 110,
+                      "InvoiceAmount": 48000.0,
+                      "Transaction_Date": null,
+                      "Transaction_Amount": null,
+                      "Since_Last_Transaction": null
+                    },
+                    "...(+350 more of 352)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/customer-aging-balance/": {
+      "get": {
+        "operationId": "get_sap_sync_customer_aging_balance",
+        "summary": "Customer aging balances (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "DocNum": 626078203,
+                      "DocDate": "2026-07-18T00:00:00",
+                      "Days_Difference": 0,
+                      "Aging": "0-30 Days",
+                      "CardCode": "ORGC000001",
+                      "CardName": "GAGANDEEP SINGH",
+                      "SlpName": "GAGANDEEP SINGH FACTORY",
+                      "ShipToCode": "GAGANDEEP SINGH NEW DELHI",
+                      "DocTotal": 25000.0,
+                      "PaidToDate": 0.0,
+                      "Balance": 25000.0,
+                      "Outstanding Amount": 1256921.9999
+                    },
+                    {
+                      "DocNum": 626078196,
+                      "DocDate": "2026-07-18T00:00:00",
+                      "Days_Difference": 0,
+                      "Aging": "0-30 Days",
+                      "CardCode": "CUSTA001205",
+                      "CardName": "SHIVAYE BEVERAGES",
+                      "SlpName": "SHARANJEET KAUR",
+                      "ShipToCode": "SHIVAYE BEVERAGES DELHI",
+                      "DocTotal": 28750.0,
+                      "PaidToDate": 0.0,
+                      "Balance": 28750.0,
+                      "Outstanding Amount": 28750.0
+                    },
+                    "...(+4845 more of 4847)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/finished-inventory/": {
+      "get": {
+        "operationId": "get_sap_sync_finished_inventory",
+        "summary": "Finished-goods inventory (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "finished_inventory": [
+                    {
+                      "Warehouse": "BH-EC",
+                      "Category": "BLENDED",
+                      "Total": 5125.0
+                    },
+                    {
+                      "Warehouse": "BH-EC",
+                      "Category": "CANOLA",
+                      "Total": 2058.0
+                    },
+                    "...(+20 more of 22)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/inventory/": {
+      "get": {
+        "operationId": "get_sap_sync_inventory",
+        "summary": "Raw/factory inventory (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "inventory": [
+                    {
+                      "Warehouse": "BH-CRUDE",
+                      "Category": "CANOLA",
+                      "Total": 177261.0
+                    },
+                    {
+                      "Warehouse": "BH-EX",
+                      "Category": "CANOLA",
+                      "Total": 0.0
+                    },
+                    "...(+48 more of 50)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/monthly-planning/": {
+      "get": {
+        "operationId": "get_sap_sync_monthly_planning",
+        "summary": "Monthly SAP planning rows for a given month id.",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [
+          {
+            "name": "monthId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "monthId filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "monthly_planning": [
+                    {
+                      "U_Sub_Group": "MUSTARD",
+                      "Quantity": 940174.0
+                    },
+                    {
+                      "U_Sub_Group": "OLIVE",
+                      "Quantity": 394734.0
+                    },
+                    "...(+11 more of 13)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/open-ap/": {
+      "get": {
+        "operationId": "get_sap_sync_open_ap",
+        "summary": "Open accounts-payable documents (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "Open APs": [
+                    {
+                      "DB Primary Key": 48250,
+                      "Invoice Number": 626074168,
+                      "Status (O=Open C=Closed)": "O",
+                      "Invoice Date": "2026-07-14T00:00:00",
+                      "Payment Due Date": "2026-07-14T00:00:00",
+                      "Tax Posting Date": "2026-07-11T00:00:00",
+                      "Vendor Code": "VENDA000930",
+                      "Vendor Name": "VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED",
+                      "Vendor GST Number": null,
+                      "Vendor Invoice Reference No": "VARPL/2627/01871",
+                      "Total Invoice Amount (INR)": 6052234.0,
+                      "Total Invoice Amount (Foreign Currency)": 0.0,
+                      "GST / VAT Amount": 288476.4,
+                      "Discount Amount": 0.0,
+                      "Amount Paid So Far": 0.0,
+                      "Reference 1": "626074168",
+                      "Remarks / Notes": "Based On Purchase Orders 220726046. GATE ENTRY NO 156 Based On Goods Receipt PO 2026076618.",
+                      "Journal Entry Memo": "A/P Invoices - VENDA000930",
+                      "Journal Entry Number": 220471,
+                      "Bilty / LR Number": "8560",
+                      "Bilty / LR Date": "2026-07-11T00:00:00",
+                      "Transporter Name": "R.K. TANKER SERVICE",
+                      "Vehicle Number": "RJ47GA7520",
+                      "Goods Received Date": null,
+                      "Linked GRN Doc Entry": null,
+                      "GRN Vendor Code": null,
+                      "GRN Warehouse Code": null
+                    },
+                    {
+                      "DB Primary Key": 48253,
+                      "Invoice Number": 626074170,
+                      "Status (O=Open C=Closed)": "O",
+                      "Invoice Date": "2026-07-13T00:00:00",
+                      "Payment Due Date": "2026-07-13T00:00:00",
+                      "Tax Posting Date": "2026-07-09T00:00:00",
+                      "Vendor Code": "VENDA000224",
+                      "Vendor Name": "AWL AGRI BUSINESS LIMITED",
+                      "Vendor GST Number": null,
+                      "Vendor Invoice Reference No": "190826018334",
+                      "Total Invoice Amount (INR)": 6229109.0,
+                      "Total Invoice Amount (Foreign Currency)": 0.0,
+                      "GST / VAT Amount": 296907.0,
+                      "Discount Amount": 0.0,
+                      "Amount Paid So Far": 0.0,
+                      "Reference 1": "626074170",
+                      "Remarks / Notes": "MUSTARD Based On Purchase Orders 220526066. gate entry  no 140 Based On Goods Receipt PO 2026076616.",
+                      "Journal Entry Memo": "A/P Invoices - VENDA000224",
+                      "Journal Entry Number": 220475,
+                      "Bilty / LR Number": "155",
+                      "Bilty / LR Date": "2026-07-09T00:00:00",
+                      "Transporter Name": "HEM TRANSPORT",
+                      "Vehicle Number": "GJ39TB1829",
+                      "Goods Received Date": null,
+                      "Linked GRN Doc Entry": null,
+                      "GRN Vendor Code": null,
+                      "GRN Warehouse Code": null
+                    },
+                    "...(+157 more of 159)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/open-ar/": {
+      "get": {
+        "operationId": "get_sap_sync_open_ar",
+        "summary": "Open accounts-receivable documents (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "Open ARs": [
+                    {
+                      "Invoice Num": 626078203,
+                      "Invoice Date": "2026-07-18T00:00:00",
+                      "Invoice Due Date": "2026-07-18T00:00:00",
+                      "Vendor Code": "ORGC000001",
+                      "Vendor Name": "GAGANDEEP SINGH",
+                      "Invoice Total": 25000.0,
+                      "Balance": 25000.0,
+                      "Days Open": 0,
+                      "Comments": "Based On Sales Orders 1726078225.",
+                      "Address": "NEW DELHI-110027\rIN",
+                      "Address2": "NEW DELHI-110027\rIN",
+                      "ShipToCode": "GAGANDEEP SINGH NEW DELHI",
+                      "Dispatch Date": null,
+                      "Bilty Num": null,
+                      "Bilty Date": null,
+                      "Transporter": null,
+                      "Vehicle Number": null
+                    },
+                    {
+                      "Invoice Num": 626078202,
+                      "Invoice Date": "2026-07-18T00:00:00",
+                      "Invoice Due Date": "2026-07-18T00:00:00",
+                      "Vendor Code": "CUSTA000985",
+                      "Vendor Name": "GURU KIRPA AGENCY",
+                      "Invoice Total": 37500.0,
+                      "Balance": 37500.0,
+                      "Days Open": 0,
+                      "Comments": "Based On Sales Orders 1726078224.",
+                      "Address": "SABJI MANDI  7713 CLOCK TOWER\rDELHI-110007\rIN",
+                      "Address2": "SABJI MANDI  7713 CLOCK TOWER\rDELHI-110007\rIN",
+                      "ShipToCode": "GURU KIRPA AGENCY DELHI",
+                      "Dispatch Date": null,
+                      "Bilty Num": null,
+                      "Bilty Date": null,
+                      "Transporter": null,
+                      "Vehicle Number": null
+                    },
+                    "...(+1110 more of 1112)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/open-pos/": {
+      "get": {
+        "operationId": "get_sap_sync_open_pos",
+        "summary": "Open purchase orders (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "open_pos": [
+                    {
+                      "PO_NUMBER": 220426102,
+                      "PO_DATE": "2026-04-24T00:00:00",
+                      "DUE_DATE": "2026-04-24T00:00:00",
+                      "VENDOR_CODE": "VENDA000224",
+                      "VENDOR_NAME": "AWL AGRI BUSINESS LIMITED",
+                      "ItemCode": "RM0000003",
+                      "UserSign": 15,
+                      "ITEM_NAME": "MUSTARD LOOSE OIL",
+                      "ORDERED_QTY": 250.0,
+                      "PENDING_QTY": 49.405,
+                      "RECEIVED_QTY": 200.595,
+                      "UNIT_PRICE": 148000.0,
+                      "OPEN_VALUE": 7311940.0,
+                      "WAREHOUSE": "BH-GJ",
+                      "UOM": "MTS"
+                    },
+                    {
+                      "PO_NUMBER": 220526013,
+                      "PO_DATE": "2026-05-06T00:00:00",
+                      "DUE_DATE": "2026-05-06T00:00:00",
+                      "VENDOR_CODE": "VENDA000149",
+                      "VENDOR_NAME": "MIGASA ACEITES S L U",
+                      "ItemCode": "RM0000013",
+                      "UserSign": 15,
+                      "ITEM_NAME": "POMACE OLIVE LOOSE OIL IMPORTED",
+                      "ORDERED_QTY": 22.0,
+                      "PENDING_QTY": 22.0,
+                      "RECEIVED_QTY": 0.0,
+                      "UNIT_PRICE": 2050.0,
+                      "OPEN_VALUE": 45100.0,
+                      "WAREHOUSE": "BH-GJ",
+                      "UOM": "MTS"
+                    },
+                    "...(+16 more of 18)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/planned-months/": {
+      "get": {
+        "operationId": "get_sap_sync_planned_months",
+        "summary": "Available planning months (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "Planned_months": [
+                    {
+                      "AbsID": 2,
+                      "Code": "Nov-2024",
+                      "Name": "Planning Month Of November 2024",
+                      "UserSign": 22,
+                      "StartDate": "2024-11-01T00:00:00",
+                      "EndDate": "2024-11-30T00:00:00",
+                      "FormView": "M"
+                    },
+                    {
+                      "AbsID": 3,
+                      "Code": "DEC-2024",
+                      "Name": "Planning Month Of DEC 2024",
+                      "UserSign": 22,
+                      "StartDate": "2024-12-01T00:00:00",
+                      "EndDate": "2024-12-31T00:00:00",
+                      "FormView": "M"
+                    },
+                    "...(+21 more of 23)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/vendor/balance-sheet/": {
+      "get": {
+        "operationId": "get_sap_sync_vendor_balance_sheet",
+        "summary": "Vendor outstanding balance sheet (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "CardCode": "VENDA000003",
+                      "CardName": "JIVO WELLNESS PVT LTD - HR",
+                      "Balance": -689617985.65,
+                      "Last Transaction Date": "2026-04-30T00:00:00",
+                      "Last Transanction Amount": 751.0
+                    },
+                    {
+                      "CardCode": "VENDA000004",
+                      "CardName": "JIVO WELLNESS PVT LTD - DL",
+                      "Balance": -54018504.0,
+                      "Last Transaction Date": "2024-12-10T00:00:00",
+                      "Last Transanction Amount": 700319.0
+                    },
+                    "...(+385 more of 387)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/": {
+      "get": {
+        "operationId": "get_stock_status",
+        "summary": "Core import stock-status rows (optionally filtered by status).",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "status filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 542,
+                    "item_code": "RM0MKG",
+                    "item_name": "MUSTARD KACHI GHANI",
+                    "vendor_code": "VENDA000224",
+                    "vendor_name": "AWL AGRI BUSINESS LIMITED",
+                    "eta": null,
+                    "status": "IN_CONTRACT",
+                    "rate": "165.000",
+                    "quantity": "250000.00",
+                    "total": "0.00",
+                    "rate_in_litres": "150.150",
+                    "quantity_in_litre": "274725.00",
+                    "job_work": null,
+                    "vehicle_number": null,
+                    "transporter": null,
+                    "location": "BUNDI, RAJASTHAN",
+                    "is_accumulator": false,
+                    "arrival_date": null,
+                    "remainder_action": null,
+                    "bility_number": null,
+                    "grpo_number": null,
+                    "payment_status": "UNPAID",
+                    "contract_start": "2026-06-12",
+                    "contract_end": "2026-07-12",
+                    "created_at": "2026-06-13T05:36:35.057986Z",
+                    "created_by": "raspreet@exim.com",
+                    "deleted": false,
+                    "parent": null
+                  },
+                  {
+                    "id": 598,
+                    "item_code": "RM00SB",
+                    "item_name": "SOYABEAN",
+                    "vendor_code": "VENDA000224",
+                    "vendor_name": "AWL AGRI BUSINESS LIMITED",
+                    "eta": null,
+                    "status": "IN_CONTRACT",
+                    "rate": "147.500",
+                    "quantity": "132020.00",
+                    "total": "0.00",
+                    "rate_in_litres": "134.225",
+                    "quantity_in_litre": "145076.78",
+                    "job_work": null,
+                    "vehicle_number": null,
+                    "transporter": null,
+                    "location": "GUJARAT",
+                    "is_accumulator": false,
+                    "arrival_date": null,
+                    "remainder_action": null,
+                    "bility_number": null,
+                    "grpo_number": null,
+                    "payment_status": "UNPAID",
+                    "contract_start": "2026-06-26",
+                    "contract_end": "2026-07-26",
+                    "created_at": "2026-06-27T08:23:03.897938Z",
+                    "created_by": "lovepreet@exim.com",
+                    "deleted": false,
+                    "parent": null
+                  },
+                  "...(+7 more of 9)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/contractual-history/": {
+      "get": {
+        "operationId": "get_stock_status_contractual_history",
+        "summary": "Contractual history of stock items (rates, contract dates).",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 68,
+                    "item_code": "RM000MR",
+                    "item_name": "MUSTARD REFINED",
+                    "vendor_code": "VENDA001695",
+                    "vendor_name": "M/S ARORA AGRI BUSINESS VENTURES",
+                    "rate": "147.000",
+                    "contract_start": "2026-05-14",
+                    "contract_end": "2026-05-21",
+                    "created_at": "2026-05-20T05:16:00.115864Z",
+                    "created_by": "raspreet@exim.com"
+                  },
+                  {
+                    "id": 59,
+                    "item_code": "RM000MR",
+                    "item_name": "MUSTARD REFINED",
+                    "vendor_code": "VENDA000224",
+                    "vendor_name": "AWL AGRI BUSINESS LIMITED",
+                    "rate": "145.000",
+                    "contract_start": "2026-05-13",
+                    "contract_end": "2026-06-14",
+                    "created_at": "2026-05-19T07:09:01.506014Z",
+                    "created_by": "raspreet@exim.com"
+                  },
+                  "...(+18 more of 20)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/debit-entries/": {
+      "get": {
+        "operationId": "get_stock_status_debit_entries",
+        "summary": "Shortage/debit deduction entries per vehicle/item.",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 14,
+                    "item_code": "RM00C01",
+                    "item_name": "CANOLA",
+                    "rate": "132000.000",
+                    "load_qty": "41.490",
+                    "unload_qty": "41.390",
+                    "shortage_qty": "0.100",
+                    "allowed_shortage_qty": "0.104",
+                    "deducted_shortage_qty": "0.000",
+                    "deduction_amount": "0.000",
+                    "supplier_code": "VENDA001035",
+                    "supplier": "ALBA EDIBLE OILS PTY LTD",
+                    "vehicle_number": "RJ47GA6771",
+                    "transporter": "RK TANKER SERVICE",
+                    "bility_number": null,
+                    "grpo_number": null,
+                    "created_at": "2026-04-25T13:09:27.557362Z",
+                    "created_by": "raspreet@exim.com",
+                    "stock": 355
+                  },
+                  {
+                    "id": 15,
+                    "item_code": "RM00C01",
+                    "item_name": "CANOLA",
+                    "rate": "125000.000",
+                    "load_qty": "41.700",
+                    "unload_qty": "41.670",
+                    "shortage_qty": "0.030",
+                    "allowed_shortage_qty": "0.104",
+                    "deducted_shortage_qty": "0.000",
+                    "deduction_amount": "0.000",
+                    "supplier_code": "VENDA000599",
+                    "supplier": "EDIBLE OIL CO D LLC",
+                    "vehicle_number": "RJ47GA8215",
+                    "transporter": null,
+                    "bility_number": null,
+                    "grpo_number": null,
+                    "created_at": "2026-04-27T14:02:36.750500Z",
+                    "created_by": "raspreet@exim.com",
+                    "stock": 347
+                  },
+                  "...(+128 more of 130)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/debit-insights/": {
+      "get": {
+        "operationId": "get_stock_status_debit_insights",
+        "summary": "Aggregate shortage/debit totals.",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "total_deduction_shortager": 4.574,
+                  "total_records": 130,
+                  "total_deduction_amount": 711668.539
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/stock-dashboard/": {
+      "get": {
+        "operationId": "get_stock_status_stock_dashboard",
+        "summary": "Multi-dimensional stock dashboard (in/outside factory, by status/vendor).",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [
+          {
+            "name": "rounding",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "rounding filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "summary": {
+                    "outside_factory_total": 104275.0,
+                    "active_items": 12
+                  },
+                  "status_vendors": {
+                    "ON_THE_WAY": [
+                      "AWL AGRI BUSINESS LIMITED",
+                      "DHANLAXMI EDIBLES PRIVATE LIMITED",
+                      "...(+2 more of 4)"
+                    ],
+                    "UNDER_LOADING": [
+                      "DHANLAXMI EDIBLES PRIVATE LIMITED"
+                    ],
+                    "AT_REFINERY": [
+                      "EDIBLE OIL CO D LLC",
+                      "GRAINCORP OILSEEDS PTY LTD"
+                    ],
+                    "ON_THE_SEA": [
+                      "MIGASA ACEITES S L U"
+                    ],
+                    "IN_CONTRACT": [
+                      "AWL AGRI BUSINESS LIMITED",
+                      "M/S ARORA AGRI BUSINESS VENTURES",
+                      "...(+1 more of 3)"
+                    ],
+                    "COMPLETED": [
+                      "ALBA EDIBLE OILS PTY LTD",
+                      "AWL AGRI BUSINESS LIMITED",
+                      "...(+9 more of 11)"
+                    ]
+                  },
+                  "items": [
+                    {
+                      "item_code": "RMMKG02",
+                      "item_name": "MUSTARD KACHI GHANI 2B",
+                      "dashboard_id": 14,
+                      "outside_factory": 0,
+                      "status_data": {
+                        "ON_THE_WAY__AWL AGRI BUSINESS LIMITED": 0,
+                        "ON_THE_WAY__DHANLAXMI EDIBLES PRIVATE LIMITED": 0,
+                        "ON_THE_WAY__M/S ARORA AGRI BUSINESS VENTURES": 0,
+                        "ON_THE_WAY__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 0,
+                        "UNDER_LOADING__DHANLAXMI EDIBLES PRIVATE LIMITED": 0,
+                        "AT_REFINERY__EDIBLE OIL CO D LLC": 0,
+                        "AT_REFINERY__GRAINCORP OILSEEDS PTY LTD": 0,
+                        "ON_THE_SEA__MIGASA ACEITES S L U": 0,
+                        "IN_CONTRACT__AWL AGRI BUSINESS LIMITED": 0,
+                        "IN_CONTRACT__M/S ARORA AGRI BUSINESS VENTURES": 0,
+                        "IN_CONTRACT__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 0,
+                        "COMPLETED__ALBA EDIBLE OILS PTY LTD": 0,
+                        "COMPLETED__AWL AGRI BUSINESS LIMITED": 0,
+                        "COMPLETED__DHANLAXMI EDIBLES PRIVATE LIMITED": 0,
+                        "COMPLETED__DIL EXIM COMMODITIES PRIVATE LIMITED": 0,
+                        "COMPLETED__EDIBLE OIL CO D LLC": 0,
+                        "COMPLETED__GRAINCORP OILSEEDS PTY LTD": 0,
+                        "COMPLETED__JIVO WELLNESS PVT LTD - DL": 87815.09,
+                        "COMPLETED__M/S ARORA AGRI BUSINESS VENTURES": 0,
+                        "COMPLETED__MIGASA ACEITES S L U": 0,
+                        "COMPLETED__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 0,
+                        "COMPLETED__VAISHNODEVI REFOILS AND SOLEX": 0
+                      },
+                      "total": 87815.09
+                    },
+                    {
+                      "item_code": "RM00GNR",
+                      "item_name": "GROUNDNUT REFINED",
+                      "dashboard_id": 15,
+                      "outside_factory": 0,
+                      "status_data": {
+                        "ON_THE_WAY__AWL AGRI BUSINESS LIMITED": 0,
+                        "ON_THE_WAY__DHANLAXMI EDIBLES PRIVATE LIMITED": 41575.0,
+                        "ON_THE_WAY__M/S ARORA AGRI BUSINESS VENTURES": 0,
+                        "ON_THE_WAY__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 0,
+                        "UNDER_LOADING__DHANLAXMI EDIBLES PRIVATE LIMITED": 42000.0,
+                        "AT_REFINERY__EDIBLE OIL CO D LLC": 0,
+                        "AT_REFINERY__GRAINCORP OILSEEDS PTY LTD": 0,
+                        "ON_THE_SEA__MIGASA ACEITES S L U": 0,
+                        "IN_CONTRACT__AWL AGRI BUSINESS LIMITED": 0,
+                        "IN_CONTRACT__M/S ARORA AGRI BUSINESS VENTURES": 0,
+                        "IN_CONTRACT__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 0,
+                        "COMPLETED__ALBA EDIBLE OILS PTY LTD": 0,
+                        "COMPLETED__AWL AGRI BUSINESS LIMITED": 0,
+                        "COMPLETED__DHANLAXMI EDIBLES PRIVATE LIMITED": 165249.97,
+                        "COMPLETED__DIL EXIM COMMODITIES PRIVATE LIMITED": 0,
+                        "COMPLETED__EDIBLE OIL CO D LLC": 0,
+                        "COMPLETED__GRAINCORP OILSEEDS PTY LTD": 0,
+                        "COMPLETED__JIVO WELLNESS PVT LTD - DL": 0,
+                        "COMPLETED__M/S ARORA AGRI BUSINESS VENTURES": 0,
+                        "COMPLETED__MIGASA ACEITES S L U": 0,
+                        "COMPLETED__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 0,
+                        "COMPLETED__VAISHNODEVI REFOILS AND SOLEX": 0
+                      },
+                      "total": 248824.97
+                    },
+                    "...(+10 more of 12)"
+                  ],
+                  "totals": {
+                    "outside_factory": 104275.0,
+                    "status_vendor_totals": {
+                      "ON_THE_WAY__AWL AGRI BUSINESS LIMITED": 39880.0,
+                      "ON_THE_WAY__DHANLAXMI EDIBLES PRIVATE LIMITED": 82555.0,
+                      "ON_THE_WAY__M/S ARORA AGRI BUSINESS VENTURES": 40060.0,
+                      "ON_THE_WAY__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 80100.0,
+                      "UNDER_LOADING__DHANLAXMI EDIBLES PRIVATE LIMITED": 42000.0,
+                      "AT_REFINERY__EDIBLE OIL CO D LLC": 433.0,
+                      "AT_REFINERY__GRAINCORP OILSEEDS PTY LTD": 156026.2,
+                      "ON_THE_SEA__MIGASA ACEITES S L U": 44000.0,
+                      "IN_CONTRACT__AWL AGRI BUSINESS LIMITED": 653360.0,
+                      "IN_CONTRACT__M/S ARORA AGRI BUSINESS VENTURES": 32760.0,
+                      "IN_CONTRACT__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 39660.0,
+                      "COMPLETED__ALBA EDIBLE OILS PTY LTD": 248618.0,
+                      "COMPLETED__AWL AGRI BUSINESS LIMITED": 1537990.0,
+                      "COMPLETED__DHANLAXMI EDIBLES PRIVATE LIMITED": 369149.97,
+                      "COMPLETED__DIL EXIM COMMODITIES PRIVATE LIMITED": 480089.97,
+                      "COMPLETED__EDIBLE OIL CO D LLC": 76814.0,
+                      "COMPLETED__GRAINCORP OILSEEDS PTY LTD": 696698.0,
+                      "COMPLETED__JIVO WELLNESS PVT LTD - DL": 87815.09,
+                      "COMPLETED__M/S ARORA AGRI BUSINESS VENTURES": 608180.0,
+                      "COMPLETED__MIGASA ACEITES S L U": 21850.0,
+                      "COMPLETED__VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED": 605010.0,
+                      "COMPLETED__VAISHNODEVI REFOILS AND SOLEX": 82880.0
+                    },
+                    "status_totals": {
+                      "ON_THE_WAY": 242595.0,
+                      "UNDER_LOADING": 42000.0,
+                      "AT_REFINERY": 156459.2,
+                      "ON_THE_SEA": 44000.0,
+                      "IN_CONTRACT": 725780.0,
+                      "COMPLETED": 4815095.03
+                    },
+                    "grand_total": 6130204.2299999995
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/stock-insights/": {
+      "get": {
+        "operationId": "get_stock_status_stock_insights",
+        "summary": "Aggregate stock KPIs (value, qty, avg price).",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "summary": {
+                    "total_value": 1227724680.22636,
+                    "total_qty": 7905497.56,
+                    "total_qty_kg": 7905497.56,
+                    "total_qty_litre": 8687351.27,
+                    "total_count": 222,
+                    "weighted_sum_kg": 1227724680.22636,
+                    "weighted_sum_liter": 1227723555.01978,
+                    "avg_price_per_kg": 155.3,
+                    "avg_price_per_ltr": 141.32
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/stock-logs/": {
+      "get": {
+        "operationId": "get_stock_status_stock_logs",
+        "summary": "Field-level audit log of stock-status changes.",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "00644799-678b-4002-a14d-bbceb7424664",
+                    "stock": 648,
+                    "action": "UPDATE",
+                    "changed_by_label": "raspreet@exim.com",
+                    "note": "",
+                    "timestamp": "2026-07-18T13:42:03.644166Z",
+                    "field_logs": [
+                      {
+                        "field_name": "status",
+                        "old_value": "OUT_SIDE_FACTORY",
+                        "new_value": "IN_TANK"
+                      },
+                      {
+                        "field_name": "quantity",
+                        "old_value": "38880.00",
+                        "new_value": "38820.00"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "c9e4723c-f0a8-4c9f-ba18-75e63e934a71",
+                    "stock": 656,
+                    "action": "UPDATE",
+                    "changed_by_label": "raspreet@exim.com",
+                    "note": "move \u2192 ON_THE_WAY",
+                    "timestamp": "2026-07-18T10:11:01.961826Z",
+                    "field_logs": [
+                      {
+                        "field_name": "status",
+                        "old_value": "UNDER_LOADING",
+                        "new_value": "ON_THE_WAY"
+                      },
+                      {
+                        "field_name": "quantity",
+                        "old_value": "40060.00",
+                        "new_value": "40060"
+                      }
+                    ]
+                  },
+                  "...(+1478 more of 1480)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/vehicle-report/": {
+      "get": {
+        "operationId": "get_stock_status_vehicle_report",
+        "summary": "Vehicle-wise stock grouped by a status.",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "status filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "vehicle_number": null,
+                    "transporter": null,
+                    "items": [
+                      {
+                        "item_code": "RM00MDEO",
+                        "item_name": "MUSTARD DEO",
+                        "vendor_code": "VENDA000930",
+                        "vendor_name": "VAISHNODEVI AGRO RESOURCES PRIVATE LIMITED",
+                        "total_quantity_in_litre": 43582.37,
+                        "total_quantity_in_mts": 39.66,
+                        "eta": null,
+                        "arrival_date": null,
+                        "status": "IN_CONTRACT",
+                        "job_work": null,
+                        "rate": 154.8
+                      },
+                      {
+                        "item_code": "RM00MRD",
+                        "item_name": "MUSTARD REFINED DARK",
+                        "vendor_code": "VENDA000224",
+                        "vendor_name": "AWL AGRI BUSINESS LIMITED",
+                        "total_quantity_in_litre": 18527.45,
+                        "total_quantity_in_mts": 16.86,
+                        "eta": null,
+                        "arrival_date": null,
+                        "status": "IN_CONTRACT",
+                        "job_work": null,
+                        "rate": 149.5
+                      },
+                      "...(+5 more of 7)"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sync_logs/": {
+      "get": {
+        "operationId": "get_sync_logs",
+        "summary": "History of SAP sync jobs (type, status, counts).",
+        "tags": [
+          "sync_logs"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "sync_type": "PRT",
+                    "status": "FLD",
+                    "triggered_by": "Manual",
+                    "started_at": "2026-02-24T09:52:04.492097Z",
+                    "completed_at": null,
+                    "error_message": "relation \"Party   \" does not exist\nLINE 1: ...rty   \".\"u_main_group\", \"Party   \".\"country\" FROM \"Party   \"...\n                              \u2026",
+                    "records_procesed": 0,
+                    "records_created": 0,
+                    "records_updated": 0
+                  },
+                  {
+                    "id": 2,
+                    "sync_type": "PRT",
+                    "status": "SCS",
+                    "triggered_by": "Manual",
+                    "started_at": "2026-02-24T09:58:57.073532Z",
+                    "completed_at": "2026-02-24T09:58:58.193350Z",
+                    "error_message": null,
+                    "records_procesed": 1,
+                    "records_created": 1,
+                    "records_updated": 0
+                  },
+                  "...(+338 more of 340)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/": {
+      "get": {
+        "operationId": "get_tank",
+        "summary": "Storage tanks (code, item, capacity, current fill).",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "tank_code": "TNK005",
+                    "item_code": "RM00CN",
+                    "tank_capacity": "50000.00",
+                    "current_capacity": "49000.00",
+                    "tank_type": "TANK",
+                    "is_active": true,
+                    "created_at": "2026-03-24T12:32:55.859877Z",
+                    "updated_at": "2026-07-03T05:16:14.141859Z"
+                  },
+                  {
+                    "tank_code": "TNK0024",
+                    "item_code": "RM00MDEO",
+                    "tank_capacity": "50000.00",
+                    "current_capacity": "44500.00",
+                    "tank_type": "TANK",
+                    "is_active": true,
+                    "created_at": "2026-06-26T05:47:37.668063Z",
+                    "updated_at": "2026-07-16T05:47:23.162083Z"
+                  },
+                  "...(+30 more of 32)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/capacity-insights/": {
+      "get": {
+        "operationId": "get_tank_capacity_insights",
+        "summary": "Overall tank capacity fill/empty percentages.",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "total_capacity": 1351500.0,
+                  "filled_capacity": 892500.0,
+                  "filled_percentage": 66.04,
+                  "empty_capacity": 459000.0,
+                  "empty_percentage": 33.96
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/in-tank-items/": {
+      "get": {
+        "operationId": "get_tank_in_tank_items",
+        "summary": "Distinct item codes currently in tanks.",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "item_code": "RM00CN"
+                  },
+                  {
+                    "item_code": "RM00MDEO"
+                  },
+                  "...(+26 more of 28)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/item-wise-average/": {
+      "get": {
+        "operationId": "get_tank_item_wise_average",
+        "summary": "Weighted average rate + matched qty for one tank item.",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "item_code filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "item_code": "RM00CN",
+                  "tank_total_capacity": 266500.0,
+                  "tank_total_capacity_kg": 292856.85,
+                  "quantity_matched": 266500.0,
+                  "quantity_matched_kg": 242515.24,
+                  "quantity_unmatched": 0.0,
+                  "average_rate(IN_TANK)": 125.55,
+                  "adjusted_average(STO)": 125.55,
+                  "average_rate_kg(IN_TANK)": 114.25,
+                  "adjusted_average_kg(STO)": 137.97,
+                  "breakdown": [
+                    {
+                      "stock_id": 320,
+                      "created_at": "2026-04-18T08:15:46.496624Z",
+                      "party": "ALBA EDIBLE OILS PTY LTD",
+                      "vehicle": "RJ47GA1756",
+                      "transporter": "N/A",
+                      "rate_in_litres": 121.94,
+                      "rate_in_kg": 134.0,
+                      "batch_quantity": 20651.63,
+                      "batch_quantity_kg": 18793.0,
+                      "quantity_consumed": 20651.63,
+                      "quantity_consumed_kg": 18793.0,
+                      "batch_total": 2518259.76,
+                      "batch_total_kg": 2518262.28
+                    },
+                    {
+                      "stock_id": 321,
+                      "created_at": "2026-04-18T08:16:56.892194Z",
+                      "party": "ALBA EDIBLE OILS PTY LTD",
+                      "vehicle": "RJ47GA1756",
+                      "transporter": "N/A",
+                      "rate_in_litres": 121.94,
+                      "rate_in_kg": 134.0,
+                      "batch_quantity": 25678.0,
+                      "batch_quantity_kg": 23367.0,
+                      "quantity_consumed": 25678.0,
+                      "quantity_consumed_kg": 23367.0,
+                      "batch_total": 3131175.32,
+                      "batch_total_kg": 3131178.45
+                    },
+                    "...(+5 more of 7)"
+                  ],
+                  "warning": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/item-wise-summary/": {
+      "get": {
+        "operationId": "get_tank_item_wise_summary",
+        "summary": "Per-item tank summary (qty, capacity, tank list).",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "total_quantity": 892500.0,
+                  "items": [
+                    {
+                      "color": "#10e0c8",
+                      "tank_item_code": "RM0EL",
+                      "tank_item_name": "EXTRA LIGHT",
+                      "quantity_in_liters": 14800.0,
+                      "total_capacity": 20000.0,
+                      "tank_count": 1,
+                      "tank_numbers": [
+                        "TNK019"
+                      ]
+                    },
+                    {
+                      "color": "#59f37f",
+                      "tank_item_code": "RM00POM",
+                      "tank_item_name": "POMACE",
+                      "quantity_in_liters": 63000.0,
+                      "total_capacity": 87000.0,
+                      "tank_count": 2,
+                      "tank_numbers": [
+                        "TNK015",
+                        "TNK006"
+                      ]
+                    },
+                    "...(+14 more of 16)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/items/": {
+      "get": {
+        "operationId": "get_tank_items",
+        "summary": "Tank item master (code, name, category, colour).",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "6bdeafc4-be36-490a-bf9e-c063ae8eb8c6",
+                    "tank_item_code": "RMSESMT",
+                    "tank_item_name": "SESAME TOASTED",
+                    "category": "SESAME",
+                    "is_active": true,
+                    "created_at": "2026-03-16T09:48:47.923091Z",
+                    "created_by": "admin@exim.com",
+                    "color": "#3498db"
+                  },
+                  {
+                    "id": "c6420d4c-c736-4f5e-990b-7771b059f1ac",
+                    "tank_item_code": "RM0SESM",
+                    "tank_item_name": "SESAME",
+                    "category": "SESAME",
+                    "is_active": true,
+                    "created_at": "2026-03-16T09:47:40.007407Z",
+                    "created_by": "admin@exim.com",
+                    "color": "#3498db"
+                  },
+                  "...(+49 more of 51)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/log/": {
+      "get": {
+        "operationId": "get_tank_log",
+        "summary": "Tank inflow/outflow log entries.",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 150,
+                    "log_type": "INWARD",
+                    "quantity": "29820.00",
+                    "vehicle_number": "GJ39TA8718",
+                    "rate": "147.00",
+                    "party": "AWL AGRI BUSINESS LIMITED",
+                    "item_code": null,
+                    "item_name": null,
+                    "arrival": null,
+                    "created_at": "2026-04-21T06:03:21.062998Z",
+                    "created_by": "raspreet@exim.com",
+                    "stock_status": 306
+                  },
+                  {
+                    "id": 151,
+                    "log_type": "INWARD",
+                    "quantity": "41730.00",
+                    "vehicle_number": "RJ14GQ1756",
+                    "rate": "154.30",
+                    "party": "BD EDIBLE OILS PVT LTD",
+                    "item_code": null,
+                    "item_name": null,
+                    "arrival": null,
+                    "created_at": "2026-04-21T06:49:33.760132Z",
+                    "created_by": "raspreet@exim.com",
+                    "stock_status": 305
+                  },
+                  "...(+138 more of 140)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/tank-summary/": {
+      "get": {
+        "operationId": "get_tank_tank_summary",
+        "summary": "Tank totals (capacity, current stock, utilisation).",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "summary": {
+                    "total_tank_capacity": 1351500.0,
+                    "current_stock": 892500.0,
+                    "utilisation_rate": 66.04,
+                    "tank_count": 32,
+                    "item_count": 16
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/{id}/": {
+      "get": {
+        "operationId": "get_stock_status_id",
+        "summary": "Single stock-status record detail.",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "id identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": 342,
+                  "item_code": "RM0EL",
+                  "item_name": "EXTRA LIGHT",
+                  "vendor_code": "VENDA000004",
+                  "vendor_name": "JIVO WELLNESS PVT LTD - DL",
+                  "eta": null,
+                  "status": "IN_TANK",
+                  "rate": "567.087",
+                  "quantity": "32578.03",
+                  "total": "0.00",
+                  "rate_in_litres": "516.050",
+                  "quantity_in_litre": "35800.00",
+                  "job_work": null,
+                  "vehicle_number": null,
+                  "transporter": null,
+                  "location": "Sonipat Factory",
+                  "is_accumulator": false,
+                  "arrival_date": null,
+                  "remainder_action": null,
+                  "bility_number": null,
+                  "grpo_number": null,
+                  "payment_status": "UNPAID",
+                  "contract_start": null,
+                  "contract_end": null,
+                  "created_at": "2026-04-23T07:35:34.354770Z",
+                  "created_by": "",
+                  "deleted": false,
+                  "parent": null
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tank/{tank_code}/": {
+      "get": {
+        "operationId": "get_tank_tank_code",
+        "summary": "Single tank detail.",
+        "tags": [
+          "tank"
+        ],
+        "parameters": [
+          {
+            "name": "tank_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "tank_code identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "tank_code": "TNK005",
+                  "item_code": "RM00CN",
+                  "tank_capacity": "50000.00",
+                  "current_capacity": "49000.00",
+                  "tank_type": "TANK",
+                  "is_active": true,
+                  "created_at": "2026-03-24T12:32:55.859877Z",
+                  "updated_at": "2026-07-03T05:16:14.141859Z"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/party/{card_code}/": {
+      "get": {
+        "operationId": "get_party_card_code",
+        "summary": "Single business-partner detail.",
+        "tags": [
+          "party"
+        ],
+        "parameters": [
+          {
+            "name": "card_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "card_code identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": 11,
+                  "card_code": "VENDA000102",
+                  "card_name": "A. L. BADA ENGINEERING",
+                  "state": "GJ",
+                  "u_main_group": "EXPORT",
+                  "country": "IN"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/item/rm/{item_code}/": {
+      "get": {
+        "operationId": "get_item_rm_item_code",
+        "summary": "Single raw-material item detail incl movement totals.",
+        "tags": [
+          "item"
+        ],
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "item_code identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": 689,
+                  "item_code": "RM0000001",
+                  "item_name": "LOOSE REFINED OLIVE OIL",
+                  "category": "OIL",
+                  "sal_factor2": "1.000000",
+                  "u_tax_rate": 5,
+                  "deleted": "N",
+                  "u_variety": "POMACE",
+                  "sal_pack_un": "1.000000",
+                  "u_brand": "JIVO",
+                  "u_unit": "OIL",
+                  "u_sub_group": "OLIVE",
+                  "total_trans_value": "4808.215100",
+                  "total_in_qty": "7894035.196000",
+                  "total_out_qty": "7894001.173300",
+                  "total_qty": "34.022700",
+                  "rate": "141.000000"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/item/fg/{item_code}/": {
+      "get": {
+        "operationId": "get_item_fg_item_code",
+        "summary": "Single finished-good item detail.",
+        "tags": [
+          "item"
+        ],
+        "parameters": [
+          {
+            "name": "item_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "item_code identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": 48655,
+                  "item_code": "FG0000412",
+                  "item_name": "JIVO PREMIUM OLIVE OIL 1 LTR 16 PCS",
+                  "category": "OIL",
+                  "sal_factor2": "16.000000",
+                  "u_tax_rate": 5,
+                  "deleted": "N",
+                  "u_variety": "EXTRA VIRGIN",
+                  "sal_pack_un": "1.000000",
+                  "u_brand": "JIVO",
+                  "u_unit": "OIL",
+                  "u_sub_group": "OLIVE"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/account/user/{id}/": {
+      "get": {
+        "operationId": "get_account_user_id",
+        "summary": "Single user detail.",
+        "tags": [
+          "account"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "id identifier"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "id": 34,
+                  "name": "Daman",
+                  "email": "daman@exim.in"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/daily-price/range/": {
+      "get": {
+        "operationId": "get_daily_price_range",
+        "summary": "Daily prices over a from/to range.",
+        "tags": [
+          "daily-price"
+        ],
+        "parameters": [
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "from_date filter"
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "to_date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 2307,
+                    "commodity_name": "Soya DO",
+                    "factory_price": "145.10",
+                    "packing_cost_kg": "159.10",
+                    "with_gst_kg": "167.06",
+                    "with_gst_ltr": "152.02",
+                    "date": "2026-06-18",
+                    "created_by": "System"
+                  },
+                  {
+                    "id": 2308,
+                    "commodity_name": "Soya Refined",
+                    "factory_price": "146.00",
+                    "packing_cost_kg": "160.00",
+                    "with_gst_kg": "168.00",
+                    "with_gst_ltr": "152.88",
+                    "date": "2026-06-18",
+                    "created_by": "System"
+                  },
+                  "...(+334 more of 336)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jivo-rate/range/": {
+      "get": {
+        "operationId": "get_jivo_rate_range",
+        "summary": "JIVO pack rates over a range.",
+        "tags": [
+          "jivo-rate"
+        ],
+        "parameters": [
+          {
+            "name": "from_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "from_date filter"
+          },
+          {
+            "name": "to_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "to_date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1951,
+                    "pack_type": "Pouch 1 Ltr",
+                    "commodity": "SOYA",
+                    "rate": "153.000",
+                    "date": "2026-06-18",
+                    "created_by": "System"
+                  },
+                  {
+                    "id": 1952,
+                    "pack_type": "Pouch 1 Ltr",
+                    "commodity": "Mustard",
+                    "rate": "168.000",
+                    "date": "2026-06-18",
+                    "created_by": "System"
+                  },
+                  "...(+698 more of 700)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/license/advance-license-import-lines/": {
+      "get": {
+        "operationId": "get_license_advance_license_import_lines",
+        "summary": "Advance-license import (BOE) lines.",
+        "tags": [
+          "license"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 2,
+                    "boe_No": "3131526",
+                    "boe_value_usd": "418666.250",
+                    "boe_date": "2022-11-02",
+                    "import_in_mts": "241.952",
+                    "license_no": "511015224"
+                  },
+                  {
+                    "id": 3,
+                    "boe_No": "3831237",
+                    "boe_value_usd": "474373.000",
+                    "boe_date": "2024-05-16",
+                    "import_in_mts": "499.340",
+                    "license_no": "511023873"
+                  },
+                  "...(+2 more of 4)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/license/advance-license-export-lines/": {
+      "get": {
+        "operationId": "get_license_advance_license_export_lines",
+        "summary": "Advance-license export (shipping bill) lines.",
+        "tags": [
+          "license"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 4,
+                    "linked_import_line": null,
+                    "linked_import_line_id": null,
+                    "shipping_bill_no": "6829939",
+                    "sb_value_usd": "187093.400",
+                    "sb_date": "2023-01-09",
+                    "export_in_mts": "121.695",
+                    "license_no": "511007116"
+                  },
+                  {
+                    "id": 3,
+                    "linked_import_line": null,
+                    "linked_import_line_id": null,
+                    "shipping_bill_no": "8500238",
+                    "sb_value_usd": "142538.000",
+                    "sb_date": "2023-03-15",
+                    "export_in_mts": "66.860",
+                    "license_no": "511007116"
+                  },
+                  "...(+7 more of 9)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/license/advance-license-import-lines/dropdown/": {
+      "get": {
+        "operationId": "get_license_advance_license_import_lines_dropdown",
+        "summary": "Import-line dropdown for a license.",
+        "tags": [
+          "license"
+        ],
+        "parameters": [
+          {
+            "name": "license_no",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "license_no filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 2,
+                    "boe_No": "3131526",
+                    "boe_value_usd": "418666.250",
+                    "boe_date": "2022-11-02",
+                    "import_in_mts": "241.952",
+                    "license_no": "511015224"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/dc/dropdown/": {
+      "get": {
+        "operationId": "get_dc_dropdown",
+        "summary": "Open-PO dropdown for domestic-contract creation.",
+        "tags": [
+          "dc"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 307,
+                    "po_number": "220526066",
+                    "vendor_code": "VENDA000224",
+                    "vendor_name": "AWL AGRI BUSINESS LIMITED",
+                    "product_code": "RM0000003",
+                    "product_name": "MUSTARD LOOSE OIL"
+                  },
+                  {
+                    "id": 306,
+                    "po_number": "220526038",
+                    "vendor_code": "VENDA000614",
+                    "vendor_name": "DHANLAXMI EDIBLES PRIVATE LIMITED",
+                    "product_code": "RM0000011",
+                    "product_name": "GROUNDNUT LOOSE OIL"
+                  },
+                  "...(+199 more of 201)"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/customer/balance/": {
+      "get": {
+        "operationId": "get_sap_sync_customer_balance",
+        "summary": "Customer outstanding balance over a date range (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "startDate filter"
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "endDate filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "Balance": 24288042.97
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/customer/ledger/": {
+      "get": {
+        "operationId": "get_sap_sync_customer_ledger",
+        "summary": "Customer ledger entries for one party (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [
+          {
+            "name": "cardCode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "cardCode filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "customer_ledger": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sap-sync/vendor/ledger/": {
+      "get": {
+        "operationId": "get_sap_sync_vendor_ledger",
+        "summary": "Vendor ledger entries for one party (SAP).",
+        "tags": [
+          "sap-sync"
+        ],
+        "parameters": [
+          {
+            "name": "cardCode",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "cardCode filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                },
+                "example": {
+                  "vendor_ledger": [
+                    {
+                      "PostingDate": "2025-07-22T00:00:00",
+                      "DocumentDate": "2025-07-22T00:00:00",
+                      "VoucherNo": 725303228,
+                      "DocType": "46",
+                      "SourceDocNo": "725466951",
+                      "Narration": "Outgoing Payments - VENDA000102",
+                      "Debit": 2360.0,
+                      "Credit": 0.0,
+                      "NetAmount": 2360.0,
+                      "FCDebit": 0.0,
+                      "FCCredit": 0.0,
+                      "DaysSinceLastTrans": 362
+                    },
+                    {
+                      "PostingDate": "2025-07-17T00:00:00",
+                      "DocumentDate": "2025-07-17T00:00:00",
+                      "VoucherNo": 725301897,
+                      "DocType": "46",
+                      "SourceDocNo": "725466770",
+                      "Narration": "Outgoing Payments - VENDA000102",
+                      "Debit": 2360.0,
+                      "Credit": 0.0,
+                      "NetAmount": 2360.0,
+                      "FCDebit": 0.0,
+                      "FCCredit": 0.0,
+                      "DaysSinceLastTrans": 367
+                    },
+                    "...(+8)"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stock-status/stock-summary/": {
+      "get": {
+        "operationId": "get_stock_status_stock_summary",
+        "summary": "Aggregate stock summary KPIs (value, qty, avg price).",
+        "tags": [
+          "stock-status"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/license/dfia-license-export-lines/dropdown/": {
+      "get": {
+        "operationId": "get_license_dfia_license_export_lines_dropdown",
+        "summary": "DFIA export-line dropdown for a license file.",
+        "tags": [
+          "license"
+        ],
+        "parameters": [
+          {
+            "name": "file_no",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "file_no filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

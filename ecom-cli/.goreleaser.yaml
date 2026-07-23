@@ -1,0 +1,51 @@
+version: 2
+project_name: jivo-ecom-pp-cli
+changelog:
+  disable: true
+builds:
+  - id: jivo-ecom-pp-cli
+    main: ./cmd/jivo-ecom-pp-cli
+    binary: jivo-ecom-pp-cli
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X jivo-ecom-pp-cli/internal/cli.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+  - id: jivo-ecom-pp-mcp
+    main: ./cmd/jivo-ecom-pp-mcp
+    binary: jivo-ecom-pp-mcp
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+checksum:
+  name_template: checksums.txt
+brews:
+  - name: jivo-ecom-pp-cli
+    repository:
+      owner: daman8271
+      name: homebrew-tap
+    homepage: "https://github.com/daman8271/jivo-ecom-pp-cli"
+    description: "JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo."
+    install: |
+      bin.install "jivo-ecom-pp-cli"
+      bin.install "jivo-ecom-pp-mcp"

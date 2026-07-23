@@ -1,0 +1,32 @@
+# --- logs & traces (operational scratch; may contain request/auth traces) ---
+*.log
+
+# --- credentials / tokens (DEFENSIVE: real tokens live in ~/.config/jivo-factory,
+#     never inside this tree — these patterns guarantee none can ever be committed) ---
+*.jwt
+*.env
+.env
+.env.*
+config.toml
+*secret*
+secrets/
+**/secrets/
+*.pem
+*.key
+id_rsa*
+*.p12
+
+# --- python / os / editor scratch ---
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+*.lock
+.*.lock
+.obsidian/workspace*.json
+.obsidian/workspace-mobile.json
+node_modules/
+
+# jivo-today: build_today.sh staging dirs (today/ itself IS committed)
+today.tmp/
+today.prev/

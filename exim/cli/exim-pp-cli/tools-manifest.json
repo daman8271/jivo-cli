@@ -1,0 +1,712 @@
+{
+  "api_name": "exim",
+  "base_url": "https://eximbe.jivo.in",
+  "description": "JIVO EXIM read-only surface. Write and sync-import endpoints are excluded.",
+  "mcp_ready": "full",
+  "http_transport": "standard",
+  "mcp": {
+    "endpoint_tools": "hidden",
+    "orchestration": "code"
+  },
+  "auth": {
+    "type": "bearer_token",
+    "header": "Authorization",
+    "env_vars": [
+      "EXIM_TOKEN"
+    ],
+    "env_var_specs": [
+      {
+        "name": "EXIM_TOKEN",
+        "kind": "per_call",
+        "required": true,
+        "sensitive": true,
+        "inferred": true
+      }
+    ]
+  },
+  "required_headers": [],
+  "tools": [
+    {
+      "name": "account_get-user-id",
+      "description": "Single user detail. Required: id. Returns the AccountGetUserIdResponse.",
+      "method": "GET",
+      "path": "/account/user/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "id identifier",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "account_get-users",
+      "description": "List of application user accounts (id, name, email). Returns array of AccountGetUsersItem.",
+      "method": "GET",
+      "path": "/account/users/",
+      "params": []
+    },
+    {
+      "name": "daily-price_get-db-list",
+      "description": "Historical daily commodity factory-price records (optionally for a date). Optional: date. Returns array of DailyPriceGetDbListItem.",
+      "method": "GET",
+      "path": "/daily-price/db-list/",
+      "params": [
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "date filter"
+        }
+      ]
+    },
+    {
+      "name": "daily-price_get-highest-lowest",
+      "description": "Highest \u0026 lowest commodity prices over a date range. Optional: end_date, start_date. Returns the DailyPriceGetHighestLowestResponse.",
+      "method": "GET",
+      "path": "/daily-price/highest-lowest/",
+      "params": [
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "query",
+          "description": "end_date filter"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "query",
+          "description": "start_date filter"
+        }
+      ]
+    },
+    {
+      "name": "daily-price_get-range",
+      "description": "Daily prices over a from/to range. Optional: from_date, to_date. Returns array of DailyPriceGetRangeItem.",
+      "method": "GET",
+      "path": "/daily-price/range/",
+      "params": [
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "from_date filter"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "to_date filter"
+        }
+      ]
+    },
+    {
+      "name": "daily-price_get-trends",
+      "description": "Daily-price trend series (labels + datasets) for charting over a range. Optional: end_date, start_date. Returns the DailyPriceGetTrendsResponse.",
+      "method": "GET",
+      "path": "/daily-price/trends/",
+      "params": [
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "query",
+          "description": "end_date filter"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "query",
+          "description": "start_date filter"
+        }
+      ]
+    },
+    {
+      "name": "dc_get",
+      "description": "Domestic contracts by FY (re-listed). Required: year. Returns array of DcGetItem.",
+      "method": "GET",
+      "path": "/dc/",
+      "params": [
+        {
+          "name": "year",
+          "type": "string",
+          "location": "query",
+          "description": "year filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dc_get-dropdown",
+      "description": "Open-PO dropdown for domestic-contract creation. Returns array of DcGetDropdownItem.",
+      "method": "GET",
+      "path": "/dc/dropdown/",
+      "params": []
+    },
+    {
+      "name": "director-inventorty_get",
+      "description": "Director rollup: finished + at-factory + in-transit inventory by litre/MT. Returns the DirectorInventortyGetResponse.",
+      "method": "GET",
+      "path": "/director-inventorty/",
+      "params": []
+    },
+    {
+      "name": "exim-rates_get-fetch",
+      "description": "Fetch/refresh custom exchange (EXIM) rates. Returns the EximRatesGetFetchResponse.",
+      "method": "GET",
+      "path": "/exim-rates/fetch/",
+      "params": []
+    },
+    {
+      "name": "item_get-fg-code",
+      "description": "Single finished-good item detail. Required: item_code. Returns the ItemGetFgCodeResponse.",
+      "method": "GET",
+      "path": "/item/fg/{item_code}/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "path",
+          "description": "item_code identifier",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "item_get-rm-code",
+      "description": "Single raw-material item detail incl movement totals. Required: item_code. Returns the ItemGetRmCodeResponse.",
+      "method": "GET",
+      "path": "/item/rm/{item_code}/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "path",
+          "description": "item_code identifier",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "items_get-fg",
+      "description": "Finished-goods item master (SAP-synced). Returns the ItemsGetFgResponse.",
+      "method": "GET",
+      "path": "/items/fg/",
+      "params": []
+    },
+    {
+      "name": "items_get-rm",
+      "description": "Raw-material item master (SAP-synced). Returns the ItemsGetRmResponse.",
+      "method": "GET",
+      "path": "/items/rm/",
+      "params": []
+    },
+    {
+      "name": "items_get-rm-summary",
+      "description": "Aggregate summary of raw-material items (counts, qty, value). Returns the ItemsGetRmSummaryResponse.",
+      "method": "GET",
+      "path": "/items/rm/summary/",
+      "params": []
+    },
+    {
+      "name": "items_get-rm-varieties",
+      "description": "Distinct raw-material varieties. Returns the ItemsGetRmVarietiesResponse.",
+      "method": "GET",
+      "path": "/items/rm/varieties/",
+      "params": []
+    },
+    {
+      "name": "jivo-rate_get-range",
+      "description": "JIVO pack rates over a range. Optional: from_date, to_date. Returns array of JivoRateGetRangeItem.",
+      "method": "GET",
+      "path": "/jivo-rate/range/",
+      "params": [
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "from_date filter"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "to_date filter"
+        }
+      ]
+    },
+    {
+      "name": "license_get-advance-export-lines",
+      "description": "Advance-license export (shipping bill) lines. Returns array of LicenseGetAdvanceExportLinesItem.",
+      "method": "GET",
+      "path": "/license/advance-license-export-lines/",
+      "params": []
+    },
+    {
+      "name": "license_get-advance-headers",
+      "description": "Advance Authorisation licenses with nested import/export lines. Returns array of LicenseGetAdvanceHeadersItem.",
+      "method": "GET",
+      "path": "/license/advance-license-headers/",
+      "params": []
+    },
+    {
+      "name": "license_get-advance-import-lines",
+      "description": "Advance-license import (BOE) lines. Returns array of LicenseGetAdvanceImportLinesItem.",
+      "method": "GET",
+      "path": "/license/advance-license-import-lines/",
+      "params": []
+    },
+    {
+      "name": "license_get-advance-import-lines-dropdown",
+      "description": "Import-line dropdown for a license. Required: license_no. Returns array of LicenseGetAdvanceImportLinesDropdownItem.",
+      "method": "GET",
+      "path": "/license/advance-license-import-lines/dropdown/",
+      "params": [
+        {
+          "name": "license_no",
+          "type": "string",
+          "location": "query",
+          "description": "license_no filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "license_get-dfia-export-lines-dropdown",
+      "description": "DFIA export-line dropdown for a license file. Required: file_no. Returns the LicenseGetDfiaExportLinesDropdownResponse.",
+      "method": "GET",
+      "path": "/license/dfia-license-export-lines/dropdown/",
+      "params": [
+        {
+          "name": "file_no",
+          "type": "string",
+          "location": "query",
+          "description": "file_no filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "license_get-dfia-header-list",
+      "description": "DFIA license headers list. Returns array of LicenseGetDfiaHeaderListItem.",
+      "method": "GET",
+      "path": "/license/dfia-license-header/list/",
+      "params": []
+    },
+    {
+      "name": "parties_get",
+      "description": "Business partners (vendors + customers) master from SAP. Returns the PartiesGetResponse.",
+      "method": "GET",
+      "path": "/parties/",
+      "params": []
+    },
+    {
+      "name": "party_get-card-code",
+      "description": "Single business-partner detail. Required: card_code. Returns the PartyGetCardCodeResponse.",
+      "method": "GET",
+      "path": "/party/{card_code}/",
+      "params": [
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "path",
+          "description": "card_code identifier",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "rates_get-basic",
+      "description": "Basic (our) rate rows over a date range. Optional: end_date, start_date. Returns the RatesGetBasicResponse.",
+      "method": "GET",
+      "path": "/rates/basic-rate/",
+      "params": [
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "query",
+          "description": "end_date filter"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "query",
+          "description": "start_date filter"
+        }
+      ]
+    },
+    {
+      "name": "rates_get-commodity",
+      "description": "Commodity master with margin rates. Returns array of RatesGetCommodityItem.",
+      "method": "GET",
+      "path": "/rates/commodity/",
+      "params": []
+    },
+    {
+      "name": "rates_get-market-get",
+      "description": "Market rate rows over a date range. Optional: end_date, start_date. Returns array of RatesGetMarketGetItem.",
+      "method": "GET",
+      "path": "/rates/market-rate/get/",
+      "params": [
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "query",
+          "description": "end_date filter"
+        },
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "query",
+          "description": "start_date filter"
+        }
+      ]
+    },
+    {
+      "name": "rates_get-market-latest",
+      "description": "Latest market rate per commodity. Returns array of RatesGetMarketLatestItem.",
+      "method": "GET",
+      "path": "/rates/market-rate/latest/",
+      "params": []
+    },
+    {
+      "name": "rates_get-packing",
+      "description": "Packing types with packing margins. Returns array of RatesGetPackingItem.",
+      "method": "GET",
+      "path": "/rates/packing/",
+      "params": []
+    },
+    {
+      "name": "rates_get-table-latest",
+      "description": "Composite latest rate table (commodities + rows). Returns the RatesGetTableLatestResponse.",
+      "method": "GET",
+      "path": "/rates/rate-table/latest/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-balance-sheet",
+      "description": "Oil Dr/Cr outstanding balance sheet (SAP). Returns the SapSyncGetBalanceSheetResponse.",
+      "method": "GET",
+      "path": "/sap-sync/balance-sheet/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-custa-balance-sheet",
+      "description": "Customer (custa) outstanding balance sheet (SAP). Returns the SapSyncGetCustaBalanceSheetResponse.",
+      "method": "GET",
+      "path": "/sap-sync/custa/balance-sheet/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-customer-aging-balance",
+      "description": "Customer aging balances (SAP). Returns the SapSyncGetCustomerAgingBalanceResponse.",
+      "method": "GET",
+      "path": "/sap-sync/customer-aging-balance/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-customer-balance",
+      "description": "Customer outstanding balance over a date range (SAP). Required: startDate, endDate. Returns the SapSyncGetCustomerBalanceResponse.",
+      "method": "GET",
+      "path": "/sap-sync/customer/balance/",
+      "params": [
+        {
+          "name": "startDate",
+          "type": "string",
+          "location": "query",
+          "description": "startDate filter",
+          "required": true
+        },
+        {
+          "name": "endDate",
+          "type": "string",
+          "location": "query",
+          "description": "endDate filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sap-sync_get-customer-ledger",
+      "description": "Customer ledger entries for one party (SAP). Required: cardCode. Returns the SapSyncGetCustomerLedgerResponse.",
+      "method": "GET",
+      "path": "/sap-sync/customer/ledger/",
+      "params": [
+        {
+          "name": "cardCode",
+          "type": "string",
+          "location": "query",
+          "description": "cardCode filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sap-sync_get-finished-inventory",
+      "description": "Finished-goods inventory (SAP). Returns the SapSyncGetFinishedInventoryResponse.",
+      "method": "GET",
+      "path": "/sap-sync/finished-inventory/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-inventory",
+      "description": "Raw/factory inventory (SAP). Returns the SapSyncGetInventoryResponse.",
+      "method": "GET",
+      "path": "/sap-sync/inventory/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-monthly-planning",
+      "description": "Monthly SAP planning rows for a given month id. Required: monthId. Returns the SapSyncGetMonthlyPlanningResponse.",
+      "method": "GET",
+      "path": "/sap-sync/monthly-planning/",
+      "params": [
+        {
+          "name": "monthId",
+          "type": "string",
+          "location": "query",
+          "description": "monthId filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sap-sync_get-open-ap",
+      "description": "Open accounts-payable documents (SAP). Returns the SapSyncGetOpenApResponse.",
+      "method": "GET",
+      "path": "/sap-sync/open-ap/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-open-ar",
+      "description": "Open accounts-receivable documents (SAP). Returns the SapSyncGetOpenArResponse.",
+      "method": "GET",
+      "path": "/sap-sync/open-ar/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-open-pos",
+      "description": "Open purchase orders (SAP). Returns the SapSyncGetOpenPosResponse.",
+      "method": "GET",
+      "path": "/sap-sync/open-pos/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-planned-months",
+      "description": "Available planning months (SAP). Returns the SapSyncGetPlannedMonthsResponse.",
+      "method": "GET",
+      "path": "/sap-sync/planned-months/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-vendor-balance-sheet",
+      "description": "Vendor outstanding balance sheet (SAP). Returns the SapSyncGetVendorBalanceSheetResponse.",
+      "method": "GET",
+      "path": "/sap-sync/vendor/balance-sheet/",
+      "params": []
+    },
+    {
+      "name": "sap-sync_get-vendor-ledger",
+      "description": "Vendor ledger entries for one party (SAP). Required: cardCode. Returns the SapSyncGetVendorLedgerResponse.",
+      "method": "GET",
+      "path": "/sap-sync/vendor/ledger/",
+      "params": [
+        {
+          "name": "cardCode",
+          "type": "string",
+          "location": "query",
+          "description": "cardCode filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "stock-status_get",
+      "description": "Core import stock-status rows (optionally filtered by status). Required: status. Returns array of StockStatusGetItem.",
+      "method": "GET",
+      "path": "/stock-status/",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "status filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "stock-status_get-contractual-history",
+      "description": "Contractual history of stock items (rates, contract dates). Returns array of StockStatusGetContractualHistoryItem.",
+      "method": "GET",
+      "path": "/stock-status/contractual-history/",
+      "params": []
+    },
+    {
+      "name": "stock-status_get-debit-entries",
+      "description": "Shortage/debit deduction entries per vehicle/item. Returns array of StockStatusGetDebitEntriesItem.",
+      "method": "GET",
+      "path": "/stock-status/debit-entries/",
+      "params": []
+    },
+    {
+      "name": "stock-status_get-debit-insights",
+      "description": "Aggregate shortage/debit totals. Returns the StockStatusGetDebitInsightsResponse.",
+      "method": "GET",
+      "path": "/stock-status/debit-insights/",
+      "params": []
+    },
+    {
+      "name": "stock-status_get-id",
+      "description": "Single stock-status record detail. Required: id. Returns the StockStatusGetIdResponse.",
+      "method": "GET",
+      "path": "/stock-status/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "id identifier",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "stock-status_get-stock-dashboard",
+      "description": "Multi-dimensional stock dashboard (in/outside factory, by status/vendor). Optional: rounding. Returns the StockStatusGetStockDashboardResponse.",
+      "method": "GET",
+      "path": "/stock-status/stock-dashboard/",
+      "params": [
+        {
+          "name": "rounding",
+          "type": "string",
+          "location": "query",
+          "description": "rounding filter"
+        }
+      ]
+    },
+    {
+      "name": "stock-status_get-stock-insights",
+      "description": "Aggregate stock KPIs (value, qty, avg price). Returns the StockStatusGetStockInsightsResponse.",
+      "method": "GET",
+      "path": "/stock-status/stock-insights/",
+      "params": []
+    },
+    {
+      "name": "stock-status_get-stock-logs",
+      "description": "Field-level audit log of stock-status changes. Returns array of StockStatusGetStockLogsItem.",
+      "method": "GET",
+      "path": "/stock-status/stock-logs/",
+      "params": []
+    },
+    {
+      "name": "stock-status_get-stock-summary",
+      "description": "Aggregate stock summary KPIs (value, qty, avg price). Returns the StockStatusGetStockSummaryResponse.",
+      "method": "GET",
+      "path": "/stock-status/stock-summary/",
+      "params": []
+    },
+    {
+      "name": "stock-status_get-vehicle-report",
+      "description": "Vehicle-wise stock grouped by a status. Required: status. Returns array of StockStatusGetVehicleReportItem.",
+      "method": "GET",
+      "path": "/stock-status/vehicle-report/",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "status filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sync-logs_get",
+      "description": "History of SAP sync jobs (type, status, counts). Returns array of SyncLogsGetItem.",
+      "method": "GET",
+      "path": "/sync_logs/",
+      "params": []
+    },
+    {
+      "name": "tank_get",
+      "description": "Storage tanks (code, item, capacity, current fill). Returns array of TankGetItem.",
+      "method": "GET",
+      "path": "/tank/",
+      "params": []
+    },
+    {
+      "name": "tank_get-capacity-insights",
+      "description": "Overall tank capacity fill/empty percentages. Returns the TankGetCapacityInsightsResponse.",
+      "method": "GET",
+      "path": "/tank/capacity-insights/",
+      "params": []
+    },
+    {
+      "name": "tank_get-code",
+      "description": "Single tank detail. Required: tank_code. Returns the TankGetCodeResponse.",
+      "method": "GET",
+      "path": "/tank/{tank_code}/",
+      "params": [
+        {
+          "name": "tank_code",
+          "type": "string",
+          "location": "path",
+          "description": "tank_code identifier",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "tank_get-in-items",
+      "description": "Distinct item codes currently in tanks. Returns array of TankGetInItemsItem.",
+      "method": "GET",
+      "path": "/tank/in-tank-items/",
+      "params": []
+    },
+    {
+      "name": "tank_get-item-wise-average",
+      "description": "Weighted average rate + matched qty for one tank item. Required: item_code. Returns the TankGetItemWiseAverageResponse.",
+      "method": "GET",
+      "path": "/tank/item-wise-average/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "query",
+          "description": "item_code filter",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "tank_get-item-wise-summary",
+      "description": "Per-item tank summary (qty, capacity, tank list). Returns the TankGetItemWiseSummaryResponse.",
+      "method": "GET",
+      "path": "/tank/item-wise-summary/",
+      "params": []
+    },
+    {
+      "name": "tank_get-items",
+      "description": "Tank item master (code, name, category, colour). Returns array of TankGetItemsItem.",
+      "method": "GET",
+      "path": "/tank/items/",
+      "params": []
+    },
+    {
+      "name": "tank_get-log",
+      "description": "Tank inflow/outflow log entries. Returns array of TankGetLogItem.",
+      "method": "GET",
+      "path": "/tank/log/",
+      "params": []
+    },
+    {
+      "name": "tank_get-summary",
+      "description": "Tank totals (capacity, current stock, utilisation). Returns the TankGetSummaryResponse.",
+      "method": "GET",
+      "path": "/tank/tank-summary/",
+      "params": []
+    }
+  ]
+}

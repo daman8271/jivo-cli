@@ -1,0 +1,51 @@
+version: 2
+project_name: exim-pp-cli
+changelog:
+  disable: true
+builds:
+  - id: exim-pp-cli
+    main: ./cmd/exim-pp-cli
+    binary: exim-pp-cli
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X exim-pp-cli/internal/cli.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+  - id: exim-pp-mcp
+    main: ./cmd/exim-pp-mcp
+    binary: exim-pp-mcp
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+checksum:
+  name_template: checksums.txt
+brews:
+  - name: exim-pp-cli
+    repository:
+      owner: daman8271
+      name: homebrew-tap
+    homepage: "https://github.com/daman8271/exim-pp-cli"
+    description: "JIVO EXIM read-only surface. Write/sync-import endpoints excluded. GRPOs via ./exim grpos wrapper."
+    install: |
+      bin.install "exim-pp-cli"
+      bin.install "exim-pp-mcp"

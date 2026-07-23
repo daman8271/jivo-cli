@@ -1,0 +1,2892 @@
+[
+  {
+    "domain": "fleet-and-gate",
+    "entities": [
+      {
+        "name": "Vehicle",
+        "cli_command": "vehicle-management vehicles",
+        "key_field": "id",
+        "important_fields": [
+          "vehicle_number",
+          "capacity_ton",
+          "created_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "transporter",
+            "links_to": "Transporter"
+          },
+          {
+            "field": "vehicle_type",
+            "links_to": "VehicleType"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "300+"
+      },
+      {
+        "name": "VehicleType",
+        "cli_command": "vehicle-management vehicle-types",
+        "key_field": "id",
+        "important_fields": [
+          "name"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "7"
+      },
+      {
+        "name": "Transporter",
+        "cli_command": "vehicle-management transporters",
+        "key_field": "id",
+        "important_fields": [
+          "name",
+          "contact_person",
+          "mobile_no",
+          "gstin",
+          "created_at"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "90+"
+      },
+      {
+        "name": "Driver",
+        "cli_command": "driver-management drivers",
+        "key_field": "id",
+        "important_fields": [
+          "name",
+          "mobile_no",
+          "license_no",
+          "id_proof_type",
+          "id_proof_number",
+          "photo",
+          "created_at"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "306+"
+      },
+      {
+        "name": "Arrival",
+        "cli_command": "gate-core arrivals",
+        "key_field": "id",
+        "important_fields": [
+          "arrival_no",
+          "vehicle_no",
+          "driver_name",
+          "gate_in_date",
+          "in_time",
+          "tare_weight",
+          "weighbridge_slip_no",
+          "security_name",
+          "status",
+          "gate_out_date",
+          "out_time",
+          "departed_at",
+          "gatepass_no",
+          "gatepass_printed_at",
+          "gatepass_committed_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "vehicle",
+            "links_to": "Vehicle"
+          },
+          {
+            "field": "driver",
+            "links_to": "Driver"
+          },
+          {
+            "field": "gate_ins[].id",
+            "links_to": "EmptyVehicleGateIn"
+          },
+          {
+            "field": "gate_outs[].id",
+            "links_to": "SalesDispatch"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "117+"
+      },
+      {
+        "name": "EmptyVehicleGateIn",
+        "cli_command": "gate-core empty-vehicle-ins",
+        "key_field": "id",
+        "important_fields": [
+          "entry_no",
+          "company_code",
+          "company_name",
+          "vehicle_entry_no",
+          "vehicle_number",
+          "vehicle_type",
+          "transporter_name",
+          "driver_name",
+          "driver_mobile",
+          "reason",
+          "reason_display",
+          "gate_in_date",
+          "in_time",
+          "document_reference",
+          "document_notes",
+          "pipeline_status",
+          "bst_gate_out_id",
+          "bst_gate_out_entry_no",
+          "security_name",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "vehicle",
+            "links_to": "Vehicle"
+          },
+          {
+            "field": "driver",
+            "links_to": "Driver"
+          },
+          {
+            "field": "vehicle_entry",
+            "links_to": "VehicleEntry"
+          },
+          {
+            "field": "company",
+            "links_to": "Company"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_doc_entry",
+          "sap_doc_num",
+          "sap_from_warehouse",
+          "sap_to_warehouse"
+        ],
+        "record_count": "230+"
+      },
+      {
+        "name": "EmptyVehicleGateOut",
+        "cli_command": "gate-core empty-vehicle-outs",
+        "key_field": "id",
+        "important_fields": [
+          "entry_no",
+          "vehicle_entry_no",
+          "vehicle_entry_type",
+          "vehicle_number",
+          "driver_name",
+          "driver_mobile",
+          "gate_out_date",
+          "out_time",
+          "security_name",
+          "status",
+          "cancel_reason",
+          "remarks",
+          "created_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "vehicle",
+            "links_to": "Vehicle"
+          },
+          {
+            "field": "driver",
+            "links_to": "Driver"
+          },
+          {
+            "field": "vehicle_entry",
+            "links_to": "VehicleEntry"
+          },
+          {
+            "field": "company",
+            "links_to": "Company"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "few (1 seen)"
+      },
+      {
+        "name": "EmptyVehicleInReason",
+        "cli_command": "gate-core empty-vehicle-ins-reasons",
+        "key_field": "value",
+        "important_fields": [
+          "value",
+          "label"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "5"
+      },
+      {
+        "name": "VehicleEntry",
+        "cli_command": "gate-core empty-vehicle-outs-eligible-entries",
+        "key_field": "id",
+        "important_fields": [
+          "entry_no",
+          "entry_type",
+          "status",
+          "entry_time",
+          "vehicle_number",
+          "vehicle_type",
+          "driver_name",
+          "driver_mobile",
+          "remarks",
+          "release_invoice_count",
+          "release_cancels_docking"
+        ],
+        "foreign_keys": [
+          {
+            "field": "vehicle_id",
+            "links_to": "Vehicle"
+          },
+          {
+            "field": "driver_id",
+            "links_to": "Driver"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "1254+"
+      },
+      {
+        "name": "BstIn",
+        "cli_command": "gate-core bst-ins",
+        "key_field": "id",
+        "important_fields": [],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "BstOut",
+        "cli_command": "gate-core bst-outs",
+        "key_field": "id",
+        "important_fields": [],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "BstReturn",
+        "cli_command": "gate-core bst-returns",
+        "key_field": "id",
+        "important_fields": [],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "BstOutSapTransfer",
+        "cli_command": "gate-core bst-outs-sap-transfers",
+        "key_field": "doc_entry",
+        "important_fields": [
+          "doc_num",
+          "doc_date",
+          "doc_status",
+          "from_warehouse",
+          "to_warehouse",
+          "branch_id",
+          "line_count",
+          "total_quantity",
+          "comments",
+          "reference"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [
+          "doc_entry",
+          "doc_num"
+        ],
+        "record_count": "3000+"
+      },
+      {
+        "name": "JobWork",
+        "cli_command": "gate-core job-work",
+        "key_field": "id",
+        "important_fields": [],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "JobWorkSapGrpo",
+        "cli_command": "gate-core job-work-sap-grpos",
+        "key_field": "id",
+        "important_fields": [],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "JobWorkSapProductionOrder",
+        "cli_command": "gate-core job-work-sap-production-orders",
+        "key_field": "id",
+        "important_fields": [],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "RejectedQcReturn",
+        "cli_command": "gate-core rejected-qc-returns",
+        "key_field": "id",
+        "important_fields": [],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "SalesDispatch",
+        "cli_command": "gate-core sales-dispatch",
+        "key_field": "id",
+        "important_fields": [
+          "entry_no",
+          "company_code",
+          "company_name",
+          "vehicle_entry_no",
+          "vehicle_number",
+          "vehicle_type",
+          "transporter_name",
+          "driver_name",
+          "driver_mobile",
+          "dispatch_date",
+          "sap_doc_num",
+          "sap_doc_entry",
+          "sap_doc_date",
+          "sap_doc_total",
+          "sap_branch_name",
+          "sap_reference",
+          "customer_code",
+          "customer_name",
+          "ship_to_code",
+          "ship_to_address",
+          "place_of_supply",
+          "bp_gstin",
+          "eway_bill",
+          "warehouses",
+          "item_summary",
+          "document_count",
+          "document_numbers",
+          "document_type",
+          "arrival_status",
+          "gatepass_print_locked",
+          "pipeline_status",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "vehicle",
+            "links_to": "Vehicle"
+          },
+          {
+            "field": "transporter",
+            "links_to": "Transporter"
+          },
+          {
+            "field": "driver",
+            "links_to": "Driver"
+          },
+          {
+            "field": "arrival",
+            "links_to": "Arrival"
+          },
+          {
+            "field": "dispatch_plan",
+            "links_to": "DispatchPlan"
+          },
+          {
+            "field": "vehicle_entry",
+            "links_to": "VehicleEntry"
+          },
+          {
+            "field": "company",
+            "links_to": "Company"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_doc_entry",
+          "sap_doc_num",
+          "sap_reference",
+          "item_summary"
+        ],
+        "record_count": "230+"
+      },
+      {
+        "name": "SalesDispatchDocument",
+        "cli_command": "gate-core sales-dispatch-documents",
+        "key_field": "doc_entry",
+        "important_fields": [
+          "doc_num",
+          "doc_date",
+          "doc_total",
+          "branch_id",
+          "branch_name",
+          "card_code",
+          "card_name",
+          "ship_to_code",
+          "ship_to_address",
+          "place_of_supply",
+          "bp_gstin",
+          "eway_bill",
+          "vehicle_no",
+          "transporter_name",
+          "warehouses",
+          "item_summary",
+          "total_quantity",
+          "total_litres",
+          "total_boxes",
+          "total_weight",
+          "line_count"
+        ],
+        "foreign_keys": [
+          {
+            "field": "plan.id",
+            "links_to": "DispatchPlan"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "doc_entry",
+          "doc_num",
+          "item_summary"
+        ],
+        "record_count": "many"
+      },
+      {
+        "name": "SalesDispatchLock",
+        "cli_command": "gate-core sales-dispatch-lock",
+        "key_field": "id",
+        "important_fields": [
+          "is_locked",
+          "reason",
+          "changed_by_name",
+          "changed_at",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "company",
+            "links_to": "Company"
+          },
+          {
+            "field": "changed_by",
+            "links_to": "User"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "1 (singleton per company)"
+      },
+      {
+        "name": "DispatchPlan",
+        "cli_command": "dispatch-plans",
+        "key_field": "id",
+        "important_fields": [
+          "sap_invoice_doc_num",
+          "invoice_number",
+          "eway_bill",
+          "dispatch_date",
+          "priority",
+          "booking_status",
+          "pipeline_status",
+          "vehicle_no",
+          "transporter_name",
+          "transporter_gstin",
+          "driver_name",
+          "driver_mobile_no",
+          "driver_license_no",
+          "place_of_supply",
+          "customer_name",
+          "bilty_no",
+          "bilty_date",
+          "freight",
+          "kanta_weight",
+          "remarks"
+        ],
+        "foreign_keys": [
+          {
+            "field": "vehicle_id",
+            "links_to": "Vehicle"
+          },
+          {
+            "field": "transporter_id",
+            "links_to": "Transporter"
+          },
+          {
+            "field": "driver_id",
+            "links_to": "Driver"
+          },
+          {
+            "field": "linked_vehicle_entry_id",
+            "links_to": "VehicleEntry"
+          },
+          {
+            "field": "gate_out_id",
+            "links_to": "SalesDispatch"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_invoice_doc_entry",
+          "sap_invoice_doc_num",
+          "sac_entry",
+          "sac_code"
+        ],
+        "record_count": "690+"
+      },
+      {
+        "name": "PartialScanRequest",
+        "cli_command": "docking-admin partial-scan-requests",
+        "key_field": "id",
+        "important_fields": [
+          "entry_no",
+          "vehicle_no",
+          "customer_name",
+          "sap_doc_num",
+          "document_type",
+          "dispatch_status",
+          "scanned_boxes",
+          "expected_boxes",
+          "reason",
+          "status",
+          "requested_by_name",
+          "requested_at",
+          "reviewed_by_name",
+          "reviewed_at",
+          "review_notes",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "sales_dispatch",
+            "links_to": "SalesDispatch"
+          },
+          {
+            "field": "requested_by",
+            "links_to": "User"
+          },
+          {
+            "field": "reviewed_by",
+            "links_to": "User"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_doc_num"
+        ],
+        "record_count": "40+"
+      },
+      {
+        "name": "ScanSkipRequest",
+        "cli_command": "docking-admin scan-skip-requests",
+        "key_field": "id",
+        "important_fields": [
+          "entry_no",
+          "vehicle_no",
+          "customer_name",
+          "sap_doc_num",
+          "document_type",
+          "dispatch_status",
+          "reason",
+          "status",
+          "requested_by_name",
+          "requested_at",
+          "reviewed_by_name",
+          "reviewed_at",
+          "review_notes",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "sales_dispatch",
+            "links_to": "SalesDispatch"
+          },
+          {
+            "field": "requested_by",
+            "links_to": "User"
+          },
+          {
+            "field": "reviewed_by",
+            "links_to": "User"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_doc_num"
+        ],
+        "record_count": "50+"
+      },
+      {
+        "name": "DailyNeedCategory",
+        "cli_command": "daily-needs-gatein",
+        "key_field": "id",
+        "important_fields": [
+          "category_name"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "1"
+      },
+      {
+        "name": "ItemGroup",
+        "cli_command": "non-moving-rm",
+        "key_field": "item_group_code",
+        "important_fields": [
+          "item_group_name"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [
+          "item_group_code"
+        ],
+        "record_count": "10"
+      }
+    ],
+    "relationships": [
+      "Vehicle belongs to a Transporter (vehicle.transporter \u2192 Transporter.id) and has a VehicleType (vehicle.vehicle_type \u2192 VehicleType.id)",
+      "Arrival references one Vehicle (arrival.vehicle) and one Driver (arrival.driver); its gate_ins array embeds EmptyVehicleGateIn entries by id/entry_no, and gate_outs array embeds SalesDispatch entries by id/entry_no",
+      "EmptyVehicleGateIn references a Vehicle, a Driver, and a parent VehicleEntry (vehicle_entry int FK); reason field is an enum (BST, DISPATCH, REPAIR_MOVEMENT, JOB_WORK, OTHER) defined by EmptyVehicleInReason",
+      "EmptyVehicleGateOut references a Vehicle, a Driver, and a VehicleEntry (vehicle_entry int FK); it closes out an EmptyVehicleGateIn session",
+      "VehicleEntry (DOCKV-prefixed) is the docking-level vehicle session created when a vehicle enters for loading; it is referenced by EmptyVehicleGateIn, EmptyVehicleGateOut, and SalesDispatch",
+      "SalesDispatch (DOCK-prefixed) is the primary gate-out record for a dispatch; it references Vehicle, Transporter, Driver, Arrival, DispatchPlan, and VehicleEntry; its item_summary field carries SAP FG item codes (e.g. FG0000143) bridging to product master",
+      "SalesDispatch embeds a documents array of SalesDispatchDocument-shaped objects each carrying sap_doc_entry/sap_doc_num, customer_code, customer_name, warehouses, and item_summary with FG SKU codes",
+      "DispatchPlan is the pre-dispatch booking record; it links vehicle_id, transporter_id, driver_id, and linked_vehicle_entry_id; its gate_out_id FK closes the loop back to a SalesDispatch once dispatched; carries sap_invoice_doc_entry/sap_invoice_doc_num as the originating SAP invoice",
+      "SalesDispatchDocument (pending-documents endpoint) represents an unassigned SAP invoice awaiting dispatch assignment; it embeds a DispatchPlan (plan.id) when a plan has been created for it",
+      "BstOutSapTransfer contains SAP inventory transfer documents (doc_entry/doc_num) eligible to be linked to a BstOut gate entry; from_warehouse and to_warehouse are SAP warehouse codes",
+      "PartialScanRequest and ScanSkipRequest both reference a SalesDispatch (sales_dispatch FK) and record supervisor approvals (requested_by, reviewed_by User FKs) for barcode-scan exceptions during outbound loading",
+      "SalesDispatchLock is a singleton per company that gates whether new SalesDispatch records can be created; changed_by FK references a User",
+      "ItemGroup is a SAP item-group reference (item_group_code bridges to SAP item master) used in non-moving raw-material reporting; item_group_code values include RAW MATERIAL (106), FINISHED (102), PACKAGING MATERIAL (105)"
+    ],
+    "notes": "CLI: jivo-factory-pp-cli (~/go/bin), authenticated. Scope: Company-Code JIVO_MART (company id=2). All endpoints under /api/v1. Entry-number prefixes observed: ARV- (Arrival), EVGI- (EmptyVehicleGateIn), EVGO- (EmptyVehicleGateOut), DOCKV- (VehicleEntry docking session), DOCK- (SalesDispatch). SAP FG item codes in item_summary follow pattern FGxxxxxxx (e.g. FG0000143). Six endpoints returned empty results (bst-ins, bst-outs, bst-returns, job-work, job-work-sap-grpos, job-work-sap-production-orders, rejected-qc-returns, sales-dispatch-pending-bookings, empty-vehicle-ins-eligible, bst-ins-eligible-outs, bst-returns-eligible-outs) \u2014 entity shapes must be inferred from endpoint names and context; no field-level data was available. The vehicles-names, transporters-names, and drivers-names subcommands are lightweight read views (id + identifier only) of Vehicle, Transporter, and Driver respectively \u2014 not separate entities. dispatch-plans returns a pipeline-board structure (columns + cards) rather than a flat list; plan_id is the DispatchPlan key. The non-moving-rm endpoint is a single flat endpoint (not a subcommand group) returning a wrapped object with a data array and meta object."
+  },
+  {
+    "domain": "quality-and-grpo",
+    "entities": [
+      {
+        "name": "ArrivalSlip",
+        "cli_command": "quality-control arrival-slips",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "entry_no",
+          "po_item_code",
+          "item_name",
+          "party_name",
+          "arrival_datetime",
+          "billing_qty",
+          "billing_uom",
+          "status",
+          "is_submitted",
+          "submitted_at",
+          "submitted_by_name",
+          "truck_no_as_per_bill",
+          "commercial_invoice_no",
+          "eway_bill_no",
+          "bilty_no",
+          "has_certificate_of_analysis",
+          "has_certificate_of_quantity",
+          "in_time_to_qa",
+          "remarks",
+          "attachments"
+        ],
+        "foreign_keys": [
+          {
+            "field": "po_item_receipt",
+            "links_to": "POItemReceipt"
+          },
+          {
+            "field": "po_receipt_id",
+            "links_to": "POReceipt"
+          },
+          {
+            "field": "vehicle_entry_id",
+            "links_to": "VehicleEntry"
+          },
+          {
+            "field": "submitted_by",
+            "links_to": "User"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "po_item_code"
+        ],
+        "record_count": "589+ (IDs seen up to 589; API returned 8 in current pending view)"
+      },
+      {
+        "name": "Inspection",
+        "cli_command": "quality-control inspections",
+        "key_field": "arrival_slip_id",
+        "important_fields": [
+          "arrival_slip_id",
+          "inspection_id",
+          "entry_no",
+          "report_no",
+          "internal_lot_no",
+          "po_item_code",
+          "item_name",
+          "party_name",
+          "billing_qty",
+          "billing_uom",
+          "workflow_status",
+          "final_status",
+          "effective_final_status",
+          "qc_stage",
+          "qc_decision",
+          "factory_head_decision",
+          "factory_head_decided_at",
+          "material_type_name",
+          "chemist_decision",
+          "manager_decision",
+          "rejected_qc_return_entry_no",
+          "created_at",
+          "submitted_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "arrival_slip_id",
+            "links_to": "ArrivalSlip"
+          },
+          {
+            "field": "rejected_qc_return_entry_id",
+            "links_to": "VehicleEntry"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "po_item_code"
+        ],
+        "record_count": "8 active (same IDs as arrival-slips; workflow_status NOT_STARTED for all current records; inspection_id is null until QC started)"
+      },
+      {
+        "name": "MaterialType",
+        "cli_command": "quality-control material-types",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "PrintDocument",
+        "cli_command": "quality-control print-documents",
+        "key_field": "id",
+        "important_fields": [
+          "id"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "ProductionQC",
+        "cli_command": "quality-control production-qc",
+        "key_field": "id",
+        "important_fields": [
+          "id"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "QCSAPItem",
+        "cli_command": "quality-control sap-items",
+        "key_field": "item_code",
+        "important_fields": [
+          "item_code"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [
+          "item_code"
+        ],
+        "record_count": "empty"
+      },
+      {
+        "name": "GRPOEntry",
+        "cli_command": "grpo all-entries",
+        "key_field": "vehicle_entry_id",
+        "important_fields": [
+          "vehicle_entry_id",
+          "entry_no",
+          "status",
+          "status_label",
+          "phase",
+          "is_ready_for_grpo",
+          "is_fully_posted",
+          "entry_time",
+          "total_po_count",
+          "posted_po_count",
+          "pending_po_count",
+          "suppliers",
+          "po_numbers",
+          "po_receipts"
+        ],
+        "foreign_keys": [
+          {
+            "field": "vehicle_entry_id",
+            "links_to": "VehicleEntry"
+          },
+          {
+            "field": "po_receipts[].po_receipt_id",
+            "links_to": "POReceipt"
+          },
+          {
+            "field": "po_receipts[].po_number",
+            "links_to": "PurchaseOrder"
+          },
+          {
+            "field": "suppliers[].supplier_code",
+            "links_to": "Vendor"
+          },
+          {
+            "field": "po_receipts[].items[].po_item_receipt_id",
+            "links_to": "POItemReceipt"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "po_receipts[].items[].item_code"
+        ],
+        "record_count": "5 (all in QC_PENDING phase; grpo pending returned empty; grpo history returned empty)"
+      },
+      {
+        "name": "GRPOServiceEntry",
+        "cli_command": "grpo service-pending",
+        "key_field": "dispatch_plan_id",
+        "important_fields": [
+          "dispatch_plan_id",
+          "sap_invoice_doc_entry",
+          "sap_invoice_doc_num",
+          "booking_status",
+          "dispatch_date",
+          "vehicle_no",
+          "driver_name",
+          "transporter_name",
+          "transporter_gstin",
+          "source_state",
+          "bilty_no",
+          "bilty_date",
+          "freight",
+          "total_freight",
+          "invoice_count",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "dispatch_plan_id",
+            "links_to": "DispatchPlan"
+          },
+          {
+            "field": "linked_vehicle_entry_id",
+            "links_to": "VehicleEntry"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_invoice_doc_entry",
+          "sap_invoice_doc_num"
+        ],
+        "record_count": "6 in service-pending; service-history empty"
+      }
+    ],
+    "relationships": [
+      "ArrivalSlip references VehicleEntry (vehicle_entry_id / entry_no) \u2014 each gate arrival generates one ArrivalSlip per PO line item received",
+      "ArrivalSlip references POItemReceipt (po_item_receipt) and POReceipt (po_receipt_id) \u2014 slip ties to the purchase order receipt in the PO domain",
+      "ArrivalSlip references User (submitted_by) \u2014 the gate/QC staff who submitted the slip",
+      "Inspection references ArrivalSlip (arrival_slip_id) one-to-one \u2014 the inspection record is the QC workflow record for each arrival slip; inspection_id is null until QC is formally started",
+      "Inspection references VehicleEntry (rejected_qc_return_entry_id) \u2014 when material fails QC and is returned to vendor, the return gate entry is linked here",
+      "Inspection references MaterialType (material_type_name) \u2014 classifies what kind of raw/packing material is being inspected",
+      "GRPOEntry references VehicleEntry (vehicle_entry_id / entry_no) \u2014 GRPO posting is triggered after QC approval of the gate entry",
+      "GRPOEntry references POReceipt (po_receipts[].po_receipt_id) \u2014 each GRPO entry groups one or more PO receipts",
+      "GRPOEntry references PurchaseOrder (po_numbers[]) \u2014 the SAP PO numbers being goods-receipted",
+      "GRPOEntry references Vendor (suppliers[].supplier_code) \u2014 the vendor whose material is being receipted",
+      "GRPOEntry references POItemReceipt (po_receipts[].items[].po_item_receipt_id) \u2014 individual line-item receipts within a PO",
+      "GRPOServiceEntry references DispatchPlan (dispatch_plan_id) \u2014 service GRPO is for outbound dispatch service invoices, not inbound material",
+      "GRPOServiceEntry references VehicleEntry (linked_vehicle_entry_id / linked_vehicle_entry_no) \u2014 the outbound gate exit event linked to the dispatch",
+      "ArrivalSlip.po_item_code and Inspection.po_item_code bridge to product/item master (SAP PM-prefix codes e.g. PM0000087 = packing material items)",
+      "GRPOEntry.po_receipts[].items[].item_code carries the same SAP item codes as ArrivalSlip.po_item_code \u2014 confirming items flow from ArrivalSlip through Inspection to GRPOEntry posting"
+    ],
+    "notes": "Filtered inspection views (inspections-actionable, inspections-awaiting-chemist, inspections-awaiting-qam, inspections-completed, inspections-draft, inspections-pending, inspections-rejected, inspections-return-to-vendor) are all the same Inspection entity filtered by workflow_status/qc_stage \u2014 not separate entities. inspections-counts and production-qc-counts return single aggregate objects (not lists). grpo summary and grpo service-options are aggregate/reference objects, not per-record lists; service-options contains branches[] and tax_codes[] reference data. The GRPO material flow is: VehicleEntry (gate) \u2192 ArrivalSlip (per PO line) \u2192 Inspection (QC decision) \u2192 GRPOEntry (SAP posting). GRPOServiceEntry is a separate outbound flow for service invoice posting against dispatch plans. All visible ArrivalSlip and GRPOEntry records are in QC_PENDING / workflow_status NOT_STARTED state, so inspection_id fields are null; no completed inspections are currently in the dataset."
+  },
+  {
+    "domain": "barcode-traceability",
+    "entities": [
+      {
+        "name": "BarcodeBox",
+        "cli_command": "barcode boxes",
+        "key_field": "id",
+        "important_fields": [
+          "box_barcode",
+          "item_code",
+          "item_name",
+          "batch_number",
+          "qty",
+          "uom",
+          "mfg_date",
+          "exp_date",
+          "current_warehouse",
+          "current_bin",
+          "status",
+          "production_line",
+          "dispatched_at",
+          "removed_from_pallet_at",
+          "removed_from_pallet_reason",
+          "created_by_name",
+          "created_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "pallet",
+            "links_to": "Pallet.id"
+          },
+          {
+            "field": "pallet_code",
+            "links_to": "Pallet.pallet_id"
+          },
+          {
+            "field": "dispatch_session",
+            "links_to": "DispatchSession.id"
+          },
+          {
+            "field": "created_by",
+            "links_to": "User.id"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "item_code"
+        ],
+        "record_count": "~151,000+"
+      },
+      {
+        "name": "Pallet",
+        "cli_command": "barcode pallets",
+        "key_field": "id",
+        "important_fields": [
+          "pallet_id",
+          "item_code",
+          "item_name",
+          "batch_number",
+          "box_count",
+          "total_boxes",
+          "available_boxes",
+          "dispatched_boxes",
+          "max_box_count",
+          "total_qty",
+          "uom",
+          "mfg_date",
+          "exp_date",
+          "current_warehouse",
+          "current_bin",
+          "status",
+          "production_line",
+          "dispatched_at",
+          "created_by_name",
+          "created_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "dispatch_session",
+            "links_to": "DispatchSession.id"
+          },
+          {
+            "field": "created_by",
+            "links_to": "User.id"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "item_code"
+        ],
+        "record_count": "~3,170+"
+      },
+      {
+        "name": "DispatchSession",
+        "cli_command": "barcode dispatch-sessions-active",
+        "key_field": "id",
+        "important_fields": [
+          "bill_number",
+          "sap_system_type",
+          "sap_object_type",
+          "sap_doc_entry",
+          "sap_doc_num",
+          "delivery_number",
+          "reference_delivery_number",
+          "customer_code",
+          "customer_name",
+          "ship_to_code",
+          "ship_to_name",
+          "bill_date",
+          "status",
+          "total_expected_qty",
+          "total_scanned_qty",
+          "pending_qty",
+          "total_remaining_qty",
+          "removed_box_count",
+          "sap_dispatch_status",
+          "sap_update_status",
+          "sap_sync_status",
+          "line_count",
+          "completed_line_count",
+          "accepted_scan_count",
+          "rejected_scan_count",
+          "pallet_scan_count",
+          "box_scan_count",
+          "started_at",
+          "completed_at",
+          "dispatched_at",
+          "closed_at",
+          "cancelled_at",
+          "dispatched_by_name",
+          "completed_by_name",
+          "closed_by_name",
+          "created_by_name",
+          "created_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "dispatched_by",
+            "links_to": "User.id"
+          },
+          {
+            "field": "completed_by",
+            "links_to": "User.id"
+          },
+          {
+            "field": "closed_by",
+            "links_to": "User.id"
+          },
+          {
+            "field": "created_by",
+            "links_to": "User.id"
+          },
+          {
+            "field": "bill_number",
+            "links_to": "SAP AR Invoice / Delivery doc"
+          },
+          {
+            "field": "customer_code",
+            "links_to": "Customer master"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_doc_num",
+          "delivery_number"
+        ],
+        "record_count": "~188 active/in-progress; ~118 completed; 0 closed (also accessible via barcode dispatch-sessions-completed and barcode dispatch-sessions-closed)"
+      },
+      {
+        "name": "DispatchSessionLine",
+        "cli_command": "barcode dispatch-sessions-active",
+        "key_field": "id",
+        "important_fields": [
+          "sequence_no",
+          "sap_line_no",
+          "material_code",
+          "material_description",
+          "bill_qty",
+          "expected_qty",
+          "scanned_qty",
+          "remaining_qty",
+          "pending_qty",
+          "bill_boxes",
+          "expected_boxes",
+          "scanned_boxes",
+          "pending_boxes",
+          "uom",
+          "batch_number",
+          "warehouse_code",
+          "serial_required",
+          "status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "id",
+            "links_to": "DispatchSession (embedded in lines array)"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "material_code"
+        ],
+        "record_count": "embedded in DispatchSession.lines array; not independently paginated"
+      },
+      {
+        "name": "ScannedUnit",
+        "cli_command": "barcode dispatch-sessions-active",
+        "key_field": "id",
+        "important_fields": [
+          "line",
+          "scan_log",
+          "barcode_value",
+          "entity_type",
+          "barcode_type",
+          "box_barcode",
+          "item_code",
+          "item_name",
+          "material_code",
+          "batch_number",
+          "original_qty",
+          "available_qty",
+          "required_pending_qty",
+          "total_box_qty",
+          "dispatch_qty",
+          "remaining_qty",
+          "qty",
+          "uom",
+          "warehouse",
+          "scan_status",
+          "status_after_scan",
+          "dispatch_doc_no",
+          "dispatch_date_time",
+          "scanned_by_name",
+          "customer_name",
+          "scanned_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "line",
+            "links_to": "DispatchSessionLine.id"
+          },
+          {
+            "field": "box",
+            "links_to": "BarcodeBox.id"
+          },
+          {
+            "field": "pallet",
+            "links_to": "Pallet.id"
+          },
+          {
+            "field": "scan_log",
+            "links_to": "ScanHistory.id"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "item_code",
+          "material_code"
+        ],
+        "record_count": "embedded in DispatchSession.scanned_units array; not independently paginated"
+      },
+      {
+        "name": "DispatchReport",
+        "cli_command": "barcode dispatch-reports",
+        "key_field": "session_id",
+        "important_fields": [
+          "bill_number",
+          "delivery_number",
+          "customer_code",
+          "customer_name",
+          "status",
+          "created_by",
+          "completed_by",
+          "started_at",
+          "completed_at",
+          "total_expected_qty",
+          "total_dispatched_qty",
+          "pending_qty",
+          "total_expected_boxes",
+          "total_dispatched_boxes",
+          "pending_boxes",
+          "sap_sync_status",
+          "sap_sync_error"
+        ],
+        "foreign_keys": [
+          {
+            "field": "session_id",
+            "links_to": "DispatchSession.id"
+          },
+          {
+            "field": "customer_code",
+            "links_to": "Customer master"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "bill_number",
+          "delivery_number"
+        ],
+        "record_count": "~188+ (summary projection of all dispatch sessions)"
+      },
+      {
+        "name": "DispatchReportBox",
+        "cli_command": "barcode dispatch-reports-boxes",
+        "key_field": "box_id",
+        "important_fields": [
+          "box_barcode",
+          "material_code",
+          "quantity",
+          "uom",
+          "pallet_barcode",
+          "box_status",
+          "dispatch_session_id",
+          "bill_number",
+          "dispatched_time",
+          "removed_from_pallet"
+        ],
+        "foreign_keys": [
+          {
+            "field": "box_id",
+            "links_to": "BarcodeBox.id"
+          },
+          {
+            "field": "pallet_barcode",
+            "links_to": "Pallet.pallet_id"
+          },
+          {
+            "field": "dispatch_session_id",
+            "links_to": "DispatchSession.id"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "material_code"
+        ],
+        "record_count": "~151,000+ (flattened box-level dispatch view)"
+      },
+      {
+        "name": "DispatchReportPallet",
+        "cli_command": "barcode dispatch-reports-pallets",
+        "key_field": "pallet_id",
+        "important_fields": [
+          "pallet_barcode",
+          "pallet_status",
+          "total_boxes",
+          "dispatched_boxes",
+          "remaining_boxes",
+          "dispatch_session_id",
+          "bill_number",
+          "dispatched_time"
+        ],
+        "foreign_keys": [
+          {
+            "field": "pallet_id",
+            "links_to": "Pallet.id"
+          },
+          {
+            "field": "dispatch_session_id",
+            "links_to": "DispatchSession.id"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "~3,170+ (flattened pallet-level dispatch view)"
+      },
+      {
+        "name": "RejectedScan",
+        "cli_command": "barcode dispatch-reports-rejected-scans",
+        "key_field": "scan_id",
+        "important_fields": [
+          "barcode",
+          "scan_type",
+          "rejection_reason",
+          "rejection_code",
+          "bill_number",
+          "user",
+          "scan_time"
+        ],
+        "foreign_keys": [
+          {
+            "field": "bill_number",
+            "links_to": "DispatchSession.bill_number"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "~6,243+"
+      },
+      {
+        "name": "DispatchSettings",
+        "cli_command": "barcode dispatch-settings",
+        "key_field": "created_at",
+        "important_fields": [
+          "allow_partial_dispatch",
+          "allow_partial_pallet_dispatch",
+          "allow_box_dispatch_from_pallet",
+          "require_sequential_item_scanning",
+          "require_sap_sync_on_completion",
+          "allow_manual_close",
+          "allow_admin_override",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "1 (singleton config object)"
+      },
+      {
+        "name": "IntercompanyTransfer",
+        "cli_command": "barcode intercompany-dashboard",
+        "key_field": "id",
+        "important_fields": [
+          "transfer_number",
+          "source_company_code",
+          "source_company_name",
+          "destination_company_code",
+          "destination_company_name",
+          "entity_type",
+          "status",
+          "total_barcodes",
+          "total_qty",
+          "uom",
+          "sap_enabled",
+          "sap_doc_entry",
+          "sap_doc_num",
+          "sap_status",
+          "sap_error",
+          "notes",
+          "device_id",
+          "reversed_at",
+          "reversed_by_name",
+          "created_by_name",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "source_company_code",
+            "links_to": "Company.company_code"
+          },
+          {
+            "field": "destination_company_code",
+            "links_to": "Company.company_code"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_doc_num"
+        ],
+        "record_count": "~1,021 (exposed via dashboard endpoint; lines embed BarcodeBox references with item_code)"
+      },
+      {
+        "name": "IntercompanyTransferLine",
+        "cli_command": "barcode intercompany-dashboard",
+        "key_field": "id",
+        "important_fields": [
+          "box",
+          "barcode",
+          "item_code",
+          "item_name",
+          "batch_number",
+          "qty",
+          "uom",
+          "from_company_code",
+          "from_company_name",
+          "to_company_code",
+          "to_company_name",
+          "created_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "box",
+            "links_to": "BarcodeBox.id"
+          },
+          {
+            "field": "from_company_code",
+            "links_to": "Company.company_code"
+          },
+          {
+            "field": "to_company_code",
+            "links_to": "Company.company_code"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "item_code"
+        ],
+        "record_count": "embedded in IntercompanyTransfer.lines array; ~27,875 total barcodes across all transfers"
+      },
+      {
+        "name": "ItemOITM",
+        "cli_command": "barcode items-oitm",
+        "key_field": "item_code",
+        "important_fields": [
+          "item_name",
+          "inventory_uom",
+          "sales_uom",
+          "purchase_uom",
+          "item_group_code",
+          "manage_batch_numbers",
+          "manage_serial_numbers",
+          "is_inventory_item",
+          "is_sales_item",
+          "is_purchase_item",
+          "valid_for",
+          "frozen_for"
+        ],
+        "foreign_keys": [
+          {
+            "field": "item_group_code",
+            "links_to": "ItemGroup.id"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "item_code"
+        ],
+        "record_count": "~500+ (SAP OITM item master; FG-prefixed finished-goods codes)"
+      },
+      {
+        "name": "LooseItem",
+        "cli_command": "barcode loose",
+        "key_field": "id",
+        "important_fields": [
+          "item_code",
+          "item_name",
+          "batch_number",
+          "qty",
+          "original_qty",
+          "uom",
+          "source_box_barcode",
+          "source_pallet_id",
+          "reason",
+          "reason_notes",
+          "current_warehouse",
+          "status",
+          "repacked_into_barcode",
+          "created_by_name",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "source_box",
+            "links_to": "BarcodeBox.id"
+          },
+          {
+            "field": "source_pallet",
+            "links_to": "Pallet.id"
+          },
+          {
+            "field": "repacked_into_box",
+            "links_to": "BarcodeBox.id"
+          },
+          {
+            "field": "created_by",
+            "links_to": "User.id"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "item_code"
+        ],
+        "record_count": "~727"
+      },
+      {
+        "name": "PrintHistory",
+        "cli_command": "barcode print-history",
+        "key_field": "id",
+        "important_fields": [
+          "label_type",
+          "reference_id",
+          "reference_code",
+          "print_type",
+          "reprint_reason",
+          "printed_by_name",
+          "printed_at",
+          "printer_name"
+        ],
+        "foreign_keys": [
+          {
+            "field": "reference_id",
+            "links_to": "BarcodeBox.id or Pallet.id (per label_type)"
+          },
+          {
+            "field": "printed_by",
+            "links_to": "User.id"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "~156,354+"
+      },
+      {
+        "name": "ScanHistory",
+        "cli_command": "barcode scan-history",
+        "key_field": "id",
+        "important_fields": [
+          "scan_type",
+          "barcode_raw",
+          "barcode_parsed",
+          "entity_type",
+          "entity_id",
+          "scan_result",
+          "context_ref_type",
+          "context_ref_id",
+          "scanned_by_name",
+          "scanned_at",
+          "device_info"
+        ],
+        "foreign_keys": [
+          {
+            "field": "entity_id",
+            "links_to": "BarcodeBox.id or Pallet.id (per entity_type)"
+          },
+          {
+            "field": "context_ref_id",
+            "links_to": "DispatchSession.id (when context_ref_type=SALES_DISPATCH)"
+          },
+          {
+            "field": "scanned_by",
+            "links_to": "User.id"
+          }
+        ],
+        "sap_or_sku_fields": [],
+        "record_count": "~25,212+"
+      }
+    ],
+    "relationships": [
+      "BarcodeBox belongs to a Pallet (BarcodeBox.pallet \u2192 Pallet.id) and optionally to a DispatchSession (BarcodeBox.dispatch_session \u2192 DispatchSession.id)",
+      "Pallet optionally belongs to a DispatchSession (Pallet.dispatch_session \u2192 DispatchSession.id) and aggregates many BarcodeBoxes",
+      "DispatchSession contains one or more DispatchSessionLines (embedded lines array), each identifying a material_code (SAP item) and warehouse_code",
+      "DispatchSession contains ScannedUnits (embedded scanned_units array) that reference both BarcodeBox.id and Pallet.id, bridging scans back to ScanHistory via scan_log",
+      "RejectedScan references a DispatchSession via bill_number and records the barcode string that was rejected during scanning",
+      "DispatchReport, DispatchReportBox, and DispatchReportPallet are flat projection views of DispatchSession, BarcodeBox, and Pallet respectively \u2014 keyed by session_id, box_id, and pallet_id",
+      "LooseItem links a source BarcodeBox (and optionally source Pallet) to a repacked-into BarcodeBox, forming a repack traceability chain for partial/damaged cartons",
+      "PrintHistory records every label print event for both BarcodeBox and Pallet entities (discriminated by label_type field)",
+      "ScanHistory records every scan attempt (success or failure) against BarcodeBox or Pallet entities, contextualised to a DispatchSession via context_ref_id",
+      "IntercompanyTransfer carries lines (IntercompanyTransferLine) each of which references a BarcodeBox.id and carries an item_code, enabling cross-company traceability between JIVO_OIL, JIVO_MART, and JIVO_BEVERAGES",
+      "ItemOITM is the SAP product master (OITM table); item_code fields across BarcodeBox, Pallet, DispatchSessionLine, LooseItem, and IntercompanyTransferLine all link to ItemOITM.item_code",
+      "DispatchSession references the SAP AR Invoice and Delivery document via bill_number / delivery_number and references Customer master via customer_code"
+    ],
+    "notes": "All 15 subcommands under `barcode` were sampled. Dispatch sessions are exposed as three filtered list endpoints (active/closed/completed) representing the same DispatchSession entity at different lifecycle stages \u2014 closed returned empty at time of sampling. DispatchSettings is a singleton config (results is a plain object, not an array). IntercompanyTransfer and IntercompanyTransferLine are exposed via the intercompany-dashboard endpoint which also returns today's summary stats and per-route aggregates. The `barcode items-oitm` endpoint mirrors the SAP OITM item master and serves as the product/SKU bridge across the entire domain. BarcodeBox barcodes follow the pattern BOX-YYYYMMDD-{line}-{seq}; Pallet barcodes follow PLT-YYYYMMDD-{line}-{seq}; IntercompanyTransfer numbers follow ICBT-{timestamp}."
+  },
+  {
+    "domain": "dispatch",
+    "entities": [
+      {
+        "name": "DispatchPlan",
+        "cli_command": "dispatch bilty-grpo-pending",
+        "key_field": "dispatch_plan_id",
+        "important_fields": [
+          "dispatch_plan_id",
+          "sap_invoice_doc_entry",
+          "sap_invoice_doc_num",
+          "booking_status",
+          "dispatch_date",
+          "vehicle_no",
+          "driver_name",
+          "transporter_name",
+          "transporter_gstin",
+          "linked_vehicle_entry_id",
+          "linked_vehicle_entry_no",
+          "source_state",
+          "bilty_no",
+          "bilty_date",
+          "freight",
+          "total_freight",
+          "invoice_count",
+          "created_at",
+          "updated_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "sap_invoice_doc_entry",
+            "links_to": "SAPInvoice"
+          },
+          {
+            "field": "linked_vehicle_entry_id",
+            "links_to": "VehicleEntry"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_invoice_doc_entry",
+          "sap_invoice_doc_num"
+        ],
+        "record_count": "6 pending; history endpoint empty"
+      },
+      {
+        "name": "BiltyGrpoHistory",
+        "cli_command": "dispatch bilty-grpo-history",
+        "key_field": "dispatch_plan_id",
+        "important_fields": [
+          "dispatch_plan_id",
+          "sap_invoice_doc_num",
+          "bilty_no",
+          "bilty_date",
+          "freight",
+          "total_freight",
+          "booking_status",
+          "dispatch_date",
+          "vehicle_no",
+          "transporter_name"
+        ],
+        "foreign_keys": [
+          {
+            "field": "sap_invoice_doc_entry",
+            "links_to": "SAPInvoice"
+          },
+          {
+            "field": "linked_vehicle_entry_id",
+            "links_to": "VehicleEntry"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_invoice_doc_entry",
+          "sap_invoice_doc_num"
+        ],
+        "record_count": "empty"
+      },
+      {
+        "name": "BiltyGrpoOptions",
+        "cli_command": "dispatch bilty-grpo-options",
+        "key_field": "branch_id",
+        "important_fields": [
+          "branches[branch_id, branch_name, state]",
+          "tax_codes[tax_code, tax_name, rate]",
+          "gl_accounts[account_code, account_name]"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [
+          "gl_accounts.account_code"
+        ],
+        "record_count": "8 branches, 24 tax_codes, multiple GL accounts (reference/config data, not paginated records)"
+      },
+      {
+        "name": "OpenBilty",
+        "cli_command": "dispatch open-bilties",
+        "key_field": "dispatch_plan_id",
+        "important_fields": [
+          "dispatch_plan_id",
+          "bilty_no",
+          "bilty_date",
+          "vehicle_no",
+          "transporter_name"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "TransporterInvoice",
+        "cli_command": "dispatch transporter-invoices-history",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "transporter_name",
+          "transporter_gstin",
+          "invoice_no",
+          "invoice_date",
+          "amount"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "empty"
+      },
+      {
+        "name": "DispatchPlanPipelineCard",
+        "cli_command": "dispatch-plans",
+        "key_field": "plan_id",
+        "important_fields": [
+          "plan_id",
+          "stage",
+          "stage_label",
+          "stage_at",
+          "module",
+          "module_status",
+          "module_label",
+          "sap_invoice_doc_entry",
+          "sap_doc_num",
+          "invoice_number",
+          "vehicle_no",
+          "vehicle_id",
+          "transporter_name",
+          "driver_name",
+          "driver_mobile_no",
+          "dispatch_date",
+          "place_of_supply",
+          "customer_name",
+          "empty_gate_in_entry_no",
+          "gate_out_id",
+          "gate_out_entry_no",
+          "gate_out_status",
+          "gate_out_vehicle_entry_id"
+        ],
+        "foreign_keys": [
+          {
+            "field": "vehicle_id",
+            "links_to": "Vehicle"
+          },
+          {
+            "field": "sap_invoice_doc_entry",
+            "links_to": "SAPInvoice"
+          },
+          {
+            "field": "gate_out_id",
+            "links_to": "GateOutEntry"
+          },
+          {
+            "field": "gate_out_vehicle_entry_id",
+            "links_to": "VehicleEntry"
+          }
+        ],
+        "sap_or_sku_fields": [
+          "sap_invoice_doc_entry",
+          "sap_doc_num",
+          "invoice_number"
+        ],
+        "record_count": "19 (all in DISPATCHED stage; 10 pipeline stages: BOOKED, EMPTY_IN, READY_TO_DOCK, DOCKED, PHOTO_ATTACHED, READY_FOR_GATEPASS, GATEPASS_PRINTED, PRINT_COMMITTED, DISPATCHED, REJECTED)"
+      }
+    ],
+    "relationships": [
+      "DispatchPlan.linked_vehicle_entry_id references VehicleEntry (EVGI-series entry numbers like EVGI-20260627-0014); the vehicle that physically carried the goods",
+      "DispatchPlan.sap_invoice_doc_entry references a SAP Invoice (doc_entry is the SAP internal id; sap_invoice_doc_num is the human-readable invoice number like 706260628)",
+      "DispatchPlanPipelineCard.plan_id is the same identifier as DispatchPlan.dispatch_plan_id \u2014 the pipeline is a kanban view over the same DispatchPlan entity",
+      "DispatchPlanPipelineCard.vehicle_id references Vehicle master (also exposed via vehicle_no string)",
+      "DispatchPlanPipelineCard.gate_out_id references GateOutEntry (DOCK-series entry numbers like DOCK-20260629-0022); the docking/exit gate event",
+      "DispatchPlanPipelineCard.gate_out_vehicle_entry_id references VehicleEntry (the vehicle entry record that was used at gate-out)",
+      "DispatchPlanPipelineCard.empty_gate_in_entry_no is a string FK (EVGI-series) referencing the empty vehicle gate-in event prior to loading",
+      "DispatchPlan.transporter_name and transporter_gstin together identify a Transporter (no integer FK in this domain; GSTIN is the unique transporter key)",
+      "BiltyGrpoOptions.branches provide the Branch reference list used to assign source_state on a DispatchPlan",
+      "BiltyGrpoOptions.gl_accounts carry SAP account_codes (e.g. 1101001) used for GL posting when a bilty-GRPO is created against a DispatchPlan",
+      "TransporterInvoice (empty) is expected to reference DispatchPlan records via transporter_name/GSTIN once populated"
+    ],
+    "notes": "Pipeline stages observed on dispatch-plans (kanban): BOOKED \u2192 EMPTY_IN \u2192 READY_TO_DOCK \u2192 DOCKED \u2192 PHOTO_ATTACHED \u2192 READY_FOR_GATEPASS \u2192 GATEPASS_PRINTED \u2192 PRINT_COMMITTED \u2192 DISPATCHED \u2192 REJECTED. Only DISPATCHED had live records (19) at time of sampling. The bilty-grpo-options endpoint returns a composite object (not a paginated list) \u2014 its sub-collections (branches, tax_codes, gl_accounts) are lookup/reference tables for the bilty creation form, not independent vault notes. BiltyGrpoHistory and OpenBilty are structurally identical to DispatchPlan but filtered to different lifecycle states; they were empty at sampling time. TransporterInvoice is a distinct accounting entity (one invoice per transporter covering multiple dispatch trips) \u2014 empty at sampling time. SAP invoice linkage is the primary bridge to product/order data in other domains."
+  },
+  {
+    "domain": "procurement",
+    "entities": [
+      {
+        "name": "Vendor",
+        "cli_command": "po vendors",
+        "key_field": "vendor_code",
+        "important_fields": [
+          "vendor_code",
+          "vendor_name"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "212"
+      },
+      {
+        "name": "Warehouse",
+        "cli_command": "po warehouses",
+        "key_field": "warehouse_code",
+        "important_fields": [
+          "warehouse_code",
+          "warehouse_name"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "31"
+      },
+      {
+        "name": "NonMovingRMItemGroup",
+        "cli_command": "non-moving-rm",
+        "key_field": "item_group_code",
+        "important_fields": [
+          "item_group_code",
+          "item_group_name"
+        ],
+        "foreign_keys": [],
+        "sap_or_sku_fields": [],
+        "record_count": "10"
+      }
+    ],
+    "relationships": [
+      "Vendor (vendor_code) is the supplying party on purchase orders and GRPO records; vendor_code appears as a FK in PO and goods-receipt documents surfaced via the grpo interface",
+      "Warehouse (warehouse_code) is the receiving or source stock location on PO lines, GRPO entries, and warehouse movement records; warehouse_code appears as a FK across grpo, warehouse, and dispatch interfaces",
+      "NonMovingRMItemGroup (item_group_code) classifies raw-material and other inventory items by material category; RM items in non-moving stock reports carry an item_group_code that links back to this lookup \u2014 item_group_code 106 (RAW MATERIAL) is the primary category for procurement-side non-moving stock"
+    ],
+    "notes": "The po group exposes only two reference/lookup tables (vendors, warehouses) \u2014 no open-PO list endpoint is surfaced in this CLI group; the full PO transaction records are likely accessible via the grpo interface. Vendor codes follow two prefix families: VENDA (external third-party suppliers, transport companies, raw material vendors) and ORGV (internal org imprest accounts for named employees, e.g. ORGV000034 = AJIT SINGH ECOM IMPREST). Warehouse codes use location-prefix notation (BH = Bhakharpur, DL = Delhi Mayapuri, PB = Punjab, KT = Karnataka, RJ = Rajasthan, UP = Uttar Pradesh, DP = Dropship). The non-moving-rm endpoint returns results nested as {data: [...], meta: {total_groups, fetched_at}} unlike the flat results array pattern used by po endpoints."
+  },
+  {
+    "domain": "production-maintenance-warehouse",
+    "entities": [
+      {
+        "name": "Line",
+        "cli_command": "production-execution lines",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name",
+          "status"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "Machine",
+        "cli_command": "production-execution machines",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name",
+          "status",
+          "level",
+          "line_id"
+        ],
+        "foreign_keys": [
+          {
+            "field": "line_id",
+            "links_to": "Line"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "ProductionRun",
+        "cli_command": "production-execution runs",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "line_id",
+          "sap_order_id",
+          "planned_qty",
+          "actual_qty",
+          "status",
+          "start_time",
+          "end_time",
+          "oee_percent",
+          "availability_percent"
+        ],
+        "foreign_keys": [
+          {
+            "field": "line_id",
+            "links_to": "Line"
+          },
+          {
+            "field": "sap_order_id",
+            "links_to": "SAPOrder"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": [
+          "sap_order_id"
+        ]
+      },
+      {
+        "name": "SAPOrder",
+        "cli_command": "production-execution sap-orders",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "order_number",
+          "item_code",
+          "planned_qty",
+          "status"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": [
+          "item_code",
+          "order_number"
+        ]
+      },
+      {
+        "name": "SAPItem",
+        "cli_command": "production-execution sap-items",
+        "key_field": "item_code",
+        "important_fields": [
+          "item_code",
+          "item_name",
+          "uom"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "WasteLog",
+        "cli_command": "production-execution waste",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "run_id",
+          "material_code",
+          "quantity",
+          "reason",
+          "approval_status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "run_id",
+            "links_to": "ProductionRun"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": [
+          "material_code"
+        ]
+      },
+      {
+        "name": "BreakdownCategory",
+        "cli_command": "production-execution breakdown-categories",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "ChecklistTemplate",
+        "cli_command": "production-execution checklist-templates",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name",
+          "machine_id",
+          "input_type"
+        ],
+        "foreign_keys": [
+          {
+            "field": "machine_id",
+            "links_to": "Machine"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "LineConfig",
+        "cli_command": "production-execution line-configs",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "line_id"
+        ],
+        "foreign_keys": [
+          {
+            "field": "line_id",
+            "links_to": "Line"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "LineClearance",
+        "cli_command": "production-execution line-clearance",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "line_id",
+          "cleared_by",
+          "cleared_at",
+          "status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "line_id",
+            "links_to": "Line"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "MachineChecklist",
+        "cli_command": "production-execution machine-checklists",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "machine_id",
+          "template_id",
+          "status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "machine_id",
+            "links_to": "Machine"
+          },
+          {
+            "field": "template_id",
+            "links_to": "ChecklistTemplate"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "MaintenanceAsset",
+        "cli_command": "maintenance assets",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name",
+          "status",
+          "level",
+          "category_id",
+          "location_id",
+          "department_id",
+          "line_id"
+        ],
+        "foreign_keys": [
+          {
+            "field": "category_id",
+            "links_to": "AssetCategory"
+          },
+          {
+            "field": "location_id",
+            "links_to": "AssetLocation"
+          },
+          {
+            "field": "department_id",
+            "links_to": "AssetDepartment"
+          },
+          {
+            "field": "line_id",
+            "links_to": "Line"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "AssetCategory",
+        "cli_command": "maintenance asset-categories",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "AssetDepartment",
+        "cli_command": "maintenance asset-departments",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "AssetLocation",
+        "cli_command": "maintenance asset-locations",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "AssetDocument",
+        "cli_command": "maintenance asset-documents",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "asset_id",
+          "document_type",
+          "url"
+        ],
+        "foreign_keys": [
+          {
+            "field": "asset_id",
+            "links_to": "MaintenanceAsset"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "AssetPhoto",
+        "cli_command": "maintenance asset-photos",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "asset_id",
+          "url"
+        ],
+        "foreign_keys": [
+          {
+            "field": "asset_id",
+            "links_to": "MaintenanceAsset"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "WorkOrder",
+        "cli_command": "maintenance work-orders",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "work_type",
+          "status",
+          "priority",
+          "asset_id",
+          "line_id",
+          "department_id",
+          "assigned_to",
+          "created_at",
+          "completed_at",
+          "production_downtime_minutes"
+        ],
+        "foreign_keys": [
+          {
+            "field": "asset_id",
+            "links_to": "MaintenanceAsset"
+          },
+          {
+            "field": "line_id",
+            "links_to": "Line"
+          },
+          {
+            "field": "department_id",
+            "links_to": "AssetDepartment"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "WorkOrderPhoto",
+        "cli_command": "maintenance work-order-photos",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "work_order_id",
+          "url"
+        ],
+        "foreign_keys": [
+          {
+            "field": "work_order_id",
+            "links_to": "WorkOrder"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "PMPlan",
+        "cli_command": "maintenance pm-plans",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name",
+          "asset_id",
+          "frequency",
+          "next_due"
+        ],
+        "foreign_keys": [
+          {
+            "field": "asset_id",
+            "links_to": "MaintenanceAsset"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "PMExecution",
+        "cli_command": "maintenance pm-executions",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "pm_plan_id",
+          "asset_id",
+          "scheduled_date",
+          "completed_date",
+          "status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "pm_plan_id",
+            "links_to": "PMPlan"
+          },
+          {
+            "field": "asset_id",
+            "links_to": "MaintenanceAsset"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "PMChecklistItem",
+        "cli_command": "maintenance pm-checklist-items",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "pm_plan_id",
+          "task_text",
+          "input_type"
+        ],
+        "foreign_keys": [
+          {
+            "field": "pm_plan_id",
+            "links_to": "PMPlan"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "Spare",
+        "cli_command": "maintenance spares",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "spare_code",
+          "name",
+          "category_id",
+          "quantity",
+          "min_level",
+          "unit",
+          "stock_status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "category_id",
+            "links_to": "SpareCategory"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "SpareCategory",
+        "cli_command": "maintenance spare-categories",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "name"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "SpareMovement",
+        "cli_command": "maintenance spare-movements",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "spare_id",
+          "work_order_id",
+          "quantity",
+          "direction",
+          "date"
+        ],
+        "foreign_keys": [
+          {
+            "field": "spare_id",
+            "links_to": "Spare"
+          },
+          {
+            "field": "work_order_id",
+            "links_to": "WorkOrder"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "SpareRequest",
+        "cli_command": "maintenance spare-requests",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "spare_id",
+          "work_order_id",
+          "quantity",
+          "status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "spare_id",
+            "links_to": "Spare"
+          },
+          {
+            "field": "work_order_id",
+            "links_to": "WorkOrder"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "VendorVisit",
+        "cli_command": "maintenance vendor-visits",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "vendor_name",
+          "asset_id",
+          "visit_type",
+          "status",
+          "scheduled_date"
+        ],
+        "foreign_keys": [
+          {
+            "field": "asset_id",
+            "links_to": "MaintenanceAsset"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "BOMRequest",
+        "cli_command": "warehouse bom-requests",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "item_code",
+          "status",
+          "requested_by",
+          "requested_at"
+        ],
+        "foreign_keys": [
+          {
+            "field": "item_code",
+            "links_to": "SAPItem"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "FGReceipt",
+        "cli_command": "warehouse fg-receipts",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "item_code",
+          "quantity",
+          "warehouse_code",
+          "receipt_date"
+        ],
+        "foreign_keys": [
+          {
+            "field": "item_code",
+            "links_to": "SAPItem"
+          },
+          {
+            "field": "warehouse_code",
+            "links_to": "Warehouse"
+          }
+        ],
+        "record_count": "empty",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "Warehouse",
+        "cli_command": "warehouse wms-warehouses",
+        "key_field": "code",
+        "important_fields": [
+          "code",
+          "name"
+        ],
+        "foreign_keys": [],
+        "record_count": "31",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "WMSItemGroup",
+        "cli_command": "warehouse wms-item-groups",
+        "key_field": "code",
+        "important_fields": [
+          "code",
+          "name"
+        ],
+        "foreign_keys": [],
+        "record_count": "9",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "WMSStockItem",
+        "cli_command": "warehouse wms-stock-overview",
+        "key_field": "item_code",
+        "important_fields": [
+          "item_code",
+          "item_name",
+          "item_group",
+          "uom",
+          "warehouse_code",
+          "on_hand",
+          "committed",
+          "on_order",
+          "available",
+          "avg_price",
+          "stock_value",
+          "min_level",
+          "max_level",
+          "last_purchase_price",
+          "stock_status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "warehouse_code",
+            "links_to": "Warehouse"
+          },
+          {
+            "field": "item_group",
+            "links_to": "WMSItemGroup"
+          }
+        ],
+        "record_count": "953",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "WMSStockMovement",
+        "cli_command": "warehouse wms-stock-movements",
+        "key_field": "doc_num",
+        "important_fields": [
+          "date",
+          "item_code",
+          "item_name",
+          "warehouse_code",
+          "in_qty",
+          "out_qty",
+          "quantity",
+          "direction",
+          "transaction_type",
+          "reference",
+          "doc_num",
+          "created_by"
+        ],
+        "foreign_keys": [
+          {
+            "field": "warehouse_code",
+            "links_to": "Warehouse"
+          }
+        ],
+        "record_count": "~200+ recent",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "WMSBatch",
+        "cli_command": "warehouse wms-batches-expiry",
+        "key_field": "batch_number",
+        "important_fields": [
+          "batch_number",
+          "item_code",
+          "item_name",
+          "warehouse_code",
+          "expiry_date",
+          "manufacturing_date",
+          "sap_status",
+          "quantity",
+          "days_to_expiry",
+          "expiry_status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "warehouse_code",
+            "links_to": "Warehouse"
+          }
+        ],
+        "record_count": "300",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "WMSTransfer",
+        "cli_command": "warehouse wms-transfers-overview",
+        "key_field": "doc_entry",
+        "important_fields": [
+          "doc_entry",
+          "doc_num",
+          "doc_date",
+          "header_from_warehouse",
+          "header_to_warehouse",
+          "comments",
+          "line_num",
+          "item_code",
+          "item_name",
+          "quantity",
+          "from_warehouse",
+          "to_warehouse"
+        ],
+        "foreign_keys": [
+          {
+            "field": "from_warehouse",
+            "links_to": "Warehouse"
+          },
+          {
+            "field": "to_warehouse",
+            "links_to": "Warehouse"
+          }
+        ],
+        "record_count": "14 transfer docs / 200 lines",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "WMSSalesOrderLine",
+        "cli_command": "warehouse wms-sales-orders-backlog",
+        "key_field": "doc_entry",
+        "important_fields": [
+          "doc_entry",
+          "doc_num",
+          "doc_date",
+          "due_date",
+          "customer_code",
+          "customer_name",
+          "line_num",
+          "item_code",
+          "item_name",
+          "warehouse_code",
+          "ordered_qty",
+          "open_qty",
+          "delivered_qty",
+          "fulfillment_pct"
+        ],
+        "foreign_keys": [
+          {
+            "field": "warehouse_code",
+            "links_to": "Warehouse"
+          }
+        ],
+        "record_count": "86 orders / 300 lines",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "WMSBillingItem",
+        "cli_command": "warehouse wms-billing-overview",
+        "key_field": "item_code",
+        "important_fields": [
+          "item_code",
+          "item_name",
+          "warehouse_code",
+          "received_qty",
+          "received_value",
+          "billed_qty",
+          "billed_value",
+          "unbilled_qty",
+          "unbilled_value",
+          "status",
+          "first_grpo_date",
+          "last_grpo_date"
+        ],
+        "foreign_keys": [
+          {
+            "field": "warehouse_code",
+            "links_to": "Warehouse"
+          }
+        ],
+        "record_count": "757",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      }
+    ],
+    "relationships": [
+      "ProductionRun belongs to a Line (line_id) and is planned against a SAPOrder (sap_order_id)",
+      "Machine belongs to a Line and its maintenance status maps to MaintenanceAsset (shared entity in production-execution and maintenance domains)",
+      "WasteLog records reference a ProductionRun (run_id) and carry a material_code (SAP item code)",
+      "BreakdownCategory is referenced by WorkOrder (breakdown-type work orders) and by downtime analytics per machine",
+      "ChecklistTemplate belongs to a Machine; MachineChecklist is an execution instance of a ChecklistTemplate on a Machine",
+      "LineConfig is the production-line configuration record belonging to a Line",
+      "LineClearance is the clearance sign-off record for a Line before/after a ProductionRun",
+      "MaintenanceAsset references AssetCategory, AssetLocation, AssetDepartment, and optionally a Line (for production-line assets); hierarchy level (PLANT/AREA/LINE/MACHINE/COMPONENT/UTILITY) defines its position in the asset tree",
+      "AssetDocument (types: MANUAL, WARRANTY, AMC, SERVICE_REPORT, CALIBRATION, OTHER) and AssetPhoto both belong to a MaintenanceAsset",
+      "WorkOrder references a MaintenanceAsset (asset_id), optionally a Line (line_id) and a Department; work_types: COMPLAINT, BREAKDOWN, GENERAL, PREVENTIVE, INSPECTION, CALIBRATION, AMC_VENDOR, PROJECT; statuses: DRAFT, OPEN, ASSIGNED, IN_PROGRESS, WAITING_SPARE, WAITING_VENDOR, ON_HOLD, COMPLETED, APPROVED, CLOSED",
+      "WorkOrderPhoto belongs to a WorkOrder",
+      "PMPlan belongs to a MaintenanceAsset with a frequency (DAILY/WEEKLY/MONTHLY/QUARTERLY/HALF_YEARLY/YEARLY); PMExecution is one scheduled run of a PMPlan; PMChecklistItem is a step inside a PMPlan",
+      "Spare references SpareCategory; SpareMovement and SpareRequest both reference a Spare and a WorkOrder",
+      "VendorVisit references a MaintenanceAsset (asset under AMC or warranty); statuses: PLANNED, IN_PROGRESS, COMPLETED, CANCELLED",
+      "WMSStockItem is keyed by (item_code, warehouse_code); foreign keys to Warehouse and WMSItemGroup",
+      "WMSStockMovement carries item_code (SAP SKU bridge) and warehouse_code; transaction_types include AR_INVOICE, TRANSFER, GRPO, Production Order (202)",
+      "WMSBatch links item_code (SAP SKU) to a Warehouse and holds batch_number, expiry_date, manufacturing_date",
+      "WMSTransfer is a multi-line SAP inventory transfer document; doc_entry (internal id) and doc_num (SAP number) identify the header; from_warehouse/to_warehouse are FKs to Warehouse; each line carries item_code",
+      "WMSSalesOrderLine is a backlog view of open SAP sales-order lines; keyed by doc_entry+line_num; warehouse_code FK to Warehouse; customer_code links to external customer master",
+      "WMSBillingItem is a GRPO billing-gap view per (item_code, warehouse_code); status: FULLY_BILLED, PARTIALLY_BILLED, UNBILLED; links to Warehouse",
+      "BOMRequest references item_code (finished-goods SAP SKU) for bill-of-materials withdrawal requests by production",
+      "FGReceipt references item_code (finished-goods SAP SKU) and warehouse_code (Warehouse) for inbound finished-goods receipts",
+      "item_code (format FG00000XX) is the cross-domain SAP/SKU bridge connecting WMS entities, SAPItem, SAPOrder, WasteLog, BOMRequest, and FGReceipt to the product master"
+    ],
+    "notes": "All production-execution list endpoints (lines, machines, runs, sap-items, sap-orders, waste, breakdown-categories, checklist-templates, line-configs, line-clearance, machine-checklists) returned empty arrays \u2014 the production MES module is configured but not yet populated with run data. Field definitions for these entities are inferred from analytics/dashboard/options endpoints that returned live aggregate data (reports-analytics, reports-analytics-monthly-summary, reports-analytics-oee, reports-analytics-downtime-pareto, reports-analytics-plan-vs-production). Similarly all maintenance CMMS list endpoints (assets, work-orders, spares, pm-plans, pm-executions, etc.) are empty; fields inferred from maintenance dashboard and maintenance options which returned live enum/count data. The maintenance options endpoint revealed all status enumerations: asset statuses (RUNNING, IDLE, BREAKDOWN, UNDER_PM, UNDER_REPAIR, RETIRED), work-order types (COMPLAINT, BREAKDOWN, GENERAL, PREVENTIVE, INSPECTION, CALIBRATION, AMC_VENDOR, PROJECT), work-order statuses (DRAFT, OPEN, ASSIGNED, IN_PROGRESS, WAITING_SPARE, WAITING_VENDOR, ON_HOLD, COMPLETED, APPROVED, CLOSED), PM frequencies (DAILY, WEEKLY, MONTHLY, QUARTERLY, HALF_YEARLY, YEARLY), PM execution statuses (PENDING, IN_PROGRESS, COMPLETED, SKIPPED, OVERDUE), asset hierarchy levels (PLANT, AREA, LINE, MACHINE, COMPONENT, UTILITY). Warehouse WMS entities are fully live with real data (31 warehouses, 9 item groups, 953 stock positions, 300 batches, 14 active transfers, 86 open sales orders, 757 billing items). The CLI base is https://factory.jivo.in/api/v1 with Company-Code: JIVO_MART header. All item_code values follow the pattern FG0000XXX for finished goods."
+  },
+  {
+    "domain": "dashboards-accounts",
+    "entities": [
+      {
+        "name": "User",
+        "cli_command": "accounts users",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "email",
+          "full_name",
+          "employee_code",
+          "is_active",
+          "is_staff",
+          "date_joined"
+        ],
+        "foreign_keys": [],
+        "record_count": "~25+",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "AuthenticatedUserProfile",
+        "cli_command": "accounts me",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "email",
+          "full_name",
+          "employee_code",
+          "is_active",
+          "is_staff",
+          "is_superuser",
+          "date_joined",
+          "companies",
+          "permissions"
+        ],
+        "foreign_keys": [
+          {
+            "field": "companies[].company_id",
+            "links_to": "Company"
+          }
+        ],
+        "record_count": "1 (self-profile only)",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "Notification",
+        "cli_command": "notifications list",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "title",
+          "body",
+          "notification_type",
+          "click_action_url",
+          "reference_type",
+          "reference_id",
+          "is_read",
+          "read_at",
+          "created_at",
+          "extra_data"
+        ],
+        "foreign_keys": [
+          {
+            "field": "reference_id",
+            "links_to": "polymorphic via reference_type (e.g. person_entry, gate_entry)"
+          }
+        ],
+        "record_count": "25000+ (highest seen id=25856)",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "NotificationPreference",
+        "cli_command": "notifications preferences",
+        "key_field": "id",
+        "important_fields": [
+          "id",
+          "code",
+          "name",
+          "description",
+          "is_enabled"
+        ],
+        "foreign_keys": [],
+        "record_count": "23+",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "StockItem",
+        "cli_command": "dashboards stock",
+        "key_field": "item_code",
+        "important_fields": [
+          "item_code",
+          "item_name",
+          "warehouse",
+          "on_hand",
+          "min_stock",
+          "uom",
+          "stock_status",
+          "health_ratio",
+          "movement_status",
+          "last_consumption_date",
+          "days_since_last_consumption",
+          "warehouse_count",
+          "has_warning"
+        ],
+        "foreign_keys": [
+          {
+            "field": "warehouse",
+            "links_to": "Warehouse"
+          }
+        ],
+        "record_count": "many (hundreds of item+warehouse rows)",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "InventoryAgeReportRow",
+        "cli_command": "dashboards inventory-age-report",
+        "key_field": "item_code",
+        "important_fields": [
+          "item_code",
+          "item_name",
+          "is_litre",
+          "item_group",
+          "unit",
+          "variety",
+          "sku",
+          "sub_group",
+          "warehouse",
+          "on_hand",
+          "litres",
+          "in_stock_value",
+          "calc_price",
+          "effective_date",
+          "days_age"
+        ],
+        "foreign_keys": [
+          {
+            "field": "warehouse",
+            "links_to": "Warehouse"
+          },
+          {
+            "field": "item_group",
+            "links_to": "ItemGroup"
+          }
+        ],
+        "record_count": "many (item_code+warehouse composite rows)",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "InventoryAgeFilterOptions",
+        "cli_command": "dashboards inventory-age-filter-options",
+        "key_field": "item_group_code",
+        "important_fields": [
+          "item_group_code",
+          "item_group_name",
+          "sub_groups",
+          "warehouses",
+          "varieties"
+        ],
+        "foreign_keys": [],
+        "record_count": "9 item_groups, 14 warehouses, 35 sub_groups, 74 varieties",
+        "sap_or_sku_fields": []
+      },
+      {
+        "name": "SalesPlanningRequirementRow",
+        "cli_command": "dashboards sales-planning-requirement-report",
+        "key_field": "item_code",
+        "important_fields": [
+          "item_code",
+          "item_name",
+          "planned_qty",
+          "base_required_qty",
+          "min_stock",
+          "stock_in_hand",
+          "required_qty",
+          "open_po_qty",
+          "net_shortage_qty",
+          "report_execution_at"
+        ],
+        "foreign_keys": [],
+        "record_count": "empty (JIVO_MART not in supported_companies; data only in JIVO_OIL and JIVO_BEVERAGES)",
+        "sap_or_sku_fields": [
+          "item_code"
+        ]
+      },
+      {
+        "name": "ProductionOrder",
+        "cli_command": "sap plan-dashboard-summary",
+        "key_field": "prod_order_entry",
+        "important_fields": [
+          "prod_order_entry",
+          "prod_order_num",
+          "sku_code",
+          "sku_name",
+          "planned_qty",
+          "completed_qty",
+          "status",
+          "due_date",
+          "post_date",
+          "priority",
+          "warehouse",
+          "total_components",
+          "components_with_shortfall",
+          "total_remaining_component_qty"
+        ],
+        "foreign_keys": [
+          {
+            "field": "warehouse",
+            "links_to": "Warehouse"
+          },
+          {
+            "field": "sku_code",
+            "links_to": "FinishedGood/SKU"
+          }
+        ],
+        "record_count": "1 (single active order seen)",
+        "sap_or_sku_fields": [
+          "sku_code",
+          "prod_order_num"
+        ]
+      },
+      {
+        "name": "ProductionOrderComponent",
+        "cli_command": "sap plan-dashboard-details",
+        "key_field": "component_line",
+        "important_fields": [
+          "component_line",
+          "component_code",
+          "component_name",
+          "component_planned_qty",
+          "component_issued_qty",
+          "component_remaining_qty",
+          "component_warehouse",
+          "base_qty",
+          "uom",
+          "stock_on_hand",
+          "stock_committed",
+          "stock_on_order",
+          "net_available",
+          "shortfall_qty",
+          "vendor_lead_time",
+          "default_vendor",
+          "stock_status"
+        ],
+        "foreign_keys": [
+          {
+            "field": "prod_order_entry",
+            "links_to": "ProductionOrder"
+          },
+          {
+            "field": "component_warehouse",
+            "links_to": "Warehouse"
+          }
+        ],
+        "record_count": "1 (nested within 1 production order)",
+        "sap_or_sku_fields": [
+          "component_code"
+        ]
+      },
+      {
+        "name": "ProcurementShortfall",
+        "cli_command": "sap plan-dashboard-procurement",
+        "key_field": "component_code",
+        "important_fields": [],
+        "foreign_keys": [],
+        "record_count": "empty",
+        "sap_or_sku_fields": [
+          "component_code"
+        ]
+      }
+    ],
+    "relationships": [
+      "Notification.reference_id is a polymorphic foreign key resolved by Notification.reference_type (observed values: 'person_entry'); links into gate/person entry entities in other domains",
+      "Notification.notification_type matches NotificationPreference.code \u2014 23 preference codes seen (GATE_ENTRY_CREATED, QC_INSPECTION_SUBMITTED, GRPO_POSTED, PERSON_ENTRY_CREATED, PERSON_ENTRY_EXITED, etc.)",
+      "AuthenticatedUserProfile.companies[].company_id links to Company (company_id=1 JIVO_OIL, company_id=2 JIVO_MART, company_id=3 JIVO_BEVERAGES); User records carry no embedded company list",
+      "StockItem.item_code and InventoryAgeReportRow.item_code are SAP item codes (PM-prefix = packaging material, FG-prefix = finished good, RM-prefix expected for raw material) \u2014 bridge to product master in other domains",
+      "InventoryAgeReportRow.item_group references InventoryAgeFilterOptions item_group names (FINISHED, PACKAGING MATERIAL, RAW MATERIAL, etc.)",
+      "InventoryAgeReportRow.warehouse and StockItem.warehouse match warehouse codes in InventoryAgeFilterOptions.warehouses list (e.g. BH-FG, DL-GR, FBF-HR)",
+      "SalesPlanningRequirementRow.item_code is an SAP item code shared with StockItem/InventoryAgeReportRow \u2014 currently empty for JIVO_MART scope; analysis endpoint confirms it draws from SAP HANA procedure with forecast_id and open_po_qty fields",
+      "ProductionOrder.sku_code (FG-prefix) is an SAP finished-good item code shared with StockItem and InventoryAgeReportRow item_code namespace",
+      "ProductionOrderComponent.component_code (FG-prefix seen) is an SAP item code for BOM components; links to StockItem for live stock levels",
+      "ProductionOrderComponent belongs to ProductionOrder via prod_order_entry (the internal PK); prod_order_num is the SAP production order number",
+      "User records (accounts users) are the assignee/operator identity referenced by notification delivery and permissions lists in AuthenticatedUserProfile"
+    ],
+    "notes": "Scope is JIVO_MART company (company_id=2). All four resource groups covered: accounts (2 endpoints), notifications (3 endpoints), dashboards (6 endpoints), sap (3 endpoints). Key observations: (1) SalesPlanningRequirementRow is schema-complete but empty for JIVO_MART \u2014 the analysis endpoint explicitly lists supported_companies as JIVO_BEVERAGES and JIVO_OIL only. (2) ProcurementShortfall (sap plan-dashboard-procurement) returned empty results. (3) notifications/unread-count returns a scalar {unread_count: 12} \u2014 not a list entity, omitted as separate entity. (4) dashboards/sales-planning-requirement-status returns {latest: null, last_success: null} \u2014 scalar refresh timestamp, omitted as entity. (5) InventoryAgeFilterOptions is a reference/lookup container rather than a rows entity; item_group_code used as key_field for its item_groups sub-list. (6) SAP item code prefixes observed: PM = Packaging Material, FG = Finished Good; RM-prefix expected for Raw Material based on permissions listing barcode.add_loosestock etc."
+  }
+]

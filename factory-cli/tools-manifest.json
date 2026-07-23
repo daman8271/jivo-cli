@@ -1,0 +1,1516 @@
+{
+  "api_name": "jivo-factory",
+  "base_url": "https://factory.jivo.in/api/v1",
+  "description": "JIVO factory management CLI (ji.jivo.in / factory.jivo.in) — read-only access to all 3 companies (JIVO_MART, JIVO_OIL, JIVO_BEVERAGES via --company / JIVO_FACTORY_COMPANY): gate, vehicles, quality control, GRPO, barcode traceability, dispatch, production, WMS, maintenance \u0026 dashboards",
+  "mcp_ready": "full",
+  "http_transport": "standard",
+  "mcp": {
+    "endpoint_tools": "hidden",
+    "orchestration": "code"
+  },
+  "auth": {
+    "type": "bearer_token",
+    "header": "Authorization",
+    "format": "Bearer {JIVO_FACTORY_TOKEN}",
+    "env_vars": [
+      "JIVO_FACTORY_TOKEN"
+    ],
+    "env_var_specs": [
+      {
+        "name": "JIVO_FACTORY_TOKEN",
+        "kind": "per_call",
+        "required": true,
+        "sensitive": true,
+        "inferred": true
+      }
+    ]
+  },
+  "required_headers": [
+    {
+      "name": "Company-Code",
+      "value": "JIVO_MART"
+    }
+  ],
+  "tools": [
+    {
+      "name": "accounts_departments",
+      "description": "GET /accounts/departments/ — departments list (15 rows, shared across companies).",
+      "method": "GET",
+      "path": "/accounts/departments/",
+      "params": []
+    },
+    {
+      "name": "accounts_me",
+      "description": "GET /accounts/me/ — accounts me.",
+      "method": "GET",
+      "path": "/accounts/me/",
+      "params": []
+    },
+    {
+      "name": "accounts_users",
+      "description": "GET /accounts/users/ — accounts users.",
+      "method": "GET",
+      "path": "/accounts/users/",
+      "params": []
+    },
+    {
+      "name": "barcode_boxes",
+      "description": "GET /barcode/boxes/ — barcode boxes.",
+      "method": "GET",
+      "path": "/barcode/boxes/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-reports",
+      "description": "GET /barcode/dispatch/reports/ — barcode dispatch reports.",
+      "method": "GET",
+      "path": "/barcode/dispatch/reports/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-reports-boxes",
+      "description": "GET /barcode/dispatch/reports/boxes/ — barcode dispatch reports boxes.",
+      "method": "GET",
+      "path": "/barcode/dispatch/reports/boxes/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-reports-pallets",
+      "description": "GET /barcode/dispatch/reports/pallets/ — barcode dispatch reports pallets.",
+      "method": "GET",
+      "path": "/barcode/dispatch/reports/pallets/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-reports-rejected-scans",
+      "description": "GET /barcode/dispatch/reports/rejected-scans/ — barcode dispatch reports rejected scans.",
+      "method": "GET",
+      "path": "/barcode/dispatch/reports/rejected-scans/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-sessions",
+      "description": "GET /barcode/dispatch/sessions/ — barcode dispatch sessions (all).",
+      "method": "GET",
+      "path": "/barcode/dispatch/sessions/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-sessions-active",
+      "description": "GET /barcode/dispatch/sessions/active/ — barcode dispatch sessions active.",
+      "method": "GET",
+      "path": "/barcode/dispatch/sessions/active/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-sessions-closed",
+      "description": "GET /barcode/dispatch/sessions/closed/ — barcode dispatch sessions closed.",
+      "method": "GET",
+      "path": "/barcode/dispatch/sessions/closed/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-sessions-completed",
+      "description": "GET /barcode/dispatch/sessions/completed/ — barcode dispatch sessions completed.",
+      "method": "GET",
+      "path": "/barcode/dispatch/sessions/completed/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-sessions-from-bill",
+      "description": "GET /barcode/dispatch/sessions/from-bill/ — barcode dispatch sessions from bill.",
+      "method": "GET",
+      "path": "/barcode/dispatch/sessions/from-bill/",
+      "params": []
+    },
+    {
+      "name": "barcode_dispatch-settings",
+      "description": "GET /barcode/dispatch/settings/ — barcode dispatch settings.",
+      "method": "GET",
+      "path": "/barcode/dispatch/settings/",
+      "params": []
+    },
+    {
+      "name": "barcode_intercompany-dashboard",
+      "description": "GET /barcode/intercompany/dashboard/ — barcode intercompany dashboard.",
+      "method": "GET",
+      "path": "/barcode/intercompany/dashboard/",
+      "params": []
+    },
+    {
+      "name": "barcode_intercompany-trace",
+      "description": "GET /barcode/intercompany/trace/ — trace an intercompany barcode. Required: search.",
+      "method": "GET",
+      "path": "/barcode/intercompany/trace/",
+      "params": [
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "Barcode / search term (required; 400 without it)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "barcode_intercompany-transfers",
+      "description": "GET /barcode/intercompany/transfers/ — barcode intercompany transfers list.",
+      "method": "GET",
+      "path": "/barcode/intercompany/transfers/",
+      "params": []
+    },
+    {
+      "name": "barcode_items-oitm",
+      "description": "GET /barcode/items/oitm/ — barcode items oitm.",
+      "method": "GET",
+      "path": "/barcode/items/oitm/",
+      "params": []
+    },
+    {
+      "name": "barcode_loose",
+      "description": "GET /barcode/loose/ — barcode loose.",
+      "method": "GET",
+      "path": "/barcode/loose/",
+      "params": []
+    },
+    {
+      "name": "barcode_pallets",
+      "description": "GET /barcode/pallets/ — barcode pallets.",
+      "method": "GET",
+      "path": "/barcode/pallets/",
+      "params": []
+    },
+    {
+      "name": "barcode_print-history",
+      "description": "GET /barcode/print/history/ — barcode print history.",
+      "method": "GET",
+      "path": "/barcode/print/history/",
+      "params": []
+    },
+    {
+      "name": "barcode_production-release-oil",
+      "description": "GET /barcode/production-release-oil/ — oil production release (JIVO_OIL only; 503 for other companies).",
+      "method": "GET",
+      "path": "/barcode/production-release-oil/",
+      "params": []
+    },
+    {
+      "name": "barcode_scan-history",
+      "description": "GET /barcode/scan/history/ — barcode scan history.",
+      "method": "GET",
+      "path": "/barcode/scan/history/",
+      "params": []
+    },
+    {
+      "name": "company_companies",
+      "description": "GET /company/companies/ — the 3 companies backing the Select-Company screen.",
+      "method": "GET",
+      "path": "/company/companies/",
+      "params": []
+    },
+    {
+      "name": "daily-needs-gatein_gate-entries-daily-need-categories",
+      "description": "GET /daily-needs-gatein/gate-entries/daily-need/categories/ — daily needs gatein gate entries daily need categories.",
+      "method": "GET",
+      "path": "/daily-needs-gatein/gate-entries/daily-need/categories/",
+      "params": []
+    },
+    {
+      "name": "dashboards_inventory-age-filter-options",
+      "description": "GET /dashboards/inventory-age/filter-options/ — dashboards inventory age filter options.",
+      "method": "GET",
+      "path": "/dashboards/inventory-age/filter-options/",
+      "params": []
+    },
+    {
+      "name": "dashboards_inventory-age-report",
+      "description": "GET /dashboards/inventory-age/report/ — dashboards inventory age report.",
+      "method": "GET",
+      "path": "/dashboards/inventory-age/report/",
+      "params": []
+    },
+    {
+      "name": "dashboards_sales-planning-requirement-analysis",
+      "description": "GET /dashboards/sales-planning-requirement/analysis/ — dashboards sales planning requirement analysis.",
+      "method": "GET",
+      "path": "/dashboards/sales-planning-requirement/analysis/",
+      "params": []
+    },
+    {
+      "name": "dashboards_sales-planning-requirement-report",
+      "description": "GET /dashboards/sales-planning-requirement/report/ — dashboards sales planning requirement report.",
+      "method": "GET",
+      "path": "/dashboards/sales-planning-requirement/report/",
+      "params": []
+    },
+    {
+      "name": "dashboards_sales-planning-requirement-status",
+      "description": "GET /dashboards/sales-planning-requirement/status/ — dashboards sales planning requirement status.",
+      "method": "GET",
+      "path": "/dashboards/sales-planning-requirement/status/",
+      "params": []
+    },
+    {
+      "name": "dashboards_stock",
+      "description": "GET /dashboards/stock/ — dashboards stock.",
+      "method": "GET",
+      "path": "/dashboards/stock/",
+      "params": []
+    },
+    {
+      "name": "dashboards_stock-as-of",
+      "description": "GET /dashboards/stock/as-of/ — stock snapshot as of a date. Required: as_of_date.",
+      "method": "GET",
+      "path": "/dashboards/stock/as-of/",
+      "params": [
+        {
+          "name": "as_of_date",
+          "type": "string",
+          "location": "query",
+          "description": "Snapshot date (YYYY-MM-DD), required by the view",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dispatch_bilty-grpo-history",
+      "description": "GET /dispatch/bilty-grpo/history/ — dispatch bilty grpo history.",
+      "method": "GET",
+      "path": "/dispatch/bilty-grpo/history/",
+      "params": []
+    },
+    {
+      "name": "dispatch_bilty-grpo-options",
+      "description": "GET /dispatch/bilty-grpo/options/ — dispatch bilty grpo options.",
+      "method": "GET",
+      "path": "/dispatch/bilty-grpo/options/",
+      "params": []
+    },
+    {
+      "name": "dispatch_bilty-grpo-pending",
+      "description": "GET /dispatch/bilty-grpo/pending/ — dispatch bilty grpo pending.",
+      "method": "GET",
+      "path": "/dispatch/bilty-grpo/pending/",
+      "params": []
+    },
+    {
+      "name": "dispatch_bilty-grpo-preview",
+      "description": "GET /dispatch/bilty-grpo/preview/{dispatch_plan_id}/ — bilty-GRPO posting preview for a dispatch plan. Required: dispatch_plan_id.",
+      "method": "GET",
+      "path": "/dispatch/bilty-grpo/preview/{dispatch_plan_id}/",
+      "params": [
+        {
+          "name": "dispatch_plan_id",
+          "type": "string",
+          "location": "path",
+          "description": "Dispatch plan ID",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dispatch_open-bilties",
+      "description": "GET /dispatch/open-bilties/ — dispatch open bilties.",
+      "method": "GET",
+      "path": "/dispatch/open-bilties/",
+      "params": []
+    },
+    {
+      "name": "dispatch_transporter-invoices-history",
+      "description": "GET /dispatch/transporter-invoices/history/ — dispatch transporter invoices history.",
+      "method": "GET",
+      "path": "/dispatch/transporter-invoices/history/",
+      "params": []
+    },
+    {
+      "name": "dispatch-plans_bills",
+      "description": "GET /dispatch-plans/bills/ — bills in a date window. Required: date_from, date_to.",
+      "method": "GET",
+      "path": "/dispatch-plans/bills/",
+      "params": [
+        {
+          "name": "date_from",
+          "type": "string",
+          "location": "query",
+          "description": "Window start (YYYY-MM-DD)",
+          "required": true
+        },
+        {
+          "name": "date_to",
+          "type": "string",
+          "location": "query",
+          "description": "Window end (YYYY-MM-DD)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dispatch-plans_pipeline",
+      "description": "GET /dispatch-plans/pipeline/ — dispatch plans pipeline.",
+      "method": "GET",
+      "path": "/dispatch-plans/pipeline/",
+      "params": []
+    },
+    {
+      "name": "docking-admin_partial-scan-requests",
+      "description": "GET /docking-admin/partial-scan-requests/ — docking admin partial scan requests.",
+      "method": "GET",
+      "path": "/docking-admin/partial-scan-requests/",
+      "params": []
+    },
+    {
+      "name": "docking-admin_scan-skip-requests",
+      "description": "GET /docking-admin/scan-skip-requests/ — docking admin scan skip requests.",
+      "method": "GET",
+      "path": "/docking-admin/scan-skip-requests/",
+      "params": []
+    },
+    {
+      "name": "driver-management_drivers",
+      "description": "GET /driver-management/drivers/ — driver management drivers.",
+      "method": "GET",
+      "path": "/driver-management/drivers/",
+      "params": []
+    },
+    {
+      "name": "driver-management_drivers-names",
+      "description": "GET /driver-management/drivers/names/ — driver management drivers names.",
+      "method": "GET",
+      "path": "/driver-management/drivers/names/",
+      "params": []
+    },
+    {
+      "name": "gate-core_arrivals",
+      "description": "GET /gate-core/arrivals/ — gate core arrivals.",
+      "method": "GET",
+      "path": "/gate-core/arrivals/",
+      "params": []
+    },
+    {
+      "name": "gate-core_arrivals-expected",
+      "description": "GET /gate-core/arrivals/expected/ — expected arrival for a vehicle. Required: vehicle_id.",
+      "method": "GET",
+      "path": "/gate-core/arrivals/expected/",
+      "params": [
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "location": "query",
+          "description": "Vehicle ID (required; 400 without it)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "gate-core_bst-ins",
+      "description": "GET /gate-core/bst-ins/ — gate core bst ins.",
+      "method": "GET",
+      "path": "/gate-core/bst-ins/",
+      "params": []
+    },
+    {
+      "name": "gate-core_bst-ins-eligible-outs",
+      "description": "GET /gate-core/bst-ins/eligible-outs/ — gate core bst ins eligible outs.",
+      "method": "GET",
+      "path": "/gate-core/bst-ins/eligible-outs/",
+      "params": []
+    },
+    {
+      "name": "gate-core_bst-outs",
+      "description": "GET /gate-core/bst-outs/ — gate core bst outs.",
+      "method": "GET",
+      "path": "/gate-core/bst-outs/",
+      "params": []
+    },
+    {
+      "name": "gate-core_bst-outs-sap-transfers",
+      "description": "GET /gate-core/bst-outs/sap-transfers/ — gate core bst outs sap transfers.",
+      "method": "GET",
+      "path": "/gate-core/bst-outs/sap-transfers/",
+      "params": []
+    },
+    {
+      "name": "gate-core_bst-returns",
+      "description": "GET /gate-core/bst-returns/ — gate core bst returns.",
+      "method": "GET",
+      "path": "/gate-core/bst-returns/",
+      "params": []
+    },
+    {
+      "name": "gate-core_bst-returns-eligible-outs",
+      "description": "GET /gate-core/bst-returns/eligible-outs/ — gate core bst returns eligible outs.",
+      "method": "GET",
+      "path": "/gate-core/bst-returns/eligible-outs/",
+      "params": []
+    },
+    {
+      "name": "gate-core_empty-vehicle-ins",
+      "description": "GET /gate-core/empty-vehicle-ins/ — gate core empty vehicle ins.",
+      "method": "GET",
+      "path": "/gate-core/empty-vehicle-ins/",
+      "params": []
+    },
+    {
+      "name": "gate-core_empty-vehicle-ins-eligible",
+      "description": "GET /gate-core/empty-vehicle-ins/eligible/ — gate core empty vehicle ins eligible.",
+      "method": "GET",
+      "path": "/gate-core/empty-vehicle-ins/eligible/",
+      "params": []
+    },
+    {
+      "name": "gate-core_empty-vehicle-ins-reasons",
+      "description": "GET /gate-core/empty-vehicle-ins/reasons/ — gate core empty vehicle ins reasons.",
+      "method": "GET",
+      "path": "/gate-core/empty-vehicle-ins/reasons/",
+      "params": []
+    },
+    {
+      "name": "gate-core_empty-vehicle-outs",
+      "description": "GET /gate-core/empty-vehicle-outs/ — gate core empty vehicle outs.",
+      "method": "GET",
+      "path": "/gate-core/empty-vehicle-outs/",
+      "params": []
+    },
+    {
+      "name": "gate-core_empty-vehicle-outs-eligible-entries",
+      "description": "GET /gate-core/empty-vehicle-outs/eligible-entries/ — gate core empty vehicle outs eligible entries.",
+      "method": "GET",
+      "path": "/gate-core/empty-vehicle-outs/eligible-entries/",
+      "params": []
+    },
+    {
+      "name": "gate-core_job-work",
+      "description": "GET /gate-core/job-work/ — gate core job work.",
+      "method": "GET",
+      "path": "/gate-core/job-work/",
+      "params": []
+    },
+    {
+      "name": "gate-core_job-work-sap-grpos",
+      "description": "GET /gate-core/job-work/sap-grpos/ — gate core job work sap grpos.",
+      "method": "GET",
+      "path": "/gate-core/job-work/sap-grpos/",
+      "params": []
+    },
+    {
+      "name": "gate-core_job-work-sap-production-orders",
+      "description": "GET /gate-core/job-work/sap-production-orders/ — gate core job work sap production orders.",
+      "method": "GET",
+      "path": "/gate-core/job-work/sap-production-orders/",
+      "params": []
+    },
+    {
+      "name": "gate-core_rejected-qc-returns",
+      "description": "GET /gate-core/rejected-qc-returns/ — gate core rejected qc returns.",
+      "method": "GET",
+      "path": "/gate-core/rejected-qc-returns/",
+      "params": []
+    },
+    {
+      "name": "gate-core_sales-dispatch",
+      "description": "GET /gate-core/sales-dispatch/ — gate core sales dispatch.",
+      "method": "GET",
+      "path": "/gate-core/sales-dispatch/",
+      "params": []
+    },
+    {
+      "name": "gate-core_sales-dispatch-documents",
+      "description": "GET /gate-core/sales-dispatch/documents/ — gate core sales dispatch documents.",
+      "method": "GET",
+      "path": "/gate-core/sales-dispatch/documents/",
+      "params": []
+    },
+    {
+      "name": "gate-core_sales-dispatch-lock",
+      "description": "GET /gate-core/sales-dispatch/lock/ — gate core sales dispatch lock.",
+      "method": "GET",
+      "path": "/gate-core/sales-dispatch/lock/",
+      "params": []
+    },
+    {
+      "name": "gate-core_sales-dispatch-pending-bookings",
+      "description": "GET /gate-core/sales-dispatch/pending-bookings/ — gate core sales dispatch pending bookings.",
+      "method": "GET",
+      "path": "/gate-core/sales-dispatch/pending-bookings/",
+      "params": []
+    },
+    {
+      "name": "gate-core_sales-dispatch-reports",
+      "description": "GET /gate-core/sales-dispatch/reports/ — gate core sales dispatch reports.",
+      "method": "GET",
+      "path": "/gate-core/sales-dispatch/reports/",
+      "params": []
+    },
+    {
+      "name": "grpo_all-entries",
+      "description": "GET /grpo/all-entries/ — grpo all entries.",
+      "method": "GET",
+      "path": "/grpo/all-entries/",
+      "params": []
+    },
+    {
+      "name": "grpo_history",
+      "description": "GET /grpo/history/ — grpo history.",
+      "method": "GET",
+      "path": "/grpo/history/",
+      "params": []
+    },
+    {
+      "name": "grpo_history-detail",
+      "description": "GET /grpo/history/{posting_id}/ — a posted material GRPO. Required: posting_id.",
+      "method": "GET",
+      "path": "/grpo/history/{posting_id}/",
+      "params": [
+        {
+          "name": "posting_id",
+          "type": "string",
+          "location": "path",
+          "description": "Posting ID",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "grpo_pending",
+      "description": "GET /grpo/pending/ — grpo pending.",
+      "method": "GET",
+      "path": "/grpo/pending/",
+      "params": []
+    },
+    {
+      "name": "grpo_preview",
+      "description": "GET /grpo/preview/{vehicle_entry_id}/ — GRPO preview for a vehicle entry. Required: vehicle_entry_id.",
+      "method": "GET",
+      "path": "/grpo/preview/{vehicle_entry_id}/",
+      "params": [
+        {
+          "name": "vehicle_entry_id",
+          "type": "string",
+          "location": "path",
+          "description": "Vehicle entry ID",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "grpo_service-history",
+      "description": "GET /grpo/service/history/ — grpo service history.",
+      "method": "GET",
+      "path": "/grpo/service/history/",
+      "params": []
+    },
+    {
+      "name": "grpo_service-history-detail",
+      "description": "GET /grpo/service/history/{posting_id}/ — a posted service GRPO. Required: posting_id.",
+      "method": "GET",
+      "path": "/grpo/service/history/{posting_id}/",
+      "params": [
+        {
+          "name": "posting_id",
+          "type": "string",
+          "location": "path",
+          "description": "Posting ID",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "grpo_service-options",
+      "description": "GET /grpo/service/options/ — grpo service options.",
+      "method": "GET",
+      "path": "/grpo/service/options/",
+      "params": []
+    },
+    {
+      "name": "grpo_service-pending",
+      "description": "GET /grpo/service/pending/ — grpo service pending.",
+      "method": "GET",
+      "path": "/grpo/service/pending/",
+      "params": []
+    },
+    {
+      "name": "grpo_service-preview",
+      "description": "GET /grpo/service/preview/{dispatch_plan_id}/ — service-GRPO preview for a dispatch plan. Required: dispatch_plan_id.",
+      "method": "GET",
+      "path": "/grpo/service/preview/{dispatch_plan_id}/",
+      "params": [
+        {
+          "name": "dispatch_plan_id",
+          "type": "string",
+          "location": "path",
+          "description": "Dispatch plan ID",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "grpo_summary",
+      "description": "GET /grpo/summary/ — grpo summary.",
+      "method": "GET",
+      "path": "/grpo/summary/",
+      "params": []
+    },
+    {
+      "name": "maintenance_alerts",
+      "description": "GET /maintenance/alerts/ — maintenance alerts.",
+      "method": "GET",
+      "path": "/maintenance/alerts/",
+      "params": []
+    },
+    {
+      "name": "maintenance_asset-categories",
+      "description": "GET /maintenance/asset-categories/ — maintenance asset categories.",
+      "method": "GET",
+      "path": "/maintenance/asset-categories/",
+      "params": []
+    },
+    {
+      "name": "maintenance_asset-departments",
+      "description": "GET /maintenance/asset-departments/ — maintenance asset departments.",
+      "method": "GET",
+      "path": "/maintenance/asset-departments/",
+      "params": []
+    },
+    {
+      "name": "maintenance_asset-documents",
+      "description": "GET /maintenance/asset-documents/ — maintenance asset documents.",
+      "method": "GET",
+      "path": "/maintenance/asset-documents/",
+      "params": []
+    },
+    {
+      "name": "maintenance_asset-locations",
+      "description": "GET /maintenance/asset-locations/ — maintenance asset locations.",
+      "method": "GET",
+      "path": "/maintenance/asset-locations/",
+      "params": []
+    },
+    {
+      "name": "maintenance_asset-photos",
+      "description": "GET /maintenance/asset-photos/ — maintenance asset photos.",
+      "method": "GET",
+      "path": "/maintenance/asset-photos/",
+      "params": []
+    },
+    {
+      "name": "maintenance_assets",
+      "description": "GET /maintenance/assets/ — maintenance assets.",
+      "method": "GET",
+      "path": "/maintenance/assets/",
+      "params": []
+    },
+    {
+      "name": "maintenance_dashboard",
+      "description": "GET /maintenance/dashboard/ — maintenance dashboard.",
+      "method": "GET",
+      "path": "/maintenance/dashboard/",
+      "params": []
+    },
+    {
+      "name": "maintenance_options",
+      "description": "GET /maintenance/options/ — maintenance options.",
+      "method": "GET",
+      "path": "/maintenance/options/",
+      "params": []
+    },
+    {
+      "name": "maintenance_pm-checklist-items",
+      "description": "GET /maintenance/pm-checklist-items/ — maintenance pm checklist items.",
+      "method": "GET",
+      "path": "/maintenance/pm-checklist-items/",
+      "params": []
+    },
+    {
+      "name": "maintenance_pm-executions",
+      "description": "GET /maintenance/pm-executions/ — maintenance pm executions.",
+      "method": "GET",
+      "path": "/maintenance/pm-executions/",
+      "params": []
+    },
+    {
+      "name": "maintenance_pm-plans",
+      "description": "GET /maintenance/pm-plans/ — maintenance pm plans.",
+      "method": "GET",
+      "path": "/maintenance/pm-plans/",
+      "params": []
+    },
+    {
+      "name": "maintenance_reports",
+      "description": "GET /maintenance/reports/ — maintenance reports.",
+      "method": "GET",
+      "path": "/maintenance/reports/",
+      "params": []
+    },
+    {
+      "name": "maintenance_scan-lookup",
+      "description": "GET /maintenance/scan/lookup/ — asset/spare scan lookup. Required: q.",
+      "method": "GET",
+      "path": "/maintenance/scan/lookup/",
+      "params": [
+        {
+          "name": "q",
+          "type": "string",
+          "location": "query",
+          "description": "Scan query (required)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "maintenance_spare-categories",
+      "description": "GET /maintenance/spare-categories/ — maintenance spare categories.",
+      "method": "GET",
+      "path": "/maintenance/spare-categories/",
+      "params": []
+    },
+    {
+      "name": "maintenance_spare-movements",
+      "description": "GET /maintenance/spare-movements/ — maintenance spare movements.",
+      "method": "GET",
+      "path": "/maintenance/spare-movements/",
+      "params": []
+    },
+    {
+      "name": "maintenance_spare-requests",
+      "description": "GET /maintenance/spare-requests/ — maintenance spare requests.",
+      "method": "GET",
+      "path": "/maintenance/spare-requests/",
+      "params": []
+    },
+    {
+      "name": "maintenance_spares",
+      "description": "GET /maintenance/spares/ — maintenance spares.",
+      "method": "GET",
+      "path": "/maintenance/spares/",
+      "params": []
+    },
+    {
+      "name": "maintenance_spares-low-stock",
+      "description": "GET /maintenance/spares/low-stock/ — maintenance spares low stock.",
+      "method": "GET",
+      "path": "/maintenance/spares/low-stock/",
+      "params": []
+    },
+    {
+      "name": "maintenance_spares-stock",
+      "description": "GET /maintenance/spares/stock/ — spare stock lookup by code. Required: code.",
+      "method": "GET",
+      "path": "/maintenance/spares/stock/",
+      "params": [
+        {
+          "name": "code",
+          "type": "string",
+          "location": "query",
+          "description": "Spare part code (required; 404 without it)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "maintenance_vendor-visits",
+      "description": "GET /maintenance/vendor-visits/ — maintenance vendor visits.",
+      "method": "GET",
+      "path": "/maintenance/vendor-visits/",
+      "params": []
+    },
+    {
+      "name": "maintenance_work-order-photos",
+      "description": "GET /maintenance/work-order-photos/ — maintenance work order photos.",
+      "method": "GET",
+      "path": "/maintenance/work-order-photos/",
+      "params": []
+    },
+    {
+      "name": "maintenance_work-orders",
+      "description": "GET /maintenance/work-orders/ — maintenance work orders.",
+      "method": "GET",
+      "path": "/maintenance/work-orders/",
+      "params": []
+    },
+    {
+      "name": "non-moving-rm_item-groups",
+      "description": "GET /non-moving-rm/item-groups/ — non moving rm item groups.",
+      "method": "GET",
+      "path": "/non-moving-rm/item-groups/",
+      "params": []
+    },
+    {
+      "name": "non-moving-rm_report",
+      "description": "GET /non-moving-rm/report/ — non-moving raw-material report (replaces the dead bare endpoint). Required: age.",
+      "method": "GET",
+      "path": "/non-moving-rm/report/",
+      "params": [
+        {
+          "name": "age",
+          "type": "int",
+          "location": "query",
+          "description": "Minimum age in days (required; 400 without it)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "notifications_list",
+      "description": "GET /notifications/ — notifications.",
+      "method": "GET",
+      "path": "/notifications/",
+      "params": []
+    },
+    {
+      "name": "notifications_preferences",
+      "description": "GET /notifications/preferences/ — notifications preferences.",
+      "method": "GET",
+      "path": "/notifications/preferences/",
+      "params": []
+    },
+    {
+      "name": "notifications_unread-count",
+      "description": "GET /notifications/unread-count/ — notifications unread count.",
+      "method": "GET",
+      "path": "/notifications/unread-count/",
+      "params": []
+    },
+    {
+      "name": "person-gatein_contractors",
+      "description": "GET /person-gatein/contractors/ — contractor master.",
+      "method": "GET",
+      "path": "/person-gatein/contractors/",
+      "params": []
+    },
+    {
+      "name": "person-gatein_entries",
+      "description": "GET /person-gatein/entries/ — person gate-in entries (paginated).",
+      "method": "GET",
+      "path": "/person-gatein/entries/",
+      "params": []
+    },
+    {
+      "name": "person-gatein_gates",
+      "description": "GET /person-gatein/gates/ — gate master.",
+      "method": "GET",
+      "path": "/person-gatein/gates/",
+      "params": []
+    },
+    {
+      "name": "person-gatein_labours",
+      "description": "GET /person-gatein/labours/ — labour master.",
+      "method": "GET",
+      "path": "/person-gatein/labours/",
+      "params": []
+    },
+    {
+      "name": "person-gatein_person-types",
+      "description": "GET /person-gatein/person-types/ — person type master.",
+      "method": "GET",
+      "path": "/person-gatein/person-types/",
+      "params": []
+    },
+    {
+      "name": "person-gatein_visitors",
+      "description": "GET /person-gatein/visitors/ — visitor master.",
+      "method": "GET",
+      "path": "/person-gatein/visitors/",
+      "params": []
+    },
+    {
+      "name": "po_vendors",
+      "description": "GET /po/vendors/ — po vendors.",
+      "method": "GET",
+      "path": "/po/vendors/",
+      "params": []
+    },
+    {
+      "name": "po_warehouses",
+      "description": "GET /po/warehouses/ — po warehouses.",
+      "method": "GET",
+      "path": "/po/warehouses/",
+      "params": []
+    },
+    {
+      "name": "production-execution_breakdown-categories",
+      "description": "GET /production-execution/breakdown-categories/ — production execution breakdown categories.",
+      "method": "GET",
+      "path": "/production-execution/breakdown-categories/",
+      "params": []
+    },
+    {
+      "name": "production-execution_checklist-templates",
+      "description": "GET /production-execution/checklist-templates/ — production execution checklist templates.",
+      "method": "GET",
+      "path": "/production-execution/checklist-templates/",
+      "params": []
+    },
+    {
+      "name": "production-execution_costs-analytics",
+      "description": "GET /production-execution/costs/analytics/ — production execution costs analytics.",
+      "method": "GET",
+      "path": "/production-execution/costs/analytics/",
+      "params": []
+    },
+    {
+      "name": "production-execution_line-clearance",
+      "description": "GET /production-execution/line-clearance/ — production execution line clearance.",
+      "method": "GET",
+      "path": "/production-execution/line-clearance/",
+      "params": []
+    },
+    {
+      "name": "production-execution_line-configs",
+      "description": "GET /production-execution/line-configs/ — production execution line configs.",
+      "method": "GET",
+      "path": "/production-execution/line-configs/",
+      "params": []
+    },
+    {
+      "name": "production-execution_line-configs-auto-fill",
+      "description": "GET /production-execution/line-configs/auto-fill/ — auto-fill config for a production line. Required: line_id.",
+      "method": "GET",
+      "path": "/production-execution/line-configs/auto-fill/",
+      "params": [
+        {
+          "name": "line_id",
+          "type": "int",
+          "location": "query",
+          "description": "Production line ID",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "production-execution_lines",
+      "description": "GET /production-execution/lines/ — production execution lines.",
+      "method": "GET",
+      "path": "/production-execution/lines/",
+      "params": []
+    },
+    {
+      "name": "production-execution_machine-checklists",
+      "description": "GET /production-execution/machine-checklists/ — production execution machine checklists.",
+      "method": "GET",
+      "path": "/production-execution/machine-checklists/",
+      "params": []
+    },
+    {
+      "name": "production-execution_machines",
+      "description": "GET /production-execution/machines/ — production execution machines.",
+      "method": "GET",
+      "path": "/production-execution/machines/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics",
+      "description": "GET /production-execution/reports/analytics/ — production execution reports analytics.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-cost-analysis",
+      "description": "GET /production-execution/reports/analytics/cost-analysis/ — production execution reports analytics cost analysis.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/cost-analysis/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-downtime",
+      "description": "GET /production-execution/reports/analytics/downtime/ — production execution reports analytics downtime.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/downtime/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-downtime-pareto",
+      "description": "GET /production-execution/reports/analytics/downtime-pareto/ — production execution reports analytics downtime pareto.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/downtime-pareto/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-monthly-summary",
+      "description": "GET /production-execution/reports/analytics/monthly-summary/ — production execution reports analytics monthly summary.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/monthly-summary/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-oee",
+      "description": "GET /production-execution/reports/analytics/oee/ — production execution reports analytics oee.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/oee/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-oee-trend",
+      "description": "GET /production-execution/reports/analytics/oee-trend/ — production execution reports analytics oee trend.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/oee-trend/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-plan-vs-production",
+      "description": "GET /production-execution/reports/analytics/plan-vs-production/ — production execution reports analytics plan vs production.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/plan-vs-production/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-procurement-vs-planned",
+      "description": "GET /production-execution/reports/analytics/procurement-vs-planned/ — procurement fulfillment vs plan for a SAP order. Required: sap_doc_entry.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/procurement-vs-planned/",
+      "params": [
+        {
+          "name": "sap_doc_entry",
+          "type": "int",
+          "location": "query",
+          "description": "SAP document entry number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "production-execution_reports-analytics-resource-consumption",
+      "description": "GET /production-execution/reports/analytics/resource-consumption/ — production execution reports analytics resource consumption.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/resource-consumption/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-waste",
+      "description": "GET /production-execution/reports/analytics/waste/ — production execution reports analytics waste.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/waste/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-analytics-waste-trend",
+      "description": "GET /production-execution/reports/analytics/waste-trend/ — production execution reports analytics waste trend.",
+      "method": "GET",
+      "path": "/production-execution/reports/analytics/waste-trend/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-daily-production",
+      "description": "GET /production-execution/reports/daily-production/ — daily production report. Required: date.",
+      "method": "GET",
+      "path": "/production-execution/reports/daily-production/",
+      "params": [
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "Report date (YYYY-MM-DD)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "production-execution_reports-line-clearance",
+      "description": "GET /production-execution/reports/line-clearance/ — production execution reports line clearance.",
+      "method": "GET",
+      "path": "/production-execution/reports/line-clearance/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-production-movement",
+      "description": "GET /production-execution/reports/production-movement/ — production execution reports production movement.",
+      "method": "GET",
+      "path": "/production-execution/reports/production-movement/",
+      "params": []
+    },
+    {
+      "name": "production-execution_reports-production-movement-filter-options",
+      "description": "GET /production-execution/reports/production-movement/filter-options/ — production execution reports production movement filter options.",
+      "method": "GET",
+      "path": "/production-execution/reports/production-movement/filter-options/",
+      "params": []
+    },
+    {
+      "name": "production-execution_runs",
+      "description": "GET /production-execution/runs/ — production execution runs.",
+      "method": "GET",
+      "path": "/production-execution/runs/",
+      "params": []
+    },
+    {
+      "name": "production-execution_sap-bom",
+      "description": "GET /production-execution/sap/bom/ — bill of materials for an item. Required: item_code.",
+      "method": "GET",
+      "path": "/production-execution/sap/bom/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP item code (e.g. FG0000085)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "production-execution_sap-items",
+      "description": "GET /production-execution/sap/items/ — production execution sap items.",
+      "method": "GET",
+      "path": "/production-execution/sap/items/",
+      "params": []
+    },
+    {
+      "name": "production-execution_sap-orders",
+      "description": "GET /production-execution/sap/orders/ — production execution sap orders.",
+      "method": "GET",
+      "path": "/production-execution/sap/orders/",
+      "params": []
+    },
+    {
+      "name": "production-execution_waste",
+      "description": "GET /production-execution/waste/ — production execution waste.",
+      "method": "GET",
+      "path": "/production-execution/waste/",
+      "params": []
+    },
+    {
+      "name": "quality-control_arrival-slips",
+      "description": "GET /quality-control/arrival-slips/ — quality control arrival slips.",
+      "method": "GET",
+      "path": "/quality-control/arrival-slips/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections",
+      "description": "GET /quality-control/inspections/ — quality control inspections.",
+      "method": "GET",
+      "path": "/quality-control/inspections/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-actionable",
+      "description": "GET /quality-control/inspections/actionable/ — quality control inspections actionable.",
+      "method": "GET",
+      "path": "/quality-control/inspections/actionable/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-awaiting-chemist",
+      "description": "GET /quality-control/inspections/awaiting-chemist/ — quality control inspections awaiting chemist.",
+      "method": "GET",
+      "path": "/quality-control/inspections/awaiting-chemist/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-awaiting-qam",
+      "description": "GET /quality-control/inspections/awaiting-qam/ — quality control inspections awaiting qam.",
+      "method": "GET",
+      "path": "/quality-control/inspections/awaiting-qam/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-completed",
+      "description": "GET /quality-control/inspections/completed/ — quality control inspections completed.",
+      "method": "GET",
+      "path": "/quality-control/inspections/completed/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-counts",
+      "description": "GET /quality-control/inspections/counts/ — quality control inspections counts.",
+      "method": "GET",
+      "path": "/quality-control/inspections/counts/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-draft",
+      "description": "GET /quality-control/inspections/draft/ — quality control inspections draft.",
+      "method": "GET",
+      "path": "/quality-control/inspections/draft/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-pending",
+      "description": "GET /quality-control/inspections/pending/ — quality control inspections pending.",
+      "method": "GET",
+      "path": "/quality-control/inspections/pending/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-rejected",
+      "description": "GET /quality-control/inspections/rejected/ — quality control inspections rejected.",
+      "method": "GET",
+      "path": "/quality-control/inspections/rejected/",
+      "params": []
+    },
+    {
+      "name": "quality-control_inspections-return-to-vendor",
+      "description": "GET /quality-control/inspections/return-to-vendor/ — quality control inspections return to vendor.",
+      "method": "GET",
+      "path": "/quality-control/inspections/return-to-vendor/",
+      "params": []
+    },
+    {
+      "name": "quality-control_material-types",
+      "description": "GET /quality-control/material-types/ — quality control material types.",
+      "method": "GET",
+      "path": "/quality-control/material-types/",
+      "params": []
+    },
+    {
+      "name": "quality-control_print-documents",
+      "description": "GET /quality-control/print-documents/ — quality control print documents.",
+      "method": "GET",
+      "path": "/quality-control/print-documents/",
+      "params": []
+    },
+    {
+      "name": "quality-control_production-qc",
+      "description": "GET /quality-control/production-qc/ — quality control production qc.",
+      "method": "GET",
+      "path": "/quality-control/production-qc/",
+      "params": []
+    },
+    {
+      "name": "quality-control_production-qc-counts",
+      "description": "GET /quality-control/production-qc/counts/ — quality control production qc counts.",
+      "method": "GET",
+      "path": "/quality-control/production-qc/counts/",
+      "params": []
+    },
+    {
+      "name": "quality-control_production-qc-pending",
+      "description": "GET /quality-control/production-qc/pending/ — quality control production qc pending.",
+      "method": "GET",
+      "path": "/quality-control/production-qc/pending/",
+      "params": []
+    },
+    {
+      "name": "quality-control_sap-items",
+      "description": "GET /quality-control/sap-items/ — quality control sap items.",
+      "method": "GET",
+      "path": "/quality-control/sap-items/",
+      "params": []
+    },
+    {
+      "name": "sap_plan-dashboard-details",
+      "description": "GET /sap/plan-dashboard/details/ — sap plan dashboard details.",
+      "method": "GET",
+      "path": "/sap/plan-dashboard/details/",
+      "params": []
+    },
+    {
+      "name": "sap_plan-dashboard-procurement",
+      "description": "GET /sap/plan-dashboard/procurement/ — sap plan dashboard procurement.",
+      "method": "GET",
+      "path": "/sap/plan-dashboard/procurement/",
+      "params": []
+    },
+    {
+      "name": "sap_plan-dashboard-summary",
+      "description": "GET /sap/plan-dashboard/summary/ — sap plan dashboard summary.",
+      "method": "GET",
+      "path": "/sap/plan-dashboard/summary/",
+      "params": []
+    },
+    {
+      "name": "vehicle-management_transporters",
+      "description": "GET /vehicle-management/transporters/ — vehicle management transporters.",
+      "method": "GET",
+      "path": "/vehicle-management/transporters/",
+      "params": []
+    },
+    {
+      "name": "vehicle-management_transporters-names",
+      "description": "GET /vehicle-management/transporters/names/ — vehicle management transporters names.",
+      "method": "GET",
+      "path": "/vehicle-management/transporters/names/",
+      "params": []
+    },
+    {
+      "name": "vehicle-management_vehicle-entries",
+      "description": "GET /vehicle-management/vehicle-entries/ — vehicle entries in a window. Required: entry_type, from_date, to_date.",
+      "method": "GET",
+      "path": "/vehicle-management/vehicle-entries/",
+      "params": [
+        {
+          "name": "entry_type",
+          "type": "string",
+          "location": "query",
+          "description": "Entry type (e.g. RAW_MATERIAL, EMPTY_VEHICLE, JOB_WORK)",
+          "required": true
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window start (YYYY-MM-DD)",
+          "required": true
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window end (YYYY-MM-DD)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "vehicle-management_vehicle-entries-count",
+      "description": "GET /vehicle-management/vehicle-entries/count/ — vehicle entry counts in a window. Required: entry_type, from_date, to_date.",
+      "method": "GET",
+      "path": "/vehicle-management/vehicle-entries/count/",
+      "params": [
+        {
+          "name": "entry_type",
+          "type": "string",
+          "location": "query",
+          "description": "Entry type",
+          "required": true
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window start (YYYY-MM-DD)",
+          "required": true
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window end (YYYY-MM-DD)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "vehicle-management_vehicle-entries-list-by-status",
+      "description": "GET /vehicle-management/vehicle-entries/list-by-status/ — vehicle entries grouped by status. Required: entry_type. Optional: from_date, to_date.",
+      "method": "GET",
+      "path": "/vehicle-management/vehicle-entries/list-by-status/",
+      "params": [
+        {
+          "name": "entry_type",
+          "type": "string",
+          "location": "query",
+          "description": "Entry type",
+          "required": true
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window start (YYYY-MM-DD)"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window end (YYYY-MM-DD)"
+        }
+      ]
+    },
+    {
+      "name": "vehicle-management_vehicle-types",
+      "description": "GET /vehicle-management/vehicle-types/ — vehicle management vehicle types.",
+      "method": "GET",
+      "path": "/vehicle-management/vehicle-types/",
+      "params": []
+    },
+    {
+      "name": "vehicle-management_vehicles",
+      "description": "GET /vehicle-management/vehicles/ — vehicle management vehicles.",
+      "method": "GET",
+      "path": "/vehicle-management/vehicles/",
+      "params": []
+    },
+    {
+      "name": "vehicle-management_vehicles-names",
+      "description": "GET /vehicle-management/vehicles/names/ — vehicle management vehicles names.",
+      "method": "GET",
+      "path": "/vehicle-management/vehicles/names/",
+      "params": []
+    },
+    {
+      "name": "warehouse_bom-requests",
+      "description": "GET /warehouse/bom-requests/ — warehouse bom requests.",
+      "method": "GET",
+      "path": "/warehouse/bom-requests/",
+      "params": []
+    },
+    {
+      "name": "warehouse_fg-receipts",
+      "description": "GET /warehouse/fg-receipts/ — warehouse fg receipts.",
+      "method": "GET",
+      "path": "/warehouse/fg-receipts/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-batches-expiry",
+      "description": "GET /warehouse/wms/batches/expiry/ — warehouse wms batches expiry.",
+      "method": "GET",
+      "path": "/warehouse/wms/batches/expiry/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-billing-overview",
+      "description": "GET /warehouse/wms/billing/overview/ — warehouse wms billing overview.",
+      "method": "GET",
+      "path": "/warehouse/wms/billing/overview/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-dashboard",
+      "description": "GET /warehouse/wms/dashboard/ — warehouse wms dashboard.",
+      "method": "GET",
+      "path": "/warehouse/wms/dashboard/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-item-groups",
+      "description": "GET /warehouse/wms/item-groups/ — warehouse wms item groups.",
+      "method": "GET",
+      "path": "/warehouse/wms/item-groups/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-sales-orders-backlog",
+      "description": "GET /warehouse/wms/sales-orders/backlog/ — warehouse wms sales orders backlog.",
+      "method": "GET",
+      "path": "/warehouse/wms/sales-orders/backlog/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-stock-movements",
+      "description": "GET /warehouse/wms/stock/movements/ — warehouse wms stock movements.",
+      "method": "GET",
+      "path": "/warehouse/wms/stock/movements/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-stock-overview",
+      "description": "GET /warehouse/wms/stock/overview/ — warehouse wms stock overview.",
+      "method": "GET",
+      "path": "/warehouse/wms/stock/overview/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-transfers-overview",
+      "description": "GET /warehouse/wms/transfers/overview/ — warehouse wms transfers overview.",
+      "method": "GET",
+      "path": "/warehouse/wms/transfers/overview/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-warehouses",
+      "description": "GET /warehouse/wms/warehouses/ — warehouse wms warehouses.",
+      "method": "GET",
+      "path": "/warehouse/wms/warehouses/",
+      "params": []
+    },
+    {
+      "name": "warehouse_wms-warehouses-summary",
+      "description": "GET /warehouse/wms/warehouses/summary/ — warehouse wms warehouses summary.",
+      "method": "GET",
+      "path": "/warehouse/wms/warehouses/summary/",
+      "params": []
+    }
+  ]
+}

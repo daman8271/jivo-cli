@@ -1,0 +1,777 @@
+{
+  "api_name": "oms",
+  "base_url": "https://oms.jivo.in",
+  "description": "JIVO OMS (Order Management System) CLI — READ-ONLY. Orders, quotations, schemes, approvals, party \u0026 product assignments, SAP Business One sync, SAP HANA live stock, invoices/SKU, and the invoice tracker at oms.jivo.in. Every command is a GET; no mutating endpoint is wrapped.",
+  "mcp_ready": "full",
+  "http_transport": "standard",
+  "mcp": {
+    "endpoint_tools": "hidden",
+    "orchestration": "code"
+  },
+  "auth": {
+    "type": "bearer_token",
+    "header": "Authorization",
+    "format": "Bearer {OMS_TOKEN}",
+    "env_vars": [
+      "OMS_TOKEN"
+    ],
+    "env_var_specs": [
+      {
+        "name": "OMS_TOKEN",
+        "kind": "per_call",
+        "required": true,
+        "sensitive": true,
+        "inferred": true
+      }
+    ]
+  },
+  "required_headers": [],
+  "tools": [
+    {
+      "name": "account_categories",
+      "description": "List product categories (e.g. OIL).",
+      "method": "GET",
+      "path": "/api/auth/categories/",
+      "params": []
+    },
+    {
+      "name": "account_companies",
+      "description": "List companies (Jivo Mart, Jivo Wellness).",
+      "method": "GET",
+      "path": "/api/auth/companies/",
+      "params": []
+    },
+    {
+      "name": "account_main-groups",
+      "description": "List main groups (ROI, GT, MT, BRANCH, ...).",
+      "method": "GET",
+      "path": "/api/auth/mainGroup/",
+      "params": []
+    },
+    {
+      "name": "account_party-products",
+      "description": "Products assigned to a party (argument is the SAP card_code, not a numeric id). Required: card_code.",
+      "method": "GET",
+      "path": "/api/auth/parties/{card_code}/products/",
+      "params": [
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "path",
+          "description": "SAP party card code, e.g. CUSTA000596",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "account_profile",
+      "description": "Show the authenticated user (role, company, main groups, states, category, page permissions).",
+      "method": "GET",
+      "path": "/api/auth/profile/",
+      "params": []
+    },
+    {
+      "name": "account_roles",
+      "description": "List roles (admin, auditor, billing, rate approver, manager, etc.).",
+      "method": "GET",
+      "path": "/api/auth/roles/",
+      "params": []
+    },
+    {
+      "name": "account_states",
+      "description": "List states.",
+      "method": "GET",
+      "path": "/api/auth/states/",
+      "params": []
+    },
+    {
+      "name": "account_user-page-permissions",
+      "description": "Page-permission grants for a user. Required: id.",
+      "method": "GET",
+      "path": "/api/auth/users/{id}/page-permissions/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "User id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "account_user-parties",
+      "description": "Parties (customers) assigned to a user. Required: id.",
+      "method": "GET",
+      "path": "/api/auth/users/{id}/parties/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "User id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "account_users",
+      "description": "List app users.",
+      "method": "GET",
+      "path": "/api/auth/users/list/",
+      "params": []
+    },
+    {
+      "name": "dashboard_charts",
+      "description": "Dashboard chart series (visual overview, statewise). Optional: status.",
+      "method": "GET",
+      "path": "/api/orders/dashboardW/charts/",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Optional status filter for the series"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_summary",
+      "description": "Dashboard KPI block (total orders, total sales, completion).",
+      "method": "GET",
+      "path": "/api/orders/dashboardW/",
+      "params": []
+    },
+    {
+      "name": "hana_address",
+      "description": "Addresses for a customer. Requires --card-code. Required: card_code.",
+      "method": "GET",
+      "path": "/api/hana/address/",
+      "params": [
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP card code",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_all-customers",
+      "description": "All customers from SAP HANA.",
+      "method": "GET",
+      "path": "/api/hana/all-customers/",
+      "params": []
+    },
+    {
+      "name": "hana_batch-details",
+      "description": "Batch details for an item in a warehouse. Requires --item-code and --whs-code. Required: item_code, whs_code.",
+      "method": "GET",
+      "path": "/api/hana/batch-details/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP item code",
+          "required": true
+        },
+        {
+          "name": "whs_code",
+          "type": "string",
+          "location": "query",
+          "description": "Warehouse code",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_customer-details",
+      "description": "Customer master detail. Requires --card-code. Required: card_code.",
+      "method": "GET",
+      "path": "/api/hana/customer-details/",
+      "params": [
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP card code",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_fg-items",
+      "description": "Finished-goods items.",
+      "method": "GET",
+      "path": "/api/hana/fg-items/",
+      "params": []
+    },
+    {
+      "name": "hana_freight-masters",
+      "description": "Freight master records.",
+      "method": "GET",
+      "path": "/api/hana/freight-masters/",
+      "params": []
+    },
+    {
+      "name": "hana_inventory-details",
+      "description": "Per-warehouse inventory for an item. Requires --item-code. Required: item_code.",
+      "method": "GET",
+      "path": "/api/hana/inventory-details/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP item code",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_item-price",
+      "description": "Price for an item on a price list. Requires --item-code and --price-list. Required: item_code, price_list.",
+      "method": "GET",
+      "path": "/api/hana/item-price/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP item code",
+          "required": true
+        },
+        {
+          "name": "price_list",
+          "type": "string",
+          "location": "query",
+          "description": "Price list id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_next-doc-number",
+      "description": "Next document number for a document type. Requires --doc-type. Required: doc_type.",
+      "method": "GET",
+      "path": "/api/hana/next-doc-number/",
+      "params": [
+        {
+          "name": "doc_type",
+          "type": "string",
+          "location": "query",
+          "description": "Document type",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_open-parties",
+      "description": "Parties with open transactions.",
+      "method": "GET",
+      "path": "/api/hana/open-parties/",
+      "params": []
+    },
+    {
+      "name": "hana_product-so",
+      "description": "Product sales-order data.",
+      "method": "GET",
+      "path": "/api/hana/product-so/",
+      "params": []
+    },
+    {
+      "name": "hana_product-stock",
+      "description": "Live product stock from SAP HANA.",
+      "method": "GET",
+      "path": "/api/hana/product-stock/",
+      "params": []
+    },
+    {
+      "name": "hana_salesperson-details",
+      "description": "Salesperson detail. Requires --slp-code. Required: slp_code.",
+      "method": "GET",
+      "path": "/api/hana/salesperson-details/",
+      "params": [
+        {
+          "name": "slp_code",
+          "type": "string",
+          "location": "query",
+          "description": "Salesperson code",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_so",
+      "description": "Sales orders.",
+      "method": "GET",
+      "path": "/api/hana/so/",
+      "params": []
+    },
+    {
+      "name": "invoices_all",
+      "description": "Invoice review queue (all invoices). Optionally filter by status. Optional: status.",
+      "method": "GET",
+      "path": "/api/invoice/all/",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Status filter"
+        }
+      ]
+    },
+    {
+      "name": "invoices_history",
+      "description": "Status-history timeline for an invoice. Required: id.",
+      "method": "GET",
+      "path": "/api/invoice/history/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Invoice id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "invoices_sku",
+      "description": "Per-SKU detail. Required: item_code.",
+      "method": "GET",
+      "path": "/api/sku/{item_code}/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "path",
+          "description": "SKU item code",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "invoices_skus",
+      "description": "All SKUs.",
+      "method": "GET",
+      "path": "/api/sku/all/",
+      "params": []
+    },
+    {
+      "name": "invoices_skus-pending",
+      "description": "SKUs pending review.",
+      "method": "GET",
+      "path": "/api/sku/pending/",
+      "params": []
+    },
+    {
+      "name": "orders_addresses",
+      "description": "Bill-to / ship-to addresses for a party. Requires --card-code. Required: card_code. Optional: category.",
+      "method": "GET",
+      "path": "/api/orders/addresses/",
+      "params": [
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP party card code",
+          "required": true
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "Optional category filter"
+        }
+      ]
+    },
+    {
+      "name": "orders_branch",
+      "description": "SAP branch / BPL list.",
+      "method": "GET",
+      "path": "/api/orders/branch/",
+      "params": []
+    },
+    {
+      "name": "orders_by-user",
+      "description": "Orders raised by a specific user (source for View Orders / Order Tracking). Required: user_id.",
+      "method": "GET",
+      "path": "/api/orders/ordersbyuser/{user_id}/",
+      "params": [
+        {
+          "name": "user_id",
+          "type": "int",
+          "location": "path",
+          "description": "User id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "orders_detail",
+      "description": "Full order with line items, addresses, rate approvals, SAP doc number. Required: id.",
+      "method": "GET",
+      "path": "/api/orders/orderdetailsbyid/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Order id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "orders_dispatches",
+      "description": "Dispatch-from locations.",
+      "method": "GET",
+      "path": "/api/orders/dispatches/",
+      "params": []
+    },
+    {
+      "name": "orders_flow-config",
+      "description": "Global order approval-flow configuration.",
+      "method": "GET",
+      "path": "/api/orders/flow-config/",
+      "params": []
+    },
+    {
+      "name": "orders_list",
+      "description": "All orders (admin-wide). Filter by status/stage. Optional: status, billing, approval_pending.",
+      "method": "GET",
+      "path": "/api/orders/list/",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Filter by status code (e.g. BILLING, AUDITOR_APPROVAL)"
+        },
+        {
+          "name": "billing",
+          "type": "bool",
+          "location": "query",
+          "description": "Only billing-stage orders"
+        },
+        {
+          "name": "approval_pending",
+          "type": "bool",
+          "location": "query",
+          "description": "Only approval-pending orders"
+        }
+      ]
+    },
+    {
+      "name": "orders_logs",
+      "description": "Status-change audit trail for an order (drives the tracking timeline). Required: id.",
+      "method": "GET",
+      "path": "/api/orders/{id}/orderlogs/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Order id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "orders_notifications",
+      "description": "Order-status notifications for the current user.",
+      "method": "GET",
+      "path": "/api/orders/notifications/",
+      "params": []
+    },
+    {
+      "name": "orders_parties",
+      "description": "Assigned-party dropdown (card_code -\u003e card_name) for the current user.",
+      "method": "GET",
+      "path": "/api/orders/parties/",
+      "params": []
+    },
+    {
+      "name": "orders_party-flow-config",
+      "description": "Per-party approval-flow configuration.",
+      "method": "GET",
+      "path": "/api/orders/party-flow-config/",
+      "params": []
+    },
+    {
+      "name": "orders_party-products",
+      "description": "Products (with rates) assigned to a party, for the order product selector. Required: card_code.",
+      "method": "GET",
+      "path": "/api/orders/party-products/{card_code}/",
+      "params": [
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "path",
+          "description": "SAP party card code",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "orders_products",
+      "description": "Global product list.",
+      "method": "GET",
+      "path": "/api/orders/products/",
+      "params": []
+    },
+    {
+      "name": "orders_schemes",
+      "description": "Sales schemes / promotions.",
+      "method": "GET",
+      "path": "/api/orders/schemes/",
+      "params": []
+    },
+    {
+      "name": "orders_staff-products",
+      "description": "Staff-assigned products.",
+      "method": "GET",
+      "path": "/api/orders/staff-products/",
+      "params": []
+    },
+    {
+      "name": "orders_status",
+      "description": "Order status master (id -\u003e name).",
+      "method": "GET",
+      "path": "/api/orders/status/",
+      "params": []
+    },
+    {
+      "name": "orders_status-tracking",
+      "description": "Approval queue for a stage. Requires --mode. Required: mode.",
+      "method": "GET",
+      "path": "/api/orders/status-tracking/",
+      "params": [
+        {
+          "name": "mode",
+          "type": "string",
+          "location": "query",
+          "description": "Approval stage",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "orders_stock-check",
+      "description": "Per-order required-qty vs available-stock (legacy view).",
+      "method": "GET",
+      "path": "/api/orders/stock-check/",
+      "params": []
+    },
+    {
+      "name": "quotations_overview",
+      "description": "All quotations with SAP doc numbers and cancellation state.",
+      "method": "GET",
+      "path": "/api/orders/quotation-overview/",
+      "params": []
+    },
+    {
+      "name": "quotations_status",
+      "description": "Open/closed SAP status badges for specific quotations. Optional: order_ids.",
+      "method": "GET",
+      "path": "/api/orders/quotation-status/",
+      "params": [
+        {
+          "name": "order_ids",
+          "type": "string",
+          "location": "query",
+          "description": "Comma-separated order ids, e.g. 1,2,3"
+        }
+      ]
+    },
+    {
+      "name": "sap_addresses",
+      "description": "SAP addresses.",
+      "method": "GET",
+      "path": "/api/sap/addresses/",
+      "params": []
+    },
+    {
+      "name": "sap_branches",
+      "description": "SAP branches.",
+      "method": "GET",
+      "path": "/api/sap/branches/",
+      "params": []
+    },
+    {
+      "name": "sap_logs",
+      "description": "SAP sync history (sync_type, status, records processed/created/updated, duration).",
+      "method": "GET",
+      "path": "/api/sap/logs/",
+      "params": []
+    },
+    {
+      "name": "sap_parties",
+      "description": "SAP parties (business partners).",
+      "method": "GET",
+      "path": "/api/sap/parties/",
+      "params": []
+    },
+    {
+      "name": "sap_party-categories",
+      "description": "SAP parties filtered by category. Optional: category.",
+      "method": "GET",
+      "path": "/api/sap/parties/category/",
+      "params": [
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "Category filter"
+        }
+      ]
+    },
+    {
+      "name": "sap_product-varieties",
+      "description": "SAP product varieties.",
+      "method": "GET",
+      "path": "/api/sap/product-varieties/",
+      "params": []
+    },
+    {
+      "name": "sap_products",
+      "description": "SAP products.",
+      "method": "GET",
+      "path": "/api/sap/products/",
+      "params": []
+    },
+    {
+      "name": "sap_quotation-log",
+      "description": "Per-order SAP quotation push record. Required: id.",
+      "method": "GET",
+      "path": "/api/sap/quotation-log/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Order id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "tracker_admin-lookups",
+      "description": "Tracker admin: lookup set by type. Required: type.",
+      "method": "GET",
+      "path": "/api/tracker/admin/lookups/{type}/",
+      "params": [
+        {
+          "name": "type",
+          "type": "string",
+          "location": "path",
+          "description": "Lookup type",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "tracker_admin-stages",
+      "description": "Tracker admin: stage definitions.",
+      "method": "GET",
+      "path": "/api/tracker/admin/stages/",
+      "params": []
+    },
+    {
+      "name": "tracker_admin-tracker-users",
+      "description": "Tracker admin: tracker-role users.",
+      "method": "GET",
+      "path": "/api/tracker/admin/tracker-users/",
+      "params": []
+    },
+    {
+      "name": "tracker_admin-users",
+      "description": "Tracker admin: users.",
+      "method": "GET",
+      "path": "/api/tracker/admin/users/",
+      "params": []
+    },
+    {
+      "name": "tracker_alerts",
+      "description": "Tracker alerts.",
+      "method": "GET",
+      "path": "/api/tracker/alerts/",
+      "params": []
+    },
+    {
+      "name": "tracker_all-invoices",
+      "description": "All tracker invoices.",
+      "method": "GET",
+      "path": "/api/tracker/all-invoices/",
+      "params": []
+    },
+    {
+      "name": "tracker_all-invoices-export",
+      "description": "Export of all tracker invoices.",
+      "method": "GET",
+      "path": "/api/tracker/all-invoices/export/",
+      "params": []
+    },
+    {
+      "name": "tracker_invoice-detail",
+      "description": "Single tracker invoice. Required: id.",
+      "method": "GET",
+      "path": "/api/tracker/invoices/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "Tracker invoice id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "tracker_invoices",
+      "description": "Tracker invoices.",
+      "method": "GET",
+      "path": "/api/tracker/invoices/",
+      "params": []
+    },
+    {
+      "name": "tracker_lookups",
+      "description": "Tracker lookup reference data.",
+      "method": "GET",
+      "path": "/api/tracker/lookups/",
+      "params": []
+    },
+    {
+      "name": "tracker_my-queue",
+      "description": "Current user's tracker work queue.",
+      "method": "GET",
+      "path": "/api/tracker/my-queue/",
+      "params": []
+    },
+    {
+      "name": "tracker_reports",
+      "description": "Tracker reports.",
+      "method": "GET",
+      "path": "/api/tracker/reports/",
+      "params": []
+    },
+    {
+      "name": "tracker_stage-advanced",
+      "description": "Advanced stage view.",
+      "method": "GET",
+      "path": "/api/tracker/stage-advanced/",
+      "params": []
+    },
+    {
+      "name": "tracker_vendors",
+      "description": "Tracker vendors.",
+      "method": "GET",
+      "path": "/api/tracker/vendors/",
+      "params": []
+    }
+  ]
+}

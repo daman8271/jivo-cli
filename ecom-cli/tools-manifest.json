@@ -1,0 +1,2364 @@
+{
+  "api_name": "jivo-ecom",
+  "base_url": "https://ecom.jivo.in",
+  "description": "JIVO e-commerce \u0026 quick-commerce analytics CLI (ecom.jivo.in) — read-only dashboards, master data, notifications, and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato",
+  "mcp_ready": "full",
+  "http_transport": "standard",
+  "mcp": {
+    "endpoint_tools": "hidden",
+    "orchestration": "code"
+  },
+  "auth": {
+    "type": "bearer_token",
+    "header": "Authorization",
+    "format": "Bearer {JIVO_ECOM_TOKEN}",
+    "env_vars": [
+      "JIVO_ECOM_TOKEN"
+    ],
+    "env_var_specs": [
+      {
+        "name": "JIVO_ECOM_TOKEN",
+        "kind": "per_call",
+        "required": true,
+        "sensitive": true,
+        "inferred": true
+      }
+    ]
+  },
+  "required_headers": [],
+  "tools": [
+    {
+      "name": "account_me",
+      "description": "Show the authenticated user (profile, groups, platforms, permissions).",
+      "method": "GET",
+      "path": "/api/auth/me",
+      "params": []
+    },
+    {
+      "name": "account_permissions",
+      "description": "List the permission modules granted to the current user.",
+      "method": "GET",
+      "path": "/api/auth/permissions",
+      "params": []
+    },
+    {
+      "name": "chatbot_conversation",
+      "description": "Get a chatbot conversation (with messages) by id. Required: id.",
+      "method": "GET",
+      "path": "/api/chatbot/conversations/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Conversation id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "chatbot_conversations",
+      "description": "List chatbot conversations.",
+      "method": "GET",
+      "path": "/api/chatbot/conversations",
+      "params": []
+    },
+    {
+      "name": "chatbot_health",
+      "description": "Chatbot service health.",
+      "method": "GET",
+      "path": "/api/chatbot/health",
+      "params": []
+    },
+    {
+      "name": "dashboard_category-breakdown",
+      "description": "Premium vs commodity category breakdown. Optional: platform, month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/category-breakdown",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_category-litres",
+      "description": "Category sales measured in litres. Optional: platform, month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/category-litres",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_category-platform-breakdown",
+      "description": "Category breakdown split by platform. Optional: month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/category-platform-breakdown",
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_category-sku-breakdown",
+      "description": "SKU-level breakdown within a category (requires --platform). Required: platform. Optional: month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/category-sku-breakdown",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Platform slug (required by this endpoint)",
+          "required": true
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_category-trend",
+      "description": "Category sales trend over time. Optional: platform.",
+      "method": "GET",
+      "path": "/api/dashboard/category-trend",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_expiry-alerts",
+      "description": "Expiry alerts for a single platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/dashboard/expiry-alerts/{platform}",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dashboard_expiry-alerts-po-items",
+      "description": "Line items for a PO behind an expiry alert. Required: platform, po.",
+      "method": "GET",
+      "path": "/api/dashboard/platform-expiry-alerts/{platform}/pos/{po}/items",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        },
+        {
+          "name": "po",
+          "type": "string",
+          "location": "path",
+          "description": "Purchase-order number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dashboard_expiry-alerts-pos",
+      "description": "Purchase orders behind a platform expiry alert. Required: platform. Optional: month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/platform-expiry-alerts/{platform}/pos",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_fulfilment-health",
+      "description": "Fulfilment health summary by platform. Optional: platform, window.",
+      "method": "GET",
+      "path": "/api/dashboard/fulfilment-health",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "window",
+          "type": "string",
+          "location": "query",
+          "description": "Time window for the health check"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_inventory-charts",
+      "description": "Inventory chart series. Optional: platform.",
+      "method": "GET",
+      "path": "/api/dashboard/inventory-charts",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_latest-month",
+      "description": "Latest data month/year available, with source metadata.",
+      "method": "GET",
+      "path": "/api/dashboard/latest-month",
+      "params": []
+    },
+    {
+      "name": "dashboard_lead-time-report",
+      "description": "Distributor lead-time report (rows, slabs, grand total).",
+      "method": "GET",
+      "path": "/api/dashboard/lead-time-report",
+      "params": []
+    },
+    {
+      "name": "dashboard_platform-expiry-alerts",
+      "description": "Expiry alerts aggregated across platforms.",
+      "method": "GET",
+      "path": "/api/dashboard/platform-expiry-alerts",
+      "params": []
+    },
+    {
+      "name": "dashboard_primary-po-litres",
+      "description": "Primary purchase-order volume in litres. Optional: month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/primary-po-litres",
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_realise-breakdown",
+      "description": "Realise dashboard: breakdown (net realisation analytics). Optional: platform, source, month (plus 1 more).",
+      "method": "GET",
+      "path": "/api/dashboard/realise-breakdown",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query",
+          "description": "Data source"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_realise-overview",
+      "description": "Realise dashboard: overview (net realisation analytics). Optional: platform, source, month (plus 1 more).",
+      "method": "GET",
+      "path": "/api/dashboard/realise-overview",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query",
+          "description": "Data source"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_realise-trend",
+      "description": "Realise dashboard: trend (net realisation analytics). Optional: platform, source, month (plus 1 more).",
+      "method": "GET",
+      "path": "/api/dashboard/realise-trend",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query",
+          "description": "Data source"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_realise-waterfall",
+      "description": "Realise dashboard: waterfall (net realisation analytics). Optional: platform, source, month (plus 1 more).",
+      "method": "GET",
+      "path": "/api/dashboard/realise-waterfall",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query",
+          "description": "Data source"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_secondary-yoy-growth",
+      "description": "Secondary sales year-over-year growth. Optional: platform.",
+      "method": "GET",
+      "path": "/api/dashboard/secondary-yoy-growth",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_state-sales",
+      "description": "State-wise sales with mapped/unmapped coverage. Optional: metric, mode, platform (plus 2 more).",
+      "method": "GET",
+      "path": "/api/dashboard/state-sales",
+      "params": [
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "description": "Metric to report (e.g. units, value)"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "location": "query",
+          "description": "Aggregation mode"
+        },
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_state-sales-detail",
+      "description": "Detailed state-wise sales rows. Optional: platform, month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/state-sales/detail",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_state-sales-detail-cities",
+      "description": "State-sales detail drilled to cities. Required: state. Optional: metric, dimension, platform (plus 2 more).",
+      "method": "GET",
+      "path": "/api/dashboard/state-sales/detail/cities",
+      "params": [
+        {
+          "name": "state",
+          "type": "string",
+          "location": "query",
+          "description": "State name",
+          "required": true
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "description": "Metric (units/value)"
+        },
+        {
+          "name": "dimension",
+          "type": "string",
+          "location": "query",
+          "description": "Dimension"
+        },
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Platform slug"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_state-sales-detail-city-skus",
+      "description": "State-sales detail drilled to city SKUs. Required: state, city. Optional: metric, platform, month (plus 1 more).",
+      "method": "GET",
+      "path": "/api/dashboard/state-sales/detail/city-skus",
+      "params": [
+        {
+          "name": "state",
+          "type": "string",
+          "location": "query",
+          "description": "State name",
+          "required": true
+        },
+        {
+          "name": "city",
+          "type": "string",
+          "location": "query",
+          "description": "City name",
+          "required": true
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "description": "Metric"
+        },
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Platform slug"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_state-sales-detail-options",
+      "description": "Filter options (skus, cities) for state-sales detail. Optional: platform, state.",
+      "method": "GET",
+      "path": "/api/dashboard/state-sales/detail/options",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Platform slug"
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "location": "query",
+          "description": "State name"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_state-sales-export",
+      "description": "Export state-wise sales (file/CSV payload). Optional: platform, month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/state-sales/export",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Platform slug"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_top-skus",
+      "description": "Top-selling SKUs with top risers and fallers. Optional: platform, month, year.",
+      "method": "GET",
+      "path": "/api/dashboard/top-skus",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "Filter to a single platform slug (default: all)"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12 (default: latest)"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year (default: latest)"
+        }
+      ]
+    },
+    {
+      "name": "master_fcs",
+      "description": "List fulfilment centres (paginated). Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/master/fcs",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "master_products",
+      "description": "List master products (paginated). Optional: page, page-size, search.",
+      "method": "GET",
+      "path": "/api/master/products",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "Free-text search filter"
+        }
+      ]
+    },
+    {
+      "name": "notifications_get",
+      "description": "Get a single notification by id. Required: id.",
+      "method": "GET",
+      "path": "/api/notifications/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Notification id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "notifications_inventory-doh",
+      "description": "Inventory days-of-health detail for a notification id. Required: id.",
+      "method": "GET",
+      "path": "/api/notifications/inventory-doh/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Inventory/DOH notification id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "notifications_list",
+      "description": "List notifications with unread count.",
+      "method": "GET",
+      "path": "/api/notifications",
+      "params": []
+    },
+    {
+      "name": "platform_ads",
+      "description": "Advertising performance dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/ads-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_ads-summary",
+      "description": "Cross-platform advertising summary.",
+      "method": "GET",
+      "path": "/api/platform/ads-summary",
+      "params": []
+    },
+    {
+      "name": "platform_ads-total-sales",
+      "description": "Ads total-sales for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/ads-total-sales",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_bigbasket-ads-daily-dashboard",
+      "description": "Bigbasket Ads Daily Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/bigbasket-ads-daily-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_bigbasket-ads-dashboard",
+      "description": "Bigbasket Ads Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/bigbasket-ads-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_blinkit-ads-dashboard",
+      "description": "Blinkit Ads Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/blinkit-ads-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_blinkit-brandfund-dashboard",
+      "description": "Blinkit Brandfund Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/blinkit-brandfund-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_call-center-targets",
+      "description": "Call-center secondary targets (premium/commodity). Required: month, year.",
+      "method": "GET",
+      "path": "/api/platform/call-center-targets",
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12",
+          "required": true
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_comparison",
+      "description": "Comparison dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/comparison-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_coupon",
+      "description": "Coupon performance dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/coupon-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_drr",
+      "description": "Daily run-rate (DRR) dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/drr-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_flipkart-ads-dashboard",
+      "description": "Flipkart Ads Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/flipkart-ads-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_flipkart-fsn-dashboard",
+      "description": "Flipkart Fsn Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/flipkart-fsn-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_inventory-match",
+      "description": "Inventory reconciliation/match for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/inventory-match",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_landing-rate",
+      "description": "Monthly landing rate (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only). Required: platform. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/landing-rate",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "platform_landing-rate-skus",
+      "description": "Landing-rate SKUs (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only). Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/landing-rate/skus",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_marketplace",
+      "description": "Marketplace dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/mp-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_meta",
+      "description": "Platform metadata (slugs, labels, config).",
+      "method": "GET",
+      "path": "/api/platform/meta",
+      "params": []
+    },
+    {
+      "name": "platform_month-on-month-sale",
+      "description": "Month-on-month sales for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/month-on-month-sale",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_month-targets",
+      "description": "Secondary monthly targets for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/month-targets",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_month-targets-dashboard",
+      "description": "Secondary month-targets dashboard across platforms. Required: month, year.",
+      "method": "GET",
+      "path": "/api/platform/month-targets/dashboard",
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12",
+          "required": true
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_mp-dashboard-version",
+      "description": "Data version stamp for a platform marketplace dashboard. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/mp-dashboard-version",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_pendency",
+      "description": "Order pendency dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/pendency-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_pos",
+      "description": "Purchase orders for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/pos",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_price",
+      "description": "Pricing dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/price-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_primary",
+      "description": "Primary (sell-in / PO) dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/primary-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_primary-month-targets",
+      "description": "Primary monthly targets for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/primary-month-targets",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_primary-month-targets-dashboard",
+      "description": "Primary month-targets dashboard across platforms. Required: month, year.",
+      "method": "GET",
+      "path": "/api/platform/primary-month-targets/dashboard",
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12",
+          "required": true
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_primary-overview-total",
+      "description": "Primary overview totals across platforms. Optional: month, year.",
+      "method": "GET",
+      "path": "/api/platform/primary-overview-total",
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "platform_primary-summary",
+      "description": "Primary sell-in summary across platforms. Optional: month, year.",
+      "method": "GET",
+      "path": "/api/platform/primary-summary",
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year"
+        }
+      ]
+    },
+    {
+      "name": "platform_primary-summary-version",
+      "description": "Data version stamp for the primary summary.",
+      "method": "GET",
+      "path": "/api/platform/primary-summary-version",
+      "params": []
+    },
+    {
+      "name": "platform_region-doh",
+      "description": "Region-wise days-of-health dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/region-doh-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_secondary",
+      "description": "Secondary (sell-out) dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/sec-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_secondary-monthly",
+      "description": "Monthly secondary-sales dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/sec-monthly-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_secondary-years",
+      "description": "Years available for the secondary dashboard. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/sec-dashboard-years",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_soh-doh",
+      "description": "Stock-on-hand / days-of-health dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/soh-doh-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_stats",
+      "description": "Headline stats for a platform (inventory, sells, open POs, active trucks). Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/stats",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_swiggy-ads-daily-dashboard",
+      "description": "Swiggy Ads Daily Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/swiggy-ads-daily-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_swiggy-ads-dashboard",
+      "description": "Swiggy Ads Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/swiggy-ads-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_swiggy-brandfund-dashboard",
+      "description": "Swiggy Brandfund Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/swiggy-brandfund-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_zepto-ads-daily-dashboard",
+      "description": "Zepto Ads Daily Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/zepto-ads-daily-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_zepto-ads-dashboard",
+      "description": "Zepto Ads Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/zepto-ads-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_zepto-brandfund-dashboard",
+      "description": "Zepto Brandfund Dashboard for a platform. Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/zepto-brandfund-dashboard",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "reports_amazon-po",
+      "description": "Amazon PO report. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/reports/amazon-po",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "reports_amazon-po-filter-options",
+      "description": "Filter options for the Amazon PO report.",
+      "method": "GET",
+      "path": "/api/reports/amazon-po/filter-options",
+      "params": []
+    },
+    {
+      "name": "reports_amazon-po-matrix",
+      "description": "Amazon PO matrix (by month/year). Required: month, year.",
+      "method": "GET",
+      "path": "/api/reports/amazon-po/matrix",
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Month number 1-12",
+          "required": true
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Four-digit year",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "reports_amazon-po-new-po",
+      "description": "Amazon new-PO report.",
+      "method": "GET",
+      "path": "/api/reports/amazon-po/new-po",
+      "params": []
+    },
+    {
+      "name": "reports_amazon-po-summary",
+      "description": "Amazon PO report summary.",
+      "method": "GET",
+      "path": "/api/reports/amazon-po/summary",
+      "params": []
+    },
+    {
+      "name": "reports_appointment",
+      "description": "Appointment report. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/reports/appointment",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "reports_appointment-filter-options",
+      "description": "Filter options (pos_numbers, destination_fcs) for the appointment report.",
+      "method": "GET",
+      "path": "/api/reports/appointment/filter-options",
+      "params": []
+    },
+    {
+      "name": "reports_appointment-summary",
+      "description": "Appointment report summary.",
+      "method": "GET",
+      "path": "/api/reports/appointment/summary",
+      "params": []
+    },
+    {
+      "name": "reports_columns",
+      "description": "Column definitions for a report view. Required: view.",
+      "method": "GET",
+      "path": "/api/reports/columns",
+      "params": [
+        {
+          "name": "view",
+          "type": "string",
+          "location": "query",
+          "description": "Report view name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "reports_raw",
+      "description": "Raw rows for a report view. Required: view. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/reports/raw",
+      "params": [
+        {
+          "name": "view",
+          "type": "string",
+          "location": "query",
+          "description": "Report view name",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_distributor",
+      "description": "Get a distributor (profile, addresses, contacts) by card code. Required: code.",
+      "method": "GET",
+      "path": "/api/sap/distributors/{code}",
+      "params": [
+        {
+          "name": "code",
+          "type": "string",
+          "location": "path",
+          "description": "Distributor CardCode",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sap_distributor-inventory",
+      "description": "Distributor inventory. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/distributor-inventory",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_distributor-invoices",
+      "description": "Invoices for a distributor by card code. Required: code. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/distributor-invoices/{code}",
+      "params": [
+        {
+          "name": "code",
+          "type": "string",
+          "location": "path",
+          "description": "Distributor CardCode",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_distributor-orders",
+      "description": "Orders for a distributor by card code. Required: code. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/distributor-orders/{code}",
+      "params": [
+        {
+          "name": "code",
+          "type": "string",
+          "location": "path",
+          "description": "Distributor CardCode",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_distributors",
+      "description": "List SAP distributors. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/distributors",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_inventory-finished-goods",
+      "description": "Finished-goods inventory. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/inventory-finished-goods",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_inventory-overview",
+      "description": "Inventory overview.",
+      "method": "GET",
+      "path": "/api/sap/inventory-overview",
+      "params": []
+    },
+    {
+      "name": "sap_inventory-warehouse-comparison",
+      "description": "Inventory comparison across warehouses.",
+      "method": "GET",
+      "path": "/api/sap/inventory-warehouse-comparison",
+      "params": []
+    },
+    {
+      "name": "sap_items",
+      "description": "SAP item master. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/items",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_platform-distributor",
+      "description": "A platform-distributor mapping by card code. Required: platform, code.",
+      "method": "GET",
+      "path": "/api/sap/platform-distributors/{platform}/{code}",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "location": "path",
+          "description": "Distributor CardCode",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sap_platform-distributors",
+      "description": "Distributors mapped to a platform. Required: platform. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/platform-distributors/{platform}",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_platform-sales-invoices",
+      "description": "Sales invoices for a platform. Required: platform. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/platform-sales-invoices/{platform}",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_sales-analysis",
+      "description": "Sales analysis over a date range. Required: from_date, to_date. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/sales-analysis",
+      "params": [
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "Start date YYYY-MM-DD",
+          "required": true
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "End date YYYY-MM-DD",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_sales-invoice",
+      "description": "Get a sales invoice by id. Required: id. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/sales-invoices/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Sales invoice id (DocEntry)",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_sales-invoice-lines",
+      "description": "Line items for a sales invoice by id (note: upstream SAP query may 500). Required: id.",
+      "method": "GET",
+      "path": "/api/sap/sales-invoice-lines/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Sales invoice id (DocEntry)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sap_sales-invoices",
+      "description": "List SAP sales invoices. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/sales-invoices",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "sap_stock-by-warehouse",
+      "description": "Stock levels by warehouse. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/sap/stock-by-warehouse",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "shipment_all-appointments",
+      "description": "All shipment appointments.",
+      "method": "GET",
+      "path": "/api/shipment/all-appointments",
+      "params": []
+    },
+    {
+      "name": "shipment_appointment-commits",
+      "description": "Appointment commit records.",
+      "method": "GET",
+      "path": "/api/shipment/appointment-commits",
+      "params": []
+    },
+    {
+      "name": "shipment_appointment-dates",
+      "description": "Available appointment dates.",
+      "method": "GET",
+      "path": "/api/shipment/appointments/dates",
+      "params": []
+    },
+    {
+      "name": "shipment_appointment-extra-pos",
+      "description": "Extra POs for an appointment. Required: id.",
+      "method": "GET",
+      "path": "/api/shipment/appointments/{id}/extra-pos",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Appointment id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_appointment-items",
+      "description": "Items for an appointment. Required: id.",
+      "method": "GET",
+      "path": "/api/shipment/appointments/{id}/items",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Appointment id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_appointments",
+      "description": "Shipment appointments.",
+      "method": "GET",
+      "path": "/api/shipment/appointments",
+      "params": []
+    },
+    {
+      "name": "shipment_asin-catalog",
+      "description": "ASIN catalog.",
+      "method": "GET",
+      "path": "/api/shipment/asin-catalog",
+      "params": []
+    },
+    {
+      "name": "shipment_inventory",
+      "description": "Shipment planning inventory.",
+      "method": "GET",
+      "path": "/api/shipment/inventory",
+      "params": []
+    },
+    {
+      "name": "shipment_po-items",
+      "description": "PO items available to ship.",
+      "method": "GET",
+      "path": "/api/shipment/po-items",
+      "params": []
+    },
+    {
+      "name": "shipment_po-shipment-lookup",
+      "description": "Lookup shipments for a PO.",
+      "method": "GET",
+      "path": "/api/shipment/po-shipment-lookup",
+      "params": []
+    },
+    {
+      "name": "shipment_po-short-supply",
+      "description": "PO short-supply report.",
+      "method": "GET",
+      "path": "/api/shipment/po-short-supply",
+      "params": []
+    },
+    {
+      "name": "shipment_record",
+      "description": "Shipment record.",
+      "method": "GET",
+      "path": "/api/shipment/record",
+      "params": []
+    },
+    {
+      "name": "shipment_shipment",
+      "description": "Get a shipment by id. Required: id.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Shipment id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_shipment-invoice-file",
+      "description": "Download an invoice file for a shipment. Required: id, invoice.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/{id}/invoices/{invoice}/file",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Shipment id",
+          "required": true
+        },
+        {
+          "name": "invoice",
+          "type": "string",
+          "location": "path",
+          "description": "Invoice id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_shipment-invoices",
+      "description": "Invoices for a shipment. Required: id.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/{id}/invoices",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Shipment id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_shipment-po-document",
+      "description": "A PO document for a shipment. Required: id, document.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/{id}/po-documents/{document}",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Shipment id",
+          "required": true
+        },
+        {
+          "name": "document",
+          "type": "string",
+          "location": "path",
+          "description": "Document id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_shipment-po-documents",
+      "description": "PO documents for a shipment. Required: id.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/{id}/po-documents",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Shipment id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_shipments",
+      "description": "List shipments.",
+      "method": "GET",
+      "path": "/api/shipment/shipments",
+      "params": []
+    },
+    {
+      "name": "shipment_shipments-deletion-log",
+      "description": "Shipment deletion log.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/deletion-log",
+      "params": []
+    },
+    {
+      "name": "shipment_shipments-doh-auto-fill",
+      "description": "DOH auto-fill suggestions.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/doh-auto-fill",
+      "params": []
+    },
+    {
+      "name": "shipment_shipments-pending-approvals",
+      "description": "Shipments pending approval.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/pending-approvals",
+      "params": []
+    },
+    {
+      "name": "shipment_shipments-stats",
+      "description": "Shipment stats.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/stats",
+      "params": []
+    },
+    {
+      "name": "tables_columns",
+      "description": "Column definitions for a table. Required: table.",
+      "method": "GET",
+      "path": "/api/dashboard/table-columns/{table}",
+      "params": [
+        {
+          "name": "table",
+          "type": "string",
+          "location": "path",
+          "description": "Table name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "tables_count",
+      "description": "Row count for a single table. Required: table.",
+      "method": "GET",
+      "path": "/api/dashboard/table-count/{table}",
+      "params": [
+        {
+          "name": "table",
+          "type": "string",
+          "location": "path",
+          "description": "Table name (see 'tables counts')",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "tables_counts",
+      "description": "Row counts for every available data table.",
+      "method": "GET",
+      "path": "/api/dashboard/table-counts",
+      "params": []
+    },
+    {
+      "name": "tables_data",
+      "description": "Paginated rows for a table (server-shaped payload). Required: table. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/dashboard/table-data/{table}",
+      "params": [
+        {
+          "name": "table",
+          "type": "string",
+          "location": "path",
+          "description": "Table name",
+          "required": true
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "tables_distinct",
+      "description": "Distinct values for a column in a table. Required: table, column.",
+      "method": "GET",
+      "path": "/api/dashboard/table-distinct/{table}/{column}",
+      "params": [
+        {
+          "name": "table",
+          "type": "string",
+          "location": "path",
+          "description": "Table name",
+          "required": true
+        },
+        {
+          "name": "column",
+          "type": "string",
+          "location": "path",
+          "description": "Column name",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "upload_ads-master",
+      "description": "Ads master sheet (columns, rows). Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/upload/ads-master",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "upload_master-sheet",
+      "description": "Master sheet. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/upload/master-sheet",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "upload_pincode-mapping",
+      "description": "Pincode mapping table. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/upload/pincode-mapping",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    },
+    {
+      "name": "uploads_get",
+      "description": "Get an upload job (summary, errors, diagnostics) by id. Required: id.",
+      "method": "GET",
+      "path": "/api/uploads/{id}",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Upload job id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "uploads_list",
+      "description": "List upload jobs. Optional: page, page-size.",
+      "method": "GET",
+      "path": "/api/uploads",
+      "params": [
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "Page number"
+        },
+        {
+          "name": "page-size",
+          "wire_name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "Rows per page"
+        }
+      ]
+    }
+  ]
+}

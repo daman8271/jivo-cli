@@ -1,0 +1,1843 @@
+name: jivo-ecom
+description: "JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.in) \u2014 read-only dashboards,\
+  \ master data, notifications, and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket,\
+  \ Flipkart, Citymall, JioMart, Zomato"
+version: 0.1.0
+base_url: https://ecom.jivo.in
+health_check_path: /api/auth/me
+auth:
+  type: bearer_token
+  header: Authorization
+  format: Bearer {token}
+  env_vars:
+  - JIVO_ECOM_TOKEN
+config:
+  format: toml
+  path: ~/.config/jivo-ecom-pp-cli/config.toml
+resources:
+  account:
+    description: 'Authenticated account: current user and permissions'
+    endpoints:
+      me:
+        method: GET
+        path: /api/auth/me
+        description: Show the authenticated user (profile, groups, platforms, permissions)
+        response:
+          type: object
+      permissions:
+        method: GET
+        path: /api/auth/permissions
+        description: List the permission modules granted to the current user
+        response:
+          type: object
+  dashboard:
+    description: Top-level analytics dashboards aggregated across all platforms
+    endpoints:
+      latest-month:
+        method: GET
+        path: /api/dashboard/latest-month
+        description: Latest data month/year available, with source metadata
+        response:
+          type: object
+      top-skus:
+        method: GET
+        path: /api/dashboard/top-skus
+        description: Top-selling SKUs with top risers and fallers
+        params:
+        - name: platform
+          type: string
+          description: 'Filter to a single platform slug (default: all)'
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: month
+          type: int
+          description: 'Month number 1-12 (default: latest)'
+        - name: year
+          type: int
+          description: 'Four-digit year (default: latest)'
+        response:
+          type: object
+      category-breakdown:
+        method: GET
+        path: /api/dashboard/category-breakdown
+        description: Premium vs commodity category breakdown
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      category-litres:
+        method: GET
+        path: /api/dashboard/category-litres
+        description: Category sales measured in litres
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      category-platform-breakdown:
+        method: GET
+        path: /api/dashboard/category-platform-breakdown
+        description: Category breakdown split by platform
+        params:
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      category-sku-breakdown:
+        method: GET
+        path: /api/dashboard/category-sku-breakdown
+        description: SKU-level breakdown within a category (requires --platform)
+        params:
+        - name: platform
+          type: string
+          required: true
+          description: Platform slug (required by this endpoint)
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      category-trend:
+        method: GET
+        path: /api/dashboard/category-trend
+        description: Category sales trend over time
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        response:
+          type: object
+      state-sales:
+        method: GET
+        path: /api/dashboard/state-sales
+        description: State-wise sales with mapped/unmapped coverage
+        params:
+        - name: metric
+          type: string
+          description: Metric to report (e.g. units, value)
+        - name: mode
+          type: string
+          description: Aggregation mode
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      state-sales-detail:
+        method: GET
+        path: /api/dashboard/state-sales/detail
+        description: Detailed state-wise sales rows
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      fulfilment-health:
+        method: GET
+        path: /api/dashboard/fulfilment-health
+        description: Fulfilment health summary by platform
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: window
+          type: string
+          description: Time window for the health check
+        response:
+          type: object
+      inventory-charts:
+        method: GET
+        path: /api/dashboard/inventory-charts
+        description: Inventory chart series
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        response:
+          type: object
+      primary-po-litres:
+        method: GET
+        path: /api/dashboard/primary-po-litres
+        description: Primary purchase-order volume in litres
+        params:
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      secondary-yoy-growth:
+        method: GET
+        path: /api/dashboard/secondary-yoy-growth
+        description: Secondary sales year-over-year growth
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        response:
+          type: object
+      expiry-alerts:
+        method: GET
+        path: /api/dashboard/expiry-alerts/{platform}
+        description: Expiry alerts for a single platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        response:
+          type: object
+      platform-expiry-alerts:
+        method: GET
+        path: /api/dashboard/platform-expiry-alerts
+        description: Expiry alerts aggregated across platforms
+        response:
+          type: object
+      lead-time-report:
+        method: GET
+        path: /api/dashboard/lead-time-report
+        description: Distributor lead-time report (rows, slabs, grand total)
+        response:
+          type: object
+      realise-overview:
+        method: GET
+        path: /api/dashboard/realise-overview
+        description: 'Realise dashboard: overview (net realisation analytics)'
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: source
+          type: string
+          description: Data source
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      realise-breakdown:
+        method: GET
+        path: /api/dashboard/realise-breakdown
+        description: 'Realise dashboard: breakdown (net realisation analytics)'
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: source
+          type: string
+          description: Data source
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      realise-trend:
+        method: GET
+        path: /api/dashboard/realise-trend
+        description: 'Realise dashboard: trend (net realisation analytics)'
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: source
+          type: string
+          description: Data source
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      realise-waterfall:
+        method: GET
+        path: /api/dashboard/realise-waterfall
+        description: 'Realise dashboard: waterfall (net realisation analytics)'
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: source
+          type: string
+          description: Data source
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      state-sales-detail-cities:
+        method: GET
+        path: /api/dashboard/state-sales/detail/cities
+        description: State-sales detail drilled to cities
+        params:
+        - name: state
+          type: string
+          required: true
+          description: State name
+        - name: metric
+          type: string
+          description: Metric (units/value)
+        - name: dimension
+          type: string
+          description: Dimension
+        - name: platform
+          type: string
+          description: Platform slug
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      state-sales-detail-city-skus:
+        method: GET
+        path: /api/dashboard/state-sales/detail/city-skus
+        description: State-sales detail drilled to city SKUs
+        params:
+        - name: state
+          type: string
+          required: true
+          description: State name
+        - name: city
+          type: string
+          required: true
+          description: City name
+        - name: metric
+          type: string
+          description: Metric
+        - name: platform
+          type: string
+          description: Platform slug
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      state-sales-detail-options:
+        method: GET
+        path: /api/dashboard/state-sales/detail/options
+        description: Filter options (skus, cities) for state-sales detail
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+        - name: state
+          type: string
+          description: State name
+        response:
+          type: object
+      state-sales-export:
+        method: GET
+        path: /api/dashboard/state-sales/export
+        description: Export state-wise sales (file/CSV payload)
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      expiry-alerts-pos:
+        method: GET
+        path: /api/dashboard/platform-expiry-alerts/{platform}/pos
+        description: Purchase orders behind a platform expiry alert
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: &id001
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      expiry-alerts-po-items:
+        method: GET
+        path: /api/dashboard/platform-expiry-alerts/{platform}/pos/{po}/items
+        description: Line items for a PO behind an expiry alert
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        - name: po
+          type: string
+          required: true
+          positional: true
+          description: Purchase-order number
+        response:
+          type: object
+  tables:
+    description: Dynamic data-table browser over the underlying warehouse tables
+    endpoints:
+      counts:
+        method: GET
+        path: /api/dashboard/table-counts
+        description: Row counts for every available data table
+        response:
+          type: object
+      count:
+        method: GET
+        path: /api/dashboard/table-count/{table}
+        description: Row count for a single table
+        params:
+        - name: table
+          type: string
+          required: true
+          positional: true
+          description: Table name (see 'tables counts')
+        response:
+          type: object
+      columns:
+        method: GET
+        path: /api/dashboard/table-columns/{table}
+        description: Column definitions for a table
+        params:
+        - name: table
+          type: string
+          required: true
+          positional: true
+          description: Table name
+        response:
+          type: object
+      data:
+        method: GET
+        path: /api/dashboard/table-data/{table}
+        description: Paginated rows for a table (server-shaped payload)
+        params:
+        - name: table
+          type: string
+          required: true
+          positional: true
+          description: Table name
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          flag_name: page-size
+          type: int
+          description: Rows per page
+        response:
+          type: object
+      distinct:
+        method: GET
+        path: /api/dashboard/table-distinct/{table}/{column}
+        description: Distinct values for a column in a table
+        params:
+        - name: table
+          type: string
+          required: true
+          positional: true
+          description: Table name
+        - name: column
+          type: string
+          required: true
+          positional: true
+          description: Column name
+        response:
+          type: object
+  master:
+    description: 'Master data: product catalogue and fulfilment centres'
+    endpoints:
+      products:
+        method: GET
+        path: /api/master/products
+        description: List master products (paginated)
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          flag_name: page-size
+          type: int
+          description: Rows per page
+        - name: search
+          type: string
+          description: Free-text search filter
+        response:
+          type: object
+        response_path: results
+      fcs:
+        method: GET
+        path: /api/master/fcs
+        description: List fulfilment centres (paginated)
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          flag_name: page-size
+          type: int
+          description: Rows per page
+        response:
+          type: object
+        response_path: results
+  notifications:
+    description: Read-only notifications with unread count
+    endpoints:
+      list:
+        method: GET
+        path: /api/notifications
+        description: List notifications with unread count
+        response:
+          type: object
+      get:
+        method: GET
+        path: /api/notifications/{id}
+        description: Get a single notification by id
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Notification id
+        response:
+          type: object
+      inventory-doh:
+        method: GET
+        path: /api/notifications/inventory-doh/{id}
+        description: Inventory days-of-health detail for a notification id
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Inventory/DOH notification id
+        response:
+          type: object
+  platform:
+    description: Per-platform dashboards (Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall,
+      JioMart, Zomato)
+    endpoints:
+      stats:
+        method: GET
+        path: /api/platform/{platform}/stats
+        description: Headline stats for a platform (inventory, sells, open POs, active trucks)
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        response:
+          type: object
+      primary:
+        method: GET
+        path: /api/platform/{platform}/primary-dashboard
+        description: Primary (sell-in / PO) dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      secondary:
+        method: GET
+        path: /api/platform/{platform}/sec-dashboard
+        description: Secondary (sell-out) dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      secondary-years:
+        method: GET
+        path: /api/platform/{platform}/sec-dashboard-years
+        description: Years available for the secondary dashboard
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      secondary-monthly:
+        method: GET
+        path: /api/platform/{platform}/sec-monthly-dashboard
+        description: Monthly secondary-sales dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      ads:
+        method: GET
+        path: /api/platform/{platform}/ads-dashboard
+        description: Advertising performance dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      price:
+        method: GET
+        path: /api/platform/{platform}/price-dashboard
+        description: Pricing dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      drr:
+        method: GET
+        path: /api/platform/{platform}/drr-dashboard
+        description: Daily run-rate (DRR) dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      comparison:
+        method: GET
+        path: /api/platform/{platform}/comparison-dashboard
+        description: Comparison dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      coupon:
+        method: GET
+        path: /api/platform/{platform}/coupon-dashboard
+        description: Coupon performance dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      marketplace:
+        method: GET
+        path: /api/platform/{platform}/mp-dashboard
+        description: Marketplace dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      pendency:
+        method: GET
+        path: /api/platform/{platform}/pendency-dashboard
+        description: Order pendency dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      region-doh:
+        method: GET
+        path: /api/platform/{platform}/region-doh-dashboard
+        description: Region-wise days-of-health dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      soh-doh:
+        method: GET
+        path: /api/platform/{platform}/soh-doh-dashboard
+        description: Stock-on-hand / days-of-health dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      month-on-month-sale:
+        method: GET
+        path: /api/platform/{platform}/month-on-month-sale
+        description: Month-on-month sales for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      pos:
+        method: GET
+        path: /api/platform/{platform}/pos
+        description: Purchase orders for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      inventory-match:
+        method: GET
+        path: /api/platform/{platform}/inventory-match
+        description: Inventory reconciliation/match for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      month-targets:
+        method: GET
+        path: /api/platform/{platform}/month-targets
+        description: Secondary monthly targets for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      primary-month-targets:
+        method: GET
+        path: /api/platform/{platform}/primary-month-targets
+        description: Primary monthly targets for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+        response:
+          type: object
+      ads-summary:
+        method: GET
+        path: /api/platform/ads-summary
+        description: Cross-platform advertising summary
+        response:
+          type: object
+      meta:
+        method: GET
+        path: /api/platform/meta
+        description: Platform metadata (slugs, labels, config)
+        response:
+          type: object
+      primary-overview-total:
+        method: GET
+        path: /api/platform/primary-overview-total
+        description: Primary overview totals across platforms
+        params:
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      primary-summary:
+        method: GET
+        path: /api/platform/primary-summary
+        description: Primary sell-in summary across platforms
+        params:
+        - name: month
+          type: int
+          description: Month number 1-12
+        - name: year
+          type: int
+          description: Four-digit year
+        response:
+          type: object
+      primary-summary-version:
+        method: GET
+        path: /api/platform/primary-summary-version
+        description: Data version stamp for the primary summary
+        response:
+          type: object
+      call-center-targets:
+        method: GET
+        path: /api/platform/call-center-targets
+        description: Call-center secondary targets (premium/commodity)
+        params:
+        - name: month
+          type: int
+          required: true
+          description: Month number 1-12
+        - name: year
+          type: int
+          required: true
+          description: Four-digit year
+        response:
+          type: object
+      month-targets-dashboard:
+        method: GET
+        path: /api/platform/month-targets/dashboard
+        description: Secondary month-targets dashboard across platforms
+        params:
+        - name: month
+          type: int
+          required: true
+          description: Month number 1-12
+        - name: year
+          type: int
+          required: true
+          description: Four-digit year
+        response:
+          type: object
+      primary-month-targets-dashboard:
+        method: GET
+        path: /api/platform/primary-month-targets/dashboard
+        description: Primary month-targets dashboard across platforms
+        params:
+        - name: month
+          type: int
+          required: true
+          description: Month number 1-12
+        - name: year
+          type: int
+          required: true
+          description: Four-digit year
+        response:
+          type: object
+      ads-total-sales:
+        method: GET
+        path: /api/platform/{platform}/ads-total-sales
+        description: Ads total-sales for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      mp-dashboard-version:
+        method: GET
+        path: /api/platform/{platform}/mp-dashboard-version
+        description: Data version stamp for a platform marketplace dashboard
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      landing-rate:
+        method: GET
+        path: /api/platform/{platform}/landing-rate
+        description: Monthly landing rate (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      landing-rate-skus:
+        method: GET
+        path: /api/platform/{platform}/landing-rate/skus
+        description: Landing-rate SKUs (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      bigbasket-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/bigbasket-ads-dashboard
+        description: Bigbasket Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      bigbasket-ads-daily-dashboard:
+        method: GET
+        path: /api/platform/{platform}/bigbasket-ads-daily-dashboard
+        description: Bigbasket Ads Daily Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      blinkit-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/blinkit-ads-dashboard
+        description: Blinkit Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      blinkit-brandfund-dashboard:
+        method: GET
+        path: /api/platform/{platform}/blinkit-brandfund-dashboard
+        description: Blinkit Brandfund Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      swiggy-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/swiggy-ads-dashboard
+        description: Swiggy Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      swiggy-ads-daily-dashboard:
+        method: GET
+        path: /api/platform/{platform}/swiggy-ads-daily-dashboard
+        description: Swiggy Ads Daily Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      swiggy-brandfund-dashboard:
+        method: GET
+        path: /api/platform/{platform}/swiggy-brandfund-dashboard
+        description: Swiggy Brandfund Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      zepto-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/zepto-ads-dashboard
+        description: Zepto Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      zepto-ads-daily-dashboard:
+        method: GET
+        path: /api/platform/{platform}/zepto-ads-daily-dashboard
+        description: Zepto Ads Daily Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      zepto-brandfund-dashboard:
+        method: GET
+        path: /api/platform/{platform}/zepto-brandfund-dashboard
+        description: Zepto Brandfund Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      flipkart-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/flipkart-ads-dashboard
+        description: Flipkart Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+      flipkart-fsn-dashboard:
+        method: GET
+        path: /api/platform/{platform}/flipkart-fsn-dashboard
+        description: Flipkart Fsn Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        response:
+          type: object
+  reports:
+    description: 'Report views: Amazon PO, appointment, and raw report tables'
+    endpoints:
+      amazon-po:
+        method: GET
+        path: /api/reports/amazon-po
+        description: Amazon PO report
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+      amazon-po-summary:
+        method: GET
+        path: /api/reports/amazon-po/summary
+        description: Amazon PO report summary
+        response:
+          type: object
+      amazon-po-new-po:
+        method: GET
+        path: /api/reports/amazon-po/new-po
+        description: Amazon new-PO report
+        response:
+          type: object
+      amazon-po-matrix:
+        method: GET
+        path: /api/reports/amazon-po/matrix
+        description: Amazon PO matrix (by month/year)
+        params:
+        - name: month
+          type: int
+          required: true
+          description: Month number 1-12
+        - name: year
+          type: int
+          required: true
+          description: Four-digit year
+        response:
+          type: object
+      amazon-po-filter-options:
+        method: GET
+        path: /api/reports/amazon-po/filter-options
+        description: Filter options for the Amazon PO report
+        response:
+          type: object
+      appointment:
+        method: GET
+        path: /api/reports/appointment
+        description: Appointment report
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+      appointment-summary:
+        method: GET
+        path: /api/reports/appointment/summary
+        description: Appointment report summary
+        response:
+          type: object
+      appointment-filter-options:
+        method: GET
+        path: /api/reports/appointment/filter-options
+        description: Filter options (pos_numbers, destination_fcs) for the appointment report
+        response:
+          type: object
+      columns:
+        method: GET
+        path: /api/reports/columns
+        description: Column definitions for a report view
+        params:
+        - &id002
+          name: view
+          type: string
+          required: true
+          description: Report view name
+          enum:
+          - amazon_mp_master_view
+          - amazon_sec_daily_master_view
+          - amazon_sec_range_master_view
+        response:
+          type: object
+      raw:
+        method: GET
+        path: /api/reports/raw
+        description: Raw rows for a report view
+        params:
+        - *id002
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+  sap:
+    description: 'SAP HANA read layer: distributors, inventory, sales invoices, stock'
+    endpoints:
+      distributors:
+        method: GET
+        path: /api/sap/distributors
+        description: List SAP distributors
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      distributor:
+        method: GET
+        path: /api/sap/distributors/{code}
+        description: Get a distributor (profile, addresses, contacts) by card code
+        params:
+        - name: code
+          type: string
+          required: true
+          positional: true
+          description: Distributor CardCode
+        response:
+          type: object
+      distributor-inventory:
+        method: GET
+        path: /api/sap/distributor-inventory
+        description: Distributor inventory
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      distributor-invoices:
+        method: GET
+        path: /api/sap/distributor-invoices/{code}
+        description: Invoices for a distributor by card code
+        params:
+        - name: code
+          type: string
+          required: true
+          positional: true
+          description: Distributor CardCode
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      distributor-orders:
+        method: GET
+        path: /api/sap/distributor-orders/{code}
+        description: Orders for a distributor by card code
+        params:
+        - name: code
+          type: string
+          required: true
+          positional: true
+          description: Distributor CardCode
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      platform-distributors:
+        method: GET
+        path: /api/sap/platform-distributors/{platform}
+        description: Distributors mapped to a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      platform-distributor:
+        method: GET
+        path: /api/sap/platform-distributors/{platform}/{code}
+        description: A platform-distributor mapping by card code
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        - name: code
+          type: string
+          required: true
+          positional: true
+          description: Distributor CardCode
+        response:
+          type: object
+      platform-sales-invoices:
+        method: GET
+        path: /api/sap/platform-sales-invoices/{platform}
+        description: Sales invoices for a platform
+        params:
+        - name: platform
+          type: string
+          required: true
+          positional: true
+          description: Platform slug
+          enum: *id001
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      inventory-finished-goods:
+        method: GET
+        path: /api/sap/inventory-finished-goods
+        description: Finished-goods inventory
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      inventory-overview:
+        method: GET
+        path: /api/sap/inventory-overview
+        description: Inventory overview
+        response:
+          type: object
+      inventory-warehouse-comparison:
+        method: GET
+        path: /api/sap/inventory-warehouse-comparison
+        description: Inventory comparison across warehouses
+        response:
+          type: object
+      stock-by-warehouse:
+        method: GET
+        path: /api/sap/stock-by-warehouse
+        description: Stock levels by warehouse
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      items:
+        method: GET
+        path: /api/sap/items
+        description: SAP item master
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      sales-invoices:
+        method: GET
+        path: /api/sap/sales-invoices
+        description: List SAP sales invoices
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      sales-invoice:
+        method: GET
+        path: /api/sap/sales-invoices/{id}
+        description: Get a sales invoice by id
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Sales invoice id (DocEntry)
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+      sales-invoice-lines:
+        method: GET
+        path: /api/sap/sales-invoice-lines/{id}
+        description: 'Line items for a sales invoice by id (note: upstream SAP query may 500)'
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Sales invoice id (DocEntry)
+        response:
+          type: object
+      sales-analysis:
+        method: GET
+        path: /api/sap/sales-analysis
+        description: Sales analysis over a date range
+        params:
+        - name: from_date
+          type: string
+          required: true
+          description: Start date YYYY-MM-DD
+        - name: to_date
+          type: string
+          required: true
+          description: End date YYYY-MM-DD
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: data
+  shipment:
+    description: Amazon Shipment Planner (read-only). Requires Shipment Planner access; returns 403 without
+      it.
+    endpoints:
+      all-appointments:
+        method: GET
+        path: /api/shipment/all-appointments
+        description: All shipment appointments
+        response:
+          type: object
+      appointment-commits:
+        method: GET
+        path: /api/shipment/appointment-commits
+        description: Appointment commit records
+        response:
+          type: object
+      appointments:
+        method: GET
+        path: /api/shipment/appointments
+        description: Shipment appointments
+        response:
+          type: object
+      appointment-dates:
+        method: GET
+        path: /api/shipment/appointments/dates
+        description: Available appointment dates
+        response:
+          type: object
+      asin-catalog:
+        method: GET
+        path: /api/shipment/asin-catalog
+        description: ASIN catalog
+        response:
+          type: object
+      inventory:
+        method: GET
+        path: /api/shipment/inventory
+        description: Shipment planning inventory
+        response:
+          type: object
+      po-items:
+        method: GET
+        path: /api/shipment/po-items
+        description: PO items available to ship
+        response:
+          type: object
+      po-shipment-lookup:
+        method: GET
+        path: /api/shipment/po-shipment-lookup
+        description: Lookup shipments for a PO
+        response:
+          type: object
+      po-short-supply:
+        method: GET
+        path: /api/shipment/po-short-supply
+        description: PO short-supply report
+        response:
+          type: object
+      record:
+        method: GET
+        path: /api/shipment/record
+        description: Shipment record
+        response:
+          type: object
+      shipments:
+        method: GET
+        path: /api/shipment/shipments
+        description: List shipments
+        response:
+          type: object
+      shipments-deletion-log:
+        method: GET
+        path: /api/shipment/shipments/deletion-log
+        description: Shipment deletion log
+        response:
+          type: object
+      shipments-doh-auto-fill:
+        method: GET
+        path: /api/shipment/shipments/doh-auto-fill
+        description: DOH auto-fill suggestions
+        response:
+          type: object
+      shipments-pending-approvals:
+        method: GET
+        path: /api/shipment/shipments/pending-approvals
+        description: Shipments pending approval
+        response:
+          type: object
+      shipments-stats:
+        method: GET
+        path: /api/shipment/shipments/stats
+        description: Shipment stats
+        response:
+          type: object
+      appointment-extra-pos:
+        method: GET
+        path: /api/shipment/appointments/{id}/extra-pos
+        description: Extra POs for an appointment
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Appointment id
+        response:
+          type: object
+      appointment-items:
+        method: GET
+        path: /api/shipment/appointments/{id}/items
+        description: Items for an appointment
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Appointment id
+        response:
+          type: object
+      shipment:
+        method: GET
+        path: /api/shipment/shipments/{id}
+        description: Get a shipment by id
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Shipment id
+        response:
+          type: object
+      shipment-invoices:
+        method: GET
+        path: /api/shipment/shipments/{id}/invoices
+        description: Invoices for a shipment
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Shipment id
+        response:
+          type: object
+      shipment-invoice-file:
+        method: GET
+        path: /api/shipment/shipments/{id}/invoices/{invoice}/file
+        description: Download an invoice file for a shipment
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Shipment id
+        - name: invoice
+          type: string
+          required: true
+          positional: true
+          description: Invoice id
+        response:
+          type: object
+      shipment-po-documents:
+        method: GET
+        path: /api/shipment/shipments/{id}/po-documents
+        description: PO documents for a shipment
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Shipment id
+        response:
+          type: object
+      shipment-po-document:
+        method: GET
+        path: /api/shipment/shipments/{id}/po-documents/{document}
+        description: A PO document for a shipment
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Shipment id
+        - name: document
+          type: string
+          required: true
+          positional: true
+          description: Document id
+        response:
+          type: object
+  upload:
+    description: Read-only views of uploaded reference data
+    endpoints:
+      ads-master:
+        method: GET
+        path: /api/upload/ads-master
+        description: Ads master sheet (columns, rows)
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: rows
+      master-sheet:
+        method: GET
+        path: /api/upload/master-sheet
+        description: Master sheet
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: rows
+      pincode-mapping:
+        method: GET
+        path: /api/upload/pincode-mapping
+        description: Pincode mapping table
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+        response_path: rows
+  uploads:
+    description: Upload job history (read-only)
+    endpoints:
+      list:
+        method: GET
+        path: /api/uploads
+        description: List upload jobs
+        params:
+        - name: page
+          type: int
+          description: Page number
+        - name: page_size
+          type: int
+          description: Rows per page
+          flag_name: page-size
+        response:
+          type: object
+      get:
+        method: GET
+        path: /api/uploads/{id}
+        description: Get an upload job (summary, errors, diagnostics) by id
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Upload job id
+        response:
+          type: object
+  chatbot:
+    description: Read-only access to the ecom app's built-in assistant (health + conversation history)
+    endpoints:
+      health:
+        method: GET
+        path: /api/chatbot/health
+        description: Chatbot service health
+        response:
+          type: object
+      conversations:
+        method: GET
+        path: /api/chatbot/conversations
+        description: List chatbot conversations
+        response:
+          type: object
+      conversation:
+        method: GET
+        path: /api/chatbot/conversations/{id}
+        description: Get a chatbot conversation (with messages) by id
+        params:
+        - name: id
+          type: string
+          required: true
+          positional: true
+          description: Conversation id
+        response:
+          type: object

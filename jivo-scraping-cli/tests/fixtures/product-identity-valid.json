@@ -1,0 +1,332 @@
+{
+  "contract": {
+    "name": "jivo-product-identity",
+    "schema_version": "1.0.0",
+    "dataset_version": "test-2026-07-19",
+    "release_status": "released",
+    "generated_at": "2026-07-19T12:00:00+05:30",
+    "generator_version": "test-fixture-1",
+    "read_only": true
+  },
+  "sources": [
+    {
+      "source_id": "fixture",
+      "kind": "test",
+      "uri": "fixture-source.json",
+      "content_sha256": "sha256:c667ebb45fc0114315f9526fcfda65459c106a7d94f396026bae139f14813cc4"
+    }
+  ],
+  "factory_scopes": [
+    {
+      "factory_scope_key": "JIVO_MART|JIVO_MART_HANADB",
+      "company_code": "JIVO_MART",
+      "sap_schema": "JIVO_MART_HANADB"
+    },
+    {
+      "factory_scope_key": "JIVO_OIL|JIVO_OIL_HANADB",
+      "company_code": "JIVO_OIL",
+      "sap_schema": "JIVO_OIL_HANADB"
+    },
+    {
+      "factory_scope_key": "JIVO_BEVERAGES|JIVO_BEVERAGES_HANADB",
+      "company_code": "JIVO_BEVERAGES",
+      "sap_schema": "JIVO_BEVERAGES_HANADB"
+    }
+  ],
+  "products": [
+    {
+      "product_key": "product|canola-3x1l",
+      "jid": "JID-0016",
+      "canonical_name": "Jivo Canola Oil 3 x 1L",
+      "state": "active"
+    },
+    {
+      "product_key": "product|canola-3l-bottle",
+      "jid": "JID-0116",
+      "canonical_name": "Jivo Canola Oil 3L Bottle",
+      "state": "active"
+    }
+  ],
+  "price_skus": [
+    {
+      "price_sku_key": "price-match|CANOLA 3L",
+      "source_namespace": "price-match",
+      "source_product_code": "CANOLA 3L",
+      "display_name": "Jivo Canola Oil 3L",
+      "state": "active",
+      "member_listing_keys": [
+        "amazon|B0CANOLA3L",
+        "flipkart|EDOCANOLA3X1"
+      ],
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/price_skus/CANOLA 3L",
+          "claim": "Exact price product code",
+          "evidence_kind": "exact_price_code"
+        }
+      ]
+    }
+  ],
+  "listings": [
+    {
+      "listing_key": "amazon|B0CANOLA3L",
+      "price_sku_key": "price-match|CANOLA 3L",
+      "platform": "amazon",
+      "listing_id": "B0CANOLA3L",
+      "listing_id_kind": "asin",
+      "title": "Jivo Canola Oil 3L Bottle",
+      "state": "active",
+      "is_primary": true,
+      "pack": "1 x 3L",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/listings/amazon/B0CANOLA3L",
+          "claim": "Exact Amazon listing identity",
+          "evidence_kind": "exact_listing_identity"
+        }
+      ]
+    },
+    {
+      "listing_key": "flipkart|EDOCANOLA3X1",
+      "price_sku_key": "price-match|CANOLA 3L",
+      "platform": "flipkart",
+      "listing_id": "EDOCANOLA3X1",
+      "listing_id_kind": "fsn",
+      "title": "Jivo Canola Oil 1L Pack of 3",
+      "state": "active",
+      "is_primary": true,
+      "pack": "3 x 1L",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/listings/flipkart/EDOCANOLA3X1",
+          "claim": "Exact Flipkart listing identity",
+          "evidence_kind": "exact_listing_identity"
+        }
+      ]
+    }
+  ],
+  "factory_items": [
+    {
+      "factory_item_key": "JIVO_MART|JIVO_MART_HANADB|FG0000317",
+      "factory_scope_key": "JIVO_MART|JIVO_MART_HANADB",
+      "company_code": "JIVO_MART",
+      "sap_schema": "JIVO_MART_HANADB",
+      "item_code": "FG0000317",
+      "item_name": "CANOLA OIL 3 LTR BOTTLE 6 PCS",
+      "item_class": "FG",
+      "state": "active",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/factory/JIVO_MART/FG0000317",
+          "claim": "Qualified Factory catalog row",
+          "evidence_kind": "qualified_factory_record"
+        }
+      ]
+    },
+    {
+      "factory_item_key": "JIVO_MART|JIVO_MART_HANADB|FG0000043",
+      "factory_scope_key": "JIVO_MART|JIVO_MART_HANADB",
+      "company_code": "JIVO_MART",
+      "sap_schema": "JIVO_MART_HANADB",
+      "item_code": "FG0000043",
+      "item_name": "CANOLA OIL 1 LTR BOTTLE 12 PCS",
+      "item_class": "FG",
+      "state": "active",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/factory/JIVO_MART/FG0000043",
+          "claim": "Qualified Factory catalog row",
+          "evidence_kind": "qualified_factory_record"
+        }
+      ]
+    },
+    {
+      "factory_item_key": "JIVO_OIL|JIVO_OIL_HANADB|FG0000317",
+      "factory_scope_key": "JIVO_OIL|JIVO_OIL_HANADB",
+      "company_code": "JIVO_OIL",
+      "sap_schema": "JIVO_OIL_HANADB",
+      "item_code": "FG0000317",
+      "item_name": "SESAME OIL PLUS JEERA COMBO",
+      "item_class": "FG",
+      "state": "active",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/factory/JIVO_OIL/FG0000317",
+          "claim": "Qualified Factory catalog row",
+          "evidence_kind": "qualified_factory_record"
+        }
+      ]
+    }
+  ],
+  "resolutions": [
+    {
+      "resolution_id": "resolution|amazon|B0CANOLA3L",
+      "listing_key": "amazon|B0CANOLA3L",
+      "canonical_product_key": "product|canola-3l-bottle",
+      "canonical_jid": "JID-0116",
+      "state": "verified",
+      "factory_mapping_state": "verified",
+      "factory_bindings": [
+        {
+          "factory_item_key": "JIVO_MART|JIVO_MART_HANADB|FG0000317",
+          "role": "physical-pack",
+          "factory_uom_per_listing_offer": {
+            "numerator": 1,
+            "denominator": 1
+          },
+          "primary_for_scope": true,
+          "evidence": [
+            {
+              "source_id": "fixture",
+              "pointer": "/listings/amazon/B0CANOLA3L",
+              "claim": "Exact Amazon listing resolves to the 3L product",
+              "evidence_kind": "exact_listing_identity"
+            },
+            {
+              "source_id": "fixture",
+              "pointer": "/factory/JIVO_MART/FG0000317",
+              "claim": "Qualified Factory row for the 3L product",
+              "evidence_kind": "qualified_factory_record"
+            }
+          ]
+        }
+      ],
+      "verification_method": "curated-fixture",
+      "verified_by": "test",
+      "verified_at": "2026-07-19T12:00:00+05:30"
+    },
+    {
+      "resolution_id": "resolution|flipkart|EDOCANOLA3X1",
+      "listing_key": "flipkart|EDOCANOLA3X1",
+      "canonical_product_key": "product|canola-3x1l",
+      "canonical_jid": "JID-0016",
+      "state": "verified",
+      "factory_mapping_state": "verified",
+      "factory_bindings": [
+        {
+          "factory_item_key": "JIVO_MART|JIVO_MART_HANADB|FG0000043",
+          "role": "physical-pack",
+          "factory_uom_per_listing_offer": {
+            "numerator": 3,
+            "denominator": 1
+          },
+          "primary_for_scope": true,
+          "evidence": [
+            {
+              "source_id": "fixture",
+              "pointer": "/listings/flipkart/EDOCANOLA3X1",
+              "claim": "Exact Flipkart listing resolves to the 3 x 1L product",
+              "evidence_kind": "exact_listing_identity"
+            },
+            {
+              "source_id": "fixture",
+              "pointer": "/factory/JIVO_MART/FG0000043",
+              "claim": "Qualified Factory row for the 1L product",
+              "evidence_kind": "qualified_factory_record"
+            }
+          ]
+        }
+      ],
+      "verification_method": "curated-fixture",
+      "verified_by": "test",
+      "verified_at": "2026-07-19T12:00:00+05:30"
+    }
+  ],
+  "jid_aliases": [],
+  "jid_conflicts": [],
+  "factory_item_accounting": [
+    {
+      "factory_item_key": "JIVO_MART|JIVO_MART_HANADB|FG0000317",
+      "disposition": "mapped",
+      "listing_keys": ["amazon|B0CANOLA3L"],
+      "reason": "Referenced by the exact Amazon listing resolution.",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/factory/JIVO_MART/FG0000317",
+          "claim": "Factory item disposition is bound",
+          "evidence_kind": "accounting_disposition"
+        }
+      ]
+    },
+    {
+      "factory_item_key": "JIVO_MART|JIVO_MART_HANADB|FG0000043",
+      "disposition": "mapped",
+      "listing_keys": ["flipkart|EDOCANOLA3X1"],
+      "reason": "Referenced by the exact Flipkart listing resolution.",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/factory/JIVO_MART/FG0000043",
+          "claim": "Factory item disposition is bound",
+          "evidence_kind": "accounting_disposition"
+        }
+      ]
+    },
+    {
+      "factory_item_key": "JIVO_OIL|JIVO_OIL_HANADB|FG0000317",
+      "disposition": "not_in_price_scraping_scope",
+      "listing_keys": [],
+      "reason": "The reused bare code is a different product outside this price scope.",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/factory/JIVO_OIL/FG0000317",
+          "claim": "Factory item disposition is outside price scope",
+          "evidence_kind": "accounting_disposition"
+        }
+      ]
+    }
+  ],
+  "factory_code_collisions": [
+    {
+      "item_code": "FG0000317",
+      "factory_item_keys": [
+        "JIVO_MART|JIVO_MART_HANADB|FG0000317",
+        "JIVO_OIL|JIVO_OIL_HANADB|FG0000317"
+      ],
+      "physical_relation": "different_offer",
+      "evidence": [
+        {
+          "source_id": "fixture",
+          "pointer": "/factory/collisions/FG0000317",
+          "claim": "The same bare code has different products in two scopes",
+          "evidence_kind": "qualified_factory_record"
+        }
+      ]
+    }
+  ],
+  "coverage": {
+    "price_skus": {
+      "expected": 1,
+      "accounted": 1,
+      "unaccounted": 0
+    },
+    "listings": {
+      "expected": 2,
+      "accounted": 2,
+      "unaccounted": 0
+    },
+    "jids": {
+      "expected": 2,
+      "accounted": 2,
+      "unaccounted": 0
+    },
+    "factory_items": {
+      "expected": 3,
+      "accounted": 3,
+      "unaccounted": 0
+    },
+    "unresolved_listings": 0,
+    "ambiguous_listings": 0,
+    "open_jid_conflicts": 0,
+    "unknown_factory_collisions": 0,
+    "source_identity_sets_match": true
+  }
+}

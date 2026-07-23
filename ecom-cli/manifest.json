@@ -1,0 +1,39 @@
+{
+  "manifest_version": "0.3",
+  "name": "jivo-ecom-pp-mcp",
+  "display_name": "Jivo Ecom",
+  "version": "0.0.0",
+  "description": "JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.",
+  "author": {
+    "name": "CLI Printing Press"
+  },
+  "license": "Apache-2.0",
+  "server": {
+    "type": "binary",
+    "entry_point": "bin/jivo-ecom-pp-mcp",
+    "mcp_config": {
+      "command": "${__dirname}/bin/jivo-ecom-pp-mcp",
+      "args": [],
+      "env": {
+        "JIVO_ECOM_TOKEN": "${user_config.jivo_ecom_token}"
+      }
+    }
+  },
+  "user_config": {
+    "jivo_ecom_token": {
+      "type": "string",
+      "title": "JIVO_ECOM_TOKEN",
+      "description": "Sets JIVO_ECOM_TOKEN for the Jivo Ecom MCP server.",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=1.0.0",
+    "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+    ]
+  }
+}

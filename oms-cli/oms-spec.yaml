@@ -1,0 +1,655 @@
+name: oms
+description: "JIVO OMS (Order Management System) CLI — READ-ONLY. Orders, quotations, schemes, approvals, party & product assignments, SAP Business One sync, SAP HANA live stock, invoices/SKU, and the invoice tracker at oms.jivo.in. Every command is a GET; no mutating endpoint is wrapped."
+version: "0.1.0"
+base_url: "https://oms.jivo.in"
+health_check_path: "/api/auth/profile/"
+
+auth:
+  type: bearer_token
+  header: "Authorization"
+  format: "Bearer {token}"
+  env_vars:
+    - OMS_TOKEN
+
+config:
+  format: toml
+  path: "~/.config/oms-pp-cli/config.toml"
+
+resources:
+  account:
+    description: "Authenticated account, users, roles, and reference master data (companies, states, categories, main groups)"
+    endpoints:
+      profile:
+        method: GET
+        path: "/api/auth/profile/"
+        description: "Show the authenticated user (role, company, main groups, states, category, page permissions)"
+        response:
+          type: object
+      users:
+        method: GET
+        path: "/api/auth/users/list/"
+        description: "List app users"
+        response:
+          type: object
+      user-parties:
+        method: GET
+        path: "/api/auth/users/{id}/parties/"
+        description: "Parties (customers) assigned to a user"
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "User id"
+        response:
+          type: object
+      user-page-permissions:
+        method: GET
+        path: "/api/auth/users/{id}/page-permissions/"
+        description: "Page-permission grants for a user"
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "User id"
+        response:
+          type: object
+      roles:
+        method: GET
+        path: "/api/auth/roles/"
+        description: "List roles (admin, auditor, billing, rate approver, manager, etc.)"
+        response:
+          type: object
+      companies:
+        method: GET
+        path: "/api/auth/companies/"
+        description: "List companies (Jivo Mart, Jivo Wellness)"
+        response:
+          type: object
+      states:
+        method: GET
+        path: "/api/auth/states/"
+        description: "List states"
+        response:
+          type: object
+      categories:
+        method: GET
+        path: "/api/auth/categories/"
+        description: "List product categories (e.g. OIL)"
+        response:
+          type: object
+      main-groups:
+        method: GET
+        path: "/api/auth/mainGroup/"
+        description: "List main groups (ROI, GT, MT, BRANCH, ...)"
+        response:
+          type: object
+      party-products:
+        method: GET
+        path: "/api/auth/parties/{card_code}/products/"
+        description: "Products assigned to a party (argument is the SAP card_code, not a numeric id)"
+        params:
+          - name: card_code
+            type: string
+            required: true
+            positional: true
+            description: "SAP party card code, e.g. CUSTA000596"
+        response:
+          type: object
+
+  orders:
+    description: "Orders: list, detail, status lifecycle, tracking, dispatch, approval-flow config, and the party/product lookups the order screens use"
+    endpoints:
+      list:
+        method: GET
+        path: "/api/orders/list/"
+        description: "All orders (admin-wide). Filter by status/stage."
+        params:
+          - name: status
+            type: string
+            description: "Filter by status code (e.g. BILLING, AUDITOR_APPROVAL)"
+          - name: billing
+            type: bool
+            description: "Only billing-stage orders"
+          - name: approval_pending
+            type: bool
+            description: "Only approval-pending orders"
+        response:
+          type: object
+      by-user:
+        method: GET
+        path: "/api/orders/ordersbyuser/{user_id}/"
+        description: "Orders raised by a specific user (source for View Orders / Order Tracking)"
+        params:
+          - name: user_id
+            type: int
+            required: true
+            positional: true
+            description: "User id"
+        response:
+          type: object
+      detail:
+        method: GET
+        path: "/api/orders/orderdetailsbyid/{id}/"
+        description: "Full order with line items, addresses, rate approvals, SAP doc number"
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "Order id"
+        response:
+          type: object
+      logs:
+        method: GET
+        path: "/api/orders/{id}/orderlogs/"
+        description: "Status-change audit trail for an order (drives the tracking timeline)"
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "Order id"
+        response:
+          type: object
+      status:
+        method: GET
+        path: "/api/orders/status/"
+        description: "Order status master (id -> name)"
+        response:
+          type: object
+      status-tracking:
+        method: GET
+        path: "/api/orders/status-tracking/"
+        description: "Approval queue for a stage. Requires --mode."
+        params:
+          - name: mode
+            type: string
+            required: true
+            description: "Approval stage"
+            enum: [auditor, billing, rate_approver]
+        response:
+          type: object
+      stock-check:
+        method: GET
+        path: "/api/orders/stock-check/"
+        description: "Per-order required-qty vs available-stock (legacy view)"
+        response:
+          type: object
+      dispatches:
+        method: GET
+        path: "/api/orders/dispatches/"
+        description: "Dispatch-from locations"
+        response:
+          type: object
+      notifications:
+        method: GET
+        path: "/api/orders/notifications/"
+        description: "Order-status notifications for the current user"
+        response:
+          type: object
+      addresses:
+        method: GET
+        path: "/api/orders/addresses/"
+        description: "Bill-to / ship-to addresses for a party. Requires --card-code."
+        params:
+          - name: card_code
+            type: string
+            required: true
+            description: "SAP party card code"
+          - name: category
+            type: string
+            description: "Optional category filter"
+        response:
+          type: object
+      branch:
+        method: GET
+        path: "/api/orders/branch/"
+        description: "SAP branch / BPL list"
+        response:
+          type: object
+      parties:
+        method: GET
+        path: "/api/orders/parties/"
+        description: "Assigned-party dropdown (card_code -> card_name) for the current user"
+        response:
+          type: object
+      products:
+        method: GET
+        path: "/api/orders/products/"
+        description: "Global product list"
+        response:
+          type: object
+      staff-products:
+        method: GET
+        path: "/api/orders/staff-products/"
+        description: "Staff-assigned products"
+        response:
+          type: object
+      party-products:
+        method: GET
+        path: "/api/orders/party-products/{card_code}/"
+        description: "Products (with rates) assigned to a party, for the order product selector"
+        params:
+          - name: card_code
+            type: string
+            required: true
+            positional: true
+            description: "SAP party card code"
+        response:
+          type: object
+      schemes:
+        method: GET
+        path: "/api/orders/schemes/"
+        description: "Sales schemes / promotions"
+        response:
+          type: object
+      flow-config:
+        method: GET
+        path: "/api/orders/flow-config/"
+        description: "Global order approval-flow configuration"
+        response:
+          type: object
+      party-flow-config:
+        method: GET
+        path: "/api/orders/party-flow-config/"
+        description: "Per-party approval-flow configuration"
+        response:
+          type: object
+
+  quotations:
+    description: "Sales quotations and their SAP push status"
+    endpoints:
+      overview:
+        method: GET
+        path: "/api/orders/quotation-overview/"
+        description: "All quotations with SAP doc numbers and cancellation state"
+        response:
+          type: object
+      status:
+        method: GET
+        path: "/api/orders/quotation-status/"
+        description: "Open/closed SAP status badges for specific quotations"
+        params:
+          - name: order_ids
+            type: string
+            description: "Comma-separated order ids, e.g. 1,2,3"
+        response:
+          type: object
+
+  dashboard:
+    description: "Dashboard KPIs and chart series"
+    endpoints:
+      summary:
+        method: GET
+        path: "/api/orders/dashboardW/"
+        description: "Dashboard KPI block (total orders, total sales, completion)"
+        response:
+          type: object
+      charts:
+        method: GET
+        path: "/api/orders/dashboardW/charts/"
+        description: "Dashboard chart series (visual overview, statewise)"
+        params:
+          - name: status
+            type: string
+            description: "Optional status filter for the series"
+        response:
+          type: object
+
+  sap:
+    description: "SAP Business One sync — history logs and synced master data (branches, parties, products)"
+    endpoints:
+      logs:
+        method: GET
+        path: "/api/sap/logs/"
+        description: "SAP sync history (sync_type, status, records processed/created/updated, duration)"
+        response:
+          type: object
+      branches:
+        method: GET
+        path: "/api/sap/branches/"
+        description: "SAP branches"
+        response:
+          type: object
+      parties:
+        method: GET
+        path: "/api/sap/parties/"
+        description: "SAP parties (business partners)"
+        response:
+          type: object
+      party-categories:
+        method: GET
+        path: "/api/sap/parties/category/"
+        description: "SAP parties filtered by category"
+        params:
+          - name: category
+            type: string
+            description: "Category filter"
+        response:
+          type: object
+      products:
+        method: GET
+        path: "/api/sap/products/"
+        description: "SAP products"
+        response:
+          type: object
+      product-varieties:
+        method: GET
+        path: "/api/sap/product-varieties/"
+        description: "SAP product varieties"
+        response:
+          type: object
+      addresses:
+        method: GET
+        path: "/api/sap/addresses/"
+        description: "SAP addresses"
+        response:
+          type: object
+      quotation-log:
+        method: GET
+        path: "/api/sap/quotation-log/{id}/"
+        description: "Per-order SAP quotation push record"
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "Order id"
+        response:
+          type: object
+
+  hana:
+    description: "Live SAP HANA queries — product stock, sales orders, customers, and the order-creation wizard lookups"
+    endpoints:
+      product-stock:
+        method: GET
+        path: "/api/hana/product-stock/"
+        description: "Live product stock from SAP HANA"
+        response:
+          type: object
+      product-so:
+        method: GET
+        path: "/api/hana/product-so/"
+        description: "Product sales-order data for an item. Requires --item-code."
+        params:
+          - name: item_code
+            type: string
+            required: true
+            description: "SAP item code"
+        response:
+          type: object
+      so:
+        method: GET
+        path: "/api/hana/so/"
+        description: "Sales orders for a party. Requires --card-code."
+        params:
+          - name: card_code
+            type: string
+            required: true
+            description: "SAP party card code"
+        response:
+          type: object
+      open-parties:
+        method: GET
+        path: "/api/hana/open-parties/"
+        description: "Parties with open transactions"
+        response:
+          type: object
+      all-customers:
+        method: GET
+        path: "/api/hana/all-customers/"
+        description: "All customers from SAP HANA"
+        response:
+          type: object
+      fg-items:
+        method: GET
+        path: "/api/hana/fg-items/"
+        description: "Finished-goods items"
+        response:
+          type: object
+      freight-masters:
+        method: GET
+        path: "/api/hana/freight-masters/"
+        description: "Freight master records"
+        response:
+          type: object
+      inventory-details:
+        method: GET
+        path: "/api/hana/inventory-details/"
+        description: "Per-warehouse inventory for an item. Requires --item-code."
+        params:
+          - name: item_code
+            type: string
+            required: true
+            description: "SAP item code"
+        response:
+          type: object
+      batch-details:
+        method: GET
+        path: "/api/hana/batch-details/"
+        description: "Batch details for an item in a warehouse. Requires --item-code and --whs-code."
+        params:
+          - name: item_code
+            type: string
+            required: true
+            description: "SAP item code"
+          - name: whs_code
+            type: string
+            required: true
+            description: "Warehouse code"
+        response:
+          type: object
+      customer-details:
+        method: GET
+        path: "/api/hana/customer-details/"
+        description: "Customer master detail. Requires --card-code."
+        params:
+          - name: card_code
+            type: string
+            required: true
+            description: "SAP card code"
+        response:
+          type: object
+      address:
+        method: GET
+        path: "/api/hana/address/"
+        description: "Addresses for a customer. Requires --card-code."
+        params:
+          - name: card_code
+            type: string
+            required: true
+            description: "SAP card code"
+        response:
+          type: object
+      item-price:
+        method: GET
+        path: "/api/hana/item-price/"
+        description: "Price for an item on a price list. Requires --item-code and --price-list."
+        params:
+          - name: item_code
+            type: string
+            required: true
+            description: "SAP item code"
+          - name: price_list
+            type: string
+            required: true
+            description: "Price list id"
+        response:
+          type: object
+      next-doc-number:
+        method: GET
+        path: "/api/hana/next-doc-number/"
+        description: "Next document number for a document type. Requires --doc-type."
+        params:
+          - name: doc_type
+            type: string
+            required: true
+            description: "Document type"
+        response:
+          type: object
+      salesperson-details:
+        method: GET
+        path: "/api/hana/salesperson-details/"
+        description: "Salesperson detail. Requires --slp-code."
+        params:
+          - name: slp_code
+            type: string
+            required: true
+            description: "Salesperson code"
+        response:
+          type: object
+
+  invoices:
+    description: "Sales invoices, invoice review, and SKU master/image data"
+    endpoints:
+      all:
+        method: GET
+        path: "/api/invoice/all/"
+        description: "Invoice review queue (all invoices). Optionally filter by status."
+        params:
+          - name: status
+            type: string
+            description: "Status filter"
+        response:
+          type: object
+      # NOTE (Phase-3 verify 2026-07-19): the live backend has NO /api/invoice/history/{id}/
+      # route (only log/create, all, refLogs exist) — deployed API is out of sync with the
+      # SPA bundle. This command is unregistered in the CLI until the backend confirms the route.
+      history:
+        method: GET
+        path: "/api/invoice/history/{id}/"
+        description: "Status-history timeline for an invoice (BACKEND ROUTE MISSING — unregistered)"
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "Invoice id"
+        response:
+          type: object
+      skus:
+        method: GET
+        path: "/api/sku/all/"
+        description: "All SKUs"
+        response:
+          type: object
+      skus-pending:
+        method: GET
+        path: "/api/sku/pending/"
+        description: "SKUs pending review"
+        response:
+          type: object
+      sku:
+        method: GET
+        path: "/api/sku/{item_code}/"
+        description: "Per-SKU detail"
+        params:
+          - name: item_code
+            type: string
+            required: true
+            positional: true
+            description: "SKU item code"
+        response:
+          type: object
+
+  tracker:
+    description: "Invoice-tracker sub-app (access-gated: returns 403 for non-tracker roles). Read endpoints for a tracker-enabled account."
+    endpoints:
+      my-queue:
+        method: GET
+        path: "/api/tracker/my-queue/"
+        description: "Current user's tracker work queue"
+        response:
+          type: object
+      invoices:
+        method: GET
+        path: "/api/tracker/invoices/"
+        description: "Tracker invoices"
+        response:
+          type: object
+      invoice-detail:
+        method: GET
+        path: "/api/tracker/invoices/{id}/"
+        description: "Single tracker invoice"
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "Tracker invoice id"
+        response:
+          type: object
+      all-invoices:
+        method: GET
+        path: "/api/tracker/all-invoices/"
+        description: "All tracker invoices"
+        response:
+          type: object
+      all-invoices-export:
+        method: GET
+        path: "/api/tracker/all-invoices/export/"
+        description: "Export of all tracker invoices"
+        response:
+          type: object
+      alerts:
+        method: GET
+        path: "/api/tracker/alerts/"
+        description: "Tracker alerts"
+        response:
+          type: object
+      reports:
+        method: GET
+        path: "/api/tracker/reports/"
+        description: "Tracker reports"
+        response:
+          type: object
+      vendors:
+        method: GET
+        path: "/api/tracker/vendors/"
+        description: "Tracker vendors"
+        response:
+          type: object
+      lookups:
+        method: GET
+        path: "/api/tracker/lookups/"
+        description: "Tracker lookup reference data"
+        response:
+          type: object
+      stage-advanced:
+        method: GET
+        path: "/api/tracker/stage-advanced/"
+        description: "Advanced stage view"
+        response:
+          type: object
+      admin-stages:
+        method: GET
+        path: "/api/tracker/admin/stages/"
+        description: "Tracker admin: stage definitions"
+        response:
+          type: object
+      admin-users:
+        method: GET
+        path: "/api/tracker/admin/users/"
+        description: "Tracker admin: users"
+        response:
+          type: object
+      admin-tracker-users:
+        method: GET
+        path: "/api/tracker/admin/tracker-users/"
+        description: "Tracker admin: tracker-role users"
+        response:
+          type: object
+      admin-lookups:
+        method: GET
+        path: "/api/tracker/admin/lookups/{type}/"
+        description: "Tracker admin: lookup set by type"
+        params:
+          - name: type
+            type: string
+            required: true
+            positional: true
+            description: "Lookup type"
+        response:
+          type: object

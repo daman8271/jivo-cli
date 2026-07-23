@@ -1,0 +1,1329 @@
+name: jivo-factory
+description: 'JIVO factory management CLI (ji.jivo.in / factory.jivo.in) — read-only access to all 3 companies (JIVO_MART,
+  JIVO_OIL, JIVO_BEVERAGES via --company / JIVO_FACTORY_COMPANY): gate, vehicles, quality control, GRPO, barcode traceability,
+  dispatch, production, WMS, maintenance & dashboards'
+version: 0.3.0
+base_url: https://factory.jivo.in/api/v1
+health_check_path: /accounts/me/
+category: developer-tools
+required_headers:
+- name: Company-Code
+  value: JIVO_MART
+auth:
+  type: bearer_token
+  header: Authorization
+  format: Bearer {token}
+  env_vars:
+  - JIVO_FACTORY_TOKEN
+config:
+  format: toml
+  path: ~/.config/jivo-factory-pp-cli/config.toml
+resources:
+  accounts:
+    description: Accounts & users
+    endpoints:
+      me:
+        method: GET
+        path: /accounts/me/
+        description: GET /accounts/me/ — accounts me
+        response:
+          type: object
+      users:
+        method: GET
+        path: /accounts/users/
+        description: GET /accounts/users/ — accounts users
+        response:
+          type: object
+      departments:
+        method: GET
+        path: /accounts/departments/
+        description: GET /accounts/departments/ — departments list (15 rows, shared across companies)
+        response:
+          type: object
+  barcode:
+    description: Barcode & traceability — boxes, pallets, dispatch sessions, intercompany
+    endpoints:
+      boxes:
+        method: GET
+        path: /barcode/boxes/
+        description: GET /barcode/boxes/ — barcode boxes
+        response:
+          type: object
+      dispatch-reports:
+        method: GET
+        path: /barcode/dispatch/reports/
+        description: GET /barcode/dispatch/reports/ — barcode dispatch reports
+        response:
+          type: object
+      dispatch-reports-boxes:
+        method: GET
+        path: /barcode/dispatch/reports/boxes/
+        description: GET /barcode/dispatch/reports/boxes/ — barcode dispatch reports boxes
+        response:
+          type: object
+      dispatch-reports-pallets:
+        method: GET
+        path: /barcode/dispatch/reports/pallets/
+        description: GET /barcode/dispatch/reports/pallets/ — barcode dispatch reports pallets
+        response:
+          type: object
+      dispatch-reports-rejected-scans:
+        method: GET
+        path: /barcode/dispatch/reports/rejected-scans/
+        description: GET /barcode/dispatch/reports/rejected-scans/ — barcode dispatch reports rejected scans
+        response:
+          type: object
+      dispatch-sessions:
+        method: GET
+        path: /barcode/dispatch/sessions/
+        description: GET /barcode/dispatch/sessions/ — barcode dispatch sessions (all)
+        response:
+          type: object
+      dispatch-sessions-active:
+        method: GET
+        path: /barcode/dispatch/sessions/active/
+        description: GET /barcode/dispatch/sessions/active/ — barcode dispatch sessions active
+        response:
+          type: object
+      dispatch-sessions-closed:
+        method: GET
+        path: /barcode/dispatch/sessions/closed/
+        description: GET /barcode/dispatch/sessions/closed/ — barcode dispatch sessions closed
+        response:
+          type: object
+      dispatch-sessions-completed:
+        method: GET
+        path: /barcode/dispatch/sessions/completed/
+        description: GET /barcode/dispatch/sessions/completed/ — barcode dispatch sessions completed
+        response:
+          type: object
+      dispatch-sessions-from-bill:
+        method: GET
+        path: /barcode/dispatch/sessions/from-bill/
+        description: GET /barcode/dispatch/sessions/from-bill/ — barcode dispatch sessions from bill
+        response:
+          type: object
+      dispatch-settings:
+        method: GET
+        path: /barcode/dispatch/settings/
+        description: GET /barcode/dispatch/settings/ — barcode dispatch settings
+        response:
+          type: object
+      intercompany-dashboard:
+        method: GET
+        path: /barcode/intercompany/dashboard/
+        description: GET /barcode/intercompany/dashboard/ — barcode intercompany dashboard
+        response:
+          type: object
+      intercompany-transfers:
+        method: GET
+        path: /barcode/intercompany/transfers/
+        description: GET /barcode/intercompany/transfers/ — barcode intercompany transfers list
+        response:
+          type: object
+      production-release-oil:
+        method: GET
+        path: /barcode/production-release-oil/
+        description: GET /barcode/production-release-oil/ — oil production release (JIVO_OIL only; 503 for other companies)
+        response:
+          type: object
+      items-oitm:
+        method: GET
+        path: /barcode/items/oitm/
+        description: GET /barcode/items/oitm/ — barcode items oitm
+        response:
+          type: object
+      loose:
+        method: GET
+        path: /barcode/loose/
+        description: GET /barcode/loose/ — barcode loose
+        response:
+          type: object
+      pallets:
+        method: GET
+        path: /barcode/pallets/
+        description: GET /barcode/pallets/ — barcode pallets
+        response:
+          type: object
+      print-history:
+        method: GET
+        path: /barcode/print/history/
+        description: GET /barcode/print/history/ — barcode print history
+        response:
+          type: object
+      scan-history:
+        method: GET
+        path: /barcode/scan/history/
+        description: GET /barcode/scan/history/ — barcode scan history
+        response:
+          type: object
+      intercompany-trace:
+        method: GET
+        path: /barcode/intercompany/trace/
+        description: GET /barcode/intercompany/trace/ — trace an intercompany barcode
+        response:
+          type: object
+        params:
+        - name: search
+          type: string
+          required: true
+          description: Barcode / search term (required; 400 without it)
+  daily-needs-gatein:
+    description: Daily-needs gate entries
+    endpoints:
+      gate-entries-daily-need-categories:
+        method: GET
+        path: /daily-needs-gatein/gate-entries/daily-need/categories/
+        description: GET /daily-needs-gatein/gate-entries/daily-need/categories/ — daily needs gatein gate entries daily need
+          categories
+        response:
+          type: object
+  dashboards:
+    description: Admin dashboards (stock, inventory-age, dispatch pipeline, SAP plan)
+    endpoints:
+      inventory-age-filter-options:
+        method: GET
+        path: /dashboards/inventory-age/filter-options/
+        description: GET /dashboards/inventory-age/filter-options/ — dashboards inventory age filter options
+        response:
+          type: object
+      inventory-age-report:
+        method: GET
+        path: /dashboards/inventory-age/report/
+        description: GET /dashboards/inventory-age/report/ — dashboards inventory age report
+        response:
+          type: object
+      sales-planning-requirement-analysis:
+        method: GET
+        path: /dashboards/sales-planning-requirement/analysis/
+        description: GET /dashboards/sales-planning-requirement/analysis/ — dashboards sales planning requirement analysis
+        response:
+          type: object
+      sales-planning-requirement-report:
+        method: GET
+        path: /dashboards/sales-planning-requirement/report/
+        description: GET /dashboards/sales-planning-requirement/report/ — dashboards sales planning requirement report
+        response:
+          type: object
+      sales-planning-requirement-status:
+        method: GET
+        path: /dashboards/sales-planning-requirement/status/
+        description: GET /dashboards/sales-planning-requirement/status/ — dashboards sales planning requirement status
+        response:
+          type: object
+      stock:
+        method: GET
+        path: /dashboards/stock/
+        description: GET /dashboards/stock/ — dashboards stock
+        response:
+          type: object
+      stock-as-of:
+        method: GET
+        path: /dashboards/stock/as-of/
+        description: GET /dashboards/stock/as-of/ — stock snapshot as of a date
+        response:
+          type: object
+        params:
+        - name: as_of_date
+          type: string
+          required: true
+          description: Snapshot date (YYYY-MM-DD), required by the view
+          format: date
+  dispatch:
+    description: Dispatch — docking, bilty-GRPO, transporter invoices
+    endpoints:
+      bilty-grpo-history:
+        method: GET
+        path: /dispatch/bilty-grpo/history/
+        description: GET /dispatch/bilty-grpo/history/ — dispatch bilty grpo history
+        response:
+          type: object
+      bilty-grpo-options:
+        method: GET
+        path: /dispatch/bilty-grpo/options/
+        description: GET /dispatch/bilty-grpo/options/ — dispatch bilty grpo options
+        response:
+          type: object
+      bilty-grpo-pending:
+        method: GET
+        path: /dispatch/bilty-grpo/pending/
+        description: GET /dispatch/bilty-grpo/pending/ — dispatch bilty grpo pending
+        response:
+          type: object
+      open-bilties:
+        method: GET
+        path: /dispatch/open-bilties/
+        description: GET /dispatch/open-bilties/ — dispatch open bilties
+        response:
+          type: object
+      transporter-invoices-history:
+        method: GET
+        path: /dispatch/transporter-invoices/history/
+        description: GET /dispatch/transporter-invoices/history/ — dispatch transporter invoices history
+        response:
+          type: object
+      bilty-grpo-preview:
+        method: GET
+        path: /dispatch/bilty-grpo/preview/{dispatch_plan_id}/
+        description: GET /dispatch/bilty-grpo/preview/{dispatch_plan_id}/ — bilty-GRPO posting preview for a dispatch plan
+        response:
+          type: object
+        params:
+        - name: dispatch_plan_id
+          type: string
+          required: true
+          description: Dispatch plan ID
+          positional: true
+  dispatch-plans:
+    description: Dispatch plans & pipeline
+    endpoints:
+      pipeline:
+        method: GET
+        path: /dispatch-plans/pipeline/
+        description: GET /dispatch-plans/pipeline/ — dispatch plans pipeline
+        response:
+          type: object
+      bills:
+        method: GET
+        path: /dispatch-plans/bills/
+        description: GET /dispatch-plans/bills/ — bills in a date window
+        response:
+          type: object
+        params:
+        - name: date_from
+          type: string
+          required: true
+          description: Window start (YYYY-MM-DD)
+          format: date
+        - name: date_to
+          type: string
+          required: true
+          description: Window end (YYYY-MM-DD)
+          format: date
+  docking-admin:
+    description: Docking admin scan approvals
+    endpoints:
+      partial-scan-requests:
+        method: GET
+        path: /docking-admin/partial-scan-requests/
+        description: GET /docking-admin/partial-scan-requests/ — docking admin partial scan requests
+        response:
+          type: object
+      scan-skip-requests:
+        method: GET
+        path: /docking-admin/scan-skip-requests/
+        description: GET /docking-admin/scan-skip-requests/ — docking admin scan skip requests
+        response:
+          type: object
+  driver-management:
+    description: Drivers
+    endpoints:
+      drivers:
+        method: GET
+        path: /driver-management/drivers/
+        description: GET /driver-management/drivers/ — driver management drivers
+        response:
+          type: object
+      drivers-names:
+        method: GET
+        path: /driver-management/drivers/names/
+        description: GET /driver-management/drivers/names/ — driver management drivers names
+        response:
+          type: object
+  gate-core:
+    description: Gate — arrivals, BST in/out/return, empty-vehicle, job-work, sales-dispatch gate-out
+    endpoints:
+      arrivals:
+        method: GET
+        path: /gate-core/arrivals/
+        description: GET /gate-core/arrivals/ — gate core arrivals
+        response:
+          type: object
+      bst-ins:
+        method: GET
+        path: /gate-core/bst-ins/
+        description: GET /gate-core/bst-ins/ — gate core bst ins
+        response:
+          type: object
+      bst-ins-eligible-outs:
+        method: GET
+        path: /gate-core/bst-ins/eligible-outs/
+        description: GET /gate-core/bst-ins/eligible-outs/ — gate core bst ins eligible outs
+        response:
+          type: object
+      bst-outs:
+        method: GET
+        path: /gate-core/bst-outs/
+        description: GET /gate-core/bst-outs/ — gate core bst outs
+        response:
+          type: object
+      bst-outs-sap-transfers:
+        method: GET
+        path: /gate-core/bst-outs/sap-transfers/
+        description: GET /gate-core/bst-outs/sap-transfers/ — gate core bst outs sap transfers
+        response:
+          type: object
+      bst-returns:
+        method: GET
+        path: /gate-core/bst-returns/
+        description: GET /gate-core/bst-returns/ — gate core bst returns
+        response:
+          type: object
+      bst-returns-eligible-outs:
+        method: GET
+        path: /gate-core/bst-returns/eligible-outs/
+        description: GET /gate-core/bst-returns/eligible-outs/ — gate core bst returns eligible outs
+        response:
+          type: object
+      empty-vehicle-ins:
+        method: GET
+        path: /gate-core/empty-vehicle-ins/
+        description: GET /gate-core/empty-vehicle-ins/ — gate core empty vehicle ins
+        response:
+          type: object
+      empty-vehicle-ins-eligible:
+        method: GET
+        path: /gate-core/empty-vehicle-ins/eligible/
+        description: GET /gate-core/empty-vehicle-ins/eligible/ — gate core empty vehicle ins eligible
+        response:
+          type: object
+      empty-vehicle-ins-reasons:
+        method: GET
+        path: /gate-core/empty-vehicle-ins/reasons/
+        description: GET /gate-core/empty-vehicle-ins/reasons/ — gate core empty vehicle ins reasons
+        response:
+          type: object
+      empty-vehicle-outs:
+        method: GET
+        path: /gate-core/empty-vehicle-outs/
+        description: GET /gate-core/empty-vehicle-outs/ — gate core empty vehicle outs
+        response:
+          type: object
+      empty-vehicle-outs-eligible-entries:
+        method: GET
+        path: /gate-core/empty-vehicle-outs/eligible-entries/
+        description: GET /gate-core/empty-vehicle-outs/eligible-entries/ — gate core empty vehicle outs eligible entries
+        response:
+          type: object
+      job-work:
+        method: GET
+        path: /gate-core/job-work/
+        description: GET /gate-core/job-work/ — gate core job work
+        response:
+          type: object
+      job-work-sap-grpos:
+        method: GET
+        path: /gate-core/job-work/sap-grpos/
+        description: GET /gate-core/job-work/sap-grpos/ — gate core job work sap grpos
+        response:
+          type: object
+      job-work-sap-production-orders:
+        method: GET
+        path: /gate-core/job-work/sap-production-orders/
+        description: GET /gate-core/job-work/sap-production-orders/ — gate core job work sap production orders
+        response:
+          type: object
+      rejected-qc-returns:
+        method: GET
+        path: /gate-core/rejected-qc-returns/
+        description: GET /gate-core/rejected-qc-returns/ — gate core rejected qc returns
+        response:
+          type: object
+      sales-dispatch:
+        method: GET
+        path: /gate-core/sales-dispatch/
+        description: GET /gate-core/sales-dispatch/ — gate core sales dispatch
+        response:
+          type: object
+      sales-dispatch-documents:
+        method: GET
+        path: /gate-core/sales-dispatch/documents/
+        description: GET /gate-core/sales-dispatch/documents/ — gate core sales dispatch documents
+        response:
+          type: object
+      sales-dispatch-lock:
+        method: GET
+        path: /gate-core/sales-dispatch/lock/
+        description: GET /gate-core/sales-dispatch/lock/ — gate core sales dispatch lock
+        response:
+          type: object
+      sales-dispatch-pending-bookings:
+        method: GET
+        path: /gate-core/sales-dispatch/pending-bookings/
+        description: GET /gate-core/sales-dispatch/pending-bookings/ — gate core sales dispatch pending bookings
+        response:
+          type: object
+      sales-dispatch-reports:
+        method: GET
+        path: /gate-core/sales-dispatch/reports/
+        description: GET /gate-core/sales-dispatch/reports/ — gate core sales dispatch reports
+        response:
+          type: object
+      arrivals-expected:
+        method: GET
+        path: /gate-core/arrivals/expected/
+        description: GET /gate-core/arrivals/expected/ — expected arrival for a vehicle
+        response:
+          type: object
+        params:
+        - name: vehicle_id
+          type: string
+          required: true
+          description: Vehicle ID (required; 400 without it)
+  grpo:
+    description: GRPO — goods-receipt POs (material & service)
+    endpoints:
+      all-entries:
+        method: GET
+        path: /grpo/all-entries/
+        description: GET /grpo/all-entries/ — grpo all entries
+        response:
+          type: object
+      history:
+        method: GET
+        path: /grpo/history/
+        description: GET /grpo/history/ — grpo history
+        response:
+          type: object
+      pending:
+        method: GET
+        path: /grpo/pending/
+        description: GET /grpo/pending/ — grpo pending
+        response:
+          type: object
+      service-history:
+        method: GET
+        path: /grpo/service/history/
+        description: GET /grpo/service/history/ — grpo service history
+        response:
+          type: object
+      service-options:
+        method: GET
+        path: /grpo/service/options/
+        description: GET /grpo/service/options/ — grpo service options
+        response:
+          type: object
+      service-pending:
+        method: GET
+        path: /grpo/service/pending/
+        description: GET /grpo/service/pending/ — grpo service pending
+        response:
+          type: object
+      summary:
+        method: GET
+        path: /grpo/summary/
+        description: GET /grpo/summary/ — grpo summary
+        response:
+          type: object
+      preview:
+        method: GET
+        path: /grpo/preview/{vehicle_entry_id}/
+        description: GET /grpo/preview/{vehicle_entry_id}/ — GRPO preview for a vehicle entry
+        response:
+          type: object
+        params:
+        - name: vehicle_entry_id
+          type: string
+          required: true
+          description: Vehicle entry ID
+          positional: true
+      history-detail:
+        method: GET
+        path: /grpo/history/{posting_id}/
+        description: GET /grpo/history/{posting_id}/ — a posted material GRPO
+        response:
+          type: object
+        params:
+        - name: posting_id
+          type: string
+          required: true
+          description: Posting ID
+          positional: true
+      service-preview:
+        method: GET
+        path: /grpo/service/preview/{dispatch_plan_id}/
+        description: GET /grpo/service/preview/{dispatch_plan_id}/ — service-GRPO preview for a dispatch plan
+        response:
+          type: object
+        params:
+        - name: dispatch_plan_id
+          type: string
+          required: true
+          description: Dispatch plan ID
+          positional: true
+      service-history-detail:
+        method: GET
+        path: /grpo/service/history/{posting_id}/
+        description: GET /grpo/service/history/{posting_id}/ — a posted service GRPO
+        response:
+          type: object
+        params:
+        - name: posting_id
+          type: string
+          required: true
+          description: Posting ID
+          positional: true
+  maintenance:
+    description: Maintenance CMMS — assets, PM, spares, work orders
+    endpoints:
+      alerts:
+        method: GET
+        path: /maintenance/alerts/
+        description: GET /maintenance/alerts/ — maintenance alerts
+        response:
+          type: object
+      asset-categories:
+        method: GET
+        path: /maintenance/asset-categories/
+        description: GET /maintenance/asset-categories/ — maintenance asset categories
+        response:
+          type: object
+      asset-departments:
+        method: GET
+        path: /maintenance/asset-departments/
+        description: GET /maintenance/asset-departments/ — maintenance asset departments
+        response:
+          type: object
+      asset-documents:
+        method: GET
+        path: /maintenance/asset-documents/
+        description: GET /maintenance/asset-documents/ — maintenance asset documents
+        response:
+          type: object
+      asset-locations:
+        method: GET
+        path: /maintenance/asset-locations/
+        description: GET /maintenance/asset-locations/ — maintenance asset locations
+        response:
+          type: object
+      asset-photos:
+        method: GET
+        path: /maintenance/asset-photos/
+        description: GET /maintenance/asset-photos/ — maintenance asset photos
+        response:
+          type: object
+      assets:
+        method: GET
+        path: /maintenance/assets/
+        description: GET /maintenance/assets/ — maintenance assets
+        response:
+          type: object
+      dashboard:
+        method: GET
+        path: /maintenance/dashboard/
+        description: GET /maintenance/dashboard/ — maintenance dashboard
+        response:
+          type: object
+      options:
+        method: GET
+        path: /maintenance/options/
+        description: GET /maintenance/options/ — maintenance options
+        response:
+          type: object
+      pm-checklist-items:
+        method: GET
+        path: /maintenance/pm-checklist-items/
+        description: GET /maintenance/pm-checklist-items/ — maintenance pm checklist items
+        response:
+          type: object
+      pm-executions:
+        method: GET
+        path: /maintenance/pm-executions/
+        description: GET /maintenance/pm-executions/ — maintenance pm executions
+        response:
+          type: object
+      pm-plans:
+        method: GET
+        path: /maintenance/pm-plans/
+        description: GET /maintenance/pm-plans/ — maintenance pm plans
+        response:
+          type: object
+      reports:
+        method: GET
+        path: /maintenance/reports/
+        description: GET /maintenance/reports/ — maintenance reports
+        response:
+          type: object
+      spare-categories:
+        method: GET
+        path: /maintenance/spare-categories/
+        description: GET /maintenance/spare-categories/ — maintenance spare categories
+        response:
+          type: object
+      spare-movements:
+        method: GET
+        path: /maintenance/spare-movements/
+        description: GET /maintenance/spare-movements/ — maintenance spare movements
+        response:
+          type: object
+      spare-requests:
+        method: GET
+        path: /maintenance/spare-requests/
+        description: GET /maintenance/spare-requests/ — maintenance spare requests
+        response:
+          type: object
+      spares:
+        method: GET
+        path: /maintenance/spares/
+        description: GET /maintenance/spares/ — maintenance spares
+        response:
+          type: object
+      spares-low-stock:
+        method: GET
+        path: /maintenance/spares/low-stock/
+        description: GET /maintenance/spares/low-stock/ — maintenance spares low stock
+        response:
+          type: object
+      vendor-visits:
+        method: GET
+        path: /maintenance/vendor-visits/
+        description: GET /maintenance/vendor-visits/ — maintenance vendor visits
+        response:
+          type: object
+      work-order-photos:
+        method: GET
+        path: /maintenance/work-order-photos/
+        description: GET /maintenance/work-order-photos/ — maintenance work order photos
+        response:
+          type: object
+      work-orders:
+        method: GET
+        path: /maintenance/work-orders/
+        description: GET /maintenance/work-orders/ — maintenance work orders
+        response:
+          type: object
+      spares-stock:
+        method: GET
+        path: /maintenance/spares/stock/
+        description: GET /maintenance/spares/stock/ — spare stock lookup by code
+        response:
+          type: object
+        params:
+        - name: code
+          type: string
+          required: true
+          description: Spare part code (required; 404 without it)
+      scan-lookup:
+        method: GET
+        path: /maintenance/scan/lookup/
+        description: GET /maintenance/scan/lookup/ — asset/spare scan lookup
+        response:
+          type: object
+        params:
+        - name: q
+          type: string
+          required: true
+          description: Scan query (required)
+  non-moving-rm:
+    description: Non-moving raw material
+    endpoints:
+      item-groups:
+        method: GET
+        path: /non-moving-rm/item-groups/
+        description: GET /non-moving-rm/item-groups/ — non moving rm item groups
+        response:
+          type: object
+      report:
+        method: GET
+        path: /non-moving-rm/report/
+        description: GET /non-moving-rm/report/ — non-moving raw-material report (replaces the dead bare endpoint)
+        response:
+          type: object
+        params:
+        - name: age
+          type: int
+          required: true
+          description: Minimum age in days (required; 400 without it)
+  notifications:
+    description: Notifications & device tokens
+    endpoints:
+      list:
+        method: GET
+        path: /notifications/
+        description: GET /notifications/ — notifications
+        response:
+          type: object
+      preferences:
+        method: GET
+        path: /notifications/preferences/
+        description: GET /notifications/preferences/ — notifications preferences
+        response:
+          type: object
+      unread-count:
+        method: GET
+        path: /notifications/unread-count/
+        description: GET /notifications/unread-count/ — notifications unread count
+        response:
+          type: object
+  po:
+    description: Purchase orders — open POs, vendors, warehouses
+    endpoints:
+      vendors:
+        method: GET
+        path: /po/vendors/
+        description: GET /po/vendors/ — po vendors
+        response:
+          type: object
+      warehouses:
+        method: GET
+        path: /po/warehouses/
+        description: GET /po/warehouses/ — po warehouses
+        response:
+          type: object
+  production-execution:
+    description: Production execution (MES) — runs, lines, machines, OEE, waste
+    endpoints:
+      breakdown-categories:
+        method: GET
+        path: /production-execution/breakdown-categories/
+        description: GET /production-execution/breakdown-categories/ — production execution breakdown categories
+        response:
+          type: object
+      checklist-templates:
+        method: GET
+        path: /production-execution/checklist-templates/
+        description: GET /production-execution/checklist-templates/ — production execution checklist templates
+        response:
+          type: object
+      costs-analytics:
+        method: GET
+        path: /production-execution/costs/analytics/
+        description: GET /production-execution/costs/analytics/ — production execution costs analytics
+        response:
+          type: object
+      line-clearance:
+        method: GET
+        path: /production-execution/line-clearance/
+        description: GET /production-execution/line-clearance/ — production execution line clearance
+        response:
+          type: object
+      line-configs:
+        method: GET
+        path: /production-execution/line-configs/
+        description: GET /production-execution/line-configs/ — production execution line configs
+        response:
+          type: object
+      lines:
+        method: GET
+        path: /production-execution/lines/
+        description: GET /production-execution/lines/ — production execution lines
+        response:
+          type: object
+      machine-checklists:
+        method: GET
+        path: /production-execution/machine-checklists/
+        description: GET /production-execution/machine-checklists/ — production execution machine checklists
+        response:
+          type: object
+      machines:
+        method: GET
+        path: /production-execution/machines/
+        description: GET /production-execution/machines/ — production execution machines
+        response:
+          type: object
+      reports-analytics:
+        method: GET
+        path: /production-execution/reports/analytics/
+        description: GET /production-execution/reports/analytics/ — production execution reports analytics
+        response:
+          type: object
+      reports-analytics-cost-analysis:
+        method: GET
+        path: /production-execution/reports/analytics/cost-analysis/
+        description: GET /production-execution/reports/analytics/cost-analysis/ — production execution reports analytics cost
+          analysis
+        response:
+          type: object
+      reports-analytics-downtime-pareto:
+        method: GET
+        path: /production-execution/reports/analytics/downtime-pareto/
+        description: GET /production-execution/reports/analytics/downtime-pareto/ — production execution reports analytics
+          downtime pareto
+        response:
+          type: object
+      reports-analytics-downtime:
+        method: GET
+        path: /production-execution/reports/analytics/downtime/
+        description: GET /production-execution/reports/analytics/downtime/ — production execution reports analytics downtime
+        response:
+          type: object
+      reports-analytics-monthly-summary:
+        method: GET
+        path: /production-execution/reports/analytics/monthly-summary/
+        description: GET /production-execution/reports/analytics/monthly-summary/ — production execution reports analytics
+          monthly summary
+        response:
+          type: object
+      reports-analytics-oee-trend:
+        method: GET
+        path: /production-execution/reports/analytics/oee-trend/
+        description: GET /production-execution/reports/analytics/oee-trend/ — production execution reports analytics oee trend
+        response:
+          type: object
+      reports-analytics-oee:
+        method: GET
+        path: /production-execution/reports/analytics/oee/
+        description: GET /production-execution/reports/analytics/oee/ — production execution reports analytics oee
+        response:
+          type: object
+      reports-analytics-plan-vs-production:
+        method: GET
+        path: /production-execution/reports/analytics/plan-vs-production/
+        description: GET /production-execution/reports/analytics/plan-vs-production/ — production execution reports analytics
+          plan vs production
+        response:
+          type: object
+      reports-analytics-resource-consumption:
+        method: GET
+        path: /production-execution/reports/analytics/resource-consumption/
+        description: GET /production-execution/reports/analytics/resource-consumption/ — production execution reports analytics
+          resource consumption
+        response:
+          type: object
+      reports-analytics-waste-trend:
+        method: GET
+        path: /production-execution/reports/analytics/waste-trend/
+        description: GET /production-execution/reports/analytics/waste-trend/ — production execution reports analytics waste
+          trend
+        response:
+          type: object
+      reports-analytics-waste:
+        method: GET
+        path: /production-execution/reports/analytics/waste/
+        description: GET /production-execution/reports/analytics/waste/ — production execution reports analytics waste
+        response:
+          type: object
+      reports-line-clearance:
+        method: GET
+        path: /production-execution/reports/line-clearance/
+        description: GET /production-execution/reports/line-clearance/ — production execution reports line clearance
+        response:
+          type: object
+      reports-production-movement:
+        method: GET
+        path: /production-execution/reports/production-movement/
+        description: GET /production-execution/reports/production-movement/ — production execution reports production movement
+        response:
+          type: object
+      reports-production-movement-filter-options:
+        method: GET
+        path: /production-execution/reports/production-movement/filter-options/
+        description: GET /production-execution/reports/production-movement/filter-options/ — production execution reports
+          production movement filter options
+        response:
+          type: object
+      runs:
+        method: GET
+        path: /production-execution/runs/
+        description: GET /production-execution/runs/ — production execution runs
+        response:
+          type: object
+      sap-items:
+        method: GET
+        path: /production-execution/sap/items/
+        description: GET /production-execution/sap/items/ — production execution sap items
+        response:
+          type: object
+      sap-orders:
+        method: GET
+        path: /production-execution/sap/orders/
+        description: GET /production-execution/sap/orders/ — production execution sap orders
+        response:
+          type: object
+      waste:
+        method: GET
+        path: /production-execution/waste/
+        description: GET /production-execution/waste/ — production execution waste
+        response:
+          type: object
+      reports-daily-production:
+        method: GET
+        path: /production-execution/reports/daily-production/
+        description: GET /production-execution/reports/daily-production/ — daily production report
+        response:
+          type: object
+        params:
+        - name: date
+          type: string
+          required: true
+          description: Report date (YYYY-MM-DD)
+          format: date
+      reports-analytics-procurement-vs-planned:
+        method: GET
+        path: /production-execution/reports/analytics/procurement-vs-planned/
+        description: GET /production-execution/reports/analytics/procurement-vs-planned/ — procurement fulfillment vs plan
+          for a SAP order
+        response:
+          type: object
+        params:
+        - name: sap_doc_entry
+          type: int
+          required: true
+          description: SAP document entry number
+      sap-bom:
+        method: GET
+        path: /production-execution/sap/bom/
+        description: GET /production-execution/sap/bom/ — bill of materials for an item
+        response:
+          type: object
+        params:
+        - name: item_code
+          type: string
+          required: true
+          description: SAP item code (e.g. FG0000085)
+      line-configs-auto-fill:
+        method: GET
+        path: /production-execution/line-configs/auto-fill/
+        description: GET /production-execution/line-configs/auto-fill/ — auto-fill config for a production line
+        response:
+          type: object
+        params:
+        - name: line_id
+          type: int
+          required: true
+          description: Production line ID
+  quality-control:
+    description: Quality control — arrival slips, inspections, material types
+    endpoints:
+      arrival-slips:
+        method: GET
+        path: /quality-control/arrival-slips/
+        description: GET /quality-control/arrival-slips/ — quality control arrival slips
+        response:
+          type: object
+      inspections:
+        method: GET
+        path: /quality-control/inspections/
+        description: GET /quality-control/inspections/ — quality control inspections
+        response:
+          type: object
+      inspections-actionable:
+        method: GET
+        path: /quality-control/inspections/actionable/
+        description: GET /quality-control/inspections/actionable/ — quality control inspections actionable
+        response:
+          type: object
+      inspections-awaiting-chemist:
+        method: GET
+        path: /quality-control/inspections/awaiting-chemist/
+        description: GET /quality-control/inspections/awaiting-chemist/ — quality control inspections awaiting chemist
+        response:
+          type: object
+      inspections-awaiting-qam:
+        method: GET
+        path: /quality-control/inspections/awaiting-qam/
+        description: GET /quality-control/inspections/awaiting-qam/ — quality control inspections awaiting qam
+        response:
+          type: object
+      inspections-completed:
+        method: GET
+        path: /quality-control/inspections/completed/
+        description: GET /quality-control/inspections/completed/ — quality control inspections completed
+        response:
+          type: object
+      inspections-counts:
+        method: GET
+        path: /quality-control/inspections/counts/
+        description: GET /quality-control/inspections/counts/ — quality control inspections counts
+        response:
+          type: object
+      inspections-draft:
+        method: GET
+        path: /quality-control/inspections/draft/
+        description: GET /quality-control/inspections/draft/ — quality control inspections draft
+        response:
+          type: object
+      inspections-pending:
+        method: GET
+        path: /quality-control/inspections/pending/
+        description: GET /quality-control/inspections/pending/ — quality control inspections pending
+        response:
+          type: object
+      inspections-rejected:
+        method: GET
+        path: /quality-control/inspections/rejected/
+        description: GET /quality-control/inspections/rejected/ — quality control inspections rejected
+        response:
+          type: object
+      inspections-return-to-vendor:
+        method: GET
+        path: /quality-control/inspections/return-to-vendor/
+        description: GET /quality-control/inspections/return-to-vendor/ — quality control inspections return to vendor
+        response:
+          type: object
+      material-types:
+        method: GET
+        path: /quality-control/material-types/
+        description: GET /quality-control/material-types/ — quality control material types
+        response:
+          type: object
+      print-documents:
+        method: GET
+        path: /quality-control/print-documents/
+        description: GET /quality-control/print-documents/ — quality control print documents
+        response:
+          type: object
+      production-qc:
+        method: GET
+        path: /quality-control/production-qc/
+        description: GET /quality-control/production-qc/ — quality control production qc
+        response:
+          type: object
+      production-qc-counts:
+        method: GET
+        path: /quality-control/production-qc/counts/
+        description: GET /quality-control/production-qc/counts/ — quality control production qc counts
+        response:
+          type: object
+      production-qc-pending:
+        method: GET
+        path: /quality-control/production-qc/pending/
+        description: GET /quality-control/production-qc/pending/ — quality control production qc pending
+        response:
+          type: object
+      sap-items:
+        method: GET
+        path: /quality-control/sap-items/
+        description: GET /quality-control/sap-items/ — quality control sap items
+        response:
+          type: object
+  sap:
+    description: SAP plan dashboard
+    endpoints:
+      plan-dashboard-details:
+        method: GET
+        path: /sap/plan-dashboard/details/
+        description: GET /sap/plan-dashboard/details/ — sap plan dashboard details
+        response:
+          type: object
+      plan-dashboard-procurement:
+        method: GET
+        path: /sap/plan-dashboard/procurement/
+        description: GET /sap/plan-dashboard/procurement/ — sap plan dashboard procurement
+        response:
+          type: object
+      plan-dashboard-summary:
+        method: GET
+        path: /sap/plan-dashboard/summary/
+        description: GET /sap/plan-dashboard/summary/ — sap plan dashboard summary
+        response:
+          type: object
+  vehicle-management:
+    description: Vehicle management — vehicles, transporters, entries, types
+    endpoints:
+      transporters:
+        method: GET
+        path: /vehicle-management/transporters/
+        description: GET /vehicle-management/transporters/ — vehicle management transporters
+        response:
+          type: object
+      transporters-names:
+        method: GET
+        path: /vehicle-management/transporters/names/
+        description: GET /vehicle-management/transporters/names/ — vehicle management transporters names
+        response:
+          type: object
+      vehicle-types:
+        method: GET
+        path: /vehicle-management/vehicle-types/
+        description: GET /vehicle-management/vehicle-types/ — vehicle management vehicle types
+        response:
+          type: object
+      vehicles:
+        method: GET
+        path: /vehicle-management/vehicles/
+        description: GET /vehicle-management/vehicles/ — vehicle management vehicles
+        response:
+          type: object
+      vehicles-names:
+        method: GET
+        path: /vehicle-management/vehicles/names/
+        description: GET /vehicle-management/vehicles/names/ — vehicle management vehicles names
+        response:
+          type: object
+      vehicle-entries:
+        method: GET
+        path: /vehicle-management/vehicle-entries/
+        description: GET /vehicle-management/vehicle-entries/ — vehicle entries in a window
+        response:
+          type: object
+        params:
+        - name: entry_type
+          type: string
+          required: true
+          description: Entry type (e.g. RAW_MATERIAL, EMPTY_VEHICLE, JOB_WORK)
+        - name: from_date
+          type: string
+          required: true
+          description: Window start (YYYY-MM-DD)
+          format: date
+        - name: to_date
+          type: string
+          required: true
+          description: Window end (YYYY-MM-DD)
+          format: date
+      vehicle-entries-count:
+        method: GET
+        path: /vehicle-management/vehicle-entries/count/
+        description: GET /vehicle-management/vehicle-entries/count/ — vehicle entry counts in a window
+        response:
+          type: object
+        params:
+        - name: entry_type
+          type: string
+          required: true
+          description: Entry type
+        - name: from_date
+          type: string
+          required: true
+          description: Window start (YYYY-MM-DD)
+          format: date
+        - name: to_date
+          type: string
+          required: true
+          description: Window end (YYYY-MM-DD)
+          format: date
+      vehicle-entries-list-by-status:
+        method: GET
+        path: /vehicle-management/vehicle-entries/list-by-status/
+        description: GET /vehicle-management/vehicle-entries/list-by-status/ — vehicle entries grouped by status
+        response:
+          type: object
+        params:
+        - name: entry_type
+          type: string
+          required: true
+          description: Entry type
+        - name: from_date
+          type: string
+          required: false
+          description: Window start (YYYY-MM-DD)
+          format: date
+        - name: to_date
+          type: string
+          required: false
+          description: Window end (YYYY-MM-DD)
+          format: date
+  warehouse:
+    description: Warehouse — FG receipts, BOM requests, WMS
+    endpoints:
+      bom-requests:
+        method: GET
+        path: /warehouse/bom-requests/
+        description: GET /warehouse/bom-requests/ — warehouse bom requests
+        response:
+          type: object
+      fg-receipts:
+        method: GET
+        path: /warehouse/fg-receipts/
+        description: GET /warehouse/fg-receipts/ — warehouse fg receipts
+        response:
+          type: object
+      wms-batches-expiry:
+        method: GET
+        path: /warehouse/wms/batches/expiry/
+        description: GET /warehouse/wms/batches/expiry/ — warehouse wms batches expiry
+        response:
+          type: object
+      wms-billing-overview:
+        method: GET
+        path: /warehouse/wms/billing/overview/
+        description: GET /warehouse/wms/billing/overview/ — warehouse wms billing overview
+        response:
+          type: object
+      wms-dashboard:
+        method: GET
+        path: /warehouse/wms/dashboard/
+        description: GET /warehouse/wms/dashboard/ — warehouse wms dashboard
+        response:
+          type: object
+      wms-item-groups:
+        method: GET
+        path: /warehouse/wms/item-groups/
+        description: GET /warehouse/wms/item-groups/ — warehouse wms item groups
+        response:
+          type: object
+      wms-sales-orders-backlog:
+        method: GET
+        path: /warehouse/wms/sales-orders/backlog/
+        description: GET /warehouse/wms/sales-orders/backlog/ — warehouse wms sales orders backlog
+        response:
+          type: object
+      wms-stock-movements:
+        method: GET
+        path: /warehouse/wms/stock/movements/
+        description: GET /warehouse/wms/stock/movements/ — warehouse wms stock movements
+        response:
+          type: object
+      wms-stock-overview:
+        method: GET
+        path: /warehouse/wms/stock/overview/
+        description: GET /warehouse/wms/stock/overview/ — warehouse wms stock overview
+        response:
+          type: object
+      wms-transfers-overview:
+        method: GET
+        path: /warehouse/wms/transfers/overview/
+        description: GET /warehouse/wms/transfers/overview/ — warehouse wms transfers overview
+        response:
+          type: object
+      wms-warehouses:
+        method: GET
+        path: /warehouse/wms/warehouses/
+        description: GET /warehouse/wms/warehouses/ — warehouse wms warehouses
+        response:
+          type: object
+      wms-warehouses-summary:
+        method: GET
+        path: /warehouse/wms/warehouses/summary/
+        description: GET /warehouse/wms/warehouses/summary/ — warehouse wms warehouses summary
+        response:
+          type: object
+  company:
+    description: Company master — the Select-Company screen
+    endpoints:
+      companies:
+        method: GET
+        path: /company/companies/
+        description: GET /company/companies/ — the 3 companies backing the Select-Company screen
+        response:
+          type: object
+  person-gatein:
+    description: Person gate-in — visitors, labour, contractors at the campus gate
+    endpoints:
+      entries:
+        method: GET
+        path: /person-gatein/entries/
+        description: GET /person-gatein/entries/ — person gate-in entries (paginated)
+        response:
+          type: object
+      visitors:
+        method: GET
+        path: /person-gatein/visitors/
+        description: GET /person-gatein/visitors/ — visitor master
+        response:
+          type: object
+      labours:
+        method: GET
+        path: /person-gatein/labours/
+        description: GET /person-gatein/labours/ — labour master
+        response:
+          type: object
+      contractors:
+        method: GET
+        path: /person-gatein/contractors/
+        description: GET /person-gatein/contractors/ — contractor master
+        response:
+          type: object
+      gates:
+        method: GET
+        path: /person-gatein/gates/
+        description: GET /person-gatein/gates/ — gate master
+        response:
+          type: object
+      person-types:
+        method: GET
+        path: /person-gatein/person-types/
+        description: GET /person-gatein/person-types/ — person type master
+        response:
+          type: object

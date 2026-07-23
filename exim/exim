@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# JIVO EXIM CLI — auto-authenticated wrapper around the Printing Press binary.
+# ============================================================================
+#  HARD RULE: READ-ONLY. This wrapper + binary only FETCH from EXIM.
+#  NEVER write/create/update/delete/sync. Production JIVO + SAP data.
+# ============================================================================
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Paths that MUTATE even via GET (blocked here as defense-in-depth):
+BLOCK='/sap_sync/ /daily-price/fetch/ /jivo-rate/fetch/ /account/logout/ /stock-status/opening-stock/'
+guard(){ for b in $BLOCK; do case "$1" in *"$b"*) echo "REFUSED: '$1' mutates data (read-only rule). See HARD-RULE.md" >&2; exit 2;; esac; done; }
+case "${1:-}" in
+  grpos|open-grpos) guard /sap_sync/open-grpos/ ;;
+  raw) shift; guard "${1:-}"; exec python3 "$ROOT/scripts/eximapi.py" "$@" ;;
+esac
+export EXIM_TOKEN="$(python3 "$ROOT/scripts/eximapi.py" --token)"
+exec "$ROOT/cli/exim-pp-cli/exim-pp-cli" "$@"

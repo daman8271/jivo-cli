@@ -1,0 +1,334 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jivo.local/schemas/product-identity-map.v1.schema.json",
+  "title": "JIVO Product Identity Map v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "contract",
+    "sources",
+    "factory_scopes",
+    "products",
+    "price_skus",
+    "listings",
+    "factory_items",
+    "resolutions",
+    "jid_aliases",
+    "jid_conflicts",
+    "factory_item_accounting",
+    "factory_code_collisions",
+    "observed_queue_accounting",
+    "coverage"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "contract": {"$ref": "#/$defs/contract"},
+    "sources": {"type": "array", "minItems": 6, "items": {"$ref": "#/$defs/source"}},
+    "factory_scopes": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/factoryScope"}},
+    "products": {"type": "array", "items": {"$ref": "#/$defs/product"}},
+    "price_skus": {"type": "array", "items": {"$ref": "#/$defs/priceSku"}},
+    "listings": {"type": "array", "items": {"$ref": "#/$defs/listing"}},
+    "factory_items": {"type": "array", "items": {"$ref": "#/$defs/factoryItem"}},
+    "resolutions": {"type": "array", "items": {"$ref": "#/$defs/resolution"}},
+    "jid_aliases": {"type": "array", "items": {"$ref": "#/$defs/jidAlias"}},
+    "jid_conflicts": {"type": "array", "items": {"$ref": "#/$defs/jidConflict"}},
+    "factory_item_accounting": {"type": "array", "items": {"$ref": "#/$defs/factoryAccounting"}},
+    "factory_code_collisions": {"type": "array", "items": {"$ref": "#/$defs/factoryCollision"}},
+    "observed_queue_accounting": {"type": "array", "items": {"$ref": "#/$defs/queueAccounting"}},
+    "coverage": {"$ref": "#/$defs/coverage"}
+  },
+  "$defs": {
+    "jid": {"type": "string", "pattern": "^JID-[0-9]{4,}$"},
+    "sha256": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "pointer", "claim", "evidence_kind"],
+      "properties": {
+        "source_id": {"type": "string", "minLength": 1},
+        "pointer": {"type": "string", "minLength": 1},
+        "claim": {"type": "string", "minLength": 1},
+        "evidence_kind": {
+          "enum": [
+            "exact_price_code",
+            "exact_listing_identity",
+            "exact_source_sap",
+            "qualified_factory_record",
+            "review_decision",
+            "complete_catalog_absence",
+            "accounting_disposition"
+          ]
+        },
+        "observed_value": {}
+      }
+    },
+    "evidenceArray": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/evidence"}},
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "schema_version", "dataset_version", "release_status", "generated_at", "generator_version", "read_only", "scope"],
+      "properties": {
+        "name": {"const": "jivo-product-identity"},
+        "schema_version": {"const": "1.0.0"},
+        "dataset_version": {"type": "string", "pattern": "^20[0-9]{2}-[0-9]{2}-[0-9]{2}\\.[1-9][0-9]*$"},
+        "release_status": {"enum": ["draft", "released"]},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "generator_version": {"type": "string", "minLength": 1},
+        "read_only": {"const": true},
+        "scope": {"type": "string", "minLength": 1}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "kind", "uri", "observed_at", "content_sha256", "identity_set_sha256", "record_count", "pagination_complete", "read_only"],
+      "properties": {
+        "source_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+        "kind": {"enum": ["scrape_catalog", "jid_catalog", "factory_oitm", "review_decisions"]},
+        "uri": {"type": "string", "minLength": 1},
+        "observed_at": {"type": "string", "format": "date-time"},
+        "content_sha256": {"$ref": "#/$defs/sha256"},
+        "identity_set_sha256": {"$ref": "#/$defs/sha256"},
+        "record_count": {"type": "integer", "minimum": 0},
+        "pagination_complete": {"const": true},
+        "read_only": {"const": true}
+      }
+    },
+    "factoryScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["factory_scope_key", "company_code", "company_id", "sap_schema"],
+      "properties": {
+        "factory_scope_key": {"type": "string", "pattern": "^urn:jivo:factory-scope:"},
+        "company_code": {"enum": ["JIVO_OIL", "JIVO_MART", "JIVO_BEVERAGES"]},
+        "company_id": {"enum": [1, 2, 3]},
+        "sap_schema": {"enum": ["JIVO_OIL_HANADB", "JIVO_MART_HANADB", "JIVO_BEVERAGES_HANADB"]}
+      }
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product_key", "jid", "canonical_name", "state", "evidence"],
+      "properties": {
+        "product_key": {"type": "string", "pattern": "^urn:jivo:product:"},
+        "jid": {"oneOf": [{"$ref": "#/$defs/jid"}, {"type": "null"}]},
+        "canonical_name": {"type": "string", "minLength": 1},
+        "state": {"enum": ["active", "retired", "merged", "split"]},
+        "name_aliases": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "reason": {"type": "string"},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "priceSku": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["price_sku_key", "source_namespace", "source_product_code", "display_name", "state", "member_listing_keys", "evidence"],
+      "properties": {
+        "price_sku_key": {"type": "string", "pattern": "^urn:jivo:price-sku:"},
+        "source_namespace": {"type": "string", "minLength": 1},
+        "source_product_code": {"type": "string", "minLength": 1},
+        "display_name": {"type": "string", "minLength": 1},
+        "state": {"enum": ["active", "retired", "excluded_non_product"]},
+        "member_listing_keys": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^urn:jivo:listing:"}},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "membership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["price_sku_key", "role"],
+      "properties": {
+        "price_sku_key": {"type": "string", "pattern": "^urn:jivo:price-sku:"},
+        "role": {"enum": ["primary", "alternate"]}
+      }
+    },
+    "pack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "components", "pack_fingerprint"],
+      "properties": {
+        "kind": {"enum": ["single", "multipack", "bundle", "assortment", "unknown"]},
+        "components": {"type": "array", "items": {"type": "object"}},
+        "pack_fingerprint": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "listing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["listing_key", "price_sku_key", "price_sku_keys", "source_memberships", "platform", "listing_id", "listing_id_kind", "title", "state", "is_primary", "pack", "evidence"],
+      "properties": {
+        "listing_key": {"type": "string", "pattern": "^urn:jivo:listing:"},
+        "price_sku_key": {"type": "string", "pattern": "^urn:jivo:price-sku:"},
+        "price_sku_keys": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^urn:jivo:price-sku:"}},
+        "source_memberships": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/membership"}},
+        "platform": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$"},
+        "listing_id": {"type": "string", "minLength": 1},
+        "listing_id_kind": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1},
+        "url": {"oneOf": [{"type": "string"}, {"type": "null"}]},
+        "state": {"enum": ["active", "retired", "excluded_non_product"]},
+        "is_primary": {"type": "boolean"},
+        "pack": {"$ref": "#/$defs/pack"},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "factoryItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["factory_item_key", "factory_scope_key", "company_code", "sap_schema", "item_code", "item_name", "catalog_scopes", "item_class", "state", "evidence"],
+      "properties": {
+        "factory_item_key": {"type": "string", "pattern": "^urn:jivo:factory:"},
+        "factory_scope_key": {"type": "string", "pattern": "^urn:jivo:factory-scope:"},
+        "company_code": {"enum": ["JIVO_OIL", "JIVO_MART", "JIVO_BEVERAGES"]},
+        "sap_schema": {"enum": ["JIVO_OIL_HANADB", "JIVO_MART_HANADB", "JIVO_BEVERAGES_HANADB"]},
+        "item_code": {"type": "string", "minLength": 1},
+        "item_name": {"type": "string"},
+        "inventory_uom": {"type": ["string", "null"]},
+        "sales_uom": {"type": ["string", "null"]},
+        "purchase_uom": {"type": ["string", "null"]},
+        "item_group_code": {"type": ["integer", "string", "null"]},
+        "catalog_scopes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["barcode_oitm", "sap_products"]}},
+        "item_class": {"enum": ["retail_finished_good", "bundle", "component", "raw_material", "packaging", "other"]},
+        "state": {"enum": ["active", "inactive"]},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["factory_item_key", "role", "factory_uom_per_listing_offer", "conversion_state", "primary_for_scope", "evidence"],
+      "properties": {
+        "factory_item_key": {"type": "string", "pattern": "^urn:jivo:factory:"},
+        "role": {"enum": ["sellable_unit", "bundle_parent", "bundle_component", "intercompany_equivalent"]},
+        "factory_uom_per_listing_offer": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["numerator", "denominator"],
+              "properties": {
+                "numerator": {"type": "integer", "minimum": 1},
+                "denominator": {"type": "integer", "minimum": 1}
+              }
+            }
+          ]
+        },
+        "conversion_state": {"enum": ["verified", "not_proven"]},
+        "primary_for_scope": {"type": "boolean"},
+        "evidence": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/evidence"}}
+      }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolution_id", "listing_key", "canonical_product_key", "canonical_jid", "state", "factory_mapping_state", "factory_bindings", "verification_method", "verified_by", "verified_at", "evidence"],
+      "properties": {
+        "resolution_id": {"type": "string", "pattern": "^RES-[A-Z0-9._-]+$"},
+        "listing_key": {"type": "string", "pattern": "^urn:jivo:listing:"},
+        "canonical_product_key": {"type": "string", "pattern": "^urn:jivo:product:"},
+        "canonical_jid": {"oneOf": [{"$ref": "#/$defs/jid"}, {"type": "null"}]},
+        "state": {"enum": ["verified", "retired"]},
+        "factory_mapping_state": {"enum": ["verified", "reviewed_absent"]},
+        "factory_bindings": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/binding"}},
+        "factory_absence": {"type": "object"},
+        "verification_method": {"enum": ["exact_source_code_plus_oitm", "exact_source_code_plus_pack", "factory_bom_plus_pack", "human_reviewed_exact_ids"]},
+        "verified_by": {"type": "string", "minLength": 1},
+        "verified_at": {"type": "string", "format": "date-time"},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "jidAlias": {
+      "type": "object",
+      "required": ["alias_jid", "canonical_jid", "relation", "decision_id", "reason", "evidence"],
+      "properties": {
+        "alias_jid": {"$ref": "#/$defs/jid"},
+        "canonical_jid": {"$ref": "#/$defs/jid"},
+        "relation": {"enum": ["duplicate_of", "renamed_to", "merged_into"]},
+        "decision_id": {"type": "string"},
+        "reason": {"type": "string"},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "jidConflict": {
+      "type": "object",
+      "required": ["conflict_id", "kind", "involved_jids", "involved_listing_keys", "status", "blocking", "resolution_kind", "reason", "evidence"],
+      "properties": {
+        "conflict_id": {"type": "string", "pattern": "^CONFLICT-"},
+        "kind": {"type": "string"},
+        "involved_jids": {"type": "array", "items": {"$ref": "#/$defs/jid"}},
+        "involved_listing_keys": {"type": "array", "items": {"type": "string", "pattern": "^urn:jivo:listing:"}},
+        "status": {"enum": ["resolved", "resolved_for_price_scope", "open_out_of_price_scope"]},
+        "blocking": {"type": "boolean"},
+        "resolution_kind": {"enum": ["alias", "merge", "split", "keep_distinct", "reassign"]},
+        "reason": {"type": "string"},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "factoryAccounting": {
+      "type": "object",
+      "required": ["factory_item_key", "disposition", "listing_keys", "reason", "evidence"],
+      "properties": {
+        "factory_item_key": {"type": "string", "pattern": "^urn:jivo:factory:"},
+        "disposition": {"enum": ["mapped", "not_in_price_scraping_scope", "inactive", "non_retail"]},
+        "listing_keys": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^urn:jivo:listing:"}},
+        "reason": {"type": "string"},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "factoryCollision": {
+      "type": "object",
+      "required": ["item_code", "factory_item_keys", "physical_relation", "evidence"],
+      "properties": {
+        "item_code": {"type": "string"},
+        "factory_item_keys": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^urn:jivo:factory:"}},
+        "physical_relation": {"enum": ["same_offer", "different_offer", "mixed"]},
+        "evidence": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/evidence"}}
+      }
+    },
+    "queueAccounting": {
+      "type": "object",
+      "required": ["source_section", "source_index", "entry_kind", "platform", "listing_id", "disposition", "evidence"],
+      "properties": {
+        "source_section": {"enum": ["review", "unpriced", "junk"]},
+        "source_index": {"type": "integer", "minimum": 0},
+        "entry_kind": {"enum": ["listing_candidate", "family_census", "note"]},
+        "platform": {"type": ["string", "null"]},
+        "listing_id": {"type": ["string", "null"]},
+        "disposition": {"const": "outside_current_price_master"},
+        "evidence": {"$ref": "#/$defs/evidenceArray"}
+      }
+    },
+    "countGate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expected", "accounted", "unaccounted"],
+      "properties": {
+        "expected": {"type": "integer", "minimum": 0},
+        "accounted": {"type": "integer", "minimum": 0},
+        "unaccounted": {"type": "integer", "minimum": 0}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["price_skus", "active_price_skus", "source_mapping_rows", "listings", "jids", "factory_items", "unresolved_listings", "unresolved_active_listings", "ambiguous_listings", "open_jid_conflicts", "unknown_factory_collisions", "source_identity_sets_match", "queue_entries_outside_current_master"],
+      "properties": {
+        "price_skus": {"$ref": "#/$defs/countGate"},
+        "active_price_skus": {"$ref": "#/$defs/countGate"},
+        "source_mapping_rows": {"$ref": "#/$defs/countGate"},
+        "listings": {"$ref": "#/$defs/countGate"},
+        "jids": {"$ref": "#/$defs/countGate"},
+        "factory_items": {"$ref": "#/$defs/countGate"},
+        "unresolved_listings": {"type": "integer", "minimum": 0},
+        "unresolved_active_listings": {"type": "integer", "minimum": 0},
+        "ambiguous_listings": {"type": "integer", "minimum": 0},
+        "open_jid_conflicts": {"type": "integer", "minimum": 0},
+        "unknown_factory_collisions": {"type": "integer", "minimum": 0},
+        "source_identity_sets_match": {"const": true},
+        "queue_entries_outside_current_master": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
