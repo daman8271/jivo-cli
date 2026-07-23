@@ -9,9 +9,23 @@ import urllib.parse
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SEC = os.path.join(ROOT, ".secrets")
-ENV = os.path.abspath(
-    os.path.join(ROOT, "..", "..", ".env")
-)  # jivogpt root .env holds EXIM_* creds
+
+
+def _find_env():
+    # Search upward from this CLI's root for the nearest .env holding EXIM_* creds
+    # (works from both the old jivogpt/CLI/exim layout and the ~/jivo-cli/exim one).
+    d = ROOT
+    while True:
+        cand = os.path.join(d, ".env")
+        if os.path.isfile(cand):
+            return cand
+        parent = os.path.dirname(d)
+        if parent == d:
+            raise FileNotFoundError("no .env found walking up from " + ROOT)
+        d = parent
+
+
+ENV = _find_env()
 
 
 def _creds():

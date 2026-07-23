@@ -8,9 +8,19 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-# Walk up from this file to find the repo root that holds .env
+# Walk up from this file to find the nearest ancestor that holds a .env
+# (works from both the old jivogpt/CLI/jsap-cli layout and ~/jivo-cli/jsap-cli).
 _HERE = Path(__file__).resolve()
-_REPO_ROOT = _HERE.parents[3]  # jsap/ -> jsap-cli/ -> CLI/ -> repo root
+
+
+def _find_repo_root() -> Path:
+    for parent in _HERE.parents:
+        if (parent / ".env").is_file():
+            return parent
+    return _HERE.parents[3]  # legacy fallback: jsap/ -> jsap-cli/ -> CLI/ -> repo root
+
+
+_REPO_ROOT = _find_repo_root()
 _ENV_PATH = _REPO_ROOT / ".env"
 
 # Where we cache the session cookie (our own store — allowed by the law).
