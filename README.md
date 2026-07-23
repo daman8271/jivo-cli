@@ -19,6 +19,9 @@ One home for all JIVO business-system CLIs, their credentials, and the knowledge
 | `jivo-scraping-cli/` | ecom-intel archive — street price / availability / DRR | 14 cmds (data checkout lives on the VPS) | `jivo-scraping-cli/bin/jivo-scrape doctor` |
 | `product-identity/` | THE BRIDGE: platform listing_id ↔ SAP item code (333↔1,906) | verifier | `python3 product-identity/tools/verify_map.py --json` |
 | `control-panel/` | Jivo Group Control Panel (103.89.45.75:9080 Django ERP) | 62 endpoints | `./control-panel/cli/jivo/jivo doctor` |
+| `postsql/` | **Raw Postgres** (103.89.45.76) — the DB layer *under* the apps: factory_flow, order_management, jivo_ecom, CRM, po_db, jivo_site, task… (16 DBs) | full SQL browser + MCP | `./postsql/postsql doctor` |
+
+`postsql` is different in kind from the others: they read each system's **HTTP API**, `postsql` reads the **database directly** (read-only, 3-layer guarantee — `BEGIN READ ONLY` + `default_transaction_read_only` + SELECT-only allowlist). Config in `~/.postsql/config.toml`. ⚠️ connects as `postgres` superuser (only cred available) — wide read blast radius; a `NOSUPERUSER` SELECT-only role is the recommended hardening (see its README).
 
 ## Connections — how systems join
 
