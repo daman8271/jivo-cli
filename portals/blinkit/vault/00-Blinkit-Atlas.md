@@ -18,6 +18,8 @@ JIVO's Blinkit presence spans **two separate portals**, each with its own auth:
 | **Partner** | `partnersbiz.com/app` | Supply-side: POs, invoices, inventory, sales, scorecard | email-OTP → token (auto) | [[Partner-Hub]] |
 | **Ads / Brand Central** | `brands.blinkit.com` | Demand-side: ad campaigns, creatives, budgets, performance | Firebase magic-link → idToken | [[Ads-Hub]] |
 
+> **Partner study COMPLETE (2026-07-24):** all **11 sections** mapped + **~90 API endpoint contracts** documented (~65 read-safe, ~22 write/export held out of scope) → see [[Partner-Endpoints]] (master API index) and [[Partner-Data-Model]] (how the sections join into one relational graph).
+
 **Entity:** Jivo Wellness Pvt. Ltd. (`x-entity-id: 1117`, type manufacturer). Data API base: `www.partnersbiz.com/v1`.
 
 **Foothold (verified 2026-07-24):** auto-login unattended (`blinkit-login.sh`, token in 3s) → browser authenticated → dashboard reached. Session `access_token` is SHORT-LIVED, so the deep crawl runs API-first (refreshable token) + screenshot bursts, not one long browser session.
@@ -26,6 +28,6 @@ JIVO's Blinkit presence spans **two separate portals**, each with its own auth:
 Walk every page → screenshot + capture data API calls (reads only) → one Obsidian note per section → weave hubs + data model → 0 broken links → then generate READ-ONLY CLIs.
 
 ## Navigation
-- [[Partner-Hub]] — 9 sections mapped
+- [[Partner-Hub]] — all 11 sections studied · [[Partner-Endpoints]] · [[Partner-Data-Model]]
 - [[Ads-Hub]] — to crawl
 - Meta: [[Auth-and-Access]] · [[Read-Only-Guardrails]]
