@@ -1,0 +1,1 @@
+(self.webpackChunkvendor=self.webpackChunkvendor||[]).push([[365],{90365:(e,k,n)=>{n.r(k)}}]);
