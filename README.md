@@ -20,6 +20,9 @@ One home for all JIVO business-system CLIs, their credentials, and the knowledge
 | `product-identity/` | THE BRIDGE: platform listing_id ↔ SAP item code (333↔1,906) | verifier | `python3 product-identity/tools/verify_map.py --json` |
 | `control-panel/` | Jivo Group Control Panel (103.89.45.75:9080 Django ERP) | 62 endpoints | `./control-panel/cli/jivo/jivo doctor` |
 | `postsql/` | **Raw Postgres** (103.89.45.76) — the DB layer *under* the apps: factory_flow, order_management, jivo_ecom, CRM, po_db, jivo_site, task… (16 DBs) | full SQL browser + MCP | `./postsql/postsql doctor` |
+| `portals/blinkit/cli/` | **Blinkit partner portal** (partnersbiz.com) — POs, invoices, sales, SOH, scorecard, payments, appointments, offers, assortment | 65 read cmds | `BLINKIT_TOKEN=… ./portals/blinkit/cli/blinkit-partner doctor` |
+
+**Brand/seller portals** (`portals/`) are studied then turned into read-only CLIs. Each portal gets an Obsidian study vault (`portals/<name>/vault/`) + a generated CLI (`portals/<name>/cli/`). Blinkit partner is done (study: 11 sections/89 read endpoints; CLI: 65 cmds, live-verified). Auth: `bash ~/ecomcliauto/orchestrate/blinkit-login.sh` prints a fresh token → `export BLINKIT_TOKEN=…`. Next: Blinkit **ads** portal, then Zepto/Amazon-VC/Flipkart/BigBasket.
 
 `postsql` is different in kind from the others: they read each system's **HTTP API**, `postsql` reads the **database directly** (read-only, 3-layer guarantee — `BEGIN READ ONLY` + `default_transaction_read_only` + SELECT-only allowlist). Config in `~/.postsql/config.toml`. ⚠️ connects as `postgres` superuser (only cred available) — wide read blast radius; a `NOSUPERUSER` SELECT-only role is the recommended hardening (see its README).
 
