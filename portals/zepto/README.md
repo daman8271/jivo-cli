@@ -35,6 +35,8 @@ Auth: email-OTP → JWT (`authorization` header, **no** `Bearer` prefix). NO ref
 
 Harvest the module-federation corpus → cluster all endpoints into coherent business sections → classify READ vs WRITE/export → gently GET-probe pure reads (read-only, allowlist, stop-on-WAF) to upgrade documented → PROVEN → one wikilinked Obsidian note per section → weave the atlas + master endpoint index + data model → then generate/expand a READ-ONLY CLI.
 
-## Existing CLI coverage vs backlog
+## The CLI — `cli/zepto-portal`
 
-`zepto-cli` (`~/ecomcliauto/clis/zepto-cli`) already pulls **6 flows** read-only: `sales pull` + `inventory pull` (Vendor-Reports-Queue: SALES / INVENTORY report types) and `ads pull` 2×2 (products/brands × range/daily). That is a thin slice of [[Vendor-Reports-Queue]] + [[Brand-Analytics]]. The **other ~21 sections** (POs, ASN, GRN, invoicing, ledger, payments, receivables, catalog, stock, contracts, campaigns, creatives, wallet, geo/market/persona/survey insights, users/access, subscription, KYC) are the read-only CLI **expansion backlog** — every endpoint they need is already catalogued in [[Zepto-Endpoints]].
+The read surface is generated: **`cli/`** is a cobra Go CLI, **417 read commands across 25 section groups** (+ `doctor`, `auth`), one JWT authorizing all 7 backends, with a 3-layer read-only guardrail. Build: `cd cli && go build -o zepto-portal .`; then `./zepto-portal doctor`. Every command maps to a READ row in [[Zepto-Endpoints]]; writes/exports are never wired. See `cli/README.md`.
+
+The older **`~/ecomcliauto/clis/zepto-cli`** stays as the CSV-pull automation (6 flows: `sales`/`inventory`/`ads` 2×2, feeding the ecom Hub daily) — `cli/zepto-portal` is the broad read/exploration surface over the whole portal.
