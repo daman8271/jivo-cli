@@ -1,2 +1,0 @@
-(self.webpackChunkvendor=self.webpackChunkvendor||[]).push([[538],{90538:(e,a,l)=>{l.r(a),l.d(a,{default:()=>u});var s=l(4120),t=l(15353),n=l(69500);const u=()=>(0,n.jsx)(s.C,{title:"Quality Details",viewType:t.S.QUALITY})}}]);
-//# sourceMappingURL=538.16f6bd8663ac3af6.js.map

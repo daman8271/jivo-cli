@@ -1,2 +1,0 @@
-(self.webpackChunkads=self.webpackChunkads||[]).push([[8276],{18276:(a,e,s)=>{s.r(e),s.d(e,{default:()=>c});var n=s(10650),i=s(71382),t=s(17704),d=s(69500);const c=()=>{const{data:a,isLoading:e}=(0,i.A)(n.B.OVERVIEW);return(0,d.jsx)(t.A,{title:"Overview",config:a,isLoading:e,showDateRangePicker:!0})}}}]);
-//# sourceMappingURL=8276.cc9c4a75f332ed65.js.map

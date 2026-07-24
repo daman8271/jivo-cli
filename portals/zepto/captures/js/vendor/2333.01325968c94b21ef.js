@@ -1,2 +1,0 @@
-(self.webpackChunkvendor=self.webpackChunkvendor||[]).push([[2333],{52333:(e,s,l)=>{l.r(s),l.d(s,{default:()=>p});var n=l(4120),t=l(15353),a=l(69500);const p=()=>(0,a.jsx)(n.C,{title:"Completeness Details",viewType:t.S.COMPLETENESS})}}]);
-//# sourceMappingURL=2333.01325968c94b21ef.js.map
