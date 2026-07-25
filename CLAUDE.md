@@ -15,7 +15,7 @@ A folder of command-line tools ("CLIs"), each a window into one JIVO system. All
 | `sap-b1/` | **SAP B1** (the books, 3 companies) | ledger balances, turnover/sales, invoices, orders, stock, party statements |
 | `ecom-cli/` `exim/` `factory-cli/` `oms-cli/` `jsap-cli/` | ecom / imports / factory / orders / ops | channel sales, POs, production, approvals (Go/Python CLIs) |
 | `postsql/` | raw Postgres (16 DBs) | direct SQL reads under the apps |
-| `portals/` | Blinkit/Zepto seller portals | studied; some CLIs built |
+| `portals/` | Blinkit/Zepto seller portals + **TankhaPay** HR/payroll | studied; read-only CLIs built (tankhapay: 297 cmds — employees/attendance/salary/payouts/leave/reports) |
 
 **SAP is the main one for Accounts.** Start there unless asked otherwise.
 
