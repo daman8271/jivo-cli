@@ -1,0 +1,967 @@
+[
+  {
+    "slug": "account_users",
+    "method": "GET",
+    "path": "/account/users/",
+    "category": "account",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "users"
+    ],
+    "desc": "List of application user accounts (id, name, email).",
+    "sample_query": ""
+  },
+  {
+    "slug": "daily-price_db-list",
+    "method": "GET",
+    "path": "/daily-price/db-list/",
+    "category": "daily-price",
+    "kind": "read",
+    "query_params": [
+      "date"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "daily-price"
+    ],
+    "desc": "Historical daily commodity factory-price records (optionally for a date).",
+    "sample_query": "date=2026-07-17"
+  },
+  {
+    "slug": "daily-price_fetch",
+    "method": "GET",
+    "path": "/daily-price/fetch/",
+    "category": "daily-price",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "daily-price"
+    ],
+    "desc": "Fetch/refresh the latest daily commodity prices; returns status + preview.",
+    "sample_query": ""
+  },
+  {
+    "slug": "daily-price_highest-lowest",
+    "method": "GET",
+    "path": "/daily-price/highest-lowest/",
+    "category": "daily-price",
+    "kind": "read",
+    "query_params": [
+      "end_date",
+      "start_date"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "daily-price"
+    ],
+    "desc": "Highest & lowest commodity prices over a date range.",
+    "sample_query": "end_date=2026-07-18&start_date=2026-06-18"
+  },
+  {
+    "slug": "daily-price_trends",
+    "method": "GET",
+    "path": "/daily-price/trends/",
+    "category": "daily-price",
+    "kind": "read",
+    "query_params": [
+      "end_date",
+      "start_date"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "daily-price",
+      "dashboard"
+    ],
+    "desc": "Daily-price trend series (labels + datasets) for charting over a range.",
+    "sample_query": "end_date=2026-07-18&start_date=2026-06-18"
+  },
+  {
+    "slug": "dc",
+    "method": "GET",
+    "path": "/dc/",
+    "category": "dc",
+    "kind": "read",
+    "query_params": [
+      "year"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "domestic-2627",
+      "domestic-contracts"
+    ],
+    "desc": "Domestic contracts (delivery challans / POs) for a given financial year.",
+    "sample_query": "year=2026"
+  },
+  {
+    "slug": "director-inventorty",
+    "method": "GET",
+    "path": "/director-inventorty/",
+    "category": "director-inventorty",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "director-dashboard"
+    ],
+    "desc": "Director rollup: finished + at-factory + in-transit inventory by litre/MT.",
+    "sample_query": ""
+  },
+  {
+    "slug": "exim-rates_fetch",
+    "method": "GET",
+    "path": "/exim-rates/fetch/",
+    "category": "exim-rates",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "exim-rates"
+    ],
+    "desc": "Fetch/refresh custom exchange (EXIM) rates.",
+    "sample_query": ""
+  },
+  {
+    "slug": "items_fg",
+    "method": "GET",
+    "path": "/items/fg/",
+    "category": "items",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "sync-finished-goods"
+    ],
+    "desc": "Finished-goods item master (SAP-synced).",
+    "sample_query": ""
+  },
+  {
+    "slug": "items_rm",
+    "method": "GET",
+    "path": "/items/rm/",
+    "category": "items",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "domestic-2627",
+      "sync-raw-material"
+    ],
+    "desc": "Raw-material item master (SAP-synced).",
+    "sample_query": ""
+  },
+  {
+    "slug": "items_rm_summary",
+    "method": "GET",
+    "path": "/items/rm/summary/",
+    "category": "items",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "sync-raw-material"
+    ],
+    "desc": "Aggregate summary of raw-material items (counts, qty, value).",
+    "sample_query": ""
+  },
+  {
+    "slug": "items_rm_varieties",
+    "method": "GET",
+    "path": "/items/rm/varieties/",
+    "category": "items",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "sync-raw-material"
+    ],
+    "desc": "Distinct raw-material varieties.",
+    "sample_query": ""
+  },
+  {
+    "slug": "jivo-rate_fetch",
+    "method": "GET",
+    "path": "/jivo-rate/fetch/",
+    "category": "jivo-rate",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "jivo-rates"
+    ],
+    "desc": "Fetch/refresh latest JIVO pack rates; returns status + preview.",
+    "sample_query": ""
+  },
+  {
+    "slug": "license_advance-license-headers",
+    "method": "GET",
+    "path": "/license/advance-license-headers/",
+    "category": "license",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "advance-license"
+    ],
+    "desc": "Advance Authorisation licenses with nested import/export lines.",
+    "sample_query": ""
+  },
+  {
+    "slug": "license_dfia-license-header_list",
+    "method": "GET",
+    "path": "/license/dfia-license-header/list/",
+    "category": "license",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "dfia-license"
+    ],
+    "desc": "DFIA license headers list.",
+    "sample_query": ""
+  },
+  {
+    "slug": "parties",
+    "method": "GET",
+    "path": "/parties/",
+    "category": "parties",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "domestic-2627",
+      "stock-status",
+      "sync-vendor-data"
+    ],
+    "desc": "Business partners (vendors + customers) master from SAP.",
+    "sample_query": ""
+  },
+  {
+    "slug": "rates_basic-rate",
+    "method": "GET",
+    "path": "/rates/basic-rate/",
+    "category": "rates",
+    "kind": "read",
+    "query_params": [
+      "end_date",
+      "start_date"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "our-rates"
+    ],
+    "desc": "Basic (our) rate rows over a date range.",
+    "sample_query": "end_date=2026-07-18&start_date=2026-06-18"
+  },
+  {
+    "slug": "rates_commodity",
+    "method": "GET",
+    "path": "/rates/commodity/",
+    "category": "rates",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "market-rates",
+      "our-rates"
+    ],
+    "desc": "Commodity master with margin rates.",
+    "sample_query": ""
+  },
+  {
+    "slug": "rates_market-rate_get",
+    "method": "GET",
+    "path": "/rates/market-rate/get/",
+    "category": "rates",
+    "kind": "read",
+    "query_params": [
+      "end_date",
+      "start_date"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "market-rates",
+      "our-rates"
+    ],
+    "desc": "Market rate rows over a date range.",
+    "sample_query": "end_date=2026-07-18&start_date=2026-06-18"
+  },
+  {
+    "slug": "rates_market-rate_latest",
+    "method": "GET",
+    "path": "/rates/market-rate/latest/",
+    "category": "rates",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "market-rates",
+      "our-rates"
+    ],
+    "desc": "Latest market rate per commodity.",
+    "sample_query": ""
+  },
+  {
+    "slug": "rates_packing",
+    "method": "GET",
+    "path": "/rates/packing/",
+    "category": "rates",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "our-rates"
+    ],
+    "desc": "Packing types with packing margins.",
+    "sample_query": ""
+  },
+  {
+    "slug": "rates_rate-table_latest",
+    "method": "GET",
+    "path": "/rates/rate-table/latest/",
+    "category": "rates",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "our-rates"
+    ],
+    "desc": "Composite latest rate table (commodities + rows).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_balance-sheet",
+    "method": "GET",
+    "path": "/sap-sync/balance-sheet/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "dashboard",
+      "exim-account"
+    ],
+    "desc": "Oil Dr/Cr outstanding balance sheet (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_custa_balance-sheet",
+    "method": "GET",
+    "path": "/sap-sync/custa/balance-sheet/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "customer-outstanding"
+    ],
+    "desc": "Customer (custa) outstanding balance sheet (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_customer-aging-balance",
+    "method": "GET",
+    "path": "/sap-sync/customer-aging-balance/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "customer-aging"
+    ],
+    "desc": "Customer aging balances (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_finished-inventory",
+    "method": "GET",
+    "path": "/sap-sync/finished-inventory/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "warehouse-inventory"
+    ],
+    "desc": "Finished-goods inventory (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_inventory",
+    "method": "GET",
+    "path": "/sap-sync/inventory/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "warehouse-inventory"
+    ],
+    "desc": "Raw/factory inventory (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_monthly-planning",
+    "method": "GET",
+    "path": "/sap-sync/monthly-planning/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [
+      "monthId"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "planning"
+    ],
+    "desc": "Monthly SAP planning rows for a given month id.",
+    "sample_query": "monthId=42"
+  },
+  {
+    "slug": "sap-sync_open-ap",
+    "method": "GET",
+    "path": "/sap-sync/open-ap/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "open-aps"
+    ],
+    "desc": "Open accounts-payable documents (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_open-ar",
+    "method": "GET",
+    "path": "/sap-sync/open-ar/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "open-ars"
+    ],
+    "desc": "Open accounts-receivable documents (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_open-pos",
+    "method": "GET",
+    "path": "/sap-sync/open-pos/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "open-pos"
+    ],
+    "desc": "Open purchase orders (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_planned-months",
+    "method": "GET",
+    "path": "/sap-sync/planned-months/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "planning"
+    ],
+    "desc": "Available planning months (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap-sync_vendor_balance-sheet",
+    "method": "GET",
+    "path": "/sap-sync/vendor/balance-sheet/",
+    "category": "sap-sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "vendor-outstanding"
+    ],
+    "desc": "Vendor outstanding balance sheet (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "sap_sync_open-grpos",
+    "method": "GET",
+    "path": "/sap_sync/open-grpos/",
+    "category": "sap_sync",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "open-grpos"
+    ],
+    "desc": "Open goods-receipt POs (SAP).",
+    "sample_query": ""
+  },
+  {
+    "slug": "stock-status",
+    "method": "GET",
+    "path": "/stock-status/",
+    "category": "stock-status",
+    "kind": "read",
+    "query_params": [
+      "status"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "contracts",
+      "dashboard",
+      "stock-status",
+      "vehicle-report"
+    ],
+    "desc": "Core import stock-status rows (optionally filtered by status).",
+    "sample_query": "status=IN_CONTRACT"
+  },
+  {
+    "slug": "stock-status_contractual-history",
+    "method": "GET",
+    "path": "/stock-status/contractual-history/",
+    "category": "stock-status",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "contractual-history"
+    ],
+    "desc": "Contractual history of stock items (rates, contract dates).",
+    "sample_query": ""
+  },
+  {
+    "slug": "stock-status_debit-entries",
+    "method": "GET",
+    "path": "/stock-status/debit-entries/",
+    "category": "stock-status",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "shortage-report"
+    ],
+    "desc": "Shortage/debit deduction entries per vehicle/item.",
+    "sample_query": ""
+  },
+  {
+    "slug": "stock-status_debit-insights",
+    "method": "GET",
+    "path": "/stock-status/debit-insights/",
+    "category": "stock-status",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "shortage-report"
+    ],
+    "desc": "Aggregate shortage/debit totals.",
+    "sample_query": ""
+  },
+  {
+    "slug": "stock-status_stock-dashboard",
+    "method": "GET",
+    "path": "/stock-status/stock-dashboard/",
+    "category": "stock-status",
+    "kind": "read",
+    "query_params": [
+      "rounding"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "stock-dashboard"
+    ],
+    "desc": "Multi-dimensional stock dashboard (in/outside factory, by status/vendor).",
+    "sample_query": "rounding=true"
+  },
+  {
+    "slug": "stock-status_stock-insights",
+    "method": "GET",
+    "path": "/stock-status/stock-insights/",
+    "category": "stock-status",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "stock-status"
+    ],
+    "desc": "Aggregate stock KPIs (value, qty, avg price).",
+    "sample_query": ""
+  },
+  {
+    "slug": "stock-status_stock-logs",
+    "method": "GET",
+    "path": "/stock-status/stock-logs/",
+    "category": "stock-status",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "stock-updation-logs"
+    ],
+    "desc": "Field-level audit log of stock-status changes.",
+    "sample_query": ""
+  },
+  {
+    "slug": "stock-status_vehicle-report",
+    "method": "GET",
+    "path": "/stock-status/vehicle-report/",
+    "category": "stock-status",
+    "kind": "read",
+    "query_params": [
+      "status"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "director-dashboard",
+      "vehicle-report"
+    ],
+    "desc": "Vehicle-wise stock grouped by a status.",
+    "sample_query": "status=IN_CONTRACT"
+  },
+  {
+    "slug": "sync_logs",
+    "method": "GET",
+    "path": "/sync_logs/",
+    "category": "sync_logs",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "sync-logs"
+    ],
+    "desc": "History of SAP sync jobs (type, status, counts).",
+    "sample_query": ""
+  },
+  {
+    "slug": "tank",
+    "method": "GET",
+    "path": "/tank/",
+    "category": "tank",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "tank-data",
+      "tank-monitoring"
+    ],
+    "desc": "Storage tanks (code, item, capacity, current fill).",
+    "sample_query": ""
+  },
+  {
+    "slug": "tank_capacity-insights",
+    "method": "GET",
+    "path": "/tank/capacity-insights/",
+    "category": "tank",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "dashboard"
+    ],
+    "desc": "Overall tank capacity fill/empty percentages.",
+    "sample_query": ""
+  },
+  {
+    "slug": "tank_in-tank-items",
+    "method": "GET",
+    "path": "/tank/in-tank-items/",
+    "category": "tank",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "in-tank-breakdown"
+    ],
+    "desc": "Distinct item codes currently in tanks.",
+    "sample_query": ""
+  },
+  {
+    "slug": "tank_item-wise-average",
+    "method": "GET",
+    "path": "/tank/item-wise-average/",
+    "category": "tank",
+    "kind": "read",
+    "query_params": [
+      "item_code"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "in-tank-breakdown",
+      "tank-monitoring"
+    ],
+    "desc": "Weighted average rate + matched qty for one tank item.",
+    "sample_query": "item_code=RM00CN"
+  },
+  {
+    "slug": "tank_item-wise-summary",
+    "method": "GET",
+    "path": "/tank/item-wise-summary/",
+    "category": "tank",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "stock-dashboard",
+      "tank-monitoring"
+    ],
+    "desc": "Per-item tank summary (qty, capacity, tank list).",
+    "sample_query": ""
+  },
+  {
+    "slug": "tank_items",
+    "method": "GET",
+    "path": "/tank/items/",
+    "category": "tank",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "in-tank-breakdown",
+      "stock-status",
+      "tank-data",
+      "tank-items",
+      "tank-monitoring"
+    ],
+    "desc": "Tank item master (code, name, category, colour).",
+    "sample_query": ""
+  },
+  {
+    "slug": "tank_log",
+    "method": "GET",
+    "path": "/tank/log/",
+    "category": "tank",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "tank-logs"
+    ],
+    "desc": "Tank inflow/outflow log entries.",
+    "sample_query": ""
+  },
+  {
+    "slug": "tank_tank-summary",
+    "method": "GET",
+    "path": "/tank/tank-summary/",
+    "category": "tank",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "tank-data",
+      "tank-monitoring"
+    ],
+    "desc": "Tank totals (capacity, current stock, utilisation).",
+    "sample_query": ""
+  },
+  {
+    "slug": "stock-status_id",
+    "method": "GET",
+    "path": "/stock-status/{id}/",
+    "category": "stock-status",
+    "kind": "detail",
+    "query_params": [],
+    "path_params": [
+      "id"
+    ],
+    "used_by_pages": [
+      "stock-status"
+    ],
+    "desc": "Single stock-status record detail.",
+    "sample_query": "/stock-status/342/"
+  },
+  {
+    "slug": "tank_tank_code",
+    "method": "GET",
+    "path": "/tank/{tank_code}/",
+    "category": "tank",
+    "kind": "detail",
+    "query_params": [],
+    "path_params": [
+      "tank_code"
+    ],
+    "used_by_pages": [
+      "tank-data"
+    ],
+    "desc": "Single tank detail.",
+    "sample_query": "/tank/TNK005/"
+  },
+  {
+    "slug": "party_card_code",
+    "method": "GET",
+    "path": "/party/{card_code}/",
+    "category": "party",
+    "kind": "detail",
+    "query_params": [],
+    "path_params": [
+      "card_code"
+    ],
+    "used_by_pages": [
+      "stock-status"
+    ],
+    "desc": "Single business-partner detail.",
+    "sample_query": "/party/VENDA000102/"
+  },
+  {
+    "slug": "item_rm_item_code",
+    "method": "GET",
+    "path": "/item/rm/{item_code}/",
+    "category": "item",
+    "kind": "detail",
+    "query_params": [],
+    "path_params": [
+      "item_code"
+    ],
+    "used_by_pages": [
+      "sync-raw-material"
+    ],
+    "desc": "Single raw-material item detail incl movement totals.",
+    "sample_query": "/item/rm/RM0000001/"
+  },
+  {
+    "slug": "item_fg_item_code",
+    "method": "GET",
+    "path": "/item/fg/{item_code}/",
+    "category": "item",
+    "kind": "detail",
+    "query_params": [],
+    "path_params": [
+      "item_code"
+    ],
+    "used_by_pages": [
+      "sync-finished-goods"
+    ],
+    "desc": "Single finished-good item detail.",
+    "sample_query": "/item/fg/FG0000412/"
+  },
+  {
+    "slug": "account_user_id",
+    "method": "GET",
+    "path": "/account/user/{id}/",
+    "category": "account",
+    "kind": "detail",
+    "query_params": [],
+    "path_params": [
+      "id"
+    ],
+    "used_by_pages": [
+      "users"
+    ],
+    "desc": "Single user detail.",
+    "sample_query": "/account/user/34/"
+  },
+  {
+    "slug": "daily-price_range",
+    "method": "GET",
+    "path": "/daily-price/range/",
+    "category": "daily-price",
+    "kind": "read",
+    "query_params": [
+      "from_date",
+      "to_date"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "daily-price"
+    ],
+    "desc": "Daily prices over a from/to range.",
+    "sample_query": "/daily-price/range/?from_date=2026-06-18&to_date=2026-07-18"
+  },
+  {
+    "slug": "jivo-rate_range",
+    "method": "GET",
+    "path": "/jivo-rate/range/",
+    "category": "jivo-rate",
+    "kind": "read",
+    "query_params": [
+      "from_date",
+      "to_date"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "jivo-rates"
+    ],
+    "desc": "JIVO pack rates over a range.",
+    "sample_query": "/jivo-rate/range/?from_date=2026-06-18&to_date=2026-07-18"
+  },
+  {
+    "slug": "license_advance-license-import-lines",
+    "method": "GET",
+    "path": "/license/advance-license-import-lines/",
+    "category": "license",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "advance-license"
+    ],
+    "desc": "Advance-license import (BOE) lines.",
+    "sample_query": "/license/advance-license-import-lines/"
+  },
+  {
+    "slug": "license_advance-license-export-lines",
+    "method": "GET",
+    "path": "/license/advance-license-export-lines/",
+    "category": "license",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "advance-license"
+    ],
+    "desc": "Advance-license export (shipping bill) lines.",
+    "sample_query": "/license/advance-license-export-lines/"
+  },
+  {
+    "slug": "license_advance-license-import-lines_dropdown",
+    "method": "GET",
+    "path": "/license/advance-license-import-lines/dropdown/",
+    "category": "license",
+    "kind": "read",
+    "query_params": [
+      "license_no"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "advance-license"
+    ],
+    "desc": "Import-line dropdown for a license.",
+    "sample_query": "/license/advance-license-import-lines/dropdown/?license_no=511015224"
+  },
+  {
+    "slug": "dc",
+    "method": "GET",
+    "path": "/dc/",
+    "category": "dc",
+    "kind": "read",
+    "query_params": [
+      "year"
+    ],
+    "path_params": [],
+    "used_by_pages": [
+      "domestic-2627"
+    ],
+    "desc": "Domestic contracts by FY (re-listed).",
+    "sample_query": "/dc/?year=2026"
+  },
+  {
+    "slug": "dc_dropdown",
+    "method": "GET",
+    "path": "/dc/dropdown/",
+    "category": "dc",
+    "kind": "read",
+    "query_params": [],
+    "path_params": [],
+    "used_by_pages": [
+      "domestic-contracts"
+    ],
+    "desc": "Open-PO dropdown for domestic-contract creation.",
+    "sample_query": "/dc/dropdown/"
+  }
+]
