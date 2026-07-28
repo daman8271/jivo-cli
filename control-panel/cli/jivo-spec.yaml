@@ -1,0 +1,696 @@
+name: jivo
+description: "Jivo Group — Control Panel: strictly READ-ONLY CLI over the internal Django ERP/analytics dashboard for JIVO Wellness (sales realise, targets, order-in-hand, receivables aging, master data, inventory & production). Live production system — read/pull endpoints only."
+version: "0.1.0"
+base_url: "http://103.89.45.75:9080"
+health_check_path: "/realise/api/health/"
+
+# Django session auth is hand-wired (see internal/cli/jivo_login.go +
+# internal/client/jivo_headers.go). The generator emits no auth layer; the
+# only static header baked into every request is the AJAX/XHR gate below.
+# The session Cookie + X-CSRFToken are injected via the config file's
+# [headers] table, written by `jivo auth login`.
+auth:
+  type: none
+
+required_headers:
+  - name: X-Requested-With
+    value: "XMLHttpRequest"
+
+config:
+  format: toml
+  path: "~/.config/jivo/config.toml"
+
+resources:
+  sales:
+    description: "Sales realise dashboard feeds — per-product realise, credit notes, hidden sales, document flow, dispatch, drill-downs and beverages (all read-only; POST reads sample the smallest date range)."
+    endpoints:
+      data:
+        method: POST
+        path: "/realise/api/sales-data/"
+        description: "Core OILS realise feed: per-product litres/₹/realise/target rows plus flattened channel + month line-item rows for a date range."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "Range start (YYYY-MM-DD). Use a single day to sample."
+          - name: end_date
+            type: string
+            required: true
+            description: "Range end (YYYY-MM-DD)."
+          - name: refresh
+            type: bool
+            description: "Force server recompute / cache-bust."
+        response:
+          type: object
+      cn:
+        method: POST
+        path: "/realise/api/sales-cn/"
+        description: "Line-level gross sales vs credit-note rows for one company (oil|beverages) over a date range."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "Range start (YYYY-MM-DD)."
+          - name: end_date
+            type: string
+            required: true
+            description: "Range end (YYYY-MM-DD)."
+          - name: company
+            type: string
+            description: "Company books: oil (default) or beverages."
+        response:
+          type: object
+      hidden:
+        method: POST
+        path: "/realise/api/hidden-sales/"
+        description: "Hidden sales-invoice lines (SAP U_ARNO='H') over a date range — oil company only."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "Range start (YYYY-MM-DD)."
+          - name: end_date
+            type: string
+            required: true
+            description: "Range end (YYYY-MM-DD)."
+        response:
+          type: object
+      flow:
+        method: POST
+        path: "/realise/api/sales-flow/"
+        description: "Sales document chains (Quotation -> Order -> Invoice) with open/closed status and source, for a date range and company."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "Range start (YYYY-MM-DD)."
+          - name: end_date
+            type: string
+            required: true
+            description: "Range end (YYYY-MM-DD)."
+          - name: company
+            type: string
+            description: "oil (default) or beverages."
+        response:
+          type: object
+      flow-open-items:
+        method: POST
+        path: "/realise/api/sales-flow/open-items/"
+        description: "Drill-down: still-open line items of a single open Sales Order or Quotation."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: doc_type
+            type: string
+            required: true
+            description: "order or quotation."
+          - name: doc_no
+            type: string
+            required: true
+            description: "SAP document number."
+          - name: company
+            type: string
+            description: "oil (default) or beverages — must match the row."
+        response:
+          type: object
+      dispatch:
+        method: POST
+        path: "/realise/api/dispatch-details/"
+        description: "Per-invoice physical dispatch / freight metadata (bilty, transporter, vehicle, driver) for a date range."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "Range start (YYYY-MM-DD)."
+          - name: end_date
+            type: string
+            required: true
+            description: "Range end (YYYY-MM-DD)."
+        response:
+          type: object
+      compare-docs:
+        method: POST
+        path: "/realise/api/compare-docs/"
+        description: "Invoice-level drill-down behind a Compare-Sales pivot cell (one month range plus optional dimension filters)."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "1st of the clicked month (YYYY-MM-DD)."
+          - name: end_date
+            type: string
+            required: true
+            description: "Last day of the clicked month (YYYY-MM-DD)."
+          - name: seg
+            type: string
+            description: "Type filter: PREMIUM | COMMODITY | empty."
+          - name: group
+            type: string
+            description: "Main Group narrowing (optional)."
+          - name: state
+            type: string
+            description: "State narrowing (optional)."
+          - name: person
+            type: string
+            description: "Territory owner narrowing (optional)."
+          - name: product
+            type: string
+            description: "Product / sub-group narrowing (optional)."
+          - name: item
+            type: string
+            description: "Item name narrowing (optional)."
+          - name: customer
+            type: string
+            description: "Customer narrowing (optional)."
+        response:
+          type: object
+      drill-down:
+        method: POST
+        path: "/realise/api/drill-down/"
+        description: "Expand one Slide-1 product row into a chosen dimension (litres + linetotal per value). drill_by is case-sensitive (State|U_Main_Group|U_Chain|ItemName|CardName)."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          properties:
+            start_date:
+              type: string
+              required: true
+              description: "Range start (YYYY-MM-DD)."
+            end_date:
+              type: string
+              required: true
+              description: "Range end (YYYY-MM-DD)."
+            u_type:
+              type: string
+              required: true
+              description: "Product tier, e.g. PREMIUM / COMMODITY."
+            u_sub_group:
+              type: string
+              required: true
+              description: "Product variety, e.g. OLIVE, MUSTARD."
+            drill_by:
+              type: string
+              required: true
+              description: "Pascal-case dimension: State | U_Main_Group | U_Chain | ItemName | CardName."
+            filters:
+              type: object
+              description: "Accumulated parent-drill path filters as JSON, e.g. {\"State\":\"HARYANA\"}; {} at top level."
+            month:
+              type: string
+              description: "Month filter (optional)."
+            year:
+              type: string
+              description: "Year filter (optional)."
+        response:
+          type: object
+      historical:
+        method: POST
+        path: "/realise/api/historical-realise/"
+        description: "Trailing-period average realise (₹/L) per product and per drilled dimension, as a Slide-1 overlay."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "Anchor range start (YYYY-MM-DD)."
+          - name: end_date
+            type: string
+            required: true
+            description: "Anchor range end (YYYY-MM-DD)."
+          - name: period
+            type: string
+            description: "Trailing window: 12m | 6m | 3m | last_month. Empty = off."
+        response:
+          type: object
+      beverages:
+        method: POST
+        path: "/realise/api/beverages-data/"
+        description: "BEVERAGES dataset feed: beverage sales lines, day-over-day box comparison, customer grading, month rollup and beverage OIH."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "Range start (YYYY-MM-DD)."
+          - name: end_date
+            type: string
+            required: true
+            description: "Range end (YYYY-MM-DD)."
+        response:
+          type: object
+      beverages-docs:
+        method: GET
+        path: "/realise/api/beverages-docs/"
+        description: "Documents (invoices / SOs) behind a beverages node — lazily fetched per drilled node."
+        params:
+          - name: metric
+            type: string
+            required: true
+            description: "Node measure, e.g. quantity | boxes | oih."
+          - name: start
+            type: string
+            required: true
+            description: "Beverages range start (YYYY-MM-DD)."
+          - name: end
+            type: string
+            required: true
+            description: "Beverages range end (YYYY-MM-DD)."
+          - name: f_brand
+            type: string
+            description: "Active brand filter (optional)."
+          - name: f_ym
+            type: string
+            description: "Active month filter YYYY-MM (optional)."
+        response:
+          type: object
+      channel-docs:
+        method: GET
+        path: "/realise/api/channel-detail-docs/"
+        description: "Documents behind a Slide-2 channel card cell — invoices (done) or open SOs (oih), with per-line items and per-warehouse stock."
+        params:
+          - name: channel
+            type: string
+            description: "Channel / main-group code (GT, MT, ECOM...); empty = all."
+          - name: metric
+            type: string
+            description: "done (invoices) or oih (open SOs). Default done."
+          - name: seg
+            type: string
+            description: "Segment scope, e.g. OILS."
+          - name: start
+            type: string
+            description: "Range start (YYYY-MM-DD)."
+          - name: end
+            type: string
+            description: "Range end (YYYY-MM-DD)."
+          - name: group
+            type: string
+            description: "Main Group filter (optional)."
+          - name: state
+            type: string
+            description: "State filter (optional)."
+          - name: person
+            type: string
+            description: "Territory owner filter (optional)."
+          - name: product
+            type: string
+            description: "Product / sub-group filter (optional)."
+          - name: item
+            type: string
+            description: "Item filter (optional)."
+          - name: customer
+            type: string
+            description: "Customer filter (optional)."
+        response:
+          type: object
+      pulse:
+        method: GET
+        path: "/realise/api/sales-pulse/"
+        description: "Cheap change-fingerprint / heartbeat for the Realise backend (empty pulse = no signal). Detect change, not data."
+        params:
+          - name: dataset
+            type: string
+            description: "oils | beverages."
+          - name: start
+            type: string
+            description: "Active window start (YYYY-MM-DD)."
+          - name: end
+            type: string
+            description: "Active window end (YYYY-MM-DD)."
+        response:
+          type: object
+
+  targets:
+    description: "Monthly target layer — product, flex (per-salesperson), segment, node (main-group x state x person x segment) and per-channel target litres/rates."
+    endpoints:
+      list:
+        method: GET
+        path: "/realise/api/targets/"
+        description: "Product-level monthly targets (tgt_ltrs, tgt_rate, source) keyed by U_TYPE|SUB_GROUP."
+        params:
+          - name: month
+            type: int
+            description: "Target month 1-12."
+          - name: year
+            type: int
+            description: "Target year (four-digit)."
+        response:
+          type: object
+      flex:
+        method: GET
+        path: "/realise/api/flex-targets/"
+        description: "Flex (flat, dimension-scoped) litre targets — currently per salesperson — for the target month."
+        params:
+          - name: seg
+            type: string
+            description: "Segment scope, e.g. OILS, BEVERAGES."
+          - name: month
+            type: int
+            description: "Target month 1-12 (optional)."
+          - name: year
+            type: int
+            description: "Target year (optional)."
+        response:
+          type: object
+      segment:
+        method: GET
+        path: "/realise/api/segment-targets/"
+        description: "Saved target overrides scoped to a single segment (empty {} when no overrides saved)."
+        params:
+          - name: segment
+            type: string
+            required: true
+            description: "Segment name (server lower-cases it), e.g. OILS."
+          - name: month
+            type: int
+            description: "Target month 1-12 (optional)."
+          - name: year
+            type: int
+            description: "Target year (optional)."
+          - name: seg
+            type: string
+            description: "Secondary segment scope (optional)."
+        response:
+          type: object
+      nodes:
+        method: GET
+        path: "/realise/api/target-nodes/"
+        description: "Granular target nodes: target litres by main_group x state x sales_person x segment for a month."
+        params:
+          - name: month
+            type: int
+            description: "Target month 1-12."
+          - name: year
+            type: int
+            description: "Target year."
+          - name: seg
+            type: string
+            description: "Segment scope, e.g. OILS, BEVERAGES."
+        response:
+          type: object
+      channel:
+        method: GET
+        path: "/realise/api/channel-targets/"
+        description: "Monthly target litres per sales channel (main group)."
+        params:
+          - name: month
+            type: int
+            description: "Target month 1-12."
+          - name: year
+            type: int
+            description: "Target year."
+        response:
+          type: object
+
+  oih:
+    description: "Order In Hand (open, uninvoiced sales orders) — line breakdown, per-person totals, and open-quantity rows."
+    endpoints:
+      breakdown:
+        method: GET
+        path: "/realise/api/oih-breakdown/"
+        description: "Line-level OIH breakdown, one row per open SO line, split premium vs commodity value and pieces."
+        response:
+          type: object
+      summary:
+        method: GET
+        path: "/realise/api/order-in-hand/"
+        description: "Total OIH value summarised per salesperson."
+        response:
+          type: object
+      rows:
+        method: GET
+        path: "/realise/api/order-in-hand-rows/"
+        description: "OIH as individual open-order rows (open litres per item/customer)."
+        params:
+          - name: start
+            type: string
+            description: "Range start (YYYY-MM-DD, optional)."
+          - name: end
+            type: string
+            description: "Range end (YYYY-MM-DD, optional)."
+        response:
+          type: object
+      commodity-rows:
+        method: GET
+        path: "/realise/api/commodity-oih-rows/"
+        description: "OIH open-order rows filtered to commodity oils (u_type=COMMODITY)."
+        params:
+          - name: start
+            type: string
+            description: "Range start (YYYY-MM-DD, optional)."
+          - name: end
+            type: string
+            description: "Range end (YYYY-MM-DD, optional)."
+        response:
+          type: object
+
+  accounts:
+    description: "Accounts receivable — customer aging (oil AR flat, mart & beverages pre-bucketed), on-account payments, and the claim register."
+    endpoints:
+      aging-oil:
+        method: GET
+        path: "/realise/api/customer-aging-oil-ar/"
+        description: "Oil company open A/R ledger as a flat per-open-invoice list (aged to as_of)."
+        params:
+          - name: as_of
+            type: string
+            description: "Age balances to this date (YYYY-MM-DD; default today)."
+        response:
+          type: object
+      aging-mart:
+        method: GET
+        path: "/realise/api/customer-aging-mart/"
+        description: "Mart A/R aging as a pre-bucketed pivot by Format with book KPIs and totals."
+        params:
+          - name: as_of
+            type: string
+            description: "Age balances to this date (YYYY-MM-DD; default today)."
+        response:
+          type: object
+      aging-beverages:
+        method: GET
+        path: "/realise/api/customer-aging-beverages/"
+        description: "Beverages A/R aging as a pre-bucketed pivot (grouped by salesperson) with KPIs and totals."
+        params:
+          - name: as_of
+            type: string
+            description: "Age balances to this date (YYYY-MM-DD; default today)."
+        response:
+          type: object
+      open-payments:
+        method: POST
+        path: "/realise/api/open-payments/"
+        description: "Customer payments on account (receipts not yet applied to invoices) for a date range."
+        meta:
+          "mcp:read-only": "true"
+        body:
+          - name: start_date
+            type: string
+            required: true
+            description: "Receipt range start (YYYY-MM-DD)."
+          - name: end_date
+            type: string
+            required: true
+            description: "Receipt range end (YYYY-MM-DD)."
+        response:
+          type: object
+      claims:
+        method: GET
+        path: "/realise/api/claims/"
+        description: "Full claim register (hand-maintained customer claims) plus the customer master picklist."
+        response:
+          type: object
+
+  masterdata:
+    description: "Reference master data — customer master, saved realise-calculator rate lists, and the FG item master."
+    endpoints:
+      customer-master:
+        method: GET
+        path: "/realise/api/customer-master/"
+        description: "Entire customer master (contact, tax, address, terms, credit limit, balance, status) in one payload. code is the join key."
+        response:
+          type: object
+      rate-list:
+        method: GET
+        path: "/realise/api/rate-list/"
+        description: "Saved realise-calculator results (rate lists). Pass --id to fetch a single saved result."
+        params:
+          - name: id
+            type: int
+            description: "Return only the saved result with this id (optional; omit to list all)."
+        response:
+          type: object
+      calculator-items:
+        method: GET
+        path: "/realise/api/realise-calculator/items/"
+        description: "SAP finished-goods item master for the realise-calculator picker (code, name, variety, sku, pcs/box, box litres)."
+        response:
+          type: object
+
+  inventory:
+    description: "Inventory & production — live on-hand stock, non-moving/ageing stock, production feasibility & catalogues, daily work orders, and Wellness-Mart reconciliation."
+    endpoints:
+      stock:
+        method: GET
+        path: "/inventory/stock-available/api/data/"
+        description: "Live finished-goods on-hand stock for one company: type summaries + per-SKU x per-warehouse rows."
+        params:
+          - name: schema
+            type: string
+            description: "Company DB: jivo_oil (default) | jivo_mart | jivo_beverages."
+        response:
+          type: object
+      non-moving:
+        method: GET
+        path: "/inventory/non-inventory/api/data/"
+        description: "Every in-stock finished good with ageing / movement signals (DaysInStock, DaysSinceMoved, last customer, qty/litres/value)."
+        params:
+          - name: schema
+            type: string
+            description: "Company DB: jivo_oil (default) | jivo_mart | jivo_beverages."
+        response:
+          type: object
+      non-moving-drill:
+        method: GET
+        path: "/inventory/non-inventory/api/drill/"
+        description: "Per-warehouse breakdown of a single finished good (code, name, qty, lot production date)."
+        params:
+          - name: schema
+            type: string
+            required: true
+            description: "Company DB (same as parent page)."
+          - name: item
+            type: string
+            required: true
+            description: "SAP FG ItemCode to drill, e.g. FG0000441."
+          - name: whs
+            type: string
+            description: "Comma-separated warehouse codes to restrict to (optional)."
+        response:
+          type: object
+      production-fg-list:
+        method: GET
+        path: "/inventory/production/api/fg-list/"
+        description: "Catalogue of manufacturable finished goods (those with a BOM) for the production-plan picker."
+        response:
+          type: object
+      production-warehouses:
+        method: GET
+        path: "/inventory/production/api/warehouses/"
+        description: "Full warehouse master (code + name) for the 'Stock from' selector."
+        response:
+          type: object
+      production-feasibility:
+        method: GET
+        path: "/inventory/production/api/feasibility/"
+        description: "Read-only feasibility check for one FG at a requested qty: max producible count + per-component sufficiency (no production occurs)."
+        params:
+          - name: fg_code
+            type: string
+            required: true
+            description: "FG code to check, e.g. FG0000149."
+          - name: qty
+            type: string
+            description: "Planned FG quantity to test (optional)."
+          - name: warehouses
+            type: string
+            description: "ALL or comma-separated warehouse codes ('Stock from' selection)."
+        response:
+          type: object
+      daily-production:
+        method: GET
+        path: "/inventory/daily-production/api/data/"
+        description: "Standard work-order (OWOR) production transactions for a date range — planned vs completed, warehouse, status, user."
+        params:
+          - name: start
+            type: string
+            description: "Range start (YYYY-MM-DD)."
+          - name: end
+            type: string
+            description: "Range end (YYYY-MM-DD)."
+        response:
+          type: object
+      reconciliation:
+        method: GET
+        path: "/inventory/reconciliation/api/data/"
+        description: "Wellness-Mart inter-company billing chains (PO -> SO -> GRPO -> A/P -> A/R) classified MATCHED/MISMATCH/INCOMPLETE."
+        params:
+          - name: schema
+            type: string
+            description: "Seller company: oil (default) | beverages."
+          - name: date_from
+            type: string
+            description: "Window start (YYYY-MM-DD, optional; server default ~last 3 months)."
+          - name: date_to
+            type: string
+            description: "Window end (YYYY-MM-DD, optional; server default today)."
+        response:
+          type: object
+      reconciliation-ledgers:
+        method: GET
+        path: "/inventory/reconciliation/api/ledgers/"
+        description: "BP ledgers behind the Wellness-Mart reconciliation, pivoted by document-type origin for each side (Mart vs Wellness)."
+        params:
+          - name: schema
+            type: string
+            description: "Seller company: oil | beverages."
+          - name: date_from
+            type: string
+            description: "Window start (YYYY-MM-DD, optional)."
+          - name: date_to
+            type: string
+            description: "Window end (YYYY-MM-DD, optional)."
+        response:
+          type: object
+
+  credit:
+    description: "Required Credit Limit page — no JSON API; data is embedded in the page HTML. Read-only GET of the page, parsing the embedded JSON."
+    endpoints:
+      required-limit:
+        method: GET
+        path: "/realise/required-credit-limit/"
+        description: "Required credit limits per ASM (Total Outstanding + 2%), lock state, as-of date — read from the page's embedded JSON."
+        response_format: html
+        html_extract:
+          mode: embedded-json
+          script_selector: "script#credit-data"
+        response:
+          type: object
+
+  users:
+    description: "User Management (Admin) page — no JSON API; data is embedded in the page HTML. Read-only GET of the page, parsing the embedded JSON. No write endpoints (users/save, users/delete, verify-pin) are exposed."
+    endpoints:
+      list:
+        method: GET
+        path: "/users/"
+        description: "Admin user list + roles/permission groups — read-only, from the page's embedded JSON."
+        response_format: html
+        html_extract:
+          mode: embedded-json
+          script_selector: "script#um-users"
+        response:
+          type: object
+      catalog:
+        method: GET
+        path: "/users/"
+        description: "Permission-module catalog used by the Users page — read-only, from the page's embedded JSON."
+        response_format: html
+        html_extract:
+          mode: embedded-json
+          script_selector: "script#um-catalog"
+        response:
+          type: object

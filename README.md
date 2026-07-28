@@ -6,7 +6,7 @@
 
 One home for all JIVO business-system CLIs, their credentials, and the knowledge of how they connect. Fleet live-tested 2026-07-23.
 
-> **Cloning from GitHub?** Use `git clone --recurse-submodules` — `sap-b1/`, `control-panel/`, and `postsql/` are **git submodules** with their own private repos (`jivo-sap-b1`, `jivo-control-panel`, `jivo-postsql`).
+> **Cloning from GitHub?** One repo, everything in it — a plain `git clone` gets the whole toolkit.
 > The repo ships **without secrets**: no `.env` / `*.env` / `*.token` files anywhere — every CLI needs its credentials restored locally before it will log in (see [Credentials & auth](#credentials--auth)).
 
 ## The grid
@@ -55,7 +55,7 @@ EXIM → Factory → OMS → Ecom → jivo-scrape (market)
 
 ## Layout notes
 
-- `sap-b1/`, `control-panel/`, and `postsql/` keep their **own git repos**, wired in here as git submodules (see `.gitmodules`).
+- `sap-b1/`, `control-panel/`, and `postsql/` used to be separate git repos; they're now plain folders of this one repo (old histories archived in `~/jivo-cli-archived-nested-git/`).
 - Compatibility symlinks left behind so nothing old breaks: `~/jivogpt/CLI` → here, `~/jivogpt/Connections` → `connections/`, `~/software` → `control-panel/`, `~/sap-b1` → `sap-b1/`.
 - The VPS deployment of jsap/jivoscrape MCPs uses `/opt/jivogpt/CLI/...` — unaffected by this Mac-side layout.
 - Related JIVO tools that live elsewhere on purpose: `~/pp-swiggy` (Swiggy intel), `~/jivo-instamart-collector`, jivoshop CLI (shop.jivo.in orders), `~/jivo-data-bank`.

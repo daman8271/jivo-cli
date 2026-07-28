@@ -1,0 +1,1000 @@
+{
+  "api_name": "jivo",
+  "base_url": "http://103.89.45.75:9080",
+  "description": "Jivo Group — Control Panel: strictly READ-ONLY CLI over the internal Django ERP/analytics dashboard for JIVO Wellness (sales realise, targets, order-in-hand, receivables aging, master data, inventory \u0026 production). Live production system — read/pull endpoints only.",
+  "mcp_ready": "full",
+  "http_transport": "standard",
+  "auth": {
+    "type": "none"
+  },
+  "required_headers": [
+    {
+      "name": "X-Requested-With",
+      "value": "XMLHttpRequest"
+    }
+  ],
+  "tools": [
+    {
+      "name": "accounts_aging-beverages",
+      "description": "Beverages A/R aging as a pre-bucketed pivot (grouped by salesperson) with KPIs and totals. Optional: as_of.",
+      "method": "GET",
+      "path": "/realise/api/customer-aging-beverages/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "as_of",
+          "type": "string",
+          "location": "query",
+          "description": "Age balances to this date (YYYY-MM-DD; default today)."
+        }
+      ]
+    },
+    {
+      "name": "accounts_aging-mart",
+      "description": "Mart A/R aging as a pre-bucketed pivot by Format with book KPIs and totals. Optional: as_of.",
+      "method": "GET",
+      "path": "/realise/api/customer-aging-mart/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "as_of",
+          "type": "string",
+          "location": "query",
+          "description": "Age balances to this date (YYYY-MM-DD; default today)."
+        }
+      ]
+    },
+    {
+      "name": "accounts_aging-oil",
+      "description": "Oil company open A/R ledger as a flat per-open-invoice list (aged to as_of). Optional: as_of.",
+      "method": "GET",
+      "path": "/realise/api/customer-aging-oil-ar/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "as_of",
+          "type": "string",
+          "location": "query",
+          "description": "Age balances to this date (YYYY-MM-DD; default today)."
+        }
+      ]
+    },
+    {
+      "name": "accounts_claims",
+      "description": "Full claim register (hand-maintained customer claims) plus the customer master picklist.",
+      "method": "GET",
+      "path": "/realise/api/claims/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "accounts_open-payments",
+      "description": "Customer payments on account (receipts not yet applied to invoices) for a date range. Required: start_date, end_date.",
+      "method": "POST",
+      "path": "/realise/api/open-payments/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Receipt range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Receipt range end (YYYY-MM-DD).",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "credit_required-limit",
+      "description": "Required credit limits per ASM (Total Outstanding + 2%), lock state, as-of date — read from the page's embedded JSON.",
+      "method": "GET",
+      "path": "/realise/required-credit-limit/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "inventory_daily-production",
+      "description": "Standard work-order (OWOR) production transactions for a date range — planned vs completed, warehouse, status, user. Optional: start, end.",
+      "method": "GET",
+      "path": "/inventory/daily-production/api/data/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start",
+          "type": "string",
+          "location": "query",
+          "description": "Range start (YYYY-MM-DD)."
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "location": "query",
+          "description": "Range end (YYYY-MM-DD)."
+        }
+      ]
+    },
+    {
+      "name": "inventory_non-moving",
+      "description": "Every in-stock finished good with ageing / movement signals (DaysInStock, DaysSinceMoved, last customer, qty/litres/value). Optional: schema.",
+      "method": "GET",
+      "path": "/inventory/non-inventory/api/data/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "schema",
+          "type": "string",
+          "location": "query",
+          "description": "Company DB: jivo_oil (default) | jivo_mart | jivo_beverages."
+        }
+      ]
+    },
+    {
+      "name": "inventory_non-moving-drill",
+      "description": "Per-warehouse breakdown of a single finished good (code, name, qty, lot production date). Required: schema, item. Optional: whs.",
+      "method": "GET",
+      "path": "/inventory/non-inventory/api/drill/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "schema",
+          "type": "string",
+          "location": "query",
+          "description": "Company DB (same as parent page).",
+          "required": true
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "query",
+          "description": "SAP FG ItemCode to drill, e.g. FG0000441.",
+          "required": true
+        },
+        {
+          "name": "whs",
+          "type": "string",
+          "location": "query",
+          "description": "Comma-separated warehouse codes to restrict to (optional)."
+        }
+      ]
+    },
+    {
+      "name": "inventory_production-feasibility",
+      "description": "Read-only feasibility check for one FG at a requested qty: max producible count + per-component sufficiency (no production occurs). Required: fg_code. Optional: qty, warehouses.",
+      "method": "GET",
+      "path": "/inventory/production/api/feasibility/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "fg_code",
+          "type": "string",
+          "location": "query",
+          "description": "FG code to check, e.g. FG0000149.",
+          "required": true
+        },
+        {
+          "name": "qty",
+          "type": "string",
+          "location": "query",
+          "description": "Planned FG quantity to test (optional)."
+        },
+        {
+          "name": "warehouses",
+          "type": "string",
+          "location": "query",
+          "description": "ALL or comma-separated warehouse codes ('Stock from' selection)."
+        }
+      ]
+    },
+    {
+      "name": "inventory_production-fg-list",
+      "description": "Catalogue of manufacturable finished goods (those with a BOM) for the production-plan picker.",
+      "method": "GET",
+      "path": "/inventory/production/api/fg-list/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "inventory_production-warehouses",
+      "description": "Full warehouse master (code + name) for the 'Stock from' selector.",
+      "method": "GET",
+      "path": "/inventory/production/api/warehouses/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "inventory_reconciliation",
+      "description": "Wellness-Mart inter-company billing chains (PO -\u003e SO -\u003e GRPO -\u003e A/P -\u003e A/R) classified MATCHED/MISMATCH/INCOMPLETE. Optional: schema, date_from, date_to.",
+      "method": "GET",
+      "path": "/inventory/reconciliation/api/data/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "schema",
+          "type": "string",
+          "location": "query",
+          "description": "Seller company: oil (default) | beverages."
+        },
+        {
+          "name": "date_from",
+          "type": "string",
+          "location": "query",
+          "description": "Window start (YYYY-MM-DD, optional; server default ~last 3 months)."
+        },
+        {
+          "name": "date_to",
+          "type": "string",
+          "location": "query",
+          "description": "Window end (YYYY-MM-DD, optional; server default today)."
+        }
+      ]
+    },
+    {
+      "name": "inventory_reconciliation-ledgers",
+      "description": "BP ledgers behind the Wellness-Mart reconciliation, pivoted by document-type origin for each side (Mart vs Wellness). Optional: schema, date_from, date_to.",
+      "method": "GET",
+      "path": "/inventory/reconciliation/api/ledgers/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "schema",
+          "type": "string",
+          "location": "query",
+          "description": "Seller company: oil | beverages."
+        },
+        {
+          "name": "date_from",
+          "type": "string",
+          "location": "query",
+          "description": "Window start (YYYY-MM-DD, optional)."
+        },
+        {
+          "name": "date_to",
+          "type": "string",
+          "location": "query",
+          "description": "Window end (YYYY-MM-DD, optional)."
+        }
+      ]
+    },
+    {
+      "name": "inventory_stock",
+      "description": "Live finished-goods on-hand stock for one company: type summaries + per-SKU x per-warehouse rows. Optional: schema.",
+      "method": "GET",
+      "path": "/inventory/stock-available/api/data/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "schema",
+          "type": "string",
+          "location": "query",
+          "description": "Company DB: jivo_oil (default) | jivo_mart | jivo_beverages."
+        }
+      ]
+    },
+    {
+      "name": "masterdata_calculator-items",
+      "description": "SAP finished-goods item master for the realise-calculator picker (code, name, variety, sku, pcs/box, box litres).",
+      "method": "GET",
+      "path": "/realise/api/realise-calculator/items/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "masterdata_customer-master",
+      "description": "Entire customer master (contact, tax, address, terms, credit limit, balance, status) in one payload. code is the join key.",
+      "method": "GET",
+      "path": "/realise/api/customer-master/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "masterdata_rate-list",
+      "description": "Saved realise-calculator results (rate lists). Pass --id to fetch a single saved result. Optional: id.",
+      "method": "GET",
+      "path": "/realise/api/rate-list/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "query",
+          "description": "Return only the saved result with this id (optional; omit to list all)."
+        }
+      ]
+    },
+    {
+      "name": "oih_breakdown",
+      "description": "Line-level OIH breakdown, one row per open SO line, split premium vs commodity value and pieces.",
+      "method": "GET",
+      "path": "/realise/api/oih-breakdown/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "oih_commodity-rows",
+      "description": "OIH open-order rows filtered to commodity oils (u_type=COMMODITY). Optional: start, end.",
+      "method": "GET",
+      "path": "/realise/api/commodity-oih-rows/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start",
+          "type": "string",
+          "location": "query",
+          "description": "Range start (YYYY-MM-DD, optional)."
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "location": "query",
+          "description": "Range end (YYYY-MM-DD, optional)."
+        }
+      ]
+    },
+    {
+      "name": "oih_rows",
+      "description": "OIH as individual open-order rows (open litres per item/customer). Optional: start, end.",
+      "method": "GET",
+      "path": "/realise/api/order-in-hand-rows/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start",
+          "type": "string",
+          "location": "query",
+          "description": "Range start (YYYY-MM-DD, optional)."
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "location": "query",
+          "description": "Range end (YYYY-MM-DD, optional)."
+        }
+      ]
+    },
+    {
+      "name": "oih_summary",
+      "description": "Total OIH value summarised per salesperson.",
+      "method": "GET",
+      "path": "/realise/api/order-in-hand/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "sales_beverages",
+      "description": "BEVERAGES dataset feed: beverage sales lines, day-over-day box comparison, customer grading, month rollup and beverage OIH. Required: start_date, end_date.",
+      "method": "POST",
+      "path": "/realise/api/beverages-data/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range end (YYYY-MM-DD).",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sales_beverages-docs",
+      "description": "Documents (invoices / SOs) behind a beverages node — lazily fetched per drilled node. Required: metric, start, end. Optional: f_brand, f_ym.",
+      "method": "GET",
+      "path": "/realise/api/beverages-docs/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "description": "Node measure, e.g. quantity | boxes | oih.",
+          "required": true
+        },
+        {
+          "name": "start",
+          "type": "string",
+          "location": "query",
+          "description": "Beverages range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "location": "query",
+          "description": "Beverages range end (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "f_brand",
+          "type": "string",
+          "location": "query",
+          "description": "Active brand filter (optional)."
+        },
+        {
+          "name": "f_ym",
+          "type": "string",
+          "location": "query",
+          "description": "Active month filter YYYY-MM (optional)."
+        }
+      ]
+    },
+    {
+      "name": "sales_channel-docs",
+      "description": "Documents behind a Slide-2 channel card cell — invoices (done) or open SOs (oih), with per-line items and per-warehouse stock. Optional: channel, metric, seg (plus 8 more).",
+      "method": "GET",
+      "path": "/realise/api/channel-detail-docs/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "Channel / main-group code (GT, MT, ECOM...); empty = all."
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "description": "done (invoices) or oih (open SOs). Default done."
+        },
+        {
+          "name": "seg",
+          "type": "string",
+          "location": "query",
+          "description": "Segment scope, e.g. OILS."
+        },
+        {
+          "name": "start",
+          "type": "string",
+          "location": "query",
+          "description": "Range start (YYYY-MM-DD)."
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "location": "query",
+          "description": "Range end (YYYY-MM-DD)."
+        },
+        {
+          "name": "group",
+          "type": "string",
+          "location": "query",
+          "description": "Main Group filter (optional)."
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "location": "query",
+          "description": "State filter (optional)."
+        },
+        {
+          "name": "person",
+          "type": "string",
+          "location": "query",
+          "description": "Territory owner filter (optional)."
+        },
+        {
+          "name": "product",
+          "type": "string",
+          "location": "query",
+          "description": "Product / sub-group filter (optional)."
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "query",
+          "description": "Item filter (optional)."
+        },
+        {
+          "name": "customer",
+          "type": "string",
+          "location": "query",
+          "description": "Customer filter (optional)."
+        }
+      ]
+    },
+    {
+      "name": "sales_cn",
+      "description": "Line-level gross sales vs credit-note rows for one company (oil|beverages) over a date range. Required: start_date, end_date. Optional: company.",
+      "method": "POST",
+      "path": "/realise/api/sales-cn/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range end (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "company",
+          "type": "string",
+          "location": "body",
+          "description": "Company books: oil (default) or beverages."
+        }
+      ]
+    },
+    {
+      "name": "sales_compare-docs",
+      "description": "Invoice-level drill-down behind a Compare-Sales pivot cell (one month range plus optional dimension filters). Required: start_date, end_date. Optional: seg, group, state (plus 4 more).",
+      "method": "POST",
+      "path": "/realise/api/compare-docs/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "1st of the clicked month (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Last day of the clicked month (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "seg",
+          "type": "string",
+          "location": "body",
+          "description": "Type filter: PREMIUM | COMMODITY | empty."
+        },
+        {
+          "name": "group",
+          "type": "string",
+          "location": "body",
+          "description": "Main Group narrowing (optional)."
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "location": "body",
+          "description": "State narrowing (optional)."
+        },
+        {
+          "name": "person",
+          "type": "string",
+          "location": "body",
+          "description": "Territory owner narrowing (optional)."
+        },
+        {
+          "name": "product",
+          "type": "string",
+          "location": "body",
+          "description": "Product / sub-group narrowing (optional)."
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "body",
+          "description": "Item name narrowing (optional)."
+        },
+        {
+          "name": "customer",
+          "type": "string",
+          "location": "body",
+          "description": "Customer narrowing (optional)."
+        }
+      ]
+    },
+    {
+      "name": "sales_data",
+      "description": "Core OILS realise feed: per-product litres/₹/realise/target rows plus flattened channel + month line-item rows for a date range. Required: start_date, end_date. Optional: refresh.",
+      "method": "POST",
+      "path": "/realise/api/sales-data/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range start (YYYY-MM-DD). Use a single day to sample.",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range end (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "refresh",
+          "type": "bool",
+          "location": "body",
+          "description": "Force server recompute / cache-bust."
+        }
+      ]
+    },
+    {
+      "name": "sales_dispatch",
+      "description": "Per-invoice physical dispatch / freight metadata (bilty, transporter, vehicle, driver) for a date range. Required: start_date, end_date.",
+      "method": "POST",
+      "path": "/realise/api/dispatch-details/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range end (YYYY-MM-DD).",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sales_drill-down",
+      "description": "Expand one Slide-1 product row into a chosen dimension (litres + linetotal per value). drill_by is case-sensitive (State|U_Main_Group|U_Chain|ItemName|CardName). Required: start_date, end_date, u_type, u_sub_group, drill_by. Optional: filters, month, year.",
+      "method": "POST",
+      "path": "/realise/api/drill-down/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range end (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "u_type",
+          "type": "string",
+          "location": "body",
+          "description": "Product tier, e.g. PREMIUM / COMMODITY.",
+          "required": true
+        },
+        {
+          "name": "u_sub_group",
+          "type": "string",
+          "location": "body",
+          "description": "Product variety, e.g. OLIVE, MUSTARD.",
+          "required": true
+        },
+        {
+          "name": "drill_by",
+          "type": "string",
+          "location": "body",
+          "description": "Pascal-case dimension: State | U_Main_Group | U_Chain | ItemName | CardName.",
+          "required": true
+        },
+        {
+          "name": "filters",
+          "type": "object",
+          "location": "body",
+          "description": "Accumulated parent-drill path filters as JSON, e.g. {'State':'HARYANA'}; {} at top level."
+        },
+        {
+          "name": "month",
+          "type": "string",
+          "location": "body",
+          "description": "Month filter (optional)."
+        },
+        {
+          "name": "year",
+          "type": "string",
+          "location": "body",
+          "description": "Year filter (optional)."
+        }
+      ]
+    },
+    {
+      "name": "sales_flow",
+      "description": "Sales document chains (Quotation -\u003e Order -\u003e Invoice) with open/closed status and source, for a date range and company. Required: start_date, end_date. Optional: company.",
+      "method": "POST",
+      "path": "/realise/api/sales-flow/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range end (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "company",
+          "type": "string",
+          "location": "body",
+          "description": "oil (default) or beverages."
+        }
+      ]
+    },
+    {
+      "name": "sales_flow-open-items",
+      "description": "Drill-down: still-open line items of a single open Sales Order or Quotation. Required: doc_type, doc_no. Optional: company.",
+      "method": "POST",
+      "path": "/realise/api/sales-flow/open-items/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "doc_type",
+          "type": "string",
+          "location": "body",
+          "description": "order or quotation.",
+          "required": true
+        },
+        {
+          "name": "doc_no",
+          "type": "string",
+          "location": "body",
+          "description": "SAP document number.",
+          "required": true
+        },
+        {
+          "name": "company",
+          "type": "string",
+          "location": "body",
+          "description": "oil (default) or beverages — must match the row."
+        }
+      ]
+    },
+    {
+      "name": "sales_hidden",
+      "description": "Hidden sales-invoice lines (SAP U_ARNO='H') over a date range — oil company only. Required: start_date, end_date.",
+      "method": "POST",
+      "path": "/realise/api/hidden-sales/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Range end (YYYY-MM-DD).",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "sales_historical",
+      "description": "Trailing-period average realise (₹/L) per product and per drilled dimension, as a Slide-1 overlay. Required: start_date, end_date. Optional: period.",
+      "method": "POST",
+      "path": "/realise/api/historical-realise/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "start_date",
+          "type": "string",
+          "location": "body",
+          "description": "Anchor range start (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "end_date",
+          "type": "string",
+          "location": "body",
+          "description": "Anchor range end (YYYY-MM-DD).",
+          "required": true
+        },
+        {
+          "name": "period",
+          "type": "string",
+          "location": "body",
+          "description": "Trailing window: 12m | 6m | 3m | last_month. Empty = off."
+        }
+      ]
+    },
+    {
+      "name": "sales_pulse",
+      "description": "Cheap change-fingerprint / heartbeat for the Realise backend (empty pulse = no signal). Detect change, not data. Optional: dataset, start, end.",
+      "method": "GET",
+      "path": "/realise/api/sales-pulse/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "dataset",
+          "type": "string",
+          "location": "query",
+          "description": "oils | beverages."
+        },
+        {
+          "name": "start",
+          "type": "string",
+          "location": "query",
+          "description": "Active window start (YYYY-MM-DD)."
+        },
+        {
+          "name": "end",
+          "type": "string",
+          "location": "query",
+          "description": "Active window end (YYYY-MM-DD)."
+        }
+      ]
+    },
+    {
+      "name": "targets_channel",
+      "description": "Monthly target litres per sales channel (main group). Optional: month, year.",
+      "method": "GET",
+      "path": "/realise/api/channel-targets/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Target month 1-12."
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Target year."
+        }
+      ]
+    },
+    {
+      "name": "targets_flex",
+      "description": "Flex (flat, dimension-scoped) litre targets — currently per salesperson — for the target month. Optional: seg, month, year.",
+      "method": "GET",
+      "path": "/realise/api/flex-targets/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "seg",
+          "type": "string",
+          "location": "query",
+          "description": "Segment scope, e.g. OILS, BEVERAGES."
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Target month 1-12 (optional)."
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Target year (optional)."
+        }
+      ]
+    },
+    {
+      "name": "targets_list",
+      "description": "Product-level monthly targets (tgt_ltrs, tgt_rate, source) keyed by U_TYPE|SUB_GROUP. Optional: month, year.",
+      "method": "GET",
+      "path": "/realise/api/targets/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Target month 1-12."
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Target year (four-digit)."
+        }
+      ]
+    },
+    {
+      "name": "targets_nodes",
+      "description": "Granular target nodes: target litres by main_group x state x sales_person x segment for a month. Optional: month, year, seg.",
+      "method": "GET",
+      "path": "/realise/api/target-nodes/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Target month 1-12."
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Target year."
+        },
+        {
+          "name": "seg",
+          "type": "string",
+          "location": "query",
+          "description": "Segment scope, e.g. OILS, BEVERAGES."
+        }
+      ]
+    },
+    {
+      "name": "targets_segment",
+      "description": "Saved target overrides scoped to a single segment (empty {} when no overrides saved). Required: segment. Optional: month, year, seg.",
+      "method": "GET",
+      "path": "/realise/api/segment-targets/",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "segment",
+          "type": "string",
+          "location": "query",
+          "description": "Segment name (server lower-cases it), e.g. OILS.",
+          "required": true
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "Target month 1-12 (optional)."
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "Target year (optional)."
+        },
+        {
+          "name": "seg",
+          "type": "string",
+          "location": "query",
+          "description": "Secondary segment scope (optional)."
+        }
+      ]
+    },
+    {
+      "name": "users_catalog",
+      "description": "Permission-module catalog used by the Users page — read-only, from the page's embedded JSON.",
+      "method": "GET",
+      "path": "/users/",
+      "no_auth": true,
+      "params": []
+    },
+    {
+      "name": "users_list",
+      "description": "Admin user list + roles/permission groups — read-only, from the page's embedded JSON.",
+      "method": "GET",
+      "path": "/users/",
+      "no_auth": true,
+      "params": []
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+Copy-paste this to whoever manages the SAP server / gave you the login.
+It asks for the exact 3 things that unblock everything.
+
+--------------------------------------------------------------------------
+Hi — I'm setting up access to our SAP Business One (HANA) system from a Mac.
+I have the login (user: manager). To connect I need three things:
+
+1) NETWORK ACCESS — the server (103.89.45.192) is firewalled to known IPs.
+   Please either:
+     a) send me the company VPN profile/credentials, OR
+     b) whitelist my public IP on the firewall: 122.180.240.216
+   (I need this for both the Service Layer API on port 50000/50001 and
+    Remote Desktop on 3389.)
+
+2) SERVICE LAYER URL — please confirm the Service Layer is enabled and the
+   URL, e.g. https://103.89.45.192:50000/b1s/v1/  (port 50000 or 50001?).
+
+3) COMPANY DATABASE NAME — the CompanyDB used for the Service Layer login
+   (e.g. something like SBO_XXXX). This is required to log in.
+
+Also good to confirm: is the SAP Web Client enabled (a browser URL)? If so
+I may not need Remote Desktop at all.
+
+Thanks!
+--------------------------------------------------------------------------
+
+Notes for me (Daman):
+- IP 122.180.240.216 was current as of 2026-07-22; it can change on a home
+  connection, so a VPN is the more durable option.
+- Once I have the CompanyDB name, put it in ~/sapb1-cli/.env as
+  SAPB1_COMPANYDB=<name>  then run:  cd ~/sapb1-cli && ./sapb1 doctor
