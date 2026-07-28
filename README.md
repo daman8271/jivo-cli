@@ -6,6 +6,10 @@
 
 One home for all JIVO business-system CLIs, their credentials, and the knowledge of how they connect. Fleet live-tested 2026-07-23.
 
+> **Cloning from GitHub?** This repo ships **without secrets and without the nested repos**:
+> - No `.env` / `*.env` / `*.token` files anywhere — every CLI needs its credentials restored locally before it will log in (see [Credentials & auth](#credentials--auth)).
+> - `sap-b1/`, `control-panel/`, and `postsql/` are **independent git repos** ignored by this one — clone/copy them separately.
+
 ## The grid
 
 | CLI | System | Surface | Run |
@@ -52,7 +56,7 @@ EXIM → Factory → OMS → Ecom → jivo-scrape (market)
 
 ## Layout notes
 
-- `sap-b1/` and `control-panel/` keep their **own git repos** (this outer repo ignores them — see `.gitignore`).
+- `sap-b1/`, `control-panel/`, and `postsql/` keep their **own git repos** (this outer repo ignores them — see `.gitignore`).
 - Compatibility symlinks left behind so nothing old breaks: `~/jivogpt/CLI` → here, `~/jivogpt/Connections` → `connections/`, `~/software` → `control-panel/`, `~/sap-b1` → `sap-b1/`.
 - The VPS deployment of jsap/jivoscrape MCPs uses `/opt/jivogpt/CLI/...` — unaffected by this Mac-side layout.
 - Related JIVO tools that live elsewhere on purpose: `~/pp-swiggy` (Swiggy intel), `~/jivo-instamart-collector`, jivoshop CLI (shop.jivo.in orders), `~/jivo-data-bank`.
