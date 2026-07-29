@@ -1,0 +1,15 @@
+# reverse-tunnel: reach SAP's SSH from ANY IP, via the fleet VPS.
+# ProxyJump is pinned to `vps-pub` (public-IPv4 route) rather than the `vps`
+# multipath alias, because the `vps` route currently needs a Tailscale re-auth.
+# Switch this back to `ProxyJump vps` once that is fixed.
+# HostKeyAlias jivo-dbsap keeps the box's host key stable across the loopback
+# hop, so 127.0.0.1:47192 doesn't collide with other loopback host keys.
+Host jivo-sap-any
+    HostName 127.0.0.1
+    Port 47192
+    User superadmin
+    IdentityFile ~/.ssh/jivo_accounts_box
+    IdentitiesOnly yes
+    ProxyJump vps-pub
+    HostKeyAlias jivo-dbsap
+    StrictHostKeyChecking accept-new

@@ -104,7 +104,7 @@ func connect(env map[string]string) (*sql.DB, string, error) {
 	host := env["HANA_HOST"] + ":" + env["HANA_PORT"]
 	for _, useTLS := range []bool{false, true} {
 		c := driver.NewBasicAuthConnector(host, env["HANA_USER"], env["HANA_PASSWORD"])
-		c.SetTimeout(20 * time.Second)
+		c.SetTimeout(90 * time.Second)
 		if useTLS {
 			c.SetTLSConfig(&tls.Config{InsecureSkipVerify: true})
 		}
