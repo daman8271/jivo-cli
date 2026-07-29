@@ -56,6 +56,41 @@ Global flags: `--db`, `--json`, `--csv`, `--compact`, `-q/--quiet`, `-n/--limit`
 ./dsr peek tbl_SalesReport -N 5 --json
 ```
 
+## Domain commands
+
+High-level, read-only commands over each subsystem (71 sub-commands across 18
+groups). Common flags where they apply: `--from`/`--to` (date window),
+`--salesperson`, `--retailer`, `--beat`, `--state`, `--zone`, `--include-deleted`,
+plus the global `-n/--limit`, `--json`, `--csv`.
+
+| Group | Sub-commands |
+|---|---|
+| `retailers` | list · get · count |
+| `salespersons` | list · get · count · subordinates |
+| `beats` | list · shops · assignments · count |
+| `attendance` | list · summary · register · count |
+| `geo` | track · last · count *(date window required — 27M rows)* |
+| `sales` | visits · lines · summary · count |
+| `promoters` | visits · lines · count |
+| `schemes` | list-sold · issued · gifts · get · count |
+| `targets` | person · retailer · category · count |
+| `stock` | retailer · distributor · lines · monthly · count |
+| `distributors` | list · shops · mappings · count |
+| `products` | list · get · count |
+| `geography` | states · zones · areas · subareas |
+| `primary` | list · orders · stock · count |
+| `ecom` | sales · returns · settlements · count |
+| `travel` | rates · km · place · reports · count |
+| `users` | list · roles · permissions · count *(never exposes passwords)* |
+| `logs` | recent · errors · reports · count *(date bound required — 8.5M rows)* |
+
+```bash
+./dsr retailers count --type Distributor          # 893
+./dsr sales visits --salesperson 4927 --from 2026-07-01 --to 2026-08-01
+./dsr beats shops 41761                            # retailers on a beat
+./dsr geo track 4926 --from 2026-07-01 --to 2026-07-31 -n 100
+```
+
 ## The study vault
 
 `study/schema/` is a full extract of `DSR_V6` (208 tables, 2,929 columns, 47.5M
@@ -74,7 +109,12 @@ sentinels, and `1899-12-30` empty-date sentinels — always bound date ranges.
 
 ## Status
 
-Working today: `doctor`, `query`, `count`, `peek`, `schema`, and the study vault.
-Still to come: the high-level named domain commands (`dsr retailers`, `dsr sales`,
-`dsr attendance`, …) specced in `study/specs/`, and a live authenticated portal
-crawl (pending real DSR app credentials — the server login is not the app login).
+Working today: `doctor`, `query`, `count`, `peek`, `schema`, the study vault, and
+all 18 domain command groups above (71 sub-commands) — every command has been
+compiled and smoke-tested against the live database.
+
+Still to come: a **live authenticated portal crawl** (pending real DSR app
+credentials — the `Admin/English@jivo` pair is the *server* login, not the app
+login), and a full **reconciliation** of command outputs against the portal's own
+reports. Command outputs are currently validated to run correctly and return
+plausible live data, not yet cross-checked number-for-number against the portal.
