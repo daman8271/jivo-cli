@@ -22,8 +22,29 @@ func newSchemaCmd(app *App) *cobra.Command {
 		Use:   "schema",
 		Short: "Explore the database catalog: tables, columns, keys, and a full dump",
 	}
-	c.AddCommand(newSchemaTablesCmd(app), newSchemaColumnsCmd(app), newSchemaKeysCmd(app), newSchemaDumpCmd(app))
+	c.AddCommand(newSchemaTablesCmd(app), newSchemaColumnsCmd(app), newSchemaKeysCmd(app), newSchemaViewsCmd(app), newSchemaDumpCmd(app))
 	return c
+}
+
+func newSchemaViewsCmd(app *App) *cobra.Command {
+	return &cobra.Command{
+		Use:   "views",
+		Short: "List views with their definition size",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := app.Ctx()
+			defer cancel()
+			res, err := app.DB.Query(ctx, app.DBName(),
+				"SELECT s.name AS [schema], v.name AS [view], "+
+					"LEN(CAST(m.definition AS nvarchar(max))) AS def_len "+
+					"FROM sys.views v JOIN sys.schemas s ON s.schema_id = v.schema_id "+
+					"LEFT JOIN sys.sql_modules m ON m.object_id = v.object_id ORDER BY v.name")
+			if err != nil {
+				return err
+			}
+			return app.Render(res)
+		},
+	}
 }
 
 // --- catalog queries (bulk, few round-trips) ---
@@ -67,6 +88,13 @@ JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id = fk.object_id
 JOIN sys.columns pc ON pc.object_id = fkc.parent_object_id AND pc.column_id = fkc.parent_column_id
 JOIN sys.columns rc ON rc.object_id = fkc.referenced_object_id AND rc.column_id = fkc.referenced_column_id
 ORDER BY from_table, fk`
+
+const sqlViews = `
+SELECT s.name AS [schema], v.name AS [view], m.definition AS definition
+FROM sys.views v
+JOIN sys.schemas s ON s.schema_id = v.schema_id
+LEFT JOIN sys.sql_modules m ON m.object_id = v.object_id
+ORDER BY v.name`
 
 func newSchemaTablesCmd(app *App) *cobra.Command {
 	var minRows int
@@ -132,23 +160,26 @@ func newSchemaKeysCmd(app *App) *cobra.Command {
 func newSchemaDumpCmd(app *App) *cobra.Command {
 	var out string
 	var samples int
+	var viewsOnly bool
 	c := &cobra.Command{
 		Use:   "dump",
-		Short: "Extract the full catalog (tables, columns, keys, sample rows) to files",
-		Long: "Writes tables.tsv, columns.tsv, primary_keys.tsv, foreign_keys.tsv, catalog.json,\n" +
-			"an INDEX.md overview, and samples/<schema>.<table>.json for every non-empty table.\n" +
-			"This is the raw material for the study vault.",
+		Short: "Extract the full catalog (tables, columns, keys, views, sample rows) to files",
+		Long: "Writes tables.tsv, columns.tsv, primary_keys.tsv, foreign_keys.tsv, views.tsv,\n" +
+			"views/<name>.sql, catalog.json, an INDEX.md overview, and samples/<schema>.<table>.json\n" +
+			"for every non-empty table. This is the raw material for the study vault.\n" +
+			"--views-only refreshes just the view definitions without touching tables/samples.",
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runDump(app, out, samples)
+			return runDump(app, out, samples, viewsOnly)
 		},
 	}
 	c.Flags().StringVar(&out, "out", "study/schema", "output directory")
 	c.Flags().IntVar(&samples, "samples", 3, "sample rows to capture per non-empty table (0 = none)")
+	c.Flags().BoolVar(&viewsOnly, "views-only", false, "dump only views (leave tables/columns/samples untouched)")
 	return c
 }
 
-func runDump(app *App, outDir string, samples int) error {
+func runDump(app *App, outDir string, samples int, viewsOnly bool) error {
 	dbName := app.DBName()
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
@@ -156,6 +187,15 @@ func runDump(app *App, outDir string, samples int) error {
 
 	// Longer budget for the whole dump than a single --timeout query.
 	ctx := context.Background()
+
+	if viewsOnly {
+		n, err := dumpViews(app, dbName, outDir, ctx)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("dumped %d views from %s to %s\n", n, dbName, outDir)
+		return nil
+	}
 
 	tables, err := app.DB.Query(ctx, dbName, sqlTables)
 	if err != nil {
@@ -187,6 +227,9 @@ func runDump(app *App, outDir string, samples int) error {
 	if err := writeTSV(filepath.Join(outDir, "foreign_keys.tsv"), fks); err != nil {
 		return err
 	}
+
+	// --- views (definitions are often the real report interface) ---
+	nViews, _ := dumpViews(app, dbName, outDir, ctx)
 
 	// --- structured catalog.json ---
 	type colInfo struct {
@@ -275,8 +318,8 @@ func runDump(app *App, outDir string, samples int) error {
 		return err
 	}
 
-	fmt.Printf("dumped %s to %s: %d tables, %d columns, %d PK cols, %d FKs; samples: %d written, %d empty-skipped, %d failed\n",
-		dbName, outDir, len(tables.Rows), len(cols.Rows), len(pks.Rows), len(fks.Rows), sampled, skipped, failed)
+	fmt.Printf("dumped %s to %s: %d tables, %d views, %d columns, %d PK cols, %d FKs; samples: %d written, %d empty-skipped, %d failed\n",
+		dbName, outDir, len(tables.Rows), nViews, len(cols.Rows), len(pks.Rows), len(fks.Rows), sampled, skipped, failed)
 	return nil
 }
 
@@ -288,6 +331,32 @@ func filterByRows(res *db.Result, min int) *db.Result {
 		}
 	}
 	return out
+}
+
+func dumpViews(app *App, dbName, outDir string, ctx context.Context) (int, error) {
+	vres, err := app.DB.Query(ctx, dbName, sqlViews)
+	if err != nil {
+		return 0, err
+	}
+	var vb strings.Builder
+	vb.WriteString("schema\tview\tdef_bytes\n")
+	vdir := filepath.Join(outDir, "views")
+	if err := os.MkdirAll(vdir, 0o755); err != nil {
+		return 0, err
+	}
+	for _, r := range vres.Rows {
+		sc := doctorStr(r, vres.Columns, "schema")
+		vn := doctorStr(r, vres.Columns, "view")
+		def := doctorStr(r, vres.Columns, "definition")
+		fmt.Fprintf(&vb, "%s\t%s\t%d\n", sc, vn, len(def))
+		if def != "" {
+			_ = os.WriteFile(filepath.Join(vdir, sanitize(sc)+"."+sanitize(vn)+".sql"), []byte(def), 0o644)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(outDir, "views.tsv"), []byte(vb.String()), 0o644); err != nil {
+		return 0, err
+	}
+	return len(vres.Rows), nil
 }
 
 func writeTSV(path string, res *db.Result) error {
