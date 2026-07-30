@@ -184,6 +184,75 @@ read-only). Nothing in the harness widens that, and no correction or minted
 skill may authorise a write the operator did not ask for. The only thing that
 learns here is the harness itself.
 
+## Before you hand a machine to anyone: run the doctor
+
+```bash
+python3 harness/bin/doctor.py     # `python` on Windows
+```
+
+29 checks. Exit non-zero means **do not hand this machine to an operator yet.**
+
+This exists because every hook here is deliberately fail-quiet — a broken
+harness must never stop someone mid-question — and that choice produced the
+three worst bugs this harness has had, all of which looked exactly like success:
+
+- `stop.sh` was never registered in `settings.json`. It passed testing because
+  the script was run by hand. It fired **never** in a real session.
+- On Windows, `harness.py context` hit `UnicodeEncodeError` on the `→` in a
+  persona profile. stderr was redirected, so every operator who tagged
+  themselves silently received an **empty** corrections digest.
+- A *tracked* question log made every worktree permanently dirty, so `git pull`
+  aborted forever and corrections never arrived. It passed a clean-clone test,
+  because a clean clone has never typed a prompt.
+
+None were findable by reading the code. All three were findable by running it
+and looking. The doctor checks each of those, plus whether every persona
+produces non-empty context, whether any hook event appears twice in
+`settings.json` (a duplicate JSON key silently discards the earlier hook — this
+happened to the watermark), and whether each hook has its *effect* rather than
+merely exiting 0.
+
+## Sharing: nobody needs to know what git is
+
+```bash
+python3 harness/bin/sync.py status    # what is unsent, what is waiting
+```
+
+`pull` runs automatically at session start (6s budget); `push` runs
+automatically when a correction is recorded. Operators are never shown a git
+command — the people this is built for do not use git, and if sharing needs a
+human to type something, the sharing half of this harness is decoration.
+
+Safety, since this runs unattended in someone else's repository:
+
+- `pull` is `fetch` + `merge --ff-only`. A fast-forward cannot conflict and
+  cannot lose a commit. A diverged branch is **declined** with a plain-English
+  reason and nothing is touched.
+- `push` stages **only** `harness/corrections/`. This repo routinely carries
+  dozens of unrelated modified files and other in-flight work; a bare
+  `git add -A` would ship somebody's WIP or a credential. Verified with a WIP
+  file and a credentials file dirty in the tree — neither was committed.
+- No `reset`, `rebase`, `checkout`, `clean`, or `--force` anywhere.
+- Offline degrades to "you keep the corrections you already have."
+
+Recording reports one of three outcomes and they are **not** interchangeable:
+sent · saved-but-not-sent · diverged-and-needs-Daman. Never tell an operator a
+correction reached the team without the `sent` line.
+
+## Windows
+
+Verified working on a real Accounts-class Windows machine (Python 3.12, Git for
+Windows): 26/27 doctor checks green, session-start injecting 1,978 bytes of
+corrections. Two things to know:
+
+- **Git for Windows must be installed.** Claude Code uses its bash to run hooks
+  and falls back to PowerShell without it, where these `.sh` hooks cannot run.
+  `bash` does not need to be on the user's PATH.
+- Hooks resolve the interpreter by **executing** `python3`/`python`/`py`, not by
+  testing for presence — on Windows `python3` is often a Microsoft Store stub
+  that sits on PATH and exits 9009. Prabhu's box has no `python3` at all and
+  correctly falls through to `python`.
+
 ## Tuning
 
 | Variable | Default | Effect |
@@ -193,3 +262,5 @@ learns here is the harness itself.
 | `JIVO_MINT_THRESHOLD` | `5` | Repeats before a shape is flagged |
 | `JIVO_REVIEW_INTERVAL` | `10` | Turns between learning checks |
 | `JIVO_HARNESS_NO_LOG` | unset | `1` disables question logging |
+| `JIVO_NO_AUTOSYNC` | unset | `1` disables the session-start pull |
+| `JIVO_SYNC_TIMEOUT` | `25` | Seconds before a git network call gives up |
