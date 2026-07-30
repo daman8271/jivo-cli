@@ -1,3 +1,28 @@
 # The corrections digest is generated (harness/bin/harness.py build). On a
 # conflict, rebuild it rather than hand-merging.
 harness/corrections/INDEX.md merge=union
+
+# Per-operator session logs. Several operators append to the shared journal on
+# the same day, so union-merge these instead of stopping a non-technical person
+# at a conflict they have no idea how to resolve.
+chats/**/*.md merge=union
+queries/**/*.jsonl merge=union
+
+# ── line endings ────────────────────────────────────────────────────────────
+# Git for Windows installs with core.autocrlf=true, which would rewrite these
+# files to CRLF on checkout. Their SHA-256 is pinned in
+# harness/protected.manifest, so a rewritten line ending reads as tampering and
+# the integrity guard would fail-closed on every Windows laptop on day one.
+# Pin them to LF everywhere. (guard.py also normalises before hashing, so a
+# machine with an odd git config still verifies — belt and braces.)
+CLAUDE.md            text eol=lf
+*.md                 text eol=lf
+*.py                 text eol=lf
+*.sh                 text eol=lf
+*.json               text eol=lf
+*.go                 text eol=lf
+
+# Never let Git touch these.
+*.png binary
+*.exe binary
+*.xlsx binary
