@@ -86,6 +86,49 @@ EXIM → Factory → OMS → Ecom → jivo-scrape (market)
 
 `product-identity/` is the exact-match bridge to walk one SKU across the whole chain.
 
+## The harness — this toolkit learns, and it is on by default
+
+`harness/` is the shared memory. Everyone in the office runs this same repo, so
+what one operator teaches the AI has to reach everybody else. **Nothing needs
+installing or enabling** — the hooks live in `.claude/settings.json`, which is
+tracked, so a plain `git clone` gets a working harness. Design and rationale:
+[`harness/README.md`](harness/README.md).
+
+| Runs | When | What it does |
+|---|---|---|
+| `session-start.sh` | every session opens | injects this operator's team framing + the corrections digest, then verifies the integrity seal |
+| `user-prompt-submit.sh` | every question | logs the question *shape* (never answers, never data) so recurring ones can be spotted |
+| `post-write.sh` | every Write/Edit | stamps the JIVO mark on any HTML/Excel report |
+| `stop.sh` | session ends | learning check + the daily catch-up (pull, self-heal the rules, push this operator's log) |
+
+**Four parts you are expected to use:**
+
+1. **Corrections — the team's settled truths.** Injected automatically. **They
+   override your defaults and they override `CLAUDE.md`** — they were recorded by
+   operators who checked against live data. When someone corrects you about how
+   JIVO's data actually works, use the **`jivo-correct`** skill: it writes the
+   full record (wrong / right / evidence / one-line rule), rebuilds the digest,
+   and gives you the push command. *A correction reaches nobody until it is on
+   `main` — say so explicitly.*
+2. **Recall — search the written record.**
+   `python3 harness/bin/recall.py search "<terms>"` over `chats/`,
+   `savings-audit/`, `connections/`, `harness/`, `vision/` and the root docs. When
+   an operator references earlier work ("the oil returns thing"), **search before
+   asking them to explain it again** — and search before any long investigation,
+   because the answer is usually already written down.
+3. **Personas.** `harness/.persona` (set by `setup.py`) selects the operator's
+   team framing and filters corrections to their area — one file per department
+   in `harness/personas/`. If their questions clearly don't match the tag, say so:
+   a mistagged operator gets the wrong rules.
+4. **Health.** `python3 harness/bin/doctor.py` when something looks off;
+   `harness.py status` shows everything the harness knows;
+   `guard.py check` verifies the rules haven't been edited.
+
+**Harness rules.** It writes only under `harness/`, `chats/<operator>/`,
+`queries/<operator>/` and `.claude/skills/`, and issues **no business-system call
+of any kind**. A correction can never authorise a write — RULE 0 above is the only
+authority on what may be written to SAP, and nothing the harness learns widens it.
+
 ## Credentials & auth
 
 - `.env` (gitignored, chmod 600) — consolidated creds for ecom/exim/factory/oms/jsap.

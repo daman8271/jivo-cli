@@ -60,7 +60,12 @@ Plus, tracked in git so a clone works with zero setup:
 
 - `.claude/settings.json` — wires the three hooks
 - `.claude/skills/jivo-correct/` — record a correction
-- `.claude/skills/jivo-mint/` — turn a recurring question into a skill
+
+(An auto-minting `jivo-mint` skill was built and then deliberately removed in
+056da47. `harness.py mint` and `patterns.py propose` still surface which question
+shapes recur — they are a demand signal to read, not a generator to run. An
+unverified minted skill looks authoritative and gets reused, which is how one
+wrong assumption becomes every operator's wrong number.)
 
 ### The loop
 
@@ -80,7 +85,7 @@ And, in parallel:
 every question → shape-normalised → questions/log.jsonl
    └─> a shape recurs 5+ times
         └─> harness.py mint flags it
-             └─> jivo-mint writes + verifies a skill
+             └─> a human writes + VERIFIES the skill against live data
                   └─> git push → everyone has it
 ```
 
