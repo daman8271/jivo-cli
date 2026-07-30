@@ -171,6 +171,17 @@ def cmd_record(args: argparse.Namespace) -> int:
             print("  Nothing was recorded. Fix the id and re-run.", file=sys.stderr)
             return 2
 
+    # A high-severity correction is, by definition, one where getting it wrong
+    # produces a financial number someone acts on. Those may not enter the
+    # digest on somebody's say-so. Learned the hard way: a seeded test record
+    # with no evidence, marked high, superseded a CORRECT rule and shipped —
+    # its replacement text would have inverted a cancelled-document filter.
+    if args.severity == "high" and not args.evidence.strip():
+        print("error: --severity high requires --evidence.", file=sys.stderr)
+        print("  A high-severity rule overrides CLAUDE.md for every operator.", file=sys.stderr)
+        print("  Give the query or source that proves it, or file it as medium.", file=sys.stderr)
+        return 2
+
     author = args.author or os.environ.get("JIVO_USER") or os.environ.get("USER") or "unknown"
     fname = f"{cid}-{_slug(args.title)}.md"
     path = CORRECTIONS / fname

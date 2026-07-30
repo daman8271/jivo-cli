@@ -6,6 +6,3 @@
 These are corrections real JIVO operators made to the AI. They override
 any default assumption. If one contradicts your instinct, the correction wins.
 
-## accounts
-- **[C-0001]** BusinessPartners.CurrentAccountBalance: positive = DEBIT (party owes JIVO), negative = CREDIT (JIVO owes party). Never state the direction without checking the sign.
-- **[C-0003]** Turnover = Invoices(DocTotal - VatSum) - CreditNotes by DocDate, excluding Cancelled eq 'tYES'. DocTotal alone is GST-inclusive.
