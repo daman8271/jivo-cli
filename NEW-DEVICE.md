@@ -122,10 +122,26 @@ Add `--yes` to skip the prompt in a script.
 
 ### Where writes are recorded
 
-Every attempt appends to `~/.sapb1-writes.jsonl` (override with
-`SAPB1_WRITE_LOG`), mode 0600, one line when the request is sent and one when
-it comes back. If a write ever fails ambiguously, that file is what tells you
-what was actually attempted, against which host.
+Every attempt is appended twice — one line when the request is sent, one when it
+comes back — so an ambiguous failure still tells you exactly what was attempted
+and against which host.
+
+The log lands in **`queries/<operator>/sap-writes.jsonl`** inside the checkout,
+which syncs to `main` with the rest of that operator's session log. That is
+deliberate: a write log that only ever sat in the writer's home directory was
+readable by exactly the one person it exists to hold accountable. In the repo,
+**every write by every operator converges into one shared history.**
+
+Precedence, highest first:
+
+| | Path |
+|---|---|
+| `$SAPB1_WRITE_LOG` | wherever you point it |
+| registered operator | `queries/<operator>/sap-writes.jsonl` |
+| fallback | `~/.sapb1-writes.jsonl` (mode 0600) |
+
+The fallback only applies to a binary run outside a registered checkout — run
+`python3 harness/bin/setup.py` and it resolves to the repo path instead.
 
 ---
 
