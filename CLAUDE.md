@@ -1,14 +1,28 @@
 # JIVO CLI — read this first
 
-You are running inside **JIVO's read-only data toolkit**. Someone (often the Accounts team) has opened a terminal here and wants answers about the business — SAP balances, turnover, ledgers, orders, stock. Your job: **answer their questions in plain language, with real numbers, pulled live.**
+You are running inside **JIVO's data toolkit**. Someone (often the Accounts team) has opened a terminal here and wants answers about the business — SAP balances, turnover, ledgers, orders, stock. Your job: **answer their questions in plain language, with real numbers, pulled live.**
 
-## ⛔ RULE 0 — READ-ONLY, ALWAYS
+## ⛔ RULE 0 — READ-ONLY BY DEFAULT; WRITES ONLY WHEN EXPLICITLY ASKED
 
-Every tool here only **reads** JIVO's live production systems. You must **NEVER** create, update, delete, upload, post, approve, or change anything — in SAP or any other system. The only write any tool performs is Login. There is no valid reason to run a write. If a user asks you to change data, say it's read-only and stop.
+These tools point at JIVO's **live production** systems. Default behaviour is read-only.
+
+- **Never write unprompted.** Not to "fix" data, not to "finish" a task, not as a helpful extra step. If the operator didn't explicitly ask you to create/update something in SAP, don't.
+- **Everything except SAP is read-only, full stop.** postsql, portals, exim, factory, oms, TankhaPay, DSR — reads only. No exceptions, even if asked.
+- **Show, don't do.** The way to help with a write is `--dry-run` + the operator's go-ahead, never a guess.
+- **SAP has exactly three write commands**, all in `sapb1`, and all only when the operator asks for them by name:
+  - `sapb1 draft <doctype>` — creates a **draft** document. Nothing is posted: no stock movement, no ledger entry, until a human opens SAP B1 → Document Drafts, reviews it, and presses **Add**. Drafts *are* visible to others and to any approval workflow.
+  - `sapb1 post <EntitySet>` — creates live, no draft. Only for master data (BusinessPartners, Items). **Prefer `draft` for anything document-shaped.**
+  - `sapb1 patch <Entity(key)>` — updates fields on one existing object.
+- **What the CLI cannot do at all:** there is no `DELETE` and no `PUT` anywhere in it, and `post` only accepts a **bare, catalogued entity set** — so SAP's OData *actions* (`Invoices(9)/Cancel`, `Orders(1)/Close`, `Drafts(4321)/SaveDraftToDocument`) are refused, by design and with no override. Cancelling, closing and posting-a-draft are a human's job in the SAP B1 client. You still cannot undo a `post`/`patch` from here — only SAP can.
+- **Every write previews, confirms, and logs.** The command prints the exact request, then requires a typed `yes` (exactly `yes` — `y` is rejected), and appends the attempt to `~/.sapb1-writes.jsonl` (override with `$SAPB1_WRITE_LOG`).
+- **Agent flow for a write — do exactly this:** run the command with **`--dry-run`** (sends nothing, exits 0, prints the exact method, URL and payload), show that output to the operator, and only if they say go, run the same command again with `--yes`. Never add `--yes` on your own initiative: a non-interactive session can't answer the prompt, so `--yes` *is* the decision, and it must be the operator's.
+- **When in doubt, draft it.** A draft is reversible by a human ignoring it; a posted invoice is not.
+- **Exit code 7 means "unknown, go look".** If a write returns exit 7 / "the outcome is unknown", the request reached SAP but the answer didn't come back — it may have committed. **Do not re-run it.** Query SAP (or Document Drafts) to find out what actually exists, and tell the operator.
+- The MCP server (`sapb1 mcp`) is **strictly read-only** — no write tool is exposed to agents.
 
 ## What's here
 
-A folder of command-line tools ("CLIs"), each a window into one JIVO system. All read-only.
+A folder of command-line tools ("CLIs"), each a window into one JIVO system. Read-only except for the three SAP write commands above.
 
 | Folder | System | What you can answer |
 |---|---|---|
@@ -50,5 +64,23 @@ sapb1 query <Entity> --all --json                # every matching row (paginated
 ## How to behave
 - Answer the actual question with the number, then a one-line "how I got it." Offer the drill-down.
 - Name the company if it's not Oil. Give date ranges for sales questions.
-- Don't wander, don't run writes, don't expose the SAP password in output.
+- Don't wander, never write unprompted (RULE 0), don't expose the SAP password in output.
 - More example questions: `sap-b1/accounts-kit/ASK-EXAMPLES.md`. Setup: `sap-b1/accounts-kit/SETUP.md`. Full map: `README.md`. Our work log: `chats/`.
+
+## ⚠️ When someone corrects you — record it
+
+This toolkit learns. When an operator corrects you about how JIVO's data
+actually works — a metric defined differently than you assumed, a field that
+doesn't mean what its name says, a relationship you got backwards — that
+correction must outlive the session and reach everyone else.
+
+**Use the `jivo-correct` skill.** It writes the correction to
+`harness/corrections/`, rebuilds the digest that every operator's session
+loads, and tells you the command to push it.
+
+The active corrections are injected into your context automatically at session
+start (see `harness/corrections/INDEX.md`). **They override your defaults and
+they override this file** — they were recorded by people who checked.
+
+If the same question keeps coming up, `jivo-mint` turns it into a skill.
+Full design: `harness/README.md`.
