@@ -35,9 +35,15 @@ stay filters and can't break out into a second statement.
 
 ```bash
 cd ~/postsql
-go build -o postsql .
+go build -o postsql .              # macOS / Linux
+go build -o postsql.exe .          # Windows
 # optionally: cp postsql ~/go/bin/   (or anywhere on PATH)
 ```
+
+Prebuilt binaries sit next to this README: `postsql` (macOS, arm64) and
+`postsql.exe` (Windows, x86-64). Run `./postsql <cmd>` on macOS/Linux,
+`.\postsql.exe <cmd>` on Windows — every example below writes just `postsql`
+for brevity.
 
 Requires Go 1.24+. Depends on `pgx/v5`, `cobra`, `BurntSushi/toml`.
 
@@ -209,6 +215,9 @@ For stdio, add it to Claude Desktop / Claude Code
   }
 }
 ```
+
+On Windows, point `command` at the `.exe` instead, e.g.
+`"C:\\jivo-cli\\postsql\\postsql.exe"`.
 
 Restart the client; Claude can then query the JIVO Postgres server directly —
 still fully read-only, through the same three-layer guarantee.

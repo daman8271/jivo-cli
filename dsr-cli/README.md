@@ -25,9 +25,12 @@ Creds come from a gitignored `.env` next to the binary (or `DSR_*` env vars):
 
 ```bash
 cp .env.example .env      # then fill in DSR_USER / DSR_PASSWORD
-go build -o dsr .
+go build -o dsr .         # Windows: go build -o dsr.exe .
 ./dsr doctor              # verifies SQL Server + portal reachability
+dsr.exe doctor            # …the same on Windows
 ```
+
+On Windows run `dsr.exe` wherever the examples below say `./dsr`.
 
 Defaults target `103.89.45.75:1433`, database `DSR_V6`. Override any of
 `DSR_HOST DSR_PORT DSR_DATABASE DSR_ENCRYPT DSR_USER DSR_PASSWORD DSR_PORTAL_URL`.

@@ -139,6 +139,12 @@ Or set it via environment variable:
 export OMS_TOKEN="your-token-here"
 ```
 
+On Windows (PowerShell):
+
+```powershell
+$env:OMS_TOKEN = "your-token-here"
+```
+
 ### 3. Verify Setup
 
 ```bash

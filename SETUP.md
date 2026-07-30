@@ -48,20 +48,27 @@ department can be added.
 
 ## Step 2 — Check your system is connected
 
-Run the check for **your** area:
+Run the check for **your** area. Every tool is built for both machines — pick
+your column.
 
-| Your department | Type this |
-|---|---|
-| **Accounts** | `cd sap-b1/cli && ./sapb1 doctor` |
-| **Sales** | `./oms-cli/oms-pp-cli doctor` |
-| **Factory** | `./factory-cli/jivo-factory-pp-cli doctor` |
-| **E-commerce** | `./ecom-cli/jivo-ecom-pp-cli doctor` |
-| **Imports / EXIM** | `./exim/exim doctor` |
-| **Operations** | `./jsap-cli/jsap-cli meta whoami` |
-| **HR / Payroll** | `tankhapay-portal doctor` |
-| **IT** | `./postsql/postsql doctor` |
+| Your department | On a Mac | On Windows |
+|---|---|---|
+| **Accounts** | `./sap-b1/cli/sapb1 doctor` | `sap-b1\accounts-kit\sapb1.exe doctor` |
+| **Sales** | `./oms-cli/oms-pp-cli doctor` | `oms-cli\oms-pp-cli.exe doctor` |
+| **Factory** | `./factory-cli/jivo-factory-pp-cli doctor` | `factory-cli\jivo-factory-pp-cli.exe doctor` |
+| **E-commerce** | `./ecom-cli/jivo-ecom-pp-cli doctor` | `ecom-cli\jivo-ecom-pp-cli.exe doctor` |
+| **Imports / EXIM** | `./exim/exim doctor` | `bash exim/exim doctor` |
+| **Operations** | `./jsap-cli/jsap-cli meta whoami` | `python jsap-cli\jsap-cli meta whoami` |
+| **HR / Payroll** | `./portals/tankhapay/cli/tankhapay-portal doctor` | `portals\tankhapay\cli\tankhapay-portal.exe doctor` |
+| **IT** | `./postsql/postsql doctor` | `postsql\postsql.exe doctor` |
 
-> On Windows, Accounts uses `cd sap-b1\accounts-kit` then `sapb1.exe doctor`.
+Two of those rows are not plain programs, which is why they look different:
+
+- **Imports** goes through `exim/exim`, a small script that fetches your login
+  token and blocks the handful of requests that would change data. Always run it
+  through the script — calling the program directly skips that guard.
+- **Operations** (`jsap-cli`) is a Python script, so it runs the same on both
+  machines; Windows just needs `python` in front of it.
 
 Green means you are ready.
 

@@ -11,7 +11,28 @@ BLOCK='/sap_sync/ /daily-price/fetch/ /jivo-rate/fetch/ /account/logout/ /stock-
 guard(){ for b in $BLOCK; do case "$1" in *"$b"*) echo "REFUSED: '$1' mutates data (read-only rule). See HARD-RULE.md" >&2; exit 2;; esac; done; }
 case "${1:-}" in
   grpos|open-grpos) guard /sap_sync/open-grpos/ ;;
-  raw) shift; guard "${1:-}"; exec python3 "$ROOT/scripts/eximapi.py" "$@" ;;
+  raw) shift; guard "${1:-}"; exec "$(command -v python3 >/dev/null 2>&1 && python3 -c pass >/dev/null 2>&1 && echo python3 || echo python)" "$ROOT/scripts/eximapi.py" "$@" ;;
 esac
-export EXIM_TOKEN="$(python3 "$ROOT/scripts/eximapi.py" --token)"
-exec "$ROOT/cli/exim-pp-cli/exim-pp-cli" "$@"
+# Pick the binary for THIS machine. On Windows (git-bash / MSYS) the build is
+# exim-pp-cli.exe; execing the extensionless macOS build there fails with a
+# confusing "cannot execute binary file". Operators must keep coming through
+# this wrapper rather than calling the binary directly — the BLOCK guard above
+# is the read-only defence, and it only exists here.
+BIN="$ROOT/cli/exim-pp-cli/exim-pp-cli"
+[ -x "$BIN" ] || BIN="$BIN.exe"
+case "$(uname -s 2>/dev/null)" in
+  MINGW*|MSYS*|CYGWIN*|Windows_NT) BIN="$ROOT/cli/exim-pp-cli/exim-pp-cli.exe" ;;
+esac
+if [ ! -x "$BIN" ]; then
+  echo "exim: no binary for this machine at $BIN" >&2
+  echo "      expected exim-pp-cli (macOS) or exim-pp-cli.exe (Windows)." >&2
+  exit 127
+fi
+
+# python3 is the name on macOS/Linux; on Windows it is usually `python`, and
+# `python3` there is often a Store stub that exits 9009 without running.
+PY=python3
+command -v "$PY" >/dev/null 2>&1 && "$PY" -c pass >/dev/null 2>&1 || PY=python
+
+export EXIM_TOKEN="$("$PY" "$ROOT/scripts/eximapi.py" --token)"
+exec "$BIN" "$@"

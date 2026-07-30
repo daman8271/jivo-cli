@@ -207,15 +207,19 @@ every error and audit line is scrubbed on the way out.
 
 ```bash
 cd hana-sql
-go build -o hana-sql .
+go build -o hana-sql .            # Windows: go build -o hana-sql.exe .
 go test ./...
 ```
 
 ## Use
 
+On Windows the binary is `hana-sql.exe` — run `hana-sql.exe …` wherever these
+examples say `./hana-sql …`.
+
 ```bash
 # a query as an argument
 ./hana-sql "SELECT CURRENT_USER, CURRENT_SCHEMA FROM DUMMY"
+hana-sql.exe "SELECT CURRENT_USER, CURRENT_SCHEMA FROM DUMMY"    # Windows
 
 # a query from a file
 ./hana-sql -f queries/turnover-oil-july.sql

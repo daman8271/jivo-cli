@@ -29,7 +29,8 @@ Credentials are inherited, never invented. Resolution order (env wins):
 - `BLINKIT_TOKEN`, `BLINKIT_API_KEY`, `BLINKIT_ENTITY_ID`, `BLINKIT_ENTITY_TYPE`,
   `BLINKIT_BASE`
 - else the **existing shared** config at
-  `~/Library/Application Support/blinkit-cli/config.json` (written by the
+  `~/Library/Application Support/blinkit-cli/config.json` on macOS —
+  `%AppData%\blinkit-cli\config.json` on Windows (written by the
   original `blinkit-cli auth import`).
 
 The `access_token` (`v2::<uuid>`) is **short-lived**. On any `401` every command
@@ -56,8 +57,12 @@ Refresh a token unattended with
 
 ```sh
 cd /Users/damanpreetsingh/jivo-cli/portals/blinkit/cli
-go build -o blinkit-partner .
+go build -o blinkit-partner .        # macOS/Linux → ./blinkit-partner
+go build -o blinkit-partner.exe .    # Windows     → blinkit-partner.exe
 ```
+
+Run it as `./blinkit-partner <cmd>` on macOS/Linux, `blinkit-partner.exe <cmd>`
+on Windows (the command names below are identical on both).
 
 ## Commands
 

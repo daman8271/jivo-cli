@@ -46,7 +46,8 @@ its `exp`. Re-mint if reads start 401ing.
 ## Build
 
 ```sh
-cd portals/zepto/cli && go build -o zepto-portal .
+cd portals/zepto/cli && go build -o zepto-portal .          # mac/linux
+cd portals/zepto/cli && go build -o zepto-portal.exe .      # windows
 ```
 
 ## Usage
@@ -57,6 +58,9 @@ cd portals/zepto/cli && go build -o zepto-portal .
 ./zepto-portal <section> <command>    # e.g. po list, reports list, catalog list
 ./zepto-portal <section> --help       # per-section command list
 ```
+
+On Windows run `zepto-portal.exe` wherever this doc says `./zepto-portal`
+(e.g. `zepto-portal.exe doctor`).
 
 Global flags: `--json` (pretty JSON), `--agent` (stable
 `{ok,command,endpoint,count,data|error}` envelope, quiet stderr).

@@ -8,6 +8,10 @@ config.json
 .sapb1-session.json
 
 # Build artifacts
-/sapb1
+# NOTE: the sapb1 binary is deliberately NOT ignored. Operators clone this repo
+# and cannot build Go, so the built CLI has to travel with it. Ignoring it here
+# while the Windows build sat in accounts-kit/ (outside this file's reach) is
+# exactly why Mac operators had every tool EXCEPT the SAP one — the single most
+# important CLI in the toolkit — and nobody noticed for weeks.
 /dist/
 *.log

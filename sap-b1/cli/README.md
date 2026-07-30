@@ -47,13 +47,15 @@ template that *is* committed and contains no real credentials.
 Build the binary:
 
 ```bash
-go build -o sapb1 ./cmd/sapb1
+go build -o sapb1 ./cmd/sapb1          # macOS / Linux
+go build -o sapb1.exe ./cmd/sapb1      # Windows
 ```
 
 Run it:
 
 ```bash
-./sapb1 doctor
+./sapb1 doctor                         # macOS / Linux
+sapb1.exe doctor                       # Windows
 ```
 
 ## Configuration precedence

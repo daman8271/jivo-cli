@@ -19,10 +19,10 @@ Open `vault/` as an Obsidian vault. Start at **`00-INDEX.md`** (map of content).
 - 94 interlinked notes, 0 broken `[[wikilinks]]`.
 
 ### 2. `cli/jivo` — the read-only terminal client
-Binary: `cli/jivo/jivo`. **42 read commands** across 8 groups + a `auth` group.
+Binary: `cli/jivo/jivo` (Windows: `cli\jivo\jivo.exe`). **42 read commands** across 8 groups + a `auth` group.
 
 ```bash
-JIVO=~/software/cli/jivo/jivo
+JIVO=~/software/cli/jivo/jivo          # Windows (PowerShell): $JIVO="$HOME\software\cli\jivo\jivo.exe"
 
 # 1. Log in once (creds from flags, JIVO_USER/JIVO_PASS env, or ~/software/.env)
 $JIVO auth login                      # stores session in ~/.config/jivo-pp-cli/config.toml (0600)

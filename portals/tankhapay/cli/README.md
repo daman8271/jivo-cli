@@ -13,7 +13,8 @@ minted daily from `.env` — authorizes all four backends. Every command is a
 
 ```sh
 cd ~/jivo-cli/portals/tankhapay/cli
-go build -buildvcs=false -o ~/go/bin/tankhapay-portal .   # on PATH
+go build -buildvcs=false -o ~/go/bin/tankhapay-portal .   # macOS/Linux — on PATH
+go build -buildvcs=false -o tankhapay-portal.exe .        # Windows — run from this folder, or move onto PATH
 ```
 
 Credentials come from a gitignored `.env` at the portal root (never hardcoded):
@@ -104,7 +105,8 @@ The command files are generated from the inventory — edit the manifest, not th
 generated `cmd_*.go`/`wired_manifest.go`:
 
 ```sh
-python3 ../scripts/gen_commands.py && go build -buildvcs=false -o ~/go/bin/tankhapay-portal .
+python3 ../scripts/gen_commands.py && go build -buildvcs=false -o ~/go/bin/tankhapay-portal .   # macOS/Linux
+python3 ../scripts/gen_commands.py && go build -buildvcs=false -o tankhapay-portal.exe .        # Windows
 ```
 
 ## Files
