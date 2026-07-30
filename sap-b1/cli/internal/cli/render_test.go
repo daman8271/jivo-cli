@@ -140,21 +140,26 @@ func TestRenderCountServerSide(t *testing.T) {
 	}
 }
 
-func TestRenderCountFallback(t *testing.T) {
+// TestRenderCountRefusesToSubstituteRowsForATotal replaces the old
+// TestRenderCountFallback, which pinned the opposite behaviour: printing
+// len(rows) with a note when the server withheld odata.count.
+//
+// That fallback became actively dangerous once --count started sending $top=0:
+// a count-only response holds no rows by construction, so the fallback's answer
+// is always "0" — a confident, plausible, wrong total for any entity set. The
+// only safe output when the server gives no total is no number at all.
+func TestRenderCountRefusesToSubstituteRowsForATotal(t *testing.T) {
 	var buf bytes.Buffer
 	res := &client.QueryResult{
 		Value:      []map[string]interface{}{{"A": 1}, {"A": 2}},
 		CountKnown: false,
 	}
-	if err := renderCount(&buf, res, false); err != nil {
-		t.Fatalf("renderCount: %v", err)
+	err := renderCount(&buf, res, false)
+	if err == nil {
+		t.Fatalf("renderCount printed %q instead of refusing — a row tally is not a total", buf.String())
 	}
-	out := buf.String()
-	if !strings.Contains(out, "2") {
-		t.Errorf("fallback count should print returned-row count 2, got:\n%s", out)
-	}
-	if !strings.Contains(out, "note:") {
-		t.Errorf("fallback count should carry a note, got:\n%s", out)
+	if strings.ContainsAny(buf.String(), "0123456789") {
+		t.Errorf("renderCount emitted a number despite having no total: %q", buf.String())
 	}
 }
 

@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const invoicesDefaultSelect = "DocEntry,DocNum,DocDate,CardCode,CardName,DocTotal,DocStatus,DocCurrency"
+const invoicesDefaultSelect = "DocEntry,DocNum,DocDate,CardCode,CardName,DocTotal,DocumentStatus,DocCurrency"
 
 func newInvoicesCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -32,13 +32,13 @@ func newInvoicesListCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			extra := ""
 			if open {
-				extra = "DocStatus eq 'O'"
+				extra = openDocumentFilter
 			}
 			return runList(cmd, "Invoices", lf, extra, invoicesDefaultSelect, "DocDate desc")
 		},
 	}
 
-	cmd.Flags().BoolVar(&open, "open", false, "only open invoices (DocStatus eq 'O')")
+	cmd.Flags().BoolVar(&open, "open", false, "only open invoices (DocumentStatus eq 'bost_Open')")
 	addListFlags(cmd, &lf, 20)
 	return cmd
 }

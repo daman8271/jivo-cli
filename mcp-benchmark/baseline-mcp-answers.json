@@ -1,0 +1,447 @@
+[
+ {
+  "id": "q01",
+  "answer": "Ziyaul Haque has two accounts in Oil, and both are DEBIT (he owes JIVO / holds an advance): the imprest/vendor account ORGV000044 \"ZIYAUL HAQUE IMPREST JWPL0042\" at \u20b982,109.29 Dr, and the customer account ORGC000013 \"ZIYAUL HAQUE DELHI\" at \u20b9680.00 Dr \u2014 \u20b982,789.29 debit in total.",
+  "value": "ORGV000044 ZIYAUL HAQUE IMPREST JWPL0042 = +82,109.29 (DEBIT); ORGC000013 ZIYAUL HAQUE DELHI = +680.00 (DEBIT); total = 82,789.29 DEBIT",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"contains(CardName,'ZIYAUL')\",\"select\":\"CardCode,CardName,CardType,CurrentAccountBalance,GroupCode,Frozen\",\"top\":50}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"contains(CardName,'ZIYA')\",...} / 'Ziya' / 'ziya' / 'HAQUE' / 'Haque' (case-variant sweep)",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"contains(CardName,'HAQ') or contains(CardName,'ZIAUL') or contains(CardName,'JWPL0042')\",\"select\":\"CardCode,CardName,CardType,CurrentAccountBalance\",\"top\":20}"
+  ],
+  "evidence": "{\"CardCode\":\"ORGV000044\",\"CardName\":\"ZIYAUL HAQUE IMPREST JWPL0042\",\"CardType\":\"cSupplier\",\"CurrentAccountBalance\":82109.29} ; {\"CardCode\":\"ORGC000013\",\"CardName\":\"ZIYAUL HAQUE DELHI\",\"CardType\":\"cCustomer\",\"CurrentAccountBalance\":680} \u2014 sap_doctor: \"connected to JIVO_OIL_HANADB as manager\"",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q02",
+  "answer": "A/R invoice 626070461 in Oil is billed to JIVO MART PVT LTD (CardCode CUSTA000606), raised on 22 July 2026, for \u20b999,88,083 including GST (GST \u20b94,75,623, so \u20b995,12,460 net) \u2014 and yes, it is still fully open with nothing paid against it.",
+  "value": "JIVO MART PVT LTD (CUSTA000606) | 2026-07-22 | \u20b999,88,083 incl. GST | Open (unpaid)",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocNum eq 626070461\",\"select\":\"DocEntry,DocNum,CardCode,CardName,DocDate,DocDueDate,DocTotal,VatSum,DocStatus,Cancelled,DocumentStatus,PaidToDate\",\"top\":5}  -> error: Property 'DocStatus' of 'Document' is invalid",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocNum eq 626070461\",\"select\":\"DocEntry,DocNum,CardCode,CardName,DocDate,DocDueDate,DocTotal,VatSum,DocumentStatus,Cancelled,PaidToDate,DocCurrency\",\"top\":5}"
+  ],
+  "evidence": "{\"count\":1,\"entity\":\"Invoices\",\"rows\":[{\"Cancelled\":\"tNO\",\"CardCode\":\"CUSTA000606\",\"CardName\":\"JIVO MART PVT LTD\",\"DocCurrency\":\"INR\",\"DocDate\":\"2026-07-22T00:00:00Z\",\"DocDueDate\":\"2026-07-22T00:00:00Z\",\"DocEntry\":76879,\"DocNum\":626070461,\"DocTotal\":9988083,\"DocumentStatus\":\"bost_Open\",\"PaidToDate\":0,\"VatSum\":475623}]}",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q03",
+  "answer": "Oil (JIVO_OIL_HANADB) has 3,390 business partner accounts in total \u2014 1,170 customers and 2,220 suppliers (0 leads). Note these are accounts, not distinct parties: one party can hold both a customer and a supplier card.",
+  "value": "3390 total; 1170 customers; 2220 suppliers",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"filter\":\"CardType eq 'cCustomer'&$skip=<N>\"} \u2014 repeated as a binary search on $skip to find the exact row count",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"filter\":\"CardType eq 'cSupplier'&$skip=<N>\"} \u2014 same binary search",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"filter\":\"CardType eq 'cLid'&$skip=<N>\"} \u2014 same binary search",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"filter\":\"CardType eq 'cCustomer' or CardType eq 'cSupplier' or CardType eq 'cLid'&$skip=<N>\"} \u2014 cross-check of the total",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"filter\":\"CardCode ne 'zzzzzzzzzz'&$skip=<N>\"} \u2014 second cross-check of the total"
+  ],
+  "evidence": "sap_doctor: {\"companyDB\":\"JIVO_OIL_HANADB\", ... \"detail\":\"connected to JIVO_OIL_HANADB as manager\"}. Boundary probes: CardType eq 'cCustomer' -> last row at $skip=1169, $skip=1170 returns {\"count\":0,\"rows\":[]} => 1170. cSupplier -> 2220. cLid -> 0. Tautology filter CardCode ne 'zzzzzzzzzz' -> 3390, and the OR-of-three-types filter -> 3390 (1170+2220+0 = 3390, reconciles).",
+  "confident": true,
+  "limitation_hit": "The MCP sap_query tool exposes no $count / $inlinecount and caps every page at 20 rows, so the totals were established by binary-searching the $skip offset until the result set went empty (three independent filters reconcile to the same 3,390)."
+ },
+ {
+  "id": "q04",
+  "answer": "Oil has 12,861 A/R invoices still open (not fully paid, not cancelled) as of today. That is out of 30,501 A/R invoices in total in the Oil book \u2014 the other 17,640 are closed.",
+  "value": "12861",
+  "tool_calls": [
+   "gateway_status {}",
+   "sap_doctor {}",
+   "sap_fields {\"entity\":\"Invoices\"}  (to find the real status field \u2014 DocStatus is rejected, the Service Layer field is DocumentStatus)",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry\",\"orderby\":\"DocEntry&$skip=<N>\",\"top\":1}  \u2014 repeated ~28x as a doubling + binary search on the $skip offset to get the exact row count (the tool caps every response at the Service Layer page size of 20 rows, so this was the only way to get a true total)",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocumentStatus,Cancelled,DocDate,DocTotal\",\"orderby\":\"DocEntry&$skip=12860\",\"top\":2}  \u2014 boundary check: 1 row at skip=12860, 0 rows at skip=12861",
+   "sap_query {\"entity\":\"Invoices\",\"select\":\"DocEntry\",\"orderby\":\"DocEntry&$skip=<N>\",\"top\":1}  \u2014 same binary search with no filter -> 30,501 total invoices",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Close'\",...}  \u2014 binary search -> 17,640 closed (12,861 + 17,640 = 30,501, cross-check passes)"
+  ],
+  "evidence": "skip 12860 -> [{'Cancelled': 'tNO', 'DocDate': '2026-07-30T00:00:00Z', 'DocEntry': 77443, 'DocNum': 626070664, 'DocTotal': 170, 'DocumentStatus': 'bost_Open'}] ; skip 12861 -> [] ; closed count: 17640 ; all invoices: 30501",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q05",
+  "answer": "Oil's item master has 1,911 true stock (inventory-managed) items. The full master is 2,269 codes, so 358 are non-stock (service/expense-type) codes; there are no fixed-asset items at all in Oil.",
+  "value": "1911",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_entities {\"search\":\"company\"}",
+   "sap_fields {\"entity\":\"Items\"}",
+   "sap_query {\"entity\":\"Items\",\"select\":\"ItemCode,ItemName,ItemType,InventoryItem,AssetItem\",\"top\":3}",
+   "sap_query {\"entity\":\"Items\",\"filter\":\"InventoryItem eq 'tYES'\",\"select\":\"ItemCode\",\"orderby\":\"ItemCode&$skip=<N>\",\"top\":1} \u2014 repeated as a binary search on $skip to establish the exact count",
+   "sap_query {\"entity\":\"Items\",\"filter\":\"ItemType eq 'itItems' and InventoryItem eq 'tYES'\",\"select\":\"ItemCode\",\"orderby\":\"ItemCode&$skip=<N>\",\"top\":1}",
+   "sap_query {\"entity\":\"Items\",\"filter\":\"ItemType eq 'itFixedAssets'\",...} / 'itLabor' / 'itTravel' (all 0)",
+   "sap_query {\"entity\":\"Items\",\"filter\":\"InventoryItem eq 'tYES'\",\"select\":\"ItemCode,ItemName,ItemType,InventoryItem,ItemsGroupCode\",\"orderby\":\"ItemCode&$skip=0..1900 step 20\",\"top\":20} \u2014 full enumeration to verify the count"
+  ],
+  "evidence": "binary count 1911 | fetched 1911 | uniq 1911 | Counter({'itItems': 1911})  \u2014 and all-items count 2269, InventoryItem eq 'tNO' = 357, ItemType eq 'itFixedAssets' = 0, 'itLabor' = 0, 'itTravel' = 0. Sample row: {\"AssetItem\":\"tNO\",\"InventoryItem\":\"tYES\",\"ItemCode\":\"FA0000396\",\"ItemType\":\"itItems\"}",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q06",
+  "answer": "Oil has 164 sales orders still open right now \u2014 status Open (not closed) and not cancelled. Their DocEntry range is 26995\u201329502 and DocDates run 28-May-2026 to 30-Jul-2026.",
+  "value": "164",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_fields {\"entity\":\"Orders\"}",
+   "sap_query {\"entity\":\"Orders\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,DocTotal,VatSum,CardCode,CardName,DocumentStatus,Cancelled,CancelStatus\",\"orderby\":\"DocEntry asc\",\"top\":20}  \u2014 then repeated 8 more times with keyset paging: filter \"(DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO') and DocEntry gt <last DocEntry>\" (9 pages total, last page 4 rows)",
+   "sap_query {\"entity\":\"Orders\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocTotal\",\"orderby\":\"DocEntry desc\",\"top\":20} \u2014 verification pass, repeated with \"... and DocEntry lt <last>\" (9 pages, 164 rows, identical set)",
+   "sap_query {\"entity\":\"Orders\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tYES'\",\"select\":\"DocEntry\",\"top\":20} \u2014 returned count 0"
+  ],
+  "evidence": "complete: True pages: 9 rows: 164 | unique DocEntry: 164 min 26995 max 29502 | statuses {'bost_Open'} {'tNO'} {'csNo'} ; descending verification: desc pages 9 rows 164 unique 164 ; open+cancelled sample count: 0",
+  "confident": true,
+  "limitation_hit": "The MCP sap_query tool has no $count and hard-caps every page at 20 rows with no $skip, so the total had to be assembled by keyset pagination on DocEntry (9 pages) and then re-verified with a descending pass. Both passes agree at 164."
+ },
+ {
+  "id": "q07",
+  "answer": "478 journal entries were posted in Oil on 23 July 2026 (posting/reference date 2026-07-23). The bulk are auto-generated production postings \u2014 123 \"Receipt from Production\" and 120 \"Issue for Production\".",
+  "value": "478",
+  "tool_calls": [
+   "sap_fields {\"entity\":\"JournalEntries\"}",
+   "sap_query {\"entity\":\"JournalEntries\",\"filter\":\"ReferenceDate eq '2026-07-23'\",\"select\":\"JdtNum,Number,ReferenceDate,Memo,TransactionCode\",\"top\":2000,\"orderby\":\"JdtNum\"} (server capped at 20 rows)",
+   "sap_query x24 keyset-paginated: same filter ANDed with \"JdtNum gt <last>\", orderby JdtNum, top 20 \u2014 walked 221232 \u2192 223120",
+   "sap_query cross-check: filter \"ReferenceDate eq '2026-07-23' and JdtNum lt 222000\" (466 rows) + \"... and JdtNum ge 222000\" (12 rows) = 478"
+  ],
+  "evidence": "ROWS: 478 PAGES: 24 \u2014 rows 478 distinct 478 min 221232 max 223120; all dates {'2026-07-23'}; split cross-check 466 + 12 = 478. Sample: {\"JdtNum\":221232,\"Memo\":\"Stock Transfers -\",\"Number\":726302596,\"ReferenceDate\":\"2026-07-23T00:00:00Z\"}",
+  "confident": true,
+  "limitation_hit": "sap_query hard-caps at 20 rows per call regardless of the `top` value and exposes no $skip/$count, so the total had to be built by keyset-paginating on JdtNum (24 calls) and was then re-verified with a two-range split."
+ },
+ {
+  "id": "q08",
+  "answer": "Total A/R outstanding in Oil is \u20b9107.43 crore (\u20b91,07,43,16,125) across 106 customer accounts sitting in debit. Worth flagging: \u20b9101.44 Cr of that is intercompany (JIVO Wellness PB \u20b956.10 Cr, JIVO Mart \u20b923.92 Cr, JIVO Wellness DL \u20b913.03 Cr, JIVO Wellness HR \u20b96.47 Cr, JIVO Wellness DL ISD \u20b91.92 Cr) \u2014 genuine third-party receivables are only about \u20b95.99 Cr.",
+  "value": "1074316124.55",
+  "tool_calls": [
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardType eq 'cCustomer' and CurrentAccountBalance gt 0\",\"select\":\"CardCode,CardName,CurrentAccountBalance\",\"top\":5}  (probe)",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardType eq 'cCustomer' and CurrentAccountBalance gt 0\",\"select\":\"CardCode,CurrentAccountBalance\",\"top\":5000}  (returned only 20 \u2014 server page cap)",
+   "sap_query x6 (forward cursor pagination): {\"entity\":\"BusinessPartners\",\"filter\":\"(CardType eq 'cCustomer' and CurrentAccountBalance gt 0) and CardCode gt '<last CardCode>'\",\"select\":\"CardCode,CardName,CurrentAccountBalance\",\"orderby\":\"CardCode asc\",\"top\":20}",
+   "sap_query x6 (reverse cursor verification): same filter with \"CardCode lt '<last>'\", \"orderby\":\"CardCode desc\", \"top\":20"
+  ],
+  "evidence": "forward pass: rows 106, sum 1074315954.5461 | reverse pass: reverse rows 106, reverse sum 1074316124.5461, 'fwd set == rev set: True'. Top rows: CUSTA000003 JIVO WELLNESS PVT LTD - PB 561002476.8 / CUSTA000606 JIVO MART PVT LTD 239172991.87 / CUSTA000001 JIVO WELLNESS PVT LTD - DL 130315843 / CUSTA000636 THE AREA MANAGER CANTEEN STORE DEPARTMENT 14841590.52",
+  "confident": true,
+  "limitation_hit": "sap_query returns max 20 rows per call regardless of top, so the total had to be built by cursor-paginating on CardCode; I verified it forward and backward and got the identical 106-account set. The two passes differ by \u20b9170 because the ledger is live and moved between calls."
+ },
+ {
+  "id": "q09",
+  "answer": "Oil owes its suppliers \u20b91,06,29,18,895 (about \u20b9106.29 crore) in total \u2014 that is the sum of 347 supplier accounts sitting in credit. Be aware \u20b976.23 Cr of that is intra-group: JIVO WELLNESS PVT LTD - HR \u20b968.96 Cr, JIVO WELLNESS - DL \u20b95.40 Cr, JIVO MART \u20b92.25 Cr, JIVO WELLNESS - PB \u20b91.86 Cr; third-party payables are roughly \u20b930 Cr.",
+  "value": "-1062918895.23 (\u20b91,06,29,18,895.23 credit / \u20b9106.29 Cr owed) across 347 supplier accounts",
+  "tool_calls": [
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"filter\":\"CardType eq 'cSupplier' and CurrentAccountBalance lt 0&$skip=<N>\"} \u2014 binary search => 347 accounts",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"filter\":\"CardType eq 'cSupplier' and CurrentAccountBalance gt 0&$skip=<N>\"} => 170",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"filter\":\"CardType eq 'cSupplier' and CurrentAccountBalance eq 0&$skip=<N>\"} => 1703",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardType eq 'cSupplier' and CurrentAccountBalance lt 0&$skip=0,20,40,...,340\",\"select\":\"CardCode,CardName,CurrentAccountBalance,Currency\",\"orderby\":\"CardCode asc\",\"top\":20} \u2014 18 paged calls, all 347 rows fetched and summed"
+  ],
+  "evidence": "rows 347, unique CardCodes 347, sum = -1062918895.2261. Largest: VENDA000003 JIVO WELLNESS PVT LTD - HR -689617985.65 INR; VENDA000004 JIVO WELLNESS PVT LTD - DL -54018504; VENDA001347 INDRANI FOODS -50604960; VENDA001490 MAHA MAYA FOOD PRODUCTS -45000004; VENDA000052 VEE KAY ENTERPRISES -35844570. Sign check reconciles: 347 credit + 170 debit + 1703 nil = 2220 total suppliers.",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q10",
+  "answer": "Oil's turnover for 1 Apr 2026 to 31 Jul 2026 is Rs 1,36,89,65,497 (about Rs 136.90 crore) \u2014 net of GST and after knocking off credit notes. That is Rs 151.72 Cr of invoices net of GST (2,199 invoices, Rs 159.53 Cr gross less Rs 7.80 Cr GST) minus Rs 14.83 Cr of credit notes net of GST (581 notes). Note the books only run to 30 Jul 2026 (today), so 31 Jul contributes nothing yet.",
+  "value": "1368965497.25",
+  "tool_calls": [
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocDate ge '2026-04-01' and DocDate le '2026-07-31' and Cancelled eq 'tNO'\",\"select\":\"DocEntry\",\"orderby\":\"DocEntry&$skip=<N>\",\"top\":1}  \u2014 binary search on $skip -> 2,199 invoices",
+   "sap_query {\"entity\":\"CreditNotes\",\"filter\":\"DocDate ge '2026-04-01' and DocDate le '2026-07-31' and Cancelled eq 'tNO'\",\"select\":\"DocEntry\",\"orderby\":\"DocEntry&$skip=<N>\",\"top\":1}  \u2014 binary search on $skip -> 581 credit notes",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocDate ge '2026-04-01' and DocDate le '2026-07-31' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,DocTotal,VatSum,DocCurrency,DocTotalSys,VatSumSys\",\"orderby\":\"DocEntry&$skip=0,20,40,...,2180\",\"top\":20}  \u2014 110 paged calls, all 2,199 rows retrieved and de-duplicated by DocEntry",
+   "sap_query {\"entity\":\"CreditNotes\",\"filter\":\"DocDate ge '2026-04-01' and DocDate le '2026-07-31' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,DocTotal,VatSum,DocCurrency,DocTotalSys,VatSumSys\",\"orderby\":\"DocEntry&$skip=0,20,...,580\",\"top\":20}  \u2014 30 paged calls, all 581 rows retrieved",
+   "summed locally: SUM(DocTotal - VatSum) invoices - SUM(DocTotal - VatSum) credit notes"
+  ],
+  "evidence": "inv 2199 cn 581 | invoices gross (DocTotal): 1595267527 | invoices VatSum: 78038004.32 | invoices net: 1517229522.68 | cn net: 148264025.43 | TURNOVER net: 1368965497.25 | in crore: 136.9 | inv date range 2026-04-01 -> 2026-07-30 | monthly net: 2026-04 29.39 Cr, 2026-05 40.10 Cr, 2026-06 36.25 Cr, 2026-07 31.16 Cr",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q11",
+  "answer": "Oil's June 2026 sales (1\u201330 Jun) were \u20b936.25 crore net of GST and after returns \u2014 precisely \u20b936,24,72,231. That is 458 invoices worth \u20b937,09,35,455 net of GST, less 82 credit notes worth \u20b984,63,223 net of GST.",
+  "value": "362472231.21",
+  "tool_calls": [
+   "sap_query {\"entity\":\"Invoices\",\"select\":\"DocEntry,DocNum,DocDate,DocDueDate,DocTotal,VatSum,PaidToDate,DocumentStatus,Cancelled,CardCode\",\"top\":3,\"orderby\":\"DocEntry desc\"} \u2014 field discovery",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocDate ge '2026-06-01' and DocDate le '2026-06-30' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,DocTotal,VatSum,Cancelled\",\"orderby\":\"DocEntry&$skip=0..440 step 20\",\"top\":20} \u2014 all 458 rows",
+   "sap_query {\"entity\":\"CreditNotes\",\"filter\":\"DocDate ge '2026-06-01' and DocDate le '2026-06-30' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,DocTotal,VatSum,Cancelled\",\"orderby\":\"DocEntry&$skip=0..80 step 20\",\"top\":20} \u2014 all 82 rows",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocDate ge '2026-06-01' and DocDate lt '2026-07-01' and Cancelled eq 'tNO'\"} \u2014 boundary re-check (same 458)"
+  ],
+  "evidence": "inv n 458 fetched 458 uniq 458 / cn n 82 fetched 82 uniq 82 -> inv_net 370935454.65  cn_net 8463223.44  net 362472231.21 (gross incl GST: inv 390075000, cn 8875147). Date range of fetched invoices: 2026-06-01T00:00:00Z .. 2026-06-30T00:00:00Z",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q12",
+  "answer": "The 164 open sales orders in Oil are worth \u20b917,17,23,752 (\u20b917.17 crore) on document totals, i.e. GST-inclusive. Net of GST (DocTotal \u2212 VatSum) that is \u20b916,35,46,430.72.",
+  "value": "171723752",
+  "tool_calls": [
+   "sap_query {\"entity\":\"Orders\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,DocTotal,VatSum,CardCode,CardName,DocumentStatus,Cancelled,CancelStatus\",\"orderby\":\"DocEntry asc\",\"top\":20} \u00d7 9 keyset pages (\"... and DocEntry gt <last>\")",
+   "sap_query {\"entity\":\"Orders\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocTotal\",\"orderby\":\"DocEntry desc\",\"top\":20} \u00d7 9 keyset pages (\"... and DocEntry lt <last>\") \u2014 independent re-sum"
+  ],
+  "evidence": "n 164 DocTotal 171723752 VatSum 8177321.2784 net 163546430.7216 ; descending verification pass: sum 171723752.00 ; largest: DocNum 1726066559 SHIVAY EDIBLES PRIVATE LIMITED 28079995 2026-06-05",
+  "confident": true,
+  "limitation_hit": "No server-side SUM and a 20-row page cap, so the total was computed by fetching all 164 rows and adding them locally; two independent paginations (ascending and descending) produced the identical figure."
+ },
+ {
+  "id": "q13",
+  "answer": "We have 6 open (uncancelled) purchase orders with AWL AGRI BUSINESS LIMITED (VENDA000224) in Oil, totalling \u20b921,57,44,519 including GST (\u20b920,54,70,970.50 net of GST). Of that, only about \u20b97.24 Cr is still actually undelivered \u2014 the rest of those POs has already been received against partially-closed lines.",
+  "value": "6 open POs; \u20b9215,744,519.00 (incl. GST) / \u20b9205,470,970.50 (ex-GST); \u20b972,432,289.70 still open at line level",
+  "tool_calls": [
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"contains(CardName,'AWL')\",\"select\":\"CardCode,CardName,CardType,CurrentAccountBalance,Valid,Frozen\",\"top\":20}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"contains(CardName,'ADANI') or contains(CardName,'WILMAR') or contains(CardName,'AGRI BUSINESS')\",...} (dedupe check)",
+   "sap_fields {\"entity\":\"PurchaseOrders\"} (DocStatus invalid \u2192 DocumentStatus)",
+   "sap_query {\"entity\":\"PurchaseOrders\",\"filter\":\"CardCode eq 'VENDA000224' and DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,DocDueDate,DocumentStatus,Cancelled,DocTotal,VatSum,DocCurrency\",\"orderby\":\"DocEntry\",\"top\":20} (1 page, 6 rows)",
+   "sap_query x6 {\"entity\":\"PurchaseOrders\",\"filter\":\"DocEntry eq <12650|12443|12026|11423|...>\",\"select\":\"DocEntry,DocNum,DocTotal,VatSum,DocumentLines\",\"top\":1} for line-level RemainingOpenQuantity"
+  ],
+  "evidence": "open POs: 6 / sum DocTotal: 215744519.00 / sum ex-GST: 205470970.50 \u2014 220426102 2026-04-24 38850000.00; 220526052 2026-05-13 18270000.00; 220526066 2026-05-13 39243750.00; 220626079 2026-06-12 43312500.00; 220626178 2026-06-26 38746628.00; 220726068 2026-07-10 37321641.00. Line check: TOTAL open-line (pre-tax) 72432289.70",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q14",
+  "answer": "I can't get this. The MCP's SAP connection is locked to the Oil company database (JIVO_OIL_HANADB) and there is no way to switch companies, so Beverages invoices and credit notes are not reachable from this tool at all \u2014 I'd be making the number up if I gave you one.",
+  "value": "",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"company\":\"JIVO_MART_HANADB\",\"filter\":\"CardType eq 'cCustomer'\",\"select\":\"CardCode,CardName\",\"top\":3}  (company arg silently ignored \u2014 Oil rows returned)",
+   "sap_entities {\"search\":\"compan\"}",
+   "sap_ops {\"service\":\"CompanyService\"}",
+   "sap_query {\"entity\":\"CompanyService_GetCompanyInfo\",\"select\":\"CompanyName,DatabaseName,DatabaseServer\"}  -> \"is not an EntitySet\"",
+   "gateway_status {}",
+   "pg_list_databases {}",
+   "pg_search {\"database\":\"order_management\",\"term\":\"sap\"} / factory_flow / jivo_ecom / test_supabase",
+   "oms_hana {\"json\":true} -> companion CLI binary not found",
+   "ecom_sql / oms_sql / fct_sql {\"query\":\"select 1\"} -> sqlite open failure"
+  ],
+  "evidence": "sap_doctor: {\"ok\":true,\"config\":{\"companyDB\":\"JIVO_OIL_HANADB\",...},\"checks\":[...{\"name\":\"login\",\"ok\":true,\"detail\":\"connected to JIVO_OIL_HANADB as manager\"}]}  \u2014 and sap_query's schema exposes only entity/filter/orderby/select/top, no company. Passing company:JIVO_MART_HANADB still returned Oil partners (CUSTA000619 AYAN EXIM INDIA, ORGC000037 SURJEET SINGH IMPREST JWPL2418).",
+  "confident": false,
+  "limitation_hit": "SAP backend is bound to a single company DB (JIVO_OIL_HANADB); no company parameter exists on any sap_ tool and the extra arg is ignored. No Postgres mirror of the SAP ledger exists (pg_search for 'OCRD'/'hana' returns []), and the ecom_/oms_/fct_ SQL and HANA tools are non-functional on the server (missing companion binary / sqlite 'unable to open database file'). Beverages data is therefore unreachable."
+ },
+ {
+  "id": "q15",
+  "answer": "I can't get this one. The MCP's SAP connection is hard-wired to JIVO_OIL_HANADB (Oil) and none of the sap_ tools accept a company parameter, so JIVO_MART_HANADB is simply not reachable through this gateway \u2014 I'd rather tell you that than hand you an Oil number dressed up as Mart's.",
+  "value": "",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"company\":\"JIVO_MART_HANADB\",\"companyDB\":\"JIVO_MART_HANADB\",\"database\":\"JIVO_MART_HANADB\"} \u2014 extra args silently ignored, still returned Oil's first row",
+   "gateway_status {}",
+   "pg_list_databases {}",
+   "pg_search {\"database\":\"test_supabase\",\"term\":\"invoice\"}",
+   "pg_search {\"database\":\"factory_flow\",\"term\":\"invoice\"}",
+   "pg_search {\"database\":\"jivo_ecom\",\"term\":\"invoice\"}",
+   "pg_search {\"database\":\"order_management\",\"term\":\"invoice\"}",
+   "oms_context {}",
+   "oms_oms_search {\"query\":\"companies\",\"limit\":8}",
+   "oms_oms_search {\"query\":\"invoices all\",\"limit\":8}",
+   "oms_oms_execute {\"endpoint_id\":\"account.companies\",\"params\":{}}",
+   "fct_context {}"
+  ],
+  "evidence": "sap_doctor -> {\"config\":{\"companyDB\":\"JIVO_OIL_HANADB\",...},\"checks\":[{\"name\":\"login\",\"ok\":true,\"detail\":\"connected to JIVO_OIL_HANADB as manager\"}]}. gateway_status -> a single sapb1 backend (http://sapb1:7701/mcp). Passing company/companyDB/database to sap_query changed nothing (same Oil row ORGV000002). Postgres holds no SAP Invoices/CreditNotes mirror (only channel tables like amazon_mp, dispatch_plans_dispatchplan, einvoice_ewaybill). OMS live API is dead anyway: account.companies -> HTTP 401 {\"detail\":\"Given token not valid for any token type\",\"code\":\"token_not_valid\",... \"Token is expired\"}.",
+  "confident": false,
+  "limitation_hit": "No cross-company access: the SAP Service Layer session is bound to JIVO_OIL_HANADB at login and sap_query has no company argument, so Mart's Invoices/CreditNotes cannot be read. Fallbacks all fail too \u2014 Postgres has no SAP books mirror, and the OMS API token (the only other route that knows about 'Jivo Mart') is expired."
+ },
+ {
+  "id": "q16",
+  "answer": "I can't get this one. The MCP's SAP connection is hard-wired to JIVO_OIL_HANADB and there is no way to switch companies through it, so Beverages' supplier balances aren't reachable from these tools at all \u2014 I'd be guessing if I gave you a number.",
+  "value": "",
+  "tool_calls": [
+   "sap_doctor {}  \u2014 returns companyDB: JIVO_OIL_HANADB, login 'connected to JIVO_OIL_HANADB as manager'",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode,CardName,CurrentAccountBalance\",\"top\":2,\"company\":\"JIVO_BEVERAGES_HANADB\"}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode,CardName,CurrentAccountBalance\",\"top\":2,\"companyDB\":\"JIVO_BEVERAGES_HANADB\"}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode,CardName,CurrentAccountBalance\",\"top\":2,\"db\":\"JIVO_BEVERAGES_HANADB\"}  \u2014 all three return byte-identical Oil rows, i.e. the company argument is silently ignored",
+   "gateway_status {}  \u2014 only one sapb1 backend (http://sapb1:7701/mcp), no per-company backend",
+   "pg_list_databases {}  \u2014 16 Postgres DBs, none is a SAP mirror",
+   "pg_search {\"term\":\"beverage\",\"database\":\"jivo_ecom\"} / {\"database\":\"order_management\"} / {\"database\":\"factory_flow\"}  \u2014 all returned []"
+  ],
+  "evidence": "sap_doctor: {\"ok\":true,\"config\":{\"companyDB\":\"JIVO_OIL_HANADB\",...},\"checks\":[...{\"name\":\"login\",\"ok\":true,\"detail\":\"connected to JIVO_OIL_HANADB as manager\"}]}  \u2014 and sap_query with company/companyDB/db = JIVO_BEVERAGES_HANADB returned the identical Oil row set {\"CardCode\": \"ORGV000002\", \"CardName\": \"DILPREET VEERJI VP VEND IMPREST JWPL0016\", \"CurrentAccountBalance\": -118000} in all three cases. pg_search 'beverage' -> [] in every database.",
+  "confident": false,
+  "limitation_hit": "The sap_ tools expose no company/companyDB parameter and the backend is pinned to JIVO_OIL_HANADB; extra company arguments are accepted but ignored (identical Oil rows returned). Neither the Postgres nor the ecom/oms/factory backends hold SAP Beverages supplier balances. To answer this the gateway would need a second SAP backend (or a company argument) pointed at JIVO_BEVERAGES_HANADB; the query itself would be BusinessPartners where CardType eq 'cSupplier', summing negative CurrentAccountBalance."
+ },
+ {
+  "id": "q17",
+  "answer": "I can't answer this one. The MCP gateway's SAP connection is hard-wired to a single company database \u2014 JIVO_OIL_HANADB \u2014 and sap_query has no company/companyDB parameter (I tested passing one; it is silently ignored). Neither Mart nor Beverages A/R data is reachable through any other backend here (the ecom and OMS SAP-HANA tools are down \u2014 missing companion binary / expired token \u2014 and Postgres holds no SAP receivables mirror). To answer this I'd need the SAP tool pointed at JIVO_MART_HANADB and JIVO_BEVERAGES_HANADB.",
+  "value": "",
+  "tool_calls": [
+   "sap_doctor {}",
+   "gateway_status {}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"select\":\"CardCode\",\"top\":1,\"company\":\"JIVO_MART_HANADB\"} / same with \"companyDB\" / \"db\" \u2014 all returned the identical Oil row, i.e. the extra argument is ignored",
+   "sap_entities {\"search\":\"company\"}",
+   "ecom_sap {\"json\":true,\"no-input\":true}",
+   "oms_hana {\"json\":true,\"no-input\":true}",
+   "ecom_jivo-ecom_search {\"query\":\"sap invoices open receivables\",\"limit\":5}",
+   "ecom_jivo-ecom_execute {\"endpoint_id\":\"sap.sales-invoices\",\"params\":{\"limit\":1}}",
+   "pg_list_databases {}",
+   "pg_search {\"term\":\"beverage\"}"
+  ],
+  "evidence": "sap_doctor -> {\"config\":{\"companyDB\":\"JIVO_OIL_HANADB\",...},\"checks\":[...{\"name\":\"login\",\"ok\":true,\"detail\":\"connected to JIVO_OIL_HANADB as manager\"}]}  |  ecom_sap -> {\"_error\":\"companion CLI binary not found: exec: \\\"jivo-ecom-pp-cli\\\"...\"}  |  oms_hana -> {\"_error\":\"companion CLI binary not found: exec: \\\"oms-pp-cli\\\"...\"}  |  ecom_jivo-ecom_execute -> HTTP 401 token_not_valid  |  pg_search beverage -> []",
+  "confident": false,
+  "limitation_hit": "SAP backend is bound to a single company DB (JIVO_OIL_HANADB); no company switch is exposed by any tool, and no alternative backend serves Mart/Beverages A/R (ecom/OMS SAP-HANA tools have no companion binary and an expired API token; Postgres has no SAP receivables data)."
+ },
+ {
+  "id": "q18",
+  "answer": "Top 5 customer ledger balances in Oil (all debit, i.e. they owe JIVO): 1) JIVO WELLNESS PVT LTD \u2013 PB (CUSTA000003) \u20b956,10,02,476.80; 2) JIVO MART PVT LTD (CUSTA000606) \u20b923,91,72,991.87; 3) JIVO WELLNESS PVT LTD \u2013 DL (CUSTA000001) \u20b913,03,15,843; 4) JIVO WELLNESS PVT LTD \u2013 HR (CUSTA000002) \u20b96,46,96,719; 5) JIVO WELLNESS PVT LTD \u2013 DL ISD (CUSTA001099) \u20b91,92,02,149. Note all five are group/related-party accounts \u2014 the largest genuinely external customers are CSD (CUSTA000636) \u20b91,48,41,590.52 and AB ENTERPRISES (CUSTA001014) \u20b91,28,77,772.",
+  "value": "CUSTA000003 JIVO WELLNESS PVT LTD - PB = 561002476.80; CUSTA000606 JIVO MART PVT LTD = 239172991.87; CUSTA000001 JIVO WELLNESS PVT LTD - DL = 130315843.00; CUSTA000002 JIVO WELLNESS PVT LTD - HR = 64696719.00; CUSTA001099 JIVO WELLNESS PVT LTD - DL ISD = 19202149.00",
+  "tool_calls": [
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardType eq 'cCustomer'\",\"select\":\"CardCode,CardName,CurrentAccountBalance,CreditLimit,Valid,Frozen,GroupCode\",\"orderby\":\"CurrentAccountBalance desc\",\"top\":20}"
+  ],
+  "evidence": "CUSTA000003 | JIVO WELLNESS PVT LTD - PB |bal 561002476.8 |lim 0 ; CUSTA000606 | JIVO MART PVT LTD |bal 239172991.8694 ; CUSTA000001 | JIVO WELLNESS PVT LTD - DL |bal 130315843 ; CUSTA000002 | JIVO WELLNESS PVT LTD - HR |bal 64696719 ; CUSTA001099 | JIVO WELLNESS PVT LTD - DL ISD |bal 19202149 ; (6th) CUSTA000636 | THE AREA MANAGER CANTEEN STORE DEPARTMENT |bal 14841590.5228",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q19",
+  "answer": "The five largest supplier credits in Oil are: 1) JIVO WELLNESS PVT LTD \u2013 HR \u20b968.96 Cr, 2) JIVO WELLNESS PVT LTD \u2013 DL \u20b95.40 Cr, 3) INDRANI FOODS \u20b95.06 Cr, 4) MAHA MAYA FOOD PRODUCTS PVT LTD \u20b94.50 Cr, 5) VEE KAY ENTERPRISES \u20b93.58 Cr. Note the top two are our own group/intercompany accounts \u2014 if you want third-party vendors only, the top five become INDRANI FOODS \u20b95.06 Cr, MAHA MAYA \u20b94.50 Cr, VEE KAY \u20b93.58 Cr, CONCEPT COLOUR \u20b93.24 Cr and NURTURING FOODS LLP \u20b92.79 Cr.",
+  "value": "1. VENDA000003 JIVO WELLNESS PVT LTD - HR = 689,617,985.65; 2. VENDA000004 JIVO WELLNESS PVT LTD - DL = 54,018,504.00; 3. VENDA001347 INDRANI FOODS = 50,604,960.00; 4. VENDA001490 MAHA MAYA FOOD PRODUCTS PRIVATE LIMITED = 45,000,004.00; 5. VENDA000052 VEE KAY ENTERPRISES = 35,844,570.00",
+  "tool_calls": [
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardType eq 'cSupplier'\",\"select\":\"CardCode,CardName,CardType,CurrentAccountBalance\",\"orderby\":\"CurrentAccountBalance asc\",\"top\":20}"
+  ],
+  "evidence": "{\"CardCode\":\"VENDA000003\",\"CardName\":\"JIVO WELLNESS PVT LTD - HR\",\"CurrentAccountBalance\":-689617985.65} ; VENDA000004 -54018504 ; VENDA001347 INDRANI FOODS -50604960 ; VENDA001490 MAHA MAYA FOOD PRODUCTS PRIVATE LIMITED -45000004 ; VENDA000052 VEE KAY ENTERPRISES -35844570 (negative = CREDIT = JIVO owes)",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q20",
+  "answer": "I can't get this one either \u2014 the SAP tool on this server only connects to the Oil company (JIVO_OIL_HANADB), so Mart's sales orders are invisible to it. For reference, the largest open order in the company I CAN see (Oil, not Mart) is DocNum 1726066559, SHIVAY EDIBLES PRIVATE LIMITED, 5 June 2026, \u20b92,80,79,995 \u2014 but that is Oil, not the Mart figure you asked for.",
+  "value": "",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_query {\"entity\":\"Orders\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocNum,CardCode,CardName,DocDate,DocTotal\",\"orderby\":\"DocTotal desc\",\"top\":3}  (runs against Oil only)",
+   "pg_postgres_query {\"database\":\"order_management\",\"sql\":\"select company, count(*) n, max(created_at::text) latest from orders group by 1 order by n desc limit 20\"}",
+   "pg_describe_table {\"database\":\"order_management\",\"table\":\"orders\"}"
+  ],
+  "evidence": "Oil result (NOT Mart): {\"rows\":[{\"CardCode\":\"CUSTA001094\",\"CardName\":\"SHIVAY EDIBLES PRIVATE LIMITED\",\"DocDate\":\"2026-06-05T00:00:00Z\",\"DocNum\":1726066559,\"DocTotal\":28079995}]}. OMS fallback is not a substitute: order_management.orders holds only [{\"company\":\"1\",\"n\":\"85\"}] rows \u2014 a single app-side company, 85 orders, no Mart dimension.",
+  "confident": false,
+  "limitation_hit": "SAP backend is locked to JIVO_OIL_HANADB with no company switch, so JIVO_MART_HANADB orders cannot be read. The Postgres order_management DB is not a Mart mirror (85 rows, single 'company' value '1'). The number above is the Oil answer and must not be read as Mart."
+ },
+ {
+  "id": "q21",
+  "answer": "The oldest open A/R invoice in Oil by true due date is invoice no. 1808191197 to THE AREA MANAGER CANTEEN STORE DEPARTMENT (CUSTA000636), due 04-Aug-2017, with \u20b92,08,603 still fully outstanding (nothing paid against it). It's one of the migrated documents \u2014 its posting date shows 30-Sep-2024, which is why it hides in a normal DocDate-based aging report.",
+  "value": "DocNum 1808191197 | CUSTA000636 THE AREA MANAGER CANTEEN STORE DEPARTMENT | due 2017-08-04 | outstanding INR 208,603",
+  "tool_calls": [
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,CardCode,CardName,DocDate,DocDueDate,DocTotal,PaidToDate,DocCurrency,DocumentStatus,Cancelled\",\"orderby\":\"DocDueDate asc\",\"top\":20}",
+   "sap_query {\"entity\":\"Invoices\",\"select\":\"DocEntry\",\"top\":1,\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDueDate lt '2017-08-04'\"} \u2014 returned 0 rows, confirming nothing older",
+   "sap_query {\"entity\":\"Invoices\",\"select\":\"DocEntry\",\"top\":1,\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'&$skip=<N>\"} \u2014 binary search => 12,861 open A/R invoices in total",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocEntry eq 34300\",\"select\":\"DocEntry,DocNum,CardCode,CardName,DocDate,DocDueDate,DocTotal,VatSum,PaidToDate,DocumentStatus,Cancelled\",\"top\":1}"
+  ],
+  "evidence": "{\"Cancelled\":\"tNO\",\"CardCode\":\"CUSTA000636\",\"CardName\":\"THE AREA MANAGER CANTEEN STORE DEPARTMENT\",\"DocDate\":\"2024-09-30T00:00:00Z\",\"DocDueDate\":\"2017-08-04T00:00:00Z\",\"DocEntry\":34300,\"DocNum\":1808191197,\"DocTotal\":208603,\"DocumentStatus\":\"bost_Open\",\"PaidToDate\":0}. Next-oldest is DocNum 1808191158, due 2017-11-07 (same customer). Probe for DocDueDate lt '2017-08-04' among open, non-cancelled invoices returned {\"count\":0,\"rows\":[]}.",
+  "confident": true,
+  "limitation_hit": "Outstanding is taken as DocTotal \u2212 PaidToDate (208,603 \u2212 0); the MCP exposes no per-invoice open-balance field, but with PaidToDate = 0 the full document value is still due."
+ },
+ {
+  "id": "q22",
+  "answer": "As of 30 Jul 2026, 9,239 open Oil A/R invoices have a due date before 30 Jul 2025, and the unpaid amount on them is Rs 1,06,90,72,511 (about Rs 106.91 crore). That's Rs 126.48 Cr of invoice value less Rs 19.58 Cr already received against them.",
+  "value": "9239 invoices; 1069072510.61",
+  "tool_calls": [
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDueDate lt '2025-07-30'\",\"select\":\"DocEntry\",\"orderby\":\"DocEntry&$skip=<N>\",\"top\":1}  \u2014 binary search on $skip -> 9,239",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDueDate lt '2025-07-30'\",\"select\":\"DocEntry,DocNum,CardCode,DocDate,DocDueDate,DocTotal,PaidToDate,DocCurrency,DocTotalSys,PaidToDateSys\",\"orderby\":\"DocEntry&$skip=0,20,40,...,9220\",\"top\":20}  \u2014 462 paged calls, 9,239 unique DocEntry rows retrieved",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDueDate ge '2025-07-30'\",...}  \u2014 binary search -> 3,622 (9,239 + 3,622 = 12,861 open invoices, cross-check passes)",
+   "summed locally: SUM(DocTotal - PaidToDate)"
+  ],
+  "evidence": "fetched unique rows: 9239 | DocTotal sum: 1264823352.4 | PaidToDate sum: 195750841.79 | Unpaid: 1069072510.61 | earliest due 2017-08-04, latest due 2025-07-28 | rows with DocDate=2024-09-30 (migration): 7054 -> aging was taken from DocDueDate, not DocDate, exactly as required",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q23",
+  "answer": "As of 30 July 2026, Oil has 936 open A/R invoices in the 91\u2013180 days overdue bucket, with \u20b96,23,37,377 (about \u20b96.23 crore) still unpaid. Those invoices total \u20b914,11,60,012 face value, of which \u20b97,88,22,635 has already been received.",
+  "value": "936 invoices; 62337377.46",
+  "tool_calls": [
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDueDate ge '2026-01-31' and DocDueDate le '2026-04-30'\",\"select\":\"DocEntry\",\"orderby\":\"DocEntry&$skip=<N>\",\"top\":1} \u2014 binary search for the count",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDueDate ge '2026-01-31' and DocDueDate le '2026-04-30'\",\"select\":\"DocEntry,DocNum,CardCode,DocDate,DocDueDate,DocTotal,PaidToDate,DocumentStatus\",\"orderby\":\"DocEntry&$skip=0..920 step 20\",\"top\":20} \u2014 all 936 rows",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO' and DocDueDate gt '2026-01-30' and DocDueDate lt '2026-05-01'\"} \u2014 boundary re-check (same 936)"
+  ],
+  "evidence": "n 936 fetched 936 uniq 936 | total DocTotal 141160012 | total paid 78822634.54 | open amount 62337377.46 | min due 2026-01-31T00:00:00Z max due 2026-04-30T00:00:00Z | rows with <=0 open: 0. Bucket built from DocDueDate (30-Jul-2026 minus 180d = 31-Jan-2026, minus 91d = 30-Apr-2026); none of the 936 carry the 2024-09-30 migration DocDate.",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q24",
+  "answer": "11 customer accounts in Oil are currently over their credit limit (customers only \u2014 the 8 suppliers that also breach were excluded): SHRI JEE TRADING CO (CUSTA000883) \u20b967,835.55 vs \u20b910; ATUL SHARMA IMPREST JWPL0003 (ORGC000034) \u20b965,959 vs \u20b930,000; INTERGLOBE AVIATION LTD (CUSTA001040) \u20b934,414 vs \u20b910; JMD ABODE AND BANQUETS PVT LTD (CUSTA001115) \u20b917,000 vs \u20b910; DILPREET VEERJI DELHI (ORGC000007) \u20b92,810 vs \u20b9460; JASNEET KAUR IMPREST JWPL0012 (ORGC000027) \u20b92,360 vs \u20b910; RAJ KUMAR TIWARI FACTORY JWPL0374 (ORGC000004) \u20b92,150 vs \u20b92,129; GURWINDERJEET SINGH DELHI (ORGC000008) \u20b91,997 vs \u20b91,600; TAJINDER SINGH LAB IMPREST JWPL1206 (ORGC000028) \u20b91,175 vs \u20b910; GURPREET SINGH WINKAL IMPREST JWPL0138 (ORGC000039) \u20b9355 vs \u20b910; KAILIAN FOODS PVT LTD (CUSTA001068) \u20b9275 vs \u20b910. Note the ORGC\u2026 ones are employee IMPREST accounts that SAP holds as customer-type cards, and accounts with CreditLimit = 0 (no limit set, e.g. JIVO WELLNESS PB) are excluded by definition.",
+  "value": "11 customers: CUSTA000883 SHRI JEE TRADING CO bal 67835.55 / lim 10 | ORGC000034 ATUL SHARMA IMPREST JWPL0003 65959 / 30000 | CUSTA001040 INTERGLOBE AVIATION LIMITED 34414 / 10 | CUSTA001115 JMD ABODE AND BANQUETS PRIVATE LIMITED 17000 / 10 | ORGC000007 DILPREET VEERJI DELHI 2810 / 460 | ORGC000027 JASNEET KAUR IMPREST JWPL0012 2360 / 10 | ORGC000004 RAJ KUMAR TIWARI FACTORY JWPL0374 2150 / 2129 | ORGC000008 GURWINDERJEET SINGH DELHI 1996.9999 / 1600 | ORGC000028 TAJINDER SINGH LAB IMPREST JWPL1206 1175 / 10 | ORGC000039 GURPREET SINGH WINKAL IMPREST JWPL0138 355 / 10 | CUSTA001068 KAILIAN FOODS PRIVATE LIMITED 275 / 10",
+  "tool_calls": [
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardType eq 'cCustomer' and CreditLimit gt 0 and CurrentAccountBalance gt CreditLimit\",\"select\":\"CardCode,CardName,CurrentAccountBalance,CreditLimit\",\"orderby\":\"CurrentAccountBalance desc\",\"top\":20}",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardCode eq 'ORGC000034' or CardCode eq 'CUSTA000883' or CardCode eq 'ORGC000030'\",\"select\":\"CardCode,CardName,CardType,GroupCode,CurrentAccountBalance,CreditLimit,Valid,Frozen\"} \u2014 confirmed the ORGC cards really are CardType cCustomer",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardType eq 'cSupplier' and CreditLimit gt 0 and CurrentAccountBalance gt CreditLimit\",\"select\":\"CardCode,CardName,CurrentAccountBalance,CreditLimit\",\"top\":20} \u2014 8 suppliers, deliberately excluded"
+  ],
+  "evidence": "count 11 \u2014 CUSTA000883 | SHRI JEE TRADING CO |bal 67835.5469 |lim 10 ; ORGC000034 | ATUL SHARMA IMPREST JWPL0003 |bal 65959 |lim 30000 ; ... CUSTA001068 | KAILIAN FOODS PRIVATE LIMITED |bal 275 |lim 10 ; verification: {'CardCode':'ORGC000034','CardType':'cCustomer','GroupCode':142}",
+  "confident": true,
+  "limitation_hit": "Interpretation caveat rather than a tool limit: SAP treats CreditLimit = 0 as 'no limit set', so cards with a zero limit (including the \u20b956 Cr JIVO WELLNESS PB account) are not counted as breaches. The comparison is ledger balance vs limit only; it does not add open-order / open-delivery exposure."
+ },
+ {
+  "id": "q25",
+  "answer": "FUTURE RETAIL LTD. (CUSTA000891) has 55 open A/R invoices in Oil, adding up to \u20b994,53,887.88 unpaid \u2014 nothing has been paid against any of them (PaidToDate = 0 on all 55). That is essentially the whole \u20b994,56,961.88 ledger balance; the remaining \u20b93,074 sits in a non-invoice entry. All 55 are migrated documents (DocDate 2024-09-30) whose real due dates run 12-Dec-2019 to 30-May-2020, so every rupee is 6+ years past due \u2014 the two biggest are \u20b931,46,393 (due 30-Apr-2020) and \u20b922,73,858 (due 19-Feb-2020).",
+  "value": "55 open invoices; \u20b99,453,887.88 unpaid",
+  "tool_calls": [
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"contains(CardName,'FUTURE')\",\"select\":\"CardCode,CardName,CardType,CurrentAccountBalance,Frozen,Valid\",\"top\":20}",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"CardCode eq 'CUSTA000891' and DocumentStatus eq 'bost_Open' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,DocDueDate,DocTotal,PaidToDate,VatSum,DocumentStatus,Cancelled\",\"orderby\":\"DocEntry\",\"top\":20} \u2014 keyset-paginated over DocEntry, 3 pages, 55 rows",
+   "sap_query {\"entity\":\"CreditNotes\"/\"DownPayments\"/\"IncomingPayments\",\"filter\":\"CardCode eq 'CUSTA000891'\"} (all 0 rows)",
+   "sap_query {\"entity\":\"Invoices\",\"filter\":\"CardCode eq 'CUSTA000891'\"} all statuses \u2014 55 rows, Counter({('bost_Open','tNO'): 55})"
+  ],
+  "evidence": "open invoices: 55 / sum DocTotal 9453887.88 / sum PaidToDate 0.00 / sum unpaid 9453887.88. BP: {\"CardCode\":\"CUSTA000891\",\"CardName\":\"FUTURE RETAIL LTD.\",\"CurrentAccountBalance\":9456961.88}. Rows show doc 2024-09-30 due 2019-12-12 ... due 2020-05-30 (migration DocDate, true DocDueDate).",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q26",
+  "answer": "Not retrievable. The SAP connection here is fixed to the Oil company (JIVO_OIL_HANADB), so I cannot read Beverages' item master or its stock-vs-minimum position. The query shape works \u2014 I ran it and got Oil packaging materials back (e.g. PM0000080 TIN 5 LTR POMACE OLIVE PRINTED, 8,089 on hand vs 15,000 minimum) \u2014 but that is the Oil company, not Beverages.",
+  "value": "",
+  "tool_calls": [
+   "sap_doctor {}",
+   "sap_fields {\"entity\":\"Items\"}",
+   "sap_query {\"entity\":\"Items\",\"filter\":\"MinInventory gt 0 and QuantityOnStock lt MinInventory\",\"select\":\"ItemCode,ItemName,QuantityOnStock,MinInventory\",\"top\":5}  (runs against Oil only)"
+  ],
+  "evidence": "Oil result (NOT Beverages): {\"rows\":[{\"ItemCode\":\"PM0000080\",\"ItemName\":\"TIN 5 LTR POMACE OLIVE PRINTED\",\"MinInventory\":15000,\"QuantityOnStock\":8089},{\"ItemCode\":\"PM0000079\",\"ItemName\":\"CAPS 1 & 2 LTR FULL GREEN WITH LOGO\",\"MinInventory\":300000,\"QuantityOnStock\":233562},{\"ItemCode\":\"PM0000077\",\"ItemName\":\"TIN 5 LTR EXTRA LIGHT OLIVE PRINTED\",\"MinInventory\":7000,\"QuantityOnStock\":6270}]} \u2014 olive-oil packaging, confirming the connected DB is JIVO_OIL_HANADB.",
+  "confident": false,
+  "limitation_hit": "SAP backend is bound to JIVO_OIL_HANADB only; no company parameter on sap_query or sap_items, and an injected company arg is ignored. Beverages item/stock data is not reachable through this MCP. Also note sap_query returns at most 20 rows per call, so even for a reachable company a full low-stock list would need cursor pagination."
+ },
+ {
+  "id": "q27",
+  "answer": "Item PM0000075 (TAPE LOGO PRINTED) has 13,04,935.94 units on hand in Oil, spread across 13 warehouses. The big holdings are BH-PP 6,82,927.26, BH-PC 4,89,771.19, GP-NM 87,500 and BH-PM 14,000.",
+  "value": "1304935.9412 units across 13 warehouses",
+  "tool_calls": [
+   "sap_query {\"entity\":\"Items\",\"filter\":\"ItemCode eq 'PM0000075'\",\"select\":\"ItemCode,ItemName,QuantityOnStock,ItemWarehouseInfoCollection\",\"top\":1}"
+  ],
+  "evidence": "QuantityOnStock: 1304935.9412; ItemName \"TAPE LOGO PRINTED\"; ItemWarehouseInfoCollection has 58 warehouse rows, 13 with non-zero InStock: BH-FG 2049.0656, BH-GR 0.4061, BH-JW 0.5621, BH-NM 0.0008, BH-PC 489771.1936, BH-PM 14000.0028, BH-PP 682927.2596, BH-SC 2000, BH-WST 6037.4506, GP-FG 6550, GP-NM 87500, PB-JP 400, PB-ST 13700 \u2014 these sum to exactly 1304935.9412, matching the item-master QuantityOnStock.",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q28",
+  "answer": "FG0000386 - CHAI 250 GMS 40 PCS - has the highest finished-good stock in Oil, at 63,661 units on hand. Next are FG0000359 SOYABEAN OIL 750 GMS 12 PCS POUCH (51,994) and FG0000032 COLD PRESS 1 LTR 20 PCS (45,934).",
+  "value": "FG0000386 (CHAI 250 GMS 40 PCS) \u2014 63,661",
+  "tool_calls": [
+   "sap_query {\"entity\":\"Items\",\"filter\":\"startswith(ItemCode,'FG')\",\"select\":\"ItemCode,ItemName,QuantityOnStock,ItemType,Valid\",\"orderby\":\"QuantityOnStock desc\",\"top\":15}",
+   "sap_query {\"entity\":\"Items\",\"filter\":\"startswith(ItemCode,'FG')\",\"select\":\"ItemCode,QuantityOnStock\",\"orderby\":\"QuantityOnStock asc\",\"top\":3}  \u2014 ascending sanity check confirms the sort is applied server-side across the whole FG set, not just one page"
+  ],
+  "evidence": "{\"ItemCode\": \"FG0000386\", \"ItemName\": \"CHAI 250 GMS 40 PCS\", \"ItemType\": \"itItems\", \"QuantityOnStock\": 63661, \"Valid\": \"tYES\"} \u2014 first row of the QuantityOnStock desc ordering; asc check returns QuantityOnStock 0 items",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q29",
+  "answer": "Oil received \u20b966.12 crore on 373 incoming payments in July 2026 (1\u201331 Jul), excluding cancelled ones \u2014 precisely \u20b966,12,35,554. Almost all of it came by bank transfer (\u20b966,11,85,554); only \u20b950,000 was cash. By type: 308 customer receipts \u20b940.69 Cr, 64 on-account/GL receipts \u20b925.42 Cr, 1 supplier refund \u20b91.00 lakh.",
+  "value": "661235553.89 on 373 receipts",
+  "tool_calls": [
+   "sap_fields {\"entity\":\"IncomingPayments\"}",
+   "sap_query {\"entity\":\"IncomingPayments\",\"filter\":\"DocDate ge '2026-07-01' and DocDate le '2026-07-31'\",\"top\":1,\"orderby\":\"DocEntry desc\"} \u2014 inspect amount fields",
+   "sap_query {\"entity\":\"IncomingPayments\",\"filter\":\"DocDate ge '2026-07-01' and DocDate le '2026-07-31' and Cancelled eq 'tNO'\",\"select\":\"DocEntry\",\"orderby\":\"DocEntry&$skip=<N>\",\"top\":1} \u2014 binary search for the count (373; 395 including cancelled)",
+   "sap_query {\"entity\":\"IncomingPayments\",\"filter\":\"DocDate ge '2026-07-01' and DocDate le '2026-07-31' and Cancelled eq 'tNO'\",\"orderby\":\"DocEntry&$skip=0..360 step 20\",\"top\":20} \u2014 all 373 full rows",
+   "sap_query {\"entity\":\"IncomingPayments\",\"filter\":\"DocDate ge '2026-07-01' and DocDate lt '2026-08-01' and Cancelled eq 'tNO'\"} \u2014 boundary re-check (same 373)"
+  ],
+  "evidence": "n 373 fetched 373 uniq 373 | CancelStatus Counter({'csNo': 373}) | DocType Counter({'rCustomer': 308, 'rAccount': 64, 'rSupplier': 1}) | cash 50000.0 | transfer 661185553.89 | boe 0 | checks 0 | cc 0 | TOTAL 661235553.89 | zero-amt rows 0. Per-type: rCustomer 308 = 406889609.69, rAccount 64 = 254245944.2, rSupplier 1 = 100000.0",
+  "confident": true,
+  "limitation_hit": ""
+ },
+ {
+  "id": "q30",
+  "answer": "I could not get this. The MCP's SAP backend is logged in to JIVO_OIL_HANADB only and exposes no company parameter, so JIVO_MART_HANADB is unreachable through these tools \u2014 I can't give you a Mart July-2026 supplier payout figure or payment count.",
+  "value": "",
+  "tool_calls": [
+   "sap_doctor {} \u2014 returned companyDB JIVO_OIL_HANADB, no company switch",
+   "sap_query {\"entity\":\"BusinessPartners\",\"filter\":\"CardCode eq 'CUSTA000003'\",\"select\":\"CardCode,CardName,CurrentAccountBalance\",\"company\":\"JIVO_MART_HANADB\",\"companyDB\":\"JIVO_MART_HANADB\"} \u2014 extra company args silently ignored, still returned Oil data",
+   "ecom_sap {\"agent\":true}",
+   "oms_hana {\"agent\":true}",
+   "oms_sap {\"agent\":true}",
+   "pg_list_databases {}",
+   "pg_search {\"database\":\"<each of test_supabase, factory_flow, jivo_ecom, order_management, oms_backup, jivo_site, Ecommerce, po_db, CRM, fs, task>\",\"term\":\"payment\"}",
+   "sap_fields {\"entity\":\"VendorPayments\"}",
+   "sap_query {\"entity\":\"VendorPayments\",\"filter\":\"DocDate ge '2026-07-01' and DocDate le '2026-07-31' and Cancelled eq 'tNO'\",\"select\":\"DocEntry,DocNum,DocDate,CardCode,CardName,CashSum,TransferSum,DeductionSum,Cancelled\",\"orderby\":\"DocEntry asc\",\"top\":20} \u00d7 24 keyset pages \u2014 this ran against OIL, not Mart (467 payments, \u20b965,20,41,698.83 cash+transfer); shown only to prove the method works, it is NOT the Mart answer"
+  ],
+  "evidence": "sap_doctor: {\"ok\":true,\"config\":{\"companyDB\":\"JIVO_OIL_HANADB\",...},\"checks\":[...{\"name\":\"login\",\"detail\":\"connected to JIVO_OIL_HANADB as manager\"}]} ; company-arg probe returned 'JIVO WELLNESS PVT LTD - PB' (an Oil card) ; ecom_sap/oms_hana/oms_sap all error: \"companion CLI binary not found: exec: \\\"oms-pp-cli\\\": executable file not found in $PATH\" ; pg_search 'payment' across all 16 DBs found only tracker_payment_detail / tracker_transporter_payment in order_management (app data, not SAP AP)",
+  "confident": false,
+  "limitation_hit": "SAP session is hard-bound to JIVO_OIL_HANADB; sap_query/sap_doctor accept no company/companyDB argument (extra args are ignored). The alternative SAP-facing backends (ecom_sap, oms_sap, oms_hana) are dead \u2014 their companion CLI binaries are missing on the server. The Postgres backend holds only app databases (ecom/OMS/factory/CRM), with no SAP Mart AP-payment data. Therefore no route to Mart's July-2026 vendor payments exists through this MCP."
+ }
+]

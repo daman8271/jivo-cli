@@ -1,0 +1,177 @@
+# SNAPSHOT of the live /opt/jivo-mcp/docker-compose.yml — reference copy only.
+# The secret URL path base is REDACTED as <SECRET-PATH-BASE>. The real value lives
+# ONLY on the VPS at /opt/jivo-mcp/.pathbase and in the live compose file. It is the
+# sole credential guarding read access to JIVO's books, so it must never be written
+# into this repo, even though the repo is private.
+# jivo-mcp-bundle — five READ-ONLY MCP servers behind Traefik.
+#
+# Every tool in every server is strictly read-only against JIVO production
+# systems (GET-only; the only permitted write is Login/session). Binaries and
+# configs are bind-mounted read-only; nothing in this stack can persist state.
+#
+# Placeholders the deploy step must substitute before `docker compose up -d`:
+#   bridge  -> the real external Traefik docker network name
+#   jivo-mcp.srv1685505.hstgr.cloud       -> the public hostname Traefik routes (Host rule)
+#   <SECRET-PATH-BASE>     -> the URL path base, no slashes (e.g. "mcp")
+#
+# No ports are published; Traefik reaches each server on its internal port
+# (7701..7705) over the shared network. Each router strips
+# /<SECRET-PATH-BASE>/<name> so the server sees its native endpoint (/mcp).
+
+services:
+  sapb1:
+    image: alpine:3.20
+    restart: unless-stopped
+    working_dir: /srv
+    command: ["/srv/sapb1", "mcp", "--transport", "http", "--addr", ":7701"]
+    volumes:
+      - ./bin/sapb1:/srv/sapb1:ro
+      # sapb1 loads .env from the directory holding the binary (and from cwd);
+      # /srv is both, so this one mount satisfies it.
+      - ./env/sapb1/.env:/srv/.env:ro
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jivo-sapb1.entrypoints=websecure
+      - traefik.http.routers.jivo-sapb1.tls.certresolver=letsencrypt
+      - traefik.http.routers.jivo-sapb1.rule=Host(`jivo-mcp.srv1685505.hstgr.cloud`) && PathPrefix(`/<SECRET-PATH-BASE>/sapb1`)
+      - traefik.http.routers.jivo-sapb1.middlewares=jivo-sapb1-strip
+      - traefik.http.middlewares.jivo-sapb1-strip.stripprefix.prefixes=/<SECRET-PATH-BASE>/sapb1
+      - traefik.http.services.jivo-sapb1.loadbalancer.server.port=7701
+
+  postsql:
+    image: alpine:3.20
+    restart: unless-stopped
+    working_dir: /srv
+    command: ["/srv/postsql", "mcp", "--transport", "http", "--addr", ":7702"]
+    volumes:
+      - ./bin/postsql:/srv/postsql:ro
+      # postsql resolves its config at $HOME/.postsql/config.toml (/root in alpine).
+      - ./env/postsql/config.toml:/root/.postsql/config.toml:ro
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jivo-postsql.entrypoints=websecure
+      - traefik.http.routers.jivo-postsql.tls.certresolver=letsencrypt
+      - traefik.http.routers.jivo-postsql.rule=Host(`jivo-mcp.srv1685505.hstgr.cloud`) && PathPrefix(`/<SECRET-PATH-BASE>/postsql`)
+      - traefik.http.routers.jivo-postsql.middlewares=jivo-postsql-strip
+      - traefik.http.middlewares.jivo-postsql-strip.stripprefix.prefixes=/<SECRET-PATH-BASE>/postsql
+      - traefik.http.services.jivo-postsql.loadbalancer.server.port=7702
+
+  ecom:
+    image: alpine:3.20
+    restart: unless-stopped
+    working_dir: /srv
+    command: ["/srv/ecom-mcp", "-transport", "http", "-addr", ":7703"]
+    volumes:
+      - ./bin/ecom-mcp:/srv/ecom-mcp:ro
+      # jivo-ecom-pp config path: $HOME/.config/jivo-ecom-pp-cli/config.toml
+      # (JIVO_ECOM_CONFIG env could override; default path is used here).
+      - ./env/ecom/config.toml:/root/.config/jivo-ecom-pp-cli/config.toml:ro
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jivo-ecom.entrypoints=websecure
+      - traefik.http.routers.jivo-ecom.tls.certresolver=letsencrypt
+      - traefik.http.routers.jivo-ecom.rule=Host(`jivo-mcp.srv1685505.hstgr.cloud`) && PathPrefix(`/<SECRET-PATH-BASE>/ecom`)
+      - traefik.http.routers.jivo-ecom.middlewares=jivo-ecom-strip
+      - traefik.http.middlewares.jivo-ecom-strip.stripprefix.prefixes=/<SECRET-PATH-BASE>/ecom
+      - traefik.http.services.jivo-ecom.loadbalancer.server.port=7703
+
+  oms:
+    image: alpine:3.20
+    restart: unless-stopped
+    working_dir: /srv
+    command: ["/srv/oms-mcp", "-transport", "http", "-addr", ":7704"]
+    volumes:
+      - ./bin/oms-mcp:/srv/oms-mcp:ro
+      # oms-pp config path: $HOME/.config/oms-pp-cli/config.toml
+      - ./env/oms/config.toml:/root/.config/oms-pp-cli/config.toml:ro
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jivo-oms.entrypoints=websecure
+      - traefik.http.routers.jivo-oms.tls.certresolver=letsencrypt
+      - traefik.http.routers.jivo-oms.rule=Host(`jivo-mcp.srv1685505.hstgr.cloud`) && PathPrefix(`/<SECRET-PATH-BASE>/oms`)
+      - traefik.http.routers.jivo-oms.middlewares=jivo-oms-strip
+      - traefik.http.middlewares.jivo-oms-strip.stripprefix.prefixes=/<SECRET-PATH-BASE>/oms
+      - traefik.http.services.jivo-oms.loadbalancer.server.port=7704
+
+  factory:
+    image: alpine:3.20
+    restart: unless-stopped
+    working_dir: /srv
+    command: ["/srv/factory-mcp", "-transport", "http", "-addr", ":7705"]
+    volumes:
+      - ./bin/factory-mcp:/srv/factory-mcp:ro
+      # jivo-factory-pp config path: $HOME/.config/jivo-factory-pp-cli/config.toml
+      - ./env/factory/config.toml:/root/.config/jivo-factory-pp-cli/config.toml:ro
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jivo-factory.entrypoints=websecure
+      - traefik.http.routers.jivo-factory.tls.certresolver=letsencrypt
+      - traefik.http.routers.jivo-factory.rule=Host(`jivo-mcp.srv1685505.hstgr.cloud`) && PathPrefix(`/<SECRET-PATH-BASE>/factory`)
+      - traefik.http.routers.jivo-factory.middlewares=jivo-factory-strip
+      - traefik.http.middlewares.jivo-factory-strip.stripprefix.prefixes=/<SECRET-PATH-BASE>/factory
+      - traefik.http.services.jivo-factory.loadbalancer.server.port=7705
+
+# NOTE (deploy 2026-07-29): this VPS's Traefik runs with network_mode: host and
+  gateway:
+    image: alpine:3.20
+    restart: unless-stopped
+    working_dir: /srv
+    command: ["/srv/jivo-gateway", "--addr", ":7700"]
+    volumes:
+      - ./bin/jivo-gateway:/srv/jivo-gateway:ro
+    networks: [traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.jivo-gateway.entrypoints=websecure
+      - traefik.http.routers.jivo-gateway.tls.certresolver=letsencrypt
+      - traefik.http.routers.jivo-gateway.rule=Host(`jivo-mcp.srv1685505.hstgr.cloud`) && PathPrefix(`/<SECRET-PATH-BASE>/jivo`)
+      - traefik.http.routers.jivo-gateway.middlewares=jivo-gateway-strip
+      - traefik.http.middlewares.jivo-gateway-strip.stripprefix.prefixes=/<SECRET-PATH-BASE>/jivo
+      - traefik.http.services.jivo-gateway.loadbalancer.server.port=7700
+
+  # SAP's Apache in front of the Service Layer refuses any request whose Host
+  # header it doesn't recognise: Host 172.16.1.1:50000 -> 403, while 127.0.0.1 /
+  # localhost / 103.89.45.192 -> 200 (measured 2026-07-30). The sapb1 client
+  # derives Host from SAPB1_HOST:SAPB1_PORT, so it must DIAL 127.0.0.1:50000.
+  # This sidecar shares sapb1's network namespace and provides exactly that:
+  # sapb1 -> 127.0.0.1:50000 (here) -> 172.16.1.1:50000 (sap-bridge, host netns)
+  # -> 127.0.0.1:47500 (reverse tunnel) -> SAP box :50000, Host preserved.
+  sapb1-sl-proxy:
+    image: alpine/socat:latest
+    restart: unless-stopped
+    network_mode: "service:sapb1"
+    depends_on: [sapb1]
+    command: ["TCP-LISTEN:50000,bind=127.0.0.1,fork,reuseaddr", "TCP:172.16.1.1:50000"]
+
+  # --- SAP reachability from anywhere (no office IP whitelist) ---------------
+  # The SAP box dials OUT to this VPS (cron + flock, see
+  # jivo-cli/connections/reverse-tunnel/dial-ports.sh) and parks two listeners on
+  # the VPS loopback: 47500 -> SAP Service Layer :50000, 47301 -> HANA :30015.
+  # Containers cannot reach the host's 127.0.0.1, so these socat bridges (host
+  # netns) republish those ports on the jivo-mcp bridge gateway 172.16.1.1.
+  # If the jivo-mcp subnet ever changes, the bind fails loudly and these restart.
+  sap-bridge:
+    image: alpine/socat:latest
+    restart: unless-stopped
+    network_mode: host
+    command: ["TCP-LISTEN:50000,bind=172.16.1.1,fork,reuseaddr", "TCP:127.0.0.1:47500"]
+
+  hana-bridge:
+    image: alpine/socat:latest
+    restart: unless-stopped
+    network_mode: host
+    command: ["TCP-LISTEN:30015,bind=172.16.1.1,fork,reuseaddr", "TCP:127.0.0.1:47301"]
+
+# has NO named docker network. The default "bridge" network rejects compose
+# endpoint aliases, so we use a compose-managed user-defined bridge; host-netns
+# Traefik reaches its subnet directly and the docker provider advertises each
+# container's IP on it.
+networks:
+  traefik:
+    name: jivo-mcp
+    driver: bridge

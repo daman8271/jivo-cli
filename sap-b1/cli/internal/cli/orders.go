@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const ordersDefaultSelect = "DocEntry,DocNum,DocDate,CardCode,CardName,DocTotal,DocStatus,DocCurrency"
+const ordersDefaultSelect = "DocEntry,DocNum,DocDate,CardCode,CardName,DocTotal,DocumentStatus,DocCurrency"
 
 func newOrdersCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -32,13 +32,13 @@ func newOrdersListCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			extra := ""
 			if open {
-				extra = "DocStatus eq 'O'"
+				extra = openDocumentFilter
 			}
 			return runList(cmd, "Orders", lf, extra, ordersDefaultSelect, "DocDate desc")
 		},
 	}
 
-	cmd.Flags().BoolVar(&open, "open", false, "only open orders (DocStatus eq 'O')")
+	cmd.Flags().BoolVar(&open, "open", false, "only open orders (DocumentStatus eq 'bost_Open')")
 	addListFlags(cmd, &lf, 20)
 	return cmd
 }

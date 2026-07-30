@@ -265,11 +265,23 @@ all share:
 
 ### `--count`
 
-On any list command or `query`, `--count` requests the server-side total via
-OData `$inlinecount=allpages` and prints just the number (SAP returns it as
-`odata.count`). If the server ignores it, sapb1 falls back to counting the
-returned rows and says so. With `--json`, you get `{"count": N, "serverSide":
-true|false}`.
+On any list command or `query`, `--count` asks the server how many rows match
+and prints just that number. It is **one** GET carrying `$top=0` and
+`$inlinecount=allpages` plus your `--filter`, so SAP answers with the total and
+**no rows at all** — roughly 120 bytes on the wire instead of the twenty full
+~200-field documents the old count used to drag back to print a single number.
+That also makes the number atomic: a paged tally can straddle live postings and
+land between two truths.
+
+Because a count returns no rows, `--select`, `--orderby`, `--skip` and
+`--top` have nothing to apply to and `--all` has nothing to paginate; the count
+is a single request either way.
+
+If the Service Layer withholds `odata.count`, `--count` **fails** (exit 6). It
+will not print a row tally in its place — with `$top=0` that substitute is
+always `0`, which would report every entity set as empty.
+
+With `--json` you get `{"count": N, "serverSide": true}`.
 
 ```bash
 sapb1 orders list --open --count
@@ -515,7 +527,9 @@ Register it with Claude Code by adding this to `~/.claude.json` under
 ```
 
 Once registered, an agent can call `sapb1_query` with
-`entity="Orders"`, `filter="DocStatus eq 'O'"` to pull open sales orders.
+`entity="Orders"`, `filter="DocumentStatus eq 'bost_Open'"` to pull open sales
+orders. (The Service Layer property is `DocumentStatus`; `DocStatus` is the HANA
+column name and is rejected outright.)
 
 Full copy-paste registration for Claude Code and Claude Desktop, the tool
 reference, and a stdio smoke-test are in **[MCP.md](MCP.md)**.

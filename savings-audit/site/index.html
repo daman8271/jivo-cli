@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>The Leakage Ledger — File Nº G-92 · JIVO Forensic Cost Audit · 28 Jul 2026</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧾</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Caveat:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4efe4; --paper2:#ede6d6; --ink:#1c170f; --ink2:#5a5142; --hair:rgba(28,23,15,.22); --hair2:rgba(28,23,15,.55);
+  --red:#a32014; --redsoft:rgba(163,32,20,.08);
+  --grn:#1d5c40; --grnsoft:rgba(29,92,64,.09);
+  --och:#8a5f14; --ochsoft:rgba(138,95,20,.10);
+  --blu:#274a78;
+  --serif:"Fraunces",Georgia,serif; --mono:"IBM Plex Mono",ui-monospace,monospace; --pen:"Caveat",cursive;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--serif); font-size:16.5px; line-height:1.62; font-weight:400;
+  -webkit-font-smoothing:antialiased;
+}
+/* paper grain + vignette */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(120% 90% at 50% 0%,transparent 60%,rgba(28,23,15,.07) 100%)}
+.sheet{position:relative;z-index:1;max-width:1000px;margin:0 auto;padding:0 28px}
+@media(min-width:1240px){.sheet{padding:0 60px}}
+a{color:var(--blu)}
+em{font-style:italic}
+b,strong{font-weight:600}
+
+/* ——— type helpers ——— */
+.k{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink2)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.rp{color:var(--red)} .gp{color:var(--grn)} .op{color:var(--och)}
+
+/* ——— masthead ——— */
+.mast{padding:46px 0 0}
+.mast .row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);padding-bottom:10px;border-bottom:1px solid var(--hair2)}
+.mast .row+.row{border-top:none;padding-top:10px;border-bottom:3px double var(--hair2)}
+h1.title{font-size:clamp(46px,8.5vw,96px);font-weight:560;letter-spacing:-.015em;line-height:.98;margin:34px 0 6px;font-variation-settings:"opsz" 144}
+h1.title .amp{font-style:italic;font-weight:340}
+.dek{font-size:clamp(17px,2.2vw,21px);font-style:italic;font-weight:340;color:var(--ink2);max-width:56ch;margin:10px 0 8px}
+.mast .stampline{position:relative;height:0}
+.stamp{display:inline-block;font-family:var(--mono);font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--red);border:3px double var(--red);padding:6px 14px 5px;transform:rotate(-5deg);font-size:13px;opacity:.85;mix-blend-mode:multiply}
+.stamp.grn{color:var(--grn);border-color:var(--grn)}
+.stamp.big{font-size:15px;padding:8px 18px 7px}
+.mast .stamp{position:absolute;right:0;top:-118px}
+@media(max-width:760px){.mast .stamp{display:none}}
+
+/* ——— summary ledger ——— */
+.sumledger{margin:38px 0 8px;border-top:3px double var(--hair2);padding-top:8px}
+.line{display:flex;align-items:baseline;gap:10px;padding:9px 0;border-bottom:1px solid var(--hair);font-size:16px}
+.line .lbl{flex-shrink:0}
+.line .dots{flex:1;border-bottom:2px dotted var(--hair2);transform:translateY(-5px)}
+.line .val{font-family:var(--mono);font-size:17px;font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.line.total{border-bottom:3px double var(--hair2)}
+.struck{position:relative;color:var(--ink2)}
+.struck::after{content:"";position:absolute;left:-3%;right:-3%;top:52%;border-top:2.5px solid var(--red);transform:rotate(-2deg)}
+.corr{font-family:var(--pen);color:var(--red);font-size:21px;margin-left:10px;letter-spacing:0;text-transform:none;font-weight:600}
+
+/* ——— nav ——— */
+nav{position:sticky;top:0;z-index:40;background:rgba(244,239,228,.94);backdrop-filter:blur(6px);border-bottom:1.5px solid var(--hair2);margin-top:34px}
+nav .in{max-width:1000px;margin:0 auto;padding:0 28px;display:flex;gap:2px;overflow-x:auto}
+nav a{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;text-decoration:none;color:var(--ink2);padding:12px 12px;white-space:nowrap;border-bottom:2px solid transparent}
+nav a:hover{color:var(--ink);border-bottom-color:var(--red)}
+
+/* ——— schedules ——— */
+section{padding:64px 0 6px}
+.schedhead{margin-bottom:26px}
+.schedhead .k{display:block;margin-bottom:8px}
+.schedhead h2{font-size:clamp(27px,4vw,38px);font-weight:530;letter-spacing:-.01em;line-height:1.12}
+.schedhead h2 em{font-weight:340}
+.schedhead .rule{margin-top:14px;border-top:1px solid var(--hair2);border-bottom:3px double var(--hair2);height:6px}
+.schedhead .note{margin-top:10px;font-style:italic;color:var(--ink2);font-size:15px;max-width:70ch}
+
+/* ——— action docket ——— */
+.docket{counter-reset:act}
+.act{display:grid;grid-template-columns:64px 1fr auto;gap:18px;padding:20px 0;border-bottom:1px solid var(--hair);align-items:start}
+.act::before{counter-increment:act;content:counter(act,decimal-leading-zero);font-family:var(--mono);font-size:30px;font-weight:600;color:var(--red);line-height:1.1}
+.act .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);border:1px solid var(--hair2);padding:4px 10px;white-space:nowrap;margin-top:5px}
+.act h3{font-size:18px;font-weight:600;margin-bottom:3px}
+.act p{font-size:15.5px;color:#3b342a}
+@media(max-width:640px){.act{grid-template-columns:44px 1fr}.act .who{grid-column:2;justify-self:start}}
+
+/* ——— entries (verified / flags) ——— */
+.entry{position:relative;padding:26px 0 20px;border-bottom:1px solid var(--hair)}
+.entry:last-child{border-bottom:none}
+.entry .head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+.entry h3{font-size:clamp(20px,2.6vw,25px);font-weight:560;letter-spacing:-.005em}
+.entry .amt{font-family:var(--mono);font-size:clamp(20px,2.6vw,26px);font-weight:600;margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums}
+.entry p{margin:8px 0;color:#352e24;font-size:15.8px}
+.entry ul{margin:10px 0 4px 22px}
+.entry li{margin:5px 0;color:#352e24;font-size:15.3px}
+.entry li::marker{color:var(--red)}
+.vergrn .entry li::marker{color:var(--grn)}
+.marginnote{position:absolute;right:-215px;top:34px;width:180px;font-family:var(--pen);font-size:21px;line-height:1.15;color:var(--red);transform:rotate(-2.5deg);opacity:.9}
+@media(max-width:1380px){.marginnote{display:none}}
+
+/* re-verification insert — live-checked after the file closed */
+.reverif{display:block;margin-top:11px;padding:10px 14px;border-left:4px solid var(--blu);background:rgba(39,74,120,.06);font-size:.93em;color:#2c3b52}
+.reverif::before{content:"Re-verified 30-Jul-2026 · ";font-family:var(--mono);font-size:.82em;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--blu)}
+.reverif b{color:#1c2c44}
+
+/* multiplier note */
+.capnote{margin:30px 0 4px;border:1.5px solid var(--hair2);border-left:6px solid var(--blu);padding:20px 24px;background:rgba(39,74,120,.05)}
+.capnote .k{color:var(--blu);margin-bottom:6px;display:block}
+.capnote .rate{font-family:var(--mono);font-size:44px;font-weight:600;color:var(--blu);float:right;margin:0 0 6px 22px;line-height:1}
+.capnote p{font-size:15.3px;color:#352e24}
+@media(max-width:560px){.capnote .rate{float:none;display:block}}
+
+/* ——— disposition (kill) ledger ——— */
+.scrollx{overflow-x:auto;border:1.5px solid var(--hair2)}
+table{border-collapse:collapse;width:100%}
+.disp{min-width:880px;font-size:14px}
+.disp th{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);text-align:left;padding:12px 14px;border-bottom:2px solid var(--hair2);background:var(--paper2)}
+.disp td{padding:11px 14px;border-bottom:1px solid var(--hair);vertical-align:top;color:#352e24}
+.disp td.cl,.disp td.vd{font-family:var(--mono);font-size:13.5px;font-weight:600;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.disp tr.dead td.cl{color:var(--red);text-decoration:line-through;text-decoration-thickness:2px;font-weight:500}
+.disp tr.dead td.vd{color:var(--red)}
+.disp tr.live td.vd{color:var(--grn)}
+.disp tr.flg td.vd{color:var(--red);font-weight:600}
+.disp tr.pnd td.vd{color:var(--och)}
+.disp td.why{min-width:300px;font-size:13.8px}
+.disp tr:hover td{background:rgba(28,23,15,.035)}
+
+/* ——— pending ——— */
+.pend2{display:grid;grid-template-columns:1fr 1fr;gap:0 44px}
+@media(max-width:820px){.pend2{grid-template-columns:1fr}}
+.pitem{padding:18px 0;border-bottom:1px solid var(--hair)}
+.pitem h3{font-size:17px;font-weight:600;margin-bottom:4px}
+.pitem h3 .num{color:var(--och)}
+.pitem p,.pitem li{font-size:14.6px;color:#3b342a}
+.pitem ul{margin:6px 0 0 20px}
+.pitem li{margin:3px 0}
+.pitem li::marker{color:var(--och)}
+
+/* ——— annexure ——— */
+.annex{min-width:940px;font-size:12.8px;font-family:var(--mono)}
+.annex th{position:sticky;top:0;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);text-align:left;padding:10px 10px;border-bottom:2px solid var(--hair2);background:var(--paper2);z-index:2}
+.annex td{padding:7px 10px;border-bottom:1px solid var(--hair);vertical-align:top;font-variant-numeric:tabular-nums}
+.annex td.r{text-align:right;white-space:nowrap;font-weight:500}
+.annex td.t{min-width:330px;font-family:var(--serif);font-size:14px}
+.annex tr:hover td{background:rgba(28,23,15,.04)}
+.annex tr.ko td{color:#7a7161}
+.annex tr.ko td:nth-child(2){color:var(--red);text-decoration:line-through;text-decoration-thickness:1.5px}
+.annex tr.ok td.t{font-weight:600}
+.pill{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.08em;padding:1px 7px;border:1.5px solid;white-space:nowrap;text-transform:uppercase}
+.pill.ok{color:var(--grn);border-color:var(--grn);background:var(--grnsoft)}
+.pill.ko{color:var(--red);border-color:var(--red);background:var(--redsoft)}
+.pill.rev{color:var(--blu);border-color:var(--blu);background:rgba(39,74,120,.07)}
+.pill.flag{color:var(--red);border-color:var(--red);background:var(--redsoft);transform:rotate(-2deg)}
+.pill.pend{color:var(--och);border-color:var(--och);background:var(--ochsoft)}
+.pill.na{color:var(--ink2);border-color:var(--hair2)}
+.annexwrap{max-height:660px;overflow:auto;border:1.5px solid var(--hair2)}
+
+/* ——— method / footer ——— */
+.meth{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 40px}
+@media(max-width:820px){.meth{grid-template-columns:1fr}}
+.meth .m{padding:16px 0;border-top:1px solid var(--hair2)}
+.meth h3{font-size:16px;font-weight:600;margin-bottom:6px}
+.meth p{font-size:14px;color:#3b342a}
+code{font-family:var(--mono);font-size:12.5px;background:var(--paper2);border:1px solid var(--hair);padding:1px 5px}
+.sig{margin-top:44px;border-top:3px double var(--hair2);padding-top:22px;display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:flex-end}
+.sig .who .name{font-family:var(--pen);font-size:34px;color:var(--ink);line-height:1}
+.sig .who .role{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink2);margin-top:2px}
+.confband{margin:40px 0 0;border:2px solid var(--red);color:var(--red);padding:14px 18px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;background:var(--redsoft)}
+footer{padding:30px 0 70px;color:var(--ink2);font-size:13px;font-family:var(--mono)}
+
+/* ——— load choreography ——— */
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes thump{0%{opacity:0;transform:rotate(-5deg) scale(1.6)}60%{opacity:.9;transform:rotate(-5deg) scale(.96)}100%{opacity:.85;transform:rotate(-5deg) scale(1)}}
+.mast .row,.h1w,.dek,.sumledger .line{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
+.h1w{animation-delay:.08s}.dek{animation-delay:.16s}
+.sumledger .line:nth-child(1){animation-delay:.28s}.sumledger .line:nth-child(2){animation-delay:.36s}.sumledger .line:nth-child(3){animation-delay:.44s}.sumledger .line:nth-child(4){animation-delay:.52s}.sumledger .line:nth-child(5){animation-delay:.60s}.sumledger .line:nth-child(6){animation-delay:.68s}
+.mast .stamp{animation:thump .55s .85s cubic-bezier(.2,.8,.3,1.2) both}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+@media print{nav,.confband{display:none}body{background:#fff}body::before,body::after{display:none}}
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+<!-- ═══════════ MASTHEAD ═══════════ -->
+<header class="mast">
+  <div class="row"><span>Strictly private &amp; confidential</span><span>File Nº G-92</span><span>28–29 July 2026 · Delhi</span></div>
+  <div class="row"><span>Jivo Wellness Pvt Ltd — Oil · Mart · Beverages</span><span>Forensic pass over the live books · CLOSED · re-verified against live SAP 30-Jul-2026</span></div>
+  <div class="stampline"><span class="stamp big">Adversarially verified ×3</span></div>
+  <div class="h1w"><h1 class="title">The Leakage<br>Ledger<span class="amp">.</span></h1></div>
+  <p class="dek">One evening against the books, one morning to finish the job: 146 hypotheses, 68 claims worth ₹341 crore — every single one cross-examined by an independent skeptic, until only real money was left standing. And one thing worse than money.</p>
+
+  <div class="sumledger">
+    <div class="line"><span class="lbl">Claimed by 68 findings, gross</span><span class="dots"></span><span class="val struck">₹341.30 Cr</span><span class="corr">smoke.</span></div>
+    <div class="line"><span class="lbl rp">Killed under cross-examination (≈97.5% of claimed value)</span><span class="dots"></span><span class="val rp">(₹332.90 Cr)</span></div>
+    <div class="line"><span class="lbl gp"><b>Verified one-time recoveries &amp; working-capital releases</b></span><span class="dots"></span><span class="val gp">₹8.17 Cr</span></div>
+    <div class="line"><span class="lbl gp"><b>Verified recurring, per annum</b> (GST on promo credit notes ₹14.5 L + statutory calendar ₹7.8 L)</span><span class="dots"></span><span class="val gp">₹22.3 L</span></div>
+    <div class="line"><span class="lbl rp"><b>Matters under red flag</b> — suspected P&amp;L inflation (RM0000052) + ₹1.41 Cr input credit from no-GSTIN suppliers</span><span class="dots"></span><span class="val rp">₹8.21 Cr+</span></div>
+    <div class="line total"><span class="lbl">Measured cost of capital — releasing the ₹8.17 Cr is worth ≈₹67 L/yr in interest, on top</span><span class="dots"></span><span class="val" style="color:var(--blu)">8.25% p.a.</span></div>
+  </div>
+</header>
+
+</div>
+
+<nav><div class="in">
+  <a href="#a">A · Actions</a><a href="#b">B · Verified</a><a href="#c">C · Red flags</a><a href="#d">D · Disposition</a><a href="#e">E · Process fixes</a><a href="#annex">Annexure · 68</a><a href="#meth">Method</a>
+</div></nav>
+
+<div class="sheet">
+
+<!-- ═══════════ SCHEDULE A ═══════════ -->
+<section id="a">
+  <div class="schedhead">
+    <span class="k">Schedule A</span>
+    <h2>Instructions for the week, <em>in order of cheapness</em></h2>
+    <div class="rule"></div>
+    <p class="note">The first item is money for the cost of a signature. Owners are suggested, not assigned.</p>
+  </div>
+  <div class="docket">
+    <div class="act"><div><h3>Revalue the invisible oil BEFORE the July close — ₹1.43 Cr, this week.</h3><p>131,789 litres of recovered mustard oil, olive oil and ghee sit in the goods-return warehouse at a book value of <b>₹0.00</b> — de-packed from returns on 23-Jul with keyboard-mash batch numbers and no expiry dates. If July closes first, the ₹2.04 Cr “variance” buries into cost of goods sold and the oil stays invisible until it is dumped or silently re-consumed. Run the SAP inventory revaluation (the TransType-162 route Accounts already used in April–May), QC the batches, and feed the oil back into production instead of buying fresh.</p></div><span class="who">Costing + Plant · CFO sign-off</span></div>
+    <div class="act"><div><h3>The Blessing set-off letter — ₹29.66 lakh for a signature.</h3><p>JIVO Oil owes Blessing Advertising ₹29.66 L as a vendor; Beverages is owed ₹3.11 Cr by the same company — same PAN, same legal entity on our side. One adjustment letter recovers ₹29.66 L without Blessing paying a rupee; then the demand letter for the balance, and stop supplying (a fresh ₹21.93 L invoice went out 30-Jun-2026).</p></div><span class="who">Accounts + CFO</span></div>
+    <div class="act"><div><h3>Allocate B S A’s ₹1.11 Cr receipt — then sweep the whole debtor book.</h3><p>B S A Engineering’s “₹1.11 Cr overdue” was <b>paid on 16-Jul-2026</b> — the receipt sits on-account while 30 invoices still show open. Real balance: ₹4.71 L. The same unallocated-receipt pattern is corrupting every aged-debtor report JIVO runs; stop the collections team chasing money already in the bank.</p></div><span class="who">Financial Controller</span></div>
+    <div class="act"><div><h3>Write off Future Retail before the 15-Sep advance-tax instalment — ₹23.80 lakh of cash tax.</h3><p>₹94.57 L has been provided since migration but never written off, so the s.36(1)(vii) deduction was never claimed (<i>Vijaya Bank v CIT</i>). The write-off has zero P&amp;L impact — the charge was taken years ago. Confirm the prior-year add-back in Form 3CD with the tax auditor.</p></div><span class="who">CFO + tax auditor</span></div>
+    <div class="act"><div><h3>Put the RM0000052 question to the owner — privately.</h3><p>₹8.21 Cr of inventory never bought, sold, or moved, created by manual year-end entries. Who is “HK VJI”, what supports the ₹6.99 Cr entry dated 31-Mar-2026 but keyed 12-Jun-2026 — and dip-test warehouse BH-OT this week to establish whether 294,992 litres physically exist. ₹3.89 Cr is provably over-valued regardless. See Schedule C, Nº 1.</p></div><span class="who">Owner / CFO only</span></div>
+    <div class="act"><div><h3>Legal notice on AB Enterprises within 7 days — ₹1.29 Cr exposure.</h3><p>Dead for 306 days, trading stopped, credit limit back-fitted to the debt plus ₹3, and the customer has no GSTIN on file despite ₹14.04 Cr of lifetime loose-oil sales. Demand, then s.9 IBC / s.138 as applicable; provision at half-year if silent. Banked at 50% workout = ₹64.4 L.</p></div><span class="who">Legal + Financial Controller</span></div>
+    <div class="act"><div><h3>Secure the HS Filling advance — ₹2.40 Cr is already out the door; then work the long tail.</h3><p><b>₹2.40 Cr</b> sits with a no-GSTIN vendor against a bottling plant <b>91 days</b> past its delivery date (due 30-Apr-2026). ₹2.90 Cr of cash left before a machine arrived; ₹50 L came back on 14-May-2026, so ₹2.40 Cr is the live exposure — and none of it is a saving. Note that <em>freezing</em> is weak leverage: only ~₹46 L of the ₹3.36 Cr order is still unpaid. The real asks are a firm despatch date or a bank guarantee against the advance, and a GSTIN on the vendor master before the next rupee moves. Meanwhile the verified 60+ worklist — <b>₹97.3 L gross, ₹71.7 L expected after dormancy haircuts</b>, across 15 accounts — goes to collections on a 30-day clock. CSD, Zomato Hyperpure, BigBasket, Walmart, DMart, Metro and the two instant same-entity set-offs are ₹61.1 L of that; the remaining ₹10.6 L sits in five dormant accounts that need a decision, not a call.</p></div><span class="who">Purchase · Collections</span></div>
+    <div class="act"><div><h3>Two document-type fixes worth ₹22.3 L every year.</h3><p>Issue promotional credit notes as GST credit notes (₹14.5 L/yr, up to ₹47 L restructured) and put a statutory payment calendar with a named owner under TDS/GST/advance-tax (₹7.8 L/yr of pure late-fee waste). Plus: squeeze employee imprest floats 40% (₹42.8 L released) and recover the ₹4.06 L of genuinely dormant advances.</p></div><span class="who">Accounts / GST desk · HR</span></div>
+  </div>
+</section>
+
+<!-- ═══════════ SCHEDULE B ═══════════ -->
+<section id="b" class="vergrn">
+  <div class="schedhead">
+    <span class="k">Schedule B</span>
+    <h2>Verified recoveries — <em>₹8.17 Cr that survived three rounds of skeptics</em></h2>
+    <div class="rule"></div>
+    <p class="note">Each entry below was independently re-derived, with different SQL, by an agent instructed to destroy it. All 68 sweep claims have now been cross-examined; nothing remains unverified.</p>
+  </div>
+
+  <div class="entry">
+    <div class="marginnote">₹29.66 L is one letter away.</div>
+    <div class="head"><span class="stamp grn">Verified · revised upward</span><h3>Blessing Advertising Pvt Ltd — the overdue that grew</h3><span class="amt gp">₹3.11 Cr</span></div>
+    <p>Beverages sold <b>₹3.67 Cr of 200 ml tonic water</b> (FG0000273, ~2.4 lakh cases, 16 production orders) to Blessing Advertising — one of JIVO’s own ad agencies — on a <b>single sales order dated 30-Sep-2025, on cash-and-carry zero-day terms</b>. Ten months on, ₹3.11 Cr is outstanding. The goods are real and dispatched; <b>≈₹1.04 Cr of GST and cess has already been paid to the government out of JIVO’s cash.</b></p>
+    <ul>
+      <li>They are paying — <b>exactly ₹5,83,330 a month since December 2025</b> (₹52.5 L collected; latest 23 &amp; 27 July). At that pace: <b>53 months to clear</b>, at zero interest.</li>
+      <li>The exposure was <em>authorised</em>: a <b>₹3.23 Cr credit limit</b> — 7.6× the next-largest external Beverages customer — with the customer master last touched 30-Jun-2026, the day the newest ₹21.93 L invoice was raised.</li>
+      <li>This single account is why Beverages collects in <b>108 days</b> while Oil collects in 12 and Mart in 19; it is ~20% of Beverages’ entire last-twelve-month sales.</li>
+      <li>Interest value of collecting it, at the measured 8.25%: <b>≈ ₹25.7 L per year</b>, on top of principal.</li>
+    </ul>
+  </div>
+
+  <div class="entry">
+    <div class="head"><span class="stamp grn">Verified</span><h3>GST never recovered on promotional credit notes</h3><span class="amt gp">₹14.5 L <span style="font-size:.6em">/yr</span></span></div>
+    <p>JIVO grants <b>₹3.94 Cr a year of promotional money</b> — brand fund to Zepto and the q-commerce platforms, promotional discounts to Walmart, Metro, Reliance Retail and the large distributors — through credit notes carrying <b>zero GST</b>, after paying 5.2–5.9% output tax on the full invoice value. The spend itself is properly booked and budgeted under SELLING EXPENSE (accounts 5500004 / 5640002); the tax leak is not. Issued correctly as GST credit notes, ≈ <b>₹14.5 L/yr</b> returns in cash — up to <b>₹47 L/yr</b> if the brand-fund portion is restructured as a taxable promotional service.</p>
+  </div>
+
+  <div class="entry">
+    <div class="marginnote">oil the books can’t see.</div>
+    <div class="head"><span class="stamp grn">Verified · round 2 finish</span><h3>The invisible oil — 1.32 lakh litres on the books at ₹0</h3><span class="amt gp">₹1.43 Cr</span></div>
+    <p>July’s ₹2.04 Cr “production variance” is neither yield loss nor a recovery — <b>296 normal production orders produced exactly ₹0.00 of variance.</b> All of it came from 114 <em>disassembly</em> orders, 110 run on 23-Jul in the goods-return warehouse: 72,326 units of returned finished goods (₹2.09 Cr) were de-packed, the packaging came back at ₹13.0 L — and <b>131,789 litres of recovered bulk oil and ghee entered stock at ₹0.00</b>, under batch numbers like “45456456465” with no expiry dates. Priced at JIVO’s own issue rates the oil is worth ₹1.91 Cr (97.3% of the charge). Banked at 75% pending QC = ₹1.43 Cr. <b>Time-critical:</b> three earlier months’ variances were quietly journaled away as “Variance A/c Reconsiled” — if July closes before the revaluation, the oil stays invisible at nil.</p>
+  </div>
+
+  <div class="entry">
+    <div class="head"><span class="stamp grn">Verified · round 3</span><h3>Named receivables — after the traps ate two-thirds of the claim</h3><span class="amt gp">₹1.66 Cr</span></div>
+    <p><b>AB Enterprises ₹64.4 L</b> (exposure ₹1.29 Cr confirmed to the rupee by three independent measures, banked at 50% workout — dead 306 days, no GSTIN on file). <b>Long tail ₹72.6 L</b> — that is the <em>expected</em> recovery after dormancy haircuts on <b>₹98.6 L gross</b> across 15 accounts, not a worklist value. CSD, Zomato Hyperpure, BigBasket, Walmart, DMart, Metro and two same-legal-entity set-offs executable without consent (Media Mind, Idea Publicity) carry ₹62.0 L of it; the other ₹10.6 L is five dormant accounts weighted at 30–60%. <span class="reverif">Re-derived live 30-Jul: BigBasket (Oil) paid <b>₹1,29,607</b> that day (receipt 726246886), so gross is now ₹97.3 L and <b>₹71.7 L remains outstanding</b> — the worklist is already collecting. Every other account re-derived unchanged.</span> <b>Future Retail ₹23.8 L</b> of unclaimed tax deduction, confirmed against the provision GL to the paisa. And one spectacular kill: <b>B S A Engineering’s “₹1.11 Cr overdue” was received on 16-Jul-2026</b> — posted on-account, invoices left open, claim overstated 24×. Real balance ₹4.7 L.</p>
+  </div>
+
+  <div class="entry">
+    <div class="head"><span class="stamp grn">Verified · round 3</span><h3>Stock discipline, floats &amp; the small leaks</h3><span class="amt gp">₹1.98 Cr</span></div>
+    <p><b>Slow stock ₹98.0 L</b> genuinely liquidatable (finished goods + raw material over policy cover, rebuilt on a 365-day window; SKU-printed packaging excluded — it unwinds by consumption, not sale). <b>Deferrable live POs ₹41.5 L</b> on already-over-covered items. <b>Employee floats ₹42.8 L</b> releasable via per-head imprest caps (the ₹1.06 Cr pool is real; ₹13.8 L of it turned out to be staff insurance mis-booked). <b>Dormant advances + ALO ₹4.1 L</b> and <b>stoppable duplicate bills + encashable credit notes ₹4.7 L</b>. The famous ₹1.42 Cr ghee PO survived as a <em>good buy</em> — 12% cheaper from a new vendor for a live export line — and the ₹5.94 Cr “stale PO exposure” died on the data: zero of 17,093 goods receipts in 12 months landed against a PO older than a year.</p>
+  </div>
+
+  <div class="entry">
+    <div class="head"><span class="stamp grn">Verified</span><h3>Seven stale advances — cash out, nothing back</h3><span class="amt gp">₹6.55 L</span></div>
+    <p>Of ₹5.10 Cr first flagged as “paid to vendors who never invoiced”, the skeptic dissected every rupee: 98.7% proved to be committed capital expenditure, land consideration, journal-only balances, or ordinary float. What remains is <b>seven vendors holding ₹6,55,011 of real cash paid at least 180 days ago</b> — no invoice, no purchase order, no activity. Recoverable on demand.</p>
+  </div>
+
+  <div class="capnote">
+    <span class="rate num">8.25%</span>
+    <span class="k">Note on cost of capital — the conversion rate</span>
+    <p>Read straight off the ledger, not estimated: Indian Bank cash-credit interest of <b class="num">₹2,33,56,352</b> in FY25-26 on a day-weighted average drawn balance of ₹28.32 Cr — <b>8.25% effective</b> (FY26-27 running at 8.0%; blended across all bank debt, 8.93%). Total bank debt stands at <b>₹71.3 Cr</b> — not the ₹56.5 Cr first estimated — plus ₹10.43 Cr of related-party loans (Gurpreet Singh ₹6.82 Cr · Nirmal Kaur ₹2.11 Cr · Charanjeet Kaur ₹1.50 Cr). <b>Every ₹1 crore of working capital released anywhere in this file pays down the overdraft and saves ₹8.25 lakh a year.</b> Not a saving by itself — the multiplier that prices every other line.</p>
+  </div>
+</section>
+
+<!-- ═══════════ SCHEDULE C ═══════════ -->
+<section id="c">
+  <div class="schedhead">
+    <span class="k">Schedule C</span>
+    <h2>Matters requiring attention — <em>worth more than the savings</em></h2>
+    <div class="rule"></div>
+    <p class="note">Not bankable rupees. Things found while hunting for savings that the owner and CFO need to see.</p>
+  </div>
+
+  <div class="entry">
+    <div class="marginnote">who signs off as “HK VJI”?</div>
+    <div class="head"><span class="stamp">Red flag Nº 1</span><h3>RM0000052, “Loose Refined Olive Oil (Dark Colour)”</h3><span class="amt rp">₹8.21 Cr</span></div>
+    <p><b>₹8,21,15,664 of inventory — 294,993 litres in bulk tank BH-OT — that has never been bought, sold, moved, transferred, produced, or consumed. Ever.</b> Zero rows across purchases, sales, deliveries, production orders, bills of material, and transfers. Its entire value arises from <b>six manually keyed goods-receipt/issue documents, each dated to a financial year-end</b> (31-Mar-2025, 1-Apr-2025, 31-Mar-2026), each debiting inventory and crediting cost of goods sold — lifting cost out of the P&amp;L onto the balance sheet: ₹3.60 Cr into FY24-25 profit, ₹4.61 Cr into FY25-26 profit (2.4% of turnover).</p>
+    <ul>
+      <li>The largest entry — <b class="num">₹6.99 Cr, 249,949 L, dated 31-Mar-2026 — was keyed on 12-Jun-2026, seventy-three days after year-close.</b> Its only explanation is a free-text note: <b>“AS PER HK VJI”.</b></li>
+      <li>Two goods issues carry quantities <b>reverse-engineered from round rupee targets</b>: 7,375.17 L × ₹271.1803 = exactly ₹20,00,000.00; 9,956.48 L × ₹271.1803 = ₹27,00,000.01. Real oil moves in round litres; book entries move in round rupees.</li>
+      <li>In the same 31-Mar-2026 close, by the same user, prime-grade oil was valued at <b class="num">₹146.57/L</b> — while this off-colour reject grade received <b class="num">₹279.66/L — 1.91× higher.</b> On that alone, <b>₹3.89 Cr is provably over-valued.</b></li>
+      <li>Scale: 13% of Oil’s entire ₹63.21 Cr inventory; 31% of the RAW MATERIAL OIL ledger.</li>
+    </ul>
+  </div>
+
+  <div class="entry">
+    <div class="head"><span class="stamp">Red flag Nº 2</span><h3>HS Filling &amp; Packaging, Sonipat — paid first, everything else pending</h3><span class="amt rp">₹2.40 Cr outstanding</span></div>
+    <p>Beverages paid out <b>₹2.90 Cr — 86% of the ₹3.36 Cr order — before a single machine arrived</b>: a 240-BPM water plant (₹48 L), a CSD plant (₹52 L) and a 300-BPM water plant (₹1.85 Cr), booked to GL 1204003 PLANT &amp; MACHINERY–WATER. <b>₹50 L came back on 14-May-2026</b> by journal entry (“AMOUNT RECD IN BEV”, contra GL 1110109 Oil-internal), so <b>the advance the vendor still holds is ₹2.40 Cr</b> — that is the exposure, and it is the figure carried at ₹0 bankable. ₹2.90 Cr is the gross-cash-out number; the two are not interchangeable. Delivery fell due <b>30-Apr-2026 — 91 days overdue at 30-Jul-2026</b>. ₹1.00 Cr of the money left on 16 and 20 July — two and a half months <em>after</em> the missed date — in same-day twin transfers (₹70 L ×2, ₹50 L ×2, identical narrations). The vendor holds <b>no GSTIN in any of the three companies</b>; ₹51.3 L of GST inside the POs cannot be claimed until a tax invoice exists. For scale: the ₹2.90 Cr paid is 63% of everything Beverages sold in those four months.</p>
+  </div>
+
+  <div class="entry">
+    <div class="marginnote">arithmetic ≠ money.</div>
+    <div class="head"><span class="stamp">Red flag Nº 3</span><h3>The “returns explosion” is largely invoice recycling</h3><span class="amt rp">fake sales, fake returns</span></div>
+    <p>Oil’s return rate genuinely tripled in two years (1.7% → 4.3%) — but the documents show the pattern: <b>invoice → full credit note days later → identical re-invoice.</b> R K Worldinfocom: billed ₹3.33 L + ₹15.87 L on 12-Nov; credited both to the rupee on 13-Nov; re-billed 29-Nov; credited 13-Dec; re-billed 21-Jan — <b>one consignment documented five times</b> (three “sales”, two “returns”, no goods moving). Kailian Foods (47%) and Comed Chemicals (33%) show the same signature. Consequences: sales and returns both overstated, GST documentation exposure, and no distributor-behaviour problem where one was claimed. Separately real: <b>62% of Oil returns (₹6.04 Cr) carry no salesperson code</b> — returns cannot be netted against any incentive scheme today.</p>
+  </div>
+
+  <div class="entry">
+    <div class="head"><span class="stamp">Red flag Nº 4</span><h3>The books do not reconcile themselves — on either side</h3><span class="amt rp">₹292.57 Cr gross</span></div>
+    <p>SAP shows <b>₹292.57 Cr of “open” purchase invoices in Oil against a true payable of ₹105.94 Cr</b> — payments are almost never applied to invoices (the down-payment tables are empty; everything sits on-account). AL GHURAIR shows ₹93.70 Cr “unpaid” while its actual balance is a ₹2.35 L debit <em>in JIVO’s favour</em>. Round 3 proved the <b>debtor side rots the same way</b>: B S A Engineering’s ₹1.11 Cr “overdue” had been received two weeks earlier and left on-account — the collections team was about to chase money already in the bank. <b>No cash is missing — but every payment run and every aged-debtor report built on document status is wrong.</b> Fix: monthly internal reconciliation per partner, both ledgers; never work from the open-document lists.</p>
+  </div>
+
+  <div class="entry">
+    <div class="head"><span class="stamp">Red flag Nº 5</span><h3>GSTIN hygiene — credit taken, counterparties unverifiable</h3><span class="amt rp">₹1.41 Cr+</span></div>
+    <p>Found while killing the ITC finding: JIVO Oil has claimed <b>₹1.41 Cr of GST input credit from suppliers with no GSTIN recorded in the ERP</b> — every rupee at risk in a 2A/2B mismatch — plus a <b>₹52.1 L dead ITC asset</b> parked in the GL. The pattern repeats across the file: HS Filling (₹2.90 Cr paid out, ₹2.40 Cr still outstanding, no GSTIN), AB Enterprises (<b>₹14.04 Cr of lifetime loose-canola sales to a customer with no GSTIN on file</b>, near-zero recorded cost, credit limit back-fitted to the debt plus ₹3). Rule worth making today: <b>no vendor payment and no customer credit above ₹10 L without a GSTIN in the master.</b></p>
+  </div>
+</section>
+
+<!-- ═══════════ SCHEDULE D ═══════════ -->
+<section id="d">
+  <div class="schedhead">
+    <span class="k">Schedule D</span>
+    <h2>Disposition of claims — <em>how ₹341 Cr became ₹8.4 Cr</em></h2>
+    <div class="rule"></div>
+    <p class="note">Every material claim was re-derived by an independent skeptic told to refute it. The arithmetic almost always held. The money usually did not. This is the file’s honesty layer.</p>
+  </div>
+  <div class="scrollx"><table class="disp">
+    <tr><th>Claim</th><th style="text-align:right">Claimed</th><th style="text-align:right">Verified</th><th>Disposition</th></tr>
+    <tr class="dead"><td>A/P sub-ledger “gap” (₹292.57 Cr shown vs ₹105.94 Cr true)</td><td class="cl">₹186.63 Cr</td><td class="vd">₹0</td><td class="why">“Open” ≠ unpaid: SAP never matches payments to invoices. Control matter — became Red flag Nº 4.</td></tr>
+    <tr class="dead"><td>Credit notes issued with no base document</td><td class="cl">₹25.83 Cr</td><td class="vd">₹1.20 Cr exposure</td><td class="why">39% intercompany (JIVO MART); the bulk re-derivable. The control fix stands: block base-less credit notes.</td></tr>
+    <tr class="dead"><td>₹13.16 Cr “advanced to two individuals”</td><td class="cl">₹13.16 Cr</td><td class="vd">₹0</td><td class="why">Deliberate Bakharpur land assembly — fixed-asset GLs named with khasra/kila survey numbers. Related-party disclosure item.</td></tr>
+    <tr class="dead"><td>Mart return rate 13.3% against a 10% allowance</td><td class="cl">₹9.91 Cr/yr</td><td class="vd">₹0.60 Cr/yr</td><td class="why">₹2.76 Cr was trade spend mislabelled as returns; more was intercompany and double counts. A negotiable slice survives.</td></tr>
+    <tr class="dead"><td>Anju Mangla: ₹9.76 Cr invoice “unpaid” while ₹17.86 Cr paid</td><td class="cl">₹9.76 Cr</td><td class="vd">₹0</td><td class="why">Land invoice = fixed asset (GL 1203017); a ₹3.20 Cr contra journal was missed; advances match the deal consideration.</td></tr>
+    <tr class="dead"><td>₹9.31 Cr of goods “pushed back” by Mart in two days</td><td class="cl">₹9.31 Cr</td><td class="vd">₹0</td><td class="why">Those same two days, Oil shipped Mart <em>more</em> than came back (+₹1.25 Cr); the intercompany mirror reconciles to the rupee.</td></tr>
+    <tr class="flg"><td>Off-spec olive oil — “slow stock, blend it down”</td><td class="cl">₹8.21 Cr</td><td class="vd">RED FLAG</td><td class="why">Worse than dead stock: it never existed as bought-and-sold oil. Became Red flag Nº 1.</td></tr>
+    <tr class="live"><td>36 vendors paid, zero invoices ever raised</td><td class="cl">₹5.10 Cr</td><td class="vd">₹6.55 L</td><td class="why">98.7% is committed capex, land, journal-only or normal float. Seven stale cash advances survive as bankable.</td></tr>
+    <tr class="dead"><td>Vendor advances held against “unpaid” bills</td><td class="cl">₹4.05 Cr</td><td class="vd">₹0</td><td class="why">Internal reconciliation moves no cash; balances already net. Ordinary float of active oil suppliers — DHANLAXMI swung −₹9,319 → +₹2.13 Cr in four weeks.</td></tr>
+    <tr class="live"><td>Trade spend “hidden” inside credit notes</td><td class="cl">₹3.87 Cr/yr</td><td class="vd">₹14.5 L/yr</td><td class="why">The spend is correctly booked and budgeted — but the credit notes carry zero GST. The claim was wrong; the money was elsewhere.</td></tr>
+    <tr class="dead"><td>Oil distributor returns above a 5% allowance</td><td class="cl">₹3.56 Cr/yr</td><td class="vd">₹0</td><td class="why">The “worst offenders” return nothing — it is invoice recycling (Red flag Nº 3). A billing-discipline matter.</td></tr>
+    <tr class="live"><td>Blessing Advertising overdue</td><td class="cl">₹2.89 Cr</td><td class="vd">₹3.11 Cr ▲</td><td class="why"><b>Survived and grew.</b> Real goods, authorised limit, ₹29.66 L instant set-off. The file’s one clean catch.</td></tr>
+    <tr class="flg"><td>HS Filling ₹2.40 Cr advance, no invoices</td><td class="cl">₹2.40 Cr</td><td class="vd">RED FLAG</td><td class="why">Capex-in-transit for the bottling line, not recoverable — but 86% prepaid (₹2.90 Cr gross out, ₹50 L returned 14-May) to a no-GSTIN vendor, 91 days late at 30-Jul. Red flag Nº 2.</td></tr>
+    <tr class="dead"><td>CC interest ₹2.07 Cr at 7.3%</td><td class="cl">₹2.07 Cr/yr</td><td class="vd">₹2.34 Cr @ 8.25%</td><td class="why">Bigger than claimed — but it is the multiplier, not a standalone saving; counting it separately double-counts.</td></tr>
+    <tr class="live"><td>July WIP / production variance</td><td class="cl">₹2.04 Cr</td><td class="vd">₹1.43 Cr</td><td class="why">Not yield loss — 131,789 L of de-packed oil received into stock at ₹0.00. The variance IS the un-costed oil; revalue before the July close.</td></tr>
+    <tr class="dead"><td>Stale open POs older than 12 months</td><td class="cl">₹5.94 Cr</td><td class="vd">₹0</td><td class="why">Zero of 17,093 goods receipts in 12 months (₹528 Cr) landed against a PO &gt;1yr — measured conversion risk is nil; 58% was capex anyway. Close them for MRP hygiene, not money.</td></tr>
+    <tr class="dead"><td>Inventory valuation drift (zero-stock negative-value rows)</td><td class="cl">₹3.37 Cr</td><td class="vd">₹0</td><td class="why">The stored warehouse field disagrees with SAP’s own movement ledger on exactly those 1,249 rows — display artifact, GL unaffected.</td></tr>
+    <tr class="live"><td>Slow stock &gt;12-month cover + dead-item POs</td><td class="cl">₹5.15 Cr</td><td class="vd">₹1.39 Cr</td><td class="why">Rebuilt on a 365-day window; SKU-printed packaging excluded; the ₹1.42 Cr ghee PO turned out to be a 12%-cheaper good buy. Liquidatable FG/RM + deferrable POs survive.</td></tr>
+    <tr class="live"><td>AB Enterprises frozen receivable</td><td class="cl">₹1.29 Cr</td><td class="vd">₹64.4 L</td><td class="why">Exposure confirmed to the rupee, three ways. Banked at 50% workout — dead 306 days, no GSTIN, credit limit back-fitted to the debt.</td></tr>
+    <tr class="dead"><td>B S A Engineering overdue</td><td class="cl">₹1.15 Cr</td><td class="vd">₹4.7 L</td><td class="why"><b>The money arrived 16-Jul-2026</b> — receipt posted on-account, invoices left open. Claim overstated 24×. Allocate the receipt; sweep the book for the pattern.</td></tr>
+    <tr class="live"><td>Employee advances &amp; imprest floats</td><td class="cl">₹1.06 Cr</td><td class="vd">₹42.8 L</td><td class="why">Pool is real (₹13.8 L was mis-booked staff insurance); 40% squeeze via per-head caps is executable without touching operations.</td></tr>
+    <tr class="live"><td>Long-tail receivables 60+ days</td><td class="cl">₹98.9 L</td><td class="vd">₹72.6 L</td><td class="why">Gross confirmed within 0.3% (₹98.6 L across 15 accounts); the ₹72.6 L is expected recovery after dormancy haircuts, not the worklist; two same-entity set-offs executable today. <b>Re-derived 30-Jul: ₹97.3 L gross / ₹71.7 L outstanding</b> — BigBasket paid ₹1.30 L.</td></tr>
+    <tr class="dead"><td>GST ITC reversals as recurring saving</td><td class="cl">₹71.5 L/yr</td><td class="vd">₹0</td><td class="why">Legally extinguished (GSTR-9 window shut; s.17(5)(h) mandatory). But the hunt exposed ₹1.41 Cr of ITC from no-GSTIN suppliers — Red flag Nº 5.</td></tr>
+    <tr class="dead"><td>Dormant vendor advances + ALO Logistics</td><td class="cl">₹49.9 L</td><td class="vd">₹4.1 L</td><td class="why">90% resolves to capex, contra-entries, or already-netted balances once each account is opened.</td></tr>
+    <tr class="dead"><td>Payroll mispunch + zero-attendance leakage</td><td class="cl">₹33.9 L/yr</td><td class="vd">₹0</td><td class="why">Mis-punch days are real 9-hour workdays (median span 9.1h, 91% ≥8h); the “100 ghost employees” was a workbook artifact — the portal credits them zero days. July’s 0-approved payroll gate is the real fix.</td></tr>
+    <tr class="live"><td>Future Retail unclaimed tax deduction</td><td class="cl">₹23.8 L</td><td class="vd">₹23.8 L</td><td class="why"><b>CONFIRMED</b> — provision matches the debtor to the paisa, untouched 22 months, write-off never booked so the s.36(1)(vii) deduction is genuinely unclaimed.</td></tr>
+    <tr class="live"><td>Statutory interest &amp; penalties</td><td class="cl">₹18.9 L/yr</td><td class="vd">₹7.8 L/yr</td><td class="why">₹2.5 L wasn’t statutory at all; the avoidable core survives — pure calendar discipline.</td></tr>
+    <tr class="live"><td>Duplicate bills + open A/P credit notes</td><td class="cl">₹12.2 L</td><td class="vd">₹4.7 L</td><td class="why">The “paid twice” case was two real truckloads; the genuinely stoppable duplicates and encashable notes survive.</td></tr>
+  </table></div>
+</section>
+
+<!-- ═══════════ SCHEDULE E ═══════════ -->
+<section id="e">
+  <div class="schedhead">
+    <span class="k">Schedule E</span>
+    <h2>Nothing left pending — <em>what survives as process fixes, not rupees</em></h2>
+    <div class="rule"></div>
+    <p class="note">Round 3 closed on 29-Jul. Every sweep claim has a verdict. These controls carry no bankable number of their own but stop the same leaks reopening.</p>
+  </div>
+  <div class="pend2">
+    <div class="pitem"><h3>Documents &amp; masters</h3><ul><li>Block A/R credit notes with no base document; keep credit notes for goods only</li><li>NumAtCard uniqueness per vendor; block back-dated inventory documents into closed periods</li><li>Mandatory salesperson code on returns; return-reason codes from top e-com accounts</li><li>GSTIN mandatory in every partner master before payment or credit &gt;₹10 L</li></ul></div>
+    <div class="pitem"><h3>Reconciliation &amp; close</h3><ul><li>Monthly internal reconciliation per partner — both A/P and A/R (the B S A lesson)</li><li>Monthly variance recognition on account 5100003; never clear by year-end journal</li><li>Open A/P credit notes &gt;90 days on the monthly close checklist</li><li>Signed stock-count reference on every COGS-contra goods receipt</li></ul></div>
+    <div class="pitem"><h3>Credit &amp; payroll</h3><ul><li>Credit limits set by policy, never back-fitted to the outstanding balance</li><li>July payroll gated on 100% TankhaPay attendance approval — live gap the day of the pull</li><li>Per-head imprest caps keyed on the JWPL code across all three companies</li><li>Statutory payment calendar with a named owner</li></ul></div>
+    <div class="pitem"><h3>Purchasing &amp; systems</h3><ul><li>PO release blocked when months-of-cover exceeds policy; close stale POs for MRP hygiene</li><li>GSTR-2B reconciliation before vendor payment release</li><li>Max-cover policy: 4 months packaging/RM, 2 months FG, monthly exception report</li><li>Read-only HANA service user to replace the personal login this audit ran on</li></ul></div>
+  </div>
+</section>
+
+<!-- ═══════════ ANNEXURE ═══════════ -->
+<section id="annex">
+  <div class="schedhead">
+    <span class="k">Annexure</span>
+    <h2>Complete register — <em>all 68 findings, nothing omitted</em></h2>
+    <div class="rule"></div>
+    <p class="note">Ranked by claimed value. Struck-through figures were refuted under cross-examination; every material claim now carries a verdict. Rows still marked “unverified” are sub-₹1L-scale or purchase-price-variance negotiation leads folded into Schedule E’s controls.</p>
+  </div>
+  <div class="annexwrap"><table class="annex">
+    <thead><tr><th>Nº</th><th style="text-align:right">Claimed</th><th>Status</th><th style="text-align:right">Verified</th><th>Co.</th><th>Kind</th><th>Conf.</th><th>Lens</th><th>Finding</th></tr></thead>
+    <tbody>
+<tr class='ko'><td>1</td><td class='r'>₹186.63 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>OIL</td><td>working capital release</td><td>high</td><td>vendors</td><td class='t'>A/P sub-ledger not reconciled: SAP shows Rs 292.57 Cr payable vs Rs 105.94 Cr actual</td></tr>
+<tr class='rev'><td>2</td><td class='r'>₹25.83 Cr</td><td><span class='pill rev'>REVISED</span></td><td class='r'>₹1.20 Cr exp.</td><td>ALL</td><td>annual recurring</td><td>high</td><td>returns</td><td class='t'>₹25.83 Cr/yr of credit notes are issued with NO base document — unverifiable against any invoice or goods receipt</td></tr>
+<tr class='ko'><td>3</td><td class='r'>₹13.16 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>OIL</td><td>working capital release</td><td>low</td><td>vendors</td><td class='t'>Rs 13.16 Cr of capital advanced to two individuals under FIXED ASSETS, largely uninvoiced</td></tr>
+<tr class='rev'><td>4</td><td class='r'>₹9.91 Cr</td><td><span class='pill rev'>REVISED</span></td><td class='r'>₹0.60 Cr</td><td>MART</td><td>annual recurring</td><td>high</td><td>returns</td><td class='t'>Mart return rate is 13.3% — ₹9.91 Cr/yr of sales reversed above a 10% allowance, 74% of it from just 4 e-com accounts</td></tr>
+<tr class='ko'><td>5</td><td class='r'>₹9.76 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>OIL</td><td>one time recovery</td><td>medium</td><td>dup-pay</td><td class='t'>Anju Mangla: ₹9.76 Cr land invoice still shows UNPAID in SAP while ₹17.86 Cr has already been transferred to her</td></tr>
+<tr class='ko'><td>6</td><td class='r'>₹9.31 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>OIL</td><td>working capital release</td><td>high</td><td>returns</td><td class='t'>₹9.31 Cr of finished goods pushed back from related party JIVO MART to JIVO OIL in two days — chronic 10.3% intercompany return rate</td></tr>
+<tr class='flag'><td>7</td><td class='r'>₹8.21 Cr</td><td><span class='pill flag'>RED FLAG</span></td><td class='r'>₹0 bankable</td><td>OIL</td><td>working capital release</td><td>high</td><td>stock</td><td class='t'>Off-spec olive oil RM0000052 — ₹8.21 Cr static for 16 months, in no BOM</td></tr>
+<tr class='na'><td>8</td><td class='r'>₹7.76 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>MART</td><td>one time recovery</td><td>high</td><td>purchase-price</td><td class='t'>NON-CASH: Rs 7.76 Cr of Mart purchase-line values do not tie to their own invoices — item costing is corrupt</td></tr>
+<tr class='ko'><td>9</td><td class='r'>₹5.94 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>ALL</td><td>working capital release</td><td>medium</td><td>stock</td><td class='t'>₹5.94 Cr of open purchase orders older than 12 months still not closed</td></tr>
+<tr class='ok'><td>10</td><td class='r'>₹5.10 Cr</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹6.55 L</td><td>ALL</td><td>working capital release</td><td>high</td><td>dup-pay</td><td class='t'>₹5.10 Cr paid out to 36 vendors that have never raised a single invoice</td></tr>
+<tr class='ko'><td>11</td><td class='r'>₹4.05 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>ALL</td><td>working capital release</td><td>high</td><td>vendors</td><td class='t'>Advances held against vendors whose bills SAP still shows as unpaid (double-payment exposure)</td></tr>
+<tr class='ko'><td>12</td><td class='r'>₹4.05 Cr</td><td><span class='pill ko'>DUP of #11</span></td><td class='r'>₹0</td><td>ALL</td><td>working capital release</td><td>high</td><td>dup-pay</td><td class='t'>₹4.05 Cr of vendor advances sit against invoices SAP still shows unpaid — because 95% of payments are posted on account and never applied</td></tr>
+<tr class='ok'><td>13</td><td class='r'>₹3.87 Cr</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹14.5 L/yr</td><td>ALL</td><td>annual recurring</td><td>high</td><td>returns</td><td class='t'>₹3.87 Cr/yr of promotional trade spend is booked as credit notes instead of an expense head — off-budget and unverifiable</td></tr>
+<tr class='ko'><td>14</td><td class='r'>₹3.56 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>OIL</td><td>annual recurring</td><td>high</td><td>returns</td><td class='t'>Oil third-party returns ₹3.56 Cr/yr above a 5% allowance, and the rate has 2.5x&#x27;d in two years (1.7% → 4.3%)</td></tr>
+<tr class='ko'><td>15</td><td class='r'>₹3.37 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>ALL</td><td>one time recovery</td><td>high</td><td>stock</td><td class='t'>₹3.37 Cr inventory valuation drift — 1,250 warehouse rows with zero stock but negative value</td></tr>
+<tr class='ok'><td>16</td><td class='r'>₹2.89 Cr</td><td><span class='pill ok'>VERIFIED ▲</span></td><td class='r'>₹3.11 Cr</td><td>BEV</td><td>one time recovery</td><td>high</td><td>receivables</td><td class='t'>BLESSING ADVERTISING PVT LTD (Beverages) — ₹2.89 Cr sitting 9-10 months past an immediate-payment term</td></tr>
+<tr class='ok'><td>17</td><td class='r'>₹2.87 Cr</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹98.0 L</td><td>ALL</td><td>working capital release</td><td>high</td><td>stock</td><td class='t'>₹2.87 Cr in slow stock carrying more than 12 months of cover</td></tr>
+<tr class='na'><td>18</td><td class='r'>₹2.60 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>working capital release</td><td>medium</td><td>receivables</td><td class='t'>₹143.23 Cr of customer receipts never reconciled — the aging report is unusable, and ₹2.60 Cr of external customer credit sits unmatched</td></tr>
+<tr class='flag'><td>19</td><td class='r'>₹2.40 Cr</td><td><span class='pill flag'>RED FLAG</span></td><td class='r'>₹0 bankable</td><td>BEV</td><td>working capital release</td><td>high</td><td>vendors</td><td class='t'>HS Filling and Packaging holds Rs 2.4 Cr of Beverages cash with zero invoices ever raised</td></tr>
+<tr class='ok'><td>20</td><td class='r'>₹2.28 Cr</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹41.5 L</td><td>ALL</td><td>working capital release</td><td>high</td><td>stock</td><td class='t'>₹2.28 Cr of open POs for items already dead or &gt;12 months covered — incl. a ₹1.42 Cr ghee PO raised 5 days ago</td></tr>
+<tr class='rev'><td>21</td><td class='r'>₹2.07 Cr</td><td><span class='pill rev'>MULTIPLIER</span></td><td class='r'>8.25%</td><td>OIL</td><td>working capital release</td><td>high</td><td>expenses</td><td class='t'>Interest carried on the ₹28.39 Cr Indian Bank cash-credit facility — the conversion rate for every other lens</td></tr>
+<tr class='ok'><td>22</td><td class='r'>₹2.04 Cr</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹1.43 Cr</td><td>OIL</td><td>one time recovery</td><td>high</td><td>expenses</td><td class='t'>Production/WIP variance of ₹2.04 Cr charged to P&amp;L in July 2026 — ₹0 in every other month</td></tr>
+<tr class='na'><td>23</td><td class='r'>₹1.48 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>MART</td><td>annual recurring</td><td>medium</td><td>returns</td><td class='t'>Mart accepted ₹1.48 Cr of returns more than 60 days after the original sale</td></tr>
+<tr class='na'><td>24</td><td class='r'>₹1.40 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>one time recovery</td><td>medium</td><td>expenses</td><td class='t'>₹1.66 Cr of goods lost in transit; ₹1.40 Cr of insurance claims booked then written off unrecovered</td></tr>
+<tr class='ok'><td>25</td><td class='r'>₹1.29 Cr</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹64.4 L</td><td>OIL</td><td>one time recovery</td><td>high</td><td>receivables</td><td class='t'>AB ENTERPRISES (Oil) — ₹1.29 Cr frozen, no payment in 10 months, trading already stopped</td></tr>
+<tr class='na'><td>26</td><td class='r'>₹1.28 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>annual recurring</td><td>medium</td><td>stock</td><td class='t'>₹1.28 Cr/yr still being spent on items already carrying over a year of cover</td></tr>
+<tr class='na'><td>27</td><td class='r'>₹1.23 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>MART</td><td>annual recurring</td><td>medium</td><td>returns</td><td class='t'>Kiranakart (Zepto): 42% of everything ever sold to them has been credited back — ₹1.23 Cr in the last 12 months</td></tr>
+<tr class='na'><td>28</td><td class='r'>₹1.22 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>annual recurring</td><td>high</td><td>stock</td><td class='t'>₹1.22 Cr/yr carrying cost on the ₹12.23 Cr dead and slow pile</td></tr>
+<tr class='na'><td>29</td><td class='r'>₹1.15 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>working capital release</td><td>high</td><td>stock</td><td class='t'>₹1.15 Cr of dead stock beyond the olive oil — 300+ items with zero consumption in 180 days</td></tr>
+<tr class='ko'><td>30</td><td class='r'>₹1.15 Cr</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹4.7 L</td><td>ALL</td><td>one time recovery</td><td>high</td><td>receivables</td><td class='t'>B S A ENGINEERING LLP — ₹1.15 Cr overdue group-wide while JIVO kept supplying for 3 more months</td></tr>
+<tr class='ok'><td>31</td><td class='r'>₹1.06 Cr</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹42.8 L</td><td>ALL</td><td>working capital release</td><td>high</td><td>payroll</td><td class='t'>₹1.06 Cr of company cash permanently parked with employees (advances + imprest floats) across all 3 companies</td></tr>
+<tr class='na'><td>32</td><td class='r'>₹1.05 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>annual recurring</td><td>low</td><td>expenses</td><td class='t'>Related-party fixed payments of ₹1.05 Cr/yr never market-tested (HUF/director retainers + family-split Mayapuri rent)</td></tr>
+<tr class='na'><td>33</td><td class='r'>₹1.02 Cr</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>annual recurring</td><td>medium</td><td>expenses</td><td class='t'>Freight-outward intensity up 32% per rupee of sales — ₹1.02 Cr/yr</td></tr>
+<tr class='ok'><td>34</td><td class='r'>₹98.9 L</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹72.6 L</td><td>ALL</td><td>one time recovery</td><td>high</td><td>receivables</td><td class='t'>Long tail — 15 external accounts, ₹98.87 L overdue 60+ days, mostly solvent large buyers</td></tr>
+<tr class='ko'><td>35</td><td class='r'>₹71.5 L</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>OIL</td><td>annual recurring</td><td>high</td><td>expenses</td><td class='t'>GST input tax credit reversals of ₹71.46 lakh/yr — half of it from suppliers who never filed</td></tr>
+<tr class='rev'><td>36</td><td class='r'>₹61.7 L</td><td><span class='pill rev'>OVERLAY</span></td><td class='r'>₹54.0 L/yr</td><td>ALL</td><td>annual recurring</td><td>high</td><td>receivables</td><td class='t'>Interest JIVO pays to finance its own overdue customers — ₹61.7 L every year</td></tr>
+<tr class='na'><td>37</td><td class='r'>₹61.6 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>one time recovery</td><td>high</td><td>purchase-price</td><td class='t'>NON-CASH: goods receipt understated by Rs 61.65 lakh — GRPO total keyed into the price field</td></tr>
+<tr class='na'><td>38</td><td class='r'>₹55.5 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>annual recurring</td><td>medium</td><td>expenses</td><td class='t'>Repairs &amp; maintenance escalating ₹55.5 lakh/yr while sales fall, 79% booked to a nameless payable</td></tr>
+<tr class='na'><td>39</td><td class='r'>₹49.6 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>one time recovery</td><td>medium</td><td>returns</td><td class='t'>Two Oil accounts had 100% of their sales reversed — ₹49.62 lakh, entire relationship credited back</td></tr>
+<tr class='na'><td>40</td><td class='r'>₹49.0 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>one time recovery</td><td>medium</td><td>stock</td><td class='t'>₹0.49 Cr of physical stock sitting in the books at zero value</td></tr>
+<tr class='na'><td>41</td><td class='r'>₹46.8 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>MART</td><td>one time recovery</td><td>medium</td><td>expenses</td><td class='t'>Mart absorbed ₹46.85 lakh of price variance on a ₹10 Cr two-day intercompany goods return</td></tr>
+<tr class='na'><td>42</td><td class='r'>₹42.6 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>working capital release</td><td>medium</td><td>vendors</td><td class='t'>Cross-company vendor netting: same vendor in debit in one company, credit in another</td></tr>
+<tr class='na'><td>43</td><td class='r'>₹40.0 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>one time recovery</td><td>low</td><td>dup-pay</td><td class='t'>₹40 lakh land payment: one invoice number (TAZ2025F15) used for two separate ₹40 lakh payments to two different sellers on the same day</td></tr>
+<tr class='na'><td>44</td><td class='r'>₹34.0 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>annual recurring</td><td>medium</td><td>purchase-price</td><td class='t'>Loose refined olive oil (RM0000001) — 11-14% same-month price gap between vendors</td></tr>
+<tr class='na'><td>45</td><td class='r'>₹33.5 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>working capital release</td><td>medium</td><td>vendors</td><td class='t'>Parties who are both supplier and customer - receivable and payable can be set off</td></tr>
+<tr class='na'><td>46</td><td class='r'>₹32.7 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>annual recurring</td><td>low</td><td>receivables</td><td class='t'>JIVO has never charged a single rupee of late-payment interest, in any company, ever</td></tr>
+<tr class='na'><td>47</td><td class='r'>₹32.3 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>working capital release</td><td>medium</td><td>vendors</td><td class='t'>Security deposits untouched since SAP go-live, including pre-GST regime deposits</td></tr>
+<tr class='na'><td>48</td><td class='r'>₹28.0 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>annual recurring</td><td>high</td><td>purchase-price</td><td class='t'>Refined soyabean oil (RM0000025) — 9 vendors, cheapest one consistently under-allocated</td></tr>
+<tr class='ok'><td>49</td><td class='r'>₹26.5 L</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹4.1 L w/#52</td><td>ALL</td><td>one time recovery</td><td>high</td><td>vendors</td><td class='t'>Dormant vendor advances with no billing or payment activity</td></tr>
+<tr class='na'><td>50</td><td class='r'>₹26.0 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>annual recurring</td><td>high</td><td>purchase-price</td><td class='t'>Mustard oil Kachi Ghani (RM0000003) — Vaishnodevi Agro 8.9% above AWL in the same month</td></tr>
+<tr class='ok'><td>51</td><td class='r'>₹23.8 L</td><td><span class='pill ok'>CONFIRMED</span></td><td class='r'>₹23.8 L</td><td>OIL</td><td>one time recovery</td><td>medium</td><td>receivables</td><td class='t'>FUTURE RETAIL LTD ₹94.57 L is provided for but never written off — ₹23.8 L of tax deduction left on the table</td></tr>
+<tr class='rev'><td>52</td><td class='r'>₹23.4 L</td><td><span class='pill rev'>MERGED</span></td><td class='r'>see #49</td><td>MART</td><td>one time recovery</td><td>high</td><td>vendors</td><td class='t'>ALO Logistics: transporter damage/RTV claims raised but never recovered</td></tr>
+<tr class='na'><td>53</td><td class='r'>₹23.4 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>MART</td><td>one time recovery</td><td>high</td><td>dup-pay</td><td class='t'>ALO Logistics: ₹23.41 lakh of transporter damage/RTV debit notes raised and then forgotten</td></tr>
+<tr class='na'><td>54</td><td class='r'>₹20.4 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>one time recovery</td><td>high</td><td>stock</td><td class='t'>₹0.20 Cr of already-expired batches still on hand; expiry dates largely not recorded</td></tr>
+<tr class='ok'><td>55</td><td class='r'>₹18.9 L</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹7.8 L/yr</td><td>ALL</td><td>annual recurring</td><td>high</td><td>expenses</td><td class='t'>₹18.92 lakh/yr of statutory interest and penalties — 100% avoidable, cheapest saving in the audit</td></tr>
+<tr class='ko'><td>56</td><td class='r'>₹18.7 L</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>PAYROLL</td><td>annual recurring</td><td>medium</td><td>payroll</td><td class='t'>≥1,530 mis-punch days a month are paid as full days with no verifiable hours — 32% of all punching days are unclosable</td></tr>
+<tr class='na'><td>57</td><td class='r'>₹18.7 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>annual recurring</td><td>low</td><td>purchase-price</td><td class='t'>Freight bought on free-text rates — Rs 6.24 Cr with no item code and no rate control</td></tr>
+<tr class='ko'><td>58</td><td class='r'>₹15.2 L</td><td><span class='pill ko'>REFUTED</span></td><td class='r'>₹0</td><td>PAYROLL</td><td>annual recurring</td><td>medium</td><td>payroll</td><td class='t'>100 employees on the roll for 30 days with zero attendance marked AND zero biometric punches — ₹3.04 Cr/yr of payroll released against no record</td></tr>
+<tr class='na'><td>59</td><td class='r'>₹13.7 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>one time recovery</td><td>medium</td><td>payroll</td><td class='t'>Salary-payable GL accounts carrying abnormal DEBIT balances — cash out with no matching accrual</td></tr>
+<tr class='na'><td>60</td><td class='r'>₹8.5 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>PAYROLL</td><td>annual recurring</td><td>low</td><td>payroll</td><td class='t'>9 same-name-same-department duplicate records in the 611-person TankhaPay roster</td></tr>
+<tr class='na'><td>61</td><td class='r'>₹8.5 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>annual recurring</td><td>high</td><td>purchase-price</td><td class='t'>HDPE bottle 5 LTR (PM0000053) — 5-10% same-month spread on a made-to-spec part</td></tr>
+<tr class='na'><td>62</td><td class='r'>₹7.5 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>OIL</td><td>annual recurring</td><td>medium</td><td>purchase-price</td><td class='t'>Preform prices swinging 20-25% from the SAME vendor inside the SAME month</td></tr>
+<tr class='na'><td>63</td><td class='r'>₹7.2 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>one time recovery</td><td>medium</td><td>payroll</td><td class='t'>₹7.20 lakh of Jan–Apr 2026 salary accrued and never paid — this year&#x27;s batch of unclaimed payroll</td></tr>
+<tr class='ok'><td>64</td><td class='r'>₹7.0 L</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹1.3 L</td><td>ALL</td><td>one time recovery</td><td>high</td><td>dup-pay</td><td class='t'>Open A/P credit notes never set off against vendors we have already squared up with — ₹7.04 lakh</td></tr>
+<tr class='na'><td>65</td><td class='r'>₹6.6 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>one time recovery</td><td>medium</td><td>dup-pay</td><td class='t'>Goods receipts left open while the same vendor bill was keyed as a standalone invoice — ₹6.60 lakh double-counted</td></tr>
+<tr class='ok'><td>66</td><td class='r'>₹5.1 L</td><td><span class='pill ok'>REVISED</span></td><td class='r'>₹3.4 L</td><td>OIL</td><td>one time recovery</td><td>high</td><td>dup-pay</td><td class='t'>Vendor bills booked twice under the same bill number — ₹1.70 L already paid twice, ₹3.41 L booked and awaiting payment</td></tr>
+<tr class='na'><td>67</td><td class='r'>₹5.0 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>annual recurring</td><td>medium</td><td>purchase-price</td><td class='t'>Other packaging items (Oil + Beverages) — 1-55% same-month vendor spreads</td></tr>
+<tr class='na'><td>68</td><td class='r'>₹4.0 L</td><td><span class='pill na'>unverified</span></td><td class='r'>—</td><td>ALL</td><td>one time recovery</td><td>medium</td><td>payroll</td><td class='t'>₹3.99 lakh of advances and imprest sitting under employee codes that do not exist on the live roster</td></tr>
+</tbody>
+  </table></div>
+</section>
+
+<!-- ═══════════ METHOD ═══════════ -->
+<section id="meth">
+  <div class="schedhead">
+    <span class="k">Auditor’s note</span>
+    <h2>Method, sources <em>&amp; certifications</em></h2>
+    <div class="rule"></div>
+  </div>
+  <div class="meth">
+    <div class="m"><h3>How the file was built</h3><p>Phase 0 — reconnaissance of live data paths. Phase 1 — eight finder agents in parallel, one lens each (vendors · receivables · duplicate payments · purchase price · stock · returns · payroll · expenses); 146 hypotheses, every claim backed by SQL actually executed. Phases 2–3 — <b>25 adversarial skeptic runs across three rounds</b> (28–29 Jul), each round’s briefs carrying the traps that killed the previous round’s claims; one run severed by a SAP outage was resumed to completion, and agents that stalled mid-return were recovered from the notes they had already written. Phase 4 — this document.</p></div>
+    <div class="m"><h3>Sources — all read-only</h3><p>Direct SAP HANA SQL (port 30015) over <code>JIVO_OIL_HANADB</code> · <code>JIVO_MART_HANADB</code> · <code>JIVO_BEVERAGES_HANADB</code> — the actual books, with server-side aggregation; the Service Layer as fallback; TankhaPay payroll workbooks (mispunch + 30-day attendance). Not one write was made to any system. Calibration anchor: Oil FY25-26 turnover ₹193.91 Cr.</p></div>
+    <div class="m"><h3>Caveats</h3><p>Figures are as-of-29-Jul ledger reads; “annual” figures are last-twelve-month run rates; workout haircuts (AB 50%, oil QC 75%) are judgment calls stated in the notes; nothing here is a statutory audit. Full evidence trail, wiki-linked: <code>~/jivo-cli/savings-audit/</code> — index → 8 lens notes (every query and result) → 24 verification notes.</p></div>
+  </div>
+
+  <div class="sig">
+    <div class="who"><div class="name">Claude — Fable 5</div><div class="role">8 finder agents · 25 adversarial verifier runs · three rounds against live books</div></div>
+    <div class="k">File Nº G-92 · closed 29-Jul-2026</div>
+  </div>
+
+  <div class="confband">⚠ STRICTLY CONFIDENTIAL — this document names counterparties, employees, bank facilities and a suspected misstatement. Circulate hand-to-hand only. Anyone holding the link can read it.</div>
+  <footer>JIVO Wellness Pvt Ltd · internal working paper · figures ledger-derived, unaudited in the statutory sense · prepared with read-only access throughout</footer>
+</section>
+
+</div>
+</body>
+</html>

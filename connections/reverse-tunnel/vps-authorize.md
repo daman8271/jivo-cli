@@ -13,7 +13,7 @@ recommended follow-up so the key never resolves to `root` at all.
 ## 1. The line
 
 ```
-restrict,port-forwarding,permitlisten="127.0.0.1:47192",permitopen="127.0.0.1:1" ssh-ed25519 AAAA...PASTE_BOX_PUBKEY_HERE... revtun@jivo-dbsap
+restrict,port-forwarding,permitlisten="127.0.0.1:47192",permitlisten="127.0.0.1:47500",permitlisten="127.0.0.1:47301",permitopen="127.0.0.1:1" ssh-ed25519 AAAA...PASTE_BOX_PUBKEY_HERE... revtun@jivo-dbsap
 ```
 
 Replace everything from `ssh-ed25519` onward with the **exact** public key that
@@ -30,7 +30,7 @@ ssh jivo-sap 'cat ~/.ssh/jivo_revtun.pub'
 |---|---|
 | `restrict` | turns **everything** off (pty, agent/X11 forwarding, port forwarding both ways, user-rc, commands) |
 | `port-forwarding` | re-enables port forwarding — but **BOTH directions**, `-R` (remote/listen) *and* `-L` (local/open) |
-| `permitlisten="127.0.0.1:47192"` | scopes only the `-R` side: the key may open **this one** listener and no other |
+| `permitlisten="127.0.0.1:47192"` | scopes only the `-R` side: the key may open **only these** listeners and no others. 47192 = SSH (dial.sh); **47500 = SAP Service Layer, 47301 = HANA** (dial-ports.sh, added 2026-07-30) — a forward with no matching entry is refused and, under `ExitOnForwardFailure=yes`, kills that whole dial |
 | `permitopen="127.0.0.1:1"` | scopes the `-L` side: local forwards may target only `127.0.0.1:1` (a dead port), which in practice **denies useful `-L`** |
 
 The trap: people assume `restrict,port-forwarding,permitlisten=…` locks the key to
@@ -53,7 +53,7 @@ From the Mac, in one shot (quote carefully — the line contains `"`):
 
 ```sh
 ssh vps-pub 'mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys' <<'EOF'
-restrict,port-forwarding,permitlisten="127.0.0.1:47192",permitopen="127.0.0.1:1" ssh-ed25519 AAAA...PASTE_BOX_PUBKEY_HERE... revtun@jivo-dbsap
+restrict,port-forwarding,permitlisten="127.0.0.1:47192",permitlisten="127.0.0.1:47500",permitlisten="127.0.0.1:47301",permitopen="127.0.0.1:1" ssh-ed25519 AAAA...PASTE_BOX_PUBKEY_HERE... revtun@jivo-dbsap
 EOF
 ssh vps-pub 'chmod 600 ~/.ssh/authorized_keys'
 ```

@@ -39,20 +39,40 @@ type mcpRPCError struct {
 }
 
 func newMcpCmd(app *App) *cobra.Command {
-	return &cobra.Command{
+	var (
+		transport string
+		addr      string
+	)
+	cmd := &cobra.Command{
 		Use:   "mcp",
-		Short: "Run a Model Context Protocol server over stdio (for AI clients)",
+		Short: "Run a Model Context Protocol server (stdio or HTTP, for AI clients)",
 		Long: "Serve this read-only PostgreSQL connection to MCP-aware AI clients\n" +
-			"(Claude Desktop / Claude Code) as newline-delimited JSON-RPC 2.0 over\n" +
-			"stdio. Reads one request per line on stdin, writes one response per line\n" +
-			"on stdout, and logs only to stderr. Exposes tools: postgres_query,\n" +
-			"list_databases, list_tables, describe_table, search, schema_dump.",
-		Example: "  postsql mcp   # add to a client's mcpServers config as the command",
-		Args:    cobra.NoArgs,
+			"(Claude Desktop / Claude Code). Exposes tools: postgres_query,\n" +
+			"list_databases, list_tables, describe_table, search, schema_dump.\n" +
+			"\n" +
+			"Transports (--transport):\n" +
+			"  stdio  (default) newline-delimited JSON-RPC 2.0: one request per line\n" +
+			"         on stdin, one response per line on stdout, logs only to stderr.\n" +
+			"  http   stateless streamable HTTP: POST one JSON-RPC message to /mcp\n" +
+			"         on --addr, get the single JSON response back (no sessions,\n" +
+			"         no server-initiated streams).",
+		Example: "  postsql mcp                                         # stdio, for a client's mcpServers config\n" +
+			"  postsql mcp --transport http --addr 127.0.0.1:7779  # streamable HTTP at http://127.0.0.1:7779/mcp",
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return mcpServe(app, os.Stdin, os.Stdout)
+			switch strings.ToLower(transport) {
+			case "stdio":
+				return mcpServe(app, os.Stdin, os.Stdout)
+			case "http":
+				return mcpServeHTTP(app, addr)
+			default:
+				return Usagef("unknown --transport %q (supported: stdio, http)", transport)
+			}
 		},
 	}
+	cmd.Flags().StringVar(&transport, "transport", "stdio", "MCP transport: stdio or http")
+	cmd.Flags().StringVar(&addr, "addr", "127.0.0.1:7779", "listen address for --transport http (host:port or :port)")
+	return cmd
 }
 
 // mcpServe runs the stdio JSON-RPC loop until stdin closes.
@@ -83,54 +103,52 @@ func mcpServe(app *App, in io.Reader, out io.Writer) error {
 // response object (plus newline). Parse errors are logged to stderr; the loop
 // never crashes.
 func mcpHandleLine(app *App, w *bufio.Writer, line []byte) {
-	var req mcpRequest
-	if err := json.Unmarshal(line, &req); err != nil {
+	resp, err := mcpHandleMessage(app, line)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "postsql: parse error:", err)
 		return
 	}
-
-	// Notifications (id absent, or any notifications/* method) get no response.
-	isNotification := len(req.ID) == 0 || strings.HasPrefix(req.Method, "notifications/")
-
-	switch req.Method {
-	case "initialize":
-		if isNotification {
-			return
-		}
-		mcpWrite(app, w, req.ID, mcpInitializeResult(req.Params), nil)
-
-	case "ping":
-		if isNotification {
-			return
-		}
-		mcpWrite(app, w, req.ID, struct{}{}, nil)
-
-	case "tools/list":
-		if isNotification {
-			return
-		}
-		mcpWrite(app, w, req.ID, map[string]any{"tools": mcpToolDefs()}, nil)
-
-	case "tools/call":
-		if isNotification {
-			return
-		}
-		mcpWrite(app, w, req.ID, mcpCallTool(app, req.Params), nil)
-
-	default:
-		if isNotification {
-			return // silently ignore notifications/* and other id-less messages
-		}
-		mcpWrite(app, w, req.ID, nil, &mcpRPCError{
-			Code:    -32601,
-			Message: "method not found: " + req.Method,
-		})
+	if resp != nil {
+		mcpWrite(w, resp)
 	}
 }
 
+// mcpHandleMessage parses one JSON-RPC message and dispatches it, transport-
+// neutrally. It returns (nil, err) when the raw bytes are not valid JSON-RPC,
+// (nil, nil) for notifications (id absent or a notifications/* method), and a
+// single response for every request.
+func mcpHandleMessage(app *App, raw []byte) (*mcpResponse, error) {
+	var req mcpRequest
+	if err := json.Unmarshal(raw, &req); err != nil {
+		return nil, err
+	}
+
+	// Notifications (id absent, or any notifications/* method) get no response.
+	if len(req.ID) == 0 || strings.HasPrefix(req.Method, "notifications/") {
+		return nil, nil
+	}
+
+	resp := &mcpResponse{JSONRPC: "2.0", ID: req.ID}
+	switch req.Method {
+	case "initialize":
+		resp.Result = mcpInitializeResult(req.Params)
+	case "ping":
+		resp.Result = struct{}{}
+	case "tools/list":
+		resp.Result = map[string]any{"tools": mcpToolDefs()}
+	case "tools/call":
+		resp.Result = mcpCallTool(app, req.Params)
+	default:
+		resp.Error = &mcpRPCError{
+			Code:    -32601,
+			Message: "method not found: " + req.Method,
+		}
+	}
+	return resp, nil
+}
+
 // mcpWrite marshals and emits exactly one JSON-RPC response line.
-func mcpWrite(app *App, w *bufio.Writer, id json.RawMessage, result any, rpcErr *mcpRPCError) {
-	resp := mcpResponse{JSONRPC: "2.0", ID: id, Result: result, Error: rpcErr}
+func mcpWrite(w *bufio.Writer, resp *mcpResponse) {
 	b, err := json.Marshal(resp)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "postsql: marshal error:", err)

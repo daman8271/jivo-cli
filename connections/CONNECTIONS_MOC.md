@@ -13,6 +13,12 @@ This vault maps how JivoGPT's six current JIVO CLIs can be queried together with
 
 > ⛔ Every connection is governed by [[READ_ONLY_LAW]]. A connection may read, normalize, reconcile, cache inside JivoGPT, and cite. It may never write or sync back to EXIM, Factory, OMS, Ecom, jivo-desk's source files, or JSAP.
 
+## Infrastructure access (how we reach the systems, off-office)
+
+- **SAP from home — full runbook:** [[SAP-HOME-ACCESS]] — HANA data + Service Layer + the ~105 GB of attachment files, all reachable from any IP via the reverse tunnel (`ssh jivo-sap-any`). Read-only.
+- **Reverse SSH tunnel (goal #96):** [[reverse-tunnel/README]] — the box dials out to the fleet VPS so the office-IP whitelist is bypassed; self-healing.
+- Secrets live in `connections/*.env` (gitignored, `chmod 600`): `fleet-access.env` (box SSH + Windows SMB/RDP), `hana.env`/`hana-tunnel.env` (HANA), `sap-b1/cli/.env` (Service Layer).
+
 ## The six connector hubs
 
 | Hub | System role | Current read surface |

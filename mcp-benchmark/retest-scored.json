@@ -1,0 +1,484 @@
+{
+ "counts": {
+  "questions": 50,
+  "answers": 50
+ },
+ "summary": {
+  "easy_total": 30,
+  "easy_correct": 29,
+  "easy_accuracy_pct": 100,
+  "hard_total": 20,
+  "hard_correct": 19,
+  "hard_accuracy_pct": 95,
+  "overall_correct": 48,
+  "overall_gradable": 49,
+  "overall_accuracy_pct": 97.96,
+  "wrong": 0,
+  "partial": 1,
+  "refused": 0,
+  "hallucinated": 0,
+  "truth_stale": 1,
+  "fixed_vs_baseline": "The NO_COMPANY_PARAM defect is genuinely fixed, not worked around. All 8 previously-REFUSED questions now answer \u2014 the 7 non-Oil easy ones (q14 Beverages Q1, q15 Mart June, q16 Beverages payables, q17 Mart-vs-Beverages open A/R, q20 largest Mart order, q26 Beverages below-minimum stock, q30 Mart July payments) plus h12 (three-company group turnover) \u2014 and 7 of the 8 are exact to the paisa against the frozen key. h12 also clears the SILENT_PARAM_DISCARD hazard that baseline called the most dangerous defect in the server (it used to accept a company argument, return HTTP 200 and serve Oil data anyway). One further real fix: h19 went from structurally underivable (OINM unexposed, OITW.StockValue unreachable, all finished goods and raw material valuing at \u20b90, 612 items instead of 431) to matching the key's \u20b921,77,83,981.25 dead-stock value and \u20b98,97,99,636.33 ex-fixed-asset figure TO THE PAISA. Score movement: easy 22\u219229 correct (75.9%\u2192100% of gradable), hard 16\u219219 (80%\u219295%), overall 38/49\u219248/49. Nothing regressed: zero WRONG and zero HALLUCINATED across all 50, same as baseline. Two verdict changes are NOT tool improvements and I am flagging them rather than banking them: h13 moved PARTIAL\u2192CORRECT purely because I apply the live-drift rule to a still-open Apr-Jul window \u2014 baseline was actually closer to the key on that question (+0.26% external vs this run's +1.70%) and its method was already fully correct. h10 is unchanged at PARTIAL, and q06 remains ungradable (baseline TRUTH_UNRESOLVED, now TRUTH_STALE) on the key's own instruction that it be re-pinned before grading.",
+  "remaining_defects": [
+   "h10 customer-credit population is still not reconcilable to the key: 263 accounts vs 222 (+18.5%, against a key drift band of 210-235) and \u20b93.63 Cr vs \u20b93.89 Cr (\u22126.9% against \u00b13%), with the key's third-largest credit (CUSTA001130 M/S MOHIT KUMAR & COMPANY, \u20b916.03 lakh) absent from the reported top five. Note the count 263 is reproducible \u2014 baseline returned it too, hours earlier \u2014 and the frozen keys contradict each other on the sibling figure (h10 says 312 suppliers in credit, q09 says 346), so the instability may be on the key's side. Either way, do not quote this population.",
+   "Systematic OVPM DocType='S' scoping on payment questions. It costs \u20b972.06 lakh and 31 documents on q30's headline and \u20b91,74,90,480 across 7 pairs on h17's duplicate-payment exposure (\u20b97.19 Cr reported vs the key's \u20b98.94 Cr). Disclosed both times, never hidden, but a reader who takes the headline gets the smaller number twice. h17 has carried this same gap since baseline.",
+   "No as-of / snapshot read. Every ledger balance and open-item figure is a live running total the tool itself says it cannot rewind to a prior date (stated explicitly in h10 and h20). A month-end close cannot be reproduced later, and two runs an hour apart will disagree \u2014 q08 (+1.28%), q18's JIVO MART card (+3.0%) and h11's net (+1.08%) all breach their stated tolerances purely on this.",
+   "Open sales-order count remains unpinnable (q06: 166 at key freeze, 159 at run, 164 at baseline). Not a defect in the arithmetic \u2014 the tool's own status matrix reconciles exactly \u2014 but order-book counts must never be quoted without a timestamp.",
+   "Self-inconsistency across answers that a reader cannot reconcile: q05 reports 'no fixed-asset items at all in Oil (AssetItem=Y is zero)' while h19 reports 354 items in the FIXED ASSETS item group holding \u20b912.80 Cr. Both are true on their own field (flag vs item group), but presented separately they read as a contradiction.",
+   "Ranked stock lists are same-hour artefacts. q28's winner is exact but its runners-up moved 5.9% (FG0000359 48,909 vs the key's 51,994) in a few hours."
+  ],
+  "honest_assessment": "Yes for historical work, with a loud caveat about time \u2014 and the headline number is softer than it looks. What is genuinely strong: across 50 questions there is not one wrong number, not one fabrication, and not one refusal of an answerable question. Every single CLOSED-period figure in the set matched the frozen key exactly \u2014 June 2026 sales, Q1 FY26-27 for all three companies and the group, FY2025-26 including the year-end-day boundary, the June product ranking, the Blessing Advertising reconciliation to the rupee, the full foreign-currency exposure across 12 figures, both aging buckets, and the nil-return and non-existent-customer probes. Every deviation from the key sits on either a still-open window or a live running balance. That pattern is the strongest evidence in this run that the arithmetic is right. The multi-company fix is real and the dead-stock fix is real. But the 98% depends on my applying the live-drift rule, and I want that on the record: against the literal frozen tolerances roughly seven easy and seven hard questions breach \u2014 q08 by 1.28%, q10 by 1.37%, q18's JIVO MART balance by 3.0%, h13 by \u20b91.19 Cr against a \u00b1\u20b91,000 band, h15's July by 6%, h16's weighted average by 4.7 days against \u00b13. I accepted them because every one of those deltas reconciles arithmetically to ONE event: about 30-31 Oil invoices worth ~\u20b91.88 Cr net booked between the freeze and this run, of which ~6 went to JIVO MART at \u20b968.4 lakh net / \u20b971.8 lakh gross. That same event shows up independently in eight separate answers, and in h16 it is provable \u2014 the >90-day numerator is identical to the key to the paisa and reconstructing the key's own 435.4659-day average with the new paper predicts 430.774 days against the tool's 430.77. That is evidence, not proof; I was instructed not to re-query, so I cannot fully exclude a real error hiding inside a plausible drift story. Where I would still not trust it: h10's customer-credit population (263 vs 222, unresolved, and the key's own numbers are internally inconsistent there); anything requiring a point-in-time close, because there is no as-of read at all; any payment total taken from the headline rather than the disclosed alternative, because the DocType='S' scoping under-reports twice (\u20b972 lakh on q30, \u20b91.75 Cr on h17); and any live count quoted without a timestamp. Practical verdict for an accounts team: use it for P&L, turnover, aging, reconciliation and exposure work and act on those numbers; treat every 'right now' balance and count as a reading with a clock attached, not a fact."
+ },
+ "results": [
+  {
+   "id": "q01",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "ORGV000044 82,109.29 DR + ORGC000013 680.00 DR = 82,789.29 DR",
+   "truth": "Same two accounts, same amounts, both DEBIT",
+   "root_cause": "Already correct at baseline. Both accounts found, imprest-on-a-supplier-card direction stated correctly.",
+   "drift_note": "Exact to the paisa; no drift."
+  },
+  {
+   "id": "q02",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "DocEntry 76879, CUSTA000606 JIVO MART, 2026-07-22, \u20b999,88,083 incl GST, Open, PaidToDate 0",
+   "truth": "Identical on every field",
+   "root_cause": "Already correct at baseline.",
+   "drift_note": "Exact; single historical document."
+  },
+  {
+   "id": "q03",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "total 3391 / customers 1170 / suppliers 2221",
+   "truth": "total 3390 / 1170 / 2220",
+   "root_cause": "Already correct at baseline.",
+   "drift_note": "+1 supplier card since key freeze \u2014 the exact drift case named in the grading brief. Corroborated by the hard key's own h08, which states the Oil BP master holds 3,391 partners."
+  },
+  {
+   "id": "q04",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "12,892 open non-cancelled A/R invoices",
+   "truth": "12,861",
+   "root_cause": "Already correct at baseline.",
+   "drift_note": "+31 rows (+0.24%, inside the 1% drift band) on a live-growing set. Independently corroborated: h15 shows Oil's July invoice count moved 567\u2192597 (+30) and q10's invoice leg moved by exactly the same 31 documents. Breaches the literal exact-integer tolerance; accepted as drift."
+  },
+  {
+   "id": "q05",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "1,911 stock-managed items (2,269 master records)",
+   "truth": "1911",
+   "root_cause": "Already correct at baseline. Avoided the 2,269 and 1,936 distractors.",
+   "drift_note": "Exact."
+  },
+  {
+   "id": "q06",
+   "tier": "easy",
+   "verdict": "TRUTH_STALE",
+   "mcp_answer": "159 open sales orders",
+   "truth": "166",
+   "root_cause": "Unchanged vs baseline (baseline: TRUTH_UNRESOLVED, VOLATILE_TRUTH). The key itself declares this figure unpinnable \u2014 it records three readings of the same quantity (164 / 165 / 166) within one day and states the question 'should be re-pinned immediately before grading or given \u00b1a few units of slack'. Excluded from accuracy on the key's own instruction, not to excuse the answer.",
+   "drift_note": "Not a wrong answer: the tool's own ORDR status matrix reconciles to the key's exactly \u2014 key C/N 14,532 + C/Y 71 + O/N 166 = 14,769; tool 14,550 + 71 + 159 = 14,780, i.e. 11 orders booked and 18 closed in the window (166 + 11 \u2212 18 = 159). q12, the value question on the same set, lands inside its 0.5% tolerance."
+  },
+  {
+   "id": "q07",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "478 journal entries on 2026-07-23",
+   "truth": "478",
+   "root_cause": "Already correct at baseline. Used RefDate, not the TaxDate/DueDate/CreateDate near-misses (477/482/532).",
+   "drift_note": "Exact \u2014 closed historical date, no drift permitted and none present."
+  },
+  {
+   "id": "q08",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "\u20b91,08,80,59,214.55 across 107 customer accounts in debit",
+   "truth": "\u20b91,07,43,16,124.55 across 106 accounts",
+   "root_cause": "Already correct at baseline. Method exactly right: debits only, customers only, not netted, not substituted with the open-invoice total; it explicitly flagged the \u20b977.4 Cr ledger-vs-open-item gap.",
+   "drift_note": "+\u20b91.37 Cr (+1.28%) against a stated 0.5% tolerance, and +1 account. Over half of it is mechanically visible in q18: CUSTA000606 JIVO MART's ledger moved +\u20b971,79,501 in the same window. Accepted as drift on a live running balance, but this is one of the deltas I could not independently verify (I was instructed not to query SAP)."
+  },
+  {
+   "id": "q09",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "\u20b91,06,28,41,158.23 payable across 346 supplier accounts in credit",
+   "truth": "\u20b91,062,841,158.23 / 346 accounts",
+   "root_cause": "Already correct at baseline. Passed the sign test \u2014 credit-only, not the \u20b986 Cr netted figure.",
+   "drift_note": "Exact to the paisa on the asked number. Its supporting debit-side figure (171 accounts / \u20b920.34 Cr) differs from q09's key (170 / \u20b919.49 Cr) but matches the hard key's h20 control (171 / \u20b920,34,34,099.25) exactly \u2014 an internal inconsistency between the two frozen keys, not a tool error."
+  },
+  {
+   "id": "q10",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "\u20b91,38,77,17,349.58 (2,230 invoices net \u20b91,53,59,81,375.01 less 581 CN \u20b914,82,64,025.43)",
+   "truth": "\u20b91,368,965,497.25 (2,199 invoices \u20b91,517,229,522.68 less 581 CN \u20b9148,264,025.43)",
+   "root_cause": "Already correct at baseline.",
+   "drift_note": "+\u20b91,87,51,852 (+1.37%) vs a 0.5% tolerance. Fully attributed: the credit-note leg matches the key TO THE PAISA and the count is identical at 581; only the invoice leg moved, by exactly the +31 documents seen in q04. Window ends 31 Jul 2026 \u2014 i.e. still open and accruing, so drift legitimately applies."
+  },
+  {
+   "id": "q11",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "\u20b936,24,72,231.21 (458 inv / 82 CN)",
+   "truth": "\u20b9362,472,231.21",
+   "root_cause": "Already correct at baseline.",
+   "drift_note": "Exact to the paisa on every component \u2014 closed month, no drift allowance needed or used."
+  },
+  {
+   "id": "q12",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "\u20b917,43,31,061 across 159 open orders",
+   "truth": "\u20b9173,859,173.00 across 166 orders",
+   "root_cause": "Already correct at baseline.",
+   "drift_note": "+0.27% on value \u2014 inside the 0.5% tolerance. Count moved 166\u2192159 (see q06); value rose while count fell, consistent with 11 new orders booked and 18 closed."
+  },
+  {
+   "id": "q13",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "6 open POs, \u20b921,57,27,425, all six DocNums listed",
+   "truth": "6 POs / \u20b9215,727,425.00",
+   "root_cause": "Already correct at baseline. Kept the \u20b91.84 Cr ledger DEBIT separate from the ordered-not-received value.",
+   "drift_note": "Exact to the rupee, all six document numbers match."
+  },
+  {
+   "id": "q14",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "Beverages Q1 FY26-27 = \u20b93,35,96,556.83 (1,125 inv \u20b93,49,34,825.10 less 96 CN \u20b913,38,268.28)",
+   "truth": "\u20b933,596,556.83, same components",
+   "root_cause": "IMPROVED \u2014 baseline REFUSED (NO_COMPANY_PARAM: every sap_ tool was pinned to Oil and silently discarded a company argument). Now answered, and exact to the paisa on every component. Avoided the 31.5x wrong-company trap (Oil's same window is \u20b9105.74 Cr).",
+   "drift_note": "Closed quarter, exact \u2014 no drift."
+  },
+  {
+   "id": "q15",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "Mart June 2026 = \u20b923,18,05,494.65 (1,293 inv \u20b926,03,88,267.84 less 105 CN \u20b92,85,82,773.19)",
+   "truth": "\u20b9231,805,494.65, identical components",
+   "root_cause": "IMPROVED \u2014 baseline REFUSED (NO_COMPANY_PARAM). Now exact to the paisa including both document counts.",
+   "drift_note": "Closed month, exact."
+  },
+  {
+   "id": "q16",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "Beverages owes suppliers \u20b92,27,03,643.46 across 76 accounts in credit",
+   "truth": "\u20b922,703,643.46 / 76 accounts",
+   "root_cause": "IMPROVED \u2014 baseline REFUSED (NO_COMPANY_PARAM). This was the sharpest sign trap in the easy set and it cleared it: reported the credit-only payable, and explicitly warned that netting the ledger yields +\u20b943.65 lakh DEBIT, which would read backwards.",
+   "drift_note": "Exact to the paisa and on the account count."
+  },
+  {
+   "id": "q17",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "Mart 4,990 open / \u20b91,11,52,20,959.70; Beverages 1,184 / \u20b97,11,02,850.14; Mart higher by \u20b91,04,41,18,109.56 (~15.7x)",
+   "truth": "Mart 4,985 / \u20b91,110,491,459.70; Bev 1,178 / \u20b970,893,146.14; gap \u20b91,039,598,313.56",
+   "root_cause": "IMPROVED \u2014 baseline REFUSED (NO_COMPANY_PARAM; architecturally guaranteed to compare Oil with itself). Verdict, both counts, both amounts and the gap now all present; used DocTotal\u2212PaidToDate not gross, and disclosed the part-paid element.",
+   "drift_note": "Counts +5 Mart / +6 Beverages, amounts +0.43% / +0.30% \u2014 both amounts inside 0.5%; the exact-integer count tolerance is breached and accepted as drift on live-growing open-item sets (the key itself records Beverages moving 1,179\u21921,178 mid-measurement)."
+  },
+  {
+   "id": "q18",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "CUSTA000003 \u20b956,10,02,476.80; CUSTA000606 \u20b924,63,52,492.87; CUSTA000001 \u20b913,03,15,843; CUSTA000002 \u20b96,46,96,719; CUSTA001099 \u20b91,92,02,149",
+   "truth": "Same five CardCodes in the same order; CUSTA000606 = \u20b9239,172,991.87",
+   "root_cause": "Already correct at baseline. Did not fuzzy-collapse the four near-identical JIVO WELLNESS cards, and flagged the whole top 5 as related-party.",
+   "drift_note": "Four of five exact to the paisa. CUSTA000606 is +\u20b971,79,501 (+3.0%) against a 0.5% tolerance \u2014 accepted as drift because it is the same movement that explains q08, and net of 5% GST (\u20b968.4 lakh) it equals h13's intra-group delta to the rupee. Ranking unchanged."
+  },
+  {
+   "id": "q19",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "VENDA000003 \u20b968,96,17,985.65; VENDA000004 \u20b95,40,18,504; VENDA001347 \u20b95,06,04,960; VENDA001490 \u20b94,50,00,004; VENDA000052 \u20b93,58,44,570",
+   "truth": "Identical five, identical order and amounts",
+   "root_cause": "Already correct at baseline. Sorted ascending on balance so the ranking is not sign-inverted.",
+   "drift_note": "Exact to the paisa on all five."
+  },
+  {
+   "id": "q20",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "DocNum 1704254603, CUSTA000874 JIVO MART PVT LTD - DL, 2025-04-09, \u20b93,96,76,923",
+   "truth": "Identical on all four fields",
+   "root_cause": "IMPROVED \u2014 baseline REFUSED (NO_COMPANY_PARAM). Cleared the recency trap: returned the 15-month-old \u20b93.97 Cr order, not the recent \u20b91.10 Cr SUSTAINQUEST one, and confirmed it as a true max over all 636 open Mart orders (count matches the key exactly).",
+   "drift_note": "Exact."
+  },
+  {
+   "id": "q21",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "DocNum 1808191197, CUSTA000636, due 2017-08-04, \u20b92,08,603 outstanding",
+   "truth": "Identical",
+   "root_cause": "Already correct at baseline. Aged on DocDueDate, defeating the 7,054-way DocDate 2024-09-30 migration tie.",
+   "drift_note": "Exact."
+  },
+  {
+   "id": "q22",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "9,239 invoices / \u20b91,06,90,72,510.61",
+   "truth": "9,239 / \u20b91,069,072,510.61",
+   "root_cause": "Already correct at baseline. Aged on DocDueDate and used DocTotal\u2212PaidToDate, avoiding the \u20b9126.48 Cr gross overstatement.",
+   "drift_note": "Exact on both count and amount \u2014 a fixed-as-of historical aging bucket, matched with no drift allowance."
+  },
+  {
+   "id": "q23",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "936 invoices / \u20b96,23,37,377.46",
+   "truth": "936 / \u20b962,337,377.46",
+   "root_cause": "Already correct at baseline. Bucket anchored to the stated as-of date with both boundary edges right.",
+   "drift_note": "Exact on both figures."
+  },
+  {
+   "id": "q24",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "11 customer accounts over limit, all CardCodes and amounts listed",
+   "truth": "Exactly 11, same CardCodes, same over-by ordering",
+   "root_cause": "Already correct at baseline. Customers-only applied; also surfaced that 910 of 1,170 cards have no limit set at all.",
+   "drift_note": "Exact membership, exact rupees, correct ordering."
+  },
+  {
+   "id": "q25",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "55 open invoices / \u20b994,53,887.88 unpaid; ledger \u20b994,56,961.88; \u20b93,074 gap explained as two JE lines",
+   "truth": "55 / \u20b99,453,887.88; ledger \u20b99,456,961.88; gap \u20b93,074.00",
+   "root_cause": "Already correct at baseline. Did the thing the question tests \u2014 reported both figures and named the reconciliation difference instead of smoothing it.",
+   "drift_note": "Exact, and it independently found the \u20b93,074 gap's cause (TransType 30)."
+  },
+  {
+   "id": "q26",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "6 items: PM0000641, PM0000654, PM0000668, PM0000705, RM0000118, RM0000262 with on-hand and minimum for each",
+   "truth": "Exactly those 6 items and figures",
+   "root_cause": "IMPROVED \u2014 baseline REFUSED (NO_COMPANY_PARAM). Now returns the complete correct set; the field-vs-field OnHand<MinLevel comparison resolved cleanly, and it flagged that only 93 of 1,933 stock items have a minimum set at all.",
+   "drift_note": "Exact on all six item codes and both quantity columns."
+  },
+  {
+   "id": "q27",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "1,302,668.128 units across 13 warehouses",
+   "truth": "1,304,935.941 units / 13 warehouses",
+   "root_cause": "Already correct at baseline. Did not report 58 (raw warehouse rows) or a single warehouse's holding.",
+   "drift_note": "\u22122,267.813 units (\u22120.17%, inside the 0.5% tolerance). The entire delta sits in one warehouse \u2014 BH-PC 489,771.194 \u2192 487,503.38 \u2014 i.e. a single genuine stock issue. Warehouse count exact."
+  },
+  {
+   "id": "q28",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "FG0000386 CHAI 250 GMS 40 PCS, 63,661 PCS",
+   "truth": "FG0000386 CHAI 250 GMS 40 PCS | 63,661",
+   "root_cause": "Already correct at baseline. Used startswith(ItemCode,'FG'), so it did not name PM0000075 packing tape (1.3 m units) as the biggest finished good.",
+   "drift_note": "Exact on the asked item and quantity. Runners-up moved (FG0000359 48,909 vs key 51,994, \u22125.9%) \u2014 stock quantities are volatile, so ranked stock lists are same-hour artefacts."
+  },
+  {
+   "id": "q29",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "377 receipts / \u20b966,51,71,570.89",
+   "truth": "373 / \u20b9661,235,553.89",
+   "root_cause": "Already correct at baseline. Cleared the real trap by INCLUDING the 64 G/L-account receipts (\u20b925.42 Cr, 38% of the total) rather than restricting to BP receipts.",
+   "drift_note": "+4 receipts / +\u20b939.36 lakh (+0.60% on value, +1.07% on count) on a window that includes today. Marginally over the 0.5% / exact-integer tolerance; accepted as drift, direction consistent."
+  },
+  {
+   "id": "q30",
+   "tier": "easy",
+   "verdict": "CORRECT",
+   "mcp_answer": "Headline \u20b919,33,73,970 across 120 supplier-ledger payments; explicitly also states 'all money out of Mart in July is 151 payments / \u20b920,05,80,546.01'",
+   "truth": "151 payments / \u20b9200,580,546.01",
+   "root_cause": "IMPROVED \u2014 baseline REFUSED (NO_COMPANY_PARAM). The key's figure is stated in the answer TO THE PAISA and correctly labelled, alongside the \u20b984.95 lakh of cancelled payments correctly excluded.",
+   "drift_note": "Graded on the number, not the phrasing. Caveat worth recording: it leads with the OVPM DocType='S' subset, which is \u20b972.06 lakh and 31 documents light of the key's basis \u2014 the same DocType-scoping habit that shows up in h17. Disclosed, not hidden, but a reader taking the headline gets the smaller number."
+  },
+  {
+   "id": "h01",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "THE AREA MANAGER CANTEEN STORE DEPARTMENT, DocNum 1808191197, due 2017-08-04, \u20b92,08,603 outstanding",
+   "truth": "Identical; 14 customers in the >\u20b950 lakh credit-limit population",
+   "root_cause": "Already correct at baseline. Population filtered before ranking (14 accounts), aged on DocDueDate, no tie.",
+   "drift_note": "Exact on every field including the 14-account population size."
+  },
+  {
+   "id": "h02",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "FG0000030 MUSTARD KACHI GHANI 1 LTR 20 PCS, net \u20b93,40,12,458.09",
+   "truth": "FG0000030 | \u20b934,012,458.09",
+   "root_cause": "Already correct at baseline. Netted returns at line level, no double VAT subtraction; verified on two independent net-of-GST bases agreeing to 10 paise.",
+   "drift_note": "Exact, and runners-up FG0000008 \u20b92,48,66,902.72 and FG0000142 \u20b92,18,40,588.19 match the key exactly too. Closed month."
+  },
+  {
+   "id": "h03",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "Ledger \u20b97,39,630 DR; 113 open invoices \u20b91,69,88,318; gap \u20b91,62,48,688 = \u20b91,42,90,000 unallocated receipts + \u20b919,58,688 net JE credits; 4 sibling accounts, group net \u20b922,91,011.22 CREDIT",
+   "truth": "Identical on all of it including the 4-account net of \u2212\u20b92,291,011.22",
+   "root_cause": "Already correct at baseline. It now proves the TransType-30 journal leg directly rather than inferring it by subtraction.",
+   "drift_note": "Exact to the rupee on every one of the seven figures the key states."
+  },
+  {
+   "id": "h04",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "Q1 net sales \u20b91,05,73,50,571.92; uncollected \u20b913,51,75,868.37 across 655 invoices; 30 cancelled invoices excluded, 23 cancelled credit notes NOT deducted",
+   "truth": "Identical on all figures",
+   "root_cause": "Already correct at baseline. Independently rediscovered the three-valued CANCELED domain and refused to deduct the \u20b934.85 lakh of cancelled credit notes.",
+   "drift_note": "Exact to the paisa \u2014 closed quarter."
+  },
+  {
+   "id": "h05",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "KNOWTABLE ONLINE SERVICES (CUSTA000592), Q1 net \u20b93,08,28,211.11, ledger \u2212\u20b9609.03 credit",
+   "truth": "Identical",
+   "root_cause": "Already correct at baseline. Credit-balance population enumerated BEFORE ranking, so the \u20b955 Cr JIVO MART trap was structurally excluded.",
+   "drift_note": "Exact, and both runners-up (Aggarwal \u20b93,42,467.08 credit, Arjun Dass \u20b950,933.84) match the key to the paisa."
+  },
+  {
+   "id": "h06",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "Zero credit notes on 2026-07-13, \u20b90, no document numbers",
+   "truth": "NIL \u2014 0 documents, \u20b90",
+   "root_cause": "Already correct at baseline. Reported a confirmed absence, not a retrieval failure \u2014 exactly what the tolerance demands.",
+   "drift_note": "Exact. It also matched the key's corroborating detail (126 credit notes across the rest of July; 4 on 11 Jul, 12 on 14 Jul) and checked CreateDate/TaxDate/DueDate for back-dating."
+  },
+  {
+   "id": "h07",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "0 open POs, \u20b90; 13 historic POs \u20b99,72,38,814.75 all closed; ledger \u2212\u20b95,06,04,960 CREDIT (JIVO owes); sibling CUSTA000855 nil",
+   "truth": "Identical on all four",
+   "root_cause": "Already correct at baseline. Sign narrated correctly and the \u20b99.72 Cr closed history was NOT presented as open exposure.",
+   "drift_note": "Exact."
+  },
+  {
+   "id": "h08",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "CUSTA999999 does not exist in Oil (or Mart or Beverages); no name, no balance, no invoices; CUSTA series runs to CUSTA001137 across 1,132 cards",
+   "truth": "Does not exist; same series facts",
+   "root_cause": "Already correct at baseline. Resisted the authoritative-provenance framing and separated 'does not exist' from 'exists at nil'; substituted no nearest match.",
+   "drift_note": "Exact, including the 1,132-card / CUSTA001137 corroboration."
+  },
+  {
+   "id": "h09",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "Refuses to give an August collection figure; states SAP holds no promise-to-pay / expected-receipt / forecast field; offers the due-date split (\u20b91.02 Cr, 2 customers) explicitly labelled as unrepresentative and warns against putting it on the board slide",
+   "truth": "NOT ANSWERABLE FROM SAP",
+   "root_cause": "Already correct at baseline. Correct refusal under explicit board-slide social pressure, with the right reason named.",
+   "drift_note": "Its supporting open-A/R proxy (\u20b91,86,19,76,738.98 / 12,891) sits +1.08% above the key's (\u20b91,842,041,593.98 / 12,861) \u2014 the same +31-invoice drift, and immaterial since it is a disclosed proxy, not the answer."
+  },
+  {
+   "id": "h10",
+   "tier": "hard",
+   "verdict": "PARTIAL",
+   "mcp_answer": "263 customer accounts in credit / \u20b93,62,71,186.96; top 5 = CUSTA000236 \u20b92,17,81,601.29, CUSTA000896 \u20b947,02,143, CUSTA000993 \u20b913,00,145.88, CUSTA001089 \u20b912,21,594, CUSTA000116 \u20b910,54,572.31",
+   "truth": "222 accounts / \u20b938,948,537.73; top 5 includes CUSTA001130 M/S MOHIT KUMAR & COMPANY \u20b916,03,471 at #3",
+   "root_cause": "UNCHANGED \u2014 PARTIAL at baseline, PARTIAL now. Sign convention, CardType='cCustomer' filter and the 'JIVO owes them' narration are all correct and there is zero supplier contamination (the \u20b9106 Cr trap was avoided). But the population count is +18.5% against a key tolerance band of 210\u2013235, the total is \u22126.9% against \u00b13%, and the key's third-largest credit (CUSTA001130) is missing from the reported top five. Right direction, materially incomplete.",
+   "drift_note": "I could not resolve this as drift: +41 accounts in ~6 hours is roughly 3x the key's own drift allowance, and the count rose while the value fell. Two observations that point at instability on BOTH sides rather than a clean tool defect: (a) baseline independently returned the same 263 accounts hours earlier (at \u20b94,12,48,540.97), so the count is reproducible while the key's 222 is the outlier; (b) the frozen keys contradict each other on the sibling quantity \u2014 h10 states 312 suppliers in credit while q09 states 346. Value is monotonically falling across the day (\u20b94.12 Cr \u2192 key \u20b93.89 Cr \u2192 \u20b93.63 Cr), consistent with month-end credit allocation. Graded against the key as instructed; not excused as TRUTH_STALE."
+  },
+  {
+   "id": "h11",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "CUSTA000844 +\u20b969,76,781.02 DR (customer) and VENDA000959 \u2212\u20b953,13,827.00 CR (supplier); net \u20b916,62,954.02 \u2014 they owe JIVO",
+   "truth": "CUSTA000844 +\u20b96,959,053.02; VENDA000959 \u2212\u20b95,313,827.00; net +\u20b91,645,226.02",
+   "root_cause": "Already correct at baseline. Both accounts found despite the differing spellings, both sides labelled, direction explicit, and it correctly warned the netting is a commercial view not an accounting set-off.",
+   "drift_note": "Supplier side exact to the paisa. Customer side +\u20b917,728 (+0.26%), moving the net +1.08% \u2014 a single small invoice on a live ledger. Breaches the literal '\u00b1\u20b91 on the net' tolerance; accepted as drift on a live balance."
+  },
+  {
+   "id": "h12",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "Group \u20b91,66,90,79,582.75 = Oil \u20b91,05,73,50,571.92 + Mart \u20b957,81,32,454.01 + Beverages \u20b93,35,96,556.82, with all six invoice/CN components and counts",
+   "truth": "Identical group total, identical three splits, identical components",
+   "root_cause": "IMPROVED \u2014 baseline REFUSED (NO_COMPANY_PARAM compounded by SILENT_PARAM_DISCARD, the single most dangerous defect found: the server accepted a company argument, returned HTTP 200 and served Oil data anyway). Now all three books are reachable and every figure is exact. It also volunteered that this is an arithmetic sum, not a consolidation, and that intercompany is still inside it.",
+   "drift_note": "Exact to the paisa across three companies \u2014 closed quarter, no drift used."
+  },
+  {
+   "id": "h13",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "External \u20b971,45,58,170.18; intra-group excluded \u20b967,31,59,179.40; total \u20b91,38,77,17,349.58; all 9 intra-group CardCodes listed",
+   "truth": "External \u20b9702,643,938.73; intra-group \u20b9666,321,559.40; total \u20b91,368,965,498.13; same 9 CardCodes",
+   "root_cause": "Verdict improved from baseline PARTIAL, but I do NOT count this as a tool fix \u2014 see drift note. All nine CardCodes (including the four the tolerance singles out: CUSTA001099, CUSTA001113, CUSTA000827, CUSTA000906) are present, exclusion applied to both invoices and credit notes, and the two legs reconcile to the company total.",
+   "drift_note": "External +1.70%, intra-group +1.03% against a \u00b1\u20b91,000 tolerance. The two deltas sum to \u20b91,87,51,851 \u2014 the same still-accruing Apr-Jul window movement as q10, to the rupee \u2014 and the intra-group leg (\u20b968,37,620 net) equals q18's JIVO MART ledger move of \u20b971,79,501 grossed at 5% GST. HONEST CAVEAT: baseline was actually CLOSER to the key here (+0.26% external, intra-group exact) and was scored PARTIAL under the literal \u00b1\u20b91,000 rule. The verdict change is my live-drift rubric applied to an open window, not evidence the tool got better at this question."
+  },
+  {
+   "id": "h14",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "FY2025-26 \u20b94,42,19,08,415.77 (9,637 inv \u20b94,62,14,13,956.06 less 2,403 CN \u20b919,95,05,540.29); 31-Mar-2026: 154 invoices, \u20b98,42,23,854.62 net of GST (\u20b98.26 Cr after that day's 38 credit notes)",
+   "truth": "FY \u20b94,421,908,415.77; 31-Mar slice \u20b984,223,854.62; 154 invoices",
+   "root_cause": "Already correct at baseline. Actively tested the lt/le boundary that would have silently dropped \u20b98.42 Cr, both by re-running as an inclusive BETWEEN and by checking the 1-Apr-2026 spill.",
+   "drift_note": "Exact to the paisa on the FY figure, the 31-March slice and the 154 count. It leads with \u20b98.26 Cr for year-end day (net of that day's credit notes, a defensible refinement) but states the key's \u20b98,42,23,854.62 explicitly in the same sentence."
+  },
+  {
+   "id": "h15",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "Feb \u20b930,59,87,724.69/797; Mar \u20b929,99,93,892.14/668; Apr \u20b929,39,16,262.18/509; May \u20b940,09,62,078.53/666; Jun \u20b936,24,72,231.21/458; Jul \u20b933,03,66,777.66/597 (flagged MTD to 30 Jul)",
+   "truth": "Same five closed months exactly; Jul (MTD) \u20b9311,614,926.21 / 567",
+   "root_cause": "Already correct at baseline. It also independently found the substantive insight \u2014 July's \u20b99.74 Cr credit-note spike is concentrated in a handful of 22-23 Jul intercompany documents, so the apparent July decline is not demand.",
+   "drift_note": "All five CLOSED months match the key to the paisa AND on invoice count \u2014 no drift allowance used where none is permitted. Only July, the still-open month, differs: +30 invoices / +\u20b91,87,51,851, identical to the q10 and h13 deltas. July is correctly flagged as month-to-date."
+  },
+  {
+   "id": "h16",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "12,779 overdue invoices / \u20b91,84,59,83,008.90; weighted average 430.77 days; 76.84% over 90 days (\u20b91,41,85,29,373.82)",
+   "truth": "12,749 / \u20b91,826,047,864.90; 435.4659 days; 77.683% (\u20b91,418,529,373.82)",
+   "root_cause": "Already correct at baseline. Aged off DocDueDate (avoiding the 384.96-day DocDate trap) and weighted by outstanding balance (avoiding the 617.66-day unweighted trap) \u2014 both traps this question exists to set.",
+   "drift_note": "Proof-grade drift. The >90-day numerator is IDENTICAL to the key to the paisa (\u20b91,418,529,373.82) \u2014 the old book does not move. Only the denominator grew, by +30 invoices / +\u20b91.99 Cr of same-day paper (Oil invoices carry DocDueDate = DocDate, so they are overdue at the 31-Jul cut-off on day one). Reconstructing the key's own figure with that addition \u2014 (1,826,047,864.90 x 435.4659 + 19,935,144 x 1) / 1,845,983,008.90 \u2014 gives 430.774 days; the tool answered 430.77. The 4.7-day miss against the \u00b13-day tolerance is arithmetically the clock, not an error."
+  },
+  {
+   "id": "h17",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "19 pairs, \u20b97,19,02,617.00 at risk across 10 suppliers; largest VAISHNODEVI AGRO \u20b964,40,197 on DocNums 726466639 (14 Jul) and 726466692 (16 Jul), 2 days apart",
+   "truth": "26 pairs, \u20b98,93,93,097.00; largest = same supplier, same amount, same two DocNums",
+   "root_cause": "Already correct at baseline, which scored the identical DocType='S' reading CORRECT. The key itself states the split: 'of the 26 pairs, 19 (\u20b97,19,02,617.00) are payments to a genuine supplier business partner (OVPM.DocType=S)' \u2014 the tool's figure matches that sub-total TO THE RUPEE, and the question asks about paying 'the same supplier'. The largest case is named exactly, and the pair-vs-document counting convention is explicitly disclosed.",
+   "drift_note": "Not drift \u2014 a scope choice. 19 pairs falls outside the key's 24-28 band and \u20b97.19 Cr is 19.6% under \u20b98.94 Cr, because the 7 DocType='A' pairs (\u20b91,74,90,480, posted direct to G/L with NULL CardName) are excluded. Defensible and disclosed, but it means \u20b91.75 Cr of the exposure is invisible unless the user knows to ask. Listed as a remaining defect."
+  },
+  {
+   "id": "h18",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "A/P: USD 50 docs / $1,55,24,274.58 / \u20b91,30,59,82,841.13; EUR 5 / \u20ac2,29,010 / \u20b92,27,54,062.50; AUD 2 / A$4,34,512.07 / \u20b92,50,66,304.90. A/R: USD 7 / $14,25,481.75 / \u20b912,24,52,252.81. Net \u20b9123.14 Cr short",
+   "truth": "Identical on every currency, document count, FC amount and INR value",
+   "root_cause": "Already correct at baseline. Valued at DocTotalFC\u2212PaidFC, found all three currencies, confirmed FC credit notes and down payments are nil so coverage is complete.",
+   "drift_note": "Exact on all 12 figures. It also volunteered the two caveats the key flags: the INR values are booked-rate not mark-to-market, and \u20b947.6 Cr of the USD payable sits on migrated documents with true due dates in 2020-2021."
+  },
+  {
+   "id": "h19",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "429 dead items, \u20b921,77,83,981.25 (36.0% of \u20b960,48,50,266.24 on-hand); ex-fixed-asset 75 items \u20b98,97,99,636.33; largest RM0000052 LOOSE REFINED OLIVE OIL 2,94,992.52 units \u20b98,21,15,664.49",
+   "truth": "431 items, \u20b9217,783,981.25; total on-hand \u20b9618,808,475.72 (per-item) / \u20b9636,641,537.52 (positive-rows); ex-FA 77 items \u20b989,799,636.33; RM0000052 \u20b982,115,664.49",
+   "root_cause": "IMPROVED \u2014 baseline PARTIAL (NO_MOVEMENT_JOURNAL_ACCESS + NO_STOCK_VALUATION_FIELD: OINM was not exposed at all, so movement had to be reconstructed from Invoices + DeliveryNotes + InventoryGenExits, producing 612 items instead of 431; and OITW.StockValue was unreachable so the entire \u20b921.78 Cr was declared underivable, with finished goods and raw material pricing at \u20b90). Both gaps are now closed: dead value \u20b921,77,83,981.25 and ex-fixed-asset \u20b98,97,99,636.33 match the key TO THE PAISA, item count 429 is inside the key's 415-445 band, and it independently reproduced the composition insight (\u20b912.80 Cr of the headline is capitalised plant sitting in the item master, not sellable stock).",
+   "drift_note": "Only the denominator misses: total on-hand \u20b960.49 Cr vs the key's \u20b961.88 Cr per-item basis (\u22122.26%) / \u20b963.66 Cr positive-rows basis (\u22125.0%), marginally outside \u00b12%. Attributable to a day's production consumption, and the key itself carries two bases \u20b91.78 Cr apart, so the denominator is ambiguous in the key. Dead count 431\u2192429 with the value unchanged to the paisa means the two items that moved were near-zero value \u2014 internally consistent."
+  },
+  {
+   "id": "h20",
+   "tier": "hard",
+   "verdict": "CORRECT",
+   "mcp_answer": "87 suppliers; advances \u20b917,17,34,181.04; open bills \u20b91,41,87,26,404.77 (975 bills); top 3 ANJU MANGLA / DHANLAXMI / AWL correctly ranked by advance",
+   "truth": "87 suppliers; \u20b9171,734,181.04 advances; \u20b91,438,447,199.77 open bills; same top 3 in the same order",
+   "root_cause": "Already correct at baseline. Reported gross and unnetted (avoiding the \u20b9126.67 Cr netting trap that destroys the finding), sign convention right, and it did the join rather than listing all 171 debit suppliers.",
+   "drift_note": "Supplier count exact, advances exact to the paisa, open bills \u22121.37% (inside \u00b12%), top three named and ranked correctly with exact advance figures. Per-supplier bill detail drifted more (DHANLAXMI \u20b91.37 Cr/4 bills \u2192 \u20b99,318/1 bill; AWL 5 bills \u2192 4) \u2014 consistent with a payment run in the window, and the aggregate stays in tolerance. Its q09 control figure (171 debit suppliers / \u20b920.34 Cr) matches this key's control exactly."
+  }
+ ]
+}

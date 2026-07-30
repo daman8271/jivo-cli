@@ -271,19 +271,18 @@ func (c *Client) Logout(ctx context.Context) error {
 	return nil
 }
 
-// get performs an authenticated GET against path (relative to the Service
-// Layer base URL, e.g. "Orders?$top=5"). It logs in first if there is no
-// session yet, and transparently re-logs-in once and retries on a 401.
-// Returns the raw response body on success (2xx), or a typed error otherwise.
-func (c *Client) get(ctx context.Context, path string, headers map[string]string) ([]byte, error) {
-	body, _, err := c.getWithHeaders(ctx, path, headers)
-	return body, err
-}
-
-// getWithHeaders is get plus the response headers of the successful request.
-// The headers matter for one thing only: the SAP Service Layer's HTTP `Date`
-// header, which is the server's own clock and therefore the honest "as of"
-// stamp for a read (see serverDate). Callers that don't care use get.
+// getWithHeaders performs an authenticated GET against path (relative to the
+// Service Layer base URL, e.g. "Orders?$top=5"). It logs in first if there is no
+// session yet, and transparently re-logs-in once and retries on a 401. It
+// returns the raw response body on success (2xx), plus the response headers, or
+// a typed error otherwise.
+//
+// The response headers matter for one thing: the Service Layer's HTTP `Date`
+// header, the server's own clock and therefore the honest "as of" stamp for a
+// read (see serverDate). A body-only wrapper used to sit in front of this for
+// callers that did not care; every caller came to care, and it was left behind
+// as dead code (`golang.org/x/tools/cmd/deadcode` named it as the only
+// unreachable function in the module).
 func (c *Client) getWithHeaders(ctx context.Context, path string, headers map[string]string) ([]byte, http.Header, error) {
 	if err := c.ensureSession(ctx); err != nil {
 		return nil, nil, err

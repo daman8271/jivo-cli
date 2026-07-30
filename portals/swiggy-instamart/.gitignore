@@ -1,0 +1,17 @@
+# Live session data and harvested corpus — NEVER commit.
+# The walk captures contain response bodies from JIVO's live account; the JS
+# corpus is 12 MB of third-party bundles. captures/scrub.py redacts secrets, but
+# the safe default is not to commit any of it.
+captures/js/
+captures/walk*/
+# downloaded report exports — REAL JIVO business data (inventory valuations, PO
+# values, vendor names). Read-only evidence for the study; must not be committed.
+captures/reports/
+captures/*.har
+*.session.json
+*.jwt
+.env
+.token
+
+# built binary
+cli/swiggy-instamart-portal

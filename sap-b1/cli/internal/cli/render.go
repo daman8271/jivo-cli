@@ -10,6 +10,7 @@ import (
 	"text/tabwriter"
 
 	"sapb1/internal/client"
+	"sapb1/internal/errs"
 )
 
 // renderResult prints a query result either as pretty JSON (the raw "value"
@@ -91,32 +92,24 @@ func renderCSV(w io.Writer, rows []map[string]interface{}, columns []string) err
 	return cw.Error()
 }
 
-// renderCount prints just the total for a --count request. When the server
-// honored $inlinecount it prints the authoritative server-side total; when it
-// didn't, it falls back to the number of returned rows and says so.
+// renderCount prints the authoritative server-side total for a --count request.
+//
+// It has no rows-returned fallback any more, and must not grow one back. A
+// count-only request carries $top=0, so len(res.Value) is 0 by construction —
+// the old fallback would have printed "0" under a note nobody reads and called
+// it the total. runList refuses outright when the server withholds odata.count,
+// which is why this function can require it.
 func renderCount(w io.Writer, res *client.QueryResult, asJSON bool) error {
-	if res.CountKnown {
-		if asJSON {
-			return renderJSONValue(w, map[string]interface{}{
-				"count":      res.Count,
-				"serverSide": true,
-			})
-		}
-		fmt.Fprintln(w, res.Count)
-		return nil
+	if !res.CountKnown {
+		return &errs.APIError{Msg: "no server-side total to print (odata.count absent)"}
 	}
-
-	// Server ignored $inlinecount — fall back to counting returned rows.
-	n := len(res.Value)
 	if asJSON {
 		return renderJSONValue(w, map[string]interface{}{
-			"count":      n,
-			"serverSide": false,
-			"note":       "server did not return odata.count; this is the number of rows returned, not the full server-side total",
+			"count":      res.Count,
+			"serverSide": true,
 		})
 	}
-	fmt.Fprintln(w, n)
-	fmt.Fprintln(w, "(note: server did not return odata.count — this is the number of rows returned, not the full server-side total; add --all or narrow with --filter)")
+	fmt.Fprintln(w, res.Count)
 	return nil
 }
 

@@ -1,0 +1,41 @@
+host	path	method	class	app	const	why
+brand-portal-service-http.swiggy.com	/api/discounting/v1/campaign/disable	PUT	WRITE	im-discounts		observed HTTP PUT
+brand-portal-service-http.swiggy.com	/api/discounting/v1/campaign/upload-status	GET	WRITE	im-discounts		mutating path token(s) ['upload']
+brand-portal-service-http.swiggy.com	/api/v1/ads-chat/conversations/{conversation_id}	DELETE	WRITE	brand-portal-client	ADS_CHAT_DELETE_SESSION	observed HTTP DELETE
+brand-portal-service-http.swiggy.com	/api/v1/advertiser/metrics/report	POST	EXPORT	brand-portal-client	INITIATE_CUSTOM_METRICS_REPORT	report generation / enqueue — creates a row + burns queue budget (G2)
+brand-portal-service-http.swiggy.com	/api/v1/bidding-events	POST	WRITE	brand-portal-client	FESTIVAL_BID_BOOSTER	mutating constant name token(s) ['bid']
+brand-portal-service-http.swiggy.com	/api/v1/campaign	POST	WRITE	brand-portal-client	CAMPAIGN_CREATE,CAMPAIGN_UPDATE,UPDATE_CAMPAIGN,CAMPAIGN_GET_BPS	mutating constant name token(s) ['create', 'update']
+brand-portal-service-http.swiggy.com	/api/v1/campaign/batch	POST	WRITE	brand-portal-client	UPDATE_BIDS_KEY_UPDATE,UPDATE_KEYWORD_BIDS,BATCH_CAMPAIGN_UPDATE	mutating constant name token(s) ['update']
+brand-portal-service-http.swiggy.com	/api/v1/campaign/pause	PUT	WRITE	instamart	CAMPAIGN_PAUSE	observed HTTP PUT
+brand-portal-service-http.swiggy.com	/api/v1/campaign/resume	POST	WRITE	instamart	CAMPAIGN_RESUME	mutating path token(s) ['resume']
+brand-portal-service-http.swiggy.com	/api/v1/campaigns/suggest_bids	POST	WRITE	brand-portal-client	SUGGEST_BID_IN_CAMPAIGNS,GET_SUGGEST_BIDS	mutating constant name token(s) ['bid']
+brand-portal-service-http.swiggy.com	/api/v1/discounts/report	POST	EXPORT	brand-portal-client	INITIATE_DISCOUNTS_METRIC_REPORT	report generation / enqueue — creates a row + burns queue budget (G2)
+brand-portal-service-http.swiggy.com	/api/v1/release-order	UNKNOWN	WRITE	brand-portal-client	RELEASE_ORDER_GET,RELEASE_ORDER_DELETE	mutating path token(s) ['release']
+brand-portal-service-http.swiggy.com	/api/v1/release-order/approve	POST	WRITE	brand-portal-client	RELEASE_ORDER_APPROVE	mutating path token(s) ['approve', 'release']
+brand-portal-service-http.swiggy.com	/api/v1/release-orders/search	POST	WRITE	brand-portal-client	RELEASE_ORDER_SEARCH	mutating path token(s) ['release']
+brand-portal-service-http.swiggy.com	/api/v1/sales/report	POST	EXPORT	brand-portal-client	INITIATE_SALES_METRIC_REPORT	report generation / enqueue — creates a row + burns queue budget (G2)
+brand-portal-service-http.swiggy.com	/v1/create_spin_change_request	POST	WRITE	im-catalog	CREATE_SPIN_CHANGE_REQUEST	mutating path token(s) ['create']
+brand-portal-service-http.swiggy.com	/v1/generate_signed_url	POST	EXPORT	im-catalog	GENERATE_SIGNED_URL	report generation / enqueue — creates a row + burns queue budget (G2)
+brand-portal-service-http.swiggy.com	/v1/update_spin_change_workflow	PUT	WRITE	im-catalog	UPDATE_SPIN_CHANGE_WORKFLOW	observed HTTP PUT
+ozone-idp-brands-im-kba.swiggy.com	/v1/accounts/createAuthURI	POST	WRITE	brand-portal-client	initiateLogin	auth/session endpoint (mints, rotates or destroys a session — G9)
+ozone-idp-brands-im-kba.swiggy.com	/v1/accounts/sendVerificationCode	POST	WRITE	brand-portal-client	sendVerificationCode	auth/session endpoint (mints, rotates or destroys a session — G9)
+ozone-idp-brands-im-kba.swiggy.com	/v1/accounts/signInWithIDP	POST	WRITE	brand-portal-client	signInWithIDP	auth/session endpoint (mints, rotates or destroys a session — G9)
+ozone-idp-brands-im-kba.swiggy.com	/v1/accounts/signInWithOTP	POST	WRITE	brand-portal-client	signInWithOTP	auth/session endpoint (mints, rotates or destroys a session — G9)
+ozone-idp-brands-im-kba.swiggy.com	/v1/accounts/signOut	POST	WRITE	brand-portal-client	signOut	auth/session endpoint (mints, rotates or destroys a session — G9)
+ozone-idp-brands-im-kba.swiggy.com	/v1/token/refresh	POST	WRITE	brand-portal-client	refreshToken,vendorRefreshToken	auth/session endpoint (mints, rotates or destroys a session — G9)
+ozone-idp-brands-im-kba.swiggy.com	/v2/accounts/sendVerificationCode	POST	WRITE	im-vendor	sendVerificationCode	auth/session endpoint (mints, rotates or destroys a session — G9)
+partner-api.swiggy.com	/instamart/v1/campaign/create	UNKNOWN	WRITE	brand-portal-client		mutating path token(s) ['create']
+partner-api.swiggy.com	/instamart/v1/campaign/deactivate	POST	WRITE	brand-portal-client	CAMPAIGN_DEACTIVATE	mutating path token(s) ['deactivate']
+partner-api.swiggy.com	/instamart/v1/campaign/update	UNKNOWN	WRITE	brand-portal-client		mutating path token(s) ['update']
+partner-api.swiggy.com	/instamart/v1/creative/get-upload-info-v2	GET	WRITE	brand-portal-client	GET_S3_UPLOAD_INFO	mutating path token(s) ['upload']
+partner-api.swiggy.com	/instamart/v1/report/initiate-bdpo-report	POST	EXPORT	brand-portal-client	INITIATE_BDPO_METRIC_REPORT	report generation / enqueue — creates a row + burns queue budget (G2)
+partner-api.swiggy.com	/instamart/v1/report/initiate-sales-report	UNKNOWN	EXPORT	brand-portal-client		report generation / enqueue — creates a row + burns queue budget (G2)
+picker.swiggy.com	/api/v1/batch/submit	POST	WRITE	im-vendor	BULK_DOWNLOAD_PO_DATA	mutating path token(s) ['submit']
+picker.swiggy.com	/api/v1/document/batch/generate	POST	EXPORT	im-vendor	DOWNLOAD_SINGLE_PO_DATA	report generation / enqueue — creates a row + burns queue budget (G2)
+picker.swiggy.com	/api/v1/document/merged/generate	POST	EXPORT	im-vendor	DOWNLOAD_MULTIPLE_PO_DATA	report generation / enqueue — creates a row + burns queue budget (G2)
+picker.swiggy.com	/api/v1/external/indent/accept	POST	WRITE	im-vendor	ACCEPT_INDENT	mutating path token(s) ['accept']
+picker.swiggy.com	/api/v1/external/indent/item/update	POST	WRITE	im-vendor	UPDATE_INDENT,UPDATE_INDENT_ITEM	mutating path token(s) ['update']
+picker.swiggy.com	/api/v1/external/indent/reject	POST	WRITE	im-vendor	REJECT_INDENT	mutating path token(s) ['reject']
+picker.swiggy.com	/api/v1/fc-appointment/batch-cancel	UNKNOWN	WRITE	im-vendor		mutating path token(s) ['cancel']
+picker.swiggy.com	/api/v1/fc-appointment/batch-create	UNKNOWN	WRITE	im-vendor		mutating path token(s) ['create']
+picker.swiggy.com	/api/v1/fc-appointment/batch-reschedule	UNKNOWN	WRITE	im-vendor		mutating path token(s) ['reschedule']

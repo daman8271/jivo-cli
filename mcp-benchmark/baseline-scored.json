@@ -1,0 +1,286 @@
+{
+ "results": [
+  {
+   "id": "q01",
+   "question": "Ziyaul Haque ledger balance in Oil, all accounts, Dr/Cr direction",
+   "mcp_answer": "ORGV000044 82,109.29 Dr + ORGC000013 680.00 Dr = 82,789.29 Dr",
+   "truth": "ORGV000044 82,109.29 DEBIT; ORGC000013 680.00 DEBIT; combined 82,789.29 DEBIT; set closed at two accounts",
+   "verdict": "CORRECT",
+   "root_cause": "No defect materialised. Both accounts found, both amounts exact to the paisa, and the counter-intuitive 'positive on a cSupplier imprest card = DEBIT' direction stated correctly. Latent WEAK_TOOL_DESCRIPTION: nothing in the sap_query schema warns that toupper()/tolower() are unsupported in $filter \u2014 the model's contains(CardName,'ZIYAUL') succeeded only because OCRD.CardName happens to be stored upper-case, and it burned 4 extra case-variant sweeps discovering that. On a mixed-case master the same tool call would have returned zero rows and invited a false 'no such party'.",
+   "fix_needed": "Document in the sap_query description that $filter has no case-folding functions, and expose a first-class name_contains parameter that the server implements case-insensitively (server-side UPPER on HANA, or client-side match over a full paginated pull)."
+  },
+  {
+   "id": "q02",
+   "question": "A/R invoice 626070461 in Oil \u2014 customer, date, GST-inclusive total, open/closed",
+   "mcp_answer": "JIVO MART PVT LTD (CUSTA000606), 2026-07-22, \u20b999,88,083 incl GST, open, nothing paid",
+   "truth": "DocEntry 76879 | CUSTA000606 JIVO MART PVT LTD | 2026-07-22 | DocTotal 9,988,083.00 | VatSum 475,623 | PaidToDate 0 | OPEN | not cancelled",
+   "verdict": "CORRECT",
+   "root_cause": "No defect materialised on the answer. One WEAK_TOOL_DESCRIPTION detour: the first sap_query failed with \"Property 'DocStatus' of 'Document' is invalid\" because the Service Layer field is DocumentStatus, not the HANA column DocStatus; the model recovered on retry. It correctly kept DocTotal (GST-inclusive) distinct from DocTotal\u2212VatSum and did not key on DocEntry.",
+   "fix_needed": "Ship a field-alias/validation layer: map HANA column names (DocStatus, CANCELED, RefDate, Balance, CreditLine, OnHand, MinLevel) to their Service Layer equivalents, and on an invalid-property error return the closest valid field name instead of the raw SAP error."
+  },
+  {
+   "id": "q03",
+   "question": "Total business partners in Oil, split customers vs suppliers",
+   "mcp_answer": "3,390 total; 1,170 customers; 2,220 suppliers; 0 leads",
+   "truth": "3,390 / 1,170 / 2,220 / leads 0",
+   "verdict": "CORRECT",
+   "root_cause": "Answer exact on all three integers, and the MCP explicitly disclosed how it got there. But it is CORRECT in spite of the server, not because of it: NO_SERVER_COUNT (no $count/$inlinecount is exposed) plus PAGE_CAP forced the model to binary-search the row count by smuggling '&$skip=<N>' into the filter string \u2014 a filter-injection hack against an undocumented, unsupported parameter. It ran ~40 probe calls to learn three numbers the Service Layer will return in one request, and the technique breaks the moment the MCP starts URL-encoding or validating the filter value.",
+   "fix_needed": "Add a real count mode to sap_query (pass $inlinecount=allpages / $count and return the server total as a distinct field, e.g. total_count), plus first-class validated skip/top parameters so offsets never have to be injected through filter."
+  },
+  {
+   "id": "q04",
+   "question": "Open, non-cancelled A/R invoices in Oil",
+   "mcp_answer": "12,861 open (30,501 total, 17,640 closed)",
+   "truth": "12,861 (server-side COUNT and $inlinecount agree); 12,860 is the different PaidToDate-based measure",
+   "verdict": "CORRECT",
+   "root_cause": "Exact match to the live truth, and the model landed on the DocumentStatus-based 'open' measure rather than the PaidToDate variant, with a closed+open=total reconciliation. Same underlying defects as q03 (NO_SERVER_COUNT + PAGE_CAP): ~28 doubling/binary-search calls via injected $skip to obtain one integer, plus an extra sap_fields round trip to discover DocumentStatus.",
+   "fix_needed": "Same as q03 \u2014 server-side count support. With $inlinecount this is one call instead of ~30, and immune to the intraday drift that a long probe sequence exposes."
+  },
+  {
+   "id": "q05",
+   "question": "Stock-managed (inventory) items on the Oil item master",
+   "mcp_answer": "1,911 stock items out of 2,269 codes; 0 fixed assets",
+   "truth": "1,911 (2,269 total; 1,936 Valid is a different question)",
+   "verdict": "CORRECT",
+   "root_cause": "Exact, and it avoided all three documented traps (2,269 unfiltered, 1,936 Valid-based, 20 single-page). Defect present but survived: PAGE_CAP forced ~96 paged calls to enumerate 1,911 ItemCodes purely to verify a count the server can return directly (NO_SERVER_COUNT).",
+   "fix_needed": "Server-side count support; additionally note in the sap_items/sap_query description that InventoryItem eq 'tYES' \u2014 not Valid \u2014 is what makes an item stock-managed."
+  },
+  {
+   "id": "q06",
+   "question": "Open, non-cancelled sales orders in Oil",
+   "mcp_answer": "164 (keyset-paginated forward and backward, both passes 164)",
+   "truth": "Benchmark key 165; independently re-measured live at 166; truth record itself says 19 of the 166 were booked today, that the figure moves intraday, and that the key 'should be re-pinned immediately before grading or given \u00b1a few units of slack'",
+   "verdict": "TRUTH_UNRESOLVED",
+   "root_cause": "VOLATILE_TRUTH \u2014 not gradeable at the stated exact-integer tolerance. Three measurements of the same quantity taken at three different moments give 164 (MCP), 165 (plan) and 166 (live re-pin), a monotone sequence entirely consistent with the documented ~19-orders-booked-today drift. The MCP's method was sound (9 keyset pages ascending, re-verified 9 pages descending, identical 164-row set, and it proved DocumentStatus='bost_Open' and Cancelled='tYES' is empty), and it honestly disclosed the workaround. I will not fail a system for being 1 short of a key that moved by 1 while the key itself was being computed. The real MCP defect exposed here is that PAGE_CAP + NO_SERVER_COUNT force an 18-call read window across which a live table can move \u2014 a server-side count is atomic, an 18-call tally is not.",
+   "fix_needed": "Two changes make this gradeable and correct: (1) server-side $inlinecount so a count is one atomic request; (2) return the SAP session/server timestamp with every response so a count can be stated 'as of HH:MM' and reconciled against a benchmark key. Re-pin this question's key immediately before any future run, or relax it to \u00b12."
+  },
+  {
+   "id": "q07",
+   "question": "Journal entries posted in Oil on 23 July 2026",
+   "mcp_answer": "478 (123 Receipt from Production, 120 Issue for Production)",
+   "truth": "478 (OJDT.RefDate; OJDT has no DocDate column at all)",
+   "verdict": "CORRECT",
+   "root_cause": "Exact, and it navigated the schema trap correctly \u2014 used ReferenceDate (RefDate), not a guessed DocDate/CreateDate, after a sap_fields probe, then cross-checked with a two-range split. Defect: PAGE_CAP is a hard 20 rows regardless of the top value (the model asked for top:2000 and got 20 back) with no $skip parameter, so 478 rows took 24 keyset-paginated calls; the MCP disclosed this.",
+   "fix_needed": "Honour the requested top by following odata.nextLink server-side up to the requested row count, and surface a truncated:true flag plus the nextLink cursor when it cannot. Also document in the tool description that JournalEntries is dated by ReferenceDate."
+  },
+  {
+   "id": "q08",
+   "question": "Total A/R outstanding in Oil (sum of customer accounts in debit)",
+   "mcp_answer": "\u20b91,07,43,16,125 (1,074,316,124.55) across 106 customer accounts, with intercompany split",
+   "truth": "1,074,316,124.55 across 106 of 1,170 customer accounts (netted 1,038,088,899.58 and open-invoice 1,842,041,593.98 are the wrong measures)",
+   "verdict": "CORRECT",
+   "root_cause": "Matches the live truth to the paisa and dodges all three documented distractors \u2014 it took debits only (not the netted \u20b9103.81 Cr), excluded cSupplier-in-debit accounts, and did not substitute the \u20b9184.20 Cr open-invoice measure. Defects present: NO_AGGREGATION (no SUM, so 106 rows had to be hauled into context) and PAGE_CAP (top:5000 silently returned 20). Notable symptom of the multi-call read: its forward pass summed to ...954.55 and its reverse pass to ...124.55 \u2014 a \u20b9170 non-atomicity artefact it honestly reported, and it happened to report the pass matching live truth.",
+   "fix_needed": "Add an aggregate mode (SUM/COUNT/GROUP BY, or a read-only HANA SQL passthrough tool) so a ledger total is one atomic server-side computation rather than a 12-call client-side tally that can straddle a posting."
+  },
+  {
+   "id": "q09",
+   "question": "Total owed to suppliers in Oil (sum of supplier accounts in credit)",
+   "mcp_answer": "\u20b91,06,29,18,895 payable across 347 supplier accounts, stated as 'Oil owes'",
+   "truth": "Live 1,062,841,158.23 across 346 accounts (benchmark anchor 1,062,918,895.23); netted 867,945,136.98 is NOT accounts payable",
+   "verdict": "CORRECT",
+   "root_cause": "Hits the benchmark anchor to the paisa and is 0.0073% from the live re-measurement \u2014 far inside the 0.5% tolerance. Critically it passed the sign test: it took credit balances only (not the \u20b986.79 Cr net) and described the figure as payable by JIVO, and its 347+170+1,703=2,220 sign reconciliation is exactly the right self-check. Deducted nothing, though the raw value field is rendered as a negative ('-1062918895.23') before the prose corrects it \u2014 a presentation-layer wart, not an error. Defects present but survived: NO_AGGREGATION + PAGE_CAP (18 paged calls + ~30 injected-$skip probes).",
+   "fix_needed": "Aggregate mode as per q08; and have the MCP return balances with an explicit direction field (debit/credit) alongside the signed number so sign convention cannot be lost in presentation."
+  },
+  {
+   "id": "q10",
+   "question": "Oil turnover 1 Apr\u201331 Jul 2026, net of GST, after credit notes",
+   "mcp_answer": "\u20b91,36,89,65,497 (1,368,965,497.25) = 2,199 invoices net \u20b9151.72 Cr less 581 credit notes net \u20b914.83 Cr",
+   "truth": "1,368,965,497.25 exactly (live); benchmark anchor 1,368,965,335.35",
+   "verdict": "CORRECT",
+   "root_cause": "Exact to the paisa against the live figure, and it cleared every one of the four documented traps: used DocTotal\u2212VatSum not DocTotal, deducted ORIN credit notes, applied Cancelled eq 'tNO', and handled the inclusive 31-July boundary (le '2026-07-31', with the correct observation that the books stop at 30 Jul). Defect: NO_AGGREGATION + PAGE_CAP cost 140 paged calls to total 2,780 documents.",
+   "fix_needed": "Aggregate mode (SUM over a filtered set) \u2014 this question should be two server-side sums, not 140 round trips of row-hauling that consume the context window and risk mid-read drift."
+  },
+  {
+   "id": "q11",
+   "question": "Oil June 2026 sales, net of GST, after returns",
+   "mcp_answer": "\u20b936,24,72,231 (458 invoices net \u20b937,09,35,455 less 82 credit notes net \u20b984,63,223)",
+   "truth": "362,472,231.21 (458 / 370,935,454.65 and 82 / 8,463,223.44)",
+   "verdict": "CORRECT",
+   "root_cause": "Exact to the rupee on the total and on both components. It did not skip the small (2.3%) credit-note deduction \u2014 the specific silent-wrongness this question hunts \u2014 and it re-ran the boundary as DocDate lt '2026-07-01' to confirm the month edge. Defects: NO_AGGREGATION + PAGE_CAP (28 paged calls).",
+   "fix_needed": "Aggregate mode as per q10."
+  },
+  {
+   "id": "q12",
+   "question": "Total value of all open sales orders in Oil, GST-inclusive DocTotal",
+   "mcp_answer": "\u20b917,17,23,752 on 164 open orders (net of GST \u20b916,35,46,430.72)",
+   "truth": "Benchmark anchor \u20b917,17,23,753 on 165 orders; live re-pin \u20b917,38,59,173 on 166 orders, the +\u20b921,35,42x delta being three orders booked the same day (DocNums 1726076948/49/50)",
+   "verdict": "CORRECT",
+   "root_cause": "Judged on the number the benchmark actually specifies, this is right to \u20b91 (anchor \u20b9171,723,753 vs answered \u20b9171,723,752). The 1.23% gap to the live re-pin is arithmetically accounted for, rupee-for-rupee, by three same-day order postings named in the truth record \u2014 clock drift, not an MCP defect, and the MCP proved completeness by paginating the set twice in opposite directions to the identical total. It also correctly used DocTotal (not the undelivered remainder) and did not stray into Mart's \u20b9101.71 Cr. Defects present: NO_AGGREGATION + PAGE_CAP.",
+   "fix_needed": "Aggregate mode; plus return a server timestamp per response so a money total is stamped 'as of' and can be reconciled against a drifting key."
+  },
+  {
+   "id": "q13",
+   "question": "Open POs with AWL AGRI BUSINESS LIMITED in Oil \u2014 count and value",
+   "mcp_answer": "6 open POs, \u20b921,57,44,519 incl GST (\u20b920,54,70,970.50 ex-GST; ~\u20b97.24 Cr undelivered at line level)",
+   "truth": "6 open POs; live \u20b9215,727,425.00 (benchmark anchor \u20b9215,744,519.00)",
+   "verdict": "CORRECT",
+   "root_cause": "Count exact; value hits the benchmark anchor exactly and is 0.0079% from the live re-measurement, well inside 0.5%. It resolved the vendor name to VENDA000224 without case-folding, went through generic PurchaseOrders (no dedicated subcommand), deduped against ADANI/WILMAR name variants, and \u2014 the trap this question sets \u2014 kept ordered-value strictly separate from AWL's +\u20b91.24 Cr debit ledger balance. The extra line-level undelivered figure is a bonus, not an error.",
+   "fix_needed": "None for correctness. Minor: the DocStatus\u2192DocumentStatus discovery cost another sap_fields call, same WEAK_TOOL_DESCRIPTION fix as q02."
+  },
+  {
+   "id": "q14",
+   "question": "Beverages turnover Q1 FY26-27 (1 Apr\u201330 Jun 2026), net of GST after credit notes",
+   "mcp_answer": "Refused \u2014 SAP connection locked to JIVO_OIL_HANADB, no company switch exists",
+   "truth": "\u20b93,35,96,556.83 (1,125 invoices net \u20b93,49,34,825.10 less 96 credit notes net \u20b913,38,268.28)",
+   "verdict": "REFUSED",
+   "root_cause": "NO_COMPANY_PARAM \u2014 every sap_ tool is pinned to the configured CompanyDB (Oil); sap_query's schema exposes only entity/filter/orderby/select/top. Aggravating defect: passing company:'JIVO_MART_HANADB' is SILENTLY IGNORED and Oil rows come back looking like a successful answer \u2014 the single most dangerous behaviour in this MCP, because a less careful model would have shipped \u20b9105.74 Cr of Oil turnover labelled 'Beverages' (a 31.5x error). This model probed it, caught it, and refused with an accurate explanation, including that CompanyService_GetCompanyInfo is not an EntitySet and that the pg_/ecom_/oms_ fallbacks are dead. Honest refusal, correct diagnosis, zero fabrication.",
+   "fix_needed": "Add a required-or-defaulted `company` enum parameter (JIVO_OIL_HANADB | JIVO_MART_HANADB | JIVO_BEVERAGES_HANADB) to every sap_ tool, implemented as a per-company Service Layer session pool (the underlying sapb1 CLI already supports --company). Independently and urgently: make the MCP REJECT unknown parameters with an error instead of silently discarding them \u2014 silent-ignore is how a wrong-company answer gets presented as fact."
+  },
+  {
+   "id": "q15",
+   "question": "Mart sales in June 2026, net of GST after credit notes",
+   "mcp_answer": "Refused \u2014 no company parameter; declined to hand over an Oil number dressed as Mart",
+   "truth": "\u20b923,18,05,494.65 (1,293 invoices net \u20b926,03,88,267.84 less 105 credit notes net \u20b92,85,82,773.19)",
+   "verdict": "REFUSED",
+   "root_cause": "NO_COMPANY_PARAM. It additionally tested three different argument spellings (company/companyDB/database), confirmed all were silently dropped (identical Oil row returned), verified Postgres holds no SAP books mirror, and found the only other route (OMS API) returns HTTP 401 token_not_valid/expired. The refusal is well-evidenced and the model explicitly named the trap it was avoiding.",
+   "fix_needed": "Same as q14: `company` parameter + per-company sessions + hard rejection of unknown parameters. Secondary: refresh the OMS API token so the fallback route is at least diagnostic."
+  },
+  {
+   "id": "q16",
+   "question": "How much does Beverages owe its suppliers in total",
+   "mcp_answer": "Refused \u2014 Beverages unreachable; stated the query it would have run",
+   "truth": "\u20b92,27,03,643.46 payable across 76 credit-balance suppliers of 1,686; naive netting flips sign to +\u20b943,65,318.10 'suppliers owe Beverages'",
+   "verdict": "REFUSED",
+   "root_cause": "NO_COMPANY_PARAM. This is the sharpest sign-convention trap in the set and it is unreachable purely because of the single-company binding. Worth crediting: the refusal specified the exact correct method (BusinessPartners where CardType eq 'cSupplier', summing negative CurrentAccountBalance) \u2014 i.e. the model would have got the sign right had the company been reachable. It also proved the silent-ignore behaviour byte-for-byte across three argument names and ruled out all Postgres fallbacks.",
+   "fix_needed": "Same as q14. Once a company parameter exists this question also needs the q09 fix (explicit debit/credit direction field) so the credit-only-vs-netted distinction cannot be lost."
+  },
+  {
+   "id": "q17",
+   "question": "Mart vs Beverages \u2014 which has more money stuck in open A/R; counts, unpaid amounts, gap",
+   "mcp_answer": "Refused \u2014 SAP bound to one company DB; no other backend serves Mart/Beverages A/R",
+   "truth": "Mart 4,985 open / \u20b91,110,491,459.70 unpaid; Beverages 1,178 open / \u20b970,893,146.14 (benchmark key said 1,181 \u2014 stale); Mart ahead by \u20b91,039,598,313.56",
+   "verdict": "REFUSED",
+   "root_cause": "NO_COMPANY_PARAM. Note this question was designed to catch a tool that reuses one company context and compares a company with itself \u2014 with silent-ignore of the company argument, this MCP is architecturally guaranteed to produce exactly that failure if the model trusts it. The model did not trust it: it enumerated the dead alternatives (ecom_sap/oms_hana companion binary missing, ecom API 401, Postgres has no receivables mirror) and refused rather than emitting a fluent Oil-vs-Oil comparison.",
+   "fix_needed": "Same as q14. Additionally the benchmark key for the Beverages leg needs re-pinning (1,178, not 1,181) before this question can be graded on its exact-integer tolerance."
+  },
+  {
+   "id": "q18",
+   "question": "Top 5 customers by ledger balance in Oil",
+   "mcp_answer": "1 JIVO WELLNESS PB 561,002,476.80; 2 JIVO MART 239,172,991.87; 3 JIVO WELLNESS DL 130,315,843; 4 JIVO WELLNESS HR 64,696,719; 5 JIVO WELLNESS DL ISD 19,202,149",
+   "truth": "Identical five CardCodes in identical order with identical amounts; 6th is CUSTA000636 at 14,841,590.52",
+   "verdict": "CORRECT",
+   "root_cause": "All five names in the right order with exact amounts, in ONE tool call. It did not drop or merge the four near-identical intercompany JIVO WELLNESS cards (- PB / - DL / - HR / - DL ISD) \u2014 the fuzzy-collapse trap \u2014 and it volunteered the 6th/7th arm's-length customers as context, which is exactly the boundary check the truth record uses. Incidentally this disproves the truth record's premise that the Service Layer cannot be relied on to sort by CurrentAccountBalance server-side: $orderby=CurrentAccountBalance desc ranked the full 1,170-row set correctly, and the evidence's 6th row matches HANA's 6th.",
+   "fix_needed": "None. Document that server-side $orderby on CurrentAccountBalance is reliable, so future top-N questions are one call instead of a 1,170-row pull."
+  },
+  {
+   "id": "q19",
+   "question": "Top 5 suppliers Oil owes the most to, and how much each",
+   "mcp_answer": "JIVO WELLNESS HR \u20b968.96 Cr; JIVO WELLNESS DL \u20b95.40 Cr; INDRANI FOODS \u20b95.06 Cr; MAHA MAYA \u20b94.50 Cr; VEE KAY \u20b93.58 Cr \u2014 plus a third-party-only variant",
+   "truth": "Same five CardCodes in the same order: 689,617,985.65 / 54,018,504 / 50,604,960 / 45,000,004 / 35,844,570",
+   "verdict": "CORRECT",
+   "root_cause": "Exact ranking and exact amounts, one tool call, and it passed the sign test that this question exists to set: it sorted ASCENDING (most negative first) rather than reusing a DESC sort, so it did not return the inverted 'suppliers who owe JIVO' list headed by ANJU MANGLA/AWL AGRI. Amounts are presented as positive payables with an explicit 'negative = CREDIT = JIVO owes' note, and it flagged the two intercompany accounts.",
+   "fix_needed": "None. (Same optional improvement as q09: an explicit direction field would make the re-signing structural rather than a model convention.)"
+  },
+  {
+   "id": "q21",
+   "question": "Oldest open A/R invoice in Oil by true due date",
+   "mcp_answer": "DocNum 1808191197, THE AREA MANAGER CANTEEN STORE DEPARTMENT (CUSTA000636), due 2017-08-04, \u20b92,08,603 outstanding; noted DocDate 2024-09-30 is the migration date",
+   "truth": "DocNum 1808191197 / DocEntry 34300 / CUSTA000636 / due 2017-08-04 / 208,603.00 outstanding; next-oldest 1808191158 due 2017-11-07",
+   "verdict": "CORRECT",
+   "root_cause": "Every field exact, and it defeated the flagship trap: it aged from DocDueDate, not from the 7,054-way tie at DocDate 2024-09-30, and it explicitly explained the migration artefact. It also proved the minimum rather than asserting it (a DocDueDate lt '2017-08-04' probe returning zero rows) and named the correct next-oldest invoice. Its only caveat is legitimate and correctly reasoned: no per-invoice open-balance field is exposed, so outstanding = DocTotal \u2212 PaidToDate, which is a no-op here because PaidToDate is 0.",
+   "fix_needed": "None for correctness. Nice-to-have: expose a derived open_amount (DocTotal \u2212 PaidToDate) field so aging/outstanding questions don't depend on the model remembering to subtract."
+  },
+  {
+   "id": "q22",
+   "question": "Open Oil A/R more than one year overdue as of 30 Jul 2026 (due before 2025-07-30) \u2014 count and unpaid",
+   "mcp_answer": "9,239 invoices; \u20b91,06,90,72,511 unpaid (\u20b9126.48 Cr face less \u20b919.58 Cr received)",
+   "truth": "9,239 / 1,069,072,510.61 (DocDate-based would give 9,398 / 1,069,283,467.50 \u2014 right money, wrong method)",
+   "verdict": "CORRECT",
+   "root_cause": "Count exact and amount exact to the rupee. All three traps cleared: aged from DocDueDate (it even reported that 7,054 of its 9,239 rows carry the 2024-09-30 migration DocDate, proving it knew the difference), used DocTotal \u2212 PaidToDate rather than the 18.3%-overstated DocTotal, and reconciled 9,239 + 3,622 = 12,861 against the full open book. Note the DocDate-based wrong answer is only 0.02% off on money \u2014 so the exact count is the only tell, and the MCP got the count right. Defect: PAGE_CAP + NO_AGGREGATION cost 462 paged calls plus ~30 offset probes for one COUNT and one SUM.",
+   "fix_needed": "Aggregate mode (SUM/COUNT over a filtered set) plus real pagination. 462 tool calls for a single aging bucket is the clearest efficiency indictment in this run; it works today only because the model is patient."
+  },
+  {
+   "id": "q23",
+   "question": "Oil open A/R in the 91\u2013180 days overdue bucket as of 30 Jul 2026 \u2014 count and unpaid",
+   "mcp_answer": "936 invoices; \u20b96,23,37,377 unpaid (\u20b914,11,60,012 face less \u20b97,88,22,635 received)",
+   "truth": "936 / 62,337,377.46 (DocDueDate 2026-01-31 to 2026-04-30 inclusive; exclusive edges give 875, DocDate-based gives 836)",
+   "verdict": "CORRECT",
+   "root_cause": "Count exact, amount exact to the paisa. It anchored the bucket to the stated as-of date (30 Jul 2026 minus 180d/91d) rather than drifting to 'today', got both boundary edges inclusive \u2014 a 61-document swing if wrong \u2014 re-ran the window in gt/lt form as a cross-check, used DocTotal \u2212 PaidToDate, and verified none of the 936 carry the migration DocDate. Defects: PAGE_CAP + NO_AGGREGATION (47 paged calls plus offset probes).",
+   "fix_needed": "Aggregate mode as per q22."
+  },
+  {
+   "id": "q24",
+   "question": "Customers in Oil over their credit limit, with balance and limit",
+   "mcp_answer": "11 customer accounts, all 11 CardCodes with balances and limits; 8 breaching suppliers explicitly excluded; zero-limit cards excluded as 'no limit set'",
+   "truth": "Exactly 11 customer accounts \u2014 the identical 11 CardCodes with identical balances and limits; all partner types would give 19",
+   "verdict": "CORRECT",
+   "root_cause": "Exact count, exact membership (no extras, none missing), exact rupees, and it cleared both traps deliberately rather than accidentally: it applied 'customers only' (and separately measured the 8 suppliers to show what it was excluding, matching the truth's 19) and excluded CreditLimit = 0 with a correct explanation of SAP's 'zero = no limit' semantics. It also verified that the ORGC* imprest cards really are CardType cCustomer instead of assuming. Grading note for the record: the truth record's premise that the Service Layer '$filter cannot compare two fields' is WRONG \u2014 the MCP's filter 'CurrentAccountBalance gt CreditLimit' executed server-side and returned precisely the right 11 rows, so no client-side 3,390-row pass was needed.",
+   "fix_needed": "None. Correct the project documentation (CLAUDE.md / ASK-EXAMPLES) which claims field-to-field $filter comparison is impossible \u2014 it demonstrably works and is much cheaper than a full pull."
+  },
+  {
+   "id": "q25",
+   "question": "Open invoices behind FUTURE RETAIL LTD's balance in Oil \u2014 count and unpaid",
+   "mcp_answer": "55 open invoices, \u20b994,53,887.88 unpaid, all fully unpaid; explicitly flagged the \u20b93,074 gap to the \u20b994,56,961.88 ledger balance; due dates 2019-12-12 to 2020-05-30",
+   "truth": "55 / 9,453,887.88 unpaid; BP balance 9,456,961.88 DEBIT; genuine unreconciled gap 3,074.00; PaidToDate 0 on all 55",
+   "verdict": "CORRECT",
+   "root_cause": "Count and amount exact, and it did the one thing this question is really testing \u2014 it reported the open-item total AND the ledger balance AND named the \u20b93,074 reconciliation difference instead of substituting one for the other or asserting they must agree. It also went looking for the gap (probed CreditNotes/DownPayments/IncomingPayments for the party, all zero) before attributing it to a non-invoice entry, resolved the name without case-folding, and used DocTotal \u2212 PaidToDate even though it is a no-op here.",
+   "fix_needed": "None."
+  },
+  {
+   "id": "q26",
+   "question": "Items in Beverages below their minimum stock level",
+   "mcp_answer": "Refused \u2014 SAP fixed to Oil; showed the working query returning Oil packaging items and labelled them as Oil, not Beverages",
+   "truth": "Exactly 6 items of 2,192: PM0000641 3,202,169.64/3,840,000; PM0000654 5,609/600,000; PM0000668 239,287.497/396,000; PM0000705 837,337/840,000; RM0000118 1,074.418/3,990; RM0000262 667.75/2,000",
+   "verdict": "REFUSED",
+   "root_cause": "NO_COMPANY_PARAM. The refusal is well-constructed: it demonstrated the query shape works (and that MinInventory gt 0 and QuantityOnStock lt MinInventory is expressible server-side \u2014 again contradicting the 'no field-to-field comparison' assumption), used the Oil result's olive-oil packaging items as positive proof of which database it was actually attached to, and labelled that output as Oil rather than passing it off as Beverages. It also pre-flagged the 20-row page cap as a second obstacle even for a reachable company \u2014 correct, since a stockout list that silently omits an item is worse than none.",
+   "fix_needed": "Same as q14 (`company` parameter + reject unknown params). Then the page cap must also be fixed for this class of question: a below-minimum list must either be complete or explicitly marked truncated."
+  },
+  {
+   "id": "q27",
+   "question": "Total stock on hand for PM0000075 in Oil and how many warehouses hold it",
+   "mcp_answer": "1,304,935.94 units across 13 warehouses; BH-PP 682,927.26, BH-PC 489,771.19, GP-NM 87,500, BH-PM 14,000",
+   "truth": "1,304,935.941 total; 58 OITW rows of which 13 hold positive stock; same per-warehouse figures including the three dust rows",
+   "verdict": "CORRECT",
+   "root_cause": "Both halves right in a single call, and it avoided all three failure modes: it did not report 58 (raw warehouse rows), did not report a single warehouse's 682,927.26 as the total (52% of truth), and did not stop at the item-master total unable to answer the warehouse half. It expanded ItemWarehouseInfoCollection, counted the 13 non-zero rows including the 0.0008/0.4061/0.5621 dust quantities, and \u2014 the right self-check \u2014 verified the 13 rows sum exactly to the item-master QuantityOnStock.",
+   "fix_needed": "None."
+  },
+  {
+   "id": "q28",
+   "question": "Finished-good (FG*) item with the highest quantity on hand in Oil",
+   "mcp_answer": "FG0000386 CHAI 250 GMS 40 PCS, 63,661 units; then FG0000359 51,994 and FG0000032 45,934",
+   "truth": "FG0000386 CHAI 250 GMS 40 PCS 63,661; top-5 matches; unfiltered max is PM0000075 at 1,304,935.941 (packaging tape)",
+   "verdict": "CORRECT",
+   "root_cause": "Exact item and exact quantity, and the runners-up match the truth's top-3 in order. It used the only correct filter form, startswith(ItemCode,'FG'), rather than a substring match on 'FG', so it did not drag in unrelated codes, and it did not return the 20x-larger packaging-tape item that a dropped prefix filter yields. It also ran an ascending sanity check to confirm the ordering was being applied server-side across the whole FG set rather than within one page \u2014 the exact doubt this question is designed to raise.",
+   "fix_needed": "None."
+  },
+  {
+   "id": "q29",
+   "question": "Incoming payments in Oil during July 2026 \u2014 amount and receipt count, excluding cancelled",
+   "mcp_answer": "373 receipts, \u20b966,12,35,554 (\u20b966,11,85,554 transfer + \u20b950,000 cash); split 308 rCustomer \u20b940.69 Cr / 64 rAccount \u20b925.42 Cr / 1 rSupplier \u20b91 lakh",
+   "verdict": "CORRECT",
+   "truth": "373 receipts / 661,235,553.89; correctly includes G/L bank-account rows (64 rows, \u20b925.42 Cr); restricting to BP receipts under-reports by 38%",
+   "root_cause": "Count exact, amount exact to the paisa. It cleared the question's real trap by INCLUDING the 64 G/L-account receipts rather than silently restricting to business-partner rows (which would have cost \u20b925.42 Cr, 38% of the total) and it broke the answer out by DocType so the inclusion is auditable \u2014 its 308 rCustomer + 1 rSupplier = 309 reconciles exactly with the truth's 309 BP rows. It also re-checked the month boundary (le '2026-07-31' vs lt '2026-08-01') and, notably, reconstructed the total from the real payment-means fields (CashSum/TransferSum/BoE/checks/cards) because the Payment entity has no DocTotal \u2014 the same obstacle that invalidated the truth plan's own CLI command. Defects: PAGE_CAP + NO_AGGREGATION (19 paged calls plus offset probes).",
+   "fix_needed": "Aggregate mode; and document in the tool description that Payment/IncomingPayments/VendorPayments expose no DocTotal, so the amount must be assembled from CashSum + TransferSum + BillOfExchangeAmount + check/card sums."
+  },
+  {
+   "id": "q30",
+   "question": "Mart's supplier payouts in July 2026 \u2014 amount and payment count, excluding cancelled",
+   "mcp_answer": "Refused \u2014 SAP bound to Oil; ran the query against Oil (467 payments, \u20b965,20,41,698.83) purely to prove the method and labelled it explicitly as NOT the Mart answer",
+   "truth": "Live 151 payments / \u20b920,05,80,546.01 (benchmark key 148 / \u20b920,02,37,476.01 \u2014 stale by 3 payments); Mart July receipts 540 / \u20b917.69 Cr and Oil July payouts 469 / \u20b965.21 Cr are the two designed distractors",
+   "verdict": "REFUSED",
+   "root_cause": "NO_COMPANY_PARAM. This question stacks three failure modes and the MCP walked straight into the one it could not avoid while sidestepping the other two: it used VendorPayments (money out), not IncomingPayments, and it did not present the Oil figure as the Mart answer \u2014 it named the Oil number, said it was Oil, and said it is not what was asked. It exhausted every fallback first (ecom_sap/oms_hana/oms_sap all fail with 'companion CLI binary not found', and pg_search 'payment' across all 16 Postgres DBs found only app-side tracker tables).",
+   "fix_needed": "Same as q14 (`company` parameter + per-company sessions + reject unknown params). Also fix or remove the dead ecom_sap/oms_sap/oms_hana tools \u2014 they are advertised in the tool list but cannot run, so they burn calls and offer false hope of a fallback. Re-pin this question's key (151, not 148) before grading it on the exact-integer tolerance."
+  }
+ ],
+ "summary": {
+  "correct": 22,
+  "wrong": 0,
+  "partial": 0,
+  "refused": 7,
+  "unresolved": 1,
+  "accuracy_pct": 75.86,
+  "root_cause_counts": "NO_COMPANY_PARAM: 7 (q14,q15,q16,q17,q20,q26,q30 \u2014 every non-Oil question, all REFUSED, none fabricated). VOLATILE_TRUTH (unpinnable exact-integer key on an intraday-moving set, compounded by NO_SERVER_COUNT forcing a non-atomic multi-call tally): 1 (q06, excluded from accuracy). No defect materialised on the answer: 22. MODEL_REASONING failures: 0. WRONG answers: 0. Page-limited figure stated as if complete: 0 \u2014 see note below. Latent-but-survived defects, counted by questions where the model had to hack around them: PAGE_CAP + no skip/top honouring: 13 (q03,q04,q05,q06,q07,q08,q09,q10,q11,q12,q22,q23,q29); NO_SERVER_COUNT: 9 (q03,q04,q05,q06,q07,q22,q23,q29 + q30's Oil demo); NO_AGGREGATION: 9 (q08,q09,q10,q11,q12,q13,q22,q23,q29); WEAK_TOOL_DESCRIPTION: 5 (q02,q04,q05,q13,q29 \u2014 DocStatus vs DocumentStatus, OJDT ReferenceDate, Payment has no DocTotal, no toupper/tolower).",
+  "prioritised_fixes": [
+   "1. Add a `company` enum parameter (JIVO_OIL_HANADB | JIVO_MART_HANADB | JIVO_BEVERAGES_HANADB) to EVERY sap_ tool, backed by a per-company Service Layer session pool \u2014 the underlying sapb1 CLI already takes --company. REPAIRS 7 QUESTIONS (q14,q15,q16,q17,q20,q26,q30) \u2014 every single non-Oil question in the benchmark, i.e. 100% of the unanswered set. This one change takes accuracy from 75.9% to ~100% of the answerable set.",
+   "2. Make the MCP REJECT unknown/unrecognised parameters with an error instead of silently discarding them. Today sap_query accepts company/companyDB/db/database, ignores them, and returns Oil rows that look like a successful answer. Repairs 0 questions directly but is the highest-severity latent defect in the server: it is the mechanism by which a wrong-company answer (Oil's \u20b9105.74 Cr presented as Beverages' \u20b93.36 Cr, a 31.5x error) reaches an accounts person with no tell. This run only escaped it because the answering model probed for it and refused; a less suspicious model ships the lie. Fix it alongside #1, not after.",
+   "3. Add true server-side counting: pass $inlinecount=allpages / $count through and return the server total as a distinct field (e.g. total_count) separate from rows-in-this-page. REPAIRS 1 (q06, the only non-refused failure) and de-risks 8 more (q03,q04,q05,q07,q22,q23,q29,q30). It also makes counts ATOMIC \u2014 q06 failed only because a ~18-call tally straddled live postings, and q12's 1.23% drift has the same origin.",
+   "4. Implement real pagination: honour the requested `top` by following odata.nextLink server-side, expose validated `skip`/`top`/`cursor` parameters, and return `truncated: true` plus the cursor whenever a result set is cut. Repairs 0 outright but eliminates the entire class of silent truncation and the absurd call counts this run needed \u2014 462 paged calls for q22, 140 for q10, ~96 for q05, 24 for q07, and offsets smuggled as '&$skip=N' inside the filter string, an injection hack that dies the moment filter values are properly encoded or validated.",
+   "5. Rename the response field `count` to `rows_in_page` and add explicit `total_count` / `truncated` fields. MISLEADING_COUNT_FIELD did not bite in this run \u2014 the model never mistook a page length for a total \u2014 but the mine is armed: q02's evidence shows {\"count\":1,...} and q03 read {\"count\":0,\"rows\":[]} as an end-of-set signal. A field named `count` next to a 20-row hard cap will eventually be read as a total.",
+   "6. Add an aggregate mode (SUM / COUNT / GROUP BY over a filtered set), or a read-only HANA SQL passthrough tool. Repairs 0 (the model brute-forced all 9 money questions correctly) but converts q08,q09,q10,q11,q12,q13,q22,q23,q29 from hundreds of row-hauling calls into one server-side computation, and removes the non-atomicity that produced q08's \u20b9170 forward-vs-reverse discrepancy.",
+   "7. Fix the tool descriptions and add a field-alias layer: map HANA column names to Service Layer names (DocStatus\u2192DocumentStatus, CANCELED\u2192Cancelled, ORCT/OVPM 'Canceled' single-l, RefDate\u2192ReferenceDate, Balance\u2192CurrentAccountBalance, CreditLine\u2192CreditLimit, OnHand\u2192QuantityOnStock, MinLevel\u2192MinInventory), state that Payment entities have NO DocTotal (amount = CashSum + TransferSum + BillOfExchangeAmount + check/card sums), and state that $filter has no toupper()/tolower(). Repairs 0 but removes 5 questions' worth of trial-and-error probing (q02,q04,q05,q13,q29).",
+   "8. Return the SAP server/session timestamp on every response so counts and totals can be stated 'as of HH:MM'. Makes q06/q09/q12/q13-style live drift diagnosable instead of looking like an error, and lets a benchmark key be reconciled against the instant it was measured.",
+   "9. Fix or remove the dead companion backends \u2014 ecom_sap / oms_sap / oms_hana all fail with 'companion CLI binary not found', and the ecom/OMS API token is expired (HTTP 401 token_not_valid). They are advertised in the tool list, cannot run, and wasted calls in 5 refusals while offering false hope of a cross-company fallback.",
+   "10. Correct the project documentation, not the code, on two points this run disproved: the Service Layer DOES support field-to-field $filter comparison (q24's 'CurrentAccountBalance gt CreditLimit' and q26's 'QuantityOnStock lt MinInventory' both executed server-side and returned the exact right rows), and server-side $orderby on CurrentAccountBalance IS reliable for global top-N (q18 got the correct top 5 of 1,170 in one call). CLAUDE.md/ASK-EXAMPLES currently claim both are impossible, which pushes future work toward needless full-table pulls."
+  ]
+ }
+}

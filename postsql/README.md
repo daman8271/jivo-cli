@@ -172,12 +172,32 @@ postsql --db jivo_ecom context                # prime an AI about the DB
 
 ## MCP server (use it from Claude)
 
-`postsql mcp` speaks the Model Context Protocol over stdio, exposing six
-read-only tools: `postgres_query`, `list_databases`, `list_tables`,
-`describe_table`, `search`, `schema_dump`.
+`postsql mcp` speaks the Model Context Protocol, exposing six read-only
+tools: `postgres_query`, `list_databases`, `list_tables`, `describe_table`,
+`search`, `schema_dump`. Two transports:
 
-Add it to Claude Desktop / Claude Code (`claude_desktop_config.json` or the
-`mcpServers` block in your settings):
+- **stdio** (default): newline-delimited JSON-RPC over stdin/stdout.
+- **HTTP** (`--transport http`): stateless streamable HTTP — POST one
+  JSON-RPC message to `/mcp`, get the single JSON response back (202 for
+  notifications; no sessions, no SSE).
+
+```bash
+postsql mcp                                         # stdio
+postsql mcp --transport http --addr 127.0.0.1:7779  # http://127.0.0.1:7779/mcp
+```
+
+Register the HTTP endpoint with Claude Code:
+
+```bash
+claude mcp add --transport http postsql http://127.0.0.1:7779/mcp
+```
+
+The `--addr` default binds loopback only — keep it that way unless you put
+auth in front (it fronts raw production Postgres). Port 7779 follows the
+fleet sequence ecom `:7777` / sapb1 `:7778` / postsql `:7779`.
+
+For stdio, add it to Claude Desktop / Claude Code
+(`claude_desktop_config.json` or the `mcpServers` block in your settings):
 
 ```json
 {

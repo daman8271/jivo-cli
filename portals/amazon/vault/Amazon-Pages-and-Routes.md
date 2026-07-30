@@ -1,0 +1,247 @@
+---
+title: Amazon Pages and Routes
+created: 2026-07-30
+updated: 2026-07-30
+project: jivo-cli
+type: index
+tags: [amazon, routes, read-only]
+status: studied
+read_only: true
+---
+
+# Amazon — Pages & Routes (the bird's-eye view)
+
+Every page/route found by static analysis of the two portals, **including the ones nobody at JIVO opens** — which is the entire point (AMENDMENT-03 #1, #9). `[200]` = walked live and confirmed this run; `[--]` = found in the corpus, not individually walked (reason in `COVERAGE-LEDGER.md` (repo root)).
+
+The route inventory below is generated verbatim from `captures/routes-raw.txt`. The endpoint (API) surface is separate — see [[Amazon-Endpoints]].
+
+```
+# Amazon — every page/route found by static analysis (PHASE 3)
+#
+# Two portals. `www.vendorcentral.in` = Vendor Central (1P). `sellercentral.amazon.in` = Seller Central (3P).
+# [200] = route confirmed live with a read-only GET this run. [--] = found in the corpus, not fetched.
+# TOTAL: 183 distinct routes across 17 section groups.
+# API endpoints are NOT listed here — see Amazon-Endpoints.md / endpoints-raw.tsv.
+
+## sellercentral.amazon.in · platform/Help-Support-Center  (85 routes)
+  [--] /cu/case-lobby
+  [--] /cu/contact-us
+  [--] /forums/index.jspa
+  [--] /forums/t/
+  [--] /gp/aw/help
+  [--] /gp/case-dashboard
+  [--] /gp/contact-amazon
+  [--] /gp/contact-us
+  [--] /gp/help
+  [--] /gp/help/
+  [--] /gp/help/customer/
+  [--] /gp/help/embed/{guid}
+  [--] /gp/help/embed/{param}
+  [--] /gp/help/external
+  [--] /gp/help/external/
+  [--] /gp/help/external/help-content.html
+  [--] /gp/help/external/help-folder.html
+  [--] /gp/help/external/help-home.html
+  [--] /gp/help/external/help-page.html
+  [--] /gp/help/external/help.html
+  [--] /gp/help/external/home
+  [--] /gp/help/external/home.html
+  [--] /gp/help/external/login-help.html
+  [--] /gp/help/external/{guid}/
+  [--] /gp/help/help-content.html
+  [--] /gp/help/help-folder.html
+  [--] /gp/help/help-home.html
+  [--] /gp/help/help-page.html
+  [--] /gp/help/help-popup.html
+  [--] /gp/help/help.html
+  [--] /gp/help/home
+  [--] /gp/help/home.html
+  [--] /gp/help/login-help.html
+  [--] /gp/help/{guid}/
+  [--] /gp/help/{helpGuid}
+  [--] /help/center/inline/workflow
+  [--] /help/da/{directAnswer}
+  [--] /help/getting-started-guide
+  [--] /help/getting-started-selling-faq
+  [--] /help/home
+  [200] /help/hub
+  [--] /help/hub/
+  [--] /help/hub/debug
+  [--] /help/hub/inline
+  [--] /help/hub/reference/
+  [--] /help/hub/reference/external/
+  [--] /help/hub/reference/external/login-help
+  [--] /help/hub/reference/external/{helpGuid}
+  [--] /help/hub/reference/{helpGuid}
+  [--] /help/hub/support
+  [--] /help/inline/athena-get-direct-answer/embed
+  [--] /help/manage-inventory-tool
+  [--] /help/manage-orders
+  [--] /help/merchant_documents/text/sign-in.html
+  [--] /help/modify-or-delete-a-product-listing
+  [--] /help/workflow/bulk/embed
+  [--] /help/workflow/embed
+  [--] /help/workflow/spl-setup
+  [--] /hz/m/help
+  [--] /hz/m/helpcontent
+  [--] /inline/sidebar
+  [--] /inline/sidebar/search
+  [--] /inline/sidebar/solution
+  [--] /inline/sidebar/support/describe
+  [--] /irc/widget
+  [--] /learn/widget-spl
+  [--] /reference/embed/{guid}
+  [--] /reference/external
+  [--] /reference/external/login-help
+  [--] /reference/external/popup/{guid}
+  [--] /reference/external/{guid}
+  [--] /reference/login-help/
+  [--] /reference/popup/{guid}
+  [--] /reference/search
+  [--] /reference/{guid}
+  [--] /solution/bulk-workflow
+  [--] /solution/{id}
+  [--] /support/SOA
+  [--] /support/describe
+  [--] /support/form/hub
+  [--] /support/help/hub
+  [--] /support/help/node/
+  [--] /support/search/
+  [--] /support/training/hub
+  [--] /support/{nodeId}
+
+## sellercentral.amazon.in · platform/Platform-Common  (19 routes)
+  [--] /1/batch/1/OE/
+  [--] /1/remote-weblab-triggers/1/OE/
+  [--] /account-switcher/dropdown-assets-loader.js
+  [--] /ah/eligibility
+  [--] /coupon-details-page
+  [--] /draft/dashboard
+  [--] /draft/dashboard/savedbyyou
+  [--] /draft/registration/dashboard
+  [--] /edit/bulk
+  [--] /edit/bulk/sph
+  [--] /edit/handmade
+  [--] /globalsearch/v1/search
+  [--] /gp/satisfaction/survey-form-frame.html
+  [--] /gp/satisfaction/survey-submit.html
+  [--] /gp/search
+  [200] /home
+  [--] /pix-gateway
+  [--] /product-search
+  [--] /reorder-coupons-dashboard-page
+
+## sellercentral.amazon.in · seller/Account-Health-Performance  (7 routes)
+  [--] /performance/detail/customer-service
+  [--] /performance/detail/product-policies
+  [--] /performance/detail/shipping
+  [--] /performance/report/order-defects
+  [--] /performance/report/performance-over-time
+  [--] /sq/approvalrequest
+  [--] /voice-of-the-customer
+
+## sellercentral.amazon.in · seller/Business-Reports-Analytics  (6 routes)
+  [--] /br-insights-widget-logger
+  [--] /br-insights-widget-metrics
+  [--] /br-insights-widget/{param}
+  [--] /br-insightswidget-api
+  [--] /business-reports-app-logger
+  [--] /reportcentral/AGLGlobalStoreSales/0
+
+## sellercentral.amazon.in · seller/Coupons-Promotions  (3 routes)
+  [--] /coupons-dashboard-page
+  [--] /promotion-central
+  [--] /promotion/psp/
+
+## sellercentral.amazon.in · seller/Global-Selling-Expansion  (7 routes)
+  [--] /global-selling/listings/connect
+  [--] /marketplace/asin-translation-details
+  [--] /marketplace/exchange-rates
+  [--] /marketplace/global-listings-expansion-data
+  [--] /marketplace/listing-preferences
+  [--] /marketplace/recommendation
+  [--] /marketplace/set-listing-preferences
+
+## sellercentral.amazon.in · seller/Inventory-Pricing  (4 routes)
+  [--] /automatepricing/rules/listings/
+  [--] /hz/inventory
+  [--] /myinventory/actions
+  [200] /myinventory/inventory
+
+## sellercentral.amazon.in · seller/Listings-ASIN-Management  (23 routes)
+  [200] /abis/index.html
+  [--] /abis/listing/clone
+  [--] /abis/listing/clone-bsm-asin
+  [--] /abis/listing/clone-bsm-asin/
+  [--] /abis/listing/clone-from-asin
+  [--] /abis/listing/clone-from-asin/
+  [--] /abis/listing/clone/
+  [--] /abis/listing/create
+  [--] /abis/listing/create-variation-from-standalone
+  [--] /abis/listing/create/
+  [--] /abis/listing/createFromDraft
+  [--] /abis/listing/edit
+  [--] /abis/listing/edit-draft
+  [--] /abis/listing/multi-create
+  [--] /abis/listing/offer-full-form
+  [--] /abis/listing/syh
+  [--] /interactive/listing/workflow/create
+  [--] /interactive/listing/workflow/create/product_identity
+  [--] /interactive/listing/workflow/edit
+  [--] /interactive/listing/workflow/offer/offer
+  [--] /m/products/edit
+  [--] /product/DisplayEditProduct
+  [--] /syh/DisplayCondition
+
+## sellercentral.amazon.in · seller/Messaging-Buyer-Seller  (1 routes)
+  [200] /messaging/inbox
+
+## sellercentral.amazon.in · seller/Orders  (1 routes)
+  [--] /gp/orders-v2/search
+
+## sellercentral.amazon.in · seller/Product-Classification  (10 routes)
+  [--] /certification/1x1certification
+  [--] /handmade/apply
+  [--] /handmade/productclassify
+  [--] /hz/manage-your-category/
+  [--] /hz/productclassify
+  [--] /productclassify/edit
+  [--] /productclassify/edit/handmade
+  [--] /productclassify/index.html
+  [--] /productsearch/v2/search
+  [--] /productsearch/valuesuggestions
+
+## sellercentral.amazon.in · vendor/VC-Support-Help  (8 routes)
+  [--] /hz/vendor/
+  [--] /hz/vendor/members/help/embed/training/widget/layout/{param}/tags/{param}
+  [--] /hz/vendor/members/products/details
+  [--] /hz/vendor/members/products/mycatalog
+  [--] /hz/vendor/members/support/help/node/G4YH8JMYV4VNXQYY
+  [--] /hz/vendor/members/support/help/node/GUYLQ4V36D857DG6
+  [--] /hz/vendor/members/support/hub
+  [--] /hz/vendor/{param}/help/embed/{param}
+
+## www.vendorcentral.in · vendor/Purchase-Orders  (2 routes)
+  [--] /po/vendor/members/po-mgmt/dashboard
+  [--] /po/vendor/members/po-mgmt/managepos
+
+## www.vendorcentral.in · vendor/Retail-Analytics-ARA  (2 routes)
+  [--] /analytics/dashboard/vendorAnalytics
+  [--] /retail-analytics/dashboard/sales
+
+## www.vendorcentral.in · vendor/VC-Catalog-Products  (2 routes)
+  [--] /hz/vendor/members/products/details
+  [--] /hz/vendor/members/products/mycatalog
+
+## www.vendorcentral.in · vendor/VC-Coupon-Campaigns  (2 routes)
+  [--] /hz/vendor/members/coupon-campaigns/download/{campaignId}/download-metrics
+  [--] /hz/vendor/members/coupon-campaigns/view/{campaignId}/campaign-metrics
+
+## www.vendorcentral.in · vendor/VC-Support-Help  (1 routes)
+  [--] /hz/vendor/members/support/hub
+```
+
+## Connections
+
+- [[00-Amazon-Atlas]] · [[Amazon-Endpoints]] · `COVERAGE-LEDGER.md` (repo root) · [[Amazon-Data-Inventory]]
+

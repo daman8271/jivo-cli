@@ -10,6 +10,18 @@ import (
 	"sapb1/internal/errs"
 )
 
+// openDocumentFilter is how the Service Layer expresses "open document", and
+// the ONLY spelling it accepts.
+//
+// The Service Layer property is DocumentStatus, with values 'bost_Open' /
+// 'bost_Close'. DocStatus (values 'O'/'C') is the HANA COLUMN name, and the
+// Service Layer rejects it outright — a $select or $filter naming it fails the
+// whole request with "Property 'DocStatus' of 'Document' is invalid", so
+// `orders list` and `invoices list` returned nothing but an error against real
+// SAP. Both the default $select and the --open filter of those two commands
+// depend on this constant; do not reintroduce the column name.
+const openDocumentFilter = "DocumentStatus eq 'bost_Open'"
+
 // listFlags backs the common --filter/--select/--top/--skip/--orderby/--all
 // flag shape shared by orders/invoices/items/partners `list` subcommands and
 // by the generic `query` command.
@@ -32,7 +44,7 @@ func addListFlags(cmd *cobra.Command, lf *listFlags, defaultTop int) {
 	cmd.Flags().StringVar(&lf.orderby, "orderby", "", "raw OData $orderby expression, e.g. \"DocDate desc\"")
 	cmd.Flags().BoolVar(&lf.all, "all", false, fmt.Sprintf("paginate through ALL matching rows via odata.nextLink (capped at %d pages)", client.MaxPages))
 	cmd.Flags().IntVar(&lf.pageSize, "page-size", 0, "rows per page while paginating (sent as Prefer: odata.maxpagesize); server default is 20")
-	cmd.Flags().BoolVar(&lf.count, "count", false, "print only the server-side total row count ($inlinecount=allpages)")
+	cmd.Flags().BoolVar(&lf.count, "count", false, "print only the server-side total row count: one GET, $top=0 with $inlinecount=allpages, no rows fetched (--select/--orderby/--skip/--top/--all do not apply)")
 }
 
 // combineFilters ANDs together any non-empty filter fragments, parenthesizing
@@ -79,17 +91,43 @@ func runList(cmd *cobra.Command, entitySet string, lf listFlags, extraFilter, de
 		ob = defaultOrderBy
 	}
 
-	opts := client.QueryOptions{
-		Select:      sel,
-		Filter:      combineFilters(extraFilter, lf.filter),
-		OrderBy:     ob,
-		Skip:        lf.skip,
-		PageSize:    lf.pageSize,
-		InlineCount: lf.count,
-	}
-
+	filter := combineFilters(extraFilter, lf.filter)
 	c := client.New(cfg)
 	ctx := cmd.Context()
+	out := cmd.OutOrStdout()
+
+	// --count is a question about the SET, so it is its own request shape: one
+	// GET, $top=0, $inlinecount=allpages, and no rows.
+	//
+	// It used to reuse the row path, which meant `sapb1 query BusinessPartners
+	// --count` asked for $top=20 with the command's full $select and pulled
+	// twenty complete SAP documents across the wire to print a single number —
+	// and with --all it walked up to 200 pages of them for the same one number,
+	// since the total always came from the first page's odata.count anyway.
+	if lf.count {
+		res, err := c.Query(ctx, entitySet, client.QueryOptions{Filter: filter, CountOnly: true})
+		if err != nil {
+			return err
+		}
+		if !res.CountKnown {
+			// Never fall back to len(rows): a count-only request holds no rows,
+			// so that fallback would print 0 and call it the total. A refusal is
+			// recoverable; a confident wrong number is not.
+			return &errs.APIError{Msg: fmt.Sprintf(
+				"the Service Layer did not return a server-side total (odata.count) for %s — "+
+					"refusing to print a row tally in its place; re-run without --count and count the rows you get, "+
+					"or narrow the request with --filter", entitySet)}
+		}
+		return renderCount(out, res, cfg.JSON)
+	}
+
+	opts := client.QueryOptions{
+		Select:   sel,
+		Filter:   filter,
+		OrderBy:  ob,
+		Skip:     lf.skip,
+		PageSize: lf.pageSize,
+	}
 
 	var res *client.QueryResult
 	if lf.all {
@@ -102,10 +140,7 @@ func runList(cmd *cobra.Command, entitySet string, lf listFlags, extraFilter, de
 		return err
 	}
 
-	out := cmd.OutOrStdout()
 	switch {
-	case lf.count:
-		return renderCount(out, res, cfg.JSON)
 	case cfg.CSV:
 		if err := renderCSV(out, res.Value, parseFieldList(sel)); err != nil {
 			return err

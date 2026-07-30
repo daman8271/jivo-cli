@@ -23,10 +23,34 @@ type QueryOptions struct {
 	OrderBy     string
 	PageSize    int  // sent as the "Prefer: odata.maxpagesize=N" header
 	InlineCount bool // request "$inlinecount=allpages" so the server returns odata.count
+	// CountOnly asks the server how many rows MATCH and for no rows at all:
+	// "$top=0&$inlinecount=allpages", carrying only $filter.
+	//
+	// A count is a question about the SET, not about any row, and $top=1 answered
+	// it by hauling one complete ~200-field SAP document back just to read a
+	// header — 14,460 bytes to learn a five-digit number. $top=0 is honoured by
+	// this Service Layer on every entity set and every company database
+	// (verified live on Orders/Invoices/Items/BusinessPartners/JournalEntries
+	// across Oil, Mart and Beverages: HTTP 200, correct odata.count, zero rows,
+	// ~110-121 bytes).
+	//
+	// It is a MODE, not a hint: $select, $orderby, $skip and $top are refused
+	// alongside it rather than quietly dropped, because there are no rows for a
+	// projection or an ordering to apply to, and $inlinecount is computed over
+	// the whole filtered set regardless of any offset.
+	CountOnly bool
 }
 
 func (o QueryOptions) queryString() string {
 	q := url.Values{}
+	if o.CountOnly {
+		if o.Filter != "" {
+			q.Set("$filter", o.Filter)
+		}
+		q.Set("$top", "0")
+		q.Set("$inlinecount", "allpages")
+		return q.Encode()
+	}
 	if o.Select != "" {
 		q.Set("$select", o.Select)
 	}
@@ -122,9 +146,39 @@ func ValidateEntitySet(entitySet string) error {
 	return nil
 }
 
+// validateCountOnly refuses the option combinations a count-only request cannot
+// honour. Dropping them in silence would be the same defect ValidateEntitySet
+// exists to stop, one layer up: the caller asked for a projection or an
+// ordering, got a number, and had no way to tell that half the request was
+// discarded.
+func validateCountOnly(o QueryOptions) error {
+	if !o.CountOnly {
+		return nil
+	}
+	for _, bad := range []struct {
+		name, why string
+		set       bool
+	}{
+		{"Select", "a count returns no rows to project", o.Select != ""},
+		{"OrderBy", "a count returns no rows to order", o.OrderBy != ""},
+		{"Skip", "$inlinecount totals the whole filtered set, so an offset cannot change it", o.Skip != 0},
+		{"Top", "a count-only request fixes $top at 0", o.Top != 0},
+		{"PageSize", "a count is a single request and never paginates", o.PageSize != 0},
+	} {
+		if bad.set {
+			return &errs.UsageError{Msg: fmt.Sprintf(
+				"QueryOptions.%s cannot be combined with CountOnly: %s", bad.name, bad.why)}
+		}
+	}
+	return nil
+}
+
 // entityPath validates entitySet and builds the request path for opts.
 func entityPath(entitySet string, opts QueryOptions) (string, error) {
 	if err := ValidateEntitySet(entitySet); err != nil {
+		return "", err
+	}
+	if err := validateCountOnly(opts); err != nil {
 		return "", err
 	}
 	path := strings.TrimSpace(entitySet)
