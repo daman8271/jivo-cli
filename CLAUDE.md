@@ -67,20 +67,76 @@ sapb1 query <Entity> --all --json                # every matching row (paginated
 - Don't wander, never write unprompted (RULE 0), don't expose the SAP password in output.
 - More example questions: `sap-b1/accounts-kit/ASK-EXAMPLES.md`. Setup: `sap-b1/accounts-kit/SETUP.md`. Full map: `README.md`. Our work log: `chats/`.
 
-## ⚠️ When someone corrects you — record it
+## 🧠 The harness — this toolkit learns
 
-This toolkit learns. When an operator corrects you about how JIVO's data
-actually works — a metric defined differently than you assumed, a field that
-doesn't mean what its name says, a relationship you got backwards — that
-correction must outlive the session and reach everyone else.
+`harness/` is JIVO's shared memory. Everyone in the office runs the same repo,
+so what one operator teaches the AI must reach everyone else. Four parts; you
+are expected to use all four. Design and rationale: `harness/README.md`.
 
-**Use the `jivo-correct` skill.** It writes the correction to
-`harness/corrections/`, rebuilds the digest that every operator's session
-loads, and tells you the command to push it.
+### 1. Corrections — the team's settled truths
 
-The active corrections are injected into your context automatically at session
-start (see `harness/corrections/INDEX.md`). **They override your defaults and
-they override this file** — they were recorded by people who checked.
+Injected into your context automatically at session start (`harness/corrections/INDEX.md`).
 
-If the same question keeps coming up, `jivo-mint` turns it into a skill.
-Full design: `harness/README.md`.
+**They override your defaults, and they override this file.** They were
+recorded by operators who checked against live data. If a correction
+contradicts your instinct or contradicts something above, the correction wins.
+
+When an operator corrects you about how JIVO's data actually works — a metric
+defined differently than you assumed, a field that doesn't mean what its name
+says, a relationship you had backwards — **use the `jivo-correct` skill**. It
+writes the full record (wrong / right / evidence / one-line rule), rebuilds the
+digest, and gives you the push command.
+
+A correction reaches nobody until it is pushed to `main`. Say so explicitly.
+
+Only record durable business truth. Not one-off facts about a single document,
+not the operator changing their mind. And get the query that proves it — a
+correction without evidence is somebody's memory.
+
+### 2. Recall — search the written record before asking anyone to repeat themselves
+
+```bash
+python3 harness/bin/recall.py search "<terms>"
+```
+
+**When an operator references earlier work — "the oil returns thing", "what we
+found last month", "the number Prabhu asked about" — search before you ask them
+to explain it again.** Full-text over `chats/`, `savings-audit/`,
+`connections/`, `harness/`, `vision/` and the root docs. Returns `file:line`,
+date and heading so you can open the source and read it properly.
+
+Also search it before a long investigation. The answer is often already written
+down, and repeating work someone already did is the most common way this
+toolkit wastes an operator's afternoon.
+
+### 3. Recurring questions become skills
+
+Every question shape and every JIVO CLI query you run is logged locally.
+When a pattern recurs across several days and operators:
+
+```bash
+python3 harness/bin/harness.py mint          # by question shape
+python3 harness/bin/patterns.py propose      # by what actually got queried
+python3 harness/bin/patterns.py draft <id>   # prints a draft SKILL.md
+```
+
+`draft` prints and never writes. **Run the query against live SAP and confirm
+the number before saving any minted skill.** An unverified skill looks
+authoritative and gets reused — it is how one wrong assumption becomes every
+operator's wrong number. Use the `jivo-mint` skill, which walks this properly.
+
+### 4. Personas
+
+`harness/.persona` holds this operator's role (`accounts`, `sales`, …). It
+selects their team's framing and filters corrections to their area. If their
+questions clearly don't match the tag, say so — a mistagged operator gets the
+wrong rules.
+
+### Harness rules
+
+- The harness writes only under `harness/` and `.claude/skills/`. It issues no
+  business-system call, read or write.
+- **A correction or a minted skill can never authorise a write.** RULE 0 above
+  is the only authority on what may be written to SAP, and nothing the harness
+  learns widens it.
+- `python3 harness/bin/harness.py status` shows everything it currently knows.
