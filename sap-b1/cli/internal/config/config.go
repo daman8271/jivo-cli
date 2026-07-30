@@ -5,6 +5,9 @@
 package config
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -203,19 +206,73 @@ func (c *Config) ValidateCompanyDB() error {
 	return nil
 }
 
-// SessionCachePath returns ~/.sapb1-session.json.
-func SessionCachePath() (string, error) {
+// SessionCachePathFor returns the session-cache file for ONE connection
+// identity: ~/.sapb1-session-<companydb-slug>-<hash of host:port:user>.json.
+//
+// Why per identity rather than one shared file: a Service Layer session is
+// scoped to the CompanyDB it logged into, so Oil, Mart and Beverages need
+// three different sessions. With a single file they overwrite each other, and
+// alternating companies (exactly what a "compare Mart vs Beverages" workflow
+// does) forces a fresh POST /Login on every switch — SAP B1 sessions are a
+// finite, ~30-minute-lived resource, so that is a login storm.
+//
+// The CompanyDB is kept readable in the filename (it is not a secret and makes
+// the files self-explaining); host, port and user are folded into a short hash
+// so the name stays bounded and no username lands in a filename.
+func SessionCachePathFor(host string, port int, companyDB, user string) (string, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("cannot determine home directory: %w", err)
 	}
-	return filepath.Join(home, ".sapb1-session.json"), nil
+	id := fmt.Sprintf("%s:%d:%s", host, port, user)
+	sum := sha256.Sum256([]byte(id))
+	name := fmt.Sprintf(".sapb1-session-%s-%s.json", slugify(companyDB), hex.EncodeToString(sum[:4]))
+	return filepath.Join(home, name), nil
 }
 
-// WriteLogPath returns the append-only audit log every write command records
-// to: $SAPB1_WRITE_LOG if set, else ~/.sapb1-writes.jsonl.
+// slugify reduces an arbitrary CompanyDB name to a safe, lower-case filename
+// fragment. Any run of non-alphanumeric characters collapses to a single "-";
+// an empty or fully-stripped name becomes "none" so the path is never
+// ambiguous.
+func slugify(s string) string {
+	var b strings.Builder
+	lastDash := false
+	for _, r := range strings.ToLower(strings.TrimSpace(s)) {
+		switch {
+		case (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9'):
+			b.WriteRune(r)
+			lastDash = false
+		default:
+			if !lastDash && b.Len() > 0 {
+				b.WriteByte('-')
+				lastDash = true
+			}
+		}
+	}
+	out := strings.Trim(b.String(), "-")
+	if out == "" {
+		return "none"
+	}
+	return out
+}
+
+// WriteLogPath returns the append-only audit log every write command records to.
+//
+// Precedence: $SAPB1_WRITE_LOG > this operator's folder inside the JIVO repo >
+// ~/.sapb1-writes.jsonl.
+//
+// The repo default is the important one. A write log that only ever lands in
+// the operator's home directory is an audit trail nobody audits: the person who
+// made the write is the only person who can read it. Inside the repo it sits in
+// `queries/<operator>/sap-writes.jsonl`, which is committed and pushed with the
+// rest of their session log — so every write attempt, by every operator, on
+// every machine, converges into one shared history. Home is kept only as the
+// fallback for a binary running outside a registered checkout.
 func WriteLogPath() (string, error) {
 	if p := strings.TrimSpace(os.Getenv("SAPB1_WRITE_LOG")); p != "" {
+		return p, nil
+	}
+	if p := operatorWriteLog(); p != "" {
 		return p, nil
 	}
 	home, err := os.UserHomeDir()
@@ -223,4 +280,51 @@ func WriteLogPath() (string, error) {
 		return "", fmt.Errorf("cannot determine home directory: %w", err)
 	}
 	return filepath.Join(home, ".sapb1-writes.jsonl"), nil
+}
+
+// operatorWriteLog finds `queries/<slug>/sap-writes.jsonl` for the operator
+// registered in this checkout, or "" if there isn't one.
+//
+// Best-effort by design: it is called on a path where failing to resolve must
+// never block a write that the operator has already confirmed. Any problem —
+// no repo, no registration, unreadable JSON — simply falls through to the home
+// default rather than returning an error.
+func operatorWriteLog() string {
+	roots := make([]string, 0, 2)
+	if cwd, err := os.Getwd(); err == nil {
+		roots = append(roots, cwd)
+	}
+	if exe, err := os.Executable(); err == nil {
+		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+			exe = resolved
+		}
+		roots = append(roots, filepath.Dir(exe))
+	}
+
+	for _, start := range roots {
+		dir := start
+		for i := 0; i < 12; i++ { // bounded: never walk to / on a deep tree
+			operator := filepath.Join(dir, "harness", ".operator")
+			if raw, err := os.ReadFile(operator); err == nil {
+				var reg struct {
+					Slug string `json:"slug"`
+				}
+				if err := json.Unmarshal(raw, &reg); err == nil {
+					if slug := strings.TrimSpace(reg.Slug); slug != "" {
+						logDir := filepath.Join(dir, "queries", slug)
+						if err := os.MkdirAll(logDir, 0o755); err == nil {
+							return filepath.Join(logDir, "sap-writes.jsonl")
+						}
+					}
+				}
+				break // found the checkout; it just isn't usable
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir {
+				break
+			}
+			dir = parent
+		}
+	}
+	return ""
 }

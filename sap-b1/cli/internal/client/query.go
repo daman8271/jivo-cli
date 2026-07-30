@@ -7,6 +7,10 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
+	"unicode"
+
+	"sapb1/internal/errs"
 )
 
 // QueryOptions maps directly onto the standard OData query options the
@@ -64,23 +68,89 @@ type QueryResult struct {
 	// CountKnown is false when the server ignored $inlinecount.
 	Count      int64 `json:"-"`
 	CountKnown bool  `json:"-"`
+	// ServerDate is the SAP server's own clock, taken from the HTTP Date
+	// response header (of the FINAL page, for QueryAll). ServerDateKnown is
+	// false when the server sent no usable Date header, in which case a caller
+	// that wants an "as of" stamp must fall back to local time AND say so.
+	ServerDate      time.Time `json:"-"`
+	ServerDateKnown bool      `json:"-"`
 }
 
 // MaxPages caps QueryAll's pagination so a runaway filter can't loop forever.
 const MaxPages = 200
 
-// Query fetches a single page of entitySet (e.g. "Orders", "Items",
-// "BusinessPartners") using the given options.
-func (c *Client) Query(ctx context.Context, entitySet string, opts QueryOptions) (*QueryResult, error) {
-	path := entitySet
+// urlStructuralChars are the characters that, appearing in an entity-set name,
+// would change the STRUCTURE of the request URL rather than name an entity.
+//
+// This matters because the request path is built as entitySet + "?" + query
+// string. A '#' anywhere in the name turns everything after it — $filter,
+// $select, $orderby, $top, $inlinecount — into a URI fragment, which net/http
+// never puts on the wire. The request then SUCCEEDS and returns unfiltered,
+// unprojected rows: a normal-looking answer to a question nobody asked, which
+// is the exact failure class this package exists to prevent. '?' and '&' would
+// splice caller text into the query string the same way; '%' would let a name
+// smuggle any of them back in percent-encoded; whitespace and control
+// characters cannot occur in a real entity-set name and only ever arrive from
+// a mangled argument.
+const urlStructuralChars = "#?&%"
+
+// ValidateEntitySet rejects an entity-set name that could not be concatenated
+// into a request URL without changing its meaning. It is deliberately a hard
+// error rather than a silent sanitisation: rewriting "Orders#" into "Orders"
+// would answer a different question than the caller asked, which is the same
+// defect wearing a different hat.
+func ValidateEntitySet(entitySet string) error {
+	name := strings.TrimSpace(entitySet)
+	if name == "" {
+		return &errs.UsageError{Msg: `entity set is required, e.g. "Orders"`}
+	}
+	for _, r := range name {
+		switch {
+		case strings.ContainsRune(urlStructuralChars, r):
+			return &errs.UsageError{Msg: fmt.Sprintf(
+				"invalid entity set %q: %q is not part of an entity-set name, and inside one it would silently drop the query options "+
+					"($filter/$select/$orderby/$top) from the request — pass just the entity set (e.g. \"Orders\") and use the filter/select/orderby options",
+				entitySet, string(r))}
+		case unicode.IsSpace(r):
+			return &errs.UsageError{Msg: fmt.Sprintf(
+				"invalid entity set %q: entity-set names contain no whitespace — pass just the entity set, e.g. \"Orders\"", entitySet)}
+		case r < 0x20 || r == 0x7f:
+			return &errs.UsageError{Msg: fmt.Sprintf(
+				"invalid entity set %q: it contains a control character", entitySet)}
+		}
+	}
+	return nil
+}
+
+// entityPath validates entitySet and builds the request path for opts.
+func entityPath(entitySet string, opts QueryOptions) (string, error) {
+	if err := ValidateEntitySet(entitySet); err != nil {
+		return "", err
+	}
+	path := strings.TrimSpace(entitySet)
 	if qs := opts.queryString(); qs != "" {
 		path += "?" + qs
 	}
-	body, err := c.get(ctx, path, opts.headers())
+	return path, nil
+}
+
+// Query fetches a single page of entitySet (e.g. "Orders", "Items",
+// "BusinessPartners") using the given options.
+func (c *Client) Query(ctx context.Context, entitySet string, opts QueryOptions) (*QueryResult, error) {
+	path, err := entityPath(entitySet, opts)
 	if err != nil {
 		return nil, err
 	}
-	return parseQueryResult(body, entitySet)
+	body, respHeaders, err := c.getWithHeaders(ctx, path, opts.headers())
+	if err != nil {
+		return nil, err
+	}
+	qr, err := parseQueryResult(body, entitySet)
+	if err != nil {
+		return nil, err
+	}
+	qr.ServerDate, qr.ServerDateKnown = serverDate(respHeaders)
+	return qr, nil
 }
 
 // parseQueryResult unmarshals one OData page body into a QueryResult and, if
@@ -120,10 +190,17 @@ func extractODataCount(body []byte) (int64, bool) {
 
 // QueryAll follows odata.nextLink until the result set is exhausted or
 // MaxPages is hit, whichever comes first, and returns the combined rows.
+//
+// When opts.Top > 0 it also stops as soon as it holds Top rows, and trims to
+// exactly Top. The Service Layer normally carries $top across its nextLinks,
+// but that is a server behaviour we do not control: without the client-side
+// stop, a server that dropped $top from the nextLink would silently turn
+// "give me 45 rows" into a 200-page walk of the whole entity set. The stop
+// makes the cost of a bounded request bounded regardless.
 func (c *Client) QueryAll(ctx context.Context, entitySet string, opts QueryOptions) (*QueryResult, error) {
-	path := entitySet
-	if qs := opts.queryString(); qs != "" {
-		path += "?" + qs
+	path, err := entityPath(entitySet, opts)
+	if err != nil {
+		return nil, err
 	}
 	headers := opts.headers()
 
@@ -131,9 +208,11 @@ func (c *Client) QueryAll(ctx context.Context, entitySet string, opts QueryOptio
 	capped := false
 	var count int64
 	countKnown := false
+	var lastDate time.Time
+	lastDateKnown := false
 
 	for page := 0; ; page++ {
-		body, err := c.get(ctx, path, headers)
+		body, respHeaders, err := c.getWithHeaders(ctx, path, headers)
 		if err != nil {
 			return nil, err
 		}
@@ -147,7 +226,15 @@ func (c *Client) QueryAll(ctx context.Context, entitySet string, opts QueryOptio
 			count = qr.Count
 			countKnown = true
 		}
+		// The freshest stamp wins: it is the moment the last row was read.
+		if d, ok := serverDate(respHeaders); ok {
+			lastDate, lastDateKnown = d, true
+		}
 
+		if opts.Top > 0 && len(all) >= opts.Top {
+			all = all[:opts.Top]
+			break
+		}
 		if qr.NextLink == "" {
 			break
 		}
@@ -158,5 +245,12 @@ func (c *Client) QueryAll(ctx context.Context, entitySet string, opts QueryOptio
 		path = qr.NextLink
 	}
 
-	return &QueryResult{Value: all, Capped: capped, Count: count, CountKnown: countKnown}, nil
+	return &QueryResult{
+		Value:           all,
+		Capped:          capped,
+		Count:           count,
+		CountKnown:      countKnown,
+		ServerDate:      lastDate,
+		ServerDateKnown: lastDateKnown,
+	}, nil
 }

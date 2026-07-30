@@ -8,9 +8,11 @@ import (
 	"sapb1/internal/config"
 )
 
-// sessionCache is what gets persisted to ~/.sapb1-session.json. It is scoped
-// to a specific host+port+companyDB+user tuple so a cached session is never
-// reused against a different SAP connection.
+// sessionCache is what gets persisted to the per-identity cache file
+// ~/.sapb1-session-<companydb>-<hash>.json. It is scoped to a specific
+// host+port+companyDB+user tuple so a cached session is never reused against a
+// different SAP connection: the tuple is both what picks the file AND what is
+// re-checked on load (see Client.LoadCachedSession).
 type sessionCache struct {
 	Host       string    `json:"host"`
 	Port       int       `json:"port"`
@@ -21,10 +23,11 @@ type sessionCache struct {
 	LoggedInAt time.Time `json:"logged_in_at"`
 }
 
-// loadSessionCache reads the cache file, if any. It never errors on a
-// missing/unreadable/corrupt file — callers just treat that as "no session".
-func loadSessionCache() (*sessionCache, bool) {
-	path, err := config.SessionCachePath()
+// loadSessionCache reads the cache file for one connection identity, if any.
+// It never errors on a missing/unreadable/corrupt file — callers just treat
+// that as "no session" and log in again.
+func loadSessionCache(host string, port int, companyDB, user string) (*sessionCache, bool) {
+	path, err := config.SessionCachePathFor(host, port, companyDB, user)
 	if err != nil {
 		return nil, false
 	}
@@ -42,10 +45,10 @@ func loadSessionCache() (*sessionCache, bool) {
 	return &sc, true
 }
 
-// saveSessionCache writes the cache file with 0600 permissions, creating or
-// truncating it as needed.
+// saveSessionCache writes the cache file for the identity carried by sc, with
+// 0600 permissions, creating or truncating it as needed.
 func saveSessionCache(sc *sessionCache) error {
-	path, err := config.SessionCachePath()
+	path, err := config.SessionCachePathFor(sc.Host, sc.Port, sc.CompanyDB, sc.User)
 	if err != nil {
 		return err
 	}
@@ -64,9 +67,10 @@ func saveSessionCache(sc *sessionCache) error {
 	return f.Chmod(0o600)
 }
 
-// clearSessionCache removes the cache file. Missing file is not an error.
-func clearSessionCache() error {
-	path, err := config.SessionCachePath()
+// clearSessionCache removes one identity's cache file. Missing file is not an
+// error.
+func clearSessionCache(host string, port int, companyDB, user string) error {
+	path, err := config.SessionCachePathFor(host, port, companyDB, user)
 	if err != nil {
 		return err
 	}

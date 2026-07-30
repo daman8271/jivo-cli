@@ -41,6 +41,13 @@ type Client struct {
 	routeID    string
 	loggedInAt time.Time
 
+	// sessions, when non-nil, shares this Client's session with every other
+	// Client in the process that has the same host/port/companyDB/user. It is
+	// what stops a burst of concurrent MCP tool calls from opening one SAP
+	// session each (see sessions.go). nil means "no sharing", which is the right
+	// thing for a one-shot CLI process.
+	sessions *SessionStore
+
 	// errOut receives the one non-fatal warning this package can emit (the write
 	// log being unwritable). Defaults to os.Stderr.
 	errOut   io.Writer
@@ -49,6 +56,14 @@ type Client struct {
 
 // New builds a Client from cfg. It does not perform any I/O.
 func New(cfg *config.Config) *Client {
+	return NewWithSessions(cfg, nil)
+}
+
+// NewWithSessions builds a Client that shares sessions with every other Client
+// created from the same store and the same connection identity. Long-lived,
+// concurrent hosts (the MCP server) pass a store; one-shot CLI commands pass
+// nil via New.
+func NewWithSessions(cfg *config.Config, sessions *SessionStore) *Client {
 	transport := &http.Transport{}
 	if cfg.Insecure {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec G402 — user opt-in for self-signed SAP certs
@@ -59,6 +74,7 @@ func New(cfg *config.Config) *Client {
 			Timeout:   time.Duration(cfg.Timeout) * time.Second,
 			Transport: transport,
 		},
+		sessions: sessions,
 	}
 }
 
@@ -91,10 +107,18 @@ func (c *Client) SessionAge() (time.Duration, bool) {
 	return time.Since(c.loggedInAt), true
 }
 
-// LoadCachedSession loads ~/.sapb1-session.json if it matches this Client's
-// host/port/companyDB/user. Returns true if a usable cached session was found.
+// LoadCachedSession loads this connection identity's session-cache file if it
+// matches this Client's host/port/companyDB/user. Returns true if a usable
+// cached session was found.
+//
+// The four-field match below is LOAD-BEARING and must not be removed. A
+// Service Layer session is bound to the CompanyDB it logged into, so replaying
+// a cached session against a different company would answer a Beverages
+// question with Oil's books — the single worst failure this tool can produce.
+// The per-identity filename already separates them; this check is the second,
+// independent guard that does not depend on how the path was derived.
 func (c *Client) LoadCachedSession() bool {
-	sc, ok := loadSessionCache()
+	sc, ok := loadSessionCache(c.cfg.Host, c.cfg.Port, c.cfg.CompanyDB, c.cfg.User)
 	if !ok {
 		return false
 	}
@@ -112,7 +136,7 @@ func (c *Client) ClearCachedSession() {
 	c.b1Session = ""
 	c.routeID = ""
 	c.loggedInAt = time.Time{}
-	_ = clearSessionCache()
+	_ = clearSessionCache(c.cfg.Host, c.cfg.Port, c.cfg.CompanyDB, c.cfg.User)
 }
 
 func (c *Client) saveSession() {
@@ -139,9 +163,26 @@ func (c *Client) attachCookies(req *http.Request) {
 }
 
 // Login performs POST /Login and, on success, stores the returned session
-// cookies both in memory and in the on-disk cache. It never logs or returns
-// the password.
+// cookies in memory, in the on-disk cache, and — when this Client shares a
+// SessionStore — in the process-shared store. It never logs or returns the
+// password.
 func (c *Client) Login(ctx context.Context) error {
+	if err := c.loginLocked(ctx); err != nil {
+		return err
+	}
+	if c.sessions != nil {
+		e := c.sessions.entryFor(c.identity())
+		e.mu.Lock()
+		c.publish(e)
+		e.mu.Unlock()
+	}
+	return nil
+}
+
+// loginLocked is Login without touching the shared store. It exists so
+// ensureSession/refreshSession, which already hold the identity's lock, can log
+// in without deadlocking on it.
+func (c *Client) loginLocked(ctx context.Context) error {
 	if err := c.cfg.ValidateConnection(); err != nil {
 		return err
 	}
@@ -203,6 +244,13 @@ func (c *Client) Login(ctx context.Context) error {
 	return nil
 }
 
+// ClearSharedSession drops this identity's entry from the shared store (if any)
+// as well as the local and on-disk copies.
+func (c *Client) ClearSharedSession() {
+	c.forgetShared()
+	c.ClearCachedSession()
+}
+
 // Logout performs POST /Logout (best-effort) and always clears the local
 // session, in memory and on disk.
 func (c *Client) Logout(ctx context.Context) error {
@@ -219,7 +267,7 @@ func (c *Client) Logout(ctx context.Context) error {
 			// Network/API errors on logout are not fatal — we still clear locally.
 		}
 	}
-	c.ClearCachedSession()
+	c.ClearSharedSession()
 	return nil
 }
 
@@ -228,26 +276,32 @@ func (c *Client) Logout(ctx context.Context) error {
 // session yet, and transparently re-logs-in once and retries on a 401.
 // Returns the raw response body on success (2xx), or a typed error otherwise.
 func (c *Client) get(ctx context.Context, path string, headers map[string]string) ([]byte, error) {
-	if c.b1Session == "" {
-		if !c.LoadCachedSession() {
-			if err := c.Login(ctx); err != nil {
-				return nil, err
-			}
-		}
+	body, _, err := c.getWithHeaders(ctx, path, headers)
+	return body, err
+}
+
+// getWithHeaders is get plus the response headers of the successful request.
+// The headers matter for one thing only: the SAP Service Layer's HTTP `Date`
+// header, which is the server's own clock and therefore the honest "as of"
+// stamp for a read (see serverDate). Callers that don't care use get.
+func (c *Client) getWithHeaders(ctx context.Context, path string, headers map[string]string) ([]byte, http.Header, error) {
+	if err := c.ensureSession(ctx); err != nil {
+		return nil, nil, err
 	}
 
-	body, status, err := c.rawGet(ctx, path, headers)
+	used := c.b1Session
+	body, status, respHeaders, err := c.rawGet(ctx, path, headers)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if status == http.StatusUnauthorized {
-		if err := c.Login(ctx); err != nil {
-			return nil, err
+		if err := c.refreshSession(ctx, used); err != nil {
+			return nil, nil, err
 		}
-		body, status, err = c.rawGet(ctx, path, headers)
+		body, status, respHeaders, err = c.rawGet(ctx, path, headers)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -257,18 +311,18 @@ func (c *Client) get(ctx context.Context, path string, headers map[string]string
 			msg = fmt.Sprintf("HTTP %d", status)
 		}
 		if status == http.StatusUnauthorized {
-			return nil, &errs.AuthError{Msg: fmt.Sprintf("authentication failed: %s", msg)}
+			return nil, nil, &errs.AuthError{Msg: fmt.Sprintf("authentication failed: %s", msg)}
 		}
-		return nil, &errs.APIError{Code: code, Msg: msg}
+		return nil, nil, &errs.APIError{Code: code, Msg: msg}
 	}
 
-	return body, nil
+	return body, respHeaders, nil
 }
 
-func (c *Client) rawGet(ctx context.Context, path string, headers map[string]string) ([]byte, int, error) {
+func (c *Client) rawGet(ctx context.Context, path string, headers map[string]string) ([]byte, int, http.Header, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.cfg.BaseURL()+path, nil)
 	if err != nil {
-		return nil, 0, fmt.Errorf("building request: %w", err)
+		return nil, 0, nil, fmt.Errorf("building request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	c.attachCookies(req)
@@ -278,15 +332,35 @@ func (c *Client) rawGet(ctx context.Context, path string, headers map[string]str
 
 	resp, err := c.http.Do(req)
 	if err != nil {
-		return nil, 0, classifyTransportErr(err, c.cfg)
+		return nil, 0, nil, classifyTransportErr(err, c.cfg)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, 0, fmt.Errorf("reading response body: %w", err)
+		return nil, 0, nil, fmt.Errorf("reading response body: %w", err)
 	}
-	return body, resp.StatusCode, nil
+	return body, resp.StatusCode, resp.Header, nil
+}
+
+// serverDate reads the HTTP `Date` response header — the SAP server's own
+// clock at the moment it answered. It is the difference between "12,861 open
+// invoices as of 13:09 on the SAP box" and an unqualified number that may
+// already have moved. ok=false when the header is absent or unparseable, in
+// which case callers fall back to local time and must say so.
+func serverDate(h http.Header) (time.Time, bool) {
+	if h == nil {
+		return time.Time{}, false
+	}
+	v := h.Get("Date")
+	if v == "" {
+		return time.Time{}, false
+	}
+	t, err := http.ParseTime(v)
+	if err != nil {
+		return time.Time{}, false
+	}
+	return t, true
 }
 
 // CheckTCPReachable does a raw TCP dial to host:port (no TLS, no HTTP) to
