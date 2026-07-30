@@ -68,6 +68,20 @@ import sys
 import time
 from pathlib import Path
 
+# Windows consoles default to cp1252, which cannot encode the characters that
+# actually occur in JIVO's data — the rupee sign, en dashes, the arrows in the
+# persona profiles. Verified live on an Accounts-class Windows box: a profile
+# containing "\u2192" raised UnicodeEncodeError inside print(), and because the
+# hook redirects stderr the operator silently received NO corrections at all.
+# Force UTF-8 on the streams we own before anything prints.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
+
+
 HARNESS = Path(__file__).resolve().parent.parent
 REPO = HARNESS.parent
 STATE = HARNESS / ".state"
