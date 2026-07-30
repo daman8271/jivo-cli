@@ -27,10 +27,10 @@ done
 [ -z "$PY" ] && exit 0
 "$PY" "$HARNESS_DIR/bin/harness.py" review >/dev/null 2>&1 || true
 
-# Daily catch-up: pull main, restore the protected files, push this operator's
-# own log. `run` no-ops after the first success each day, so putting it here
-# costs one cheap date comparison per turn and needs no cron, no Task Scheduler,
-# and no setup on the operator's machine — which is the point, because they
-# cannot be asked to install one.
-"$PY" "$HARNESS_DIR/bin/update.py" run >/dev/null 2>&1 || true
+# Daily catch-up: restore the shared rules, pull main, push this operator's own
+# log. `daily` no-ops after the first success each day, so this costs one cheap
+# date comparison per turn and needs no cron, no Task Scheduler, and no setup on
+# the operator's machine — which is the point, because they cannot be asked to
+# install one. Windows has no cron at all.
+"$PY" "$HARNESS_DIR/bin/sync.py" daily >/dev/null 2>&1 || true
 exit 0

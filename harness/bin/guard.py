@@ -62,7 +62,7 @@ PROTECTED = [
     "harness/bin/harness.py",
     # The self-heal engine itself. Left unprotected, editing this one file
     # disables the repair of all the others.
-    "harness/bin/update.py",
+    "harness/bin/sync.py",
     "harness/hooks/post-write.sh",
     "harness/hooks/session-start.sh",
     "harness/hooks/user-prompt-submit.sh",
