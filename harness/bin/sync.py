@@ -156,15 +156,34 @@ def cmd_push(args: argparse.Namespace) -> int:
         print("jivo-sync: could not read git status", file=sys.stderr)
         return 1
     pending = [ln for ln in st.stdout.splitlines() if ln.strip()]
-    if not pending:
-        if not args.quiet:
-            print("jivo-sync: no new corrections to send")
-        return 0
 
     branch = _branch()
     if not branch or branch == "HEAD":
         print("jivo-sync: detached HEAD — not pushing", file=sys.stderr)
         return 1
+
+    if not pending:
+        # Nothing new in the working tree — but a correction may already be
+        # committed and simply never sent (this happens after a declined
+        # fast-forward). Reporting "nothing to send" here would strand it
+        # silently, which is precisely the failure this tool exists to prevent.
+        try:
+            _git("fetch", "--quiet", "origin", branch, timeout=NET_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            pass
+        ahead = _git("rev-list", "--count", f"origin/{branch}..HEAD").stdout.strip()
+        if ahead in ("", "0"):
+            if not args.quiet:
+                print("jivo-sync: no new corrections to send")
+            return 0
+        behind = _git("rev-list", "--count", f"HEAD..origin/{branch}").stdout.strip()
+        if behind not in ("", "0"):
+            print(f"jivo-sync: {ahead} correction commit(s) on this machine have "
+                  f"NOT reached the team, and {behind} update(s) are waiting to "
+                  "come down. This needs Daman to reconcile once — your work is "
+                  "committed and safe, but it is not shared yet.", file=sys.stderr)
+            return 1
+        return _do_push(branch, note=f"{ahead} previously-unsent commit(s)")
 
     # Stage ONLY corrections. This repo routinely has dozens of unrelated
     # modified files; a bare `git add -A` here would ship somebody's WIP.
@@ -187,7 +206,12 @@ def cmd_push(args: argparse.Namespace) -> int:
               file=sys.stderr)
         return 1
 
-    # Pull first so the push cannot be rejected for being behind.
+    return _do_push(branch, note=f"{len(added) or len(staged)} correction(s)")
+
+
+def _do_push(branch: str, note: str) -> int:
+    """Send committed corrections. Pull first so we cannot be rejected for
+    being behind; never force."""
     cmd_pull(argparse.Namespace(quiet=True))
 
     try:
@@ -203,8 +227,8 @@ def cmd_push(args: argparse.Namespace) -> int:
               f"{(p.stderr or '').strip().splitlines()[:1]}", file=sys.stderr)
         return 0
 
-    print(f"jivo-sync: sent {len(added) or len(staged)} correction(s) — "
-          "every other operator gets this on their next session")
+    print(f"jivo-sync: sent {note} — every other operator gets this on their "
+          "next session")
     return 0
 
 

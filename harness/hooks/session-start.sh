@@ -34,6 +34,19 @@ if [ -z "$PY" ]; then
   exit 1
 fi
 
+# Bring in corrections other operators recorded, before building the digest, so
+# this session starts with the team's current knowledge rather than yesterday's.
+# Accounts staff will not run `git pull`, so this has to be automatic or the
+# sharing half of the harness is decoration.
+#
+# Budget is deliberately tight: the SessionStart hook has a 10s ceiling, and a
+# slow VPN must never make Claude feel broken at startup. On timeout we simply
+# use the corrections already on disk. `--quiet` keeps a normal "already up to
+# date" out of the operator's context; a real problem still prints.
+if [ -f "$HARNESS_DIR/bin/sync.py" ] && [ "${JIVO_NO_AUTOSYNC:-}" != "1" ]; then
+  JIVO_SYNC_TIMEOUT=6 "$PY" "$HARNESS_DIR/bin/sync.py" pull --quiet 2>&1 || true
+fi
+
 # Capture instead of streaming, so a crash can be reported rather than
 # silently producing an empty digest.
 _ctx="$("$PY" "$HARNESS_DIR/bin/harness.py" context 2>/tmp/jivo-harness-err.$$)"

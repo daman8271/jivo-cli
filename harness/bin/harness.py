@@ -240,8 +240,39 @@ tags: [{", ".join(args.tag or [])}]
 
     print(f"recorded {cid} -> {path.relative_to(HARNESS.parent)}")
     cmd_build(argparse.Namespace(quiet=True))
-    print("\nNext: commit and push so every other JIVO Claude picks it up:")
-    print(f"  git add harness/corrections && git commit -m 'correction {cid}: {args.title}' && git push")
+
+    # Send it. A correction that stays on one laptop helps nobody, and the
+    # operators this is built for do not use git — telling them to run three
+    # commands is the same as not sharing it at all. --no-sync exists for
+    # rehearsing the command without publishing.
+    if args.no_sync:
+        print("\nNot sent (--no-sync). To share it later:")
+        print("  python3 harness/bin/sync.py push")
+        return 0
+
+    sync = HARNESS / "bin" / "sync.py"
+    if not sync.exists():
+        print("\nharness/bin/sync.py is missing — this correction is saved but "
+              "NOT shared. Run: git add harness/corrections && git commit && git push")
+        return 0
+
+    import subprocess
+    try:
+        r = subprocess.run([sys.executable, str(sync), "push"],
+                           capture_output=True, text=True, timeout=90,
+                           errors="replace")
+        out = (r.stdout or "").strip()
+        err = (r.stderr or "").strip()
+        if out:
+            print("\n" + out)
+        if err:
+            print("\n" + err, file=sys.stderr)
+        if r.returncode != 0 or err:
+            print("\nThe correction is SAVED on this machine either way. "
+                  "It just is not shared yet.")
+    except subprocess.TimeoutExpired:
+        print("\nSaved, but sharing timed out. It will go out on the next "
+              "correction or session — nothing is lost.")
     return 0
 
 
@@ -713,6 +744,8 @@ def main() -> int:
     p.add_argument("--supersedes", default="", help="id of a correction this replaces")
     p.add_argument("--tag", action="append", default=[])
     p.add_argument("--author", default="")
+    p.add_argument("--no-sync", action="store_true",
+                   help="record but do not share it yet")
     p.set_defaults(func=cmd_record)
 
     p = sub.add_parser("build", help="rebuild the injected digest")

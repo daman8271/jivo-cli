@@ -76,20 +76,25 @@ python3 harness/bin/harness.py record \
 - `--supersedes C-00NN`: if this replaces an earlier correction, pass its id.
   The old one is retired automatically rather than contradicting the new one.
 
-The digest rebuilds itself after recording.
+The digest rebuilds itself, and the correction is **sent automatically** — the
+command commits just `harness/corrections/` and pushes it. Operators here do not
+use git and must never be asked to.
 
-### 5. Push it, or it helps nobody
+### 5. Confirm it actually went out
 
-The correction only reaches other operators once it is on `main`:
+Read the output. There are three outcomes and they are not the same:
 
-```bash
-git add harness/corrections && \
-git commit -m "correction <ID>: <title>" && \
-git push
-```
+- `jivo-sync: sent 1 correction(s)` — done, everyone gets it next session.
+- `...could not send to the server` / `...timed out` — **saved but NOT shared.**
+  Say so plainly. It will go out with the next correction or session.
+- `...have NOT reached the team, and N update(s) are waiting to come down` —
+  this machine has diverged and needs Daman once. The work is safe but private.
 
-Tell the user this explicitly. A recorded-but-unpushed correction is the most
-common way this system silently fails.
+Never tell the operator it reached the team unless you saw the `sent` line. A
+recorded-but-unshared correction is the most common way this silently fails.
+
+To record without sharing (rehearsal, or a correction you are unsure about),
+add `--no-sync`.
 
 ## Reading corrections back
 
