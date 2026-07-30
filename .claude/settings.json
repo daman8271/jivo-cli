@@ -1,5 +1,5 @@
 {
-  "$comment": "JIVO harness — shared, tracked in git. Personal settings belong in settings.local.json (gitignored). These two hooks are what make the harness self-learning: one injects what the team has already corrected, the other notices which questions recur.",
+  "$comment": "JIVO harness \u2014 shared, tracked in git. Personal settings belong in settings.local.json (gitignored). These two hooks are what make the harness self-learning: one injects what the team has already corrected, the other notices which questions recur.",
   "hooks": {
     "SessionStart": [
       {
@@ -26,6 +26,16 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Write|Edit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/harness/hooks/post-write.sh\"",
+            "timeout": 20
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
