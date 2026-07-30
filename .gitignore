@@ -29,6 +29,20 @@ session.json
 # Never shared — each person has their own.
 harness/.state/
 harness/.persona
+
+# This operator's registered identity (name + department), written by setup.py
+# and stamped onto every report they produce. Per-machine, never shared.
+harness/.operator
+
+# NOTE: per-operator session logs are TRACKED, not ignored. Every operator
+# commits their own `chats/<name>/` and `queries/<name>/` subfolder straight to
+# `main` — one shared journal, no branches. This means every operator can read
+# every other operator's logs after a pull; that is a deliberate accepted
+# trade, not an oversight.
+
+# Salted hash of the override password. Per-machine and never the plaintext,
+# but there is no reason for one operator's hash to travel to another.
+harness/guard.hash
 __pycache__/
 *.pyc
 

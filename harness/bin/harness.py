@@ -68,7 +68,8 @@ DIGEST_CHAR_BUDGET = int(os.environ.get("JIVO_DIGEST_BUDGET", "6000"))
 # How many times a question shape must recur before we propose a skill.
 MINT_THRESHOLD = int(os.environ.get("JIVO_MINT_THRESHOLD", "5"))
 
-VALID_AREAS = ["all", "accounts", "sales", "factory", "ecom", "ops", "hr"]
+VALID_AREAS = ["all", "accounts", "sales", "factory", "ecom", "exim",
+               "ops", "hr", "it"]
 VALID_SEVERITY = ["high", "medium", "low"]
 
 
