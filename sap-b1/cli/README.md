@@ -450,7 +450,9 @@ refuses most edits to closed/posted documents.
 
 ### The write log
 
-Every write attempt appends **two** JSON lines to `~/.sapb1-writes.jsonl`
+Every write attempt appends **two** JSON lines to `queries/<operator>/sap-writes.jsonl`
+(inside the checkout, so it syncs with that operator's session log; falls back to
+`~/.sapb1-writes.jsonl` outside a registered checkout)
 (override with `$SAPB1_WRITE_LOG`), mode `0600` — an `intent` line *before* the
 request goes out and an `outcome` line once it resolves:
 
@@ -475,8 +477,8 @@ tightened on the next write). Logging is best-effort: if the log can't be writte
 you get one warning on stderr and the write proceeds regardless.
 
 ```bash
-tail -4 ~/.sapb1-writes.jsonl | jq .                              # what did this box change, and when
-jq -r 'select(.event=="intent") | .path' ~/.sapb1-writes.jsonl    # every request that was sent
+tail -4 queries/*/sap-writes.jsonl | jq .                              # what did this box change, and when
+jq -r 'select(.event=="intent") | .path' queries/*/sap-writes.jsonl    # every request that was sent
 ```
 
 ## MCP server (for AI agents)
