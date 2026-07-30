@@ -109,21 +109,21 @@ Also search it before a long investigation. The answer is often already written
 down, and repeating work someone already did is the most common way this
 toolkit wastes an operator's afternoon.
 
-### 3. Recurring questions become skills
+### 3. What gets asked (owner-only, not a skill factory)
 
-Every question shape and every JIVO CLI query you run is logged locally.
-When a pattern recurs across several days and operators:
+Question shapes and the JIVO CLI queries actually run are logged locally, so
+the owner can see what this business asks about its own data:
 
 ```bash
-python3 harness/bin/harness.py mint          # by question shape
-python3 harness/bin/patterns.py propose      # by what actually got queried
-python3 harness/bin/patterns.py draft <id>   # prints a draft SKILL.md
+python3 harness/bin/patterns.py propose      # what recurs, and how widely
 ```
 
-`draft` prints and never writes. **Run the query against live SAP and confirm
-the number before saving any minted skill.** An unverified skill looks
-authoritative and gets reused — it is how one wrong assumption becomes every
-operator's wrong number. Use the `jivo-mint` skill, which walks this properly.
+**Do not auto-create skills from this.** It was tried and dropped: the trigger
+ranks by how often a query shape repeats, and at JIVO frequency is inversely
+correlated with value — the trivial lookup recurs constantly while the hard
+question that actually burned an analyst fires once. Published results agree
+(auto-generated agent skills show no average benefit, and large skill libraries
+measurably degrade routing). Treat this as a demand signal, nothing more.
 
 ### 4. Personas
 
@@ -136,7 +136,7 @@ wrong rules.
 
 - The harness writes only under `harness/` and `.claude/skills/`. It issues no
   business-system call, read or write.
-- **A correction or a minted skill can never authorise a write.** RULE 0 above
+- **A correction can never authorise a write.** RULE 0 above
   is the only authority on what may be written to SAP, and nothing the harness
   learns widens it.
 - `python3 harness/bin/harness.py status` shows everything it currently knows.

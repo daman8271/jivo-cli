@@ -320,19 +320,35 @@ _DOMAIN_TERMS = {
 }
 
 
+# Words that introduce a party/entity in the way operators actually phrase these
+# questions: "balance for Sharma Traders", "statement of Gupta Oils".
+_RE_ENTITY_LEAD = re.compile(r"\b(for|of|to|from|with|against|by)\s+$", re.I)
+
+
 def _genericise_names(text: str) -> str:
     """Replace proper-noun runs with <name>, so 'Sharma Traders' and
-    'Gupta Oils' reduce to the same question shape."""
+    'Gupta Oils' reduce to the same question shape.
+
+    Deliberately conservative. An earlier version genericised any capitalised
+    word not at position 0, which turned "Pretty long I think" into
+    "<name> long <name> think" — ordinary words masked as party names, which
+    silently destroys the clustering this exists to produce. A single
+    capitalised word is only a name if something introduces it as one.
+    """
     def repl(m: re.Match) -> str:
-        # Never touch the sentence-initial word: whether a user types "What"
-        # or "what" is stylistic, and treating it as a name would split one
-        # shape into two.
-        if m.start() == 0:
-            return m.group(0)
-        tokens = m.group(0).split()
+        run = m.group(0)
+        tokens = run.split()
+        # Domain vocabulary is never a party name.
         if all(t.upper().strip(".',&-") in _DOMAIN_TERMS for t in tokens):
-            return m.group(0)
-        return "<name>"
+            return run
+        # Two or more consecutive capitalised words is a strong proper-noun
+        # signal on its own ("Sharma Traders", "Blessing Advertising").
+        if len(tokens) >= 2:
+            return "<name>"
+        # A lone capitalised word needs evidence. Sentence-initial words and
+        # stray capitals ("Pretty", "I", "Tell") are not names; a word
+        # following for/of/to/from usually is.
+        return "<name>" if _RE_ENTITY_LEAD.search(text[:m.start()]) else run
     return _RE_CAP_RUN.sub(repl, text)
 
 
