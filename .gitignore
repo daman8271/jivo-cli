@@ -31,3 +31,11 @@ harness/.state/
 harness/.persona
 __pycache__/
 *.pyc
+
+# Question/query logs: appended on EVERY prompt and tool call. Tracking them
+# made every operator's worktree permanently dirty, which aborts `git pull` —
+# breaking the very distribution the harness exists for. They also carried
+# verbatim question text into a shared repo. Local-only; share via an
+# aggregated export, never a live-appended tracked file.
+harness/questions/log.jsonl
+harness/questions/queries.jsonl

@@ -43,8 +43,14 @@ if [[ ! "$payload" =~ (sapb1|postsql|hana-sql|hanasql|dsr|ecom|oms|factory|exim)
   exit 0
 fi
 
-command -v python3 >/dev/null 2>&1 || exit 0
+# Accounts runs Windows, where the interpreter is `python` (and `python3`
+# is a Store stub that exits non-zero). Try each before giving up.
+PY=""
+for c in python3 python py; do
+  command -v "$c" >/dev/null 2>&1 && { PY="$c"; break; }
+done
+[ -z "$PY" ] && exit 0
 
 printf '%s' "$payload" \
-  | python3 "$HARNESS_DIR/bin/patterns.py" record >/dev/null 2>&1 || true
+  | "$PY" "$HARNESS_DIR/bin/patterns.py" record >/dev/null 2>&1 || true
 exit 0
