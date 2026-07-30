@@ -1,11 +1,22 @@
 # JIVO CLI — every window into the company, one folder
 
-> ## ⚠️ READ-ONLY LAW — ALL of these tools only READ
-> Every CLI here reads JIVO's live production systems and **never writes** to any of them.
-> The only non-GET call any tool makes is Login. No exceptions, ever.
+> ## ⚠️ READ-ONLY BY DEFAULT
+> Every CLI here reads JIVO's live production systems. Asking questions never changes anything.
+>
+> **One exception, and it is explicit:** `sapb1` has three write commands —
+> `draft` / `post` / `patch` — that only run when a person types them on purpose.
+> `sapb1 draft` creates a SAP **draft** for a human to review and Add in the SAP client;
+> it does not post documents. Nothing else in this repo writes anywhere, there is no
+> DELETE or PUT in any tool, and no CLI can cancel or post a document.
+>
+> **Every "ask in English" surface stays read-only** — Claude Desktop and MCP expose
+> only read tools, on every device, enforced by a test. See [NEW-DEVICE.md](NEW-DEVICE.md).
 
 One home for all JIVO business-system CLIs, their credentials, and the knowledge of how they connect. Fleet live-tested 2026-07-23.
 
+> **Setting up a new machine? → [NEW-DEVICE.md](NEW-DEVICE.md)** — clone, restore credentials,
+> build, verify, and how writes work. Start there.
+>
 > **Cloning from GitHub?** One repo, everything in it — a plain `git clone` gets the whole toolkit.
 > The repo ships **without secrets**: no `.env` / `*.env` / `*.token` files anywhere — every CLI needs its credentials restored locally before it will log in (see [Credentials & auth](#credentials--auth)).
 
