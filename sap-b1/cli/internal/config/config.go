@@ -25,14 +25,25 @@ type Config struct {
 	Password  string
 	Insecure  bool
 	Timeout   int // seconds
-	JSON      bool
-	CSV       bool
+	// TimeoutSet records whether Timeout came from the operator (--timeout or
+	// SAPB1_TIMEOUT) rather than the built-in default. Writes use a longer
+	// default than reads, but never override an explicit choice.
+	TimeoutSet bool
+	JSON       bool
+	CSV        bool
 }
 
 // Defaults.
 const (
-	DefaultPort    = 50000
+	DefaultPort = 50000
+	// DefaultTimeout is the read timeout. Reads are cheap to retry, so a short
+	// timeout is a feature.
 	DefaultTimeout = 30
+	// DefaultWriteTimeout is the default for POST/PATCH. It is deliberately much
+	// longer than DefaultTimeout: a write that times out client-side may still
+	// commit in SAP, which leaves the operator with an unknown outcome. Waiting
+	// two minutes for SAP's answer is far better than not knowing.
+	DefaultWriteTimeout = 120
 )
 
 // Flags captures the values the caller pulled from CLI flags (global persistent
@@ -95,6 +106,7 @@ func Load(f Flags) (*Config, error) {
 	if v := os.Getenv("SAPB1_TIMEOUT"); v != "" {
 		if t, err := strconv.Atoi(v); err == nil {
 			cfg.Timeout = t
+			cfg.TimeoutSet = true
 		} else {
 			return nil, &errs.ConfigError{Msg: fmt.Sprintf("invalid SAPB1_TIMEOUT %q: must be a number of seconds", v)}
 		}
@@ -118,6 +130,7 @@ func Load(f Flags) (*Config, error) {
 	}
 	if f.TimeoutSet {
 		cfg.Timeout = f.Timeout
+		cfg.TimeoutSet = true
 	}
 	cfg.JSON = f.JSON
 	cfg.CSV = f.CSV
@@ -132,6 +145,19 @@ func Load(f Flags) (*Config, error) {
 // BaseURL returns the Service Layer root, e.g. https://host:50000/b1s/v1/.
 func (c *Config) BaseURL() string {
 	return fmt.Sprintf("https://%s:%d/b1s/v1/", c.Host, c.Port)
+}
+
+// WriteTimeout returns the timeout (seconds) to use for POST/PATCH. An explicit
+// --timeout/SAPB1_TIMEOUT always wins; otherwise writes get
+// DefaultWriteTimeout instead of the shorter read default.
+func (c *Config) WriteTimeout() int {
+	if c.TimeoutSet {
+		return c.Timeout
+	}
+	if c.Timeout > DefaultWriteTimeout {
+		return c.Timeout
+	}
+	return DefaultWriteTimeout
 }
 
 // HostPort returns "host:port" for use in network-reachability messages.
@@ -184,4 +210,17 @@ func SessionCachePath() (string, error) {
 		return "", fmt.Errorf("cannot determine home directory: %w", err)
 	}
 	return filepath.Join(home, ".sapb1-session.json"), nil
+}
+
+// WriteLogPath returns the append-only audit log every write command records
+// to: $SAPB1_WRITE_LOG if set, else ~/.sapb1-writes.jsonl.
+func WriteLogPath() (string, error) {
+	if p := strings.TrimSpace(os.Getenv("SAPB1_WRITE_LOG")); p != "" {
+		return p, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("cannot determine home directory: %w", err)
+	}
+	return filepath.Join(home, ".sapb1-writes.jsonl"), nil
 }

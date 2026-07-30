@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"errors"
+	"path/filepath"
 	"testing"
 
 	"sapb1/internal/config"
@@ -197,5 +198,87 @@ func TestBaseURLAndHostPort(t *testing.T) {
 	}
 	if got, want := cfg.HostPort(), "10.0.0.5:50000"; got != want {
 		t.Errorf("HostPort() = %q, want %q", got, want)
+	}
+}
+
+// TestWriteLogPath covers both sources of the write-audit-log path: the
+// SAPB1_WRITE_LOG override (used by tests and by anyone who wants the log
+// somewhere shared) and the ~/.sapb1-writes.jsonl default. Paths are built with
+// filepath.Join so this passes on Windows too, where the accounts-kit binary runs.
+func TestWriteLogPath(t *testing.T) {
+	custom := filepath.Join(t.TempDir(), "custom-writes.jsonl")
+	t.Setenv("SAPB1_WRITE_LOG", custom)
+	got, err := config.WriteLogPath()
+	if err != nil {
+		t.Fatalf("WriteLogPath: %v", err)
+	}
+	if got != custom {
+		t.Errorf("WriteLogPath() = %q, want the SAPB1_WRITE_LOG value %q", got, custom)
+	}
+
+	home := t.TempDir()
+	t.Setenv("SAPB1_WRITE_LOG", "")
+	t.Setenv("HOME", home)        // unix
+	t.Setenv("USERPROFILE", home) // windows
+	got, err = config.WriteLogPath()
+	if err != nil {
+		t.Fatalf("WriteLogPath: %v", err)
+	}
+	if want := filepath.Join(home, ".sapb1-writes.jsonl"); got != want {
+		t.Errorf("WriteLogPath() = %q, want %q", got, want)
+	}
+}
+
+// TestWriteTimeout — writes get a longer default than reads, but never override
+// an explicit --timeout/SAPB1_TIMEOUT, however short.
+func TestWriteTimeout(t *testing.T) {
+	cases := []struct {
+		name string
+		cfg  config.Config
+		want int
+	}{
+		{"default read timeout -> long write default", config.Config{Timeout: config.DefaultTimeout}, config.DefaultWriteTimeout},
+		{"explicit short timeout wins", config.Config{Timeout: 7, TimeoutSet: true}, 7},
+		{"explicit long timeout wins", config.Config{Timeout: 600, TimeoutSet: true}, 600},
+		{"unset but generous default", config.Config{Timeout: 300}, 300},
+	}
+	for _, tc := range cases {
+		if got := tc.cfg.WriteTimeout(); got != tc.want {
+			t.Errorf("%s: WriteTimeout() = %d, want %d", tc.name, got, tc.want)
+		}
+	}
+	if config.DefaultWriteTimeout <= config.DefaultTimeout {
+		t.Error("the write default must be longer than the read default")
+	}
+}
+
+// TestTimeoutSetTracksProvenance — WriteTimeout's behaviour depends on knowing
+// whether the operator chose the timeout, so Load must record that.
+func TestTimeoutSetTracksProvenance(t *testing.T) {
+	t.Setenv("SAPB1_TIMEOUT", "")
+	cfg, err := config.Load(config.Flags{})
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.TimeoutSet {
+		t.Error("TimeoutSet should be false when nothing set it")
+	}
+
+	t.Setenv("SAPB1_TIMEOUT", "45")
+	cfg, err = config.Load(config.Flags{})
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.TimeoutSet || cfg.Timeout != 45 {
+		t.Errorf("env timeout: got %d/%v, want 45/true", cfg.Timeout, cfg.TimeoutSet)
+	}
+
+	t.Setenv("SAPB1_TIMEOUT", "")
+	cfg, err = config.Load(config.Flags{Timeout: 9, TimeoutSet: true})
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if !cfg.TimeoutSet || cfg.Timeout != 9 {
+		t.Errorf("flag timeout: got %d/%v, want 9/true", cfg.Timeout, cfg.TimeoutSet)
 	}
 }

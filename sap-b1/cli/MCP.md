@@ -1,20 +1,34 @@
 # sapb1 MCP server
 
 `sapb1 mcp` runs a **read-only** [Model Context Protocol](https://modelcontextprotocol.io)
-server over stdio (stdin/stdout JSON-RPC). Register it with an MCP client
-(Claude Code, Claude Desktop, …) and an AI agent can query the SAP Business One
-Service Layer as tools.
+server over stdio (stdin/stdout JSON-RPC) by default, or over **streamable
+HTTP** with `--transport http`. Register it with an MCP client (Claude Code,
+Claude Desktop, …) and an AI agent can query the SAP Business One Service
+Layer as tools. Both transports expose the identical read-only tool set.
 
 ## Read-only guarantee
 
 Every tool resolves to only these HTTP operations against the Service Layer:
 `GET` (entity reads), `POST /Login`, and `POST /Logout` (session
-establishment/teardown). There is **no tool, and no code path,** that issues
-`POST`/`PUT`/`PATCH`/`DELETE` against business data. Read-only is asserted in
-the tool metadata (`readOnlyHint: true`, `destructiveHint: false`) and enforced
-in code — the server reuses `internal/client`, which only ever sends
-`GET` + `Login`/`Logout`. The password is never returned in a tool result,
+establishment/teardown). There is **no tool** that issues `POST`/`PATCH` against
+business data. Read-only is asserted in the tool metadata (`readOnlyHint: true`,
+`destructiveHint: false`). The password is never returned in a tool result,
 logged, or embedded in any error message.
+
+**The CLI can write; the MCP surface deliberately cannot.** `sapb1` itself has
+three operator-invoked write commands (`draft`, `post`, `patch`) — see the
+"Writing to SAP" section of [README.md](README.md) — and `internal/client`
+therefore carries `Create`/`Update`. None of that is wired to a tool, on
+purpose: a write needs a human reading a preview and typing `yes`, which is
+exactly what an agent transport can't provide. So the whole write path stays out
+of the MCP server, and an agent that wants a document created has to ask the
+operator to run `sapb1 draft …` themselves.
+
+That boundary is a test, not a promise: `TestRegisteredToolsAreReadOnly`
+(`internal/mcp/server_test.go`) walks every registered tool and fails if any of
+them lacks `readOnlyHint: true`, is marked destructive, or if the tool set
+changes at all without the expected list being updated. Adding a write tool
+breaks the build.
 
 ## Build
 
@@ -76,6 +90,30 @@ add an `env` block (fill in your real values — do not commit this):
 
 Restart Claude Code (or reload MCP servers). The `sapb1_*` tools appear in the
 tool list.
+
+## HTTP transport (streamable HTTP)
+
+Instead of letting the client spawn the process over stdio, you can run the
+server yourself and point clients at it over HTTP:
+
+```bash
+sapb1 mcp --transport http                      # serves http://127.0.0.1:7778/mcp
+sapb1 mcp --transport http --addr 127.0.0.1:9000
+```
+
+Register it with Claude Code:
+
+```bash
+claude mcp add --transport http sapb1 http://127.0.0.1:7778/mcp
+```
+
+The **default bind is loopback (`127.0.0.1:7778`) on purpose** — there is no
+auth layer in front of production SAP, so only processes on this machine can
+reach the server out of the box. Binding wider (e.g. a tailscale IP, or
+`--addr 0.0.0.0:7778`) is an explicit `--addr` choice you make knowingly.
+The endpoint path is `/mcp`; the server is stateless, so clients don't need to
+carry an `Mcp-Session-Id`. Config resolution (`.env` next to the binary, etc.)
+is identical to stdio mode.
 
 ## Register with Claude Desktop
 

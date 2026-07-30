@@ -14,6 +14,9 @@ const (
 	ExitAuth    = 4
 	ExitNetwork = 5
 	ExitAPI     = 6
+	// ExitWriteUnknown means a write was sent but its outcome never came back.
+	// It is NOT "the write failed" — see errs.WriteOutcomeUnknownError.
+	ExitWriteUnknown = 7
 )
 
 // ExitCodeFor maps an error returned by a command's RunE to the process exit
@@ -32,6 +35,13 @@ func ExitCodeFor(err error) int {
 	var authErr *errs.AuthError
 	if errors.As(err, &authErr) {
 		return ExitAuth
+	}
+
+	// Checked before NetworkError: an unknown write outcome may wrap a transport
+	// error, and "you must go look in SAP" outranks "you couldn't connect".
+	var unknownErr *errs.WriteOutcomeUnknownError
+	if errors.As(err, &unknownErr) {
+		return ExitWriteUnknown
 	}
 
 	var netErr *errs.NetworkError

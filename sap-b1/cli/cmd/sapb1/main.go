@@ -1,4 +1,6 @@
-// Command sapb1 is a read-only CLI for the SAP Business One Service Layer.
+// Command sapb1 is a CLI for the SAP Business One Service Layer: read-only by
+// default, with three explicit write commands (draft/post/patch) that preview,
+// confirm, and log every write.
 package main
 
 import (

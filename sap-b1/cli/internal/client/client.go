@@ -1,8 +1,14 @@
 // Package client is a minimal HTTP client for the SAP Business One Service
 // Layer (b1s/v1). It handles Login/Logout, session-cookie management (with
 // on-disk caching + transparent one-shot re-login on 401), and generic OData
-// reads. It never issues POST/PUT/PATCH/DELETE against business entity sets —
-// only against Login/Logout, per the read-only contract of this tool.
+// reads.
+//
+// Beyond reads it exposes exactly two write operations — Create (POST) and
+// Update (PATCH) — and nothing else: there is no DELETE and no PUT. Those two
+// are reached only from the operator-invoked write commands (`sapb1 draft`,
+// `sapb1 post`, `sapb1 patch`), each of which previews the request and asks for
+// confirmation first. Every attempted write is appended to a local audit log
+// (see writelog.go). Everything else in this package is a GET.
 package client
 
 import (
@@ -14,7 +20,9 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"sapb1/internal/config"
@@ -25,10 +33,18 @@ import (
 type Client struct {
 	cfg  *config.Config
 	http *http.Client
+	// writeHTTP is built on first write; it differs from http only in having the
+	// longer write timeout (see config.WriteTimeout).
+	writeHTTP *http.Client
 
 	b1Session  string
 	routeID    string
 	loggedInAt time.Time
+
+	// errOut receives the one non-fatal warning this package can emit (the write
+	// log being unwritable). Defaults to os.Stderr.
+	errOut   io.Writer
+	warnOnce sync.Once
 }
 
 // New builds a Client from cfg. It does not perform any I/O.
@@ -44,6 +60,20 @@ func New(cfg *config.Config) *Client {
 			Transport: transport,
 		},
 	}
+}
+
+// SetErrWriter redirects the client's warning output (currently only "write log
+// unavailable"). Commands point this at cmd.ErrOrStderr(); tests capture it.
+func (c *Client) SetErrWriter(w io.Writer) {
+	c.errOut = w
+}
+
+func (c *Client) warn(format string, args ...interface{}) {
+	w := c.errOut
+	if w == nil {
+		w = os.Stderr
+	}
+	fmt.Fprintf(w, format, args...)
 }
 
 // HasSession reports whether this Client currently holds session cookies
@@ -222,14 +252,14 @@ func (c *Client) get(ctx context.Context, path string, headers map[string]string
 	}
 
 	if status < 200 || status >= 300 {
-		msg := extractSAPError(body)
+		code, msg := extractSAPErrorDetail(body)
 		if msg == "" {
 			msg = fmt.Sprintf("HTTP %d", status)
 		}
 		if status == http.StatusUnauthorized {
 			return nil, &errs.AuthError{Msg: fmt.Sprintf("authentication failed: %s", msg)}
 		}
-		return nil, &errs.APIError{Msg: msg}
+		return nil, &errs.APIError{Code: code, Msg: msg}
 	}
 
 	return body, nil
@@ -290,14 +320,27 @@ type sapErrorBody struct {
 // extractSAPError best-effort parses the SAP error envelope out of body and
 // returns the human message, or "" if body doesn't look like a SAP error.
 func extractSAPError(body []byte) string {
+	_, msg := extractSAPErrorDetail(body)
+	return msg
+}
+
+// extractSAPErrorDetail parses the SAP error envelope and returns both SAP's own
+// error code (-5002, 301, …, nil when absent) and the human message. An empty
+// message means the body isn't a SAP error envelope at all — which, for a write,
+// is the difference between "SAP rejected this" and "something in between
+// answered for it".
+func extractSAPErrorDetail(body []byte) (interface{}, string) {
 	if len(body) == 0 {
-		return ""
+		return nil, ""
 	}
 	var eb sapErrorBody
 	if err := json.Unmarshal(body, &eb); err != nil {
-		return ""
+		return nil, ""
 	}
-	return eb.Error.Message.Value
+	if eb.Error.Message.Value == "" {
+		return nil, ""
+	}
+	return eb.Error.Code, eb.Error.Message.Value
 }
 
 // classifyTransportErr turns a low-level Go net/http transport error (dial
