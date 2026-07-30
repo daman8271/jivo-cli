@@ -91,6 +91,23 @@ plus the global `-n/--limit`, `--json`, `--csv`.
 ./dsr geo track 4926 --from 2026-07-01 --to 2026-07-31 -n 100
 ```
 
+## Portal cross-check (read-only)
+
+`dsr portal …` calls the DSR **web portal's own** report endpoints (GET-only,
+logs in with `DSR_PORTAL_USER`/`DSR_PORTAL_PASSWORD`) so you can compare them to
+the direct-SQL numbers. It never posts or writes.
+
+| Command | Portal endpoint |
+|---|---|
+| `dsr portal check` | logs in, confirms the session |
+| `dsr portal monthly-sale [--from --to]` | `/Home/MonthlySale` (litres by month) |
+| `dsr portal item-sale --month "July,2026"` | `/Home/GetItemWiseSale` |
+| `dsr portal unapproved-count` | `/geolocation/getUnapprovedSalesCount` |
+
+Verified 2026-07-30: `dsr`'s July item-wise pieces match the portal **exactly** on
+all top items (see `study/portal/reconciliation.md`). The portal map is in
+`study/portal/portal-map.md`.
+
 ## The study vault
 
 `study/schema/` is a full extract of `DSR_V6` (208 tables, 2,929 columns, 47.5M
@@ -113,8 +130,10 @@ Working today: `doctor`, `query`, `count`, `peek`, `schema`, the study vault, an
 all 18 domain command groups above (71 sub-commands) — every command has been
 compiled and smoke-tested against the live database.
 
-Still to come: a **live authenticated portal crawl** (pending real DSR app
-credentials — the `Admin/English@jivo` pair is the *server* login, not the app
-login), and a full **reconciliation** of command outputs against the portal's own
-reports. Command outputs are currently validated to run correctly and return
-plausible live data, not yet cross-checked number-for-number against the portal.
+Complete: the live portal is mapped (`study/portal/portal-map.md`, ~55 routes),
+`dsr portal` wraps its read endpoints, and the direct-SQL numbers were
+reconciled against the portal's own item-wise report — pieces match exactly
+(`study/portal/reconciliation.md`).
+
+Optional next: match the portal's exact litre/qty formula to the last decimal
+(currently ~99.5%), and add an `ASK-EXAMPLES.md` plain-English question guide.
