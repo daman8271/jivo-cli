@@ -184,16 +184,11 @@ Cloning does not give you these — set them up only if that machine needs them:
 
 ## Restore all credentials (env vault)
 
-All `.env` / credential files (32 of them, TankhaPay excluded) live encrypted in the
-**private** submodule `env-vault/` → repo `daman8271/jivo-env-vault`.
-The public jivo-cli repo only stores a pointer; the ciphertext stays private.
+All env files live plainly in the private submodule `env-vault/` (repo `daman8271/jivo-env-vault`),
+as one file `all-env.txt`. After cloning jivo-cli:
 
 ```bash
-# after cloning jivo-cli:
-git submodule update --init env-vault          # pulls the private encrypted blob
-cd env-vault
-gpg -d jivo-all-env.tar.gz.gpg > bundle.tar.gz # prompts for the passphrase (shared out-of-band)
-tar xzf bundle.tar.gz -C ~/                     # restores each .env to its original path
+git submodule update --init env-vault
+open env-vault/all-env.txt        # every .env in one file, each block labeled with its path
 ```
 
-Passphrase is never stored in any repo — keep it in your password manager.
