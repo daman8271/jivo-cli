@@ -119,8 +119,15 @@ func (g *Gateway) initializeResult(params json.RawMessage) map[string]any {
 	return map[string]any{
 		"protocolVersion": protocol,
 		"capabilities":    map[string]any{"tools": map[string]any{}},
-		"serverInfo":      map[string]any{"name": "jivo-gateway", "version": g.version},
-		"instructions":    instructions,
+		"serverInfo": map[string]any{
+			"name":        "jivo-gateway",
+			"version":     g.version,
+			"title":       serverTitle,
+			"description": serverDescription,
+			"websiteUrl":  serverWebsiteURL,
+			"icons":       serverIcons(),
+		},
+		"instructions": instructions,
 	}
 }
 
