@@ -181,3 +181,19 @@ Cloning does not give you these — set them up only if that machine needs them:
 | `x509: certificate signed by unknown authority` | `SAPB1_INSECURE=true` missing from `.env`. |
 | A write says exit 7 | Outcome unknown. Query SAP to see whether it landed before doing anything else. |
 | `Specify an active branch` | Add `BPL_IDAssignedToInvoice` to the payload. |
+
+## Restore all credentials (env vault)
+
+All `.env` / credential files (32 of them, TankhaPay excluded) live encrypted in the
+**private** submodule `env-vault/` → repo `daman8271/jivo-env-vault`.
+The public jivo-cli repo only stores a pointer; the ciphertext stays private.
+
+```bash
+# after cloning jivo-cli:
+git submodule update --init env-vault          # pulls the private encrypted blob
+cd env-vault
+gpg -d jivo-all-env.tar.gz.gpg > bundle.tar.gz # prompts for the passphrase (shared out-of-band)
+tar xzf bundle.tar.gz -C ~/                     # restores each .env to its original path
+```
+
+Passphrase is never stored in any repo — keep it in your password manager.
