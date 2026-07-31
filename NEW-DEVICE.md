@@ -165,7 +165,7 @@ Cloning does not give you these — set them up only if that machine needs them:
 
 - **Other systems' credentials** — the root `.env` (ecom/exim/factory/oms/jsap),
   `control-panel/.env`, `~/.postsql/config.toml`, portal tokens.
-- **Portal logins** that mint JWTs on a schedule (Blinkit, Zepto, TankhaPay) —
+- **Portal logins** that mint JWTs on a schedule (Blinkit, Zepto) —
   those run off LaunchAgents on the Mac that owns them; don't duplicate them on
   a second box or they'll fight over the same session.
 - **Fleet SSH access** — `~/.ssh/config` aliases and keys are per-machine.

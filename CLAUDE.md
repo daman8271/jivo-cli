@@ -7,7 +7,7 @@ You are running inside **JIVO's data toolkit**. Someone (often the Accounts team
 These tools point at JIVO's **live production** systems. Default behaviour is read-only.
 
 - **Never write unprompted.** Not to "fix" data, not to "finish" a task, not as a helpful extra step. If the operator didn't explicitly ask you to create/update something in SAP, don't.
-- **Everything except SAP is read-only, full stop.** postsql, portals, exim, factory, oms, TankhaPay, DSR — reads only. No exceptions, even if asked.
+- **Everything except SAP is read-only, full stop.** postsql, portals, exim, factory, oms, DSR — reads only. No exceptions, even if asked.
 - **Show, don't do.** The way to help with a write is `--dry-run` + the operator's go-ahead, never a guess.
 - **SAP has exactly three write commands**, all in `sapb1`, and all only when the operator asks for them by name:
   - `sapb1 draft <doctype>` — creates a **draft** document. Nothing is posted: no stock movement, no ledger entry, until a human opens SAP B1 → Document Drafts, reviews it, and presses **Add**. Drafts *are* visible to others and to any approval workflow.
@@ -29,7 +29,7 @@ A folder of command-line tools ("CLIs"), each a window into one JIVO system. Rea
 | `sap-b1/` | **SAP B1** (the books, 3 companies) | ledger balances, turnover/sales, invoices, orders, stock, party statements |
 | `ecom-cli/` `exim/` `factory-cli/` `oms-cli/` `jsap-cli/` | ecom / imports / factory / orders / ops | channel sales, POs, production, approvals (Go/Python CLIs) |
 | `postsql/` | raw Postgres (16 DBs) | direct SQL reads under the apps |
-| `portals/` | Blinkit/Zepto seller portals + **TankhaPay** HR/payroll | studied; read-only CLIs built (tankhapay: 297 cmds — employees/attendance/salary/payouts/leave/reports) |
+| `portals/` | Blinkit/Zepto seller portals | studied; read-only CLIs built |
 
 **SAP is the main one for Accounts.** Start there unless asked otherwise.
 

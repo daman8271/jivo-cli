@@ -59,7 +59,6 @@ your column.
 | **E-commerce** | `./ecom-cli/jivo-ecom-pp-cli doctor` | `ecom-cli\jivo-ecom-pp-cli.exe doctor` |
 | **Imports / EXIM** | `./exim/exim doctor` | `bash exim/exim doctor` |
 | **Operations** | `./jsap-cli/jsap-cli meta whoami` | `python jsap-cli\jsap-cli meta whoami` |
-| **HR / Payroll** | `./portals/tankhapay/cli/tankhapay-portal doctor` | `portals\tankhapay\cli\tankhapay-portal.exe doctor` |
 | **IT** | `./postsql/postsql doctor` | `postsql\postsql.exe doctor` |
 
 Two of those rows are not plain programs, which is why they look different:
@@ -155,7 +154,7 @@ Almost everything you do here is **reading**. Asking a question never changes a
 record, in any system.
 
 SAP is the one system that can also be written to, and only if you ask for it by
-name. Everything else — Postgres, the portals, exim, factory, orders, TankhaPay,
+name. Everything else — Postgres, the portals, exim, factory, orders,
 DSR — is read-only and cannot write at all, even if you ask.
 
 **If you do want something created in SAP, ask for a draft.**
