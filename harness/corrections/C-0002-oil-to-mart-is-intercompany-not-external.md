@@ -4,7 +4,7 @@ date: 2026-07-30
 author: daman
 area: all
 severity: high
-status: active
+status: superseded
 supersedes: 
 tags: [intercompany]
 ---
