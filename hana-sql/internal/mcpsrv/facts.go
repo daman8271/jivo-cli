@@ -36,11 +36,113 @@ const CancelFlag = `"CANCELED" = 'N'`
 // number, but it costs the model a round trip every time.
 const CancelFlagPayments = `"Canceled" = 'N'`
 
+// The three sentences below are JIVO's settled corrections, recorded by
+// operators against live data (harness/corrections/). They are repeated in the
+// domain tool descriptions because a correction that only exists in a local CLI
+// session reaches nobody asking from a phone — which is exactly how the olive
+// incident happened.
+const (
+	// IntercompanyFact is correction C-0002 — ALL of it.
+	//
+	// It used to name 'CUSTA000606' and stop there, which is the rule line of
+	// C-0002 without its evidence. The record also says Mart's books "carry JIVO
+	// MART branch cards (DL/PB/HR/KT/KR/RJ/UP) and a JIVO WELLNESS PVT LTD card
+	// needing the same treatment", and this description is what a model reads when
+	// it decides which tool to call and how to read the answer — so leaving the
+	// branch cards out of it left the model believing EXTERNAL meant outside sales
+	// when for Mart it did not. Measured live 2026-08-01: Rs 9.58 Cr to
+	// CUSTA000874 alone in April–July.
+	IntercompanyFact = "JIVO bills its OWN companies and branches through ordinary customer cards — INTERCOMPANY / branch transfers, not outside sales, and NOT one card code: 'CUSTA000606' is Mart buying from Oil; Mart's own books carry JIVO MART branch cards (CUSTA000874 DL took Rs 9.58 Cr of Mart's 'external' Apr–Jul 2026 sales, CUSTA000827 HR, plus PB/KR/RJ/UP) and a JIVO WELLNESS card. INTERNAL_RELATED_PARTY holds all of them; every company block lists its own cards"
+	// SegmentationFact is correction C-0003.
+	//
+	// The direction matters and is stated on purpose. Measured live 2026-08-01 on
+	// June-2026 olive: name matching MISSED Rs 1.62 Cr of Mart's tagged sales but
+	// OVER-counted Oil's by Rs 1.54 Cr. Saying only that it under-reports invites
+	// a model to treat it as a safe lower bound, which it is not.
+	SegmentationFact = "NEVER classify products by matching item names: SAP tags every item, and name matching is measurably wrong in BOTH directions (one month's olive: missed Rs 1.62 Cr of one company's tagged sales, over-counted another's by Rs 1.54 Cr), so it is not even a safe lower bound — COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in its name"
+	// BottlesFact is correction C-0001.
+	//
+	// It used to say "quantities are single BOTTLES (InvntryUom=PCS)". The
+	// carton half is verified and is what the correction is actually about —
+	// "NumInSale" is 1 on every item, so INV1."Quantity" is saleable units and
+	// the x20 carton error cannot happen. The bottle half is not: of 185 Oil
+	// olive-tagged items, 111 are PCS, 62 carry no UoM, 10 are LTR, 1 DRM and 1
+	// SET, and one month's answer counted 1,640 Mart 'SET' units and 5 Oil 'DRM'
+	// drums as bottles. Units, not bottles.
+	BottlesFact = "INV1.\"Quantity\" is saleable UNITS, never cartons (\"NumInSale\" = 1 on every item) — the '20 PCS' in an item name is carton configuration and multiplying by it inflates volume ~20x. Mostly single bottles (PCS), but some SKUs are LTR/DRM/SET or carry no UoM, so it is units across mixed UoMs: do not call it a bottle count"
+
+	// BasisGapFact is why hana_turnover and hana_sales_by_variety disagree.
+	//
+	// It used to be one line saying "header freight" and calling the gap slight —
+	// both empirically false; see domain.BasisGapNote for the live measurement. A
+	// wrong reason costs more than a long one: a model that repeats it hands
+	// Accounts a confident explanation they cannot reconcile against anything in
+	// SAP. The magnitude belongs here too, because a model told the difference is
+	// "slight" will pick whichever figure it saw first and defend it — asked for
+	// Mart's June sales it can get Rs 23.18 Cr or Rs 27.97 Cr, 17% apart.
+	BasisGapFact = "DIFFERENT BASES, and the gap is MATERIAL, not slight: hana_turnover is HEADER level (\"DocTotal\" - \"VatSum\"), hana_sales_by_variety is LINE level (INV1/RIN1) — Mart Apr–Jul 2026, Rs 76.50 Cr vs Rs 87.72 Cr (12.8%; 17.1% in June). NOT freight (\"TotalExpns\" totals Rs 22,500 all-time on 3 Oil invoices, Rs 0 elsewhere, 2026-08-01): it is BRANCH STOCK-TRANSFER invoices, whose header is GST-only so it nets to ~0 while the lines keep full value, which is why LINE is the HIGHER one. All of it sits on two JIVO MART branch cards, so compare EXTERNAL to EXTERNAL and the two tools agree to the rupee"
+	// PaymentScopeFact is the measured payment-scoping defect.
+	//
+	// The discriminator is OCRD membership, not the name: verified live
+	// 2026-08-01 across all 18 company x table x DocType groups, every 'A' row's
+	// "CardCode" is absent from OCRD, while "CardName" is empty on OVPM but
+	// FILLED IN on ORCT. A model told to look at the name gets the wrong answer
+	// in the incoming direction.
+	PaymentScopeFact = "OVPM/ORCT \"DocType\": 'S' = supplier business partner, 'C' = customer, 'A' = booked straight to a G/L account (\"CardCode\" is an ACCOUNT code with no row in OCRD — on OVPM \"CardName\" is empty too, but on ORCT it is filled in, so OCRD membership is the tell, not the name) — 'A' is still real cash, so a payments total must include all three"
+)
+
+// DomainToolPointer is the sentence on hana_query that sends a model to the
+// tools which cannot get these definitions wrong.
+const DomainToolPointer = "PREFER THE DOMAIN TOOLS: hana_sales_by_variety (sales by product variety), hana_turnover (the canonical turnover figure) and hana_payments (payment totals) encode JIVO's settled definitions — corrections C-0001..C-0004 and the payment-scoping rule — so they cannot be gotten wrong. Write SQL here only for something they do not cover."
+
+// SalesByVarietyFacts describes hana_sales_by_variety.
+func SalesByVarietyFacts() string {
+	return `Net sales (INR, net of GST) by VARIETY = OITM."U_Sub_Group" (optionally "U_TYPE": PREMIUM/COMMODITY/OTHERS), per company, for a date range. ` +
+		`USE THIS for any "how much olive/canola/mustard did we sell" question — ` + SegmentationFact + `. ` +
+		`EXTERNAL_NET vs INTERNAL_RELATED_PARTY: ` + IntercompanyFact + `. Quote EXTERNAL, say so, never add two companies' gross. ` +
+		`UNLISTED_JIVO_CARD_NET is a drift alarm, not a figure: non-zero means a JIVO-named card is missing from the split, so EXTERNAL is an UPPER BOUND. ` +
+		`QTY_UNITS_*: ` + BottlesFact + `. ` +
+		`OF_WHICH_COMBO_PACKS is the 'SALES BOM' share of GROSS — ONE tag on a mixed pack, so subtract it or say it is counted whole; NULL = unresolved, not zero. ` +
+		`Excludes cancelled (` + CancelFlag + `); nets off credit notes by default (net_credit_notes:false = before returns). An unknown variety is an ERROR listing the valid tags. ` +
+		`If it disagrees with hana_turnover: ` + BasisGapFact + `. ` +
+		`Returns the exact SQL and binds, the basis, and as_of from the HANA server clock. ` + ReadOnlyLine
+}
+
+// TurnoverFacts describes hana_turnover.
+func TurnoverFacts() string {
+	return `THE canonical JIVO turnover figure — use this, not hand-written SQL, for turnover, total sales or revenue. ` +
+		`Fixed definition: A/R invoices (OINV) net of GST ("DocTotal" - "VatSum") MINUS credit notes (ORIN), by "DocDate", cancelled excluded (` + CancelFlag + `). ` +
+		`Per company: EXTERNAL_TURNOVER, INTERNAL_RELATED_PARTY (` + IntercompanyFact + `), GROSS_TURNOVER, UNLISTED_JIVO_CARD_NET (a drift alarm, not a figure), ` +
+		`plus INVOICES_NET / CREDIT_NOTES_NET and counts for audit. Quote EXTERNAL alongside GROSS and say which; never sum two companies' gross. ` +
+		`A company with no invoices returns explicit ZEROS, never nulls, never a missing block. ` +
+		`If it disagrees with hana_sales_by_variety: ` + BasisGapFact + `. ` +
+		`Returns the exact SQL executed, the basis, and as_of from the HANA server clock. ` + ReadOnlyLine
+}
+
+// PaymentsFacts describes hana_payments.
+func PaymentsFacts() string {
+	return `Payment totals for a date range, per company: direction 'outgoing' = money JIVO paid (OVPM), 'incoming' = money JIVO received (ORCT). ` +
+		`Always returns the per-"DocType" breakdown AND the '(ALL)' total, because ` + PaymentScopeFact + `. ` +
+		`"Total payouts" means the '(ALL)' row; restricting to DocType='S' understates it — measured on these books, Rs 72.06 lakh and 31 documents missed on one question and Rs 1,74,90,480 on another. Say which scope you quoted. ` +
+		`There is no scoping argument, so the breakdown cannot be silently narrowed. ` +
+		`On these tables the cancel flag is spelled ` + CancelFlagPayments + ` (one L), and "DocTotal" EXISTS in HANA — never assemble CashSum + TransferSum, that is a Service Layer limitation. Cancelled documents are excluded. ` +
+		`Returns the exact SQL executed, the basis, and as_of from the HANA server clock. ` + ReadOnlyLine
+}
+
 // QueryFacts is the full crib sheet, carried by hana_query's description only.
-// The other three tools stay short so tools/list is cheap behind the gateway.
+//
+// It used to claim "the other tools stay short so tools/list is cheap behind the
+// gateway". That stopped being true when the domain tools arrived: measured by
+// TestToolsListPayloadStaysBounded, tools/list is now ~17 KB across seven tools,
+// of which hana_query alone is ~5.6 KB. The tools are no longer short, and the
+// budgets in TestDescriptionsCarryFacts are what actually keeps the payload
+// bounded — so that test asserts the total, rather than this comment asserting a
+// property nothing checked.
 func QueryFacts(maxRows int, timeout time.Duration) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, `Run one read-only SQL statement against JIVO's SAP Business One HANA database and get the rows back as JSON. %s
+
+%s
 
 JIVO SAP B1 crib sheet — money is INR; present large figures in crores.
 
@@ -96,13 +198,29 @@ DECIMALS: DECIMAL columns come back as EXACT decimal strings (e.g.
 "1074316124.550000") — never a float, never silently rounded. When you want a
 rounded number instead, ask the database for it: %s
 
+JIVO'S SETTLED CORRECTIONS — recorded by operators against live data. They
+override any assumption you would otherwise make, and they apply to SQL you
+write here just as much as to the domain tools:
+  - INTERCOMPANY / BRANCH TRANSFERS: %s. Report external (excluding
+    every one of those cards) alongside gross, say which one you quoted, and
+    never add Oil + Mart gross. Get the card list from hana_sales_by_variety or
+    hana_turnover (each company block carries internal_cards) rather than
+    guessing, and NEVER classify a party by matching its name.
+  - PRODUCT SEGMENTATION: %s. OITM."U_TYPE"
+    (PREMIUM/COMMODITY/OTHERS) and OITM."U_Sub_Group" (variety) are the SAP tags.
+  - VOLUME: %s.
+  - COMBO PACKS: a 'SALES BOM' item carries ONE "U_Sub_Group" tag for a mixed
+    pack, so its whole value lands in that variety; split it out or say so.
+  - PAYMENT SCOPE: %s.
+
 AGGREGATE SERVER-SIDE — do not page rows. One SUM / COUNT / GROUP BY answers a
 money question in a single call. The row cap is %d rows and the statement
 timeout is %s; hitting the cap means the query was shaped wrong, not that you
 should page.
 
 Refusals name the layer that refused and why. Only one statement per call.`,
-		ReadOnlyLine, SchemaLines, CancelFlag, CancelFlagPayments, CancelFlag, TurnoverRecipe, maxRows, timeout)
+		ReadOnlyLine, DomainToolPointer, SchemaLines, CancelFlag, CancelFlagPayments, CancelFlag, TurnoverRecipe,
+		IntercompanyFact, SegmentationFact, BottlesFact, PaymentScopeFact, maxRows, timeout)
 	return b.String()
 }
 

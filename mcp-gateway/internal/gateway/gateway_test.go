@@ -3,6 +3,8 @@ package gateway
 import (
 	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -265,11 +267,48 @@ func TestGatewayStatusTool(t *testing.T) {
 			Mode      string `json:"mode"`
 			ToolsLive int    `json:"tools_live"`
 		} `json:"gateway"`
-		BackendsUp string          `json:"backends_up"`
-		Backends   []BackendStatus `json:"backends"`
+		BackendsUp  string          `json:"backends_up"`
+		Backends    []BackendStatus `json:"backends"`
+		Corrections struct {
+			Count     int    `json:"count"`
+			Source    string `json:"source"`
+			Path      string `json:"path"`
+			Bytes     int    `json:"bytes"`
+			LoadedAt  string `json:"loaded_at"`
+			LastError string `json:"last_error"`
+		} `json:"corrections"`
 	}
 	if err := json.Unmarshal([]byte(text), &report); err != nil {
 		t.Fatalf("gateway_status text is not JSON: %v\n%s", err, text)
+	}
+
+	// An operator must be able to see whether clients are being told the team's
+	// rules, and from where. This fleet configures no path, so it is the
+	// embedded snapshot, cleanly.
+	corr := report.Corrections
+	if corr.Source != "embedded" {
+		t.Fatalf("corrections.source = %q, want embedded (no --corrections configured)", corr.Source)
+	}
+	if corr.Path != "" {
+		t.Fatalf("corrections.path = %q, want omitted while serving embedded", corr.Path)
+	}
+	if corr.Count != countCorrections(string(embeddedDigest)) || corr.Count == 0 {
+		t.Fatalf("corrections.count = %d, want %d", corr.Count, countCorrections(string(embeddedDigest)))
+	}
+	if corr.Bytes != len(embeddedDigest) {
+		t.Fatalf("corrections.bytes = %d, want %d", corr.Bytes, len(embeddedDigest))
+	}
+	if corr.LastError != "" {
+		t.Fatalf("corrections.last_error = %q, want empty", corr.LastError)
+	}
+	if _, err := time.Parse(time.RFC3339, corr.LoadedAt); err != nil {
+		t.Fatalf("corrections.loaded_at = %q, not RFC3339: %v", corr.LoadedAt, err)
+	}
+	// What status claims is what initialize actually served.
+	instr, _ := f.g.initializeResult(nil)["instructions"].(string)
+	if countCorrections(instr) != corr.Count {
+		t.Fatalf("initialize carried %d rules, gateway_status reports %d",
+			countCorrections(instr), corr.Count)
 	}
 	if report.Gateway.Name != "jivo-gateway" || report.Gateway.Version != "0.1.0-test" || report.Gateway.Mode != "read-only" {
 		t.Fatalf("gateway = %+v", report.Gateway)
@@ -298,6 +337,119 @@ func TestGatewayStatusTool(t *testing.T) {
 		if st.LastError != "" {
 			t.Fatalf("%s last_error = %q, want empty", st.Name, st.LastError)
 		}
+	}
+}
+
+// Every client is handed JIVO's corrections on initialize. This is the gap that
+// produced the olive-oil answer: a phone matched item NAMES for "OLIVE" — the
+// exact thing C-0003 forbids — because nothing had ever told it the rule.
+//
+// instructions is the delivery channel on purpose: it is the only initialize
+// field clients contractually put in front of the model. A resource or a tool
+// would be opt-in by the model, which is precisely the measured failure.
+func TestInitializeCarriesCorrections(t *testing.T) {
+	f := newFleet(t, time.Hour)
+
+	rec := postMCP(t, f.h, `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200; body: %s", rec.Code, rec.Body.String())
+	}
+	result, _ := decodeRPC(t, rec)["result"].(map[string]any)
+	instr, _ := result["instructions"].(string)
+
+	// The gateway's own guidance survives — corrections are appended, not a
+	// replacement — and it names EVERY configured backend. It used to list five
+	// and omit hana_, so a client was handed JIVO's SAP corrections and never
+	// told that the tools which encode them exist.
+	for _, want := range []string{
+		"read-only", "gateway_status", "six JIVO backends",
+		"sap_ (SAP B1", "pg_ (Postgres)", "ecom_", "oms_", "fct_ (factory)", "hana_ (SAP B1's HANA",
+	} {
+		if !strings.Contains(instr, want) {
+			t.Fatalf("instructions lost the gateway guidance %q:\n%s", want, instr)
+		}
+	}
+	for _, b := range DefaultBackends() {
+		if !strings.Contains(instr, b.Prefix) {
+			t.Fatalf("instructions never mention the %s backend's %q prefix:\n%s", b.Name, b.Prefix, instr)
+		}
+	}
+	// The rules themselves, and the framing that makes them binding. Both come
+	// from the digest verbatim — the gateway writes no wording of its own.
+	for _, want := range []string{
+		"[C-0001]",
+		"the correction wins",
+		"never item-name matching", // C-0003, the rule the phone broke
+	} {
+		if !strings.Contains(instr, want) {
+			t.Fatalf("instructions missing %q:\n%s", want, instr)
+		}
+	}
+	// Verbatim, byte for byte, as one block.
+	if !strings.Contains(instr, string(embeddedDigest)) {
+		t.Fatal("the digest was rewritten on its way to the client; it must be passed through untouched")
+	}
+	// But NOT last, and not unmarked. The digest is a file's contents; it used
+	// to be concatenated onto the guidance with nothing but a blank line, which
+	// put it after the gateway's own "strictly read-only" sentence as the final
+	// word of the system prompt.
+	if !strings.HasSuffix(instr, correctionsTrailer) {
+		t.Fatalf("instructions do not end with the read-only trailer; the digest is the last word again:\n%s", instr)
+	}
+	if !strings.Contains(instr, correctionsOpen) || !strings.Contains(instr, correctionsClose) {
+		t.Fatalf("the digest is not fenced as quoted data:\n%s", instr)
+	}
+	if strings.Index(instr, correctionsOpen) > strings.Index(instr, string(embeddedDigest)) {
+		t.Fatal("the opening fence must come before the digest")
+	}
+	// Nothing else about the handshake changed.
+	if result["protocolVersion"] != "2025-06-18" {
+		t.Fatalf("protocolVersion = %v, want echoed", result["protocolVersion"])
+	}
+	info, _ := result["serverInfo"].(map[string]any)
+	if info["name"] != "jivo-gateway" || info["title"] != serverTitle {
+		t.Fatalf("serverInfo = %v, want branding untouched", info)
+	}
+	// And no backend was consulted to build it: this is one local file read.
+	for _, b := range []*fakeBackend{f.sapb1, f.postsql, f.ecom, f.oms, f.factory} {
+		if _, _, calls := b.stats(); len(calls) != 0 {
+			t.Fatalf("%s received %d requests during initialize, want 0", b.opts.name, len(calls))
+		}
+	}
+}
+
+// A mounted digest is what clients get — the runtime path, end to end over
+// HTTP, so a correction pushed to main reaches a phone without a rebuild.
+func TestInitializeServesMountedDigestOverHTTP(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "INDEX.md")
+	const mounted = "# JIVO corrections — active rule digest\n\n" +
+		"## sales\n- **[C-7777]** MOUNTED-RULE: pushed to main, not compiled in.\n"
+	if err := os.WriteFile(path, []byte(mounted), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := DefaultConfig()
+	cfg.CorrectionsPath = path
+	cfg.Backends = nil
+	g := New(cfg, "test")
+
+	rec := postMCP(t, g.Handler(), `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}`)
+	result, _ := decodeRPC(t, rec)["result"].(map[string]any)
+	instr, _ := result["instructions"].(string)
+	if !strings.Contains(instr, "MOUNTED-RULE") {
+		t.Fatalf("instructions do not carry the mounted digest:\n%s", instr)
+	}
+	if strings.Contains(instr, "[C-0001]") {
+		t.Fatalf("the embedded snapshot leaked in alongside the file:\n%s", instr)
+	}
+
+	st := g.CorrectionsStatus()
+	if st["source"] != "file" || st["path"] != path {
+		t.Fatalf("CorrectionsStatus = %v, want the file provenance", st)
+	}
+	if st["count"] != 1 {
+		t.Fatalf("count = %v, want 1", st["count"])
 	}
 }
 

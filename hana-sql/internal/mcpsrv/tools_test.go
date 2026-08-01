@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"hana-sql/internal/config"
+	"hana-sql/internal/domain"
 	"hana-sql/internal/hana"
 )
 
@@ -55,6 +56,16 @@ func TestUnknownArgumentsAreRefusedNotIgnored(t *testing.T) {
 		{"hana_tables", `{"company":"Mart"}`, "company"},
 		{"hana_columns", `{"schema":"JIVO_OIL_HANADB","table":"OINV","db":"x"}`, "db"},
 		{"hana_doctor", `{"company":"Oil"}`, "company"},
+		// The domain tools carry JIVO's settled definitions, so a discarded
+		// argument here is worse than on hana_query: a silently-ignored `variety`
+		// or `company` returns a real, well-formed, WRONG business figure.
+		{"hana_sales_by_variety", `{"from":"2026-06-01","to":"2026-06-30","product":"OLIVE"}`, "product"},
+		{"hana_sales_by_variety", `{"from":"2026-06-01","to":"2026-06-30","schema":"JIVO_MART_HANADB"}`, "schema"},
+		{"hana_sales_by_variety", `{"from":"2026-06-01","to":"2026-06-30","u_sub_group":"OLIVE"}`, "u_sub_group"},
+		{"hana_turnover", `{"from":"2026-07-01","to":"2026-07-28","net_credit_notes":false}`, "net_credit_notes"},
+		{"hana_turnover", `{"from":"2026-07-01","to":"2026-07-28","exclude_intercompany":true}`, "exclude_intercompany"},
+		{"hana_payments", `{"direction":"outgoing","from":"2026-07-01","to":"2026-07-31","doc_type":"S"}`, "doc_type"},
+		{"hana_payments", `{"direction":"outgoing","from":"2026-07-01","to":"2026-07-31","card_code":"V1"}`, "card_code"},
 	}
 	for _, c := range cases {
 		t.Run(c.tool+"_"+c.wantIn, func(t *testing.T) {
@@ -92,6 +103,20 @@ func TestMissingRequiredArguments(t *testing.T) {
 		{"hana_columns", `{"table":"OINV"}`, "missing required argument: schema"},
 		{"hana_columns", `{"schema":"JIVO_OIL_HANADB"}`, "missing required argument: table"},
 		{"", `{}`, "missing tool name"},
+		// A domain tool with no window must say which date is missing, before it
+		// touches the database — a figure with an unstated range is unusable.
+		{"hana_sales_by_variety", `{}`, "missing required argument: from"},
+		{"hana_sales_by_variety", `{"from":"2026-06-01"}`, "missing required argument: to"},
+		{"hana_sales_by_variety", `{"from":"   ","to":"2026-06-30"}`, "missing required argument: from"},
+		{"hana_turnover", `{}`, "missing required argument: from"},
+		{"hana_turnover", `{"to":"2026-07-28"}`, "missing required argument: from"},
+		{"hana_payments", `{"from":"2026-07-01","to":"2026-07-31"}`, "missing required argument: direction"},
+		{"hana_payments", `{"direction":"outgoing"}`, "missing required argument: from"},
+		// And a malformed one is refused with the format, not with a zero.
+		{"hana_sales_by_variety", `{"from":"01-06-2026","to":"2026-06-30"}`, "YYYY-MM-DD"},
+		{"hana_sales_by_variety", `{"from":"2026-06-31","to":"2026-07-01"}`, "YYYY-MM-DD"},
+		{"hana_turnover", `{"from":"2026-07-28","to":"2026-07-01"}`, "runs backwards"},
+		{"hana_payments", `{"direction":"sideways","from":"2026-07-01","to":"2026-07-31"}`, "unknown direction"},
 	}
 	for _, c := range cases {
 		text, isErr := dispatch(t, c.tool, c.args)
@@ -125,8 +150,11 @@ func TestNegativeCapsRejected(t *testing.T) {
 
 func TestRequiredListsMatchTheValidator(t *testing.T) {
 	want := map[string][]string{
-		"hana_query":   {"sql"},
-		"hana_columns": {"schema", "table"},
+		"hana_query":            {"sql"},
+		"hana_columns":          {"schema", "table"},
+		"hana_sales_by_variety": {"from", "to"},
+		"hana_turnover":         {"from", "to"},
+		"hana_payments":         {"direction", "from", "to"},
 	}
 	for _, def := range testServer().ToolDefs() {
 		name, _ := def["name"].(string)
@@ -293,6 +321,159 @@ func TestDescriptionsCarryFacts(t *testing.T) {
 	if len(q) < 1200 {
 		t.Errorf("hana_query's description is only %d chars; the crib sheet looks truncated", len(q))
 	}
+
+	// --- the domain tools carry the corrections themselves -----------------------
+	//
+	// This is the whole point of the exercise. A correction recorded in
+	// harness/corrections/ reaches a local CLI session and NOBODY asking from a
+	// phone; the only copy that travels to the remote MCP is the sentence in the
+	// tool description. If one of these assertions ever fails, the tool has
+	// quietly stopped telling an operator the thing that was written down after it
+	// went wrong last time.
+	domainMust := map[string][]string{
+		"hana_sales_by_variety": {
+			`OITM."U_Sub_Group"`,             // C-0003: the tag, named exactly
+			"NEVER classify products",        // C-0003: the prohibition
+			"COLD PRESS 1 LTR",               // C-0003: the example that proves it
+			"CUSTA000606",                    // C-0002: the CardCode
+			"INTERCOMPANY",                   // C-0002: what it means
+			"never add two companies' gross", // C-0002: the consequence
+			"saleable UNITS",                 // C-0001: what INV1."Quantity" is
+			"20 PCS",                         // C-0001: the trap in the item name
+			"do not call it a bottle count",  // C-0001: and what it is NOT
+			"SALES BOM",                      // C-0004: combo packs
+			`"CANCELED" = 'N'`,               // the cancel flag, two Ls on OINV
+			"an ERROR",                       // a typo must not read as zero
+			"as_of",
+			"HANA server clock",
+		},
+		"hana_turnover": {
+			`"DocTotal" - "VatSum"`, // the definition
+			"MINUS credit notes",
+			`"DocDate"`,
+			`"CANCELED" = 'N'`,
+			"CUSTA000606",
+			"INTERCOMPANY",
+			"never sum two companies' gross",
+			"DIFFERENT BASES", // the flip-flop guard
+			"NOT freight",     // the explanation that measured false
+			"GST-only",        // the one that measured true
+			"as_of",
+			"HANA server clock",
+		},
+		"hana_payments": {
+			"OVPM", "ORCT",
+			"'S'", "'C'", "'A'", // the three DocTypes, quoted as they appear
+			"G/L account",
+			"OCRD",             // the VERIFIED discriminator
+			"(ALL)",            // the row that cannot be narrowed
+			"72.06 lakh",       // the measured cost, q30
+			"1,74,90,480",      // the measured cost, h17
+			`"Canceled" = 'N'`, // ONE l on the payment tables
+			`"DocTotal"`,       // exists in HANA, unlike the Service Layer
+			"Say which scope you quoted",
+			"as_of",
+			"HANA server clock",
+		},
+	}
+	for name, musts := range domainMust {
+		desc, ok := byName[name]
+		if !ok {
+			t.Fatalf("tool %q is not advertised at all", name)
+		}
+		for _, m := range musts {
+			if !strings.Contains(desc, m) {
+				t.Errorf("%s's description is missing the load-bearing fact %q\n--- description ---\n%s", name, m, desc)
+			}
+		}
+		// A budget, not a style rule: the gateway advertises ~75 tools and every
+		// tools/list pays for all of them. It is measured on the tool-SPECIFIC
+		// text, because ReadOnlyLine is shared boilerplate on all seven tools and
+		// trimming a correction to make room for it would be the wrong trade.
+		//
+		// The ceiling is PER TOOL, not one number, so it stays a real constraint
+		// on the small descriptions. hana_sales_by_variety gets the most room
+		// because it carries four corrections (C-0001..C-0004) plus the measured
+		// basis-gap explanation. That last one used to be a single clause saying
+		// "header freight" — short, and false: freight totals Rs 22,500 all-time
+		// across 3 Oil invoices, against the Rs 11.23 Cr gap it was offered to
+		// explain. A wrong one-liner is not cheaper than a correct paragraph, it
+		// is more expensive, because a model repeats it to Accounts with
+		// confidence. If one of these needs more room, take it from the prose,
+		// never from a fact.
+		//
+		// The budgets were RAISED on 2026-08-01 (2200->2650, 1500->1800) for
+		// exactly that reason: the correct intercompany and basis-gap facts carry
+		// measured figures — the branch card codes, Rs 9.58 Cr, Rs 11.23 Cr / 12.8%,
+		// Rs 22,500 — and the short versions they replaced were short because they
+		// were wrong. The prose around them was cut first, and
+		// TestToolsListPayloadStaysBounded caps the total so this cannot creep.
+		budget := map[string]int{"hana_sales_by_variety": 2650, "hana_turnover": 1800, "hana_payments": 1300}[name]
+		if budget == 0 {
+			t.Fatalf("%s has no description budget; add one", name)
+		}
+		if n := len(desc) - len(ReadOnlyLine); n < 500 || n > budget {
+			t.Errorf("%s's own description text is %d chars (%d with the shared read-only line); it must carry the corrections (>500) without bloating a 75-tool tools/list (<%d)",
+				name, n, len(desc), budget)
+		}
+	}
+
+	// The payments description must not send a model looking for an empty
+	// "CardName" as THE signal. Verified live 2026-08-01: on OVPM the G/L rows do
+	// have an empty name (4590 of Oil's 4592), but on ORCT every one of the 1899
+	// carries a name. So the name may be mentioned only alongside the fact that
+	// ORCT fills it in, and OCRD membership must be named as the actual tell.
+	p := byName["hana_payments"]
+	if strings.Contains(p, "CardName") {
+		if !strings.Contains(p, "on ORCT it is filled in") {
+			t.Errorf("hana_payments mentions \"CardName\" without saying ORCT fills it in; a model would use the wrong signal on every incoming-payment question:\n%s", p)
+		}
+		if !strings.Contains(p, "OCRD membership is the tell") {
+			t.Errorf("hana_payments does not name OCRD membership as the discriminator that holds in both directions:\n%s", p)
+		}
+	}
+
+	// hana_query stays the escape hatch, so it must carry the same corrections AND
+	// point at the tools that cannot get them wrong.
+	for _, m := range []string{
+		"PREFER THE DOMAIN TOOLS",
+		"hana_sales_by_variety", "hana_turnover", "hana_payments",
+		"CUSTA000606", "INTERCOMPANY",
+		"PRODUCT SEGMENTATION", `OITM."U_Sub_Group"`,
+		"COMBO PACKS", "SALES BOM",
+		"PAYMENT SCOPE",
+		"saleable UNITS",
+	} {
+		if !strings.Contains(q, m) {
+			t.Errorf("hana_query's crib sheet is missing %q — the freeform path must carry the corrections too", m)
+		}
+	}
+}
+
+// The corrections are one shared source of truth. If a fact is edited into the
+// domain package but not into the description a phone actually reads (or vice
+// versa), the remote assistant goes back to guessing — which is precisely the
+// gap this work exists to close.
+func TestDescriptionsAgreeWithTheDomainPackage(t *testing.T) {
+	byName := map[string]string{}
+	for _, d := range testServer().ToolDefs() {
+		name, _ := d["name"].(string)
+		desc, _ := d["description"].(string)
+		byName[name] = desc
+	}
+	for _, tool := range []string{"hana_sales_by_variety", "hana_turnover"} {
+		if !strings.Contains(byName[tool], domain.InternalCardCode) {
+			t.Errorf("%s does not name domain.InternalCardCode (%s); the split it reports would be unexplained",
+				tool, domain.InternalCardCode)
+		}
+	}
+	if !strings.Contains(byName["hana_sales_by_variety"], domain.ComboItemGroup) {
+		t.Errorf("hana_sales_by_variety does not name domain.ComboItemGroup (%s), so OF_WHICH_COMBO_PACKS arrives unexplained",
+			domain.ComboItemGroup)
+	}
+	if !strings.Contains(byName["hana_payments"], domain.AllDocTypes) {
+		t.Errorf("hana_payments does not name the %s row, which is the answer to \"total payments\"", domain.AllDocTypes)
+	}
 }
 
 // The description must track the caps actually in force, not a hard-coded 1000.
@@ -301,7 +482,13 @@ func TestDescriptionReflectsConfiguredCaps(t *testing.T) {
 		hana.Options{Limits: hana.Limits{MaxRows: 37, Timeout: 9 * time.Second}})
 	defer db.Close()
 	srv := &Server{DB: db}
-	desc, _ := srv.ToolDefs()[0]["description"].(string)
+	// The caps live in hana_query's crib sheet, which is no longer tool[0].
+	desc := ""
+	for _, d := range srv.ToolDefs() {
+		if d["name"] == ToolQuery {
+			desc, _ = d["description"].(string)
+		}
+	}
 	if !strings.Contains(desc, "37 rows") {
 		t.Fatalf("description does not carry the configured row cap of 37:\n%s", desc)
 	}
@@ -413,7 +600,60 @@ func TestServeStdioRoundTrip(t *testing.T) {
 	var listResp map[string]any
 	json.Unmarshal([]byte(lines[1]), &listResp)
 	result := listResp["result"].(map[string]any)
-	if len(result["tools"].([]any)) != 4 {
-		t.Fatalf("tools/list over stdio returned %d tools, want 4", len(result["tools"].([]any)))
+	if got := len(result["tools"].([]any)); got != len(ToolNames) {
+		t.Fatalf("tools/list over stdio returned %d tools, want %d", got, len(ToolNames))
 	}
+}
+
+// The tool DESCRIPTION and the answer PAYLOAD have to tell the same story. A
+// model reads the description before it calls and the note after, and the two
+// disagreeing is worse than either being terse — that is how a flip-flop starts.
+//
+// The specific drift this guards is the one that shipped: the basis gap was
+// explained as header freight in three places at once (TurnoverFacts,
+// SalesByVarietyFacts and turnover.go's note), and all three were wrong
+// together. Measured 2026-08-01, OINV."TotalExpns" is 0.00 on every
+// non-cancelled A/R invoice in all three companies.
+func TestFactsMatchTheDomainNotes(t *testing.T) {
+	descs := map[string]string{
+		"hana_sales_by_variety": SalesByVarietyFacts(),
+		"hana_turnover":         TurnoverFacts(),
+	}
+
+	// Neither description may go back to explaining the gap as freight...
+	for name, d := range descs {
+		for _, dead := range []string{"INCLUDES freight", "EXCLUDES header freight", "includes header freight"} {
+			if strings.Contains(d, dead) {
+				t.Errorf("%s's description explains the basis gap with %q, which measured false", name, dead)
+			}
+		}
+		if !strings.Contains(d, BasisGapFact) {
+			t.Errorf("%s's description does not carry BasisGapFact, so it can drift from the payload note", name)
+		}
+	}
+
+	// ...and the short description and the long payload note must agree on the
+	// two load-bearing claims: not freight, and GST-only invoices.
+	for _, must := range []string{"TotalExpns", "GST-only"} {
+		if !strings.Contains(BasisGapFact, must) {
+			t.Errorf("BasisGapFact is missing %q:\n%s", must, BasisGapFact)
+		}
+		if !strings.Contains(domain.BasisGapNote, must) {
+			t.Errorf("domain.BasisGapNote is missing %q:\n%s", must, domain.BasisGapNote)
+		}
+	}
+
+	// The quantity claim, likewise: the carton half of C-0001 survives, the
+	// "every unit is a bottle" half does not.
+	if !strings.Contains(BottlesFact, "saleable UNITS") || !strings.Contains(BottlesFact, "20x") {
+		t.Errorf("BottlesFact lost the C-0001 carton rule:\n%s", BottlesFact)
+	}
+	if strings.Contains(BottlesFact, "quantities are single BOTTLES") {
+		t.Errorf("BottlesFact claims every unit is a bottle again; of 185 Oil olive-tagged items, 10 are LTR, 1 DRM and 1 SET:\n%s", BottlesFact)
+	}
+	if !strings.Contains(SalesByVarietyFacts(), "QTY_UNITS_") {
+		t.Error("hana_sales_by_variety's description still advertises the old QTY_BOTTLES_* column names")
+	}
+	// (the column names themselves are asserted next door, in
+	// domain.TestQuantityColumnsClaimUnitsNotBottles)
 }

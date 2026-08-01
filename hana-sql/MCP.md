@@ -7,7 +7,7 @@ JSON-RPC on stdin/stdout) by default, or over **streamable HTTP** with
 JIVO's SAP Business One HANA database real SQL questions — `SUM`, `GROUP BY`,
 `JOIN` — instead of hauling rows through the Service Layer.
 
-Both transports expose the identical four tools and share every read-only layer.
+Both transports expose the identical seven tools and share every read-only layer.
 
 ## Read-only guarantee
 
@@ -41,14 +41,28 @@ applying the access mode, and on HANA 2.00.059 `SYS.M_TRANSACTIONS` exposes no
 effect. Layers 0-3 are load-bearing on their own; the dedicated `SELECT`-only
 HANA user is **blocking for a gateway rollout**, not optional hardening.
 
-## The four tools
+## The seven tools
+
+Three of them — the DOMAIN tools — answer a business question with a FIXED
+statement, so JIVO's settled definitions (harness corrections C-0001..C-0004 and
+the payment-scoping rule) cannot be gotten wrong by a model writing its own SQL.
+The other four are the generic database surface.
 
 | Tool | Arguments | Notes |
 |---|---|---|
+| `hana_sales_by_variety` | `from`, `to` (required), `company?`, `variety?`, `include_type?`, `net_credit_notes?` | **domain.** Net sales by `OITM."U_Sub_Group"`. Splits `EXTERNAL_NET` from `INTERNAL_RELATED_PARTY` (JIVO's own companies and branches) and carries `UNLISTED_JIVO_CARD_NET` as a drift alarm. An unknown variety is an error listing the valid tags. |
+| `hana_turnover` | `from`, `to` (required), `company?` | **domain.** THE canonical turnover figure: OINV net of GST minus ORIN, same external/internal split. |
+| `hana_payments` | `direction`, `from`, `to` (required), `company?` | **domain.** OVPM/ORCT totals with the per-`DocType` breakdown AND the `(ALL)` row. |
 | `hana_query` | `sql` (required), `max_rows?`, `timeout_ms?` | one `SELECT`/`WITH`. Carries the full SAP B1 crib sheet in its description. |
 | `hana_tables` | `schema?`, `like?`, `include_views?`, `offset?`, `no_row_counts?` | **one page, not the catalog** — see below |
 | `hana_columns` | `schema` (required), `table` (required), `like?` | column names, HANA types, scale, PK flag |
 | `hana_doctor` | none | connection, login, version, clock skew, schema readability, the caps in force |
+
+The domain tools take every caller value as a `?` bind and interpolate nothing
+but the compile-time schema list, the catalogued related-party card codes and the
+item-group codes resolved from OITB — so they are as injection-proof as the
+catalog tools, and `TestDomainStatementsPassGuard` proves every variant of every
+statement clears the same read-only guard a user's `hana_query` SQL does.
 
 ### `hana_tables` returns a PAGE, and says which companies it left out
 

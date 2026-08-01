@@ -157,7 +157,7 @@ func TestMCPHTTPToolsList(t *testing.T) {
 		name, _ := tm["name"].(string)
 		names = append(names, name)
 	}
-	want := []string{"hana_query", "hana_tables", "hana_columns", "hana_doctor"}
+	want := []string{"hana_sales_by_variety", "hana_turnover", "hana_payments", "hana_query", "hana_tables", "hana_columns", "hana_doctor"}
 	if len(names) != len(want) {
 		t.Fatalf("tool names = %v, want exactly %v", names, want)
 	}

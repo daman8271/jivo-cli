@@ -21,14 +21,46 @@ import (
 // identity in both directions — so the names read correctly standalone AND
 // through the gateway, with no hana_hana_ stutter.
 const (
-	ToolQuery   = "hana_query"
-	ToolTables  = "hana_tables"
-	ToolColumns = "hana_columns"
-	ToolDoctor  = "hana_doctor"
+	ToolSalesByVariety = "hana_sales_by_variety"
+	ToolTurnover       = "hana_turnover"
+	ToolPayments       = "hana_payments"
+	ToolQuery          = "hana_query"
+	ToolTables         = "hana_tables"
+	ToolColumns        = "hana_columns"
+	ToolDoctor         = "hana_doctor"
 )
 
 // ToolNames is the advertised order of tools/list.
-var ToolNames = []string{ToolQuery, ToolTables, ToolColumns, ToolDoctor}
+//
+// The three DOMAIN tools come first, ahead of the freeform hana_query escape
+// hatch, on purpose: a model scanning the list meets JIVO's encoded definitions
+// before it meets the blank SQL box. The olive incident was a model reaching
+// straight for SQL and inventing a definition (item-name matching) that the
+// business had already settled and written down.
+var ToolNames = []string{
+	ToolSalesByVariety, ToolTurnover, ToolPayments,
+	ToolQuery, ToolTables, ToolColumns, ToolDoctor,
+}
+
+// companyProp is the shared `company` argument. ALL is the default because a
+// question asked without a company ("olive sales last month") is a question
+// about the group, and answering it from one company's books silently is the
+// wrong-company defect the benchmark rated most dangerous.
+func companyProp() map[string]any {
+	return map[string]any{
+		"type":        "string",
+		"enum":        []string{"Oil", "Mart", "Beverages", "ALL"},
+		"description": "Oil, Mart, Beverages or ALL (default ALL — every company reported SEPARATELY, never summed). Full schema names (JIVO_OIL_HANADB …) are also accepted. An unknown value is an ERROR, never an empty result.",
+	}
+}
+
+func fromProp() map[string]any {
+	return strProp("First day of the range, YYYY-MM-DD (INCLUSIVE), e.g. \"2026-06-01\".")
+}
+
+func toProp() map[string]any {
+	return strProp("Last day of the range, YYYY-MM-DD (INCLUSIVE — the server binds to+1 day internally and echoes the half-open window it applied, so the final day is never dropped).")
+}
 
 func strProp(desc string) map[string]any {
 	return map[string]any{"type": "string", "description": desc}
@@ -67,6 +99,43 @@ func objectSchema(props map[string]any, required ...string) map[string]any {
 func (s *Server) ToolDefs() []map[string]any {
 	lim := s.limits()
 	return []map[string]any{
+		{
+			"name":        ToolSalesByVariety,
+			"description": SalesByVarietyFacts(),
+			"inputSchema": objectSchema(map[string]any{
+				"from":    fromProp(),
+				"to":      toProp(),
+				"company": companyProp(),
+				"variety": strProp("Optional OITM.\"U_Sub_Group\" tag to filter on, case-insensitive (e.g. \"OLIVE\", \"CANOLA\", \"MUSTARD\"). Omit to get every variety. A value that tags no item is an ERROR listing the valid tags — never an empty result, because a typo must not read as \"we sold none of it\"."),
+				"include_type": boolProp(
+					"Also group by OITM.\"U_TYPE\" (PREMIUM / COMMODITY / OTHERS). Default false."),
+				"net_credit_notes": boolProp(
+					"Subtract credit-note lines (RIN1). Default TRUE. Pass false to see sales BEFORE returns; the basis string says which was applied."),
+			}, "from", "to"),
+		},
+		{
+			"name":        ToolTurnover,
+			"description": TurnoverFacts(),
+			"inputSchema": objectSchema(map[string]any{
+				"from":    fromProp(),
+				"to":      toProp(),
+				"company": companyProp(),
+			}, "from", "to"),
+		},
+		{
+			"name":        ToolPayments,
+			"description": PaymentsFacts(),
+			"inputSchema": objectSchema(map[string]any{
+				"direction": map[string]any{
+					"type":        "string",
+					"enum":        []string{"outgoing", "incoming"},
+					"description": "'outgoing' = money JIVO paid (OVPM), 'incoming' = money JIVO received (ORCT).",
+				},
+				"from":    fromProp(),
+				"to":      toProp(),
+				"company": companyProp(),
+			}, "direction", "from", "to"),
+		},
 		{
 			"name":        ToolQuery,
 			"description": QueryFacts(lim.MaxRows, lim.Timeout),
@@ -292,6 +361,15 @@ func cleanJSONError(err error) string {
 // Argument validation always happens BEFORE the database is touched.
 func (s *Server) Dispatch(ctx context.Context, name string, rawArgs json.RawMessage) (string, bool) {
 	switch name {
+	case ToolSalesByVariety:
+		return s.salesByVariety(ctx, rawArgs)
+
+	case ToolTurnover:
+		return s.turnover(ctx, rawArgs)
+
+	case ToolPayments:
+		return s.payments(ctx, rawArgs)
+
 	case ToolQuery:
 		var a struct {
 			SQL       string `json:"sql"`

@@ -1,5 +1,5 @@
 // Package gateway is a unified, strictly read-only MCP gateway in front of
-// JIVO's five MCP backends (SAP B1, Postgres, ecom, oms, factory).
+// JIVO's six MCP backends (SAP B1, Postgres, ecom, oms, factory, HANA).
 //
 // The front side speaks the stateless "streamable HTTP" transport that postsql
 // serves: one JSON-RPC message per POST, one JSON response back, no sessions.
@@ -22,7 +22,7 @@ import (
 )
 
 // Compiled-in defaults. The URLs are the docker-compose service names of the
-// five backends; nothing here is a credential.
+// six backends; nothing here is a credential.
 const (
 	defaultAddr        = "127.0.0.1:7700"
 	defaultToolsTTL    = 5 * time.Minute
@@ -58,9 +58,33 @@ type Config struct {
 	ListTimeout time.Duration // per-backend budget for one tools/list refresh
 	CallTimeout time.Duration // budget for one forwarded tools/call
 	Backends    []BackendConf // merge order; also the tools/list order
+
+	// CorrectionsPath is the JIVO corrections digest handed to clients on
+	// initialize (harness/corrections/INDEX.md). Empty — the compiled default —
+	// means the embedded snapshot only, which is a working rule set, not a
+	// failure. It is deliberately absent from Validate(): a mount can appear
+	// late, and a gateway that refuses to boot because a rules file is not
+	// there yet trades a degraded read-only service for no service at all.
+	// gateway_status is where a missing or stale digest is reported.
+	CorrectionsPath string
+
+	// AllowedOrigins are the browser Origins the front side accepts. Empty —
+	// the default — means NO browser origin is accepted, which is the safe
+	// default and costs nothing: a CLI, an MCP client and the Claude connector
+	// all send no Origin header at all. See http.go for what this defends.
+	AllowedOrigins []string
+
+	// AllowedHosts are the Host header values the front side accepts, for a
+	// gateway bound to loopback. Empty — the default — accepts any Host,
+	// because unlike hana-sql this gateway is DELIBERATELY reachable by a public
+	// name through a reverse proxy, and the proxy is free to pass any Host it
+	// likes; a loopback-only allowlist would 403 the entire deployment. Set it
+	// (--allow-host) on a loopback-bound gateway to get the anti-DNS-rebinding
+	// check hana-sql has by default.
+	AllowedHosts []string
 }
 
-// DefaultBackends returns the five compiled-in backends in merge order.
+// DefaultBackends returns the six compiled-in backends in merge order.
 //
 // StripPrefix is set only where every single tool of that backend shares one
 // redundant prefix, verified against the backends' real tool registrations:
@@ -82,10 +106,12 @@ func DefaultBackends() []BackendConf {
 		{Name: "ecom", Prefix: "ecom_", URL: "http://ecom:7703/mcp"},
 		{Name: "oms", Prefix: "oms_", URL: "http://oms:7704/mcp"},
 		{Name: "factory", Prefix: "fct_", URL: "http://factory:7705/mcp"},
-		// hana registers hana_query / hana_tables / hana_columns / hana_doctor,
-		// so Prefix and StripPrefix are the same string and the rename is the
-		// identity in both directions: the tools read as hana_query standalone
-		// and behind the gateway alike, with no hana_hana_ stutter.
+		// hana registers seven tools — hana_query / _tables / _columns / _doctor
+		// plus the domain three, hana_sales_by_variety / _turnover / _payments —
+		// and every one of them already starts with "hana_", so Prefix and
+		// StripPrefix are the same string and the rename is the identity in both
+		// directions: the tools read as hana_query standalone and behind the
+		// gateway alike, with no hana_hana_ stutter.
 		{Name: "hana", Prefix: "hana_", StripPrefix: "hana_", URL: "http://hana:7706/mcp"},
 	}
 }
@@ -105,8 +131,11 @@ func DefaultConfig() Config {
 //
 //	JIVO_GW_ADDR          front-side listen address
 //	JIVO_GW_TTL           tools/list cache TTL (any Go duration, e.g. "90s")
+//	JIVO_GW_CORRECTIONS   path to the corrections digest served on initialize
+//	JIVO_GW_ALLOW_ORIGIN  comma-separated browser Origins to accept (default: none)
+//	JIVO_GW_ALLOW_HOST    comma-separated Host values to accept (default: any)
 //	JIVO_GW_URL_<NAME>    URL of one backend (NAME upper-cased: SAPB1, POSTSQL,
-//	                      ECOM, OMS, FACTORY)
+//	                      ECOM, OMS, FACTORY, HANA)
 //
 // getenv is injected so this is testable without touching the real process
 // environment. Unparseable values are ignored in favour of the default.
@@ -120,12 +149,34 @@ func ConfigFromEnv(getenv func(string) string) Config {
 			cfg.ToolsTTL = d
 		}
 	}
+	if v := strings.TrimSpace(getenv("JIVO_GW_CORRECTIONS")); v != "" {
+		cfg.CorrectionsPath = v
+	}
+	if v := splitList(getenv("JIVO_GW_ALLOW_ORIGIN")); len(v) > 0 {
+		cfg.AllowedOrigins = v
+	}
+	if v := splitList(getenv("JIVO_GW_ALLOW_HOST")); len(v) > 0 {
+		cfg.AllowedHosts = v
+	}
 	for i := range cfg.Backends {
 		if v := strings.TrimSpace(getenv(backendURLEnv(cfg.Backends[i].Name))); v != "" {
 			cfg.Backends[i].URL = v
 		}
 	}
 	return cfg
+}
+
+// splitList parses a comma-separated environment value into trimmed, non-empty
+// entries. An empty or all-whitespace value yields nil, so it never turns into
+// an allowlist containing "".
+func splitList(v string) []string {
+	var out []string
+	for _, part := range strings.Split(v, ",") {
+		if p := strings.TrimSpace(part); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 // backendURLEnv is the environment variable that overrides one backend's URL.
@@ -171,7 +222,7 @@ func (c Config) Validate() error {
 //     the host:port survive on purpose — this is a secret-path, read-only
 //     service on a private network and topology is what makes it diagnosable.
 //   - user/pass: the credentials, if any, sent as an HTTP basic-auth header
-//     instead. None of the five JIVO backends uses auth; this only keeps an
+//     instead. None of the six JIVO backends uses auth; this only keeps an
 //     operator-supplied credential working while keeping it out of every log.
 //
 // A URL with no userinfo (the normal case) comes back unchanged.

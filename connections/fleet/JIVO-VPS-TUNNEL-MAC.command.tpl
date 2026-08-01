@@ -89,8 +89,21 @@ register(){
   # The registrar only accepts [A-Za-z0-9._-]; sanitise or it refuses.
   # Capture FIRST, then sanitise: piping `hostname -s` straight into tr feeds the
   # trailing newline in, and tr turns it into a stray '_' on the end of the name.
-  host="$(hostname -s)"
+  # `hostname -s` on macOS is NOT stable: when DHCP hands out a name the machine
+  # reports something like 192.168.1.5, which truncates to "192". Measured on the
+  # Mac Air, which registered as host "192". That is not unique -- ANY Mac on a
+  # 192.168.x.x network reports the same, and since the registrar is keyed by HOST
+  # the second one would seize the first one's port and replace its key.
+  # LocalHostName / ComputerName are user-set and stable; fall back to the hardware
+  # UUID rather than ever registering a name that cannot identify one machine.
+  host="$(scutil --get LocalHostName 2>/dev/null)"
+  [ -n "$host" ] || host="$(scutil --get ComputerName 2>/dev/null)"
+  [ -n "$host" ] || host="$(hostname -s)"
   host="$(printf '%s' "$host" | tr -c 'A-Za-z0-9._-' '_' | cut -c1-64)"
+  if printf '%s' "$host" | grep -qE '^[0-9._-]*$' || [ "${#host}" -lt 3 ]; then
+    uuid="$(ioreg -rd1 -c IOPlatformExpertDevice 2>/dev/null | awk -F'\"' '/IOPlatformUUID/{print $4}' | tr -d '-' | cut -c1-8)"
+    host="mac-${uuid:-$$}"
+  fi
   user="$(printf '%s' "$TARGET_USER" | tr -c 'A-Za-z0-9._-' '_' | cut -c1-64)"
   out="$(ssh -n -i "$rk" -o IdentitiesOnly=yes -o BatchMode=yes \
            -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 \

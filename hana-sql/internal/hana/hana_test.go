@@ -112,26 +112,38 @@ func TestRollbackHappensOnQueryError(t *testing.T) {
 	}
 }
 
-// Structural: there must be no Commit call in the package's non-test source.
-// A future edit that "fixes" the rollback into a commit fails here.
+// Structural: there must be no Commit call in the non-test source of ANY package
+// that builds SQL for this database. A future edit that "fixes" the rollback into
+// a commit fails here.
+//
+// internal/domain is scanned too. It holds only a Runner interface today and
+// cannot reach *sql.Tx at all, so the scan is harmless — which is the point: it
+// costs nothing now and is already in place the day someone gives that package a
+// database handle of its own. A guard added after the capability arrives is a
+// guard that was missing for exactly as long as it mattered.
 func TestNoCommitInPackageSource(t *testing.T) {
-	fset := token.NewFileSet()
-	pkgs, err := parser.ParseDir(fset, ".", func(fi os.FileInfo) bool {
-		return !strings.HasSuffix(fi.Name(), "_test.go")
-	}, 0)
-	if err != nil {
-		t.Fatalf("parse package: %v", err)
-	}
-	for _, pkg := range pkgs {
-		for name, file := range pkg.Files {
-			ast.Inspect(file, func(n ast.Node) bool {
-				sel, ok := n.(*ast.SelectorExpr)
-				if ok && sel.Sel.Name == "Commit" {
-					t.Errorf("%s: calls .Commit — internal/hana must never commit; the read-only transaction's only exit is Rollback",
-						filepath.Base(name))
-				}
-				return true
-			})
+	for _, dir := range []string{".", "../domain"} {
+		fset := token.NewFileSet()
+		pkgs, err := parser.ParseDir(fset, dir, func(fi os.FileInfo) bool {
+			return !strings.HasSuffix(fi.Name(), "_test.go")
+		}, 0)
+		if err != nil {
+			t.Fatalf("parse %s: %v", dir, err)
+		}
+		if len(pkgs) == 0 {
+			t.Fatalf("%s parsed to no packages; the scan would be vacuous", dir)
+		}
+		for _, pkg := range pkgs {
+			for name, file := range pkg.Files {
+				ast.Inspect(file, func(n ast.Node) bool {
+					sel, ok := n.(*ast.SelectorExpr)
+					if ok && sel.Sel.Name == "Commit" {
+						t.Errorf("%s/%s: calls .Commit — no package that builds SQL for this database may commit; the read-only transaction's only exit is Rollback",
+							dir, filepath.Base(name))
+					}
+					return true
+				})
+			}
 		}
 	}
 }

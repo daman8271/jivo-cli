@@ -40,6 +40,12 @@ user=$(printf '%s' "$cmd" | grep -oE '(^| )USER=[A-Za-z0-9._-]{1,64}( |$)' | hea
 keyb=$(printf '%s' "$cmd" | grep -oE '(^| )KEY=[A-Za-z0-9+/=]{40,1000}( |$)'  | head -1 | tr -d ' ' | cut -d= -f2)
 
 [ -n "$host" ] || die "bad-or-missing-HOST"
+# Reject names that cannot identify ONE machine. A Mac on DHCP can report "192"
+# (from 192.168.x.x truncated at the first dot); since the registry is keyed by
+# HOST, accepting it lets a second machine seize the first one's port and replace
+# its key. Better to refuse than to hand out a colliding identity.
+printf '%s' "$host" | grep -qE '^[0-9._-]+$' && die "host-not-unique-numeric"
+[ "${#host}" -ge 3 ] || die "host-too-short"
 [ -n "$user" ] || die "bad-or-missing-USER"
 [ -n "$keyb" ] || die "bad-or-missing-KEY"
 

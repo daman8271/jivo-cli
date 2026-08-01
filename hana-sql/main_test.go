@@ -137,6 +137,13 @@ func TestMCPStdioServesWithNoDatabase(t *testing.T) {
 		`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}`,
 		`{"jsonrpc":"2.0","id":2,"method":"tools/list"}`,
 		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"hana_query","arguments":{"sql":"SELECT 1 FROM DUMMY","company":"Mart"}}}`,
+		// A domain tool with a mis-typed date must be answered by the argument
+		// validator, not by the connection layer: with the tunnel down, "no HANA
+		// connection" would send a model debugging the wrong thing entirely.
+		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"hana_sales_by_variety","arguments":{"from":"01-06-2026","to":"2026-06-30"}}}`,
+		// And an unknown company is refused with the valid list, never answered
+		// as an empty result.
+		`{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"hana_turnover","arguments":{"from":"2026-07-01","to":"2026-07-28","company":"Bevrages"}}}`,
 	}, "\n") + "\n"
 
 	var out, errb bytes.Buffer
@@ -150,8 +157,8 @@ func TestMCPStdioServesWithNoDatabase(t *testing.T) {
 	}
 
 	lines := strings.Split(strings.TrimSpace(out.String()), "\n")
-	if len(lines) != 3 {
-		t.Fatalf("got %d responses, want 3:\n%s", len(lines), out.String())
+	if len(lines) != 5 {
+		t.Fatalf("got %d responses, want 5:\n%s", len(lines), out.String())
 	}
 
 	var list map[string]any
@@ -163,7 +170,10 @@ func TestMCPStdioServesWithNoDatabase(t *testing.T) {
 	for _, tl := range tools {
 		names = append(names, tl.(map[string]any)["name"].(string))
 	}
-	want := "hana_query,hana_tables,hana_columns,hana_doctor"
+	// The three DOMAIN tools come first, ahead of the freeform hana_query escape
+	// hatch, so a model scanning the list meets JIVO's encoded definitions before
+	// it meets the blank SQL box.
+	want := "hana_sales_by_variety,hana_turnover,hana_payments,hana_query,hana_tables,hana_columns,hana_doctor"
 	if strings.Join(names, ",") != want {
 		t.Fatalf("tools = %v, want %s", names, want)
 	}
@@ -179,6 +189,35 @@ func TestMCPStdioServesWithNoDatabase(t *testing.T) {
 	text := res["content"].([]any)[0].(map[string]any)["text"].(string)
 	if !strings.Contains(text, "company") || !strings.Contains(text, "refusing rather than ignoring") {
 		t.Fatalf("text = %q", text)
+	}
+
+	// The domain tools must reach the same standard end-to-end over the wire: a
+	// bad argument is explained on its own terms, with no database in reach.
+	for _, c := range []struct {
+		line   string
+		mustBe []string
+		mustNo string
+	}{
+		{lines[3], []string{"YYYY-MM-DD", "01-06-2026"}, "no HANA connection"},
+		{lines[4], []string{"unknown company", "Beverages"}, "no HANA connection"},
+	} {
+		var resp map[string]any
+		if err := json.Unmarshal([]byte(c.line), &resp); err != nil {
+			t.Fatalf("response is not JSON: %v\n%s", err, c.line)
+		}
+		r := resp["result"].(map[string]any)
+		if isErr, _ := r["isError"].(bool); !isErr {
+			t.Fatalf("a bad domain-tool argument was accepted: %s", c.line)
+		}
+		txt := r["content"].([]any)[0].(map[string]any)["text"].(string)
+		for _, m := range c.mustBe {
+			if !strings.Contains(txt, m) {
+				t.Fatalf("the refusal does not contain %q: %s", m, txt)
+			}
+		}
+		if strings.Contains(txt, c.mustNo) {
+			t.Fatalf("an argument mistake was reported as a connection problem, which sends a model debugging the wrong thing: %s", txt)
+		}
 	}
 }
 

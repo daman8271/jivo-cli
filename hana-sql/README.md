@@ -169,7 +169,7 @@ nothing to aggregate — the page's real coverage plus the `offset` to pass next
 | unterminated `'` or `/*` hiding the tail | L0, fail-closed |
 | zero-width / homoglyph before the verb | L0, fail-closed |
 | `COMMIT` / `ROLLBACK` escaping the read-only tx | L3 |
-| SQL injection through tool arguments | structurally impossible — `hana_query` takes no parameters, and the catalog tools use `?` binds with fixed SQL text |
+| SQL injection through tool arguments | structurally impossible across all seven tools — `hana_query` takes no parameters; the catalog tools and the three domain tools (`hana_sales_by_variety`, `hana_turnover`, `hana_payments`) use `?` binds with fixed SQL text, interpolating only the compile-time schema list, the catalogued related-party card codes and item-group codes read back from OITB as integers |
 | result-set flooding | L5 row + byte caps, with an explicit `truncated` flag |
 | runaway cross-join burning production CPU | L5 deadline + server-side cancel + semaphore |
 | `SELECT "SEQ".NEXTVAL` — a write dressed as a read | L3 (`NEXTVAL` banned) |

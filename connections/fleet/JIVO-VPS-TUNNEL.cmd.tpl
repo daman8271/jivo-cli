@@ -27,6 +27,10 @@ exit /b
 # ================= PowerShell body (runs elevated) ===================
 # No global ErrorActionPreference=Stop: every step reports its own failure and
 # the rest still runs, so one hiccup can't abandon a half-configured box.
+# The blue "Operation Running [ooooo]" banner comes from PowerShell's progress
+# stream. It hides real output, redraws constantly, and is the single biggest
+# reason this looks hung. Off.
+$ProgressPreference = 'SilentlyContinue'
 $log = "$env:USERPROFILE\Desktop\jivo-vps-tunnel-log.txt"
 try { Start-Transcript -Path $log -Force | Out-Null } catch {}
 
@@ -81,25 +85,40 @@ $MANAGER_KEYS = @(
   'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHR8F2rqvcl7hHaAmpmXd3uogcx0AUflmMvlAART0JNK hermes-agent-access'
 )
 
-$SSHDIR = "$env:WINDIR\System32\OpenSSH"
-$SSH    = "$SSHDIR\ssh.exe"
-$KEYGEN = "$SSHDIR\ssh-keygen.exe"
+# ssh.exe lives in System32\OpenSSH for the inbox capability, but in
+# Program Files\OpenSSH when installed from the MSI. Resolve, do not assume.
+function Find-Exe($name) {
+  foreach ($d in @("$env:WINDIR\System32\OpenSSH", "$env:ProgramFiles\OpenSSH", "${env:ProgramFiles(x86)}\OpenSSH")) {
+    if ($d -and (Test-Path (Join-Path $d $name))) { return (Join-Path $d $name) }
+  }
+  $c = Get-Command $name -ErrorAction SilentlyContinue
+  if ($c) { return $c.Source }
+  return "$env:WINDIR\System32\OpenSSH\$name"
+}
+$SSH    = Find-Exe 'ssh.exe'
+$KEYGEN = Find-Exe 'ssh-keygen.exe' 
 
 Write-Host ""
 Write-Host "  === JIVO VPS TUNNEL SETUP ===" -ForegroundColor White
 Write-Host "  About a minute. Leave this window alone (do not click inside it)." -ForegroundColor Gray
 Write-Host ""
 
-# ---- 1. the door: OpenSSH server, so the tunnel has something to land on ----
-Step 'openssh-server' {
-  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
-    Write-Host "  installing OpenSSH Server (slowest step, 1-3 min)..." -ForegroundColor Cyan
-    $c = Get-WindowsCapability -Online -Name 'OpenSSH.Server*' -ErrorAction Stop
-    if ($c.State -ne 'Installed') { Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 -ErrorAction Stop | Out-Null }
+# ---- 1. START the OpenSSH Server install IN THE BACKGROUND ----
+# This is the only slow step (it pulls from Windows Update and has been measured
+# at 14+ minutes on a throttled office line). Nothing below depends on it until
+# the very end, so it runs in parallel instead of blocking everything.
+$sshJob = $null
+if (Get-Service sshd -ErrorAction SilentlyContinue) {
+  $ok += 'openssh-server(already)'
+} else {
+  Write-Host "  OpenSSH Server not present - installing in the background while we continue..." -ForegroundColor Cyan
+  $sshJob = Start-Job -ScriptBlock {
+    $ProgressPreference = 'SilentlyContinue'
+    try { Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 -ErrorAction Stop | Out-Null; 'capability' }
+    catch { "capability-failed: $($_.Exception.Message)" }
   }
-  Set-Service -Name sshd -StartupType Automatic -ErrorAction Stop
-  Start-Service sshd -ErrorAction Stop
 }
+
 # ---- 2. the ssh CLIENT, needed to dial out ----
 Step 'openssh-client' {
   if (-not (Test-Path $SSH)) {
@@ -262,6 +281,47 @@ if (-not `$alive) { L 'tunnel DOWN - kicking dialer'; schtasks /Run /TN JivoRevT
   $r = schtasks /Create /TN JivoTunnelWatchdog /TR "$psExe2 -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File $wd" /SC MINUTE /MO 15 /RU SYSTEM /RL HIGHEST /F 2>&1
   if ($LASTEXITCODE -ne 0) { throw "watchdog schtasks failed: $r" }
   try { Set-BootProof 'JivoTunnelWatchdog' $false } catch { Write-Host "  note: boot-proofing the watchdog failed ($($_.Exception.Message))" -ForegroundColor Yellow }
+}
+
+# ---- 6d. collect the background OpenSSH install (bounded, with a fallback) ----
+Step 'openssh-server' {
+  if (-not $sshJob) { if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw 'sshd missing and no install was started' }; return }
+  $sw = [Diagnostics.Stopwatch]::StartNew()
+  while ($sshJob.State -eq 'Running' -and $sw.Elapsed.TotalSeconds -lt 150) {
+    Start-Sleep 10
+    Write-Host ("    OpenSSH Server still installing... {0}s" -f [int]$sw.Elapsed.TotalSeconds) -ForegroundColor DarkGray
+  }
+  if ($sshJob.State -eq 'Running') {
+    Write-Host "  Windows Update is too slow - switching to the direct installer." -ForegroundColor Yellow
+    Stop-Job $sshJob -ErrorAction SilentlyContinue
+  }
+  Remove-Job $sshJob -Force -ErrorAction SilentlyContinue
+
+  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
+    # Fallback: Microsoft's own Win32-OpenSSH MSI. A direct HTTPS download of a
+    # few MB, seconds instead of minutes, and it does not touch Windows Update --
+    # so it also works on boxes where policy blocks the component store (0x800f0954).
+    $msi = "$env:TEMP\openssh-win64.msi"
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    # Resolve the asset from the API. A hardcoded /releases/latest/download/<file>
+    # URL 404s the moment Microsoft cuts a new version -- measured: the pinned
+    # v9.8.1.0 name was already dead while the latest release was v10.0.0.0.
+    $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'Win64' }
+    $url = $null
+    try {
+      $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest' `
+               -UseBasicParsing -TimeoutSec 30 -Headers @{ 'User-Agent' = 'jivo-fleet' }
+      $url = ($rel.assets | Where-Object { $_.name -like "OpenSSH-$arch-*.msi" } | Select-Object -First 1).browser_download_url
+    } catch { }
+    if (-not $url) { $url = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/OpenSSH-$arch-v10.0.0.0.msi" }
+    Write-Host "  downloading $url" -ForegroundColor DarkGray
+    Invoke-WebRequest -Uri $url -OutFile $msi -UseBasicParsing -TimeoutSec 120 -ErrorAction Stop
+    Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /quiet /norestart" -Wait -ErrorAction Stop
+    Remove-Item $msi -Force -ErrorAction SilentlyContinue
+  }
+  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw 'OpenSSH Server could not be installed by either route' }
+  Set-Service -Name sshd -StartupType Automatic -ErrorAction Stop
+  Start-Service sshd -ErrorAction SilentlyContinue
 }
 
 # ---- 7. verify the tunnel actually came up ----

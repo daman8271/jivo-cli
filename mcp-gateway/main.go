@@ -1,7 +1,7 @@
 // Command jivo-gateway serves one strictly read-only MCP endpoint that fronts
-// JIVO's five MCP backends (SAP B1, Postgres, ecom, oms, factory), merging their
-// tools under the prefixes sap_ / pg_ / ecom_ / oms_ / fct_ and adding a native
-// gateway_status tool.
+// JIVO's six MCP backends (SAP B1, Postgres, ecom, oms, factory, HANA), merging
+// their tools under the prefixes sap_ / pg_ / ecom_ / oms_ / fct_ / hana_ and
+// adding a native gateway_status tool.
 //
 // Front side: stateless streamable HTTP at /mcp (POST one JSON-RPC message, get
 // one JSON response). Back side: one lazily-initialized session per backend.
@@ -13,6 +13,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"mcp-gateway/internal/gateway"
 )
@@ -29,6 +30,9 @@ func main() {
 	ttl := flag.Duration("ttl", cfg.ToolsTTL, "how long a merged tools/list snapshot stays fresh")
 	listTimeout := flag.Duration("list-timeout", cfg.ListTimeout, "per-backend timeout for one tools/list refresh")
 	callTimeout := flag.Duration("call-timeout", cfg.CallTimeout, "timeout for one forwarded tools/call")
+	corrections := flag.String("corrections", cfg.CorrectionsPath, "path to the JIVO corrections digest (harness/corrections/INDEX.md); the embedded snapshot is the fallback")
+	allowOrigin := newListFlag("allow-origin", cfg.AllowedOrigins, "browser Origin to accept (repeatable; default: none — a real MCP client sends no Origin)")
+	allowHost := newListFlag("allow-host", cfg.AllowedHosts, "Host header value to accept (repeatable; default: any, because this gateway is proxied under a public name)")
 	showVersion := flag.Bool("version", false, "print version and exit")
 
 	urls := make([]*string, len(cfg.Backends))
@@ -52,6 +56,9 @@ func main() {
 	cfg.ToolsTTL = *ttl
 	cfg.ListTimeout = *listTimeout
 	cfg.CallTimeout = *callTimeout
+	cfg.CorrectionsPath = *corrections
+	cfg.AllowedOrigins = allowOrigin.values
+	cfg.AllowedHosts = allowHost.values
 	for i := range cfg.Backends {
 		cfg.Backends[i].URL = *urls[i]
 	}
@@ -80,6 +87,10 @@ func main() {
 			st.Name, st.URL, state, st.ToolCount, detail)
 	}
 
+	// Which rule set clients will be handed on initialize, and from where. Only
+	// the provenance is printed, never the digest's contents.
+	logCorrections(g.CorrectionsStatus())
+
 	fmt.Fprintf(os.Stderr, "jivo-gateway %s: read-only MCP gateway listening on http://%s/mcp\n", version, cfg.Addr)
 	if err := g.ListenAndServe(); err != nil {
 		fmt.Fprintf(os.Stderr, "jivo-gateway: %v\n", err)
@@ -87,8 +98,66 @@ func main() {
 	}
 }
 
+// listFlag is a repeatable string flag, seeded from the environment. The first
+// -flag occurrence REPLACES the environment's list rather than appending to it,
+// so a flag always wins outright — the same precedence as every other setting.
+type listFlag struct {
+	values  []string
+	fromEnv bool
+}
+
+func newListFlag(name string, seed []string, usage string) *listFlag {
+	f := &listFlag{values: seed, fromEnv: len(seed) > 0}
+	flag.Var(f, name, usage)
+	return f
+}
+
+func (f *listFlag) String() string {
+	if f == nil {
+		return ""
+	}
+	return strings.Join(f.values, ",")
+}
+
+func (f *listFlag) Set(v string) error {
+	if f.fromEnv {
+		f.values, f.fromEnv = nil, false
+	}
+	for _, part := range strings.Split(v, ",") {
+		if p := strings.TrimSpace(part); p != "" {
+			f.values = append(f.values, p)
+		}
+	}
+	return nil
+}
+
+// logCorrections prints one line of provenance for the corrections digest:
+// how many rules, from which file — or that the embedded snapshot is standing
+// in, and why. A gateway serving stale or fallback rules looks healthy in every
+// other respect, so this is the one place a boot makes it obvious.
+func logCorrections(st map[string]any) {
+	origin := "embedded snapshot"
+	if src, _ := st["source"].(string); src == "file" {
+		origin = fmt.Sprintf("file %v", st["path"])
+	}
+	if lastErr, _ := st["last_error"].(string); lastErr != "" {
+		origin += ", last re-read failed: " + lastErr
+	}
+	fmt.Fprintf(os.Stderr, "jivo-gateway: corrections %v rules (%s)\n", st["count"], origin)
+}
+
 func usage() {
-	fmt.Fprint(os.Stderr, `jivo-gateway — one read-only MCP endpoint in front of five JIVO backends
+	fmt.Fprint(os.Stderr, `jivo-gateway — one read-only MCP endpoint in front of six JIVO backends
+
+Backends and the prefix each contributes:
+  sapb1    sap_   SAP B1 Service Layer
+  postsql  pg_    Postgres
+  ecom     ecom_  e-commerce
+  oms      oms_   orders
+  factory  fct_   factory
+  hana     hana_  SAP B1's HANA database direct (hana_sales_by_variety,
+                  hana_turnover and hana_payments compute JIVO's settled
+                  definitions; prefer them to hand-written SQL)
 
 Usage:
   jivo-gateway [flags]
@@ -96,7 +165,10 @@ Usage:
 Environment (flags win):
   JIVO_GW_ADDR         front-side listen address
   JIVO_GW_TTL          tools/list cache TTL (Go duration)
-  JIVO_GW_URL_<NAME>   backend URL: SAPB1, POSTSQL, ECOM, OMS, FACTORY
+  JIVO_GW_CORRECTIONS  path to the JIVO corrections digest served on initialize
+  JIVO_GW_ALLOW_ORIGIN comma-separated browser Origins to accept (default: none)
+  JIVO_GW_ALLOW_HOST   comma-separated Host values to accept (default: any)
+  JIVO_GW_URL_<NAME>   backend URL: SAPB1, POSTSQL, ECOM, OMS, FACTORY, HANA
 
 Flags:
 `)

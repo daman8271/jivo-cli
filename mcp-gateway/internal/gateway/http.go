@@ -3,12 +3,102 @@ package gateway
 import (
 	"encoding/json"
 	"io"
+	"mime"
+	"net"
 	"net/http"
+	"strings"
 	"time"
 )
 
 // httpBodyLimit caps a single JSON-RPC request body (4 MiB), same as postsql.
 const httpBodyLimit = 4 << 20
+
+// The front side is the one surface a WEB PAGE can reach, and this gateway is
+// reachable through a public reverse proxy, so it is the surface that matters
+// most. hana-sql's transport already enforces these checks and explains the
+// reasoning; this one enforced none of them, which meant a POST carrying
+// `Origin: http://evil.example` or `Content-Type: text/plain` was answered 200.
+//
+//	Origin        must be absent (a CLI, an MCP client, the Claude connector —
+//	              none of them send one) or explicitly allowed. A browser always
+//	              sends it cross-origin, and no browser has business driving
+//	              JIVO's production books.
+//	Content-Type  must be application/json. text/plain and the form encodings
+//	              are CORS *simple* requests, sent with no preflight at all;
+//	              application/json forces a preflight, and this server answers
+//	              no preflight and emits no CORS header, so the preflight fails.
+//	              The MCP streamable-HTTP transport requires this header anyway.
+//	Host          checked only when AllowedHosts is configured. Unlike
+//	              hana-sql, this gateway is DELIBERATELY reached by a public
+//	              name through a proxy, so a loopback-only default would 403 the
+//	              real deployment. --allow-host is there for a loopback-bound
+//	              gateway that wants the anti-DNS-rebinding check.
+//
+// None of this is authentication. It is the difference between "a page a JIVO
+// machine visits can drive the gateway" and "it cannot".
+
+// checkHTTPRequest applies the browser-shaped checks. It returns ("", 0) when
+// the request may proceed, or a reason and the HTTP status to answer with.
+func (g *Gateway) checkHTTPRequest(r *http.Request) (string, int) {
+	if origin := r.Header.Get("Origin"); origin != "" && !allowedBy(g.cfg.AllowedOrigins, origin) {
+		return "forbidden: Origin " + origin + " is not allowed. This endpoint fronts JIVO's production systems and validates Origin, " +
+			"because a client that legitimately speaks MCP does not send one at all. Pass --allow-origin to permit a specific origin.", http.StatusForbidden
+	}
+	if len(g.cfg.AllowedHosts) > 0 && !g.hostAllowed(r.Host) {
+		return "forbidden: Host " + r.Host + " is not allowed. Reach this endpoint under one of the names passed to --allow-host; " +
+			"a request arriving under some other name is what a DNS-rebinding attack looks like.", http.StatusForbidden
+	}
+	if !jsonContentType(r.Header.Get("Content-Type")) {
+		return "unsupported media type: POST a JSON-RPC message with Content-Type: application/json " +
+			"(text/plain and the form encodings are refused because they are CORS simple requests a web page can send with no preflight)", http.StatusUnsupportedMediaType
+	}
+	return "", 0
+}
+
+// allowedBy reports whether value appears in an allowlist ("*" allows all).
+func allowedBy(list []string, value string) bool {
+	for _, a := range list {
+		if a == "*" || strings.EqualFold(strings.TrimSpace(a), value) {
+			return true
+		}
+	}
+	return false
+}
+
+// hostAllowed reports whether the Host header names this gateway legitimately.
+// Only reached when AllowedHosts is non-empty. Loopback is always accepted
+// alongside the configured names, so --allow-host never locks an operator out
+// of their own 127.0.0.1 probe.
+func (g *Gateway) hostAllowed(host string) bool {
+	if allowedBy(g.cfg.AllowedHosts, host) {
+		return true
+	}
+	name := host
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		name = h
+	}
+	name = strings.Trim(name, "[]")
+	if allowedBy(g.cfg.AllowedHosts, name) || strings.EqualFold(name, "localhost") {
+		return true
+	}
+	if ip := net.ParseIP(name); ip != nil {
+		return ip.IsLoopback()
+	}
+	return false
+}
+
+// jsonContentType reports whether ct is application/json (parameters allowed).
+func jsonContentType(ct string) bool {
+	if ct == "" {
+		return false
+	}
+	mt, _, err := mime.ParseMediaType(ct)
+	if err != nil {
+		return false
+	}
+	mt = strings.ToLower(mt)
+	return mt == "application/json" || strings.HasSuffix(mt, "+json")
+}
 
 // mcpHTTPHandler serves the MCP "streamable HTTP" transport on the front side,
 // fully stateless: exactly one JSON-RPC message per POST, exactly one JSON
@@ -21,9 +111,15 @@ const httpBodyLimit = 4 << 20
 // identically byte-for-byte on transport errors.
 func (g *Gateway) mcpHTTPHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// The method check is first because it reveals nothing and reads nothing;
+		// everything after it can reach JIVO's production backends.
 		if r.Method != http.MethodPost {
 			w.Header().Set("Allow", http.MethodPost)
 			http.Error(w, "method not allowed: this MCP endpoint is stateless (POST one JSON-RPC message; no SSE stream, no sessions)", http.StatusMethodNotAllowed)
+			return
+		}
+		if reason, status := g.checkHTTPRequest(r); status != 0 {
+			http.Error(w, reason, status)
 			return
 		}
 

@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"hana-sql/internal/config"
+	"hana-sql/internal/domain"
 	"hana-sql/internal/hana"
 )
 
@@ -345,6 +347,10 @@ func TestArgumentNamesAreCaseSensitive(t *testing.T) {
 		{"hana_tables", `{"SCHEMA":"JIVO_OIL_HANADB"}`, "SCHEMA"},
 		{"hana_tables", `{"Like":"O%"}`, "Like"},
 		{"hana_columns", `{"schema":"JIVO_OIL_HANADB","TABLE":"OINV"}`, "TABLE"},
+		{"hana_sales_by_variety", `{"From":"2026-06-01","to":"2026-06-30"}`, "From"},
+		{"hana_sales_by_variety", `{"from":"2026-06-01","to":"2026-06-30","Variety":"OLIVE"}`, "Variety"},
+		{"hana_turnover", `{"from":"2026-07-01","to":"2026-07-28","Company":"Oil"}`, "Company"},
+		{"hana_payments", `{"Direction":"outgoing","from":"2026-07-01","to":"2026-07-31"}`, "Direction"},
 	}
 	for _, c := range cases {
 		t.Run(c.want, func(t *testing.T) {
@@ -365,11 +371,135 @@ func TestArgumentNamesAreCaseSensitive(t *testing.T) {
 		{"hana_query", `{"sql":"SELECT 1 FROM DUMMY","max_rows":5,"timeout_ms":100}`},
 		{"hana_tables", `{"schema":"JIVO_OIL_HANADB","like":"O%","include_views":true,"offset":0,"no_row_counts":true}`},
 		{"hana_columns", `{"schema":"JIVO_OIL_HANADB","table":"OINV","like":"Doc%"}`},
+		{"hana_sales_by_variety", `{"from":"2026-06-01","to":"2026-06-30","company":"ALL","variety":"OLIVE","include_type":true,"net_credit_notes":false}`},
+		{"hana_turnover", `{"from":"2026-07-01","to":"2026-07-28","company":"Oil"}`},
+		{"hana_payments", `{"direction":"outgoing","from":"2026-07-01","to":"2026-07-31","company":"Mart"}`},
 	} {
 		text, isErr := dispatch(t, c.tool, c.args)
 		if isErr && !strings.Contains(text, "no HANA connection") {
 			t.Fatalf("%s(%s) was refused on its own arguments: %s", c.tool, c.args, text)
 		}
+	}
+}
+
+// --- the domain tools' envelope --------------------------------------------------
+
+// The NO-AS-OF defect, closed and pinned. Every ledger figure the benchmark
+// pulled was a live running total with no snapshot, so a month-end close could
+// not be reproduced and two runs an hour apart disagreed. The generic tools stamp
+// the MCP HOST clock; the three domain tools carry the DATABASE's own clock, read
+// in the same statement as the figures, and say so in as_of_source.
+func TestDomainEnvelopeCarriesTheServerClock(t *testing.T) {
+	srv := &Server{}
+	res := &domain.Response{
+		AsOf:       "2026-08-01T10:04:20Z",
+		AsOfSource: domain.AsOfSource,
+		ElapsedMS:  398,
+		Window:     domain.Window{From: "2026-06-01", To: "2026-06-30", Applied: `"DocDate" >= '2026-06-01' AND "DocDate" < '2026-07-01'`},
+		Basis:      "net sales = SUM(INV1.\"LineTotal\")",
+		Note:       domain.InternalSplitNote,
+		Companies: []domain.CompanyBlock{{
+			Company: "Oil", Schema: "JIVO_OIL_HANADB",
+			Rows: []map[string]any{{"VARIETY": "OLIVE", "EXTERNAL_NET": 39909813.16}},
+		}},
+		SQL:    "WITH AGG AS (…)",
+		Params: []any{"2026-06-01", "2026-07-01"},
+	}
+	text, isErr := srv.domainEnvelope(res, nil)
+	if isErr {
+		t.Fatalf("domainEnvelope reported an error: %s", text)
+	}
+	var e map[string]any
+	if err := json.Unmarshal([]byte(text), &e); err != nil {
+		t.Fatalf("the domain envelope is not JSON: %v\n%s", err, text)
+	}
+	for _, k := range []string{"as_of", "as_of_source", "elapsed_ms", "window", "basis", "note", "companies", "sql", "params"} {
+		if _, ok := e[k]; !ok {
+			t.Fatalf("the domain envelope is missing %q: %s", k, text)
+		}
+	}
+	if e["as_of"] != "2026-08-01T10:04:20Z" {
+		t.Fatalf("as_of = %v, want the value the DATABASE returned, not this host's clock", e["as_of"])
+	}
+	want := "hana-server-clock (CURRENT_UTCTIMESTAMP selected in the same statement as the figures)"
+	if e["as_of_source"] != want {
+		t.Fatalf("as_of_source = %v, want %q — a caller must be able to tell a reproducible snapshot from a host timestamp", e["as_of_source"], want)
+	}
+	if e["as_of_source"] == "mcp-host-clock" {
+		t.Fatal("a domain tool claimed the host clock; the whole point is that its figures carry the server's")
+	}
+	// The answer must be re-runnable by hand: the exact statement AND its binds.
+	if e["sql"] == "" {
+		t.Fatal("the envelope does not carry the statement that produced the figures")
+	}
+	if p, ok := e["params"].([]any); !ok || len(p) != 2 {
+		t.Fatalf("params = %v, want the values actually bound", e["params"])
+	}
+	// The window must state what was APPLIED, not just what was asked for: `to` is
+	// inclusive at the boundary and half-open in the SQL, and a reader has to be
+	// able to see that without trusting a sentence.
+	w := e["window"].(map[string]any)
+	if w["to"] != "2026-06-30" || !strings.Contains(w["applied"].(string), "< '2026-07-01'") {
+		t.Fatalf("window = %v, want the inclusive `to` alongside the half-open comparison actually sent", w)
+	}
+	// C-0002 travels with every sales-shaped answer, not just the description.
+	if !strings.Contains(e["note"].(string), "CUSTA000606") {
+		t.Fatalf("the note lost the intercompany rule: %v", e["note"])
+	}
+}
+
+// EVERY tool must stamp an answer with an as_of, whichever of the three response
+// shapes it uses — that is the benchmark's NO-AS-OF defect closed across the
+// whole surface, not just on the new tools. Asserted on the types themselves so
+// a fourth response shape cannot be added without one.
+func TestEveryResponseShapeCarriesAnAsOf(t *testing.T) {
+	for _, shape := range []struct {
+		name string
+		v    any
+		// The doctor is a status report, not a figure, so it stamps the time it
+		// ran without claiming a source for anybody's numbers.
+		wantSource bool
+	}{
+		{"hana_query / hana_tables / hana_columns envelope", envelope{}, true},
+		{"hana_doctor report", doctorReport{}, false},
+		{"domain tools (hana_sales_by_variety / hana_turnover / hana_payments)", domain.Response{}, true},
+	} {
+		tags := map[string]bool{}
+		rt := reflect.TypeOf(shape.v)
+		for i := 0; i < rt.NumField(); i++ {
+			name := strings.Split(rt.Field(i).Tag.Get("json"), ",")[0]
+			tags[name] = true
+		}
+		if !tags["as_of"] {
+			t.Errorf("%s has no as_of field: a ledger figure with no snapshot cannot be reproduced at month-end, and two runs an hour apart disagree with no way to tell which was which", shape.name)
+		}
+		if shape.wantSource && !tags["as_of_source"] {
+			t.Errorf("%s has no as_of_source field: a caller cannot tell a reproducible database snapshot from this host's wall clock", shape.name)
+		}
+	}
+}
+
+// The two families must be distinguishable at a glance, and the domain tools must
+// say out loud where their timestamp comes from — that is the difference between
+// "roughly now" and an instant a month-end close can be re-run against.
+func TestDomainToolsAdvertiseTheServerClock(t *testing.T) {
+	byName := map[string]string{}
+	for _, d := range testServer().ToolDefs() {
+		name, _ := d["name"].(string)
+		byName[name], _ = d["description"].(string)
+	}
+	for _, name := range []string{ToolSalesByVariety, ToolTurnover, ToolPayments} {
+		if !strings.Contains(byName[name], "as_of from the HANA server clock") {
+			t.Errorf("%s does not say its as_of comes from the HANA server clock:\n%s", name, byName[name])
+		}
+	}
+	// And the generic ones must not claim it: they stamp the host clock, which is
+	// a deliberate, bounded trade-off (hana_doctor alarms above maxClockSkew).
+	if strings.Contains(byName[ToolQuery], "as_of from the HANA server clock") {
+		t.Error("hana_query claims a server-clock as_of; its envelope uses the MCP host clock, and overstating that hides real skew")
+	}
+	if domain.AsOfSource == "mcp-host-clock" {
+		t.Fatal("the domain tools report the host clock as their source")
 	}
 }
 
