@@ -11,4 +11,4 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0005]** Intercompany is 23 group CardCodes, not just CUSTA000606: Oil CUSTA000001/2/3/4/606/827/906/1099/1113, Mart CUSTA000001/827/874/875/876/877/878/926, Bev CUSTA000001/2/3/4/606/827. Exclude all; name them.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
-- **[C-0004]** Variety totals from OITM.U_Sub_Group over-credit combo packs: 66 olive-tagged SKUs are ItmsGrpNam='SALES BOM' bundling olive with canola/mustard. Split SALES BOM out, or say it is counted whole.
+- **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.

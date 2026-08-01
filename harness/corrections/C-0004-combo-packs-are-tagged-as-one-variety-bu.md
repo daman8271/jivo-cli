@@ -4,7 +4,7 @@ date: 2026-08-01
 author: daman
 area: sales
 severity: medium
-status: active
+status: superseded
 supersedes: 
 tags: [variety, bom]
 ---
