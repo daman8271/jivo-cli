@@ -11,3 +11,4 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0002]** JIVO Mart (CardCode CUSTA000606) is Oil's biggest customer — Oil+Mart double-counts the stock transfer. Report external (excluding CUSTA000606) alongside gross, and say which one you quoted.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
+- **[C-0004]** Variety totals from OITM.U_Sub_Group over-credit combo packs: 66 olive-tagged SKUs are ItmsGrpNam='SALES BOM' bundling olive with canola/mustard. Split SALES BOM out, or say it is counted whole.
