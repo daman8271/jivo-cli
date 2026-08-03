@@ -9,6 +9,8 @@ any default assumption. If one contradicts your instinct, the correction wins.
 ## all
 - **[C-0001]** INV1.Quantity is in PIECES (single bottles), not cartons — InvntryUom=PCS, NumInSale=1. The '20 PCS' in item names is carton config only; multiplying by it inflates volume ~20x.
 - **[C-0005]** Intercompany is 23 group CardCodes, not just CUSTA000606: Oil CUSTA000001/2/3/4/606/827/906/1099/1113, Mart CUSTA000001/827/874/875/876/877/878/926, Bev CUSTA000001/2/3/4/606/827. Exclude all; name them.
+## factory
+- **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
 - **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.
