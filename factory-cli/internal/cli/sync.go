@@ -732,15 +732,61 @@ type paginationDefaults struct {
 // Values are detected from the API spec by the profiler at generation time.
 func determinePaginationDefaults() paginationDefaults {
 	return paginationDefaults{
-		cursorParam: "after",
+		cursorParam: "page",
 		cursorType:  "",
-		limitParam:  "limit",
+		limitParam:  "page_size",
 		limit:       100,
 	}
 }
 
 func resourceSupportsPagination(resource string) bool {
 	switch resource {
+	case "barcode":
+		return true
+	case "barcode-dispatch-sessions":
+		return true
+	case "barcode-dispatch-sessions-active":
+		return true
+	case "barcode-dispatch-sessions-closed":
+		return true
+	case "barcode-dispatch-sessions-completed":
+		return true
+	case "barcode-intercompany-transfers":
+		return true
+	case "barcode-items-oitm":
+		return true
+	case "barcode-loose":
+		return true
+	case "barcode-pallets":
+		return true
+	case "barcode-print-history":
+		return true
+	case "barcode-production-release-oil":
+		return true
+	case "barcode-scan-history":
+		return true
+	case "barcode-verify-requests":
+		return true
+	case "barcode-voids-boxes":
+		return true
+	case "barcode-voids-pallets":
+		return true
+	case "gate-core-sales-dispatch":
+		return true
+	case "grpo":
+		return true
+	case "marketplace-dispatches":
+		return true
+	case "marketplace-orders":
+		return true
+	case "marketplace-returns":
+		return true
+	case "notifications":
+		return true
+	case "quality-control":
+		return true
+	case "wms":
+		return true
 	}
 	return false
 }
@@ -751,6 +797,62 @@ func resourceSupportsPagination(resource string) bool {
 // validation-error 400s on APIs that reject unknown query keys.
 func syncResourceSinceParam(resource string) string {
 	switch resource {
+	case "barcode-dispatch-reports":
+		return "from_date"
+	case "barcode-dispatch-reports-boxes":
+		return "from_date"
+	case "barcode-dispatch-reports-pallets":
+		return "from_date"
+	case "barcode-dispatch-reports-rejected-scans":
+		return "from_date"
+	case "gate-core-bst-outs":
+		return "from_date"
+	case "gate-core-empty-vehicle-ins":
+		return "from_date"
+	case "gate-core-empty-vehicle-ins-eligible":
+		return "from_date"
+	case "gate-core-empty-vehicle-outs":
+		return "from_date"
+	case "gate-core-empty-vehicle-outs-eligible-entries":
+		return "from_date"
+	case "gate-core-job-work":
+		return "from_date"
+	case "gate-core-rejected-qc-returns":
+		return "from_date"
+	case "gate-core-sales-dispatch":
+		return "from_date"
+	case "gate-core-sales-dispatch-documents":
+		return "from_date"
+	case "gate-core-sales-dispatch-pending-bookings":
+		return "from_date"
+	case "quality-control-inspections":
+		return "from_date"
+	case "quality-control-inspections-actionable":
+		return "from_date"
+	case "quality-control-inspections-awaiting-chemist":
+		return "from_date"
+	case "quality-control-inspections-awaiting-qam":
+		return "from_date"
+	case "quality-control-inspections-completed":
+		return "from_date"
+	case "quality-control-inspections-decision-changed":
+		return "from_date"
+	case "quality-control-inspections-draft":
+		return "from_date"
+	case "quality-control-inspections-pending":
+		return "from_date"
+	case "quality-control-inspections-rejected":
+		return "from_date"
+	case "quality-control-inspections-return-to-vendor":
+		return "from_date"
+	case "warehouse":
+		return "from_date"
+	case "warehouse-bst-gate-expected-inwards":
+		return "from_date"
+	case "warehouse-bst-gate-expected-outwards":
+		return "from_date"
+	case "warehouse-bst-incoming":
+		return "from_date"
 	}
 	return ""
 }
@@ -1390,13 +1492,178 @@ func parseSinceDuration(s string) (time.Time, error) {
 
 func defaultSyncResources() []string {
 	return []string{
+		"accounts",
+		"accounts-departments",
+		"attendance",
+		"attendance-employees",
 		"barcode",
+		"barcode-dispatch-reports",
+		"barcode-dispatch-reports-boxes",
 		"barcode-dispatch-reports-pallets",
+		"barcode-dispatch-reports-rejected-scans",
+		"barcode-dispatch-sessions",
+		"barcode-dispatch-sessions-active",
+		"barcode-dispatch-sessions-closed",
+		"barcode-dispatch-sessions-completed",
+		"barcode-dispatch-sessions-from-bill",
+		"barcode-intercompany-transfers",
+		"barcode-items-oitm",
+		"barcode-loose",
+		"barcode-pallets",
+		"barcode-print-history",
+		"barcode-production-release-oil",
+		"barcode-scan-history",
+		"barcode-verify-requests",
+		"barcode-voids-boxes",
+		"barcode-voids-pallets",
+		"blowing",
+		"blowing-breakdown-categories",
+		"blowing-buy-prices",
+		"blowing-cost-rates",
+		"blowing-machines",
+		"blowing-preform-specs",
+		"blowing-rate-configs",
+		"blowing-sap-items",
+		"construction-gatein",
+		"daily-needs-gatein",
+		"dispatch",
+		"dispatch-transporter-invoices-history",
+		"docking-admin",
+		"docking-admin-partial-scan-requests",
+		"driver-management",
+		"driver-management-drivers-names",
+		"fixed-asset-gatein",
+		"gate-core",
+		"gate-core-arrivals",
+		"gate-core-bst-ins-eligible-outs",
+		"gate-core-bst-outs",
+		"gate-core-bst-outs-sap-transfers",
+		"gate-core-bst-returns",
+		"gate-core-bst-returns-eligible-outs",
+		"gate-core-empty-vehicle-ins",
+		"gate-core-empty-vehicle-ins-eligible",
+		"gate-core-empty-vehicle-ins-reasons",
+		"gate-core-empty-vehicle-outs",
+		"gate-core-empty-vehicle-outs-eligible-entries",
+		"gate-core-inside-dispatch-vehicles",
+		"gate-core-job-work",
+		"gate-core-job-work-sap-grpos",
+		"gate-core-job-work-sap-production-orders",
+		"gate-core-rejected-qc-returns",
+		"gate-core-sales-dispatch",
+		"gate-core-sales-dispatch-documents",
+		"gate-core-sales-dispatch-pending-bookings",
+		"gate-core-unit-choices",
 		"grpo",
 		"maintenance",
+		"maintenance-asset-categories",
+		"maintenance-asset-departments",
+		"maintenance-asset-documents",
+		"maintenance-asset-locations",
+		"maintenance-asset-photos",
+		"maintenance-assets",
+		"maintenance-fire-categories",
+		"maintenance-fire-issues",
+		"maintenance-fire-low-stock",
+		"maintenance-fire-movements",
+		"maintenance-fire-report-attachments",
+		"maintenance-fire-report-items",
+		"maintenance-fire-report-photos",
+		"maintenance-fire-reports",
+		"maintenance-fire-requests",
+		"maintenance-gatein",
+		"maintenance-material-indent-attachments",
+		"maintenance-material-indents",
+		"maintenance-pm-checklist-items",
+		"maintenance-pm-executions",
+		"maintenance-pm-plans",
+		"maintenance-safety-fine-photos",
+		"maintenance-safety-fines",
+		"maintenance-safety-violation-types",
+		"maintenance-spare-categories",
+		"maintenance-spare-movements",
+		"maintenance-spare-requests",
+		"maintenance-spares",
+		"maintenance-spares-low-stock",
+		"maintenance-vendor-visits",
+		"maintenance-work-order-photos",
+		"maintenance-work-orders",
+		"maintenance-work-permit-attachments",
+		"maintenance-work-permit-workers",
+		"maintenance-work-permits",
+		"marketplace",
+		"marketplace-batches",
+		"marketplace-dispatches",
+		"marketplace-issue-requests",
+		"marketplace-orders",
+		"marketplace-returns",
+		"marketplace-sap-items",
+		"marketplace-sku-mappings",
+		"marketplace-warehouses",
 		"notifications",
+		"person-gatein",
+		"person-gatein-contractors",
+		"person-gatein-entry-inside",
+		"person-gatein-labours",
+		"person-gatein-person-types",
+		"person-gatein-visitors",
+		"po",
+		"po-warehouses",
 		"production-execution",
+		"production-execution-breakdown-categories",
 		"production-execution-checklist-templates",
+		"production-execution-cost-rates",
+		"production-execution-costs-analytics",
+		"production-execution-line-clearance",
+		"production-execution-line-configs",
+		"production-execution-lines",
+		"production-execution-machine-checklists",
+		"production-execution-machines",
+		"production-execution-reports-line-clearance",
+		"production-execution-sap-orders",
+		"production-execution-waste",
+		"quality-control",
+		"quality-control-arrival-slips",
+		"quality-control-inspections",
+		"quality-control-inspections-actionable",
+		"quality-control-inspections-awaiting-chemist",
+		"quality-control-inspections-awaiting-qam",
+		"quality-control-inspections-completed",
+		"quality-control-inspections-decision-changed",
+		"quality-control-inspections-draft",
+		"quality-control-inspections-pending",
+		"quality-control-inspections-rejected",
+		"quality-control-inspections-return-to-vendor",
+		"quality-control-material-types",
+		"quality-control-online-monitoring",
+		"quality-control-online-monitoring-lines",
+		"quality-control-online-monitoring-runs",
+		"quality-control-online-monitoring-specs",
+		"quality-control-print-documents",
+		"quality-control-production-qc",
+		"quality-control-production-qc-pending",
+		"quality-control-production-qc-running-runs",
+		"returnable-items",
+		"returnable-items-returnable-attachments",
+		"returnable-items-returnable-gatepass-items",
+		"returnable-items-returnable-gatepasses-pending-approval",
+		"returnable-items-returnable-gatepasses-pending-gate-in",
+		"returnable-items-returnable-gatepasses-pending-gate-out",
+		"returnable-items-returnable-return-events",
+		"vehicle-management",
+		"vehicle-management-transporters",
+		"vehicle-management-transporters-names",
+		"vehicle-management-vehicle-types",
+		"vehicle-management-vehicles-names",
+		"warehouse",
+		"warehouse-bom-requests",
+		"warehouse-bst-gate-expected-inwards",
+		"warehouse-bst-gate-expected-outwards",
+		"warehouse-bst-incoming",
+		"warehouse-bst-partial-transfers",
+		"warehouse-bst-sap-transfers",
+		"warehouse-fg-receipts",
+		"wms",
 	}
 }
 
@@ -1405,13 +1672,178 @@ func defaultSyncResources() []string {
 // validation to reject misspellings before they become silent no-ops.
 func knownSyncResourceNames() []string {
 	names := []string{
+		"accounts",
+		"accounts-departments",
+		"attendance",
+		"attendance-employees",
 		"barcode",
+		"barcode-dispatch-reports",
+		"barcode-dispatch-reports-boxes",
 		"barcode-dispatch-reports-pallets",
+		"barcode-dispatch-reports-rejected-scans",
+		"barcode-dispatch-sessions",
+		"barcode-dispatch-sessions-active",
+		"barcode-dispatch-sessions-closed",
+		"barcode-dispatch-sessions-completed",
+		"barcode-dispatch-sessions-from-bill",
+		"barcode-intercompany-transfers",
+		"barcode-items-oitm",
+		"barcode-loose",
+		"barcode-pallets",
+		"barcode-print-history",
+		"barcode-production-release-oil",
+		"barcode-scan-history",
+		"barcode-verify-requests",
+		"barcode-voids-boxes",
+		"barcode-voids-pallets",
+		"blowing",
+		"blowing-breakdown-categories",
+		"blowing-buy-prices",
+		"blowing-cost-rates",
+		"blowing-machines",
+		"blowing-preform-specs",
+		"blowing-rate-configs",
+		"blowing-sap-items",
+		"construction-gatein",
+		"daily-needs-gatein",
+		"dispatch",
+		"dispatch-transporter-invoices-history",
+		"docking-admin",
+		"docking-admin-partial-scan-requests",
+		"driver-management",
+		"driver-management-drivers-names",
+		"fixed-asset-gatein",
+		"gate-core",
+		"gate-core-arrivals",
+		"gate-core-bst-ins-eligible-outs",
+		"gate-core-bst-outs",
+		"gate-core-bst-outs-sap-transfers",
+		"gate-core-bst-returns",
+		"gate-core-bst-returns-eligible-outs",
+		"gate-core-empty-vehicle-ins",
+		"gate-core-empty-vehicle-ins-eligible",
+		"gate-core-empty-vehicle-ins-reasons",
+		"gate-core-empty-vehicle-outs",
+		"gate-core-empty-vehicle-outs-eligible-entries",
+		"gate-core-inside-dispatch-vehicles",
+		"gate-core-job-work",
+		"gate-core-job-work-sap-grpos",
+		"gate-core-job-work-sap-production-orders",
+		"gate-core-rejected-qc-returns",
+		"gate-core-sales-dispatch",
+		"gate-core-sales-dispatch-documents",
+		"gate-core-sales-dispatch-pending-bookings",
+		"gate-core-unit-choices",
 		"grpo",
 		"maintenance",
+		"maintenance-asset-categories",
+		"maintenance-asset-departments",
+		"maintenance-asset-documents",
+		"maintenance-asset-locations",
+		"maintenance-asset-photos",
+		"maintenance-assets",
+		"maintenance-fire-categories",
+		"maintenance-fire-issues",
+		"maintenance-fire-low-stock",
+		"maintenance-fire-movements",
+		"maintenance-fire-report-attachments",
+		"maintenance-fire-report-items",
+		"maintenance-fire-report-photos",
+		"maintenance-fire-reports",
+		"maintenance-fire-requests",
+		"maintenance-gatein",
+		"maintenance-material-indent-attachments",
+		"maintenance-material-indents",
+		"maintenance-pm-checklist-items",
+		"maintenance-pm-executions",
+		"maintenance-pm-plans",
+		"maintenance-safety-fine-photos",
+		"maintenance-safety-fines",
+		"maintenance-safety-violation-types",
+		"maintenance-spare-categories",
+		"maintenance-spare-movements",
+		"maintenance-spare-requests",
+		"maintenance-spares",
+		"maintenance-spares-low-stock",
+		"maintenance-vendor-visits",
+		"maintenance-work-order-photos",
+		"maintenance-work-orders",
+		"maintenance-work-permit-attachments",
+		"maintenance-work-permit-workers",
+		"maintenance-work-permits",
+		"marketplace",
+		"marketplace-batches",
+		"marketplace-dispatches",
+		"marketplace-issue-requests",
+		"marketplace-orders",
+		"marketplace-returns",
+		"marketplace-sap-items",
+		"marketplace-sku-mappings",
+		"marketplace-warehouses",
 		"notifications",
+		"person-gatein",
+		"person-gatein-contractors",
+		"person-gatein-entry-inside",
+		"person-gatein-labours",
+		"person-gatein-person-types",
+		"person-gatein-visitors",
+		"po",
+		"po-warehouses",
 		"production-execution",
+		"production-execution-breakdown-categories",
 		"production-execution-checklist-templates",
+		"production-execution-cost-rates",
+		"production-execution-costs-analytics",
+		"production-execution-line-clearance",
+		"production-execution-line-configs",
+		"production-execution-lines",
+		"production-execution-machine-checklists",
+		"production-execution-machines",
+		"production-execution-reports-line-clearance",
+		"production-execution-sap-orders",
+		"production-execution-waste",
+		"quality-control",
+		"quality-control-arrival-slips",
+		"quality-control-inspections",
+		"quality-control-inspections-actionable",
+		"quality-control-inspections-awaiting-chemist",
+		"quality-control-inspections-awaiting-qam",
+		"quality-control-inspections-completed",
+		"quality-control-inspections-decision-changed",
+		"quality-control-inspections-draft",
+		"quality-control-inspections-pending",
+		"quality-control-inspections-rejected",
+		"quality-control-inspections-return-to-vendor",
+		"quality-control-material-types",
+		"quality-control-online-monitoring",
+		"quality-control-online-monitoring-lines",
+		"quality-control-online-monitoring-runs",
+		"quality-control-online-monitoring-specs",
+		"quality-control-print-documents",
+		"quality-control-production-qc",
+		"quality-control-production-qc-pending",
+		"quality-control-production-qc-running-runs",
+		"returnable-items",
+		"returnable-items-returnable-attachments",
+		"returnable-items-returnable-gatepass-items",
+		"returnable-items-returnable-gatepasses-pending-approval",
+		"returnable-items-returnable-gatepasses-pending-gate-in",
+		"returnable-items-returnable-gatepasses-pending-gate-out",
+		"returnable-items-returnable-return-events",
+		"vehicle-management",
+		"vehicle-management-transporters",
+		"vehicle-management-transporters-names",
+		"vehicle-management-vehicle-types",
+		"vehicle-management-vehicles-names",
+		"warehouse",
+		"warehouse-bom-requests",
+		"warehouse-bst-gate-expected-inwards",
+		"warehouse-bst-gate-expected-outwards",
+		"warehouse-bst-incoming",
+		"warehouse-bst-partial-transfers",
+		"warehouse-bst-sap-transfers",
+		"warehouse-fg-receipts",
+		"wms",
 	}
 	return names
 }
@@ -1421,13 +1853,178 @@ func knownSyncResourceNames() []string {
 // this preserves the actual endpoint path like "/ISteamApps/GetAppList/v2".
 func syncResourcePath(resource string) (string, error) {
 	paths := map[string]string{
-		"barcode":                          "/barcode/pallets/",
-		"barcode-dispatch-reports-pallets": "/barcode/dispatch/reports/pallets/",
-		"grpo":                             "/grpo/all-entries/",
-		"maintenance":                      "/maintenance/pm-checklist-items/",
-		"notifications":                    "/notifications/",
-		"production-execution":             "/production-execution/machine-checklists/",
-		"production-execution-checklist-templates": "/production-execution/checklist-templates/",
+		"accounts":                                                "/accounts/users/",
+		"accounts-departments":                                    "/accounts/departments/",
+		"attendance":                                              "/attendance/records/",
+		"attendance-employees":                                    "/attendance/employees/",
+		"barcode":                                                 "/barcode/boxes/",
+		"barcode-dispatch-reports":                                "/barcode/dispatch/reports/",
+		"barcode-dispatch-reports-boxes":                          "/barcode/dispatch/reports/boxes/",
+		"barcode-dispatch-reports-pallets":                        "/barcode/dispatch/reports/pallets/",
+		"barcode-dispatch-reports-rejected-scans":                 "/barcode/dispatch/reports/rejected-scans/",
+		"barcode-dispatch-sessions":                               "/barcode/dispatch/sessions/",
+		"barcode-dispatch-sessions-active":                        "/barcode/dispatch/sessions/active/",
+		"barcode-dispatch-sessions-closed":                        "/barcode/dispatch/sessions/closed/",
+		"barcode-dispatch-sessions-completed":                     "/barcode/dispatch/sessions/completed/",
+		"barcode-dispatch-sessions-from-bill":                     "/barcode/dispatch/sessions/from-bill/",
+		"barcode-intercompany-transfers":                          "/barcode/intercompany/transfers/",
+		"barcode-items-oitm":                                      "/barcode/items/oitm/",
+		"barcode-loose":                                           "/barcode/loose/",
+		"barcode-pallets":                                         "/barcode/pallets/",
+		"barcode-print-history":                                   "/barcode/print/history/",
+		"barcode-production-release-oil":                          "/barcode/production-release-oil/",
+		"barcode-scan-history":                                    "/barcode/scan/history/",
+		"barcode-verify-requests":                                 "/barcode/verify-requests/",
+		"barcode-voids-boxes":                                     "/barcode/voids/boxes/",
+		"barcode-voids-pallets":                                   "/barcode/voids/pallets/",
+		"blowing":                                                 "/blowing/runs/",
+		"blowing-breakdown-categories":                            "/blowing/breakdown-categories/",
+		"blowing-buy-prices":                                      "/blowing/buy-prices/",
+		"blowing-cost-rates":                                      "/blowing/cost-rates/",
+		"blowing-machines":                                        "/blowing/machines/",
+		"blowing-preform-specs":                                   "/blowing/preform-specs/",
+		"blowing-rate-configs":                                    "/blowing/rate-configs/",
+		"blowing-sap-items":                                       "/blowing/sap/items/",
+		"construction-gatein":                                     "/construction-gatein/gate-entries/construction/categories/",
+		"daily-needs-gatein":                                      "/daily-needs-gatein/gate-entries/daily-need/categories/",
+		"dispatch":                                                "/dispatch/open-bilties/",
+		"dispatch-transporter-invoices-history":                   "/dispatch/transporter-invoices/history/",
+		"docking-admin":                                           "/docking-admin/scan-skip-requests/",
+		"docking-admin-partial-scan-requests":                     "/docking-admin/partial-scan-requests/",
+		"driver-management":                                       "/driver-management/drivers/",
+		"driver-management-drivers-names":                         "/driver-management/drivers/names/",
+		"fixed-asset-gatein":                                      "/fixed-asset-gatein/gate-entries/fixed-asset/categories/",
+		"gate-core":                                               "/gate-core/bst-ins/",
+		"gate-core-arrivals":                                      "/gate-core/arrivals/",
+		"gate-core-bst-ins-eligible-outs":                         "/gate-core/bst-ins/eligible-outs/",
+		"gate-core-bst-outs":                                      "/gate-core/bst-outs/",
+		"gate-core-bst-outs-sap-transfers":                        "/gate-core/bst-outs/sap-transfers/",
+		"gate-core-bst-returns":                                   "/gate-core/bst-returns/",
+		"gate-core-bst-returns-eligible-outs":                     "/gate-core/bst-returns/eligible-outs/",
+		"gate-core-empty-vehicle-ins":                             "/gate-core/empty-vehicle-ins/",
+		"gate-core-empty-vehicle-ins-eligible":                    "/gate-core/empty-vehicle-ins/eligible/",
+		"gate-core-empty-vehicle-ins-reasons":                     "/gate-core/empty-vehicle-ins/reasons/",
+		"gate-core-empty-vehicle-outs":                            "/gate-core/empty-vehicle-outs/",
+		"gate-core-empty-vehicle-outs-eligible-entries":           "/gate-core/empty-vehicle-outs/eligible-entries/",
+		"gate-core-inside-dispatch-vehicles":                      "/gate-core/inside-dispatch-vehicles/",
+		"gate-core-job-work":                                      "/gate-core/job-work/",
+		"gate-core-job-work-sap-grpos":                            "/gate-core/job-work/sap-grpos/",
+		"gate-core-job-work-sap-production-orders":                "/gate-core/job-work/sap-production-orders/",
+		"gate-core-rejected-qc-returns":                           "/gate-core/rejected-qc-returns/",
+		"gate-core-sales-dispatch":                                "/gate-core/sales-dispatch/",
+		"gate-core-sales-dispatch-documents":                      "/gate-core/sales-dispatch/documents/",
+		"gate-core-sales-dispatch-pending-bookings":               "/gate-core/sales-dispatch/pending-bookings/",
+		"gate-core-unit-choices":                                  "/gate-core/unit-choices/",
+		"grpo":                                                    "/grpo/all-entries/",
+		"maintenance":                                             "/maintenance/fire/",
+		"maintenance-asset-categories":                            "/maintenance/asset-categories/",
+		"maintenance-asset-departments":                           "/maintenance/asset-departments/",
+		"maintenance-asset-documents":                             "/maintenance/asset-documents/",
+		"maintenance-asset-locations":                             "/maintenance/asset-locations/",
+		"maintenance-asset-photos":                                "/maintenance/asset-photos/",
+		"maintenance-assets":                                      "/maintenance/assets/",
+		"maintenance-fire-categories":                             "/maintenance/fire-categories/",
+		"maintenance-fire-issues":                                 "/maintenance/fire-issues/",
+		"maintenance-fire-low-stock":                              "/maintenance/fire/low-stock/",
+		"maintenance-fire-movements":                              "/maintenance/fire-movements/",
+		"maintenance-fire-report-attachments":                     "/maintenance/fire-report-attachments/",
+		"maintenance-fire-report-items":                           "/maintenance/fire-report-items/",
+		"maintenance-fire-report-photos":                          "/maintenance/fire-report-photos/",
+		"maintenance-fire-reports":                                "/maintenance/fire-reports/",
+		"maintenance-fire-requests":                               "/maintenance/fire-requests/",
+		"maintenance-gatein":                                      "/maintenance-gatein/gate-entries/maintenance/types/",
+		"maintenance-material-indent-attachments":                 "/maintenance/material-indent-attachments/",
+		"maintenance-material-indents":                            "/maintenance/material-indents/",
+		"maintenance-pm-checklist-items":                          "/maintenance/pm-checklist-items/",
+		"maintenance-pm-executions":                               "/maintenance/pm-executions/",
+		"maintenance-pm-plans":                                    "/maintenance/pm-plans/",
+		"maintenance-safety-fine-photos":                          "/maintenance/safety-fine-photos/",
+		"maintenance-safety-fines":                                "/maintenance/safety-fines/",
+		"maintenance-safety-violation-types":                      "/maintenance/safety-violation-types/",
+		"maintenance-spare-categories":                            "/maintenance/spare-categories/",
+		"maintenance-spare-movements":                             "/maintenance/spare-movements/",
+		"maintenance-spare-requests":                              "/maintenance/spare-requests/",
+		"maintenance-spares":                                      "/maintenance/spares/",
+		"maintenance-spares-low-stock":                            "/maintenance/spares/low-stock/",
+		"maintenance-vendor-visits":                               "/maintenance/vendor-visits/",
+		"maintenance-work-order-photos":                           "/maintenance/work-order-photos/",
+		"maintenance-work-orders":                                 "/maintenance/work-orders/",
+		"maintenance-work-permit-attachments":                     "/maintenance/work-permit-attachments/",
+		"maintenance-work-permit-workers":                         "/maintenance/work-permit-workers/",
+		"maintenance-work-permits":                                "/maintenance/work-permits/",
+		"marketplace":                                             "/marketplace/combos/",
+		"marketplace-batches":                                     "/marketplace/batches/",
+		"marketplace-dispatches":                                  "/marketplace/dispatches/",
+		"marketplace-issue-requests":                              "/marketplace/issue-requests/",
+		"marketplace-orders":                                      "/marketplace/orders/",
+		"marketplace-returns":                                     "/marketplace/returns/",
+		"marketplace-sap-items":                                   "/marketplace/sap-items/",
+		"marketplace-sku-mappings":                                "/marketplace/sku-mappings/",
+		"marketplace-warehouses":                                  "/marketplace/warehouses/",
+		"notifications":                                           "/notifications/",
+		"person-gatein":                                           "/person-gatein/gates/",
+		"person-gatein-contractors":                               "/person-gatein/contractors/",
+		"person-gatein-entry-inside":                              "/person-gatein/entry/inside/",
+		"person-gatein-labours":                                   "/person-gatein/labours/",
+		"person-gatein-person-types":                              "/person-gatein/person-types/",
+		"person-gatein-visitors":                                  "/person-gatein/visitors/",
+		"po":                                                      "/po/vendors/",
+		"po-warehouses":                                           "/po/warehouses/",
+		"production-execution":                                    "/production-execution/runs/",
+		"production-execution-breakdown-categories":               "/production-execution/breakdown-categories/",
+		"production-execution-checklist-templates":                "/production-execution/checklist-templates/",
+		"production-execution-cost-rates":                         "/production-execution/cost-rates/",
+		"production-execution-costs-analytics":                    "/production-execution/costs/analytics/",
+		"production-execution-line-clearance":                     "/production-execution/line-clearance/",
+		"production-execution-line-configs":                       "/production-execution/line-configs/",
+		"production-execution-lines":                              "/production-execution/lines/",
+		"production-execution-machine-checklists":                 "/production-execution/machine-checklists/",
+		"production-execution-machines":                           "/production-execution/machines/",
+		"production-execution-reports-line-clearance":             "/production-execution/reports/line-clearance/",
+		"production-execution-sap-orders":                         "/production-execution/sap/orders/",
+		"production-execution-waste":                              "/production-execution/waste/",
+		"quality-control":                                         "/quality-control/sap-items/",
+		"quality-control-arrival-slips":                           "/quality-control/arrival-slips/",
+		"quality-control-inspections":                             "/quality-control/inspections/",
+		"quality-control-inspections-actionable":                  "/quality-control/inspections/actionable/",
+		"quality-control-inspections-awaiting-chemist":            "/quality-control/inspections/awaiting-chemist/",
+		"quality-control-inspections-awaiting-qam":                "/quality-control/inspections/awaiting-qam/",
+		"quality-control-inspections-completed":                   "/quality-control/inspections/completed/",
+		"quality-control-inspections-decision-changed":            "/quality-control/inspections/decision-changed/",
+		"quality-control-inspections-draft":                       "/quality-control/inspections/draft/",
+		"quality-control-inspections-pending":                     "/quality-control/inspections/pending/",
+		"quality-control-inspections-rejected":                    "/quality-control/inspections/rejected/",
+		"quality-control-inspections-return-to-vendor":            "/quality-control/inspections/return-to-vendor/",
+		"quality-control-material-types":                          "/quality-control/material-types/",
+		"quality-control-online-monitoring":                       "/quality-control/online-monitoring/",
+		"quality-control-online-monitoring-lines":                 "/quality-control/online-monitoring/lines/",
+		"quality-control-online-monitoring-runs":                  "/quality-control/online-monitoring/runs/",
+		"quality-control-online-monitoring-specs":                 "/quality-control/online-monitoring/specs/",
+		"quality-control-print-documents":                         "/quality-control/print-documents/",
+		"quality-control-production-qc":                           "/quality-control/production-qc/",
+		"quality-control-production-qc-pending":                   "/quality-control/production-qc/pending/",
+		"quality-control-production-qc-running-runs":              "/quality-control/production-qc/running-runs/",
+		"returnable-items":                                        "/returnable-items/returnable-gatepasses/",
+		"returnable-items-returnable-attachments":                 "/returnable-items/returnable-attachments/",
+		"returnable-items-returnable-gatepass-items":              "/returnable-items/returnable-gatepass-items/",
+		"returnable-items-returnable-gatepasses-pending-approval": "/returnable-items/returnable-gatepasses/pending-approval/",
+		"returnable-items-returnable-gatepasses-pending-gate-in":  "/returnable-items/returnable-gatepasses/pending-gate-in/",
+		"returnable-items-returnable-gatepasses-pending-gate-out": "/returnable-items/returnable-gatepasses/pending-gate-out/",
+		"returnable-items-returnable-return-events":               "/returnable-items/returnable-return-events/",
+		"vehicle-management":                                      "/vehicle-management/vehicles/",
+		"vehicle-management-transporters":                         "/vehicle-management/transporters/",
+		"vehicle-management-transporters-names":                   "/vehicle-management/transporters/names/",
+		"vehicle-management-vehicle-types":                        "/vehicle-management/vehicle-types/",
+		"vehicle-management-vehicles-names":                       "/vehicle-management/vehicles/names/",
+		"warehouse":                                               "/warehouse/bst/",
+		"warehouse-bom-requests":                                  "/warehouse/bom-requests/",
+		"warehouse-bst-gate-expected-inwards":                     "/warehouse/bst/gate/expected-inwards/",
+		"warehouse-bst-gate-expected-outwards":                    "/warehouse/bst/gate/expected-outwards/",
+		"warehouse-bst-incoming":                                  "/warehouse/bst/incoming/",
+		"warehouse-bst-partial-transfers":                         "/warehouse/bst/partial-transfers/",
+		"warehouse-bst-sap-transfers":                             "/warehouse/bst/sap-transfers/",
+		"warehouse-fg-receipts":                                   "/warehouse/fg-receipts/",
+		"wms":                                                     "/wms/pallets/",
 	}
 	if p, ok := paths[resource]; ok {
 		return p, nil

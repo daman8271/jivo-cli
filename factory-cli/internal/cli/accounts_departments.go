@@ -15,7 +15,7 @@ func newAccountsDepartmentsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "departments",
-		Short:       "GET /accounts/departments/ — departments list (15 rows, shared across companies)",
+		Short:       "List the factory's department master (IT, Ecom, Account, Store, Dock, Quality, Fire, production(oil), …)",
 		Example:     "  jivo-factory-pp-cli accounts departments",
 		Annotations: map[string]string{"pp:endpoint": "accounts.departments", "pp:method": "GET", "pp:path": "/accounts/departments/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

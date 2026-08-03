@@ -10,33 +10,58 @@ import (
 func newGateCoreCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "gate-core",
-		Short:       "Gate — arrivals, BST in/out/return, empty-vehicle, job-work, sales-dispatch gate-out",
+		Short:       "gate-core is the shared gate engine underneath every category-specific gate app (raw-material, daily-needs, maintenance",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newGateCoreArrivalGatepassReadinessCmd(flags))
 	cmd.AddCommand(newGateCoreArrivalsCmd(flags))
 	cmd.AddCommand(newGateCoreArrivalsExpectedCmd(flags))
+	cmd.AddCommand(newGateCoreBstInCmd(flags))
 	cmd.AddCommand(newGateCoreBstInsCmd(flags))
 	cmd.AddCommand(newGateCoreBstInsEligibleOutsCmd(flags))
+	cmd.AddCommand(newGateCoreBstOutCmd(flags))
 	cmd.AddCommand(newGateCoreBstOutsCmd(flags))
+	cmd.AddCommand(newGateCoreBstOutsSapTransferCmd(flags))
 	cmd.AddCommand(newGateCoreBstOutsSapTransfersCmd(flags))
+	cmd.AddCommand(newGateCoreBstReturnCmd(flags))
 	cmd.AddCommand(newGateCoreBstReturnsCmd(flags))
 	cmd.AddCommand(newGateCoreBstReturnsEligibleOutsCmd(flags))
+	cmd.AddCommand(newGateCoreConstructionGateEntryCmd(flags))
+	cmd.AddCommand(newGateCoreDailyNeedGateEntryCmd(flags))
+	cmd.AddCommand(newGateCoreDispatchTrackingCmd(flags))
+	cmd.AddCommand(newGateCoreDispatchTrackingUpdatesCmd(flags))
+	cmd.AddCommand(newGateCoreEmptyVehicleInCmd(flags))
 	cmd.AddCommand(newGateCoreEmptyVehicleInsCmd(flags))
 	cmd.AddCommand(newGateCoreEmptyVehicleInsEligibleCmd(flags))
 	cmd.AddCommand(newGateCoreEmptyVehicleInsReasonsCmd(flags))
+	cmd.AddCommand(newGateCoreEmptyVehicleOutCmd(flags))
 	cmd.AddCommand(newGateCoreEmptyVehicleOutsCmd(flags))
 	cmd.AddCommand(newGateCoreEmptyVehicleOutsEligibleEntriesCmd(flags))
+	cmd.AddCommand(newGateCoreGateAttachmentsCmd(flags))
+	cmd.AddCommand(newGateCoreInsideDispatchVehiclesCmd(flags))
 	cmd.AddCommand(newGateCoreJobWorkCmd(flags))
+	cmd.AddCommand(newGateCoreJobWorkDetailCmd(flags))
+	cmd.AddCommand(newGateCoreJobWorkSapGrpoCmd(flags))
 	cmd.AddCommand(newGateCoreJobWorkSapGrposCmd(flags))
+	cmd.AddCommand(newGateCoreJobWorkSapProductionOrderCmd(flags))
 	cmd.AddCommand(newGateCoreJobWorkSapProductionOrdersCmd(flags))
+	cmd.AddCommand(newGateCoreMaintenanceGateEntryCmd(flags))
+	cmd.AddCommand(newGateCoreRawMaterialGateEntryCmd(flags))
+	cmd.AddCommand(newGateCoreRejectedQcReturnCmd(flags))
 	cmd.AddCommand(newGateCoreRejectedQcReturnsCmd(flags))
 	cmd.AddCommand(newGateCoreSalesDispatchCmd(flags))
+	cmd.AddCommand(newGateCoreSalesDispatchAttachmentsCmd(flags))
+	cmd.AddCommand(newGateCoreSalesDispatchBarcodeScansCmd(flags))
+	cmd.AddCommand(newGateCoreSalesDispatchBoxScansCmd(flags))
+	cmd.AddCommand(newGateCoreSalesDispatchDetailCmd(flags))
+	cmd.AddCommand(newGateCoreSalesDispatchDocumentCmd(flags))
 	cmd.AddCommand(newGateCoreSalesDispatchDocumentsCmd(flags))
-	cmd.AddCommand(newGateCoreSalesDispatchLockCmd(flags))
+	cmd.AddCommand(newGateCoreSalesDispatchGatepassPrintsCmd(flags))
 	cmd.AddCommand(newGateCoreSalesDispatchPendingBookingsCmd(flags))
 	cmd.AddCommand(newGateCoreSalesDispatchReportsCmd(flags))
+	cmd.AddCommand(newGateCoreUnitChoicesCmd(flags))
 	return cmd
 }

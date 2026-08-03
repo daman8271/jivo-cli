@@ -12,10 +12,11 @@ import (
 )
 
 func newMaintenanceAssetPhotosCmd(flags *rootFlags) *cobra.Command {
+	var flagAsset int
 
 	cmd := &cobra.Command{
 		Use:         "asset-photos",
-		Short:       "GET /maintenance/asset-photos/ — maintenance asset photos",
+		Short:       "Photos attached to assets, including the monthly condition photo.",
 		Example:     "  jivo-factory-pp-cli maintenance asset-photos",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.asset-photos", "pp:method": "GET", "pp:path": "/maintenance/asset-photos/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newMaintenanceAssetPhotosCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/asset-photos/"
 			params := map[string]string{}
+			if flagAsset != 0 {
+				params["asset"] = formatCLIParamValue(flagAsset)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newMaintenanceAssetPhotosCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagAsset, "asset", 0, "the UI always scopes by asset; unfiltered works and returns everything int")
 
 	return cmd
 }

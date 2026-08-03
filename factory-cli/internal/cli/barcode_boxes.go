@@ -12,10 +12,16 @@ import (
 )
 
 func newBarcodeBoxesCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
+	var flagStatus string
+	var flagSearch string
+	var flagWarehouse string
+	var flagUnpalletized string
 
 	cmd := &cobra.Command{
 		Use:         "boxes",
-		Short:       "GET /barcode/boxes/ — barcode boxes",
+		Short:       "List carton barcodes — item, batch, qty, pallet, warehouse and status for every box.",
 		Example:     "  jivo-factory-pp-cli barcode boxes",
 		Annotations: map[string]string{"pp:endpoint": "barcode.boxes", "pp:method": "GET", "pp:path": "/barcode/boxes/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newBarcodeBoxesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/boxes/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
+			if flagUnpalletized != "" {
+				params["unpalletized"] = formatCLIParamValue(flagUnpalletized)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newBarcodeBoxesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "opt-in; presence of page OR page_size switches on the DRF envelope int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "without it you get a bare array HARD-CAPPED AT 500 rows int")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "verified live. UI dropdown: ACTIVE, PARTIAL, DISMANTLED, VOID")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "verified live — matches box_barcode (search=BOX-20260803-RP-0001 -> count 1)")
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "verified live (warehouse=BH-JM -> 253 of 100314); warehouse codes are SAP codes seen in payloads, e.g.")
+	cmd.Flags().StringVar(&flagUnpalletized, "unpalletized", "", "verified live; UI sends the string 'true' — boxes not on any pallet (264 in MART)")
 
 	return cmd
 }

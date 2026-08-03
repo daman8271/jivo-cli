@@ -12,10 +12,12 @@ import (
 )
 
 func newBarcodeItemsOitmCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagLimit int
 
 	cmd := &cobra.Command{
 		Use:         "items-oitm",
-		Short:       "GET /barcode/items/oitm/ — barcode items oitm",
+		Short:       "SAP item master as the barcode module sees it — UoM, batch flags and pieces-per-box for label generation.",
 		Example:     "  jivo-factory-pp-cli barcode items-oitm",
 		Annotations: map[string]string{"pp:endpoint": "barcode.items-oitm", "pp:method": "GET", "pp:path": "/barcode/items/oitm/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,10 +28,18 @@ func newBarcodeItemsOitmCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/items/oitm/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagLimit != 0 {
+				params["limit"] = formatCLIParamValue(flagLimit)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			// Honor --limit when the API accepts but ignores ?limit=N.
+			data = truncateJSONArray(data, flagLimit)
 			// Print provenance to stderr for human-facing output only.
 			// Machine-format flags (--json, --csv, --compact, --quiet, --plain,
 			// --select) and piped stdout suppress this line; the JSON envelope
@@ -74,6 +84,8 @@ func newBarcodeItemsOitmCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "verified live — matches item_code and item_name; a no-match search returns []")
+	cmd.Flags().IntVar(&flagLimit, "limit", 0, "verified live. Default 100.")
 
 	return cmd
 }

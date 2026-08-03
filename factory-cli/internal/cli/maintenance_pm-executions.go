@@ -12,10 +12,12 @@ import (
 )
 
 func newMaintenancePmExecutionsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagPmPlan int
 
 	cmd := &cobra.Command{
 		Use:         "pm-executions",
-		Short:       "GET /maintenance/pm-executions/ — maintenance pm executions",
+		Short:       "Actual PM rounds generated from the plans — what was due, what got done, what was skipped, with the checklist results.",
 		Example:     "  jivo-factory-pp-cli maintenance pm-executions",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.pm-executions", "pp:method": "GET", "pp:path": "/maintenance/pm-executions/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newMaintenancePmExecutionsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/pm-executions/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagPmPlan != 0 {
+				params["pm_plan"] = formatCLIParamValue(flagPmPlan)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newMaintenancePmExecutionsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "PENDING | IN_PROGRESS | COMPLETED | SKIPPED | OVERDUE")
+	cmd.Flags().IntVar(&flagPmPlan, "pm-plan", 0, "int")
 
 	return cmd
 }

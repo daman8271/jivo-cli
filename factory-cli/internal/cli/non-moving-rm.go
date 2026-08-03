@@ -10,7 +10,7 @@ import (
 func newNonMovingRmCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "non-moving-rm",
-		Short:       "Get non moving rm",
+		Short:       "This is the factory app's read-only reporting corner — the five 'management dashboard' screens the plant and purchase",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),

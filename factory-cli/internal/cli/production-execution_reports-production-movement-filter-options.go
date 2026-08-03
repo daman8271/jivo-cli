@@ -15,7 +15,7 @@ func newProductionExecutionReportsProductionMovementFilterOptionsCmd(flags *root
 
 	cmd := &cobra.Command{
 		Use:         "reports-production-movement-filter-options",
-		Short:       "GET /production-execution/reports/production-movement/filter-options/ — production execution reports production",
+		Short:       "The valid warehouse codes and SAP transaction-type codes for the production-movement report, per company.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-production-movement-filter-options",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-production-movement-filter-options", "pp:method": "GET", "pp:path": "/production-execution/reports/production-movement/filter-options/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

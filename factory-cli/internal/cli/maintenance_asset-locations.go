@@ -12,10 +12,11 @@ import (
 )
 
 func newMaintenanceAssetLocationsCmd(flags *rootFlags) *cobra.Command {
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "asset-locations",
-		Short:       "GET /maintenance/asset-locations/ — maintenance asset locations",
+		Short:       "Asset location master (plant area / line), with asset counts.",
 		Example:     "  jivo-factory-pp-cli maintenance asset-locations",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.asset-locations", "pp:method": "GET", "pp:path": "/maintenance/asset-locations/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newMaintenanceAssetLocationsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/asset-locations/"
 			params := map[string]string{}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newMaintenanceAssetLocationsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
 
 	return cmd
 }

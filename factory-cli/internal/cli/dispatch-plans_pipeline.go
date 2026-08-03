@@ -12,10 +12,16 @@ import (
 )
 
 func newDispatchPlansPipelineCmd(flags *rootFlags) *cobra.Command {
+	var flagDateFrom string
+	var flagDateTo string
+	var flagSearch string
+	var flagStage string
+	var flagStages string
+	var flagAllCompanies bool
 
 	cmd := &cobra.Command{
 		Use:         "pipeline",
-		Short:       "GET /dispatch-plans/pipeline/ — dispatch plans pipeline",
+		Short:       "Live dispatch board — every vehicle currently in the dispatch flow",
 		Example:     "  jivo-factory-pp-cli dispatch-plans pipeline",
 		Annotations: map[string]string{"pp:endpoint": "dispatch-plans.pipeline", "pp:method": "GET", "pp:path": "/dispatch-plans/pipeline/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newDispatchPlansPipelineCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/dispatch-plans/pipeline/"
 			params := map[string]string{}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagStage != "" {
+				params["stage"] = formatCLIParamValue(flagStage)
+			}
+			if flagStages != "" {
+				params["stages"] = formatCLIParamValue(flagStages)
+			}
+			if flagAllCompanies != false {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dispatch-plans", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newDispatchPlansPipelineCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "Optional server-side.")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "see date_from (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "UI placeholder: 'Vehicle, invoice, transporter, driver, customer'")
+	cmd.Flags().StringVar(&flagStage, "stage", "", "One of BOOKED | EMPTY_IN | READY_TO_DOCK | DOCKED | PHOTO_ATTACHED | READY_FOR_GATEPASS | GATEPASS_PRINTED |")
+	cmd.Flags().StringVar(&flagStages, "stages", "", "Multiple stages in one call, e.g. stages=DOCKED,PHOTO_ATTACHED.")
+	cmd.Flags().BoolVar(&flagAllCompanies, "all-companies", false, "Verified live: JIVO_OIL alone meta.total=26, with all_companies=1 meta.total=90. bool ('1')")
 
 	return cmd
 }

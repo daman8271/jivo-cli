@@ -12,10 +12,17 @@ import (
 )
 
 func newMaintenanceAssetsCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagStatus string
+	var flagCategory int
+	var flagDepartment int
+	var flagLocation int
+	var flagLine string
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "assets",
-		Short:       "GET /maintenance/assets/ — maintenance assets",
+		Short:       "The plant asset register — every machine/component with its category, location, department, status, make/model/serial",
 		Example:     "  jivo-factory-pp-cli maintenance assets",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.assets", "pp:method": "GET", "pp:path": "/maintenance/assets/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +33,27 @@ func newMaintenanceAssetsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/assets/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagCategory != 0 {
+				params["category"] = formatCLIParamValue(flagCategory)
+			}
+			if flagDepartment != 0 {
+				params["department"] = formatCLIParamValue(flagDepartment)
+			}
+			if flagLocation != 0 {
+				params["location"] = formatCLIParamValue(flagLocation)
+			}
+			if flagLine != "" {
+				params["line"] = formatCLIParamValue(flagLine)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +102,13 @@ func newMaintenanceAssetsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "fuzzy, spans code/name and related fields")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "RUNNING | IDLE | BREAKDOWN | UNDER_PM | UNDER_REPAIR | RETIRED")
+	cmd.Flags().IntVar(&flagCategory, "category", 0, "int")
+	cmd.Flags().IntVar(&flagDepartment, "department", 0, "int")
+	cmd.Flags().IntVar(&flagLocation, "location", 0, "int")
+	cmd.Flags().StringVar(&flagLine, "line", "", "")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "true|false; the list is NOT pre-filtered — deactivated assets appear unless you filter bool")
 
 	return cmd
 }

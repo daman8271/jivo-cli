@@ -12,10 +12,11 @@ import (
 )
 
 func newDockingAdminPartialScanRequestsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
 
 	cmd := &cobra.Command{
 		Use:         "partial-scan-requests",
-		Short:       "GET /docking-admin/partial-scan-requests/ — docking admin partial scan requests",
+		Short:       "Requests to dispatch a vehicle when the scanned box count is short of the invoice count (e.g.",
 		Example:     "  jivo-factory-pp-cli docking-admin partial-scan-requests",
 		Annotations: map[string]string{"pp:endpoint": "docking-admin.partial-scan-requests", "pp:method": "GET", "pp:path": "/docking-admin/partial-scan-requests/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newDockingAdminPartialScanRequestsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/docking-admin/partial-scan-requests/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "docking-admin", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newDockingAdminPartialScanRequestsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "PENDING | APPROVED | REJECTED; omit the param entirely for 'All'.")
 
 	return cmd
 }

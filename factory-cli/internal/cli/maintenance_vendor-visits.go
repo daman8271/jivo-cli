@@ -12,10 +12,13 @@ import (
 )
 
 func newMaintenanceVendorVisitsCmd(flags *rootFlags) *cobra.Command {
+	var flagWorkOrder int
+	var flagIsActive bool
+	var flagStatus string
 
 	cmd := &cobra.Command{
 		Use:         "vendor-visits",
-		Short:       "GET /maintenance/vendor-visits/ — maintenance vendor visits",
+		Short:       "External vendor / AMC visits booked against a work order, with planned vs actual times, gate entries",
 		Example:     "  jivo-factory-pp-cli maintenance vendor-visits",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.vendor-visits", "pp:method": "GET", "pp:path": "/maintenance/vendor-visits/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +29,15 @@ func newMaintenanceVendorVisitsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/vendor-visits/"
 			params := map[string]string{}
+			if flagWorkOrder != 0 {
+				params["work_order"] = formatCLIParamValue(flagWorkOrder)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +86,9 @@ func newMaintenanceVendorVisitsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagWorkOrder, "work-order", 0, "scope to one work order int")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "PLANNED | IN_PROGRESS | COMPLETED | CANCELLED — filter support INFERRED")
 
 	return cmd
 }

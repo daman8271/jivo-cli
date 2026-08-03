@@ -15,7 +15,7 @@ func newProductionExecutionBreakdownCategoriesCmd(flags *rootFlags) *cobra.Comma
 
 	cmd := &cobra.Command{
 		Use:         "breakdown-categories",
-		Short:       "GET /production-execution/breakdown-categories/ — production execution breakdown categories",
+		Short:       "List the reason categories a line stoppage can be booked to (Machine, PM Short, RM Short, Labour, Other).",
 		Example:     "  jivo-factory-pp-cli production-execution breakdown-categories",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.breakdown-categories", "pp:method": "GET", "pp:path": "/production-execution/breakdown-categories/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

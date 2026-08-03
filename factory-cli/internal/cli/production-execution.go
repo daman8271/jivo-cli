@@ -10,7 +10,7 @@ import (
 func newProductionExecutionCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "production-execution",
-		Short:       "Production execution (MES) — runs, lines, machines, OEE, waste",
+		Short:       "This is the factory's shop-floor execution system (MES) for the Bhakharpur plant — it is where a production run is born",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
@@ -18,13 +18,18 @@ func newProductionExecutionCmd(flags *rootFlags) *cobra.Command {
 
 	cmd.AddCommand(newProductionExecutionBreakdownCategoriesCmd(flags))
 	cmd.AddCommand(newProductionExecutionChecklistTemplatesCmd(flags))
+	cmd.AddCommand(newProductionExecutionCostRatesCmd(flags))
 	cmd.AddCommand(newProductionExecutionCostsAnalyticsCmd(flags))
 	cmd.AddCommand(newProductionExecutionLineClearanceCmd(flags))
+	cmd.AddCommand(newProductionExecutionLineClearanceDetailCmd(flags))
 	cmd.AddCommand(newProductionExecutionLineConfigsCmd(flags))
 	cmd.AddCommand(newProductionExecutionLineConfigsAutoFillCmd(flags))
 	cmd.AddCommand(newProductionExecutionLinesCmd(flags))
 	cmd.AddCommand(newProductionExecutionMachineChecklistsCmd(flags))
 	cmd.AddCommand(newProductionExecutionMachinesCmd(flags))
+	cmd.AddCommand(newProductionExecutionReconMaterialCmd(flags))
+	cmd.AddCommand(newProductionExecutionReconProductionCmd(flags))
+	cmd.AddCommand(newProductionExecutionReconWastageCmd(flags))
 	cmd.AddCommand(newProductionExecutionReportsAnalyticsCmd(flags))
 	cmd.AddCommand(newProductionExecutionReportsAnalyticsCostAnalysisCmd(flags))
 	cmd.AddCommand(newProductionExecutionReportsAnalyticsDowntimeCmd(flags))
@@ -41,10 +46,26 @@ func newProductionExecutionCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newProductionExecutionReportsLineClearanceCmd(flags))
 	cmd.AddCommand(newProductionExecutionReportsProductionMovementCmd(flags))
 	cmd.AddCommand(newProductionExecutionReportsProductionMovementFilterOptionsCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunBreakdownsCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunCompressedAirCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunDetailCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunElectricityCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunGasCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunLabourCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunMachineCostsCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunMachineRuntimeCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunManpowerCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunMaterialsCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunOverheadCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunQcInprocessCmd(flags))
+	cmd.AddCommand(newProductionExecutionRunWaterCmd(flags))
 	cmd.AddCommand(newProductionExecutionRunsCmd(flags))
 	cmd.AddCommand(newProductionExecutionSapBomCmd(flags))
 	cmd.AddCommand(newProductionExecutionSapItemsCmd(flags))
+	cmd.AddCommand(newProductionExecutionSapOrderDetailCmd(flags))
 	cmd.AddCommand(newProductionExecutionSapOrdersCmd(flags))
 	cmd.AddCommand(newProductionExecutionWasteCmd(flags))
+	cmd.AddCommand(newProductionExecutionWasteDetailCmd(flags))
+	cmd.AddCommand(newProductionExecutionYieldReportCmd(flags))
 	return cmd
 }

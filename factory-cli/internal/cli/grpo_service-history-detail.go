@@ -15,7 +15,7 @@ func newGrpoServiceHistoryDetailCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "service-history-detail <posting_id>",
-		Short:       "GET /grpo/service/history/{posting_id}/ — a posted service GRPO",
+		Short:       "GET /grpo/service/history/{posting_id}/",
 		Example:     "  jivo-factory-pp-cli grpo service-history-detail 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "grpo.service-history-detail", "pp:method": "GET", "pp:path": "/grpo/service/history/{posting_id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

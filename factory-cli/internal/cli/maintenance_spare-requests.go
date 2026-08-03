@@ -12,10 +12,14 @@ import (
 )
 
 func newMaintenanceSpareRequestsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagSearch string
+	var flagWorkOrder int
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "spare-requests",
-		Short:       "GET /maintenance/spare-requests/ — maintenance spare requests",
+		Short:       "Requests raised off a work order for spares from the maintenance store, through issue",
 		Example:     "  jivo-factory-pp-cli maintenance spare-requests",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.spare-requests", "pp:method": "GET", "pp:path": "/maintenance/spare-requests/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newMaintenanceSpareRequestsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/spare-requests/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagWorkOrder != 0 {
+				params["work_order"] = formatCLIParamValue(flagWorkOrder)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newMaintenanceSpareRequestsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "REQUESTED | PARTIALLY_ISSUED | ISSUED | PARTIALLY_CONSUMED | CLOSED | CANCELLED")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "")
+	cmd.Flags().IntVar(&flagWorkOrder, "work-order", 0, "scope to one work order int")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
 
 	return cmd
 }

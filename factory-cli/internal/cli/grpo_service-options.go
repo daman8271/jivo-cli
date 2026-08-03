@@ -15,7 +15,7 @@ func newGrpoServiceOptionsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "service-options",
-		Short:       "GET /grpo/service/options/ — grpo service options",
+		Short:       "The SAP master lists a freight booking has to pick from — branches, tax codes, GL accounts, SAC codes, locations",
 		Example:     "  jivo-factory-pp-cli grpo service-options",
 		Annotations: map[string]string{"pp:endpoint": "grpo.service-options", "pp:method": "GET", "pp:path": "/grpo/service/options/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

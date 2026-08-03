@@ -12,10 +12,11 @@ import (
 )
 
 func newMaintenanceAssetDepartmentsCmd(flags *rootFlags) *cobra.Command {
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "asset-departments",
-		Short:       "GET /maintenance/asset-departments/ — maintenance asset departments",
+		Short:       "Maintenance's own department master (separate from the HR/org department list), with asset counts.",
 		Example:     "  jivo-factory-pp-cli maintenance asset-departments",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.asset-departments", "pp:method": "GET", "pp:path": "/maintenance/asset-departments/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newMaintenanceAssetDepartmentsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/asset-departments/"
 			params := map[string]string{}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newMaintenanceAssetDepartmentsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
 
 	return cmd
 }

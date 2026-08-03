@@ -12,10 +12,13 @@ import (
 )
 
 func newBarcodeIntercompanyTransfersCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "intercompany-transfers",
-		Short:       "GET /barcode/intercompany/transfers/ — barcode intercompany transfers list",
+		Short:       "Stock physically moved between JIVO companies by barcode scan — with every box on each transfer.",
 		Example:     "  jivo-factory-pp-cli barcode intercompany-transfers",
 		Annotations: map[string]string{"pp:endpoint": "barcode.intercompany-transfers", "pp:method": "GET", "pp:path": "/barcode/intercompany/transfers/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +29,15 @@ func newBarcodeIntercompanyTransfersCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/intercompany/transfers/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +86,9 @@ func newBarcodeIntercompanyTransfersCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "STRONGLY recommended — the unpaginated response is 3.7 MB because every transfer embeds its full `lines` array int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "verified live — matches transfer_number (-> count 1)")
 
 	return cmd
 }

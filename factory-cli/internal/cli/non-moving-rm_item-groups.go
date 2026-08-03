@@ -15,7 +15,7 @@ func newNonMovingRmItemGroupsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "item-groups",
-		Short:       "GET /non-moving-rm/item-groups/ — non moving rm item groups",
+		Short:       "Item-group code/name list used by the Non-Moving screen's Material Type dropdown.",
 		Example:     "  jivo-factory-pp-cli non-moving-rm item-groups",
 		Annotations: map[string]string{"pp:endpoint": "non-moving-rm.item-groups", "pp:method": "GET", "pp:path": "/non-moving-rm/item-groups/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

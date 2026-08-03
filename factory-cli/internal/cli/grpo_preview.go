@@ -12,15 +12,22 @@ import (
 )
 
 func newGrpoPreviewCmd(flags *rootFlags) *cobra.Command {
+	var flagVehicleEntryId string
 
 	cmd := &cobra.Command{
-		Use:         "preview <vehicle_entry_id>",
-		Short:       "GET /grpo/preview/{vehicle_entry_id}/ — GRPO preview for a vehicle entry",
-		Example:     "  jivo-factory-pp-cli grpo preview 550e8400-e29b-41d4-a716-446655440000",
+		Use:         "preview",
+		Short:       "Everything needed to post a gate entry to SAP — PO lines, QC status, accepted quantity, price, tax code",
+		Example:     "  jivo-factory-pp-cli grpo preview --vehicle-entry-id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "grpo.preview", "pp:method": "GET", "pp:path": "/grpo/preview/{vehicle_entry_id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("vehicle-entry-id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "vehicle-entry-id")
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,7 +35,7 @@ func newGrpoPreviewCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/grpo/preview/{vehicle_entry_id}/"
-			path = replacePathParam(path, "vehicle_entry_id", args[0])
+			path = replacePathParam(path, "vehicle_entry_id", formatCLIParamValue(flagVehicleEntryId))
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "grpo", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -78,6 +85,7 @@ func newGrpoPreviewCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagVehicleEntryId, "vehicle-entry-id", "", "path segment; the `vehicle_entry_id` from /grpo/pending/ or /grpo/all-entries/ (NOT a posting id) int")
 
 	return cmd
 }

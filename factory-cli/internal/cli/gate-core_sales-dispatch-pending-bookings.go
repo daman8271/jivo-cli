@@ -12,10 +12,15 @@ import (
 )
 
 func newGateCoreSalesDispatchPendingBookingsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagSearch string
+	var flagDocumentType string
+	var flagAllCompanies int
 
 	cmd := &cobra.Command{
 		Use:         "sales-dispatch-pending-bookings",
-		Short:       "GET /gate-core/sales-dispatch/pending-bookings/ — gate core sales dispatch pending bookings",
+		Short:       "Bills booked to a truck but not yet docked — loads that are planned and still waiting to enter the dispatch flow.",
 		Example:     "  jivo-factory-pp-cli gate-core sales-dispatch-pending-bookings",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.sales-dispatch-pending-bookings", "pp:method": "GET", "pp:path": "/gate-core/sales-dispatch/pending-bookings/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newGateCoreSalesDispatchPendingBookingsCmd(flags *rootFlags) *cobra.Command
 
 			path := "/gate-core/sales-dispatch/pending-bookings/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagDocumentType != "" {
+				params["document_type"] = formatCLIParamValue(flagDocumentType)
+			}
+			if flagAllCompanies != 0 {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newGateCoreSalesDispatchPendingBookingsCmd(flags *rootFlags) *cobra.Command
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "same filter object as sales-dispatch")
+	cmd.Flags().StringVar(&flagDocumentType, "document-type", "", "INVOICE")
+	cmd.Flags().IntVar(&flagAllCompanies, "all-companies", 0, "1. VERIFIED live: a MART-headed call with all_companies=1 returned 2 JIVO_BEVERAGES bookings.")
 
 	return cmd
 }

@@ -12,10 +12,18 @@ import (
 )
 
 func newBarcodeDispatchReportsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagBillNumber string
+	var flagCustomer string
+	var flagStatus string
+	var flagMaterialCode string
+	var flagPalletBarcode string
+	var flagBoxBarcode string
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-reports",
-		Short:       "GET /barcode/dispatch/reports/ — barcode dispatch reports",
+		Short:       "Dispatch summary per bill — expected vs dispatched vs pending quantity and boxes, and SAP sync state.",
 		Example:     "  jivo-factory-pp-cli barcode dispatch-reports",
 		Annotations: map[string]string{"pp:endpoint": "barcode.dispatch-reports", "pp:method": "GET", "pp:path": "/barcode/dispatch/reports/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +34,30 @@ func newBarcodeDispatchReportsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/dispatch/reports/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagBillNumber != "" {
+				params["bill_number"] = formatCLIParamValue(flagBillNumber)
+			}
+			if flagCustomer != "" {
+				params["customer"] = formatCLIParamValue(flagCustomer)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagMaterialCode != "" {
+				params["material_code"] = formatCLIParamValue(flagMaterialCode)
+			}
+			if flagPalletBarcode != "" {
+				params["pallet_barcode"] = formatCLIParamValue(flagPalletBarcode)
+			}
+			if flagBoxBarcode != "" {
+				params["box_barcode"] = formatCLIParamValue(flagBoxBarcode)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +106,14 @@ func newBarcodeDispatchReportsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD, verified live")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD, verified live")
+	cmd.Flags().StringVar(&flagBillNumber, "bill-number", "", "UI-sourced")
+	cmd.Flags().StringVar(&flagCustomer, "customer", "", "verified live (customer=CUSTA000048 -> 35 of 57); matches the customer code")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "verified live. ACTIVE, PARTIAL, COMPLETED, CLOSED, CANCELLED (UI dropdown); DRAFT also appears in live rows")
+	cmd.Flags().StringVar(&flagMaterialCode, "material-code", "", "UI-sourced")
+	cmd.Flags().StringVar(&flagPalletBarcode, "pallet-barcode", "", "UI-sourced")
+	cmd.Flags().StringVar(&flagBoxBarcode, "box-barcode", "", "UI-sourced")
 
 	return cmd
 }

@@ -12,10 +12,12 @@ import (
 )
 
 func newWarehouseFgReceiptsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagProductionRunId string
 
 	cmd := &cobra.Command{
 		Use:         "fg-receipts",
-		Short:       "GET /warehouse/fg-receipts/ — warehouse fg receipts",
+		Short:       "Finished goods coming off production runs — good versus rejected quantity, which warehouse they went into",
 		Example:     "  jivo-factory-pp-cli warehouse fg-receipts",
 		Annotations: map[string]string{"pp:endpoint": "warehouse.fg-receipts", "pp:method": "GET", "pp:path": "/warehouse/fg-receipts/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newWarehouseFgReceiptsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/warehouse/fg-receipts/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagProductionRunId != "" {
+				params["production_run_id"] = formatCLIParamValue(flagProductionRunId)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "warehouse", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newWarehouseFgReceiptsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "VERIFIED accepted: ?status=RECEIVED on JIVO_OIL returned the 3 rows, all RECEIVED.")
+	cmd.Flags().StringVar(&flagProductionRunId, "production-run-id", "", "INFERRED from the app's query hook (getFGReceipts({status, production_run_id})); not separately proven live.")
 
 	return cmd
 }

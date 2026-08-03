@@ -12,10 +12,16 @@ import (
 )
 
 func newDispatchBiltyGrpoHistoryCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagYear int
+	var flagMonth int
+	var flagPage string
+	var flagPageSize int
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "bilty-grpo-history",
-		Short:       "GET /dispatch/bilty-grpo/history/ — dispatch bilty grpo history",
+		Short:       "Every transporter bilty that has been posted (or failed to post) to SAP as a service GRPO",
 		Example:     "  jivo-factory-pp-cli dispatch bilty-grpo-history",
 		Annotations: map[string]string{"pp:endpoint": "dispatch.bilty-grpo-history", "pp:method": "GET", "pp:path": "/dispatch/bilty-grpo/history/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newDispatchBiltyGrpoHistoryCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/dispatch/bilty-grpo/history/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dispatch", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newDispatchBiltyGrpoHistoryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "DRAFT | PENDING | POSTED | FAILED | PARTIALLY_POSTED (from the bundle's GRPO status constant).")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "Verified live: year=2026&month=6 narrowed 35 to 32.")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "int 1-12")
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "capped at 100; UI uses 25 int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "UI placeholder: 'Search bilty, bill, vehicle, transporter, SAP…'. Verified live: search=45430 -> 1 row.")
 
 	return cmd
 }

@@ -12,10 +12,16 @@ import (
 )
 
 func newSapPlanDashboardProcurementCmd(flags *rootFlags) *cobra.Command {
+	var flagShowShortfallOnly bool
+	var flagStatus string
+	var flagDueDateFrom string
+	var flagDueDateTo string
+	var flagWarehouse string
+	var flagSku string
 
 	cmd := &cobra.Command{
 		Use:         "plan-dashboard-procurement",
-		Short:       "GET /sap/plan-dashboard/procurement/ — sap plan dashboard procurement",
+		Short:       "Shortfall rolled up by component across all open production orders",
 		Example:     "  jivo-factory-pp-cli sap plan-dashboard-procurement",
 		Annotations: map[string]string{"pp:endpoint": "sap.plan-dashboard-procurement", "pp:method": "GET", "pp:path": "/sap/plan-dashboard/procurement/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newSapPlanDashboardProcurementCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/sap/plan-dashboard/procurement/"
 			params := map[string]string{}
+			if flagShowShortfallOnly != false {
+				params["show_shortfall_only"] = formatCLIParamValue(flagShowShortfallOnly)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagDueDateFrom != "" {
+				params["due_date_from"] = formatCLIParamValue(flagDueDateFrom)
+			}
+			if flagDueDateTo != "" {
+				params["due_date_to"] = formatCLIParamValue(flagDueDateTo)
+			}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
+			if flagSku != "" {
+				params["sku"] = formatCLIParamValue(flagSku)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newSapPlanDashboardProcurementCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagShowShortfallOnly, "show-shortfall-only", false, "Send as true. VERIFIED effective: OIL 191 components -> 59 (exactly the components_with_shortfall count).")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "planned | released — accepted by the shared filter (inferred: I verified status on summary and details")
+	cmd.Flags().StringVar(&flagDueDateFrom, "due-date-from", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagDueDateTo, "due-date-to", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "UPPERCASE SAP warehouse code")
+	cmd.Flags().StringVar(&flagSku, "sku", "", "UPPERCASE SAP finished-good item code — filters by the parent order's SKU, not by the component")
 
 	return cmd
 }

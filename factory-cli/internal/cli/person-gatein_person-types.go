@@ -15,7 +15,7 @@ func newPersonGateinPersonTypesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "person-types",
-		Short:       "GET /person-gatein/person-types/ — person type master",
+		Short:       "The person-type lookup that maps the numeric person_type filter to a word — 1 = visitor, 2 = labour.",
 		Example:     "  jivo-factory-pp-cli person-gatein person-types",
 		Annotations: map[string]string{"pp:endpoint": "person-gatein.person-types", "pp:method": "GET", "pp:path": "/person-gatein/person-types/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

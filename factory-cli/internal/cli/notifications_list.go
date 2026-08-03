@@ -12,10 +12,15 @@ import (
 )
 
 func newNotificationsListCmd(flags *rootFlags) *cobra.Command {
+	var flagIsRead bool
+	var flagLimit int
+	var flagOffset string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "list",
-		Short:       "GET /notifications/ — notifications",
+		Short:       "Read the alert feed for this company — gate entries, QC decisions, GRPO/FG postings, dispatch bookings",
 		Example:     "  jivo-factory-pp-cli notifications list",
 		Annotations: map[string]string{"pp:endpoint": "notifications.list", "pp:method": "GET", "pp:path": "/notifications/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,10 +31,27 @@ func newNotificationsListCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/notifications/"
 			params := map[string]string{}
+			if flagIsRead != false {
+				params["is_read"] = formatCLIParamValue(flagIsRead)
+			}
+			if flagLimit != 0 {
+				params["limit"] = formatCLIParamValue(flagLimit)
+			}
+			if flagOffset != "" {
+				params["offset"] = formatCLIParamValue(flagOffset)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "notifications", true, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			// Honor --limit when the API accepts but ignores ?limit=N.
+			data = truncateJSONArray(data, flagLimit)
 			// Print provenance to stderr for human-facing output only.
 			// Machine-format flags (--json, --csv, --compact, --quiet, --plain,
 			// --select) and piped stdout suppress this line; the JSON envelope
@@ -74,6 +96,11 @@ func newNotificationsListCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagIsRead, "is-read", false, "true = only read, false = only unread. Omit for all. The UI's All/Unread/Read tabs are exactly this. bool")
+	cmd.Flags().IntVar(&flagLimit, "limit", 0, "page size; UI uses 20. Alias of page_size. int")
+	cmd.Flags().StringVar(&flagOffset, "offset", "", "row offset; UI pages with offset = page_index * 20. Alias of page. int")
+	cmd.Flags().StringVar(&flagPage, "page", "", "1-based page number; sets offset. Verified live: page=2&page_size=3 → offset 3. int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "rows per page; sets limit. int")
 
 	return cmd
 }

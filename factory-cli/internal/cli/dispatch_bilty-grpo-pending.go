@@ -12,10 +12,15 @@ import (
 )
 
 func newDispatchBiltyGrpoPendingCmd(flags *rootFlags) *cobra.Command {
+	var flagYear int
+	var flagMonth int
+	var flagPage string
+	var flagPageSize int
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "bilty-grpo-pending",
-		Short:       "GET /dispatch/bilty-grpo/pending/ — dispatch bilty grpo pending",
+		Short:       "Booked dispatch vehicle bookings that still need their transporter bilty posted to SAP as a service GRPO — the",
 		Example:     "  jivo-factory-pp-cli dispatch bilty-grpo-pending",
 		Annotations: map[string]string{"pp:endpoint": "dispatch.bilty-grpo-pending", "pp:method": "GET", "pp:path": "/dispatch/bilty-grpo/pending/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newDispatchBiltyGrpoPendingCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/dispatch/bilty-grpo/pending/"
 			params := map[string]string{}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dispatch", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newDispatchBiltyGrpoPendingCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagYear, "year", 0, "See the month trap below — always send year and month together and explicitly. int")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "*** TRAP: omitting year/month does NOT mean 'all pending'.")
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "capped at 100 int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "UI placeholder: 'Search bill, vehicle, transporter, driver, state, bilty, GSTIN…'")
 
 	return cmd
 }

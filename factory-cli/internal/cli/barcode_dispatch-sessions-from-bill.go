@@ -15,7 +15,7 @@ func newBarcodeDispatchSessionsFromBillCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-sessions-from-bill",
-		Short:       "GET /barcode/dispatch/sessions/from-bill/ — barcode dispatch sessions from bill",
+		Short:       "GET /barcode/dispatch/sessions/from-bill/",
 		Example:     "  jivo-factory-pp-cli barcode dispatch-sessions-from-bill",
 		Annotations: map[string]string{"pp:endpoint": "barcode.dispatch-sessions-from-bill", "pp:method": "GET", "pp:path": "/barcode/dispatch/sessions/from-bill/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

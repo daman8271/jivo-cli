@@ -10,31 +10,46 @@ import (
 func newBarcodeCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "barcode",
-		Short:       "Barcode & traceability — boxes, pallets, dispatch sessions, intercompany",
+		Short:       "This is JIVO's carton-level traceability system — the barcode that gets stuck on every box coming off a filling line",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newBarcodeBoxCmd(flags))
+	cmd.AddCommand(newBarcodeBoxHistoryCmd(flags))
 	cmd.AddCommand(newBarcodeBoxesCmd(flags))
+	cmd.AddCommand(newBarcodeDispatchReportDetailCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchReportsCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchReportsBoxesCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchReportsPalletsCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchReportsRejectedScansCmd(flags))
+	cmd.AddCommand(newBarcodeDispatchSapSyncLogsCmd(flags))
+	cmd.AddCommand(newBarcodeDispatchScanLogsCmd(flags))
+	cmd.AddCommand(newBarcodeDispatchSessionCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchSessionsCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchSessionsActiveCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchSessionsClosedCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchSessionsCompletedCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchSessionsFromBillCmd(flags))
-	cmd.AddCommand(newBarcodeDispatchSettingsCmd(flags))
 	cmd.AddCommand(newBarcodeIntercompanyDashboardCmd(flags))
 	cmd.AddCommand(newBarcodeIntercompanyTraceCmd(flags))
+	cmd.AddCommand(newBarcodeIntercompanyTransferCmd(flags))
 	cmd.AddCommand(newBarcodeIntercompanyTransfersCmd(flags))
+	cmd.AddCommand(newBarcodeItemDetailCmd(flags))
 	cmd.AddCommand(newBarcodeItemsOitmCmd(flags))
+	cmd.AddCommand(newBarcodeLookupCmd(flags))
 	cmd.AddCommand(newBarcodeLooseCmd(flags))
+	cmd.AddCommand(newBarcodeLooseItemCmd(flags))
+	cmd.AddCommand(newBarcodePalletCmd(flags))
+	cmd.AddCommand(newBarcodePalletHistoryCmd(flags))
 	cmd.AddCommand(newBarcodePalletsCmd(flags))
 	cmd.AddCommand(newBarcodePrintHistoryCmd(flags))
 	cmd.AddCommand(newBarcodeProductionReleaseOilCmd(flags))
 	cmd.AddCommand(newBarcodeScanHistoryCmd(flags))
+	cmd.AddCommand(newBarcodeVerifyRequestCmd(flags))
+	cmd.AddCommand(newBarcodeVerifyRequestsCmd(flags))
+	cmd.AddCommand(newBarcodeVoidedBoxesCmd(flags))
+	cmd.AddCommand(newBarcodeVoidedPalletsCmd(flags))
 	return cmd
 }

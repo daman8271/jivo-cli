@@ -12,10 +12,12 @@ import (
 )
 
 func newProductionExecutionReportsAnalyticsCmd(flags *rootFlags) *cobra.Command {
+	var flagDateFrom string
+	var flagDateTo string
 
 	cmd := &cobra.Command{
 		Use:         "reports-analytics",
-		Short:       "GET /production-execution/reports/analytics/ — production execution reports analytics",
+		Short:       "Headline production numbers for a period: runs, cases produced, running minutes, breakdown minutes, availability %.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-analytics",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-analytics", "pp:method": "GET", "pp:path": "/production-execution/reports/analytics/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newProductionExecutionReportsAnalyticsCmd(flags *rootFlags) *cobra.Command 
 
 			path := "/production-execution/reports/analytics/"
 			params := map[string]string{}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newProductionExecutionReportsAnalyticsCmd(flags *rootFlags) *cobra.Command 
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD. Verified live (response changed).")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD")
 
 	return cmd
 }

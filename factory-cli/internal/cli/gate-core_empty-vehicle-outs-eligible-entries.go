@@ -12,10 +12,14 @@ import (
 )
 
 func newGateCoreEmptyVehicleOutsEligibleEntriesCmd(flags *rootFlags) *cobra.Command {
+	var flagEntryType string
+	var flagFromDate string
+	var flagToDate string
+	var flagAllCompanies string
 
 	cmd := &cobra.Command{
 		Use:         "empty-vehicle-outs-eligible-entries",
-		Short:       "GET /gate-core/empty-vehicle-outs/eligible-entries/ — gate core empty vehicle outs eligible entries",
+		Short:       "Vehicle entries that are allowed to leave empty right now — the pick-list for recording an empty gate-out.",
 		Example:     "  jivo-factory-pp-cli gate-core empty-vehicle-outs-eligible-entries",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.empty-vehicle-outs-eligible-entries", "pp:method": "GET", "pp:path": "/gate-core/empty-vehicle-outs/eligible-entries/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newGateCoreEmptyVehicleOutsEligibleEntriesCmd(flags *rootFlags) *cobra.Comm
 
 			path := "/gate-core/empty-vehicle-outs/eligible-entries/"
 			params := map[string]string{}
+			if flagEntryType != "" {
+				params["entry_type"] = formatCLIParamValue(flagEntryType)
+			}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagAllCompanies != "" {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newGateCoreEmptyVehicleOutsEligibleEntriesCmd(flags *rootFlags) *cobra.Comm
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagEntryType, "entry-type", "", "VERIFIED live in MART: SALES_DISPATCH -> 138 rows, EMPTY_VEHICLE -> 12 rows, unfiltered -> 150.")
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagAllCompanies, "all-companies", "", "the Empty Vehicle Out page sends all_companies:1 on this call")
 
 	return cmd
 }

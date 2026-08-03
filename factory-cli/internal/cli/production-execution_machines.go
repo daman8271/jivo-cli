@@ -12,10 +12,12 @@ import (
 )
 
 func newProductionExecutionMachinesCmd(flags *rootFlags) *cobra.Command {
+	var flagLineId string
+	var flagMachineType string
 
 	cmd := &cobra.Command{
 		Use:         "machines",
-		Short:       "GET /production-execution/machines/ — production execution machines",
+		Short:       "List individual machines on a line (filler, capper, labeler…)",
 		Example:     "  jivo-factory-pp-cli production-execution machines",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.machines", "pp:method": "GET", "pp:path": "/production-execution/machines/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newProductionExecutionMachinesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/production-execution/machines/"
 			params := map[string]string{}
+			if flagLineId != "" {
+				params["line_id"] = formatCLIParamValue(flagLineId)
+			}
+			if flagMachineType != "" {
+				params["machine_type"] = formatCLIParamValue(flagMachineType)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newProductionExecutionMachinesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagLineId, "line-id", "", "From /production-execution/lines/ int")
+	cmd.Flags().StringVar(&flagMachineType, "machine-type", "", "Enum from the UI bundle: FILLER, CAPPER, CONVEYOR, LABELER, CODING, SHRINK_PACK, STICKER_LABELER, TAPPING_MACHINE")
 
 	return cmd
 }

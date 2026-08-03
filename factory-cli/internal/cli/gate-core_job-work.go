@@ -12,10 +12,12 @@ import (
 )
 
 func newGateCoreJobWorkCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "job-work",
-		Short:       "GET /gate-core/job-work/ — gate core job work",
+		Short:       "Job-work movements at the gate — material sent out to a job worker and coming back, tied to the SAP production order.",
 		Example:     "  jivo-factory-pp-cli gate-core job-work",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.job-work", "pp:method": "GET", "pp:path": "/gate-core/job-work/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newGateCoreJobWorkCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/job-work/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newGateCoreJobWorkCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD — the Job Work dashboard sends {from_date, to_date}")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
 
 	return cmd
 }

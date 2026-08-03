@@ -15,7 +15,7 @@ func newDispatchTransporterInvoicesHistoryCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "transporter-invoices-history",
-		Short:       "GET /dispatch/transporter-invoices/history/ — dispatch transporter invoices history",
+		Short:       "Transporter A/P invoices submitted or posted to SAP from bilty GRPOs.",
 		Example:     "  jivo-factory-pp-cli dispatch transporter-invoices-history",
 		Annotations: map[string]string{"pp:endpoint": "dispatch.transporter-invoices-history", "pp:method": "GET", "pp:path": "/dispatch/transporter-invoices/history/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

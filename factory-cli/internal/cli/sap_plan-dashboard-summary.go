@@ -12,10 +12,15 @@ import (
 )
 
 func newSapPlanDashboardSummaryCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagDueDateFrom string
+	var flagDueDateTo string
+	var flagWarehouse string
+	var flagSku string
 
 	cmd := &cobra.Command{
 		Use:         "plan-dashboard-summary",
-		Short:       "GET /sap/plan-dashboard/summary/ — sap plan dashboard summary",
+		Short:       "One row per open SAP production order: planned vs completed qty, due date",
 		Example:     "  jivo-factory-pp-cli sap plan-dashboard-summary",
 		Annotations: map[string]string{"pp:endpoint": "sap.plan-dashboard-summary", "pp:method": "GET", "pp:path": "/sap/plan-dashboard/summary/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newSapPlanDashboardSummaryCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/sap/plan-dashboard/summary/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagDueDateFrom != "" {
+				params["due_date_from"] = formatCLIParamValue(flagDueDateFrom)
+			}
+			if flagDueDateTo != "" {
+				params["due_date_to"] = formatCLIParamValue(flagDueDateTo)
+			}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
+			if flagSku != "" {
+				params["sku"] = formatCLIParamValue(flagSku)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newSapPlanDashboardSummaryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "Enum, lowercase: planned | released.")
+	cmd.Flags().StringVar(&flagDueDateFrom, "due-date-from", "", "YYYY-MM-DD, inclusive lower bound on due_date. Verified (OIL 201 -> 17 for 2026-07-01..2026-08-31).")
+	cmd.Flags().StringVar(&flagDueDateTo, "due-date-to", "", "YYYY-MM-DD, inclusive upper bound on due_date.")
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "SAP warehouse code, e.g. BH-PF. Must be UPPERCASE — the UI trims+uppercases before sending.")
+	cmd.Flags().StringVar(&flagSku, "sku", "", "SAP finished-good item code, e.g. FG0000030. Must be UPPERCASE. Verified (OIL 201 -> 7).")
 
 	return cmd
 }

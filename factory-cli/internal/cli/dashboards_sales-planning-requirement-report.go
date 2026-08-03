@@ -12,10 +12,14 @@ import (
 )
 
 func newDashboardsSalesPlanningRequirementReportCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagSearch string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "sales-planning-requirement-report",
-		Short:       "GET /dashboards/sales-planning-requirement/report/ — dashboards sales planning requirement report",
+		Short:       "Monthly forecast demand vs stock in hand",
 		Example:     "  jivo-factory-pp-cli dashboards sales-planning-requirement-report",
 		Annotations: map[string]string{"pp:endpoint": "dashboards.sales-planning-requirement-report", "pp:method": "GET", "pp:path": "/dashboards/sales-planning-requirement/report/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newDashboardsSalesPlanningRequirementReportCmd(flags *rootFlags) *cobra.Com
 
 			path := "/dashboards/sales-planning-requirement/report/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboards", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newDashboardsSalesPlanningRequirementReportCmd(flags *rootFlags) *cobra.Com
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "Server-enforced enum: all | shortage | po_covered. Anything else returns 400 ''x' is not a valid choice.")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "Item code, item name or forecast name. Verified: search=MUSTARD → 36 of 294 on OIL.")
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Default 50, max 200. int")
 
 	return cmd
 }

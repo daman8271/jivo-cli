@@ -12,10 +12,12 @@ import (
 )
 
 func newGateCoreRejectedQcReturnsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "rejected-qc-returns",
-		Short:       "GET /gate-core/rejected-qc-returns/ — gate core rejected qc returns",
+		Short:       "QC-rejected material leaving the plant — goods sent back out after failing quality control.",
 		Example:     "  jivo-factory-pp-cli gate-core rejected-qc-returns",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.rejected-qc-returns", "pp:method": "GET", "pp:path": "/gate-core/rejected-qc-returns/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newGateCoreRejectedQcReturnsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/rejected-qc-returns/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newGateCoreRejectedQcReturnsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD — the only two params the bundle's serializer builds for this endpoint")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
 
 	return cmd
 }

@@ -12,10 +12,11 @@ import (
 )
 
 func newProductionExecutionLineConfigsCmd(flags *rootFlags) *cobra.Command {
+	var flagLineId string
 
 	cmd := &cobra.Command{
 		Use:         "line-configs",
-		Short:       "GET /production-execution/line-configs/ — production execution line configs",
+		Short:       "List the saved line presets (line + SKU + rated speed + labour/manpower counts) that pre-fill a new run.",
 		Example:     "  jivo-factory-pp-cli production-execution line-configs",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.line-configs", "pp:method": "GET", "pp:path": "/production-execution/line-configs/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newProductionExecutionLineConfigsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/production-execution/line-configs/"
 			params := map[string]string{}
+			if flagLineId != "" {
+				params["line_id"] = formatCLIParamValue(flagLineId)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newProductionExecutionLineConfigsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagLineId, "line-id", "", "Verified live on JIVO_BEVERAGES line 8 → 2 rows. int")
 
 	return cmd
 }

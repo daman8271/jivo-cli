@@ -12,10 +12,12 @@ import (
 )
 
 func newProductionExecutionReportsAnalyticsDowntimeCmd(flags *rootFlags) *cobra.Command {
+	var flagDateFrom string
+	var flagDateTo string
 
 	cmd := &cobra.Command{
 		Use:         "reports-analytics-downtime",
-		Short:       "GET /production-execution/reports/analytics/downtime/ — production execution reports analytics downtime",
+		Short:       "Stoppage reasons for a period, rolled up by the free-text reason operators typed.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-analytics-downtime",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-analytics-downtime", "pp:method": "GET", "pp:path": "/production-execution/reports/analytics/downtime/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newProductionExecutionReportsAnalyticsDowntimeCmd(flags *rootFlags) *cobra.
 
 			path := "/production-execution/reports/analytics/downtime/"
 			params := map[string]string{}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newProductionExecutionReportsAnalyticsDowntimeCmd(flags *rootFlags) *cobra.
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD. Verified live (1,273 B → 212 B).")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD")
 
 	return cmd
 }

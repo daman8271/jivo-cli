@@ -15,7 +15,7 @@ func newNotificationsUnreadCountCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "unread-count",
-		Short:       "GET /notifications/unread-count/ — notifications unread count",
+		Short:       "How many unread alerts this account has in this company — the number on the bell badge.",
 		Example:     "  jivo-factory-pp-cli notifications unread-count",
 		Annotations: map[string]string{"pp:endpoint": "notifications.unread-count", "pp:method": "GET", "pp:path": "/notifications/unread-count/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

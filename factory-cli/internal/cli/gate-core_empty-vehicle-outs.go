@@ -12,10 +12,14 @@ import (
 )
 
 func newGateCoreEmptyVehicleOutsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagEntryType string
+	var flagAllCompanies string
 
 	cmd := &cobra.Command{
 		Use:         "empty-vehicle-outs",
-		Short:       "GET /gate-core/empty-vehicle-outs/ — gate core empty vehicle outs",
+		Short:       "Vehicles sent back out empty — the gate-out record for a truck that came in but did not load.",
 		Example:     "  jivo-factory-pp-cli gate-core empty-vehicle-outs",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.empty-vehicle-outs", "pp:method": "GET", "pp:path": "/gate-core/empty-vehicle-outs/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newGateCoreEmptyVehicleOutsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/empty-vehicle-outs/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagEntryType != "" {
+				params["entry_type"] = formatCLIParamValue(flagEntryType)
+			}
+			if flagAllCompanies != "" {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newGateCoreEmptyVehicleOutsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagEntryType, "entry-type", "", "observed values EMPTY_VEHICLE, SALES_DISPATCH")
+	cmd.Flags().StringVar(&flagAllCompanies, "all-companies", "", "the UI sends String(all_companies); 1 works")
 
 	return cmd
 }

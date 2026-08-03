@@ -12,10 +12,15 @@ import (
 )
 
 func newGateCoreSalesDispatchReportsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagSearch string
+	var flagDocumentType string
+	var flagAllCompanies int
 
 	cmd := &cobra.Command{
 		Use:         "sales-dispatch-reports",
-		Short:       "GET /gate-core/sales-dispatch/reports/ — gate core sales dispatch reports",
+		Short:       "Gate-out control report — dispatch counts bucketed by stage (waiting inside, missing photo, gatepass pending",
 		Example:     "  jivo-factory-pp-cli gate-core sales-dispatch-reports",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.sales-dispatch-reports", "pp:method": "GET", "pp:path": "/gate-core/sales-dispatch/reports/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newGateCoreSalesDispatchReportsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/sales-dispatch/reports/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagDocumentType != "" {
+				params["document_type"] = formatCLIParamValue(flagDocumentType)
+			}
+			if flagAllCompanies != 0 {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newGateCoreSalesDispatchReportsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD — VERIFIED live, a 3-day window gave counts.total 6 instead of 142")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "inferred — same generic query-string serializer as the other salesDispatch calls; not confirmed against data")
+	cmd.Flags().StringVar(&flagDocumentType, "document-type", "", "inferred, same serializer")
+	cmd.Flags().IntVar(&flagAllCompanies, "all-companies", 0, "inferred, same serializer")
 
 	return cmd
 }

@@ -12,10 +12,12 @@ import (
 )
 
 func newBarcodeDispatchSessionsCompletedCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-sessions-completed",
-		Short:       "GET /barcode/dispatch/sessions/completed/ — barcode dispatch sessions completed",
+		Short:       "Dispatch sessions where every bill line has been scanned out.",
 		Example:     "  jivo-factory-pp-cli barcode dispatch-sessions-completed",
 		Annotations: map[string]string{"pp:endpoint": "barcode.dispatch-sessions-completed", "pp:method": "GET", "pp:path": "/barcode/dispatch/sessions/completed/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newBarcodeDispatchSessionsCompletedCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/dispatch/sessions/completed/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newBarcodeDispatchSessionsCompletedCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "OIL's unpaginated response is 7.8 MB for 44 rows int")
 
 	return cmd
 }

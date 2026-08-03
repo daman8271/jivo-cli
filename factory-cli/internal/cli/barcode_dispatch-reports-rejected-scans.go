@@ -12,10 +12,18 @@ import (
 )
 
 func newBarcodeDispatchReportsRejectedScansCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagBillNumber string
+	var flagCustomer string
+	var flagStatus string
+	var flagMaterialCode string
+	var flagPalletBarcode string
+	var flagBoxBarcode string
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-reports-rejected-scans",
-		Short:       "GET /barcode/dispatch/reports/rejected-scans/ — barcode dispatch reports rejected scans",
+		Short:       "Scans the system refused during dispatch — the barcode, the reason and the code, per bill and operator.",
 		Example:     "  jivo-factory-pp-cli barcode dispatch-reports-rejected-scans",
 		Annotations: map[string]string{"pp:endpoint": "barcode.dispatch-reports-rejected-scans", "pp:method": "GET", "pp:path": "/barcode/dispatch/reports/rejected-scans/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +34,30 @@ func newBarcodeDispatchReportsRejectedScansCmd(flags *rootFlags) *cobra.Command 
 
 			path := "/barcode/dispatch/reports/rejected-scans/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagBillNumber != "" {
+				params["bill_number"] = formatCLIParamValue(flagBillNumber)
+			}
+			if flagCustomer != "" {
+				params["customer"] = formatCLIParamValue(flagCustomer)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagMaterialCode != "" {
+				params["material_code"] = formatCLIParamValue(flagMaterialCode)
+			}
+			if flagPalletBarcode != "" {
+				params["pallet_barcode"] = formatCLIParamValue(flagPalletBarcode)
+			}
+			if flagBoxBarcode != "" {
+				params["box_barcode"] = formatCLIParamValue(flagBoxBarcode)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +106,14 @@ func newBarcodeDispatchReportsRejectedScansCmd(flags *rootFlags) *cobra.Command 
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "verified live (single-day range -> 51 rows)")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "verified live")
+	cmd.Flags().StringVar(&flagBillNumber, "bill-number", "", "")
+	cmd.Flags().StringVar(&flagCustomer, "customer", "", "")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "")
+	cmd.Flags().StringVar(&flagMaterialCode, "material-code", "", "")
+	cmd.Flags().StringVar(&flagPalletBarcode, "pallet-barcode", "", "")
+	cmd.Flags().StringVar(&flagBoxBarcode, "box-barcode", "", "")
 
 	return cmd
 }

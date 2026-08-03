@@ -12,10 +12,12 @@ import (
 )
 
 func newProductionExecutionLineClearanceCmd(flags *rootFlags) *cobra.Command {
+	var flagLineId string
+	var flagStatus string
 
 	cmd := &cobra.Command{
 		Use:         "line-clearance",
-		Short:       "GET /production-execution/line-clearance/ — production execution line clearance",
+		Short:       "List pre-production line clearance records — the QA sign-off that a line is clean and set up before a run starts.",
 		Example:     "  jivo-factory-pp-cli production-execution line-clearance",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.line-clearance", "pp:method": "GET", "pp:path": "/production-execution/line-clearance/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newProductionExecutionLineClearanceCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/production-execution/line-clearance/"
 			params := map[string]string{}
+			if flagLineId != "" {
+				params["line_id"] = formatCLIParamValue(flagLineId)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newProductionExecutionLineClearanceCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagLineId, "line-id", "", "Verified live combined with status → 20 rows on OIL. int")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "Enum from the UI bundle: DRAFT, SUBMITTED, ON_HOLD, CLEARED, NOT_CLEARED.")
 
 	return cmd
 }

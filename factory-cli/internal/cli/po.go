@@ -10,12 +10,14 @@ import (
 func newPoCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "po",
-		Short:       "Purchase orders — open POs, vendors, warehouses",
+		Short:       "This corner of the factory app answers one question: can we actually build what SAP says we are going to build",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newPoOpenPoItemsCmd(flags))
+	cmd.AddCommand(newPoOpenPosCmd(flags))
 	cmd.AddCommand(newPoVendorsCmd(flags))
 	cmd.AddCommand(newPoWarehousesCmd(flags))
 	return cmd

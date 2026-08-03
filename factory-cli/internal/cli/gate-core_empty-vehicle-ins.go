@@ -12,10 +12,15 @@ import (
 )
 
 func newGateCoreEmptyVehicleInsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagReason string
+	var flagInsideOnly bool
+	var flagAllCompanies int
 
 	cmd := &cobra.Command{
 		Use:         "empty-vehicle-ins",
-		Short:       "GET /gate-core/empty-vehicle-ins/ — gate core empty vehicle ins",
+		Short:       "Empty vehicles gated in — the per-company gate-in record for a truck arriving to load, with its live pipeline stage.",
 		Example:     "  jivo-factory-pp-cli gate-core empty-vehicle-ins",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.empty-vehicle-ins", "pp:method": "GET", "pp:path": "/gate-core/empty-vehicle-ins/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newGateCoreEmptyVehicleInsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/empty-vehicle-ins/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagReason != "" {
+				params["reason"] = formatCLIParamValue(flagReason)
+			}
+			if flagInsideOnly != false {
+				params["inside_only"] = formatCLIParamValue(flagInsideOnly)
+			}
+			if flagAllCompanies != 0 {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newGateCoreEmptyVehicleInsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagReason, "reason", "", "enum, fetch the authoritative list from /gate-core/empty-vehicle-ins/reasons/: DISPATCH, REPAIR_MOVEMENT, JOB_WORK")
+	cmd.Flags().BoolVar(&flagInsideOnly, "inside-only", false, "send literally 'true'. VERIFIED live: 143 rows -> 3 rows (trucks still inside).")
+	cmd.Flags().IntVar(&flagAllCompanies, "all-companies", 0, "send 1 — the UI's Empty Vehicle In page always sends all_companies:1")
 
 	return cmd
 }

@@ -15,7 +15,7 @@ func newMaintenanceAlertsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "alerts",
-		Short:       "GET /maintenance/alerts/ — maintenance alerts",
+		Short:       "Live maintenance alert feed — PM due, breakdown escalation, low critical spare, AMC/warranty expiry.",
 		Example:     "  jivo-factory-pp-cli maintenance alerts",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.alerts", "pp:method": "GET", "pp:path": "/maintenance/alerts/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

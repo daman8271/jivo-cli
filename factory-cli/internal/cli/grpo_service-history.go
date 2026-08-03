@@ -12,10 +12,17 @@ import (
 )
 
 func newGrpoServiceHistoryCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagDispatchPlanId string
+	var flagYear int
+	var flagMonth int
+	var flagSearch string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "service-history",
-		Short:       "GET /grpo/service/history/ — grpo service history",
+		Short:       "Log of transport-service GRPO postings — which bilty was booked against which transporter, for how much",
 		Example:     "  jivo-factory-pp-cli grpo service-history",
 		Annotations: map[string]string{"pp:endpoint": "grpo.service-history", "pp:method": "GET", "pp:path": "/grpo/service/history/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +33,27 @@ func newGrpoServiceHistoryCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/grpo/service/history/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagDispatchPlanId != "" {
+				params["dispatch_plan_id"] = formatCLIParamValue(flagDispatchPlanId)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "grpo", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +102,13 @@ func newGrpoServiceHistoryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "enum DRAFT | PENDING | POSTED | FAILED | PARTIALLY_POSTED (same GRPO status constant")
+	cmd.Flags().StringVar(&flagDispatchPlanId, "dispatch-plan-id", "", "documented in the server's OPTIONS docstring: 'GET /api/grpo/service/history/?dispatch_plan_id=123'; verified live int")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "by POSTING date.")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "1-12 int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "")
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "capped at 100 int")
 
 	return cmd
 }

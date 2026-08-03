@@ -10,23 +10,26 @@ import (
 func newWarehouseCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "warehouse",
-		Short:       "Warehouse — FG receipts, BOM requests, WMS",
+		Short:       "The warehouse module is the factory floor's stock-handling desk — its own landing page calls it 'Material requests",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newWarehouseBomRequestGetCmd(flags))
 	cmd.AddCommand(newWarehouseBomRequestsCmd(flags))
+	cmd.AddCommand(newWarehouseBstGateInwardsCmd(flags))
+	cmd.AddCommand(newWarehouseBstGateOutwardsCmd(flags))
+	cmd.AddCommand(newWarehouseBstGetCmd(flags))
+	cmd.AddCommand(newWarehouseBstIncomingCmd(flags))
+	cmd.AddCommand(newWarehouseBstIncomingGetCmd(flags))
+	cmd.AddCommand(newWarehouseBstListCmd(flags))
+	cmd.AddCommand(newWarehouseBstPartialTransfersCmd(flags))
+	cmd.AddCommand(newWarehouseBstSapTransferGetCmd(flags))
+	cmd.AddCommand(newWarehouseBstSapTransfersCmd(flags))
+	cmd.AddCommand(newWarehouseFgReceiptGetCmd(flags))
 	cmd.AddCommand(newWarehouseFgReceiptsCmd(flags))
-	cmd.AddCommand(newWarehouseWmsBatchesExpiryCmd(flags))
-	cmd.AddCommand(newWarehouseWmsBillingOverviewCmd(flags))
-	cmd.AddCommand(newWarehouseWmsDashboardCmd(flags))
 	cmd.AddCommand(newWarehouseWmsItemGroupsCmd(flags))
-	cmd.AddCommand(newWarehouseWmsSalesOrdersBacklogCmd(flags))
-	cmd.AddCommand(newWarehouseWmsStockMovementsCmd(flags))
-	cmd.AddCommand(newWarehouseWmsStockOverviewCmd(flags))
-	cmd.AddCommand(newWarehouseWmsTransfersOverviewCmd(flags))
 	cmd.AddCommand(newWarehouseWmsWarehousesCmd(flags))
-	cmd.AddCommand(newWarehouseWmsWarehousesSummaryCmd(flags))
 	return cmd
 }

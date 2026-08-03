@@ -12,10 +12,11 @@ import (
 )
 
 func newMaintenanceSpareCategoriesCmd(flags *rootFlags) *cobra.Command {
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "spare-categories",
-		Short:       "GET /maintenance/spare-categories/ — maintenance spare categories",
+		Short:       "Spare category master.",
 		Example:     "  jivo-factory-pp-cli maintenance spare-categories",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.spare-categories", "pp:method": "GET", "pp:path": "/maintenance/spare-categories/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newMaintenanceSpareCategoriesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/spare-categories/"
 			params := map[string]string{}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newMaintenanceSpareCategoriesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
 
 	return cmd
 }

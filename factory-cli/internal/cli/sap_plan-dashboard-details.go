@@ -12,10 +12,16 @@ import (
 )
 
 func newSapPlanDashboardDetailsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagDueDateFrom string
+	var flagDueDateTo string
+	var flagWarehouse string
+	var flagSku string
+	var flagShowShortfallOnly bool
 
 	cmd := &cobra.Command{
 		Use:         "plan-dashboard-details",
-		Short:       "GET /sap/plan-dashboard/details/ — sap plan dashboard details",
+		Short:       "Same open production orders as the summary but with every BOM component line nested — required, issued, remaining",
 		Example:     "  jivo-factory-pp-cli sap plan-dashboard-details",
 		Annotations: map[string]string{"pp:endpoint": "sap.plan-dashboard-details", "pp:method": "GET", "pp:path": "/sap/plan-dashboard/details/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newSapPlanDashboardDetailsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/sap/plan-dashboard/details/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagDueDateFrom != "" {
+				params["due_date_from"] = formatCLIParamValue(flagDueDateFrom)
+			}
+			if flagDueDateTo != "" {
+				params["due_date_to"] = formatCLIParamValue(flagDueDateTo)
+			}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
+			if flagSku != "" {
+				params["sku"] = formatCLIParamValue(flagSku)
+			}
+			if flagShowShortfallOnly != false {
+				params["show_shortfall_only"] = formatCLIParamValue(flagShowShortfallOnly)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newSapPlanDashboardDetailsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "planned | released. Verified server-side (OIL 201 -> 164 for released).")
+	cmd.Flags().StringVar(&flagDueDateFrom, "due-date-from", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagDueDateTo, "due-date-to", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "UPPERCASE SAP warehouse code")
+	cmd.Flags().StringVar(&flagSku, "sku", "", "UPPERCASE SAP item code; verified warehouse=BH-PF&sku=FG0000030 -> 7 orders / 49 lines")
+	cmd.Flags().BoolVar(&flagShowShortfallOnly, "show-shortfall-only", false, "Send as true. VERIFIED effective here: OIL 201 orders/1127 lines -> 141 orders/417 lines.")
 
 	return cmd
 }

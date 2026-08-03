@@ -12,10 +12,12 @@ import (
 )
 
 func newQualityControlInspectionsDraftCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "inspections-draft",
-		Short:       "GET /quality-control/inspections/draft/ — quality control inspections draft",
+		Short:       "Inspections a chemist started filling but has not submitted.",
 		Example:     "  jivo-factory-pp-cli quality-control inspections-draft",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.inspections-draft", "pp:method": "GET", "pp:path": "/quality-control/inspections/draft/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newQualityControlInspectionsDraftCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/quality-control/inspections/draft/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newQualityControlInspectionsDraftCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "(YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "(YYYY-MM-DD)")
 
 	return cmd
 }

@@ -12,10 +12,11 @@ import (
 )
 
 func newProductionExecutionWasteCmd(flags *rootFlags) *cobra.Command {
+	var flagRunId string
 
 	cmd := &cobra.Command{
 		Use:         "waste",
-		Short:       "GET /production-execution/waste/ — production execution waste",
+		Short:       "List wastage logs — material scrapped during a run, with the four-signature approval chain (engineer, asst.",
 		Example:     "  jivo-factory-pp-cli production-execution waste",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.waste", "pp:method": "GET", "pp:path": "/production-execution/waste/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newProductionExecutionWasteCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/production-execution/waste/"
 			params := map[string]string{}
+			if flagRunId != "" {
+				params["run_id"] = formatCLIParamValue(flagRunId)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newProductionExecutionWasteCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagRunId, "run-id", "", "Verified live: run_id=123 on OIL → 5 rows. int")
 
 	return cmd
 }

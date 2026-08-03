@@ -12,10 +12,14 @@ import (
 )
 
 func newProductionExecutionMachineChecklistsCmd(flags *rootFlags) *cobra.Command {
+	var flagMachineId string
+	var flagDate string
+	var flagMonth int
+	var flagYear int
 
 	cmd := &cobra.Command{
 		Use:         "machine-checklists",
-		Short:       "GET /production-execution/machine-checklists/ — production execution machine checklists",
+		Short:       "List filled-in machine checklist entries for a machine and date/month.",
 		Example:     "  jivo-factory-pp-cli production-execution machine-checklists",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.machine-checklists", "pp:method": "GET", "pp:path": "/production-execution/machine-checklists/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newProductionExecutionMachineChecklistsCmd(flags *rootFlags) *cobra.Command
 
 			path := "/production-execution/machine-checklists/"
 			params := map[string]string{}
+			if flagMachineId != "" {
+				params["machine_id"] = formatCLIParamValue(flagMachineId)
+			}
+			if flagDate != "" {
+				params["date"] = formatCLIParamValue(flagDate)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newProductionExecutionMachineChecklistsCmd(flags *rootFlags) *cobra.Command
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagMachineId, "machine-id", "", "int")
+	cmd.Flags().StringVar(&flagDate, "date", "", "YYYY-MM-DD. Verified live (returns []).")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "1-12 int")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "e.g. 2026 int")
 
 	return cmd
 }

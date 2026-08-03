@@ -10,7 +10,7 @@ import (
 func newDashboardsCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "dashboards",
-		Short:       "Admin dashboards (stock, inventory-age, dispatch pipeline, SAP plan)",
+		Short:       "This is the factory app's read-only reporting corner — the five 'management dashboard' screens the plant and purchase",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
@@ -23,5 +23,6 @@ func newDashboardsCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newDashboardsSalesPlanningRequirementStatusCmd(flags))
 	cmd.AddCommand(newDashboardsStockCmd(flags))
 	cmd.AddCommand(newDashboardsStockAsOfCmd(flags))
+	cmd.AddCommand(newDashboardsStockBenchmarkItemWarehousesCmd(flags))
 	return cmd
 }

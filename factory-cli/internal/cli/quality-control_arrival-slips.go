@@ -12,10 +12,11 @@ import (
 )
 
 func newQualityControlArrivalSlipsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
 
 	cmd := &cobra.Command{
 		Use:         "arrival-slips",
-		Short:       "GET /quality-control/arrival-slips/ — quality control arrival slips",
+		Short:       "List QA arrival slips — the intake record raised against each PO item when material reaches QA at gate-in.",
 		Example:     "  jivo-factory-pp-cli quality-control arrival-slips",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.arrival-slips", "pp:method": "GET", "pp:path": "/quality-control/arrival-slips/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newQualityControlArrivalSlipsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/quality-control/arrival-slips/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newQualityControlArrivalSlipsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "enum DRAFT | SUBMITTED | REJECTED (from ARRIVAL_SLIP_STATUS in status.constants).")
 
 	return cmd
 }

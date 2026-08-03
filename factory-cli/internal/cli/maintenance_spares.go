@@ -12,10 +12,16 @@ import (
 )
 
 func newMaintenanceSparesCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagCategory int
+	var flagIsCritical bool
+	var flagLowStock bool
+	var flagCompatibleAsset int
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "spares",
-		Short:       "GET /maintenance/spares/ — maintenance spares",
+		Short:       "Maintenance spare-part master with local stock, reorder level, criticality and which assets each part fits.",
 		Example:     "  jivo-factory-pp-cli maintenance spares",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.spares", "pp:method": "GET", "pp:path": "/maintenance/spares/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newMaintenanceSparesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/spares/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagCategory != 0 {
+				params["category"] = formatCLIParamValue(flagCategory)
+			}
+			if flagIsCritical != false {
+				params["is_critical"] = formatCLIParamValue(flagIsCritical)
+			}
+			if flagLowStock != false {
+				params["low_stock"] = formatCLIParamValue(flagLowStock)
+			}
+			if flagCompatibleAsset != 0 {
+				params["compatible_asset"] = formatCLIParamValue(flagCompatibleAsset)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newMaintenanceSparesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "")
+	cmd.Flags().IntVar(&flagCategory, "category", 0, "spare-category id int")
+	cmd.Flags().BoolVar(&flagIsCritical, "is-critical", false, "bool")
+	cmd.Flags().BoolVar(&flagLowStock, "low-stock", false, "only parts at or below reorder level bool")
+	cmd.Flags().IntVar(&flagCompatibleAsset, "compatible-asset", 0, "spares that fit this asset — used by the work-order screen int")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
 
 	return cmd
 }

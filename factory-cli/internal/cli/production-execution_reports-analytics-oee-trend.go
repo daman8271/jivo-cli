@@ -12,10 +12,14 @@ import (
 )
 
 func newProductionExecutionReportsAnalyticsOeeTrendCmd(flags *rootFlags) *cobra.Command {
+	var flagDateFrom string
+	var flagDateTo string
+	var flagGroupBy string
+	var flagLine int
 
 	cmd := &cobra.Command{
 		Use:         "reports-analytics-oee-trend",
-		Short:       "GET /production-execution/reports/analytics/oee-trend/ — production execution reports analytics oee trend",
+		Short:       "OEE over time (daily/weekly/monthly) with a by-line comparison and per-run detail.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-analytics-oee-trend",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-analytics-oee-trend", "pp:method": "GET", "pp:path": "/production-execution/reports/analytics/oee-trend/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newProductionExecutionReportsAnalyticsOeeTrendCmd(flags *rootFlags) *cobra.
 
 			path := "/production-execution/reports/analytics/oee-trend/"
 			params := map[string]string{}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
+			if flagGroupBy != "" {
+				params["group_by"] = formatCLIParamValue(flagGroupBy)
+			}
+			if flagLine != 0 {
+				params["line"] = formatCLIParamValue(flagLine)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newProductionExecutionReportsAnalyticsOeeTrendCmd(flags *rootFlags) *cobra.
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagGroupBy, "group-by", "", "Enum read from the UI dropdown: daily | weekly | monthly. Default daily (echoed in summary.group_by).")
+	cmd.Flags().IntVar(&flagLine, "line", 0, "Verified live: payload shrank 8,834 B → 3,605 B with line=3 on OIL. int")
 
 	return cmd
 }

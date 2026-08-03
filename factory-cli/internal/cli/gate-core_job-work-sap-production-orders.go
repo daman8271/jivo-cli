@@ -12,10 +12,11 @@ import (
 )
 
 func newGateCoreJobWorkSapProductionOrdersCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "job-work-sap-production-orders",
-		Short:       "GET /gate-core/job-work/sap-production-orders/ — gate core job work sap production orders",
+		Short:       "SAP production orders available to link to a job-work entry — planned vs completed vs remaining quantity.",
 		Example:     "  jivo-factory-pp-cli gate-core job-work-sap-production-orders",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.job-work-sap-production-orders", "pp:method": "GET", "pp:path": "/gate-core/job-work/sap-production-orders/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newGateCoreJobWorkSapProductionOrdersCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/job-work/sap-production-orders/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newGateCoreJobWorkSapProductionOrdersCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "VERIFIED live in JIVO_OIL: ?search=1124026615 narrowed 50 rows to 1")
 
 	return cmd
 }

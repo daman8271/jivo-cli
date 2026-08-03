@@ -12,10 +12,14 @@ import (
 )
 
 func newMaintenancePmPlansCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagFrequency string
+	var flagDueOnly bool
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "pm-plans",
-		Short:       "GET /maintenance/pm-plans/ — maintenance pm plans",
+		Short:       "Preventive-maintenance plans — which asset gets serviced how often, and when it is next due.",
 		Example:     "  jivo-factory-pp-cli maintenance pm-plans",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.pm-plans", "pp:method": "GET", "pp:path": "/maintenance/pm-plans/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newMaintenancePmPlansCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/pm-plans/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagFrequency != "" {
+				params["frequency"] = formatCLIParamValue(flagFrequency)
+			}
+			if flagDueOnly != false {
+				params["due_only"] = formatCLIParamValue(flagDueOnly)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newMaintenancePmPlansCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "")
+	cmd.Flags().StringVar(&flagFrequency, "frequency", "", "DAILY | WEEKLY | MONTHLY | QUARTERLY | HALF_YEARLY | YEARLY")
+	cmd.Flags().BoolVar(&flagDueOnly, "due-only", false, "only plans currently due bool")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
 
 	return cmd
 }

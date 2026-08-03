@@ -16,7 +16,7 @@ func newProductionExecutionReportsAnalyticsProcurementVsPlannedCmd(flags *rootFl
 
 	cmd := &cobra.Command{
 		Use:         "reports-analytics-procurement-vs-planned",
-		Short:       "GET /production-execution/reports/analytics/procurement-vs-planned/ — procurement fulfillment vs plan for a SAP order",
+		Short:       "For one SAP production order: BOM requirement vs what was actually procured and consumed, per component.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-analytics-procurement-vs-planned --sap-doc-entry 42",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-analytics-procurement-vs-planned", "pp:method": "GET", "pp:path": "/production-execution/reports/analytics/procurement-vs-planned/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,7 +87,7 @@ func newProductionExecutionReportsAnalyticsProcurementVsPlannedCmd(flags *rootFl
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().IntVar(&flagSapDocEntry, "sap-doc-entry", 0, "SAP document entry number")
+	cmd.Flags().IntVar(&flagSapDocEntry, "sap-doc-entry", 0, "SAP DocEntry from /production-execution/sap/orders/. Missing → 400 {'error':'sap_doc_entry is required'} int")
 
 	return cmd
 }

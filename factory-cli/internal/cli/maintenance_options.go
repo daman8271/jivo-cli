@@ -15,7 +15,7 @@ func newMaintenanceOptionsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "options",
-		Short:       "GET /maintenance/options/ — maintenance options",
+		Short:       "The dropdown catalogue for the whole module — every status/priority/type enum plus the live category, location",
 		Example:     "  jivo-factory-pp-cli maintenance options",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.options", "pp:method": "GET", "pp:path": "/maintenance/options/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

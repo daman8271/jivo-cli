@@ -10,14 +10,13 @@ import (
 func newNotificationsCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "notifications",
-		Short:       "Notifications & device tokens",
+		Short:       "The 'platform' group is the plumbing the rest of the factory app sits on: who you are, who else exists",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
 	cmd.AddCommand(newNotificationsListCmd(flags))
-	cmd.AddCommand(newNotificationsPreferencesCmd(flags))
 	cmd.AddCommand(newNotificationsUnreadCountCmd(flags))
 	return cmd
 }

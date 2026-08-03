@@ -12,10 +12,11 @@ import (
 )
 
 func newGateCoreBstOutsSapTransfersCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "bst-outs-sap-transfers",
-		Short:       "GET /gate-core/bst-outs/sap-transfers/ — gate core bst outs sap transfers",
+		Short:       "SAP stock-transfer documents available to attach to a BST gate-out — search by document number.",
 		Example:     "  jivo-factory-pp-cli gate-core bst-outs-sap-transfers",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.bst-outs-sap-transfers", "pp:method": "GET", "pp:path": "/gate-core/bst-outs/sap-transfers/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newGateCoreBstOutsSapTransfersCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/bst-outs/sap-transfers/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newGateCoreBstOutsSapTransfersCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "VERIFIED live: ?search=826674501 narrowed 50 rows to 1. Matches doc_num.")
 
 	return cmd
 }

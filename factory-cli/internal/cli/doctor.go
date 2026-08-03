@@ -204,7 +204,7 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 						authParams := map[string]string{}
 						authHeaders := map[string]string{}
 						authHeaders["Authorization"] = authHeader
-						authHeaders["Company-Code"] = client.CompanyCode()
+						authHeaders["Company-Code"] = "JIVO_MART"
 						authHeaders["User-Agent"] = "jivo-factory-pp-cli"
 						verifyPath := "/accounts/me/"
 						if !strings.HasPrefix(verifyPath, "/") {

@@ -12,10 +12,13 @@ import (
 )
 
 func newQualityControlInspectionsCompletedCmd(flags *rootFlags) *cobra.Command {
+	var flagFinalStatus string
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "inspections-completed",
-		Short:       "GET /quality-control/inspections/completed/ — quality control inspections completed",
+		Short:       "Fully signed-off inspections; filter by final verdict to get accepted lots or on-hold lots.",
 		Example:     "  jivo-factory-pp-cli quality-control inspections-completed",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.inspections-completed", "pp:method": "GET", "pp:path": "/quality-control/inspections/completed/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +29,15 @@ func newQualityControlInspectionsCompletedCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/quality-control/inspections/completed/"
 			params := map[string]string{}
+			if flagFinalStatus != "" {
+				params["final_status"] = formatCLIParamValue(flagFinalStatus)
+			}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +86,9 @@ func newQualityControlInspectionsCompletedCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFinalStatus, "final-status", "", "enum ACCEPTED | HOLD | REJECTED | PENDING. CONFIRMED working: ?final_status=ACCEPTED -> 1044 rows all ACCEPTED; ?")
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "(YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "(YYYY-MM-DD)")
 
 	return cmd
 }

@@ -12,10 +12,17 @@ import (
 )
 
 func newGrpoHistoryCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagVehicleEntryId string
+	var flagYear int
+	var flagMonth int
+	var flagSearch string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "history",
-		Short:       "GET /grpo/history/ — grpo history",
+		Short:       "Log of every material GRPO posting ATTEMPT — posted",
 		Example:     "  jivo-factory-pp-cli grpo history",
 		Annotations: map[string]string{"pp:endpoint": "grpo.history", "pp:method": "GET", "pp:path": "/grpo/history/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +33,27 @@ func newGrpoHistoryCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/grpo/history/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagVehicleEntryId != "" {
+				params["vehicle_entry_id"] = formatCLIParamValue(flagVehicleEntryId)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "grpo", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +102,13 @@ func newGrpoHistoryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "enum DRAFT | PENDING | POSTED | FAILED | PARTIALLY_POSTED (from status.constants-BWw2RNtv.")
+	cmd.Flags().StringVar(&flagVehicleEntryId, "vehicle-entry-id", "", "documented in the server's own OPTIONS docstring: 'GET /api/grpo/history/?")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "omit year+month for all-time (227 vs 62 for 2026-07 on OIL) int")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "1-12 int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "free text over entry / PO / SAP doc no / status; verified")
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "capped at 100 int")
 
 	return cmd
 }

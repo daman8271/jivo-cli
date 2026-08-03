@@ -15,7 +15,7 @@ func newQualityControlProductionQcPendingCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "production-qc-pending",
-		Short:       "GET /quality-control/production-qc/pending/ — quality control production qc pending",
+		Short:       "Production QC sessions submitted and waiting for approval — the FG-release approval queue.",
 		Example:     "  jivo-factory-pp-cli quality-control production-qc-pending",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.production-qc-pending", "pp:method": "GET", "pp:path": "/quality-control/production-qc/pending/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

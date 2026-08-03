@@ -10,7 +10,7 @@ import (
 func newAccountsCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "accounts",
-		Short:       "Manage accounts command groups",
+		Short:       "The 'platform' group is the plumbing the rest of the factory app sits on: who you are, who else exists",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),

@@ -12,10 +12,11 @@ import (
 )
 
 func newProductionExecutionChecklistTemplatesCmd(flags *rootFlags) *cobra.Command {
+	var flagMachineType string
 
 	cmd := &cobra.Command{
 		Use:         "checklist-templates",
-		Short:       "GET /production-execution/checklist-templates/ — production execution checklist templates",
+		Short:       "List the reusable machine-checklist templates (the checkpoint sets operators tick off per machine).",
 		Example:     "  jivo-factory-pp-cli production-execution checklist-templates",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.checklist-templates", "pp:method": "GET", "pp:path": "/production-execution/checklist-templates/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newProductionExecutionChecklistTemplatesCmd(flags *rootFlags) *cobra.Comman
 
 			path := "/production-execution/checklist-templates/"
 			params := map[string]string{}
+			if flagMachineType != "" {
+				params["machine_type"] = formatCLIParamValue(flagMachineType)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newProductionExecutionChecklistTemplatesCmd(flags *rootFlags) *cobra.Comman
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagMachineType, "machine-type", "", "Same enum as /machines/: FILLER, CAPPER, CONVEYOR, LABELER, CODING, SHRINK_PACK, STICKER_LABELER, TAPPING_MACHINE")
 
 	return cmd
 }

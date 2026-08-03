@@ -13,10 +13,11 @@ import (
 
 func newProductionExecutionLineConfigsAutoFillCmd(flags *rootFlags) *cobra.Command {
 	var flagLineId string
+	var flagSkuCode string
 
 	cmd := &cobra.Command{
 		Use:         "line-configs-auto-fill",
-		Short:       "GET /production-execution/line-configs/auto-fill/ — auto-fill config for a production line",
+		Short:       "Look up the matching saved preset for a line + SKU, as the Start Run screen does before pre-filling the form.",
 		Example:     "  jivo-factory-pp-cli production-execution line-configs-auto-fill --line-id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.line-configs-auto-fill", "pp:method": "GET", "pp:path": "/production-execution/line-configs/auto-fill/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -38,6 +39,9 @@ func newProductionExecutionLineConfigsAutoFillCmd(flags *rootFlags) *cobra.Comma
 			params := map[string]string{}
 			if flagLineId != "" {
 				params["line_id"] = formatCLIParamValue(flagLineId)
+			}
+			if flagSkuCode != "" {
+				params["sku_code"] = formatCLIParamValue(flagSkuCode)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -87,7 +91,8 @@ func newProductionExecutionLineConfigsAutoFillCmd(flags *rootFlags) *cobra.Comma
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagLineId, "line-id", "", "Production line ID")
+	cmd.Flags().StringVar(&flagLineId, "line-id", "", "Missing → 400 {'error':'line_id is required'} int")
+	cmd.Flags().StringVar(&flagSkuCode, "sku-code", "", "SAP item code, e.g. FG0000227. The UI sends '' when unknown.")
 
 	return cmd
 }

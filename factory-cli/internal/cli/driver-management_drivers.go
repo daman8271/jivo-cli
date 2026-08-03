@@ -15,7 +15,7 @@ func newDriverManagementDriversCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "drivers",
-		Short:       "GET /driver-management/drivers/ — driver management drivers",
+		Short:       "All drivers on file — mobile, driving licence, ID proof and photo.",
 		Example:     "  jivo-factory-pp-cli driver-management drivers",
 		Annotations: map[string]string{"pp:endpoint": "driver-management.drivers", "pp:method": "GET", "pp:path": "/driver-management/drivers/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

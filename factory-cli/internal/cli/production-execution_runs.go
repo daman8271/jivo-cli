@@ -12,10 +12,16 @@ import (
 )
 
 func newProductionExecutionRunsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagDate string
+	var flagDateFrom string
+	var flagDateTo string
+	var flagLineId string
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "runs",
-		Short:       "GET /production-execution/runs/ — production execution runs",
+		Short:       "List production runs — the core shift-level record: date, line, SKU, required vs produced quantity, running minutes",
 		Example:     "  jivo-factory-pp-cli production-execution runs",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.runs", "pp:method": "GET", "pp:path": "/production-execution/runs/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newProductionExecutionRunsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/production-execution/runs/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagDate != "" {
+				params["date"] = formatCLIParamValue(flagDate)
+			}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
+			if flagLineId != "" {
+				params["line_id"] = formatCLIParamValue(flagLineId)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newProductionExecutionRunsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "UI dropdown values: DRAFT, IN_PROGRESS, COMPLETED. Verified live (status=IN_PROGRESS&line_id=3 → 5 rows).")
+	cmd.Flags().StringVar(&flagDate, "date", "", "YYYY-MM-DD, single day. Verified live → 6 rows for 2026-08-03 on OIL.")
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagLineId, "line-id", "", "NOTE the name: runs uses line_id, the analytics reports use `line`. Verified live. int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "Free text over run number, product and SAP entry. Verified live (search=RICE → 5 rows).")
 
 	return cmd
 }

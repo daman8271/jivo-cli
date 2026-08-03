@@ -15,7 +15,7 @@ func newBarcodeIntercompanyDashboardCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "intercompany-dashboard",
-		Short:       "GET /barcode/intercompany/dashboard/ — barcode intercompany dashboard",
+		Short:       "Today's intercompany movement plus lifetime totals per route and the latest transfers.",
 		Example:     "  jivo-factory-pp-cli barcode intercompany-dashboard",
 		Annotations: map[string]string{"pp:endpoint": "barcode.intercompany-dashboard", "pp:method": "GET", "pp:path": "/barcode/intercompany/dashboard/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

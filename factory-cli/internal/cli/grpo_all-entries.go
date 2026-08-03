@@ -12,10 +12,16 @@ import (
 )
 
 func newGrpoAllEntriesCmd(flags *rootFlags) *cobra.Command {
+	var flagPhase string
+	var flagYear int
+	var flagMonth int
+	var flagSearch string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "all-entries",
-		Short:       "GET /grpo/all-entries/ — grpo all entries",
+		Short:       "Every raw-material gate entry visible to GRPO — including trucks still at the gate or sitting with QC — with supplier",
 		Example:     "  jivo-factory-pp-cli grpo all-entries",
 		Annotations: map[string]string{"pp:endpoint": "grpo.all-entries", "pp:method": "GET", "pp:path": "/grpo/all-entries/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newGrpoAllEntriesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/grpo/all-entries/"
 			params := map[string]string{}
+			if flagPhase != "" {
+				params["phase"] = formatCLIParamValue(flagPhase)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "grpo", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newGrpoAllEntriesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPhase, "phase", "", "enum GATE | QC | DONE | CANCELLED (from the server docstring; UI exposes ALL/GATE/QC/DONE). Omit for all phases.")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "e.g. 2026. UI pairs it with month; omitting BOTH returns all-time (verified: 573 unfiltered vs 142 for 2026-07 on OIL).")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "1-12 int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "free text over entry no / supplier / PO / status (UI placeholder 'Search entry, supplier, PO, status…'); verified")
+	cmd.Flags().StringVar(&flagPage, "page", "", "1-based int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "UI default 25; server HARD-CAPS at 100 — asking 500 returns 100 int")
 
 	return cmd
 }

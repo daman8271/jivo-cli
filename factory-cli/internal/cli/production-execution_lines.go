@@ -12,10 +12,11 @@ import (
 )
 
 func newProductionExecutionLinesCmd(flags *rootFlags) *cobra.Command {
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "lines",
-		Short:       "GET /production-execution/lines/ — production execution lines",
+		Short:       "List the physical filling/packing lines in the plant, with standard running hours per day and month.",
 		Example:     "  jivo-factory-pp-cli production-execution lines",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.lines", "pp:method": "GET", "pp:path": "/production-execution/lines/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newProductionExecutionLinesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/production-execution/lines/"
 			params := map[string]string{}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newProductionExecutionLinesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "Sent as the string 'true'/'false'. Verified live: is_active=true returns all 7 OIL lines. bool")
 
 	return cmd
 }

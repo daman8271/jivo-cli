@@ -14,10 +14,18 @@ import (
 func newDispatchPlansBillsCmd(flags *rootFlags) *cobra.Command {
 	var flagDateFrom string
 	var flagDateTo string
+	var flagBookingStatus string
+	var flagSearch string
+	var flagBranch string
+	var flagLimit int
+	var flagExcludeJivoMartTransfer bool
+	var flagByDispatchDate bool
+	var flagAllCompanies bool
+	var flagSelectedOnly bool
 
 	cmd := &cobra.Command{
 		Use:         "bills",
-		Short:       "GET /dispatch-plans/bills/ — bills in a date window",
+		Short:       "SAP sales invoices in a date window with the factory's dispatch-planning overlay (vehicle, transporter, driver, bilty",
 		Example:     "  jivo-factory-pp-cli dispatch-plans bills --date-from 2026-01-15 --date-to 2026-01-15",
 		Annotations: map[string]string{"pp:endpoint": "dispatch-plans.bills", "pp:method": "GET", "pp:path": "/dispatch-plans/bills/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -46,10 +54,36 @@ func newDispatchPlansBillsCmd(flags *rootFlags) *cobra.Command {
 			if flagDateTo != "" {
 				params["date_to"] = formatCLIParamValue(flagDateTo)
 			}
+			if flagBookingStatus != "" {
+				params["booking_status"] = formatCLIParamValue(flagBookingStatus)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagBranch != "" {
+				params["branch"] = formatCLIParamValue(flagBranch)
+			}
+			if flagLimit != 0 {
+				params["limit"] = formatCLIParamValue(flagLimit)
+			}
+			if flagExcludeJivoMartTransfer != false {
+				params["exclude_jivo_mart_transfer"] = formatCLIParamValue(flagExcludeJivoMartTransfer)
+			}
+			if flagByDispatchDate != false {
+				params["by_dispatch_date"] = formatCLIParamValue(flagByDispatchDate)
+			}
+			if flagAllCompanies != false {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
+			if flagSelectedOnly != false {
+				params["selected_only"] = formatCLIParamValue(flagSelectedOnly)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dispatch-plans", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			// Honor --limit when the API accepts but ignores ?limit=N.
+			data = truncateJSONArray(data, flagLimit)
 			// Print provenance to stderr for human-facing output only.
 			// Machine-format flags (--json, --csv, --compact, --quiet, --plain,
 			// --select) and piped stdout suppress this line; the JSON envelope
@@ -94,8 +128,16 @@ func newDispatchPlansBillsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "Window start (YYYY-MM-DD)")
-	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "Window end (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "A bare GET returns 400 {'detail':'Invalid query parameters.','errors':{'date_from':['This field is required.")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "Inclusive. The UI defaults to the last month. (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagBookingStatus, "booking-status", "", "PENDING | BOOKED | DISPATCHED | CANCELLED.")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "Matches bill number / party / vehicle. Verified live: search=626080104 returned exactly that bill.")
+	cmd.Flags().StringVar(&flagBranch, "branch", "", "Server accepted both branch=2 and branch=FACTORY without error")
+	cmd.Flags().IntVar(&flagLimit, "limit", 0, "TRAP: caps the rows AND the meta totals are recomputed on the capped set. Verified live: unlimited meta.")
+	cmd.Flags().BoolVar(&flagExcludeJivoMartTransfer, "exclude-jivo-mart-transfer", false, "Drops Oil->Jivo Mart intercompany stock-transfer bills.")
+	cmd.Flags().BoolVar(&flagByDispatchDate, "by-dispatch-date", false, "Applies date_from/date_to to the PLANNED dispatch date instead of the SAP invoice date.")
+	cmd.Flags().BoolVar(&flagAllCompanies, "all-companies", false, "Cross-company sweep.")
+	cmd.Flags().BoolVar(&flagSelectedOnly, "selected-only", false, "Only bills ticked for planning (is_selected). Verified live: 1 of 4. bool ('true')")
 
 	return cmd
 }

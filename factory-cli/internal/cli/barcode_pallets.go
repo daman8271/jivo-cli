@@ -12,10 +12,14 @@ import (
 )
 
 func newBarcodePalletsCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
+	var flagStatus string
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "pallets",
-		Short:       "GET /barcode/pallets/ — barcode pallets",
+		Short:       "List pallets — item, batch, box counts (total/available/dispatched), warehouse and status.",
 		Example:     "  jivo-factory-pp-cli barcode pallets",
 		Annotations: map[string]string{"pp:endpoint": "barcode.pallets", "pp:method": "GET", "pp:path": "/barcode/pallets/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newBarcodePalletsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/pallets/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newBarcodePalletsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "without it, bare array capped at 500 int")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "verified live.")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "verified live — matches pallet_id and item_code (status=ACTIVE&search=FG0000384 -> 12)")
 
 	return cmd
 }

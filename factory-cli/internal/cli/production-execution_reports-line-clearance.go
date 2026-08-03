@@ -12,10 +12,12 @@ import (
 )
 
 func newProductionExecutionReportsLineClearanceCmd(flags *rootFlags) *cobra.Command {
+	var flagDateFrom string
+	var flagDateTo string
 
 	cmd := &cobra.Command{
 		Use:         "reports-line-clearance",
-		Short:       "GET /production-execution/reports/line-clearance/ — production execution reports line clearance",
+		Short:       "Date-filtered line clearance register — the audit trail of who cleared which line on which day.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-line-clearance",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-line-clearance", "pp:method": "GET", "pp:path": "/production-execution/reports/line-clearance/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newProductionExecutionReportsLineClearanceCmd(flags *rootFlags) *cobra.Comm
 
 			path := "/production-execution/reports/line-clearance/"
 			params := map[string]string{}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newProductionExecutionReportsLineClearanceCmd(flags *rootFlags) *cobra.Comm
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD. Verified live: 94 rows unfiltered → 13 rows for 2026-08-01..2026-08-03 on OIL.")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD")
 
 	return cmd
 }

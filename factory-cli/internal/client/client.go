@@ -500,6 +500,10 @@ func (c *Client) doInternal(ctx context.Context, method, path string, params map
 		if authHeader != "" {
 			req.Header.Set("Authorization", authHeader)
 		}
+		// Patch 0002: the company must come from --company / JIVO_FACTORY_COMPANY,
+		// never a hardcoded default. The generated template pins this to the
+		// spec's required_headers value, which silently served JIVO_MART data
+		// for every --company oil request.
 		req.Header.Set("Company-Code", CompanyCode())
 		if c.Config != nil {
 			for k, v := range c.Config.Headers {
@@ -515,7 +519,7 @@ func (c *Client) doInternal(ctx context.Context, method, path string, params map
 			req.Header.Del(BinaryResponseHeader)
 		}
 		if req.Header.Get("User-Agent") == "" {
-			req.Header.Set("User-Agent", "jivo-factory-pp-cli/0.3.0")
+			req.Header.Set("User-Agent", "jivo-factory-pp-cli/0.4.0")
 		}
 		// Go's net/http omits Accept by default; browsers, curl, and other
 		// stdlibs always send it. Fingerprint-checking WAFs (Imperva, Akamai,

@@ -12,10 +12,12 @@ import (
 )
 
 func newMaintenanceAssetDocumentsCmd(flags *rootFlags) *cobra.Command {
+	var flagAsset int
+	var flagDocumentType string
 
 	cmd := &cobra.Command{
 		Use:         "asset-documents",
-		Short:       "GET /maintenance/asset-documents/ — maintenance asset documents",
+		Short:       "Documents filed against an asset — manual, warranty, AMC contract, service report, calibration certificate.",
 		Example:     "  jivo-factory-pp-cli maintenance asset-documents",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.asset-documents", "pp:method": "GET", "pp:path": "/maintenance/asset-documents/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newMaintenanceAssetDocumentsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/asset-documents/"
 			params := map[string]string{}
+			if flagAsset != 0 {
+				params["asset"] = formatCLIParamValue(flagAsset)
+			}
+			if flagDocumentType != "" {
+				params["document_type"] = formatCLIParamValue(flagDocumentType)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newMaintenanceAssetDocumentsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagAsset, "asset", 0, "the UI always scopes by asset int")
+	cmd.Flags().StringVar(&flagDocumentType, "document-type", "", "MANUAL | WARRANTY | AMC | SERVICE_REPORT | CALIBRATION | OTHER — filter support INFERRED, not verified (table empty)")
 
 	return cmd
 }

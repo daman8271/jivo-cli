@@ -12,10 +12,13 @@ import (
 )
 
 func newMaintenanceWorkOrderPhotosCmd(flags *rootFlags) *cobra.Command {
+	var flagWorkOrder int
+	var flagIsActive bool
+	var flagPhotoType string
 
 	cmd := &cobra.Command{
 		Use:         "work-order-photos",
-		Short:       "GET /maintenance/work-order-photos/ — maintenance work order photos",
+		Short:       "Before/after photos attached to a work order.",
 		Example:     "  jivo-factory-pp-cli maintenance work-order-photos",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.work-order-photos", "pp:method": "GET", "pp:path": "/maintenance/work-order-photos/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +29,15 @@ func newMaintenanceWorkOrderPhotosCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/work-order-photos/"
 			params := map[string]string{}
+			if flagWorkOrder != 0 {
+				params["work_order"] = formatCLIParamValue(flagWorkOrder)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
+			if flagPhotoType != "" {
+				params["photo_type"] = formatCLIParamValue(flagPhotoType)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +86,9 @@ func newMaintenanceWorkOrderPhotosCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagWorkOrder, "work-order", 0, "UI always scopes by work order int")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
+	cmd.Flags().StringVar(&flagPhotoType, "photo-type", "", "BEFORE | AFTER | GENERAL — filter support INFERRED (table empty)")
 
 	return cmd
 }

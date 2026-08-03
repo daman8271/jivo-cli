@@ -12,10 +12,11 @@ import (
 )
 
 func newQualityControlPrintDocumentsCmd(flags *rootFlags) *cobra.Command {
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "print-documents",
-		Short:       "GET /quality-control/print-documents/ — quality control print documents",
+		Short:       "List the document-ID templates printed at the bottom of QC report forms (e.g.",
 		Example:     "  jivo-factory-pp-cli quality-control print-documents",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.print-documents", "pp:method": "GET", "pp:path": "/quality-control/print-documents/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newQualityControlPrintDocumentsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/quality-control/print-documents/"
 			params := map[string]string{}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newQualityControlPrintDocumentsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "NOT verified — only one row exists in the whole system so the filter could not be discriminated.")
 
 	return cmd
 }

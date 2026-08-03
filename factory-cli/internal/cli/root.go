@@ -18,6 +18,13 @@ import (
 )
 
 type rootFlags struct {
+	// companyExplicit records whether the caller selected a company through
+	// --company or JIVO_FACTORY_COMPANY. Product identity commands must not
+	// inherit the API client's historical JIVO_MART default: a bare Factory
+	// item code is only safe when its company was stated explicitly.
+	companyExplicit bool
+	companyCode     string
+
 	asJSON        bool
 	compact       bool
 	csv           bool
@@ -38,12 +45,6 @@ type rootFlags struct {
 	maxAge        time.Duration
 	dataSource    string
 	freshnessMeta any
-	// companyExplicit records whether the caller selected a company through
-	// --company or JIVO_FACTORY_COMPANY. Product identity commands must not
-	// inherit the API client's historical JIVO_MART default: a bare Factory
-	// item code is only safe when its company was stated explicitly.
-	companyExplicit bool
-	companyCode     string
 
 	// deliverBuf captures command output when --deliver is set to a
 	// non-stdout sink. Flushed to the sink after Execute returns.
@@ -144,11 +145,8 @@ func newRootCmd(flags *rootFlags) *cobra.Command {
 	var companyFlag string
 	rootCmd := &cobra.Command{
 		Use:   "jivo-factory-pp-cli",
-		Short: "Manage jivo-factory resources via the jivo-factory API",
+		Short: `Jivo Factory CLI — Read-only access to every live endpoint of JIVO's factory system across all three companies, with an offline mirror and…`,
 		Long: `Manage jivo-factory resources via the jivo-factory API.
-
-One CLI, three companies: pass --company JIVO_MART|JIVO_OIL|JIVO_BEVERAGES
-(or set JIVO_FACTORY_COMPANY) to scope every request. Default: JIVO_MART.
 
 Add --agent to any command for JSON output + non-interactive mode.
 Run 'jivo-factory-pp-cli doctor' to verify auth and connectivity.`,
@@ -157,12 +155,12 @@ Run 'jivo-factory-pp-cli doctor' to verify auth and connectivity.`,
 	}
 	rootCmd.SetVersionTemplate("jivo-factory-pp-cli {{ .Version }}\n")
 
-	rootCmd.PersistentFlags().StringVar(&companyFlag, "company", "", "Company scope for every request: JIVO_MART (default), JIVO_OIL, or JIVO_BEVERAGES (or set JIVO_FACTORY_COMPANY; shorthands mart/oil/beverages work)")
 	rootCmd.PersistentFlags().BoolVar(&flags.asJSON, "json", false, "Output as JSON")
 	rootCmd.PersistentFlags().BoolVar(&flags.compact, "compact", false, "Return only key fields (id, name, status, timestamps) for minimal token usage")
 	rootCmd.PersistentFlags().BoolVar(&flags.csv, "csv", false, "Output as CSV (table and array responses)")
 	rootCmd.PersistentFlags().BoolVar(&flags.plain, "plain", false, "Output as plain tab-separated text")
 	rootCmd.PersistentFlags().BoolVar(&flags.quiet, "quiet", false, "Bare output, one value per line")
+	rootCmd.PersistentFlags().StringVar(&companyFlag, "company", "", "Company scope for every request: JIVO_MART (default), JIVO_OIL, or JIVO_BEVERAGES (or set JIVO_FACTORY_COMPANY; shorthands mart/oil/beverages work)")
 	rootCmd.PersistentFlags().StringVar(&flags.configPath, "config", "", "Config file path")
 	rootCmd.PersistentFlags().DurationVar(&flags.timeout, "timeout", 60*time.Second, "Request timeout")
 	rootCmd.PersistentFlags().BoolVar(&flags.dryRun, "dry-run", false, "Show request without sending")
@@ -251,7 +249,11 @@ Run 'jivo-factory-pp-cli doctor' to verify auth and connectivity.`,
 		return nil
 	}
 	rootCmd.AddCommand(newAccountsCmd(flags))
+	rootCmd.AddCommand(newAttendanceCmd(flags))
 	rootCmd.AddCommand(newBarcodeCmd(flags))
+	rootCmd.AddCommand(newBlowingCmd(flags))
+	rootCmd.AddCommand(newConstructionGateinCmd(flags))
+	rootCmd.AddCommand(newDailyNeedsGateinCmd(flags))
 	rootCmd.AddCommand(newDashboardsCmd(flags))
 	rootCmd.AddCommand(newDispatchCmd(flags))
 	rootCmd.AddCommand(newDispatchPlansCmd(flags))
@@ -259,18 +261,26 @@ Run 'jivo-factory-pp-cli doctor' to verify auth and connectivity.`,
 	rootCmd.AddCommand(newDriverManagementCmd(flags))
 	rootCmd.AddCommand(newGateCoreCmd(flags))
 	rootCmd.AddCommand(newGrpoCmd(flags))
+	rootCmd.AddCommand(newLabourCountCmd(flags))
+	rootCmd.AddCommand(newLabourGateCmd(flags))
 	rootCmd.AddCommand(newMaintenanceCmd(flags))
+	rootCmd.AddCommand(newMaintenanceGateinCmd(flags))
+	rootCmd.AddCommand(newMarketplaceCmd(flags))
 	rootCmd.AddCommand(newNonMovingRmCmd(flags))
 	rootCmd.AddCommand(newNotificationsCmd(flags))
+	rootCmd.AddCommand(newOmsCmd(flags))
 	rootCmd.AddCommand(newPersonGateinCmd(flags))
 	rootCmd.AddCommand(newPoCmd(flags))
 	rootCmd.AddCommand(newProductionExecutionCmd(flags))
 	rootCmd.AddCommand(newQualityControlCmd(flags))
+	rootCmd.AddCommand(newReturnableItemsCmd(flags))
 	rootCmd.AddCommand(newSapCmd(flags))
 	rootCmd.AddCommand(newVehicleManagementCmd(flags))
 	rootCmd.AddCommand(newWarehouseCmd(flags))
+	rootCmd.AddCommand(newWmsCmd(flags))
 	rootCmd.AddCommand(newDoctorCmd(flags))
 	rootCmd.AddCommand(newAuthCmd(flags))
+	rootCmd.AddCommand(newProductCmd(flags))
 	rootCmd.AddCommand(newAgentContextCmd(rootCmd))
 	rootCmd.AddCommand(newProfileCmd(flags))
 	rootCmd.AddCommand(newFeedbackCmd(flags))
@@ -282,8 +292,7 @@ Run 'jivo-factory-pp-cli doctor' to verify auth and connectivity.`,
 	rootCmd.AddCommand(newWorkflowCmd(flags))
 	rootCmd.AddCommand(newAPICmd(flags))
 	rootCmd.AddCommand(newCompanyPromotedCmd(flags))
-	rootCmd.AddCommand(newDailyNeedsGateinPromotedCmd(flags))
-	rootCmd.AddCommand(newProductCmd(flags))
+	rootCmd.AddCommand(newFixedAssetGateinPromotedCmd(flags))
 	rootCmd.AddCommand(newVersionCmd())
 
 	return rootCmd

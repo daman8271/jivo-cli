@@ -15,8 +15,8 @@ func newCompanyPromotedCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "company",
-		Short:       "GET /company/companies/ — the 3 companies backing the Select-Company screen",
-		Long:        "GET /company/companies/ — the 3 companies backing the Select-Company screen",
+		Short:       "GET /company/companies/",
+		Long:        "GET /company/companies/",
 		Example:     "  jivo-factory-pp-cli company",
 		Annotations: map[string]string{"pp:endpoint": "company.companies", "pp:method": "GET", "pp:path": "/company/companies/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -12,10 +12,12 @@ import (
 )
 
 func newGateCoreBstOutsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "bst-outs",
-		Short:       "GET /gate-core/bst-outs/ — gate core bst outs",
+		Short:       "Branch stock transfers going out through the gate — stock leaving one JIVO warehouse for another.",
 		Example:     "  jivo-factory-pp-cli gate-core bst-outs",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.bst-outs", "pp:method": "GET", "pp:path": "/gate-core/bst-outs/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newGateCoreBstOutsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/bst-outs/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newGateCoreBstOutsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD; passed by the BST gate-out list page")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
 
 	return cmd
 }

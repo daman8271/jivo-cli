@@ -15,7 +15,7 @@ func newGateCoreBstReturnsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "bst-returns",
-		Short:       "GET /gate-core/bst-returns/ — gate core bst returns",
+		Short:       "BST material coming back after a failed or partial transfer (legacy path).",
 		Example:     "  jivo-factory-pp-cli gate-core bst-returns",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.bst-returns", "pp:method": "GET", "pp:path": "/gate-core/bst-returns/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

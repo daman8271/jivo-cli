@@ -12,10 +12,12 @@ import (
 )
 
 func newMaintenancePmChecklistItemsCmd(flags *rootFlags) *cobra.Command {
+	var flagPmPlan int
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "pm-checklist-items",
-		Short:       "GET /maintenance/pm-checklist-items/ — maintenance pm checklist items",
+		Short:       "The checklist template lines under a PM plan — what the technician has to tick, measure or record.",
 		Example:     "  jivo-factory-pp-cli maintenance pm-checklist-items",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.pm-checklist-items", "pp:method": "GET", "pp:path": "/maintenance/pm-checklist-items/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newMaintenancePmChecklistItemsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/pm-checklist-items/"
 			params := map[string]string{}
+			if flagPmPlan != 0 {
+				params["pm_plan"] = formatCLIParamValue(flagPmPlan)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newMaintenancePmChecklistItemsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagPmPlan, "pm-plan", 0, "scope to one plan (the UI always passes this) int")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
 
 	return cmd
 }

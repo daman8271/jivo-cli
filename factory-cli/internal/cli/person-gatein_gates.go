@@ -15,7 +15,7 @@ func newPersonGateinGatesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "gates",
-		Short:       "GET /person-gatein/gates/ — gate master",
+		Short:       "The gate master — which physical gates people can be checked in and out through.",
 		Example:     "  jivo-factory-pp-cli person-gatein gates",
 		Annotations: map[string]string{"pp:endpoint": "person-gatein.gates", "pp:method": "GET", "pp:path": "/person-gatein/gates/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

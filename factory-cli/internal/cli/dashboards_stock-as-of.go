@@ -13,10 +13,19 @@ import (
 
 func newDashboardsStockAsOfCmd(flags *rootFlags) *cobra.Command {
 	var flagAsOfDate string
+	var flagSearch string
+	var flagItemGroup string
+	var flagWarehouse string
+	var flagStatus string
+	var flagMovementStatus string
+	var flagSortBy string
+	var flagSortDir string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "stock-as-of",
-		Short:       "GET /dashboards/stock/as-of/ — stock snapshot as of a date",
+		Short:       "The same stock-vs-benchmark view reconstructed as it stood on a chosen past date. Required: as_of_date.",
 		Example:     "  jivo-factory-pp-cli dashboards stock-as-of --as-of-date 2026-01-15",
 		Annotations: map[string]string{"pp:endpoint": "dashboards.stock-as-of", "pp:method": "GET", "pp:path": "/dashboards/stock/as-of/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -38,6 +47,33 @@ func newDashboardsStockAsOfCmd(flags *rootFlags) *cobra.Command {
 			params := map[string]string{}
 			if flagAsOfDate != "" {
 				params["as_of_date"] = formatCLIParamValue(flagAsOfDate)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagItemGroup != "" {
+				params["item_group"] = formatCLIParamValue(flagItemGroup)
+			}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagMovementStatus != "" {
+				params["movement_status"] = formatCLIParamValue(flagMovementStatus)
+			}
+			if flagSortBy != "" {
+				params["sort_by"] = formatCLIParamValue(flagSortBy)
+			}
+			if flagSortDir != "" {
+				params["sort_dir"] = formatCLIParamValue(flagSortDir)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboards", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -87,7 +123,16 @@ func newDashboardsStockAsOfCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagAsOfDate, "as-of-date", "", "Snapshot date (YYYY-MM-DD), required by the view")
+	cmd.Flags().StringVar(&flagAsOfDate, "as-of-date", "", "Hard requirement. Without it: 400 {'detail':'Invalid query parameters.','errors':{'as_of_date':['This field is required.")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "")
+	cmd.Flags().StringVar(&flagItemGroup, "item-group", "", "Group NAME, same as the live view.")
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "CSV. Verified: warehouse=BH-PM narrows OIL to 2,269 items.")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "CSV; critical|healthy|low|unset. Verified live on this path (status=critical returned 78 items).")
+	cmd.Flags().StringVar(&flagMovementStatus, "movement-status", "", "recent|slow. Accepted by the shared query builder; inferred from the client, not separately proven on this path.")
+	cmd.Flags().StringVar(&flagSortBy, "sort-by", "", "Verified live on this path (sort_by=on_hand&sort_dir=desc).")
+	cmd.Flags().StringVar(&flagSortDir, "sort-dir", "", "")
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "max 200 int")
 
 	return cmd
 }

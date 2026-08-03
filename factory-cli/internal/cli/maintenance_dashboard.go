@@ -12,10 +12,15 @@ import (
 )
 
 func newMaintenanceDashboardCmd(flags *rootFlags) *cobra.Command {
+	var flagDepartment int
+	var flagLine string
+	var flagPriority string
+	var flagDateFrom string
+	var flagDateTo string
 
 	cmd := &cobra.Command{
 		Use:         "dashboard",
-		Short:       "GET /maintenance/dashboard/ — maintenance dashboard",
+		Short:       "One-screen plant health: asset counts by status, open/critical work orders, breakdowns and production downtime minutes",
 		Example:     "  jivo-factory-pp-cli maintenance dashboard",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.dashboard", "pp:method": "GET", "pp:path": "/maintenance/dashboard/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newMaintenanceDashboardCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/dashboard/"
 			params := map[string]string{}
+			if flagDepartment != 0 {
+				params["department"] = formatCLIParamValue(flagDepartment)
+			}
+			if flagLine != "" {
+				params["line"] = formatCLIParamValue(flagLine)
+			}
+			if flagPriority != "" {
+				params["priority"] = formatCLIParamValue(flagPriority)
+			}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newMaintenanceDashboardCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagDepartment, "department", 0, "asset-department id (see maintenance-asset-departments) int")
+	cmd.Flags().StringVar(&flagLine, "line", "", "free-text production line code")
+	cmd.Flags().StringVar(&flagPriority, "priority", "", "NORMAL | HIGH | CRITICAL")
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD date")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD date")
 
 	return cmd
 }

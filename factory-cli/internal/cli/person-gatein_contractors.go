@@ -15,7 +15,7 @@ func newPersonGateinContractorsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "contractors",
-		Short:       "GET /person-gatein/contractors/ — contractor master",
+		Short:       "The labour-contractor master — contractor name, contact person, mobile and contract expiry date.",
 		Example:     "  jivo-factory-pp-cli person-gatein contractors",
 		Annotations: map[string]string{"pp:endpoint": "person-gatein.contractors", "pp:method": "GET", "pp:path": "/person-gatein/contractors/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

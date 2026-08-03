@@ -12,10 +12,11 @@ import (
 )
 
 func newGateCoreArrivalsCmd(flags *rootFlags) *cobra.Command {
+	var flagOpenOnly bool
 
 	cmd := &cobra.Command{
 		Use:         "arrivals",
-		Short:       "GET /gate-core/arrivals/ — gate core arrivals",
+		Short:       "Trucks at the gate — one row per physical vehicle arrival, with every company's gate-in and gate-out on that truck.",
 		Example:     "  jivo-factory-pp-cli gate-core arrivals",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.arrivals", "pp:method": "GET", "pp:path": "/gate-core/arrivals/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newGateCoreArrivalsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/arrivals/"
 			params := map[string]string{}
+			if flagOpenOnly != false {
+				params["open_only"] = formatCLIParamValue(flagOpenOnly)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newGateCoreArrivalsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagOpenOnly, "open-only", false, "send literally 'true' (observed in bundle as ?open_only=true). Verified live: 200 rows -> 8 rows.")
 
 	return cmd
 }

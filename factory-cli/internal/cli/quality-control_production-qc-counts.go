@@ -15,7 +15,7 @@ func newQualityControlProductionQcCountsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "production-qc-counts",
-		Short:       "GET /quality-control/production-qc/counts/ — quality control production qc counts",
+		Short:       "Production QC scoreboard: how many QC sessions are draft, submitted, approved and rejected.",
 		Example:     "  jivo-factory-pp-cli quality-control production-qc-counts",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.production-qc-counts", "pp:method": "GET", "pp:path": "/quality-control/production-qc/counts/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

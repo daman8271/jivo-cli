@@ -12,10 +12,15 @@ import (
 )
 
 func newGrpoPendingCmd(flags *rootFlags) *cobra.Command {
+	var flagYear int
+	var flagMonth int
+	var flagSearch string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "pending",
-		Short:       "GET /grpo/pending/ — grpo pending",
+		Short:       "Gate entries that have cleared QC and are waiting to be posted to SAP — the actual GRPO work queue",
 		Example:     "  jivo-factory-pp-cli grpo pending",
 		Annotations: map[string]string{"pp:endpoint": "grpo.pending", "pp:method": "GET", "pp:path": "/grpo/pending/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newGrpoPendingCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/grpo/pending/"
 			params := map[string]string{}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "grpo", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newGrpoPendingCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagYear, "year", 0, "omit year+month for all-time (327 vs 97 for 2026-07 on OIL) int")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "1-12 int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "verified: search=<entry_no> narrows to 1")
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "capped at 100 int")
 
 	return cmd
 }

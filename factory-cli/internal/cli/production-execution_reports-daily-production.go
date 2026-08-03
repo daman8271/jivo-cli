@@ -16,7 +16,7 @@ func newProductionExecutionReportsDailyProductionCmd(flags *rootFlags) *cobra.Co
 
 	cmd := &cobra.Command{
 		Use:         "reports-daily-production",
-		Short:       "GET /production-execution/reports/daily-production/ — daily production report",
+		Short:       "Every production run on one date, with its segments — the shift report a plant head asks for each morning.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-daily-production --date 2026-01-15",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-daily-production", "pp:method": "GET", "pp:path": "/production-execution/reports/daily-production/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,7 +87,7 @@ func newProductionExecutionReportsDailyProductionCmd(flags *rootFlags) *cobra.Co
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagDate, "date", "", "Report date (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagDate, "date", "", "YYYY-MM-DD. Missing → 400 {'detail':'date query parameter is required.'}")
 
 	return cmd
 }

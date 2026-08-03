@@ -10,22 +10,23 @@ import (
 func newGrpoCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "grpo",
-		Short:       "GRPO — goods-receipt POs (material & service)",
+		Short:       "GRPO = 'Goods Receipt PO' — the step where material that has physically arrived at a JIVO plant gets booked into SAP as",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
 	cmd.AddCommand(newGrpoAllEntriesCmd(flags))
+	cmd.AddCommand(newGrpoAttachmentsCmd(flags))
 	cmd.AddCommand(newGrpoHistoryCmd(flags))
 	cmd.AddCommand(newGrpoHistoryDetailCmd(flags))
+	cmd.AddCommand(newGrpoInspectionReportCmd(flags))
 	cmd.AddCommand(newGrpoPendingCmd(flags))
 	cmd.AddCommand(newGrpoPreviewCmd(flags))
 	cmd.AddCommand(newGrpoServiceHistoryCmd(flags))
 	cmd.AddCommand(newGrpoServiceHistoryDetailCmd(flags))
 	cmd.AddCommand(newGrpoServiceOptionsCmd(flags))
 	cmd.AddCommand(newGrpoServicePendingCmd(flags))
-	cmd.AddCommand(newGrpoServicePreviewCmd(flags))
 	cmd.AddCommand(newGrpoSummaryCmd(flags))
 	return cmd
 }

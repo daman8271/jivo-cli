@@ -15,7 +15,7 @@ func newGateCoreBstReturnsEligibleOutsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "bst-returns-eligible-outs",
-		Short:       "GET /gate-core/bst-returns/eligible-outs/ — gate core bst returns eligible outs",
+		Short:       "BST-outs eligible to be returned.",
 		Example:     "  jivo-factory-pp-cli gate-core bst-returns-eligible-outs",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.bst-returns-eligible-outs", "pp:method": "GET", "pp:path": "/gate-core/bst-returns/eligible-outs/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -12,14 +12,15 @@ import (
 )
 
 func newVehicleManagementVehicleEntriesListByStatusCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
 	var flagEntryType string
 	var flagFromDate string
 	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "vehicle-entries-list-by-status",
-		Short:       "GET /vehicle-management/vehicle-entries/list-by-status/ — vehicle entries grouped by status",
-		Example:     "  jivo-factory-pp-cli vehicle-management vehicle-entries-list-by-status --entry-type example-value",
+		Short:       "The same gate log, but filtered to one status — the only way to actually filter entries by status.",
+		Example:     "  jivo-factory-pp-cli vehicle-management vehicle-entries-list-by-status --status example-value --entry-type example-value --from-date 2026-01-15 --to-date 2026-01-15",
 		Annotations: map[string]string{"pp:endpoint": "vehicle-management.vehicle-entries-list-by-status", "pp:method": "GET", "pp:path": "/vehicle-management/vehicle-entries/list-by-status/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -28,8 +29,17 @@ func newVehicleManagementVehicleEntriesListByStatusCmd(flags *rootFlags) *cobra.
 			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
 			}
+			if !cmd.Flags().Changed("status") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "status")
+			}
 			if !cmd.Flags().Changed("entry-type") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "entry-type")
+			}
+			if !cmd.Flags().Changed("from-date") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "from-date")
+			}
+			if !cmd.Flags().Changed("to-date") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "to-date")
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -38,6 +48,9 @@ func newVehicleManagementVehicleEntriesListByStatusCmd(flags *rootFlags) *cobra.
 
 			path := "/vehicle-management/vehicle-entries/list-by-status/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			if flagEntryType != "" {
 				params["entry_type"] = formatCLIParamValue(flagEntryType)
 			}
@@ -95,9 +108,10 @@ func newVehicleManagementVehicleEntriesListByStatusCmd(flags *rootFlags) *cobra.
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagEntryType, "entry-type", "", "Entry type")
-	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "Window start (YYYY-MM-DD)")
-	cmd.Flags().StringVar(&flagToDate, "to-date", "", "Window end (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "Live-observed values: DRAFT, IN_PROGRESS, COMPLETED, CANCELLED, QC_PENDING, QC_COMPLETED, QC_AWAITING_QAM")
+	cmd.Flags().StringVar(&flagEntryType, "entry-type", "", "same 8 values as vehicle-entries; also required — the 400 cascade is status, then entry_type, then from_date")
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "required despite the July spec marking it optional — verified live date YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "required despite the July spec marking it optional — verified live date YYYY-MM-DD")
 
 	return cmd
 }

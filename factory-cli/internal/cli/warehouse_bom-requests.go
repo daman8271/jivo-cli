@@ -12,10 +12,12 @@ import (
 )
 
 func newWarehouseBomRequestsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagProductionRunId string
 
 	cmd := &cobra.Command{
 		Use:         "bom-requests",
-		Short:       "GET /warehouse/bom-requests/ — warehouse bom requests",
+		Short:       "Material requests raised by production against a run — what the line asked for, what the warehouse approved",
 		Example:     "  jivo-factory-pp-cli warehouse bom-requests",
 		Annotations: map[string]string{"pp:endpoint": "warehouse.bom-requests", "pp:method": "GET", "pp:path": "/warehouse/bom-requests/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newWarehouseBomRequestsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/warehouse/bom-requests/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagProductionRunId != "" {
+				params["production_run_id"] = formatCLIParamValue(flagProductionRunId)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "warehouse", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newWarehouseBomRequestsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "VERIFIED server-side: ?status=PARTIALLY_APPROVED on JIVO_OIL returned 77 of 95 rows.")
+	cmd.Flags().StringVar(&flagProductionRunId, "production-run-id", "", "VERIFIED: ?production_run_id=141 on JIVO_OIL returned the 1 matching request.")
 
 	return cmd
 }

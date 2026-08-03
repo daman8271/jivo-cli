@@ -12,10 +12,12 @@ import (
 )
 
 func newQualityControlInspectionsCountsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "inspections-counts",
-		Short:       "GET /quality-control/inspections/counts/ — quality control inspections counts",
+		Short:       "One-line QC scoreboard: how many raw-material inspections sit in each stage right now.",
 		Example:     "  jivo-factory-pp-cli quality-control inspections-counts",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.inspections-counts", "pp:method": "GET", "pp:path": "/quality-control/inspections/counts/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newQualityControlInspectionsCountsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/quality-control/inspections/counts/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newQualityControlInspectionsCountsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "CONFIRMED working: with 2026-08-01..2026-08-03 the OIL counts dropped from completed 1044 to completed 11 (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "(YYYY-MM-DD)")
 
 	return cmd
 }

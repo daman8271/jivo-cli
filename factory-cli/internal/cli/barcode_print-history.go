@@ -12,10 +12,15 @@ import (
 )
 
 func newBarcodePrintHistoryCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
+	var flagLabelType string
+	var flagPrintType string
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "print-history",
-		Short:       "GET /barcode/print/history/ — barcode print history",
+		Short:       "Label print audit trail — every original print and reprint, with printer, operator and reprint reason.",
 		Example:     "  jivo-factory-pp-cli barcode print-history",
 		Annotations: map[string]string{"pp:endpoint": "barcode.print-history", "pp:method": "GET", "pp:path": "/barcode/print/history/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newBarcodePrintHistoryCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/print/history/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagLabelType != "" {
+				params["label_type"] = formatCLIParamValue(flagLabelType)
+			}
+			if flagPrintType != "" {
+				params["print_type"] = formatCLIParamValue(flagPrintType)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newBarcodePrintHistoryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "without it, bare array capped at 500 — and OIL has 329,931 rows int")
+	cmd.Flags().StringVar(&flagLabelType, "label-type", "", "verified live. BOX | PALLET")
+	cmd.Flags().StringVar(&flagPrintType, "print-type", "", "verified live. ORIGINAL | REPRINT")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "UI-sourced (PrintHistoryPage), not separately verified")
 
 	return cmd
 }

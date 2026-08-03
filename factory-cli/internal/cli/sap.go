@@ -10,7 +10,7 @@ import (
 func newSapCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "sap",
-		Short:       "Manage sap command groups",
+		Short:       "This corner of the factory app answers one question: can we actually build what SAP says we are going to build",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
@@ -18,6 +18,7 @@ func newSapCmd(flags *rootFlags) *cobra.Command {
 
 	cmd.AddCommand(newSapPlanDashboardDetailsCmd(flags))
 	cmd.AddCommand(newSapPlanDashboardProcurementCmd(flags))
+	cmd.AddCommand(newSapPlanDashboardSkuCmd(flags))
 	cmd.AddCommand(newSapPlanDashboardSummaryCmd(flags))
 	return cmd
 }

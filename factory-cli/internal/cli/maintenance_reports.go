@@ -12,10 +12,17 @@ import (
 )
 
 func newMaintenanceReportsCmd(flags *rootFlags) *cobra.Command {
+	var flagReportType string
+	var flagDateFrom string
+	var flagDateTo string
+	var flagDepartment int
+	var flagAsset int
+	var flagLine string
+	var flagPriority string
 
 	cmd := &cobra.Command{
 		Use:         "reports",
-		Short:       "GET /maintenance/reports/ — maintenance reports",
+		Short:       "Twelve canned maintenance reports (daily, monthly, PM compliance, breakdown, downtime pareto, MTTR, MTBF, asset history",
 		Example:     "  jivo-factory-pp-cli maintenance reports",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.reports", "pp:method": "GET", "pp:path": "/maintenance/reports/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +33,27 @@ func newMaintenanceReportsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/reports/"
 			params := map[string]string{}
+			if flagReportType != "" {
+				params["report_type"] = formatCLIParamValue(flagReportType)
+			}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
+			if flagDepartment != 0 {
+				params["department"] = formatCLIParamValue(flagDepartment)
+			}
+			if flagAsset != 0 {
+				params["asset"] = formatCLIParamValue(flagAsset)
+			}
+			if flagLine != "" {
+				params["line"] = formatCLIParamValue(flagLine)
+			}
+			if flagPriority != "" {
+				params["priority"] = formatCLIParamValue(flagPriority)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +102,13 @@ func newMaintenanceReportsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagReportType, "report-type", "", "daily (default)")
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD; defaults to today, so ALWAYS pass a range or you get a one-day report date")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD; defaults to today date")
+	cmd.Flags().IntVar(&flagDepartment, "department", 0, "int")
+	cmd.Flags().IntVar(&flagAsset, "asset", 0, "int")
+	cmd.Flags().StringVar(&flagLine, "line", "", "")
+	cmd.Flags().StringVar(&flagPriority, "priority", "", "NORMAL | HIGH | CRITICAL")
 
 	return cmd
 }

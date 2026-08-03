@@ -10,7 +10,7 @@ import (
 func newDriverManagementCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "driver-management",
-		Short:       "Manage driver management command groups",
+		Short:       "This is the factory's transport master file plus the gate's vehicle-entry log.",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),

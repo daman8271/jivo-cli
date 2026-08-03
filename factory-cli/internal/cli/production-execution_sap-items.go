@@ -12,13 +12,24 @@ import (
 )
 
 func newProductionExecutionSapItemsCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagProducedOnly bool
 
 	cmd := &cobra.Command{
 		Use:         "sap-items",
-		Short:       "GET /production-execution/sap/items/ — production execution sap items",
-		Example:     "  jivo-factory-pp-cli production-execution sap-items",
+		Short:       "Search the SAP item master for a SKU to raise a run against. Required: search.",
+		Example:     "  jivo-factory-pp-cli production-execution sap-items --search example-value",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.sap-items", "pp:method": "GET", "pp:path": "/production-execution/sap/items/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("search") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "search")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -26,6 +37,12 @@ func newProductionExecutionSapItemsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/production-execution/sap/items/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagProducedOnly != false {
+				params["produced_only"] = formatCLIParamValue(flagProducedOnly)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +91,8 @@ func newProductionExecutionSapItemsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "Effectively required. With no `search` the endpoint returns 200 with [] — it does NOT 400.")
+	cmd.Flags().BoolVar(&flagProducedOnly, "produced-only", false, "Sent as the string 'true'.")
 
 	return cmd
 }

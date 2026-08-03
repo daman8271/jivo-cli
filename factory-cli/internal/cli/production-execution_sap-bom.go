@@ -16,7 +16,7 @@ func newProductionExecutionSapBomCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "sap-bom",
-		Short:       "GET /production-execution/sap/bom/ — bill of materials for an item",
+		Short:       "Read the SAP bill of materials for one finished-goods item — what goes into one unit and at what price.",
 		Example:     "  jivo-factory-pp-cli production-execution sap-bom --item-code example-value",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.sap-bom", "pp:method": "GET", "pp:path": "/production-execution/sap/bom/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,7 +87,7 @@ func newProductionExecutionSapBomCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagItemCode, "item-code", "", "SAP item code (e.g. FG0000085)")
+	cmd.Flags().StringVar(&flagItemCode, "item-code", "", "SAP ItemCode, e.g. FG0000085. Missing → 400 {'detail':'item_code query parameter is required.'}")
 
 	return cmd
 }

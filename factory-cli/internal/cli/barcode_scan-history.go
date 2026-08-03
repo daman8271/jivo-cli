@@ -12,10 +12,15 @@ import (
 )
 
 func newBarcodeScanHistoryCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
+	var flagScanType string
+	var flagEntityType string
+	var flagScanResult string
 
 	cmd := &cobra.Command{
 		Use:         "scan-history",
-		Short:       "GET /barcode/scan/history/ — barcode scan history",
+		Short:       "Every barcode scan the factory has made — type, entity, result, operator and device.",
 		Example:     "  jivo-factory-pp-cli barcode scan-history",
 		Annotations: map[string]string{"pp:endpoint": "barcode.scan-history", "pp:method": "GET", "pp:path": "/barcode/scan/history/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newBarcodeScanHistoryCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/scan/history/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagScanType != "" {
+				params["scan_type"] = formatCLIParamValue(flagScanType)
+			}
+			if flagEntityType != "" {
+				params["entity_type"] = formatCLIParamValue(flagEntityType)
+			}
+			if flagScanResult != "" {
+				params["scan_result"] = formatCLIParamValue(flagScanResult)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newBarcodeScanHistoryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "without it, bare array capped at 500 of ~80,700 int")
+	cmd.Flags().StringVar(&flagScanType, "scan-type", "", "verified live (scan_type=SHIP -> 80,711 of 80,733).")
+	cmd.Flags().StringVar(&flagEntityType, "entity-type", "", "verified live (entity_type=BOX -> 80,402). Observed: BOX, PALLET")
+	cmd.Flags().StringVar(&flagScanResult, "scan-result", "", "verified live (scan_result=SUCCESS -> 72,495). Observed: SUCCESS")
 
 	return cmd
 }

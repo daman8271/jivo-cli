@@ -12,10 +12,11 @@ import (
 )
 
 func newPersonGateinVisitorsCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "visitors",
-		Short:       "GET /person-gatein/visitors/ — visitor master",
+		Short:       "The visitor master — everyone ever registered at the gate, with mobile, the company they came from",
 		Example:     "  jivo-factory-pp-cli person-gatein visitors",
 		Annotations: map[string]string{"pp:endpoint": "person-gatein.visitors", "pp:method": "GET", "pp:path": "/person-gatein/visitors/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newPersonGateinVisitorsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/person-gatein/visitors/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "person-gatein", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newPersonGateinVisitorsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "*** SILENTLY IGNORED — DO NOT PUBLISH AS A FLAG. *** The SPA sends it.")
 
 	return cmd
 }

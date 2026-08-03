@@ -12,10 +12,13 @@ import (
 )
 
 func newProductionExecutionReportsAnalyticsResourceConsumptionCmd(flags *rootFlags) *cobra.Command {
+	var flagDateFrom string
+	var flagDateTo string
+	var flagLine int
 
 	cmd := &cobra.Command{
 		Use:         "reports-analytics-resource-consumption",
-		Short:       "GET /production-execution/reports/analytics/resource-consumption/ — production execution reports analytics resource",
+		Short:       "Day-by-day utility and labour consumption against production, with cost per case.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-analytics-resource-consumption",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-analytics-resource-consumption", "pp:method": "GET", "pp:path": "/production-execution/reports/analytics/resource-consumption/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +29,15 @@ func newProductionExecutionReportsAnalyticsResourceConsumptionCmd(flags *rootFla
 
 			path := "/production-execution/reports/analytics/resource-consumption/"
 			params := map[string]string{}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
+			if flagLine != 0 {
+				params["line"] = formatCLIParamValue(flagLine)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +86,9 @@ func newProductionExecutionReportsAnalyticsResourceConsumptionCmd(flags *rootFla
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD")
+	cmd.Flags().IntVar(&flagLine, "line", 0, "Verified live: 8,100 B → 6,266 B with line=3 on OIL. int")
 
 	return cmd
 }

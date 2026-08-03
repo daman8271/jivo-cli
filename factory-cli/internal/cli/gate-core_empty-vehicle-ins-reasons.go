@@ -15,7 +15,7 @@ func newGateCoreEmptyVehicleInsReasonsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "empty-vehicle-ins-reasons",
-		Short:       "GET /gate-core/empty-vehicle-ins/reasons/ — gate core empty vehicle ins reasons",
+		Short:       "The valid reasons an empty vehicle can be gated in — use this to populate or validate the reason filter.",
 		Example:     "  jivo-factory-pp-cli gate-core empty-vehicle-ins-reasons",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.empty-vehicle-ins-reasons", "pp:method": "GET", "pp:path": "/gate-core/empty-vehicle-ins/reasons/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

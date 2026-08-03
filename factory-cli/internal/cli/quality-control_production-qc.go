@@ -15,7 +15,7 @@ func newQualityControlProductionQcCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "production-qc",
-		Short:       "GET /quality-control/production-qc/ — quality control production qc",
+		Short:       "List production QC sessions — in-process and final quality checks recorded against production runs.",
 		Example:     "  jivo-factory-pp-cli quality-control production-qc",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.production-qc", "pp:method": "GET", "pp:path": "/quality-control/production-qc/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

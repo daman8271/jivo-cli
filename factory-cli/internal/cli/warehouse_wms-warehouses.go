@@ -15,7 +15,7 @@ func newWarehouseWmsWarehousesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "wms-warehouses",
-		Short:       "GET /warehouse/wms/warehouses/ — warehouse wms warehouses",
+		Short:       "The company's SAP warehouse master — every warehouse code and name, as the app's warehouse dropdowns see it.",
 		Example:     "  jivo-factory-pp-cli warehouse wms-warehouses",
 		Annotations: map[string]string{"pp:endpoint": "warehouse.wms-warehouses", "pp:method": "GET", "pp:path": "/warehouse/wms/warehouses/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

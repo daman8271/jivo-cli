@@ -12,10 +12,14 @@ import (
 )
 
 func newBarcodeDispatchSessionsCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
+	var flagStatus string
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-sessions",
-		Short:       "GET /barcode/dispatch/sessions/ — barcode dispatch sessions (all)",
+		Short:       "All dispatch sessions — one per SAP bill being loaded, with expected vs scanned vs pending quantity and SAP sync state.",
 		Example:     "  jivo-factory-pp-cli barcode dispatch-sessions",
 		Annotations: map[string]string{"pp:endpoint": "barcode.dispatch-sessions", "pp:method": "GET", "pp:path": "/barcode/dispatch/sessions/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newBarcodeDispatchSessionsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/dispatch/sessions/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newBarcodeDispatchSessionsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "ESSENTIAL — the unpaginated response is 4.5 MB on MART and TIMED OUT on OIL during the bulk survey int")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "verified live (status=COMPLETED -> 2).")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "verified live — matches bill_number (search=706260740 -> 1)")
 
 	return cmd
 }

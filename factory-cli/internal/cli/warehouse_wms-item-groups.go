@@ -15,7 +15,7 @@ func newWarehouseWmsItemGroupsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "wms-item-groups",
-		Short:       "GET /warehouse/wms/item-groups/ — warehouse wms item groups",
+		Short:       "The company's SAP item-group master (FINISHED, RAW MATERIAL, PACKAGING MATERIAL, …) with its numeric group codes.",
 		Example:     "  jivo-factory-pp-cli warehouse wms-item-groups",
 		Annotations: map[string]string{"pp:endpoint": "warehouse.wms-item-groups", "pp:method": "GET", "pp:path": "/warehouse/wms/item-groups/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

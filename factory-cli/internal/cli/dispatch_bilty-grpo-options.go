@@ -15,7 +15,7 @@ func newDispatchBiltyGrpoOptionsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "bilty-grpo-options",
-		Short:       "GET /dispatch/bilty-grpo/options/ — dispatch bilty grpo options",
+		Short:       "The SAP master-data pick-lists used when booking a bilty as a service GRPO — branches, tax codes, G/L accounts",
 		Example:     "  jivo-factory-pp-cli dispatch bilty-grpo-options",
 		Annotations: map[string]string{"pp:endpoint": "dispatch.bilty-grpo-options", "pp:method": "GET", "pp:path": "/dispatch/bilty-grpo/options/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -12,10 +12,15 @@ import (
 )
 
 func newGrpoServicePendingCmd(flags *rootFlags) *cobra.Command {
+	var flagYear int
+	var flagMonth int
+	var flagSearch string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "service-pending",
-		Short:       "GET /grpo/service/pending/ — grpo service pending",
+		Short:       "Dispatched vehicles whose transporter freight (bilty)",
 		Example:     "  jivo-factory-pp-cli grpo service-pending",
 		Annotations: map[string]string{"pp:endpoint": "grpo.service-pending", "pp:method": "GET", "pp:path": "/grpo/service/pending/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newGrpoServicePendingCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/grpo/service/pending/"
 			params := map[string]string{}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "grpo", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newGrpoServicePendingCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagYear, "year", 0, "CRITICAL: unlike every other list here, this one DEFAULTS TO THE CURRENT MONTH.")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "1-12 int")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "server docstring: 'search over bill no / bilty / vehicle / driver / transporter / entry'")
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "capped at 100 int")
 
 	return cmd
 }

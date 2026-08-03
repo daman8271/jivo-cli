@@ -15,7 +15,7 @@ func newDispatchOpenBiltiesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "open-bilties",
-		Short:       "GET /dispatch/open-bilties/ — dispatch open bilties",
+		Short:       "Bilties whose service GRPO is posted in SAP but which have not yet been rolled into a transporter A/P invoice — the",
 		Example:     "  jivo-factory-pp-cli dispatch open-bilties",
 		Annotations: map[string]string{"pp:endpoint": "dispatch.open-bilties", "pp:method": "GET", "pp:path": "/dispatch/open-bilties/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

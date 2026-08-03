@@ -124,7 +124,7 @@ func buildAgentContext(rootCmd *cobra.Command) agentContext {
 		SchemaVersion: agentContextSchemaVersion,
 		CLI: agentContextCLI{
 			Name:        "jivo-factory-pp-cli",
-			Description: "JIVO factory management CLI (ji.jivo.in / factory.jivo.",
+			Description: "Read-only access to every live endpoint of JIVO's factory system across all three companies",
 			Version:     rootCmd.Version,
 		},
 		Auth: agentContextAuth{

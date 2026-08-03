@@ -12,10 +12,12 @@ import (
 )
 
 func newQualityControlInspectionsAwaitingQamCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "inspections-awaiting-qam",
-		Short:       "GET /quality-control/inspections/awaiting-qam/ — quality control inspections awaiting qam",
+		Short:       "Chemist-approved inspections waiting on the QA Manager's verdict (stage QA_CHEMIST_APPROVED).",
 		Example:     "  jivo-factory-pp-cli quality-control inspections-awaiting-qam",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.inspections-awaiting-qam", "pp:method": "GET", "pp:path": "/quality-control/inspections/awaiting-qam/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newQualityControlInspectionsAwaitingQamCmd(flags *rootFlags) *cobra.Command
 
 			path := "/quality-control/inspections/awaiting-qam/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newQualityControlInspectionsAwaitingQamCmd(flags *rootFlags) *cobra.Command
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "(YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "(YYYY-MM-DD)")
 
 	return cmd
 }

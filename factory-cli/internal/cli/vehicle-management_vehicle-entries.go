@@ -18,7 +18,7 @@ func newVehicleManagementVehicleEntriesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "vehicle-entries",
-		Short:       "GET /vehicle-management/vehicle-entries/ — vehicle entries in a window",
+		Short:       "The gate log: every vehicle that entered the plant for one movement type in a date window, with vehicle, driver",
 		Example:     "  jivo-factory-pp-cli vehicle-management vehicle-entries --entry-type example-value --from-date 2026-01-15 --to-date 2026-01-15",
 		Annotations: map[string]string{"pp:endpoint": "vehicle-management.vehicle-entries", "pp:method": "GET", "pp:path": "/vehicle-management/vehicle-entries/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -101,9 +101,9 @@ func newVehicleManagementVehicleEntriesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagEntryType, "entry-type", "", "Entry type (e.g. RAW_MATERIAL, EMPTY_VEHICLE, JOB_WORK)")
-	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "Window start (YYYY-MM-DD)")
-	cmd.Flags().StringVar(&flagToDate, "to-date", "", "Window end (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagEntryType, "entry-type", "", "EXACTLY ONE value per call.")
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "inclusive; omitting returns 400 {'detail':'from_date query parameter is required'} date YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "inclusive; omitting returns 400 {'detail':'to_date query parameter is required'} date YYYY-MM-DD")
 
 	return cmd
 }

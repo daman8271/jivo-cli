@@ -13,11 +13,12 @@ import (
 
 func newNonMovingRmReportCmd(flags *rootFlags) *cobra.Command {
 	var flagAge int
+	var flagItemGroup int
 
 	cmd := &cobra.Command{
 		Use:         "report",
-		Short:       "GET /non-moving-rm/report/ — non-moving raw-material report (replaces the dead bare endpoint)",
-		Example:     "  jivo-factory-pp-cli non-moving-rm report --age 42",
+		Short:       "Dead and slow-moving stock — items whose last movement is older than N days, with quantity",
+		Example:     "  jivo-factory-pp-cli non-moving-rm report --age 42 --item-group 42",
 		Annotations: map[string]string{"pp:endpoint": "non-moving-rm.report", "pp:method": "GET", "pp:path": "/non-moving-rm/report/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -29,6 +30,9 @@ func newNonMovingRmReportCmd(flags *rootFlags) *cobra.Command {
 			if !cmd.Flags().Changed("age") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "age")
 			}
+			if !cmd.Flags().Changed("item-group") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "item-group")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -38,6 +42,9 @@ func newNonMovingRmReportCmd(flags *rootFlags) *cobra.Command {
 			params := map[string]string{}
 			if flagAge != 0 {
 				params["age"] = formatCLIParamValue(flagAge)
+			}
+			if flagItemGroup != 0 {
+				params["item_group"] = formatCLIParamValue(flagItemGroup)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "non-moving-rm", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -87,7 +94,8 @@ func newNonMovingRmReportCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().IntVar(&flagAge, "age", 0, "Minimum age in days (required; 400 without it)")
+	cmd.Flags().IntVar(&flagAge, "age", 0, "Hard requirement — 400 {'detail':'Invalid query parameters.','errors':{'age':['This field is required.']}} without it.")
+	cmd.Flags().IntVar(&flagItemGroup, "item-group", 0, "Nominally optional but REQUIRED IN PRACTICE. Omit it and the API returns zero rows with meta.")
 
 	return cmd
 }

@@ -12,10 +12,19 @@ import (
 )
 
 func newDashboardsStockCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagItemGroup string
+	var flagWarehouse string
+	var flagStatus string
+	var flagMovementStatus string
+	var flagSortBy string
+	var flagSortDir string
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "stock",
-		Short:       "GET /dashboards/stock/ — dashboards stock",
+		Short:       "On-hand stock vs its minimum-stock benchmark, per item per warehouse, flagged healthy / low / critical.",
 		Example:     "  jivo-factory-pp-cli dashboards stock",
 		Annotations: map[string]string{"pp:endpoint": "dashboards.stock", "pp:method": "GET", "pp:path": "/dashboards/stock/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +35,33 @@ func newDashboardsStockCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/dashboards/stock/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagItemGroup != "" {
+				params["item_group"] = formatCLIParamValue(flagItemGroup)
+			}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagMovementStatus != "" {
+				params["movement_status"] = formatCLIParamValue(flagMovementStatus)
+			}
+			if flagSortBy != "" {
+				params["sort_by"] = formatCLIParamValue(flagSortBy)
+			}
+			if flagSortDir != "" {
+				params["sort_dir"] = formatCLIParamValue(flagSortDir)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboards", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +110,15 @@ func newDashboardsStockCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "Matches item code, item name or warehouse.")
+	cmd.Flags().StringVar(&flagItemGroup, "item-group", "", "Item group NAME, not the code — e.g. 'PACKAGING MATERIAL'. Verified: narrows OIL from 127,065 to 49,460 rows.")
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "Comma-separated warehouse codes (CSV works here).")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "CSV. Allowed values, quoted from the API's own 400: critical, healthy, low, unset.")
+	cmd.Flags().StringVar(&flagMovementStatus, "movement-status", "", "CSV. recent | slow. 'recent' = consumed lately, 'slow' = Slow Moving.")
+	cmd.Flags().StringVar(&flagSortBy, "sort-by", "", "item_code | item_name | warehouse | on_hand | min_stock | health_ratio. UI default is health_ratio.")
+	cmd.Flags().StringVar(&flagSortDir, "sort-dir", "", "asc | desc. UI default asc (worst health first).")
+	cmd.Flags().StringVar(&flagPage, "page", "", "1-based. int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Default 50, maximum 200. int")
 
 	return cmd
 }

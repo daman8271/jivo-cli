@@ -15,7 +15,7 @@ func newAccountsUsersCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "users",
-		Short:       "GET /accounts/users/ — accounts users",
+		Short:       "List every factory app user (name, email, employee code, active/staff flags) — the notification-recipient picker.",
 		Example:     "  jivo-factory-pp-cli accounts users",
 		Annotations: map[string]string{"pp:endpoint": "accounts.users", "pp:method": "GET", "pp:path": "/accounts/users/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

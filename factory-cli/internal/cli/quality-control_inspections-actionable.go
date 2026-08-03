@@ -12,10 +12,12 @@ import (
 )
 
 func newQualityControlInspectionsActionableCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "inspections-actionable",
-		Short:       "GET /quality-control/inspections/actionable/ — quality control inspections actionable",
+		Short:       "Everything the QA team must act on right now — pending plus draft plus anything awaiting a decision.",
 		Example:     "  jivo-factory-pp-cli quality-control inspections-actionable",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.inspections-actionable", "pp:method": "GET", "pp:path": "/quality-control/inspections/actionable/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newQualityControlInspectionsActionableCmd(flags *rootFlags) *cobra.Command 
 
 			path := "/quality-control/inspections/actionable/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newQualityControlInspectionsActionableCmd(flags *rootFlags) *cobra.Command 
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "(YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "(YYYY-MM-DD)")
 
 	return cmd
 }

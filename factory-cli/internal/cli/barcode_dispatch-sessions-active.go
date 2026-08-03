@@ -12,10 +12,14 @@ import (
 )
 
 func newBarcodeDispatchSessionsActiveCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
+	var flagStatus string
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-sessions-active",
-		Short:       "GET /barcode/dispatch/sessions/active/ — barcode dispatch sessions active",
+		Short:       "Dispatch sessions still open on the floor — loading in progress or not yet started.",
 		Example:     "  jivo-factory-pp-cli barcode dispatch-sessions-active",
 		Annotations: map[string]string{"pp:endpoint": "barcode.dispatch-sessions-active", "pp:method": "GET", "pp:path": "/barcode/dispatch/sessions/active/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newBarcodeDispatchSessionsActiveCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/dispatch/sessions/active/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newBarcodeDispatchSessionsActiveCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "same 4 MB / timeout risk as the base list int")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "INFERRED — same viewset as the base list, not separately verified on this sub-path")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "INFERRED, same reason")
 
 	return cmd
 }

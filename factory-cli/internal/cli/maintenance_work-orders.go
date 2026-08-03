@@ -12,10 +12,17 @@ import (
 )
 
 func newMaintenanceWorkOrdersCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagStatus string
+	var flagWorkType string
+	var flagPriority string
+	var flagDepartment int
+	var flagLine string
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "work-orders",
-		Short:       "GET /maintenance/work-orders/ — maintenance work orders",
+		Short:       "Maintenance work orders — complaints, breakdowns and jobs against an asset, with downtime",
 		Example:     "  jivo-factory-pp-cli maintenance work-orders",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.work-orders", "pp:method": "GET", "pp:path": "/maintenance/work-orders/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +33,27 @@ func newMaintenanceWorkOrdersCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/work-orders/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagWorkType != "" {
+				params["work_type"] = formatCLIParamValue(flagWorkType)
+			}
+			if flagPriority != "" {
+				params["priority"] = formatCLIParamValue(flagPriority)
+			}
+			if flagDepartment != 0 {
+				params["department"] = formatCLIParamValue(flagDepartment)
+			}
+			if flagLine != "" {
+				params["line"] = formatCLIParamValue(flagLine)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +102,13 @@ func newMaintenanceWorkOrdersCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "spans work_order_no, title, problem_statement AND the related asset name — verified: search=LIVE matched 4 of 5 rows")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "DRAFT | OPEN | ASSIGNED | IN_PROGRESS | WAITING_SPARE | WAITING_VENDOR | ON_HOLD | COMPLETED | APPROVED | CLOSED")
+	cmd.Flags().StringVar(&flagWorkType, "work-type", "", "COMPLAINT | BREAKDOWN | GENERAL | PREVENTIVE | INSPECTION | CALIBRATION | AMC_VENDOR | PROJECT")
+	cmd.Flags().StringVar(&flagPriority, "priority", "", "NORMAL | HIGH | CRITICAL")
+	cmd.Flags().IntVar(&flagDepartment, "department", 0, "maintenance department id int")
+	cmd.Flags().StringVar(&flagLine, "line", "", "")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "bool")
 
 	return cmd
 }

@@ -12,10 +12,16 @@ import (
 )
 
 func newDashboardsInventoryAgeReportCmd(flags *rootFlags) *cobra.Command {
+	var flagItemGroup string
+	var flagSearch string
+	var flagMinAge int
+	var flagWarehouse string
+	var flagSubGroup string
+	var flagVariety string
 
 	cmd := &cobra.Command{
 		Use:         "inventory-age-report",
-		Short:       "GET /dashboards/inventory-age/report/ — dashboards inventory age report",
+		Short:       "Every item sitting in stock with how many days it has been there, its litres and its stock value",
 		Example:     "  jivo-factory-pp-cli dashboards inventory-age-report",
 		Annotations: map[string]string{"pp:endpoint": "dashboards.inventory-age-report", "pp:method": "GET", "pp:path": "/dashboards/inventory-age/report/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +32,24 @@ func newDashboardsInventoryAgeReportCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/dashboards/inventory-age/report/"
 			params := map[string]string{}
+			if flagItemGroup != "" {
+				params["item_group"] = formatCLIParamValue(flagItemGroup)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagMinAge != 0 {
+				params["min_age"] = formatCLIParamValue(flagMinAge)
+			}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
+			if flagSubGroup != "" {
+				params["sub_group"] = formatCLIParamValue(flagSubGroup)
+			}
+			if flagVariety != "" {
+				params["variety"] = formatCLIParamValue(flagVariety)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboards", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +98,12 @@ func newDashboardsInventoryAgeReportCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagItemGroup, "item-group", "", "Item group NAME (e.g. 'PACKAGING MATERIAL'), not the numeric code. Verified: 1,445 of OIL's 2,418 rows.")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "Item code or name; upper-cased by the UI. Verified: search=TIN returned 132 rows on OIL.")
+	cmd.Flags().IntVar(&flagMinAge, "min-age", 0, "INCLUSIVE lower bound — min_age=90 returned rows whose smallest days_age was exactly 90.")
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "SERVER-SIDE and working, though the UI filters this client-side.")
+	cmd.Flags().StringVar(&flagSubGroup, "sub-group", "", "Single value; same last-wins behaviour. Verified: sub_group=TIN → 63 rows on OIL.")
+	cmd.Flags().StringVar(&flagVariety, "variety", "", "Single value; same last-wins behaviour. Verified: variety=OLIVE → 95 rows, variety=POMACE → 138 on OIL.")
 
 	return cmd
 }

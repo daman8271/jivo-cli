@@ -12,10 +12,12 @@ import (
 )
 
 func newQualityControlSapItemsCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagLimit int
 
 	cmd := &cobra.Command{
 		Use:         "sap-items",
-		Short:       "GET /quality-control/sap-items/ — quality control sap items",
+		Short:       "Search the SAP item master from inside QC, to find the item code to map to a material type.",
 		Example:     "  jivo-factory-pp-cli quality-control sap-items",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.sap-items", "pp:method": "GET", "pp:path": "/quality-control/sap-items/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,10 +28,18 @@ func newQualityControlSapItemsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/quality-control/sap-items/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagLimit != 0 {
+				params["limit"] = formatCLIParamValue(flagLimit)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			// Honor --limit when the API accepts but ignores ?limit=N.
+			data = truncateJSONArray(data, flagLimit)
 			// Print provenance to stderr for human-facing output only.
 			// Machine-format flags (--json, --csv, --compact, --quiet, --plain,
 			// --select) and piped stdout suppress this line; the JSON envelope
@@ -74,6 +84,8 @@ func newQualityControlSapItemsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "the UI requires at least 2 characters ('Type at least 2 characters to search SAP items'). CONFIRMED working: ?")
+	cmd.Flags().IntVar(&flagLimit, "limit", 0, "UI always sends 50")
 
 	return cmd
 }

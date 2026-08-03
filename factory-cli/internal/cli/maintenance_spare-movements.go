@@ -12,10 +12,14 @@ import (
 )
 
 func newMaintenanceSpareMovementsCmd(flags *rootFlags) *cobra.Command {
+	var flagMovementType string
+	var flagSpare int
+	var flagWorkOrder int
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "spare-movements",
-		Short:       "GET /maintenance/spare-movements/ — maintenance spare movements",
+		Short:       "The spare stock ledger — every receipt, issue, consumption, return and adjustment with quantity and value.",
 		Example:     "  jivo-factory-pp-cli maintenance spare-movements",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.spare-movements", "pp:method": "GET", "pp:path": "/maintenance/spare-movements/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +30,18 @@ func newMaintenanceSpareMovementsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/spare-movements/"
 			params := map[string]string{}
+			if flagMovementType != "" {
+				params["movement_type"] = formatCLIParamValue(flagMovementType)
+			}
+			if flagSpare != 0 {
+				params["spare"] = formatCLIParamValue(flagSpare)
+			}
+			if flagWorkOrder != 0 {
+				params["work_order"] = formatCLIParamValue(flagWorkOrder)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newMaintenanceSpareMovementsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagMovementType, "movement-type", "", "RECEIPT | ISSUE | CONSUME | RETURN | ADJUSTMENT — verified on the fire twin, INFERRED here")
+	cmd.Flags().IntVar(&flagSpare, "spare", 0, "INFERRED by symmetry with fire-movements' fire_item int")
+	cmd.Flags().IntVar(&flagWorkOrder, "work-order", 0, "INFERRED int")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "INFERRED bool")
 
 	return cmd
 }

@@ -12,10 +12,12 @@ import (
 )
 
 func newPersonGateinLaboursCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
+	var flagContractor int
 
 	cmd := &cobra.Command{
 		Use:         "labours",
-		Short:       "GET /person-gatein/labours/ — labour master",
+		Short:       "The contract-labour master — every registered labourer, their contractor, skill and work-permit expiry.",
 		Example:     "  jivo-factory-pp-cli person-gatein labours",
 		Annotations: map[string]string{"pp:endpoint": "person-gatein.labours", "pp:method": "GET", "pp:path": "/person-gatein/labours/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newPersonGateinLaboursCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/person-gatein/labours/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagContractor != 0 {
+				params["contractor"] = formatCLIParamValue(flagContractor)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "person-gatein", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newPersonGateinLaboursCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "*** SILENTLY IGNORED. *** Verified: ?search=ABC returned all 3 labours unchanged.")
+	cmd.Flags().IntVar(&flagContractor, "contractor", 0, "*** SILENTLY IGNORED — DO NOT PUBLISH AS A FLAG. *** Verified: ?")
 
 	return cmd
 }

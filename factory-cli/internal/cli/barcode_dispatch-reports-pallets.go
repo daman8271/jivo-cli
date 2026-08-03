@@ -12,10 +12,18 @@ import (
 )
 
 func newBarcodeDispatchReportsPalletsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagBillNumber string
+	var flagCustomer string
+	var flagStatus string
+	var flagMaterialCode string
+	var flagPalletBarcode string
+	var flagBoxBarcode string
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-reports-pallets",
-		Short:       "GET /barcode/dispatch/reports/pallets/ — barcode dispatch reports pallets",
+		Short:       "Pallet-level dispatch report — boxes on each pallet, how many shipped, how many remain.",
 		Example:     "  jivo-factory-pp-cli barcode dispatch-reports-pallets",
 		Annotations: map[string]string{"pp:endpoint": "barcode.dispatch-reports-pallets", "pp:method": "GET", "pp:path": "/barcode/dispatch/reports/pallets/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +34,30 @@ func newBarcodeDispatchReportsPalletsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/dispatch/reports/pallets/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagBillNumber != "" {
+				params["bill_number"] = formatCLIParamValue(flagBillNumber)
+			}
+			if flagCustomer != "" {
+				params["customer"] = formatCLIParamValue(flagCustomer)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagMaterialCode != "" {
+				params["material_code"] = formatCLIParamValue(flagMaterialCode)
+			}
+			if flagPalletBarcode != "" {
+				params["pallet_barcode"] = formatCLIParamValue(flagPalletBarcode)
+			}
+			if flagBoxBarcode != "" {
+				params["box_barcode"] = formatCLIParamValue(flagBoxBarcode)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +106,14 @@ func newBarcodeDispatchReportsPalletsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "")
+	cmd.Flags().StringVar(&flagBillNumber, "bill-number", "", "")
+	cmd.Flags().StringVar(&flagCustomer, "customer", "", "")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "")
+	cmd.Flags().StringVar(&flagMaterialCode, "material-code", "", "")
+	cmd.Flags().StringVar(&flagPalletBarcode, "pallet-barcode", "", "verified live -> exactly 1 row")
+	cmd.Flags().StringVar(&flagBoxBarcode, "box-barcode", "", "")
 
 	return cmd
 }

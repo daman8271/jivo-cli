@@ -12,10 +12,17 @@ import (
 )
 
 func newProductionExecutionReportsProductionMovementCmd(flags *rootFlags) *cobra.Command {
+	var flagDateFrom string
+	var flagDateTo string
+	var flagWarehouse string
+	var flagTransactionType string
+	var flagDirection string
+	var flagProductionOnly bool
+	var flagLimit int
 
 	cmd := &cobra.Command{
 		Use:         "reports-production-movement",
-		Short:       "GET /production-execution/reports/production-movement/ — production execution reports production movement",
+		Short:       "SAP stock movements in and out of the production warehouses — every receipt, issue",
 		Example:     "  jivo-factory-pp-cli production-execution reports-production-movement",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-production-movement", "pp:method": "GET", "pp:path": "/production-execution/reports/production-movement/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,10 +33,33 @@ func newProductionExecutionReportsProductionMovementCmd(flags *rootFlags) *cobra
 
 			path := "/production-execution/reports/production-movement/"
 			params := map[string]string{}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
+			if flagTransactionType != "" {
+				params["transaction_type"] = formatCLIParamValue(flagTransactionType)
+			}
+			if flagDirection != "" {
+				params["direction"] = formatCLIParamValue(flagDirection)
+			}
+			if flagProductionOnly != false {
+				params["production_only"] = formatCLIParamValue(flagProductionOnly)
+			}
+			if flagLimit != 0 {
+				params["limit"] = formatCLIParamValue(flagLimit)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			// Honor --limit when the API accepts but ignores ?limit=N.
+			data = truncateJSONArray(data, flagLimit)
 			// Print provenance to stderr for human-facing output only.
 			// Machine-format flags (--json, --csv, --compact, --quiet, --plain,
 			// --select) and piped stdout suppress this line; the JSON envelope
@@ -74,6 +104,13 @@ func newProductionExecutionReportsProductionMovementCmd(flags *rootFlags) *cobra
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "YYYY-MM-DD. Defaults to today (echoed in meta).")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "YYYY-MM-DD. Verified live with a range + warehouse.")
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "Warehouse code from /reports/production-movement/filter-options/ — e.g. BH-PF, BH-PC, BH-PM, BH-WST, BH-FG.")
+	cmd.Flags().StringVar(&flagTransactionType, "transaction-type", "", "SAP TransType code from filter-options: 13 AR Invoice, 14 AR Credit, 15 Delivery, 16 Return, 18 AP Invoice, 19 AP Credit")
+	cmd.Flags().StringVar(&flagDirection, "direction", "", "Default 'all'. 'all' and 'out' are seen in the bundle; 'in' is inferred from the response's direction field (IN/OUT).")
+	cmd.Flags().BoolVar(&flagProductionOnly, "production-only", false, "Default true — restricts to production warehouses. Send false for all warehouses. bool")
+	cmd.Flags().IntVar(&flagLimit, "limit", 0, "Default 500 (echoed in meta); the UI sends 1000 on one screen.")
 
 	return cmd
 }

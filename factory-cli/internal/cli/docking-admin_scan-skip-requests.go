@@ -12,10 +12,11 @@ import (
 )
 
 func newDockingAdminScanSkipRequestsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
 
 	cmd := &cobra.Command{
 		Use:         "scan-skip-requests",
-		Short:       "GET /docking-admin/scan-skip-requests/ — docking admin scan skip requests",
+		Short:       "Requests from the dock to dispatch a vehicle WITHOUT barcode scanning (old barcodes, loose cartons, drums)",
 		Example:     "  jivo-factory-pp-cli docking-admin scan-skip-requests",
 		Annotations: map[string]string{"pp:endpoint": "docking-admin.scan-skip-requests", "pp:method": "GET", "pp:path": "/docking-admin/scan-skip-requests/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newDockingAdminScanSkipRequestsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/docking-admin/scan-skip-requests/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "docking-admin", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newDockingAdminScanSkipRequestsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "PENDING | APPROVED | REJECTED. The UI's 'All' tab sends NO param — do not send status=ALL.")
 
 	return cmd
 }

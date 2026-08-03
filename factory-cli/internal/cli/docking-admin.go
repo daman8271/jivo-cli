@@ -10,7 +10,7 @@ import (
 func newDockingAdminCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "docking-admin",
-		Short:       "Docking admin scan approvals",
+		Short:       "The dispatch domain follows a SAP sales invoice from the moment it becomes a 'dispatch bill' to the moment the truck",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),

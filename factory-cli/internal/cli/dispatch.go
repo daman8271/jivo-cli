@@ -10,7 +10,7 @@ import (
 func newDispatchCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "dispatch",
-		Short:       "Dispatch — docking, bilty-GRPO, transporter invoices",
+		Short:       "The dispatch domain follows a SAP sales invoice from the moment it becomes a 'dispatch bill' to the moment the truck",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
@@ -19,7 +19,6 @@ func newDispatchCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newDispatchBiltyGrpoHistoryCmd(flags))
 	cmd.AddCommand(newDispatchBiltyGrpoOptionsCmd(flags))
 	cmd.AddCommand(newDispatchBiltyGrpoPendingCmd(flags))
-	cmd.AddCommand(newDispatchBiltyGrpoPreviewCmd(flags))
 	cmd.AddCommand(newDispatchOpenBiltiesCmd(flags))
 	cmd.AddCommand(newDispatchTransporterInvoicesHistoryCmd(flags))
 	return cmd

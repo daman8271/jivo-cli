@@ -16,7 +16,7 @@ func newBarcodeIntercompanyTraceCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "intercompany-trace",
-		Short:       "GET /barcode/intercompany/trace/ — trace an intercompany barcode",
+		Short:       "Follow one barcode across companies — where it is now, who made it, and its transfer history. Required: search.",
 		Example:     "  jivo-factory-pp-cli barcode intercompany-trace --search example-value",
 		Annotations: map[string]string{"pp:endpoint": "barcode.intercompany-trace", "pp:method": "GET", "pp:path": "/barcode/intercompany/trace/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,7 +87,7 @@ func newBarcodeIntercompanyTraceCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagSearch, "search", "", "Barcode / search term (required; 400 without it)")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "REQUIRED. Without it: HTTP 400 {'error': 'Search value is required.'} (verbatim).")
 
 	return cmd
 }

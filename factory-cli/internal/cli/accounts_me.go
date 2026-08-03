@@ -15,8 +15,8 @@ func newAccountsMeCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "me",
-		Short:       "GET /accounts/me/ — accounts me",
-		Example:     "  jivo-factory-pp-cli accounts me",
+		Short:       "Show the signed-in account: name, employee code, the companies it can switch to, and its full permission list.",
+		Example:     "  jivo-factory-pp-cli accounts me --json",
 		Annotations: map[string]string{"pp:endpoint": "accounts.me", "pp:method": "GET", "pp:path": "/accounts/me/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()

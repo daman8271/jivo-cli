@@ -12,10 +12,11 @@ import (
 )
 
 func newQualityControlMaterialTypesCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "material-types",
-		Short:       "GET /quality-control/material-types/ — quality control material types",
+		Short:       "List QC material types — the master categories (bottle, cap, carton, label, jerry can…)",
 		Example:     "  jivo-factory-pp-cli quality-control material-types",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.material-types", "pp:method": "GET", "pp:path": "/quality-control/material-types/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +27,9 @@ func newQualityControlMaterialTypesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/quality-control/material-types/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "quality-control", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newQualityControlMaterialTypesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "CONFIRMED working: ?search=Jerry returned 3 of 182 OIL rows. Matches code, name and linked SAP item.")
 
 	return cmd
 }

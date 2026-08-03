@@ -15,7 +15,7 @@ func newProductionExecutionSapOrdersCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "sap-orders",
-		Short:       "GET /production-execution/sap/orders/ — production execution sap orders",
+		Short:       "List OPEN SAP production orders (status Released)",
 		Example:     "  jivo-factory-pp-cli production-execution sap-orders",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.sap-orders", "pp:method": "GET", "pp:path": "/production-execution/sap/orders/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

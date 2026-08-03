@@ -10,7 +10,7 @@ import (
 func newVehicleManagementCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "vehicle-management",
-		Short:       "Vehicle management — vehicles, transporters, entries, types",
+		Short:       "This is the factory's transport master file plus the gate's vehicle-entry log.",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),

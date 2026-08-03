@@ -15,7 +15,7 @@ func newDashboardsSalesPlanningRequirementAnalysisCmd(flags *rootFlags) *cobra.C
 
 	cmd := &cobra.Command{
 		Use:         "sales-planning-requirement-analysis",
-		Short:       "GET /dashboards/sales-planning-requirement/analysis/ — dashboards sales planning requirement analysis",
+		Short:       "Self-documentation for the sales-plan report: which SAP procedure feeds it, what each column means",
 		Example:     "  jivo-factory-pp-cli dashboards sales-planning-requirement-analysis",
 		Annotations: map[string]string{"pp:endpoint": "dashboards.sales-planning-requirement-analysis", "pp:method": "GET", "pp:path": "/dashboards/sales-planning-requirement/analysis/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

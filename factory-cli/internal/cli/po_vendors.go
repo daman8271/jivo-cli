@@ -15,7 +15,7 @@ func newPoVendorsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "vendors",
-		Short:       "GET /po/vendors/ — po vendors",
+		Short:       "SAP vendor master for the selected company — code and name only, used to pick a supplier before looking up open POs.",
 		Example:     "  jivo-factory-pp-cli po vendors",
 		Annotations: map[string]string{"pp:endpoint": "po.vendors", "pp:method": "GET", "pp:path": "/po/vendors/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

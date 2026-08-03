@@ -12,10 +12,12 @@ import (
 )
 
 func newMaintenanceSparesLowStockCmd(flags *rootFlags) *cobra.Command {
+	var flagCategory int
+	var flagIsActive bool
 
 	cmd := &cobra.Command{
 		Use:         "spares-low-stock",
-		Short:       "GET /maintenance/spares/low-stock/ — maintenance spares low stock",
+		Short:       "Spares at or below reorder level — the reorder shortlist.",
 		Example:     "  jivo-factory-pp-cli maintenance spares-low-stock",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.spares-low-stock", "pp:method": "GET", "pp:path": "/maintenance/spares/low-stock/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newMaintenanceSparesLowStockCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/maintenance/spares/low-stock/"
 			params := map[string]string{}
+			if flagCategory != 0 {
+				params["category"] = formatCLIParamValue(flagCategory)
+			}
+			if flagIsActive != false {
+				params["is_active"] = formatCLIParamValue(flagIsActive)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "maintenance", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newMaintenanceSparesLowStockCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagCategory, "category", 0, "verified on the fire twin; INFERRED here int")
+	cmd.Flags().BoolVar(&flagIsActive, "is-active", false, "INFERRED bool")
 
 	return cmd
 }

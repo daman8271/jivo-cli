@@ -18,10 +18,14 @@ func newAuthCmd(flags *rootFlags) *cobra.Command {
 	}
 
 	cmd.AddCommand(newAuthSetupCmd(flags))
-	cmd.AddCommand(newAuthFactoryLoginCmd(flags))
 	cmd.AddCommand(newAuthStatusCmd(flags))
 	cmd.AddCommand(newAuthSetTokenCmd(flags))
 	cmd.AddCommand(newAuthLogoutCmd(flags))
+
+	// Patch 0001: the hand-authored Factory JWT login. It exchanges email +
+	// password at POST /accounts/login/, stores only the rotating token pair,
+	// never the password, and is hidden from the MCP surface.
+	cmd.AddCommand(newAuthFactoryLoginCmd(flags))
 
 	return cmd
 }

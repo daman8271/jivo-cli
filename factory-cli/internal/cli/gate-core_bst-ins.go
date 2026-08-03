@@ -15,7 +15,7 @@ func newGateCoreBstInsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "bst-ins",
-		Short:       "GET /gate-core/bst-ins/ — gate core bst ins",
+		Short:       "Branch stock transfers received back in through the gate (legacy path).",
 		Example:     "  jivo-factory-pp-cli gate-core bst-ins",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.bst-ins", "pp:method": "GET", "pp:path": "/gate-core/bst-ins/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

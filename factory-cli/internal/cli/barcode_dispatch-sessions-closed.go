@@ -12,10 +12,12 @@ import (
 )
 
 func newBarcodeDispatchSessionsClosedCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-sessions-closed",
-		Short:       "GET /barcode/dispatch/sessions/closed/ — barcode dispatch sessions closed",
+		Short:       "Dispatch sessions a supervisor force-closed short of the full bill quantity.",
 		Example:     "  jivo-factory-pp-cli barcode dispatch-sessions-closed",
 		Annotations: map[string]string{"pp:endpoint": "barcode.dispatch-sessions-closed", "pp:method": "GET", "pp:path": "/barcode/dispatch/sessions/closed/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newBarcodeDispatchSessionsClosedCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/dispatch/sessions/closed/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newBarcodeDispatchSessionsClosedCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "int")
 
 	return cmd
 }

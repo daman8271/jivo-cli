@@ -12,10 +12,15 @@ import (
 )
 
 func newPersonGateinEntriesCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagPersonType int
+	var flagGateIn int
+	var flagFromDate string
+	var flagToDate string
 
 	cmd := &cobra.Command{
 		Use:         "entries",
-		Short:       "GET /person-gatein/entries/ — person gate-in entries (paginated)",
+		Short:       "The full gate register — every visitor and labour entry ever recorded, with entry/exit time, gate, purpose",
 		Example:     "  jivo-factory-pp-cli person-gatein entries",
 		Annotations: map[string]string{"pp:endpoint": "person-gatein.entries", "pp:method": "GET", "pp:path": "/person-gatein/entries/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newPersonGateinEntriesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/person-gatein/entries/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagPersonType != 0 {
+				params["person_type"] = formatCLIParamValue(flagPersonType)
+			}
+			if flagGateIn != 0 {
+				params["gate_in"] = formatCLIParamValue(flagGateIn)
+			}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "person-gatein", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newPersonGateinEntriesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "VERIFIED exact-match filter (IN=0, OUT=284, CANCELLED=3, total 287).")
+	cmd.Flags().IntVar(&flagPersonType, "person-type", 0, "VERIFIED (1 -> 286 rows, 2 -> 1 row). It is the numeric PersonType PK, NOT the word 'visitor'.")
+	cmd.Flags().IntVar(&flagGateIn, "gate-in", 0, "Accepted; could not be proven to filter because only one gate (id 2, 'Front gate') exists, so every row matches.")
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "*** SILENTLY IGNORED — DO NOT PUBLISH AS A FLAG.")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "*** SILENTLY IGNORED. *** Verified: ?to_date=2026-02-20 returned all 287 rows with max entry_time 2026-08-03.")
 
 	return cmd
 }

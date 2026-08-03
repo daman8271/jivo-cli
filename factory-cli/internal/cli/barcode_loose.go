@@ -12,10 +12,15 @@ import (
 )
 
 func newBarcodeLooseCmd(flags *rootFlags) *cobra.Command {
+	var flagPage string
+	var flagPageSize int
+	var flagStatus string
+	var flagReason string
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "loose",
-		Short:       "GET /barcode/loose/ — barcode loose",
+		Short:       "Loose stock — part-used cartons booked out with a reason, and what they were later repacked into.",
 		Example:     "  jivo-factory-pp-cli barcode loose",
 		Annotations: map[string]string{"pp:endpoint": "barcode.loose", "pp:method": "GET", "pp:path": "/barcode/loose/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newBarcodeLooseCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/barcode/loose/"
 			params := map[string]string{}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagReason != "" {
+				params["reason"] = formatCLIParamValue(flagReason)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "barcode", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newBarcodeLooseCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPage, "page", "", "int")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "without it, bare array capped at 500 int")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "verified live. UI: ACTIVE, REPACKED, CONSUMED")
+	cmd.Flags().StringVar(&flagReason, "reason", "", "verified live. UI: REPACK, SAMPLE, DAMAGED, RETURN, OTHER")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "UI-sourced (LooseStockPage), not separately verified")
 
 	return cmd
 }

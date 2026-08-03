@@ -12,10 +12,12 @@ import (
 )
 
 func newProductionExecutionReportsAnalyticsMonthlySummaryCmd(flags *rootFlags) *cobra.Command {
+	var flagYear int
+	var flagLine int
 
 	cmd := &cobra.Command{
 		Use:         "reports-analytics-monthly-summary",
-		Short:       "GET /production-execution/reports/analytics/monthly-summary/ — production execution reports analytics monthly summary",
+		Short:       "Twelve-month rollup for a year: runs, production, OEE, cost split and breakdown minutes per month, plus an annual total.",
 		Example:     "  jivo-factory-pp-cli production-execution reports-analytics-monthly-summary",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-analytics-monthly-summary", "pp:method": "GET", "pp:path": "/production-execution/reports/analytics/monthly-summary/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +28,12 @@ func newProductionExecutionReportsAnalyticsMonthlySummaryCmd(flags *rootFlags) *
 
 			path := "/production-execution/reports/analytics/monthly-summary/"
 			params := map[string]string{}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagLine != 0 {
+				params["line"] = formatCLIParamValue(flagLine)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newProductionExecutionReportsAnalyticsMonthlySummaryCmd(flags *rootFlags) *
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagYear, "year", 0, "Defaults to the current year. Verified live: year=2025 returns the 2025 grid. int")
+	cmd.Flags().IntVar(&flagLine, "line", 0, "Verified live: 2026 all-lines annual total_runs 45 / 33,071 cases → line=3 gives 14 / 9,322. int")
 
 	return cmd
 }

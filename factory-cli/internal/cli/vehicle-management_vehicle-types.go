@@ -15,7 +15,7 @@ func newVehicleManagementVehicleTypesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "vehicle-types",
-		Short:       "GET /vehicle-management/vehicle-types/ — vehicle management vehicle types",
+		Short:       "The fixed list of vehicle categories used across the plant (Truck, Car, Bike, Cycle, Eco Van, Courier, By Hand).",
 		Example:     "  jivo-factory-pp-cli vehicle-management vehicle-types",
 		Annotations: map[string]string{"pp:endpoint": "vehicle-management.vehicle-types", "pp:method": "GET", "pp:path": "/vehicle-management/vehicle-types/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

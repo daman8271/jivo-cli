@@ -15,7 +15,7 @@ func newPoWarehousesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "warehouses",
-		Short:       "GET /po/warehouses/ — po warehouses",
+		Short:       "SAP warehouse codes and names for the selected company — the source of valid --warehouse values elsewhere in this",
 		Example:     "  jivo-factory-pp-cli po warehouses",
 		Annotations: map[string]string{"pp:endpoint": "po.warehouses", "pp:method": "GET", "pp:path": "/po/warehouses/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

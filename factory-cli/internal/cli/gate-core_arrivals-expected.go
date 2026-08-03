@@ -16,7 +16,7 @@ func newGateCoreArrivalsExpectedCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "arrivals-expected",
-		Short:       "GET /gate-core/arrivals/expected/ — expected arrival for a vehicle",
+		Short:       "What a given vehicle is expected to pick up — the companies and booked bills waiting for that truck",
 		Example:     "  jivo-factory-pp-cli gate-core arrivals-expected --vehicle-id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.arrivals-expected", "pp:method": "GET", "pp:path": "/gate-core/arrivals/expected/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -87,7 +87,7 @@ func newGateCoreArrivalsExpectedCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagVehicleId, "vehicle-id", "", "Vehicle ID (required; 400 without it)")
+	cmd.Flags().StringVar(&flagVehicleId, "vehicle-id", "", "REQUIRED. Without it: HTTP 400 {'detail':'vehicle_id is required.'} in all three companies. Get ids from arrivals[].")
 
 	return cmd
 }

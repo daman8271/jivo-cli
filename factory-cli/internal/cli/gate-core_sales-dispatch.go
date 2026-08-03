@@ -12,10 +12,17 @@ import (
 )
 
 func newGateCoreSalesDispatchCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagSearch string
+	var flagDocumentType string
+	var flagAllCompanies int
+	var flagPage string
+	var flagPageSize int
 
 	cmd := &cobra.Command{
 		Use:         "sales-dispatch",
-		Short:       "GET /gate-core/sales-dispatch/ — gate core sales dispatch",
+		Short:       "Customer dispatches at the gate ('docking') — one row per company per truck, from docked through gatepass to dispatched",
 		Example:     "  jivo-factory-pp-cli gate-core sales-dispatch",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.sales-dispatch", "pp:method": "GET", "pp:path": "/gate-core/sales-dispatch/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +33,27 @@ func newGateCoreSalesDispatchCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/sales-dispatch/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagDocumentType != "" {
+				params["document_type"] = formatCLIParamValue(flagDocumentType)
+			}
+			if flagAllCompanies != 0 {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
+			if flagPage != "" {
+				params["page"] = formatCLIParamValue(flagPage)
+			}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +102,13 @@ func newGateCoreSalesDispatchCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD. VERIFIED live: June window returned 43 rows — unlike arrivals, this endpoint really does filter by date.")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "VERIFIED live: ?search=DOCK-20260803-0004 -> 1 row.")
+	cmd.Flags().StringVar(&flagDocumentType, "document-type", "", "observed value INVOICE (the UI sends document_type:'INVOICE' in gate-out mode)")
+	cmd.Flags().IntVar(&flagAllCompanies, "all-companies", 0, "send 1. VERIFIED live: a MART-headed 3-day query went from 7 rows (all JIVO_MART) to 30 rows (BEV 18 / MART 7 / OIL 5).")
+	cmd.Flags().StringVar(&flagPage, "page", "", "1-based. Sending page SWITCHES the response from a bare array to an envelope.")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "UI default 25")
 
 	return cmd
 }

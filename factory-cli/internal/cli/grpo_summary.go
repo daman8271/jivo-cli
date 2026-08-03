@@ -15,7 +15,7 @@ func newGrpoSummaryCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "summary",
-		Short:       "GET /grpo/summary/ — grpo summary",
+		Short:       "GRPO dashboard totals for one company: entries and POs awaiting posting, QC accepted/rejected quantity",
 		Example:     "  jivo-factory-pp-cli grpo summary",
 		Annotations: map[string]string{"pp:endpoint": "grpo.summary", "pp:method": "GET", "pp:path": "/grpo/summary/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

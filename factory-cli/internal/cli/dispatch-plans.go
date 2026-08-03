@@ -10,13 +10,16 @@ import (
 func newDispatchPlansCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "dispatch-plans",
-		Short:       "Dispatch plans & pipeline",
+		Short:       "The dispatch domain follows a SAP sales invoice from the moment it becomes a 'dispatch bill' to the moment the truck",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
 	cmd.AddCommand(newDispatchPlansBillsCmd(flags))
+	cmd.AddCommand(newDispatchPlansDispatchFulfilmentBillsCmd(flags))
+	cmd.AddCommand(newDispatchPlansDispatchFulfilmentSummaryCmd(flags))
+	cmd.AddCommand(newDispatchPlansDispatchPlansBillByNumberCmd(flags))
 	cmd.AddCommand(newDispatchPlansPipelineCmd(flags))
 	return cmd
 }

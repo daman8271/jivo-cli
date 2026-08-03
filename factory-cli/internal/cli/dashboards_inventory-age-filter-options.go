@@ -15,7 +15,7 @@ func newDashboardsInventoryAgeFilterOptionsCmd(flags *rootFlags) *cobra.Command 
 
 	cmd := &cobra.Command{
 		Use:         "inventory-age-filter-options",
-		Short:       "GET /dashboards/inventory-age/filter-options/ — dashboards inventory age filter options",
+		Short:       "The company's own list of item groups, sub-groups",
 		Example:     "  jivo-factory-pp-cli dashboards inventory-age-filter-options",
 		Annotations: map[string]string{"pp:endpoint": "dashboards.inventory-age-filter-options", "pp:method": "GET", "pp:path": "/dashboards/inventory-age/filter-options/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

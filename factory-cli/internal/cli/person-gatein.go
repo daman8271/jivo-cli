@@ -10,7 +10,7 @@ import (
 func newPersonGateinCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "person-gatein",
-		Short:       "Person gate-in — visitors, labour, contractors at the campus gate",
+		Short:       "This is the factory's people register at the gate — who walked into the plant, when, through which gate, why",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
@@ -18,6 +18,10 @@ func newPersonGateinCmd(flags *rootFlags) *cobra.Command {
 
 	cmd.AddCommand(newPersonGateinContractorsCmd(flags))
 	cmd.AddCommand(newPersonGateinEntriesCmd(flags))
+	cmd.AddCommand(newPersonGateinGateLabourCmd(flags))
+	cmd.AddCommand(newPersonGateinGatePersonDashboardCmd(flags))
+	cmd.AddCommand(newPersonGateinGatePersonInsideCmd(flags))
+	cmd.AddCommand(newPersonGateinGatePersonSearchCmd(flags))
 	cmd.AddCommand(newPersonGateinGatesCmd(flags))
 	cmd.AddCommand(newPersonGateinLaboursCmd(flags))
 	cmd.AddCommand(newPersonGateinPersonTypesCmd(flags))

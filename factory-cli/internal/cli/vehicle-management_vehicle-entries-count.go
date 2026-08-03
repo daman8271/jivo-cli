@@ -18,7 +18,7 @@ func newVehicleManagementVehicleEntriesCountCmd(flags *rootFlags) *cobra.Command
 
 	cmd := &cobra.Command{
 		Use:         "vehicle-entries-count",
-		Short:       "GET /vehicle-management/vehicle-entries/count/ — vehicle entry counts in a window",
+		Short:       "How many gate entries of one movement type sit in each status over a date window — the 'how many trucks are still",
 		Example:     "  jivo-factory-pp-cli vehicle-management vehicle-entries-count --entry-type example-value --from-date 2026-01-15 --to-date 2026-01-15",
 		Annotations: map[string]string{"pp:endpoint": "vehicle-management.vehicle-entries-count", "pp:method": "GET", "pp:path": "/vehicle-management/vehicle-entries/count/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -101,9 +101,9 @@ func newVehicleManagementVehicleEntriesCountCmd(flags *rootFlags) *cobra.Command
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagEntryType, "entry-type", "", "Entry type")
-	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "Window start (YYYY-MM-DD)")
-	cmd.Flags().StringVar(&flagToDate, "to-date", "", "Window end (YYYY-MM-DD)")
+	cmd.Flags().StringVar(&flagEntryType, "entry-type", "", "same 8 values; required, 400 {'detail':'entry_type query parameter is required'} if missing enum")
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "required date YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "required date YYYY-MM-DD")
 
 	return cmd
 }

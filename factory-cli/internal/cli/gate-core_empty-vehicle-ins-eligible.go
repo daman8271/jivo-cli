@@ -12,10 +12,15 @@ import (
 )
 
 func newGateCoreEmptyVehicleInsEligibleCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagReason string
+	var flagInsideOnly bool
+	var flagAllCompanies int
 
 	cmd := &cobra.Command{
 		Use:         "empty-vehicle-ins-eligible",
-		Short:       "GET /gate-core/empty-vehicle-ins/eligible/ — gate core empty vehicle ins eligible",
+		Short:       "Gate-in entries still open and eligible for the next step — the working queue at the gate.",
 		Example:     "  jivo-factory-pp-cli gate-core empty-vehicle-ins-eligible",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.empty-vehicle-ins-eligible", "pp:method": "GET", "pp:path": "/gate-core/empty-vehicle-ins/eligible/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newGateCoreEmptyVehicleInsEligibleCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/empty-vehicle-ins/eligible/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagReason != "" {
+				params["reason"] = formatCLIParamValue(flagReason)
+			}
+			if flagInsideOnly != false {
+				params["inside_only"] = formatCLIParamValue(flagInsideOnly)
+			}
+			if flagAllCompanies != 0 {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newGateCoreEmptyVehicleInsEligibleCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagReason, "reason", "", "same enum as empty-vehicle-ins")
+	cmd.Flags().BoolVar(&flagInsideOnly, "inside-only", false, "'true'")
+	cmd.Flags().IntVar(&flagAllCompanies, "all-companies", 0, "1")
 
 	return cmd
 }

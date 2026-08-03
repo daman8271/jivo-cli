@@ -10,7 +10,7 @@ import (
 func newQualityControlCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "quality-control",
-		Short:       "Quality control — arrival slips, inspections, material types",
+		Short:       "Quality Control is the QA department's own workflow inside the factory app",
 		Hidden:      true,
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
@@ -32,6 +32,19 @@ func newQualityControlCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newQualityControlProductionQcCmd(flags))
 	cmd.AddCommand(newQualityControlProductionQcCountsCmd(flags))
 	cmd.AddCommand(newQualityControlProductionQcPendingCmd(flags))
+	cmd.AddCommand(newQualityControlQcArrivalSlipGetCmd(flags))
+	cmd.AddCommand(newQualityControlQcInspectionGetCmd(flags))
+	cmd.AddCommand(newQualityControlQcInspectionsDecisionChangedCmd(flags))
+	cmd.AddCommand(newQualityControlQcMaterialTypeGetCmd(flags))
+	cmd.AddCommand(newQualityControlQcMaterialTypeParametersCmd(flags))
+	cmd.AddCommand(newQualityControlQcOnlineMonitoringCmd(flags))
+	cmd.AddCommand(newQualityControlQcOnlineMonitoringGetCmd(flags))
+	cmd.AddCommand(newQualityControlQcOnlineMonitoringLinesCmd(flags))
+	cmd.AddCommand(newQualityControlQcOnlineMonitoringRunsCmd(flags))
+	cmd.AddCommand(newQualityControlQcOnlineMonitoringSpecsCmd(flags))
+	cmd.AddCommand(newQualityControlQcParameterGetCmd(flags))
+	cmd.AddCommand(newQualityControlQcProductionRunningRunsCmd(flags))
+	cmd.AddCommand(newQualityControlQcProductionSessionGetCmd(flags))
 	cmd.AddCommand(newQualityControlSapItemsCmd(flags))
 	return cmd
 }

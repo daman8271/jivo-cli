@@ -12,10 +12,15 @@ import (
 )
 
 func newGateCoreSalesDispatchDocumentsCmd(flags *rootFlags) *cobra.Command {
+	var flagFromDate string
+	var flagToDate string
+	var flagSearch string
+	var flagDocumentType string
+	var flagAllCompanies int
 
 	cmd := &cobra.Command{
 		Use:         "sales-dispatch-documents",
-		Short:       "GET /gate-core/sales-dispatch/documents/ — gate core sales dispatch documents",
+		Short:       "SAP invoices and stock transfers available to load onto a truck — the bill pick-list at the dock.",
 		Example:     "  jivo-factory-pp-cli gate-core sales-dispatch-documents",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.sales-dispatch-documents", "pp:method": "GET", "pp:path": "/gate-core/sales-dispatch/documents/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -26,6 +31,21 @@ func newGateCoreSalesDispatchDocumentsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/gate-core/sales-dispatch/documents/"
 			params := map[string]string{}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagDocumentType != "" {
+				params["document_type"] = formatCLIParamValue(flagDocumentType)
+			}
+			if flagAllCompanies != 0 {
+				params["all_companies"] = formatCLIParamValue(flagAllCompanies)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "gate-core", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +94,11 @@ func newGateCoreSalesDispatchDocumentsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "YYYY-MM-DD. VERIFIED live: 2026-08-01..2026-08-03 -> 7 rows.")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "YYYY-MM-DD")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "VERIFIED live: ?search=708260106 -> 1 row (matches doc_num)")
+	cmd.Flags().StringVar(&flagDocumentType, "document-type", "", "observed values INVOICE and STOCK_TRANSFER.")
+	cmd.Flags().IntVar(&flagAllCompanies, "all-companies", 0, "1 — the dashboard sends it alongside the other filters")
 
 	return cmd
 }
