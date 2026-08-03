@@ -9,6 +9,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 ## all
 - **[C-0001]** INV1.Quantity is in PIECES (single bottles), not cartons — InvntryUom=PCS, NumInSale=1. The '20 PCS' in item names is carton config only; multiplying by it inflates volume ~20x.
 - **[C-0005]** Intercompany is 23 group CardCodes, not just CUSTA000606: Oil CUSTA000001/2/3/4/606/827/906/1099/1113, Mart CUSTA000001/827/874/875/876/877/878/926, Bev CUSTA000001/2/3/4/606/827. Exclude all; name them.
+- **[C-0008]** ecom /api/sap/* (ecom-cli 'sap', MCP ecom_sap) is JIVO_MART only - never Oil, never group. Only 'sales-analysis --source oil' reaches Oil; Beverages is unreachable from ecom.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
