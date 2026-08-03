@@ -193,40 +193,14 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 				break
 			}
 			data, err = c.Get(ctx, path, params)
-		case "POST":
-			if len(headers) > 0 {
-				if readOnly {
-					data, _, err = c.PostQueryWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				} else {
-					data, _, err = c.PostWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				}
-				break
-			}
-			if readOnly {
-				data, _, err = c.PostQueryWithParams(ctx, path, params, bodyArgs)
-			} else {
-				data, _, err = c.PostWithParams(ctx, path, params, bodyArgs)
-			}
-		case "PUT":
-			if len(headers) > 0 {
-				data, _, err = c.PutWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				break
-			}
-			data, _, err = c.PutWithParams(ctx, path, params, bodyArgs)
-		case "PATCH":
-			if len(headers) > 0 {
-				data, _, err = c.PatchWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				break
-			}
-			data, _, err = c.PatchWithParams(ctx, path, params, bodyArgs)
-		case "DELETE":
-			if len(headers) > 0 {
-				data, _, err = c.DeleteWithParamsAndHeaders(ctx, path, params, headers)
-				break
-			}
-			data, _, err = c.DeleteWithParams(ctx, path, params)
 		default:
-			return mcplib.NewToolResultError("unsupported method: " + method), nil
+			// READ-ONLY LAW (jivogpt): this CLI never mutates JIVO source
+			// systems, and the MCP surface never exposes a write at all. The
+			// spec is GET-only; refuse every write method by construction so
+			// that a future spec edit cannot silently open a write path
+			// through an agent-trusted surface. Re-apply after every regen.
+			return mcplib.NewToolResultError("read-only CLI: method " + method +
+				" is not permitted (GET only, per the JivoGPT READ-ONLY LAW)"), nil
 		}
 
 		if err != nil {
@@ -662,7 +636,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 		"api":         "jivo-ecom",
 		"description": "JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.",
 		"archetype":   "crm",
-		"tool_count":  138,
+		"tool_count":  151,
 		// tool_surface tells agents which surface a capability lives on.
 		"tool_surface": "MCP exposes typed endpoint tools plus a runtime mirror of user-facing CLI commands. Endpoint tools keep typed schemas; command-mirror tools shell out to the companion jivo-ecom-pp-cli binary.",
 		"auth": map[string]any{
@@ -680,19 +654,20 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 		"resources": []map[string]any{
 			{
 				"name":        "account",
-				"description": "Authenticated account: current user and permissions",
-				"endpoints":   []string{"me", "permissions"},
+				"description": "Authenticated account: current user, permissions and feature flags",
+				"endpoints":   []string{"feature-flags", "me", "permissions"},
 			},
 			{
 				"name":        "chatbot",
 				"description": "Read-only access to the ecom app's built-in assistant (health + conversation history)",
 				"endpoints":   []string{"conversation", "conversations", "health"},
+				"syncable":    true,
 				"searchable":  true,
 			},
 			{
 				"name":        "dashboard",
 				"description": "Top-level analytics dashboards aggregated across all platforms",
-				"endpoints":   []string{"category-breakdown", "category-litres", "category-platform-breakdown", "category-sku-breakdown", "category-trend", "expiry-alerts", "expiry-alerts-po-items", "expiry-alerts-pos", "fulfilment-health", "inventory-charts", "latest-month", "lead-time-report", "platform-expiry-alerts", "primary-po-litres", "realise-breakdown", "realise-overview", "realise-trend", "realise-waterfall", "secondary-yoy-growth", "state-sales", "state-sales-detail", "state-sales-detail-cities", "state-sales-detail-city-skus", "state-sales-detail-options", "state-sales-export", "top-skus"},
+				"endpoints":   []string{"category-breakdown", "category-litres", "category-platform-breakdown", "category-sku-breakdown", "category-trend", "expiry-alerts", "expiry-alerts-po-items", "expiry-alerts-pos", "fulfilment-health", "inventory-charts", "latest-month", "lead-time-report", "penetration-report", "penetration-report-options", "platform-expiry-alerts", "primary-po-litres", "realise-breakdown", "realise-overview", "realise-trend", "realise-waterfall", "secondary-yoy-growth", "state-sales", "state-sales-detail", "state-sales-detail-cities", "state-sales-detail-city-skus", "state-sales-detail-options", "state-sales-export", "top-skus"},
 				"syncable":    true,
 				"searchable":  true,
 			},
@@ -711,26 +686,26 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			},
 			{
 				"name":        "platform",
-				"description": "Per-platform dashboards (Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato)",
-				"endpoints":   []string{"ads", "ads-summary", "ads-total-sales", "bigbasket-ads-daily-dashboard", "bigbasket-ads-dashboard", "blinkit-ads-dashboard", "blinkit-brandfund-dashboard", "call-center-targets", "comparison", "coupon", "drr", "flipkart-ads-dashboard", "flipkart-fsn-dashboard", "inventory-match", "landing-rate", "landing-rate-skus", "marketplace", "meta", "month-on-month-sale", "month-targets", "month-targets-dashboard", "mp-dashboard-version", "pendency", "pos", "price", "primary", "primary-month-targets", "primary-month-targets-dashboard", "primary-overview-total", "primary-summary", "primary-summary-version", "region-doh", "secondary", "secondary-monthly", "secondary-years", "soh-doh", "stats", "swiggy-ads-daily-dashboard", "swiggy-ads-dashboard", "swiggy-brandfund-dashboard", "zepto-ads-daily-dashboard", "zepto-ads-dashboard", "zepto-brandfund-dashboard"},
+				"description": "Per-platform dashboards.",
+				"endpoints":   []string{"ads", "ads-summary", "ads-total-sales", "bigbasket-ads-daily-dashboard", "bigbasket-ads-dashboard", "bigbasket-sales-explorer", "blinkit-ads-dashboard", "blinkit-brandfund-dashboard", "blinkit-summary-report", "call-center-targets", "comparison", "coupon", "drr", "flipkart-ads-dashboard", "flipkart-fsn-dashboard", "inventory-match", "landing-rate", "landing-rate-skus", "marketplace", "meta", "month-targets", "month-targets-dashboard", "monthly-sales-explorer", "mp-dashboard-version", "pendency", "pos", "price", "primary", "primary-month-targets", "primary-month-targets-dashboard", "primary-overview-total", "primary-summary", "primary-summary-version", "region-doh", "secondary", "secondary-monthly", "secondary-summary-version", "secondary-years", "soh-doh", "stats", "swiggy-ads-daily-dashboard", "swiggy-ads-dashboard", "swiggy-brandfund-dashboard", "zepto-ads-daily-dashboard", "zepto-ads-dashboard", "zepto-brandfund-dashboard"},
 				"searchable":  true,
 			},
 			{
 				"name":        "reports",
 				"description": "Report views: Amazon PO, appointment, and raw report tables",
-				"endpoints":   []string{"amazon-po", "amazon-po-filter-options", "amazon-po-matrix", "amazon-po-new-po", "amazon-po-summary", "appointment", "appointment-filter-options", "appointment-summary", "columns", "raw"},
+				"endpoints":   []string{"amazon-po", "amazon-po-billing", "amazon-po-filter-options", "amazon-po-matrix", "amazon-po-new-po", "amazon-po-sku-pendency", "amazon-po-sku-pendency-filter-options", "amazon-po-summary", "appointment", "appointment-filter-options", "appointment-summary", "columns", "live-data", "live-reports", "raw"},
 				"searchable":  true,
 			},
 			{
 				"name":        "sap",
 				"description": "SAP HANA read layer: distributors, inventory, sales invoices, stock",
-				"endpoints":   []string{"distributor", "distributor-inventory", "distributor-invoices", "distributor-orders", "distributors", "inventory-finished-goods", "inventory-overview", "inventory-warehouse-comparison", "items", "platform-distributor", "platform-distributors", "platform-sales-invoices", "sales-analysis", "sales-invoice", "sales-invoice-lines", "sales-invoices", "stock-by-warehouse"},
+				"endpoints":   []string{"distributor", "distributor-inventory", "distributor-invoices", "distributor-orders", "distributors", "inventory-finished-goods", "inventory-overview", "inventory-warehouse-comparison", "items", "platform-distributor", "platform-distributors", "platform-sales-invoices", "sales-analysis", "sales-invoice", "sales-invoices", "stock-by-warehouse"},
 				"searchable":  true,
 			},
 			{
 				"name":        "shipment",
-				"description": "Amazon Shipment Planner (read-only). Requires Shipment Planner access; returns 403 without it.",
-				"endpoints":   []string{"all-appointments", "appointment-commits", "appointment-dates", "appointment-extra-pos", "appointment-items", "appointments", "asin-catalog", "inventory", "po-items", "po-shipment-lookup", "po-short-supply", "record", "shipment", "shipment-invoice-file", "shipment-invoices", "shipment-po-document", "shipment-po-documents", "shipments", "shipments-deletion-log", "shipments-doh-auto-fill", "shipments-pending-approvals", "shipments-stats"},
+				"description": "Amazon Shipment Planner (read-only). Requires the amazon.shipment_planning.view permission; returns 403 without it.",
+				"endpoints":   []string{"all-appointments", "appointment-commits", "appointment-dates", "appointment-extra-pos", "appointment-families", "appointment-items", "appointments", "asin-catalog", "fc-switch-group", "inventory", "po-appointments", "po-items", "po-shipment-lookup", "po-short-supply", "record", "shipment", "shipment-invoice-file", "shipment-invoices", "shipment-po-document", "shipment-po-documents", "shipments", "shipments-deletion-log", "shipments-doh-auto-fill", "shipments-pending-approvals", "shipments-stats"},
 				"syncable":    true,
 				"searchable":  true,
 			},
@@ -744,6 +719,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 				"name":        "upload",
 				"description": "Read-only views of uploaded reference data",
 				"endpoints":   []string{"ads-master", "master-sheet", "pincode-mapping"},
+				"searchable":  true,
 			},
 			{
 				"name":        "uploads",

@@ -12,24 +12,38 @@ import (
 )
 
 func newShipmentShipmentCmd(flags *rootFlags) *cobra.Command {
+	var flagId string
+	var flagShipmentId string
 
 	cmd := &cobra.Command{
-		Use:         "shipment <id>",
+		Use:         "shipment",
 		Short:       "Get a shipment by id",
-		Example:     "  jivo-ecom-pp-cli shipment shipment 550e8400-e29b-41d4-a716-446655440000",
-		Annotations: map[string]string{"pp:endpoint": "shipment.shipment", "pp:method": "GET", "pp:path": "/api/shipment/shipments/{id}", "mcp:read-only": "true"},
+		Example:     "  jivo-ecom-pp-cli shipment shipment --id 550e8400-e29b-41d4-a716-446655440000 --shipment-id 550e8400-e29b-41d4-a716-446655440000",
+		Annotations: map[string]string{"pp:endpoint": "shipment.shipment", "pp:method": "GET", "pp:path": "/api/shipment/shipments/{id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "id")
+			}
+			if !cmd.Flags().Changed("shipment-id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "shipment-id")
 			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/shipments/{id}"
-			path = replacePathParam(path, "id", args[0])
+			path := "/api/shipment/shipments/{id}/"
+			path = replacePathParam(path, "id", formatCLIParamValue(flagId))
 			params := map[string]string{}
+			if flagShipmentId != "" {
+				params["shipment_id"] = formatCLIParamValue(flagShipmentId)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +92,8 @@ func newShipmentShipmentCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagId, "id", "", "Shipment id")
+	cmd.Flags().StringVar(&flagShipmentId, "shipment-id", "", "shipment id from the shipments list")
 
 	return cmd
 }

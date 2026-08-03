@@ -15,7 +15,7 @@ func newPlatformMetaCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "meta",
-		Short:       "Platform metadata (slugs, labels, config)",
+		Short:       "Meta (Facebook/Instagram) advertising dashboard - campaign-level reach, impressions, link clicks, CPC",
 		Example:     "  jivo-ecom-pp-cli platform meta",
 		Annotations: map[string]string{"pp:endpoint": "platform.meta", "pp:method": "GET", "pp:path": "/api/platform/meta", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

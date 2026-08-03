@@ -12,17 +12,79 @@ import (
 )
 
 func newTablesDataCmd(flags *rootFlags) *cobra.Command {
+	var flagTable string
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagSearch string
+	var flagSearchColumns string
+	var flagDateColumn string
+	var flagSortBy string
+	var flagSortDir string
+	var flagMaxDate string
+	var flagYear int
+	var flagMonth int
+	var flagDate string
+	var flagColumnFilters string
 
 	cmd := &cobra.Command{
-		Use:         "data <table>",
+		Use:         "data",
 		Short:       "Paginated rows for a table (server-shaped payload)",
-		Example:     "  jivo-ecom-pp-cli tables data example-value",
+		Example:     "  jivo-ecom-pp-cli tables data --table all_platform_inventory",
 		Annotations: map[string]string{"pp:endpoint": "tables.data", "pp:method": "GET", "pp:path": "/api/dashboard/table-data/{table}", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("table") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "table")
+			}
+			if cmd.Flags().Changed("table") {
+				allowedTable := []string{"all_platform_inventory", "amazon_ads", "amazon_coupon", "amazon_inventory", "amazon_mp", "amazon_price_data", "amazon_sec_city", "amazon_sec_daily", "amazon_sec_daily_master_view", "amazon_sec_range", "amazon_sec_range_margins", "amazon_sec_range_master_view", "bigbasketSec", "bigbasket_ads", "bigbasket_inventory", "bigbasket_sec_range", "blinkitSec", "blinkit_ads", "blinkit_brandfund", "blinkit_inventory", "citymallSec", "citymall_inventory", "fk_grocery", "flipkartSec", "flipkart_ads", "flipkart_grocery_master", "flipkart_secondary_all", "jiomartSec", "jiomart_inventory", "master_po", "prim_master_po", "swiggySec", "swiggy_ads", "swiggy_brandfund", "swiggy_inventory", "test_master_po", "total_po", "total_po_zbs", "zeptoSec", "zepto_ads", "zepto_brandfund", "zepto_inventory", "zomatoSec", "zomato_inventory"}
+				validTable := false
+				for _, v := range allowedTable {
+					if flagTable == v {
+						validTable = true
+						break
+					}
+				}
+				if !validTable {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagTable, "table", allowedTable)
+				}
+			}
+			if cmd.Flags().Changed("sort-dir") {
+				allowedSortDir := []string{"desc"}
+				validSortDir := false
+				for _, v := range allowedSortDir {
+					if flagSortDir == v {
+						validSortDir = true
+						break
+					}
+				}
+				if !validSortDir {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSortDir, "sort-dir", allowedSortDir)
+				}
+			}
+			if cmd.Flags().Changed("max-date") {
+				allowedMaxDate := []string{"1"}
+				validMaxDate := false
+				for _, v := range allowedMaxDate {
+					if flagMaxDate == v {
+						validMaxDate = true
+						break
+					}
+				}
+				if !validMaxDate {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagMaxDate, "max-date", allowedMaxDate)
+				}
+			}
+			if cmd.Flags().Changed("column-filters") {
+				var parsedColumnFilters any
+				if err := json.Unmarshal([]byte(flagColumnFilters), &parsedColumnFilters); err != nil {
+					return fmt.Errorf("--column-filters must be valid JSON: %w", err)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -30,13 +92,43 @@ func newTablesDataCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/dashboard/table-data/{table}"
-			path = replacePathParam(path, "table", args[0])
+			path = replacePathParam(path, "table", formatCLIParamValue(flagTable))
 			params := map[string]string{}
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagSearchColumns != "" {
+				params["search_columns"] = formatCLIParamValue(flagSearchColumns)
+			}
+			if flagDateColumn != "" {
+				params["date_column"] = formatCLIParamValue(flagDateColumn)
+			}
+			if flagSortBy != "" {
+				params["sort_by"] = formatCLIParamValue(flagSortBy)
+			}
+			if flagSortDir != "" {
+				params["sort_dir"] = formatCLIParamValue(flagSortDir)
+			}
+			if flagMaxDate != "" {
+				params["max_date"] = formatCLIParamValue(flagMaxDate)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagDate != "" {
+				params["date"] = formatCLIParamValue(flagDate)
+			}
+			if flagColumnFilters != "" {
+				params["column_filters"] = formatCLIParamValue(flagColumnFilters)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "tables", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -86,8 +178,19 @@ func newTablesDataCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagTable, "table", "", "Reporting-schema table name, case-sensitive. (one of: all_platform_inventory, amazon_ads, amazon_coupon, amazon_inventory, amazon_mp, amazon_price_data, amazon_sec_city, amazon_sec_daily, amazon_sec_daily_master_view, amazon_sec_range, amazon_sec_range_margins, amazon_sec_range_master_view, bigbasketSec, bigbasket_ads, bigbasket_inventory, bigbasket_sec_range, blinkitSec, blinkit_ads, blinkit_brandfund, blinkit_inventory, citymallSec, citymall_inventory, fk_grocery, flipkartSec, flipkart_ads, flipkart_grocery_master, flipkart_secondary_all, jiomartSec, jiomart_inventory, master_po, prim_master_po, swiggySec, swiggy_ads, swiggy_brandfund, swiggy_inventory, test_master_po, total_po, total_po_zbs, zeptoSec, zepto_ads, zepto_brandfund, zepto_inventory, zomatoSec, zomato_inventory)")
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "free text")
+	cmd.Flags().StringVar(&flagSearchColumns, "search-columns", "", "comma-joined column names")
+	cmd.Flags().StringVar(&flagDateColumn, "date-column", "", "column name")
+	cmd.Flags().StringVar(&flagSortBy, "sort-by", "", "column name")
+	cmd.Flags().StringVar(&flagSortDir, "sort-dir", "", " (one of: desc)")
+	cmd.Flags().StringVar(&flagMaxDate, "max-date", "", " (one of: 1)")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "4-digit year")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "month number")
+	cmd.Flags().StringVar(&flagDate, "date", "", "date string from the picker")
+	cmd.Flags().StringVar(&flagColumnFilters, "column-filters", "", "JSON array string [{'column':'<col>','values':[...]}]")
 
 	return cmd
 }

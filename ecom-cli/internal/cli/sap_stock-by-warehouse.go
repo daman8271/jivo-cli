@@ -13,14 +13,24 @@ import (
 
 func newSapStockByWarehouseCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagItemCode string
 
 	cmd := &cobra.Command{
 		Use:         "stock-by-warehouse",
-		Short:       "Stock levels by warehouse",
-		Example:     "  jivo-ecom-pp-cli sap stock-by-warehouse",
+		Short:       "Stock levels by warehouse. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.",
+		Example:     "  jivo-ecom-pp-cli sap stock-by-warehouse --item-code example-value",
 		Annotations: map[string]string{"pp:endpoint": "sap.stock-by-warehouse", "pp:method": "GET", "pp:path": "/api/sap/stock-by-warehouse", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("item-code") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "item-code")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -31,8 +41,11 @@ func newSapStockByWarehouseCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagItemCode != "" {
+				params["item_code"] = formatCLIParamValue(flagItemCode)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -83,7 +96,8 @@ func newSapStockByWarehouseCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagItemCode, "item-code", "", "SAP ItemCode; service hard-wires the only key")
 
 	return cmd
 }

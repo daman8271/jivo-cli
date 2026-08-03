@@ -12,20 +12,24 @@ import (
 )
 
 func newShipmentPoItemsCmd(flags *rootFlags) *cobra.Command {
+	var flagNoPaginate bool
 
 	cmd := &cobra.Command{
 		Use:         "po-items",
-		Short:       "PO items available to ship",
+		Short:       "PO items available to ship Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment po-items",
-		Annotations: map[string]string{"pp:endpoint": "shipment.po-items", "pp:method": "GET", "pp:path": "/api/shipment/po-items", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.po-items", "pp:method": "GET", "pp:path": "/api/shipment/po-items/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/po-items"
+			path := "/api/shipment/po-items/"
 			params := map[string]string{}
+			if flagNoPaginate != false {
+				params["no_paginate"] = formatCLIParamValue(flagNoPaginate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newShipmentPoItemsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagNoPaginate, "no-paginate", false, " (one of: true)")
 
 	return cmd
 }

@@ -12,20 +12,33 @@ import (
 )
 
 func newShipmentAppointmentsCmd(flags *rootFlags) *cobra.Command {
+	var flagDate string
 
 	cmd := &cobra.Command{
 		Use:         "appointments",
-		Short:       "Shipment appointments",
-		Example:     "  jivo-ecom-pp-cli shipment appointments",
-		Annotations: map[string]string{"pp:endpoint": "shipment.appointments", "pp:method": "GET", "pp:path": "/api/shipment/appointments", "mcp:read-only": "true"},
+		Short:       "Shipment appointments Requires additional permission; returns 403 otherwise.",
+		Example:     "  jivo-ecom-pp-cli shipment appointments --date 2026-01-15",
+		Annotations: map[string]string{"pp:endpoint": "shipment.appointments", "pp:method": "GET", "pp:path": "/api/shipment/appointments/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("date") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "date")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/appointments"
+			path := "/api/shipment/appointments/"
 			params := map[string]string{}
+			if flagDate != "" {
+				params["date"] = formatCLIParamValue(flagDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +87,7 @@ func newShipmentAppointmentsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagDate, "date", "", "whatever getDates() returns; passed straight through, unquoted")
 
 	return cmd
 }

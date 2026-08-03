@@ -1,12 +1,3 @@
----
-title: Jivo Ecom Printed CLI Agent Guide
-created: 2026-07-19
-updated: 2026-07-19
-project: jivogpt
-type: instructions
-tags: [jivogpt, ecom, cli, agents]
----
-
 # Jivo Ecom Printed CLI Agent Guide
 
 This directory is a generated `jivo-ecom-pp-cli` printed CLI. It was produced by [CLI Printing Press](https://github.com/mvanhorn/cli-printing-press), so treat systemic fixes as upstream Printing Press fixes first. Keep local edits narrow and document why a generated-tree patch belongs here.
@@ -52,8 +43,4 @@ For install, auth, examples, and longer product guidance, read `README.md` and `
 
 This directory is **generated output** -- a fresh print can overwrite the whole tree, so ad-hoc hand-edits don't survive on their own. If you modify the generated code, record each change under `.printing-press-patches/` (parallel to `.printing-press.json`) so a regen carries the intent forward instead of silently dropping it.
 
-Start every reprint review at [[CLI/ecom-cli/.printing-press-patches/README|the Ecom local patch ledger]]. It indexes the three live deviations, their evidence, and the re-apply checks.
-
 The entry shape, and the altitude to write it at -- a durable reprint-guard, not a changelog -- live in the source catalog's `AGENTS.md`, which is the single source of truth; this guide intentionally doesn't duplicate them.
-
-Linked: [[CLI/ecom-cli/.printing-press-patches/README|Ecom patch ledger]] · [[docs/ecom/ECOM_MAP|ECOM_MAP]] · [[docs/READ_ONLY_LAW|READ_ONLY_LAW]] · [[/README|JivoGPT]]

@@ -15,11 +15,14 @@ func newReportsRawCmd(flags *rootFlags) *cobra.Command {
 	var flagView string
 	var flagPage string
 	var flagPageSize int
+	var flagDateFrom string
+	var flagDateTo string
+	var flagPlatform string
 
 	cmd := &cobra.Command{
 		Use:         "raw",
-		Short:       "Raw rows for a report view",
-		Example:     "  jivo-ecom-pp-cli reports raw --view amazon_mp_master_view",
+		Short:       "Raw rows for one report view. `view` is required - a bare call returns 400 'Unknown report view'.",
+		Example:     "  jivo-ecom-pp-cli reports raw --view all_platform_inventory",
 		Annotations: map[string]string{"pp:endpoint": "reports.raw", "pp:method": "GET", "pp:path": "/api/reports/raw", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -32,7 +35,7 @@ func newReportsRawCmd(flags *rootFlags) *cobra.Command {
 				return fmt.Errorf("required flag \"%s\" not set", "view")
 			}
 			if cmd.Flags().Changed("view") {
-				allowedView := []string{"amazon_mp_master_view", "amazon_sec_daily_master_view", "amazon_sec_range_master_view"}
+				allowedView := []string{"all_platform_inventory", "master_po", "total_po", "SecMaster", "amazon_sec_range_master_view", "amazon_sec_daily_master_view", "amazon_mp_master_view", "sap:jm_primary:oil", "sap:jm_primary:mart", "sap:jm_inventory:oil", "sap:jm_inventory:mart"}
 				validView := false
 				for _, v := range allowedView {
 					if flagView == v {
@@ -42,6 +45,19 @@ func newReportsRawCmd(flags *rootFlags) *cobra.Command {
 				}
 				if !validView {
 					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagView, "view", allowedView)
+				}
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"AMAZON", "BLINKIT", "ZEPTO", "SWIGGY", "BIG BASKET", "FLIPKART", "FLIPKART GROCERY", "ZOMATO", "CITY MALL"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
 				}
 			}
 			c, err := flags.newClient()
@@ -59,6 +75,15 @@ func newReportsRawCmd(flags *rootFlags) *cobra.Command {
 			}
 			if flagPageSize != 0 {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
+			}
+			if flagPlatform != "" {
+				params["platform"] = formatCLIParamValue(flagPlatform)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "reports", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -108,9 +133,12 @@ func newReportsRawCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagView, "view", "", "Report view name (one of: amazon_mp_master_view, amazon_sec_daily_master_view, amazon_sec_range_master_view)")
-	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagView, "view", "", "view name (one of: all_platform_inventory, master_po, total_po, SecMaster, amazon_sec_range_master_view, amazon_sec_daily_master_view, amazon_mp_master_view, sap:jm_primary:oil, sap:jm_primary:mart, sap:jm_inventory:oil, sap:jm_inventory:mart)")
+	cmd.Flags().StringVar(&flagPage, "page", "", "0-based integer")
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "integer")
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "date string derived from the period preset (this_week/this_month/this_year/custom)")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "date string derived from the period preset (this_week/this_month/this_year/custom)")
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "comma-joined UPPERCASE display names, NOT slugs; TRAP (one of: AMAZON, BLINKIT, ZEPTO, SWIGGY, BIG BASKET, FLIPKART, FLIPKART GROCERY, ZOMATO, CITY MALL)")
 
 	return cmd
 }

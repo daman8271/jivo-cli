@@ -12,15 +12,43 @@ import (
 )
 
 func newDashboardExpiryAlertsPoItemsCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
+	var flagPo string
+	var flagPoNumber string
 
 	cmd := &cobra.Command{
-		Use:         "expiry-alerts-po-items <platform> <po>",
+		Use:         "expiry-alerts-po-items",
 		Short:       "Line items for a PO behind an expiry alert",
-		Example:     "  jivo-ecom-pp-cli dashboard expiry-alerts-po-items amazon example-value",
+		Example:     "  jivo-ecom-pp-cli dashboard expiry-alerts-po-items --platform amazon --po example-value --po-number example-value",
 		Annotations: map[string]string{"pp:endpoint": "dashboard.expiry-alerts-po-items", "pp:method": "GET", "pp:path": "/api/dashboard/platform-expiry-alerts/{platform}/pos/{po}/items", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("platform") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "platform")
+			}
+			if !cmd.Flags().Changed("po") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "po")
+			}
+			if !cmd.Flags().Changed("po-number") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "po-number")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"amazon", "bigbasket", "blinkit", "citymall", "flipkart", "flipkart_grocery", "jiomart", "swiggy", "zepto", "zomato"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,12 +56,12 @@ func newDashboardExpiryAlertsPoItemsCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/dashboard/platform-expiry-alerts/{platform}/pos/{po}/items"
-			path = replacePathParam(path, "platform", args[0])
-			if len(args) < 2 {
-				return usageErr(fmt.Errorf("po is required\nUsage: %s <%s>", cmd.CommandPath(), "po"))
-			}
-			path = replacePathParam(path, "po", args[1])
+			path = replacePathParam(path, "platform", formatCLIParamValue(flagPlatform))
+			path = replacePathParam(path, "po", formatCLIParamValue(flagPo))
 			params := map[string]string{}
+			if flagPoNumber != "" {
+				params["po_number"] = formatCLIParamValue(flagPoNumber)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -82,6 +110,9 @@ func newDashboardExpiryAlertsPoItemsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug (one of: amazon, bigbasket, blinkit, citymall, flipkart, flipkart_grocery, jiomart, swiggy, zepto, zomato)")
+	cmd.Flags().StringVar(&flagPo, "po", "", "Purchase-order number")
+	cmd.Flags().StringVar(&flagPoNumber, "po-number", "", "PO number, URL-encoded (encodeURIComponent in the template)")
 
 	return cmd
 }

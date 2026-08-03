@@ -12,20 +12,24 @@ import (
 )
 
 func newShipmentAllAppointmentsCmd(flags *rootFlags) *cobra.Command {
+	var flagNoPaginate bool
 
 	cmd := &cobra.Command{
 		Use:         "all-appointments",
-		Short:       "All shipment appointments",
+		Short:       "All shipment appointments Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment all-appointments",
-		Annotations: map[string]string{"pp:endpoint": "shipment.all-appointments", "pp:method": "GET", "pp:path": "/api/shipment/all-appointments", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.all-appointments", "pp:method": "GET", "pp:path": "/api/shipment/all-appointments/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/all-appointments"
+			path := "/api/shipment/all-appointments/"
 			params := map[string]string{}
+			if flagNoPaginate != false {
+				params["no_paginate"] = formatCLIParamValue(flagNoPaginate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newShipmentAllAppointmentsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagNoPaginate, "no-paginate", false, "Source writes the JS boolean !0; the URL builder stringifies it to 'true'. (one of: true)")
 
 	return cmd
 }

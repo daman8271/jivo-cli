@@ -12,20 +12,54 @@ import (
 )
 
 func newShipmentShipmentsCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
+	var flagSwitchState string
 
 	cmd := &cobra.Command{
 		Use:         "shipments",
-		Short:       "List shipments",
+		Short:       "List shipments Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment shipments",
-		Annotations: map[string]string{"pp:endpoint": "shipment.shipments", "pp:method": "GET", "pp:path": "/api/shipment/shipments", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.shipments", "pp:method": "GET", "pp:path": "/api/shipment/shipments/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("status") {
+				allowedStatus := []string{"draft", "pending_approval", "approved", "rejected", "dispatched", "in_transit", "delivered"}
+				validStatus := false
+				for _, v := range allowedStatus {
+					if flagStatus == v {
+						validStatus = true
+						break
+					}
+				}
+				if !validStatus {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagStatus, "status", allowedStatus)
+				}
+			}
+			if cmd.Flags().Changed("switch-state") {
+				allowedSwitchState := []string{"any", "waiting", "email_failed", "verified", "rejected"}
+				validSwitchState := false
+				for _, v := range allowedSwitchState {
+					if flagSwitchState == v {
+						validSwitchState = true
+						break
+					}
+				}
+				if !validSwitchState {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSwitchState, "switch-state", allowedSwitchState)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/shipments"
+			path := "/api/shipment/shipments/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagSwitchState != "" {
+				params["switch_state"] = formatCLIParamValue(flagSwitchState)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +108,8 @@ func newShipmentShipmentsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "omitted entirely when falsy; the UI reads it from the browser URL ?status= (one of: draft, pending_approval, approved, rejected, dispatched, in_transit, delivered)")
+	cmd.Flags().StringVar(&flagSwitchState, "switch-state", "", "`any` is the sentinel the app always sends; the other four are the observed row values (one of: any, waiting, email_failed, verified, rejected)")
 
 	return cmd
 }

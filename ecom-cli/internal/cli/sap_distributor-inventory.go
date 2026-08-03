@@ -13,14 +13,24 @@ import (
 
 func newSapDistributorInventoryCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagCardCode string
 
 	cmd := &cobra.Command{
 		Use:         "distributor-inventory",
 		Short:       "Distributor inventory",
-		Example:     "  jivo-ecom-pp-cli sap distributor-inventory",
+		Example:     "  jivo-ecom-pp-cli sap distributor-inventory --card-code example-value",
 		Annotations: map[string]string{"pp:endpoint": "sap.distributor-inventory", "pp:method": "GET", "pp:path": "/api/sap/distributor-inventory", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("card-code") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "card-code")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -31,8 +41,11 @@ func newSapDistributorInventoryCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagCardCode != "" {
+				params["card_code"] = formatCLIParamValue(flagCardCode)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -83,7 +96,8 @@ func newSapDistributorInventoryCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagCardCode, "card-code", "", "SAP CardCode; the service hard-wires card_code as the first key; extra keys are caller-supplied and none were observed")
 
 	return cmd
 }

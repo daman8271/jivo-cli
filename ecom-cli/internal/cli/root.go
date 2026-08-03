@@ -241,10 +241,10 @@ Run 'jivo-ecom-pp-cli doctor' to verify auth and connectivity.`,
 	rootCmd.AddCommand(newFeedbackCmd(flags))
 	rootCmd.AddCommand(newWhichCmd(flags))
 	// JivoGPT RULE 0 (READ_ONLY_LAW): the generic `import` command POSTs records to
-	// ecom.jivo.in (internal/cli/import.go → c.Post "/<resource>"). It is the only write
+	// ecom.jivo.in (internal/cli/import.go -> c.Post "/<resource>"). It is the only write
 	// path to a JIVO source system in this CLI, so it is deliberately NOT registered.
-	// Re-apply this removal after any `cli-printing-press generate`. See patch 0001 +
-	// docs/ecom/ECOM_CLI_INTERNALS_CLIENT.md. Do not re-add newImportCmd.
+	// Re-apply this removal after any `cli-printing-press generate`. See patch 0001.
+	// Do not re-add newImportCmd.
 	rootCmd.AddCommand(newSearchCmd(flags))
 	rootCmd.AddCommand(newSyncCmd(flags))
 	rootCmd.AddCommand(newTailCmd(flags))

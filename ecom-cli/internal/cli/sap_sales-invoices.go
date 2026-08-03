@@ -13,11 +13,11 @@ import (
 
 func newSapSalesInvoicesCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
 
 	cmd := &cobra.Command{
 		Use:         "sales-invoices",
-		Short:       "List SAP sales invoices",
+		Short:       "List SAP sales invoices. Invoice HEADERS only, and the set includes cancelled documents. DocTotal is GST-inclusive.",
 		Example:     "  jivo-ecom-pp-cli sap sales-invoices",
 		Annotations: map[string]string{"pp:endpoint": "sap.sales-invoices", "pp:method": "GET", "pp:path": "/api/sap/sales-invoices", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -31,7 +31,7 @@ func newSapSalesInvoicesCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
@@ -83,7 +83,7 @@ func newSapSalesInvoicesCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
 
 	return cmd
 }

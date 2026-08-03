@@ -13,6 +13,8 @@ import (
 
 func newDashboardSecondaryYoyGrowthCmd(flags *rootFlags) *cobra.Command {
 	var flagPlatform string
+	var flagYear int
+	var flagMonth int
 
 	cmd := &cobra.Command{
 		Use:         "secondary-yoy-growth",
@@ -29,6 +31,12 @@ func newDashboardSecondaryYoyGrowthCmd(flags *rootFlags) *cobra.Command {
 			params := map[string]string{}
 			if flagPlatform != "" {
 				params["platform"] = formatCLIParamValue(flagPlatform)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -79,6 +87,8 @@ func newDashboardSecondaryYoyGrowthCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Filter to a single platform slug")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "4-digit year")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "month number")
 
 	return cmd
 }

@@ -13,7 +13,7 @@ import (
 
 func newMasterProductsCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
 	var flagSearch string
 
 	cmd := &cobra.Command{
@@ -32,7 +32,7 @@ func newMasterProductsCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
 			}
 			if flagSearch != "" {
@@ -87,7 +87,7 @@ func newMasterProductsCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
 	cmd.Flags().StringVar(&flagSearch, "search", "", "Free-text search filter")
 
 	return cmd

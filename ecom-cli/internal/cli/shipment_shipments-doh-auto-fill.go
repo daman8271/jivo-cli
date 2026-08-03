@@ -12,20 +12,91 @@ import (
 )
 
 func newShipmentShipmentsDohAutoFillCmd(flags *rootFlags) *cobra.Command {
+	var flagTruckSize string
+	var flagTruckCapacityLiters string
+	var flagFc string
+	var flagPriorityStrict string
+	var flagMaximizeFill string
+	var flagPriorityPremiumPct string
+	var flagPriorityCommodityPct string
+	var flagPriorityOtherPct string
 
 	cmd := &cobra.Command{
 		Use:         "shipments-doh-auto-fill",
-		Short:       "DOH auto-fill suggestions",
+		Short:       "DOH auto-fill suggestions Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment shipments-doh-auto-fill",
-		Annotations: map[string]string{"pp:endpoint": "shipment.shipments-doh-auto-fill", "pp:method": "GET", "pp:path": "/api/shipment/shipments/doh-auto-fill", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.shipments-doh-auto-fill", "pp:method": "GET", "pp:path": "/api/shipment/shipments/doh-auto-fill/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("truck-size") {
+				allowedTruckSize := []string{"10_ton", "15_ton", "custom"}
+				validTruckSize := false
+				for _, v := range allowedTruckSize {
+					if flagTruckSize == v {
+						validTruckSize = true
+						break
+					}
+				}
+				if !validTruckSize {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagTruckSize, "truck-size", allowedTruckSize)
+				}
+			}
+			if cmd.Flags().Changed("priority-strict") {
+				allowedPriorityStrict := []string{"1"}
+				validPriorityStrict := false
+				for _, v := range allowedPriorityStrict {
+					if flagPriorityStrict == v {
+						validPriorityStrict = true
+						break
+					}
+				}
+				if !validPriorityStrict {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPriorityStrict, "priority-strict", allowedPriorityStrict)
+				}
+			}
+			if cmd.Flags().Changed("maximize-fill") {
+				allowedMaximizeFill := []string{"0", "1"}
+				validMaximizeFill := false
+				for _, v := range allowedMaximizeFill {
+					if flagMaximizeFill == v {
+						validMaximizeFill = true
+						break
+					}
+				}
+				if !validMaximizeFill {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagMaximizeFill, "maximize-fill", allowedMaximizeFill)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/shipments/doh-auto-fill"
+			path := "/api/shipment/shipments/doh-auto-fill/"
 			params := map[string]string{}
+			if flagTruckSize != "" {
+				params["truck_size"] = formatCLIParamValue(flagTruckSize)
+			}
+			if flagTruckCapacityLiters != "" {
+				params["truck_capacity_liters"] = formatCLIParamValue(flagTruckCapacityLiters)
+			}
+			if flagFc != "" {
+				params["fc"] = formatCLIParamValue(flagFc)
+			}
+			if flagPriorityStrict != "" {
+				params["priority_strict"] = formatCLIParamValue(flagPriorityStrict)
+			}
+			if flagMaximizeFill != "" {
+				params["maximize_fill"] = formatCLIParamValue(flagMaximizeFill)
+			}
+			if flagPriorityPremiumPct != "" {
+				params["priority_premium_pct"] = formatCLIParamValue(flagPriorityPremiumPct)
+			}
+			if flagPriorityCommodityPct != "" {
+				params["priority_commodity_pct"] = formatCLIParamValue(flagPriorityCommodityPct)
+			}
+			if flagPriorityOtherPct != "" {
+				params["priority_other_pct"] = formatCLIParamValue(flagPriorityOtherPct)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +145,14 @@ func newShipmentShipmentsDohAutoFillCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagTruckSize, "truck-size", "", "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e)) (one of: 10_ton, 15_ton, custom)")
+	cmd.Flags().StringVar(&flagTruckCapacityLiters, "truck-capacity-liters", "", "integer litres; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))")
+	cmd.Flags().StringVar(&flagFc, "fc", "", "FC code string; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))")
+	cmd.Flags().StringVar(&flagPriorityStrict, "priority-strict", "", "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e)) (one of: 1)")
+	cmd.Flags().StringVar(&flagMaximizeFill, "maximize-fill", "", "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e)) (one of: 0, 1)")
+	cmd.Flags().StringVar(&flagPriorityPremiumPct, "priority-premium-pct", "", "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))")
+	cmd.Flags().StringVar(&flagPriorityCommodityPct, "priority-commodity-pct", "", "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))")
+	cmd.Flags().StringVar(&flagPriorityOtherPct, "priority-other-pct", "", "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))")
 
 	return cmd
 }

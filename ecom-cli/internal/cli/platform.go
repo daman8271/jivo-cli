@@ -10,7 +10,7 @@ import (
 func newPlatformCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "platform",
-		Short:       "Per-platform dashboards (Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato)",
+		Short:       "Manage platform command groups",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
@@ -20,8 +20,10 @@ func newPlatformCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newPlatformAdsTotalSalesCmd(flags))
 	cmd.AddCommand(newPlatformBigbasketAdsDailyDashboardCmd(flags))
 	cmd.AddCommand(newPlatformBigbasketAdsDashboardCmd(flags))
+	cmd.AddCommand(newPlatformBigbasketSalesExplorerCmd(flags))
 	cmd.AddCommand(newPlatformBlinkitAdsDashboardCmd(flags))
 	cmd.AddCommand(newPlatformBlinkitBrandfundDashboardCmd(flags))
+	cmd.AddCommand(newPlatformBlinkitSummaryReportCmd(flags))
 	cmd.AddCommand(newPlatformCallCenterTargetsCmd(flags))
 	cmd.AddCommand(newPlatformComparisonCmd(flags))
 	cmd.AddCommand(newPlatformCouponCmd(flags))
@@ -33,9 +35,9 @@ func newPlatformCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newPlatformLandingRateSkusCmd(flags))
 	cmd.AddCommand(newPlatformMarketplaceCmd(flags))
 	cmd.AddCommand(newPlatformMetaCmd(flags))
-	cmd.AddCommand(newPlatformMonthOnMonthSaleCmd(flags))
 	cmd.AddCommand(newPlatformMonthTargetsCmd(flags))
 	cmd.AddCommand(newPlatformMonthTargetsDashboardCmd(flags))
+	cmd.AddCommand(newPlatformMonthlySalesExplorerCmd(flags))
 	cmd.AddCommand(newPlatformMpDashboardVersionCmd(flags))
 	cmd.AddCommand(newPlatformPendencyCmd(flags))
 	cmd.AddCommand(newPlatformPosCmd(flags))
@@ -49,6 +51,7 @@ func newPlatformCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newPlatformRegionDohCmd(flags))
 	cmd.AddCommand(newPlatformSecondaryCmd(flags))
 	cmd.AddCommand(newPlatformSecondaryMonthlyCmd(flags))
+	cmd.AddCommand(newPlatformSecondarySummaryVersionCmd(flags))
 	cmd.AddCommand(newPlatformSecondaryYearsCmd(flags))
 	cmd.AddCommand(newPlatformSohDohCmd(flags))
 	cmd.AddCommand(newPlatformStatsCmd(flags))

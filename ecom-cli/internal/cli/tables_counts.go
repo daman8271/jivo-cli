@@ -12,13 +12,36 @@ import (
 )
 
 func newTablesCountsCmd(flags *rootFlags) *cobra.Command {
+	var flagTables string
 
 	cmd := &cobra.Command{
 		Use:         "counts",
 		Short:       "Row counts for every available data table",
-		Example:     "  jivo-ecom-pp-cli tables counts",
+		Example:     "  jivo-ecom-pp-cli tables counts --tables amazon_ads",
 		Annotations: map[string]string{"pp:endpoint": "tables.counts", "pp:method": "GET", "pp:path": "/api/dashboard/table-counts", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("tables") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "tables")
+			}
+			if cmd.Flags().Changed("tables") {
+				allowedTables := []string{"amazon_ads", "amazon_coupon", "amazon_inventory", "amazon_mp", "amazon_price_data", "amazon_sec_city", "amazon_sec_daily", "amazon_sec_range", "bigbasketSec", "bigbasket_ads", "bigbasket_inventory", "bigbasket_sec_range", "blinkitSec", "blinkit_ads", "blinkit_brandfund", "blinkit_inventory", "citymallSec", "citymall_inventory", "consolidated_fsn_report", "flipkartSec", "flipkart_ads", "flipkart_grocery_master", "flipkart_state_sales", "jiomartSec", "jiomart_inventory", "meta_data", "swiggySec", "swiggy_ads", "swiggy_brandfund", "swiggy_inventory", "total_po", "total_po_grn_update", "total_po_zbs", "total_po_zbs_grn_update", "zeptoSec", "zepto_ads", "zepto_brandfund", "zepto_inventory", "zomatoSec", "zomato_inventory", "master_po", "all_platform_inventory", "zeptSec"}
+				validTables := false
+				for _, v := range allowedTables {
+					if flagTables == v {
+						validTables = true
+						break
+					}
+				}
+				if !validTables {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagTables, "tables", allowedTables)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -26,6 +49,9 @@ func newTablesCountsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/dashboard/table-counts"
 			params := map[string]string{}
+			if flagTables != "" {
+				params["tables"] = formatCLIParamValue(flagTables)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "tables", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +100,7 @@ func newTablesCountsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagTables, "tables", "", "comma-joined table names (one of: amazon_ads, amazon_coupon, amazon_inventory, amazon_mp, amazon_price_data, amazon_sec_city, amazon_sec_daily, amazon_sec_range, bigbasketSec, bigbasket_ads, bigbasket_inventory, bigbasket_sec_range, blinkitSec, blinkit_ads, blinkit_brandfund, blinkit_inventory, citymallSec, citymall_inventory, consolidated_fsn_report, flipkartSec, flipkart_ads, flipkart_grocery_master, flipkart_state_sales, jiomartSec, jiomart_inventory, meta_data, swiggySec, swiggy_ads, swiggy_brandfund, swiggy_inventory, total_po, total_po_grn_update, total_po_zbs, total_po_zbs_grn_update, zeptoSec, zepto_ads, zepto_brandfund, zepto_inventory, zomatoSec, zomato_inventory, master_po, all_platform_inventory, zeptSec)")
 
 	return cmd
 }

@@ -12,6 +12,8 @@ import (
 )
 
 func newNotificationsListCmd(flags *rootFlags) *cobra.Command {
+	var flagActiveOnly bool
+	var flagLimit int
 
 	cmd := &cobra.Command{
 		Use:         "list",
@@ -26,10 +28,18 @@ func newNotificationsListCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/notifications"
 			params := map[string]string{}
+			if flagActiveOnly != false {
+				params["active_only"] = formatCLIParamValue(flagActiveOnly)
+			}
+			if flagLimit != 0 {
+				params["limit"] = formatCLIParamValue(flagLimit)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "notifications", true, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			// Honor --limit when the API accepts but ignores ?limit=N.
+			data = truncateJSONArray(data, flagLimit)
 			// Print provenance to stderr for human-facing output only.
 			// Machine-format flags (--json, --csv, --compact, --quiet, --plain,
 			// --select) and piped stdout suppress this line; the JSON envelope
@@ -74,6 +84,8 @@ func newNotificationsListCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().BoolVar(&flagActiveOnly, "active-only", false, "hard-wired by the service, not caller supplied Source writes the JS boolean ! (one of: true)")
+	cmd.Flags().IntVar(&flagLimit, "limit", 0, "hard-wired by the service (one of: 200)")
 
 	return cmd
 }

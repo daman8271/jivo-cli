@@ -12,13 +12,28 @@ import (
 )
 
 func newSapInventoryOverviewCmd(flags *rootFlags) *cobra.Command {
+	var flagPageSize int
+	var flagStatus string
 
 	cmd := &cobra.Command{
 		Use:         "inventory-overview",
-		Short:       "Inventory overview",
+		Short:       "Inventory overview. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.",
 		Example:     "  jivo-ecom-pp-cli sap inventory-overview",
 		Annotations: map[string]string{"pp:endpoint": "sap.inventory-overview", "pp:method": "GET", "pp:path": "/api/sap/inventory-overview", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("status") {
+				allowedStatus := []string{"", "Y", "N"}
+				validStatus := false
+				for _, v := range allowedStatus {
+					if flagStatus == v {
+						validStatus = true
+						break
+					}
+				}
+				if !validStatus {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagStatus, "status", allowedStatus)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -26,6 +41,12 @@ func newSapInventoryOverviewCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/sap/inventory-overview"
 			params := map[string]string{}
+			if flagPageSize != 0 {
+				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +95,8 @@ func newSapInventoryOverviewCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "integer (1e5)")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "Item status: empty = all, Y = active, N = frozen. (one of: , Y, N)")
 
 	return cmd
 }

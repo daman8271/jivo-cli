@@ -12,20 +12,37 @@ import (
 )
 
 func newShipmentRecordCmd(flags *rootFlags) *cobra.Command {
+	var flagStatus string
 
 	cmd := &cobra.Command{
 		Use:         "record",
-		Short:       "Shipment record",
+		Short:       "Shipment record Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment record",
-		Annotations: map[string]string{"pp:endpoint": "shipment.record", "pp:method": "GET", "pp:path": "/api/shipment/record", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.record", "pp:method": "GET", "pp:path": "/api/shipment/record/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("status") {
+				allowedStatus := []string{"draft", "pending_approval", "approved", "dispatched"}
+				validStatus := false
+				for _, v := range allowedStatus {
+					if flagStatus == v {
+						validStatus = true
+						break
+					}
+				}
+				if !validStatus {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagStatus, "status", allowedStatus)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/record"
+			path := "/api/shipment/record/"
 			params := map[string]string{}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +91,7 @@ func newShipmentRecordCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStatus, "status", "", "Shipment lifecycle state. (one of: draft, pending_approval, approved, dispatched)")
 
 	return cmd
 }

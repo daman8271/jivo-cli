@@ -16,14 +16,19 @@ func newReportsCmd(flags *rootFlags) *cobra.Command {
 	}
 
 	cmd.AddCommand(newReportsAmazonPoCmd(flags))
+	cmd.AddCommand(newReportsAmazonPoBillingCmd(flags))
 	cmd.AddCommand(newReportsAmazonPoFilterOptionsCmd(flags))
 	cmd.AddCommand(newReportsAmazonPoMatrixCmd(flags))
 	cmd.AddCommand(newReportsAmazonPoNewPoCmd(flags))
+	cmd.AddCommand(newReportsAmazonPoSkuPendencyCmd(flags))
+	cmd.AddCommand(newReportsAmazonPoSkuPendencyFilterOptionsCmd(flags))
 	cmd.AddCommand(newReportsAmazonPoSummaryCmd(flags))
 	cmd.AddCommand(newReportsAppointmentCmd(flags))
 	cmd.AddCommand(newReportsAppointmentFilterOptionsCmd(flags))
 	cmd.AddCommand(newReportsAppointmentSummaryCmd(flags))
 	cmd.AddCommand(newReportsColumnsCmd(flags))
+	cmd.AddCommand(newReportsLiveDataCmd(flags))
+	cmd.AddCommand(newReportsLiveReportsCmd(flags))
 	cmd.AddCommand(newReportsRawCmd(flags))
 	return cmd
 }

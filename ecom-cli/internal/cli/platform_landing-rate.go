@@ -12,17 +12,53 @@ import (
 )
 
 func newPlatformLandingRateCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagMode string
+	var flagMonth int
+	var flagSearch string
 
 	cmd := &cobra.Command{
-		Use:         "landing-rate <platform>",
+		Use:         "landing-rate",
 		Short:       "Monthly landing rate (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)",
-		Example:     "  jivo-ecom-pp-cli platform landing-rate amazon",
+		Example:     "  jivo-ecom-pp-cli platform landing-rate --platform blinkit",
 		Annotations: map[string]string{"pp:endpoint": "platform.landing-rate", "pp:method": "GET", "pp:path": "/api/platform/{platform}/landing-rate", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("platform") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "platform")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"blinkit", "zepto", "swiggy", "bigbasket", "flipkart_grocery"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
+			}
+			if cmd.Flags().Changed("mode") {
+				allowedMode := []string{"effective", "history"}
+				validMode := false
+				for _, v := range allowedMode {
+					if flagMode == v {
+						validMode = true
+						break
+					}
+				}
+				if !validMode {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagMode, "mode", allowedMode)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -30,13 +66,22 @@ func newPlatformLandingRateCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/platform/{platform}/landing-rate"
-			path = replacePathParam(path, "platform", args[0])
+			path = replacePathParam(path, "platform", formatCLIParamValue(flagPlatform))
 			params := map[string]string{}
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagMode != "" {
+				params["mode"] = formatCLIParamValue(flagMode)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -86,8 +131,12 @@ func newPlatformLandingRateCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug. This endpoint is served ONLY for: blinkit, zepto, swiggy, bigbasket, flipkart_grocery (one of: blinkit, zepto, swiggy, bigbasket, flipkart_grocery)")
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagMode, "mode", "", " (one of: effective, history)")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "YYYY-MM-01 (the picker holds YYYY-MM, the code appends -01)")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "free text")
 
 	return cmd
 }

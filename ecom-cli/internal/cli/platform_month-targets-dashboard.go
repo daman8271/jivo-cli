@@ -12,13 +12,14 @@ import (
 )
 
 func newPlatformMonthTargetsDashboardCmd(flags *rootFlags) *cobra.Command {
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
+	var flagNocache string
 
 	cmd := &cobra.Command{
 		Use:         "month-targets-dashboard",
-		Short:       "Secondary month-targets dashboard across platforms",
-		Example:     "  jivo-ecom-pp-cli platform month-targets-dashboard --month 42 --year 42",
+		Short:       "Secondary month-targets dashboard across platforms Server requires: `month` (1–12) and `year` (YYYY) are required.",
+		Example:     "  jivo-ecom-pp-cli platform month-targets-dashboard --month example-value --year example-value",
 		Annotations: map[string]string{"pp:endpoint": "platform.month-targets-dashboard", "pp:method": "GET", "pp:path": "/api/platform/month-targets/dashboard", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -33,6 +34,19 @@ func newPlatformMonthTargetsDashboardCmd(flags *rootFlags) *cobra.Command {
 			if !cmd.Flags().Changed("year") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "year")
 			}
+			if cmd.Flags().Changed("nocache") {
+				allowedNocache := []string{"1"}
+				validNocache := false
+				for _, v := range allowedNocache {
+					if flagNocache == v {
+						validNocache = true
+						break
+					}
+				}
+				if !validNocache {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagNocache, "nocache", allowedNocache)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -40,11 +54,14 @@ func newPlatformMonthTargetsDashboardCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/platform/month-targets/dashboard"
 			params := map[string]string{}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagNocache != "" {
+				params["nocache"] = formatCLIParamValue(flagNocache)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -94,8 +111,9 @@ func newPlatformMonthTargetsDashboardCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
+	cmd.Flags().StringVar(&flagNocache, "nocache", "", " (one of: 1)")
 
 	return cmd
 }

@@ -16,8 +16,8 @@ func newReportsColumnsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "columns",
-		Short:       "Column definitions for a report view",
-		Example:     "  jivo-ecom-pp-cli reports columns --view amazon_mp_master_view",
+		Short:       "Column definitions for one report view. `view` is required - a bare call returns 400 'Unknown report view'.",
+		Example:     "  jivo-ecom-pp-cli reports columns --view all_platform_inventory",
 		Annotations: map[string]string{"pp:endpoint": "reports.columns", "pp:method": "GET", "pp:path": "/api/reports/columns", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -30,7 +30,7 @@ func newReportsColumnsCmd(flags *rootFlags) *cobra.Command {
 				return fmt.Errorf("required flag \"%s\" not set", "view")
 			}
 			if cmd.Flags().Changed("view") {
-				allowedView := []string{"amazon_mp_master_view", "amazon_sec_daily_master_view", "amazon_sec_range_master_view"}
+				allowedView := []string{"all_platform_inventory", "master_po", "total_po", "SecMaster", "amazon_sec_range_master_view", "amazon_sec_daily_master_view", "amazon_mp_master_view", "sap:jm_primary:oil", "sap:jm_primary:mart", "sap:jm_inventory:oil", "sap:jm_inventory:mart"}
 				validView := false
 				for _, v := range allowedView {
 					if flagView == v {
@@ -100,7 +100,7 @@ func newReportsColumnsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagView, "view", "", "Report view name (one of: amazon_mp_master_view, amazon_sec_daily_master_view, amazon_sec_range_master_view)")
+	cmd.Flags().StringVar(&flagView, "view", "", "view name; the sap: ones are colon-delimited triples; the service hard-wires the key: getColumns (one of: all_platform_inventory, master_po, total_po, SecMaster, amazon_sec_range_master_view, amazon_sec_daily_master_view, amazon_mp_master_view, sap:jm_primary:oil, sap:jm_primary:mart, sap:jm_inventory:oil, sap:jm_inventory:mart)")
 
 	return cmd
 }

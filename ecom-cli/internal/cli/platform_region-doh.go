@@ -12,15 +12,36 @@ import (
 )
 
 func newPlatformRegionDohCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
+	var flagDate string
 
 	cmd := &cobra.Command{
-		Use:         "region-doh <platform>",
-		Short:       "Region-wise days-of-health dashboard for a platform",
-		Example:     "  jivo-ecom-pp-cli platform region-doh example-value",
+		Use:         "region-doh",
+		Short:       "Region-wise days-of-health dashboard for a platform Served only for: swiggy, zepto",
+		Example:     "  jivo-ecom-pp-cli platform region-doh --platform swiggy",
 		Annotations: map[string]string{"pp:endpoint": "platform.region-doh", "pp:method": "GET", "pp:path": "/api/platform/{platform}/region-doh-dashboard", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("platform") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "platform")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"swiggy", "zepto"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,8 +49,11 @@ func newPlatformRegionDohCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/platform/{platform}/region-doh-dashboard"
-			path = replacePathParam(path, "platform", args[0])
+			path = replacePathParam(path, "platform", formatCLIParamValue(flagPlatform))
 			params := map[string]string{}
+			if flagDate != "" {
+				params["date"] = formatCLIParamValue(flagDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +102,8 @@ func newPlatformRegionDohCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug. This endpoint is served ONLY for: swiggy, zepto (one of: swiggy, zepto)")
+	cmd.Flags().StringVar(&flagDate, "date", "", "date string from the picker")
 
 	return cmd
 }

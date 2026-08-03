@@ -12,24 +12,138 @@ import (
 )
 
 func newShipmentAppointmentItemsCmd(flags *rootFlags) *cobra.Command {
+	var flagId string
+	var flagAppointmentId string
+	var flagTruckSize string
+	var flagTruckCapacityLiters string
+	var flagPriorityPremiumPct string
+	var flagPriorityCommodityPct string
+	var flagPriorityOtherPct string
+	var flagPriorityStrict string
+	var flagMaximizeFill string
+	var flagRespectStock bool
+	var flagAppointmentIds string
+	var flagSelectedPos string
+	var flagProductFamily string
+	var flagFamilyAsins string
+	var flagCommitCapsJson string
 
 	cmd := &cobra.Command{
-		Use:         "appointment-items <id>",
+		Use:         "appointment-items",
 		Short:       "Items for an appointment",
-		Example:     "  jivo-ecom-pp-cli shipment appointment-items 550e8400-e29b-41d4-a716-446655440000",
-		Annotations: map[string]string{"pp:endpoint": "shipment.appointment-items", "pp:method": "GET", "pp:path": "/api/shipment/appointments/{id}/items", "mcp:read-only": "true"},
+		Example:     "  jivo-ecom-pp-cli shipment appointment-items --id 550e8400-e29b-41d4-a716-446655440000 --appointment-id 550e8400-e29b-41d4-a716-446655440000 --truck-size 10_ton",
+		Annotations: map[string]string{"pp:endpoint": "shipment.appointment-items", "pp:method": "GET", "pp:path": "/api/shipment/appointments/{id}/items/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "id")
+			}
+			if !cmd.Flags().Changed("appointment-id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "appointment-id")
+			}
+			if !cmd.Flags().Changed("truck-size") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "truck-size")
+			}
+			if cmd.Flags().Changed("truck-size") {
+				allowedTruckSize := []string{"10_ton", "15_ton", "custom"}
+				validTruckSize := false
+				for _, v := range allowedTruckSize {
+					if flagTruckSize == v {
+						validTruckSize = true
+						break
+					}
+				}
+				if !validTruckSize {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagTruckSize, "truck-size", allowedTruckSize)
+				}
+			}
+			if cmd.Flags().Changed("priority-strict") {
+				allowedPriorityStrict := []string{"1"}
+				validPriorityStrict := false
+				for _, v := range allowedPriorityStrict {
+					if flagPriorityStrict == v {
+						validPriorityStrict = true
+						break
+					}
+				}
+				if !validPriorityStrict {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPriorityStrict, "priority-strict", allowedPriorityStrict)
+				}
+			}
+			if cmd.Flags().Changed("maximize-fill") {
+				allowedMaximizeFill := []string{"0", "1"}
+				validMaximizeFill := false
+				for _, v := range allowedMaximizeFill {
+					if flagMaximizeFill == v {
+						validMaximizeFill = true
+						break
+					}
+				}
+				if !validMaximizeFill {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagMaximizeFill, "maximize-fill", allowedMaximizeFill)
+				}
+			}
+			if cmd.Flags().Changed("commit-caps-json") {
+				var parsedCommitCapsJson any
+				if err := json.Unmarshal([]byte(flagCommitCapsJson), &parsedCommitCapsJson); err != nil {
+					return fmt.Errorf("--commit-caps-json must be valid JSON: %w", err)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/appointments/{id}/items"
-			path = replacePathParam(path, "id", args[0])
+			path := "/api/shipment/appointments/{id}/items/"
+			path = replacePathParam(path, "id", formatCLIParamValue(flagId))
 			params := map[string]string{}
+			if flagAppointmentId != "" {
+				params["appointment_id"] = formatCLIParamValue(flagAppointmentId)
+			}
+			if flagTruckSize != "" {
+				params["truck_size"] = formatCLIParamValue(flagTruckSize)
+			}
+			if flagTruckCapacityLiters != "" {
+				params["truck_capacity_liters"] = formatCLIParamValue(flagTruckCapacityLiters)
+			}
+			if flagPriorityPremiumPct != "" {
+				params["priority_premium_pct"] = formatCLIParamValue(flagPriorityPremiumPct)
+			}
+			if flagPriorityCommodityPct != "" {
+				params["priority_commodity_pct"] = formatCLIParamValue(flagPriorityCommodityPct)
+			}
+			if flagPriorityOtherPct != "" {
+				params["priority_other_pct"] = formatCLIParamValue(flagPriorityOtherPct)
+			}
+			if flagPriorityStrict != "" {
+				params["priority_strict"] = formatCLIParamValue(flagPriorityStrict)
+			}
+			if flagMaximizeFill != "" {
+				params["maximize_fill"] = formatCLIParamValue(flagMaximizeFill)
+			}
+			if flagRespectStock != false {
+				params["respect_stock"] = formatCLIParamValue(flagRespectStock)
+			}
+			if flagAppointmentIds != "" {
+				params["appointment_ids"] = formatCLIParamValue(flagAppointmentIds)
+			}
+			if flagSelectedPos != "" {
+				params["selected_pos"] = formatCLIParamValue(flagSelectedPos)
+			}
+			if flagProductFamily != "" {
+				params["product_family"] = formatCLIParamValue(flagProductFamily)
+			}
+			if flagFamilyAsins != "" {
+				params["family_asins"] = formatCLIParamValue(flagFamilyAsins)
+			}
+			if flagCommitCapsJson != "" {
+				params["commit_caps_json"] = formatCLIParamValue(flagCommitCapsJson)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +192,21 @@ func newShipmentAppointmentItemsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagId, "id", "", "Appointment id")
+	cmd.Flags().StringVar(&flagAppointmentId, "appointment-id", "", "numeric/string appointment id from the appointments list")
+	cmd.Flags().StringVar(&flagTruckSize, "truck-size", "", "always set - it is the only unconditional key in the URLSearchParams. UI default is 15_ton (one of: 10_ton, 15_ton, custom)")
+	cmd.Flags().StringVar(&flagTruckCapacityLiters, "truck-capacity-liters", "", "integer litres; 10000 for 10_ton, 15000 for 15_ton, 12000 default for custom")
+	cmd.Flags().StringVar(&flagPriorityPremiumPct, "priority-premium-pct", "", "number as string (percentage); sent as a group of three or not at all")
+	cmd.Flags().StringVar(&flagPriorityCommodityPct, "priority-commodity-pct", "", "number as string (percentage); sent as a group of three or not at all")
+	cmd.Flags().StringVar(&flagPriorityOtherPct, "priority-other-pct", "", "number as string (percentage); sent as a group of three or not at all")
+	cmd.Flags().StringVar(&flagPriorityStrict, "priority-strict", "", "flag; only ever the string 1 (one of: 1)")
+	cmd.Flags().StringVar(&flagMaximizeFill, "maximize-fill", "", "always sent; defaults to 1 (one of: 0, 1)")
+	cmd.Flags().BoolVar(&flagRespectStock, "respect-stock", false, "only ever set to 0 (to switch stock respect OFF); omitted means on (one of: 0)")
+	cmd.Flags().StringVar(&flagAppointmentIds, "appointment-ids", "", "comma-joined appointment ids")
+	cmd.Flags().StringVar(&flagSelectedPos, "selected-pos", "", "comma-joined PO numbers")
+	cmd.Flags().StringVar(&flagProductFamily, "product-family", "", "family key from GET /api/shipment/appointments/{id}/families/; not a fixed set - fetch families first")
+	cmd.Flags().StringVar(&flagFamilyAsins, "family-asins", "", "comma-joined ASINs")
+	cmd.Flags().StringVar(&flagCommitCapsJson, "commit-caps-json", "", "JSON object {'<asin>':{'units':N,'cartons':N}}")
 
 	return cmd
 }

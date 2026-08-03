@@ -10,7 +10,7 @@ import (
 func newShipmentCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "shipment",
-		Short:       "Amazon Shipment Planner (read-only). Requires Shipment Planner access; returns 403 without it.",
+		Short:       "Amazon Shipment Planner (read-only). Requires the amazon.shipment_planning.view permission; returns 403 without it.",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
@@ -19,10 +19,13 @@ func newShipmentCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newShipmentAppointmentCommitsCmd(flags))
 	cmd.AddCommand(newShipmentAppointmentDatesCmd(flags))
 	cmd.AddCommand(newShipmentAppointmentExtraPosCmd(flags))
+	cmd.AddCommand(newShipmentAppointmentFamiliesCmd(flags))
 	cmd.AddCommand(newShipmentAppointmentItemsCmd(flags))
 	cmd.AddCommand(newShipmentAppointmentsCmd(flags))
 	cmd.AddCommand(newShipmentAsinCatalogCmd(flags))
+	cmd.AddCommand(newShipmentFcSwitchGroupCmd(flags))
 	cmd.AddCommand(newShipmentInventoryCmd(flags))
+	cmd.AddCommand(newShipmentPoAppointmentsCmd(flags))
 	cmd.AddCommand(newShipmentPoItemsCmd(flags))
 	cmd.AddCommand(newShipmentPoShipmentLookupCmd(flags))
 	cmd.AddCommand(newShipmentPoShortSupplyCmd(flags))

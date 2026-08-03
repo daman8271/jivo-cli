@@ -12,15 +12,26 @@ import (
 )
 
 func newShipmentShipmentInvoiceFileCmd(flags *rootFlags) *cobra.Command {
+	var flagId string
+	var flagInvoice string
 
 	cmd := &cobra.Command{
-		Use:         "shipment-invoice-file <id> <invoice>",
+		Use:         "shipment-invoice-file",
 		Short:       "Download an invoice file for a shipment",
-		Example:     "  jivo-ecom-pp-cli shipment shipment-invoice-file 550e8400-e29b-41d4-a716-446655440000 example-value",
+		Example:     "  jivo-ecom-pp-cli shipment shipment-invoice-file --id 550e8400-e29b-41d4-a716-446655440000 --invoice example-value",
 		Annotations: map[string]string{"pp:endpoint": "shipment.shipment-invoice-file", "pp:method": "GET", "pp:path": "/api/shipment/shipments/{id}/invoices/{invoice}/file", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "id")
+			}
+			if !cmd.Flags().Changed("invoice") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "invoice")
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,11 +39,8 @@ func newShipmentShipmentInvoiceFileCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/shipment/shipments/{id}/invoices/{invoice}/file"
-			path = replacePathParam(path, "id", args[0])
-			if len(args) < 2 {
-				return usageErr(fmt.Errorf("invoice is required\nUsage: %s <%s>", cmd.CommandPath(), "invoice"))
-			}
-			path = replacePathParam(path, "invoice", args[1])
+			path = replacePathParam(path, "id", formatCLIParamValue(flagId))
+			path = replacePathParam(path, "invoice", formatCLIParamValue(flagInvoice))
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -82,6 +90,8 @@ func newShipmentShipmentInvoiceFileCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagId, "id", "", "Shipment id")
+	cmd.Flags().StringVar(&flagInvoice, "invoice", "", "Invoice id")
 
 	return cmd
 }

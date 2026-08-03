@@ -12,15 +12,44 @@ import (
 )
 
 func newDashboardCategoryPlatformBreakdownCmd(flags *rootFlags) *cobra.Command {
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
+	var flagSource string
+	var flagHead string
+	var flagDimension string
+	var flagName string
 
 	cmd := &cobra.Command{
 		Use:         "category-platform-breakdown",
-		Short:       "Category breakdown split by platform",
-		Example:     "  jivo-ecom-pp-cli dashboard category-platform-breakdown",
+		Short:       "Category breakdown split by platform Server requires: name is required.",
+		Example:     "  jivo-ecom-pp-cli dashboard category-platform-breakdown --month example-value --year example-value",
 		Annotations: map[string]string{"pp:endpoint": "dashboard.category-platform-breakdown", "pp:method": "GET", "pp:path": "/api/dashboard/category-platform-breakdown", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("month") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "month")
+			}
+			if !cmd.Flags().Changed("year") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "year")
+			}
+			if cmd.Flags().Changed("source") {
+				allowedSource := []string{"primary", "secondary"}
+				validSource := false
+				for _, v := range allowedSource {
+					if flagSource == v {
+						validSource = true
+						break
+					}
+				}
+				if !validSource {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSource, "source", allowedSource)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -28,11 +57,23 @@ func newDashboardCategoryPlatformBreakdownCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/dashboard/category-platform-breakdown"
 			params := map[string]string{}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagSource != "" {
+				params["source"] = formatCLIParamValue(flagSource)
+			}
+			if flagHead != "" {
+				params["head"] = formatCLIParamValue(flagHead)
+			}
+			if flagDimension != "" {
+				params["dimension"] = formatCLIParamValue(flagDimension)
+			}
+			if flagName != "" {
+				params["name"] = formatCLIParamValue(flagName)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -82,8 +123,12 @@ func newDashboardCategoryPlatformBreakdownCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
+	cmd.Flags().StringVar(&flagSource, "source", "", " (one of: primary, secondary)")
+	cmd.Flags().StringVar(&flagHead, "head", "", "category / item-head key taken from the clicked row (e?.")
+	cmd.Flags().StringVar(&flagDimension, "dimension", "", "dimension key taken from the clicked row (e?.")
+	cmd.Flags().StringVar(&flagName, "name", "", "row name taken from the clicked row (e?.")
 
 	return cmd
 }

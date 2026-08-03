@@ -11,26 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newPlatformMonthOnMonthSaleCmd(flags *rootFlags) *cobra.Command {
+func newReportsLiveReportsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:         "month-on-month-sale <platform>",
-		Short:       "Month-on-month sales for a platform",
-		Example:     "  jivo-ecom-pp-cli platform month-on-month-sale example-value",
-		Annotations: map[string]string{"pp:endpoint": "platform.month-on-month-sale", "pp:method": "GET", "pp:path": "/api/platform/{platform}/month-on-month-sale", "mcp:read-only": "true"},
+		Use:         "live-reports",
+		Short:       "Live reports (reports) Requires additional permission; returns 403 otherwise.",
+		Example:     "  jivo-ecom-pp-cli reports live-reports",
+		Annotations: map[string]string{"pp:endpoint": "reports.live-reports", "pp:method": "GET", "pp:path": "/api/reports/live/reports", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				return cmd.Help()
-			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/platform/{platform}/month-on-month-sale"
-			path = replacePathParam(path, "platform", args[0])
+			path := "/api/reports/live/reports"
 			params := map[string]string{}
-			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
+			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "reports", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}

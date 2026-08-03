@@ -1,7 +1,7 @@
 {
   "api_name": "jivo-ecom",
   "base_url": "https://ecom.jivo.in",
-  "description": "JIVO e-commerce \u0026 quick-commerce analytics CLI (ecom.jivo.in) — read-only dashboards, master data, notifications, and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato",
+  "description": "JIVO e-commerce \u0026 quick-commerce analytics CLI (ecom.jivo.in) - read-only dashboards, master data, notifications, SAP mirror, Amazon PO reporting and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato",
   "mcp_ready": "full",
   "http_transport": "standard",
   "mcp": {
@@ -28,6 +28,13 @@
   "required_headers": [],
   "tools": [
     {
+      "name": "account_feature-flags",
+      "description": "Feature flags (getFeatureFlags).",
+      "method": "GET",
+      "path": "/api/auth/feature-flags",
+      "params": []
+    },
+    {
       "name": "account_me",
       "description": "Show the authenticated user (profile, groups, platforms, permissions).",
       "method": "GET",
@@ -43,7 +50,7 @@
     },
     {
       "name": "chatbot_conversation",
-      "description": "Get a chatbot conversation (with messages) by id. Required: id.",
+      "description": "Get a chatbot conversation (with messages) by id. Required: id, conversation_id.",
       "method": "GET",
       "path": "/api/chatbot/conversations/{id}",
       "params": [
@@ -53,12 +60,19 @@
           "location": "path",
           "description": "Conversation id",
           "required": true
+        },
+        {
+          "name": "conversation_id",
+          "type": "string",
+          "location": "query",
+          "description": "conversation id from /api/chatbot/conversations",
+          "required": true
         }
       ]
     },
     {
       "name": "chatbot_conversations",
-      "description": "List chatbot conversations.",
+      "description": "List chatbot conversations. Returns array.",
       "method": "GET",
       "path": "/api/chatbot/conversations",
       "params": []
@@ -72,7 +86,7 @@
     },
     {
       "name": "dashboard_category-breakdown",
-      "description": "Premium vs commodity category breakdown. Optional: platform, month, year.",
+      "description": "Premium vs commodity category breakdown. Required: month, year. Optional: platform, source.",
       "method": "GET",
       "path": "/api/dashboard/category-breakdown",
       "params": [
@@ -84,15 +98,22 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
-          "description": "Month number 1-12"
+          "description": "Month number 1-12",
+          "required": true
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
-          "description": "Four-digit year"
+          "description": "Four-digit year",
+          "required": true
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
@@ -110,13 +131,13 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
         }
@@ -124,27 +145,52 @@
     },
     {
       "name": "dashboard_category-platform-breakdown",
-      "description": "Category breakdown split by platform. Optional: month, year.",
+      "description": "Category breakdown split by platform Server requires: name is required. Required: month, year. Optional: source, head, dimension (plus 1 more).",
       "method": "GET",
       "path": "/api/dashboard/category-platform-breakdown",
       "params": [
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
-          "description": "Month number 1-12"
+          "description": "Month number 1-12",
+          "required": true
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
-          "description": "Four-digit year"
+          "description": "Four-digit year",
+          "required": true
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "head",
+          "type": "string",
+          "location": "query",
+          "description": "category / item-head key taken from the clicked row (e?.head); values come from a previously fetched breakdown row - NOT a fixed set; no literal member observed"
+        },
+        {
+          "name": "dimension",
+          "type": "string",
+          "location": "query",
+          "description": "dimension key taken from the clicked row (e?.dimension); values come from a previously fetched breakdown row - NOT a fixed set; no literal member observed"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "location": "query",
+          "description": "row name taken from the clicked row (e?.name); values come from a previously fetched breakdown row - NOT a fixed set; no literal member observed"
         }
       ]
     },
     {
       "name": "dashboard_category-sku-breakdown",
-      "description": "SKU-level breakdown within a category (requires --platform). Required: platform. Optional: month, year.",
+      "description": "SKU-level breakdown within a category (requires --platform) Server requires: name is required. Required: platform. Optional: month, year.",
       "method": "GET",
       "path": "/api/dashboard/category-sku-breakdown",
       "params": [
@@ -157,13 +203,13 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
         }
@@ -171,7 +217,7 @@
     },
     {
       "name": "dashboard_category-trend",
-      "description": "Category sales trend over time. Optional: platform.",
+      "description": "Category sales trend over time. Required: month, year. Optional: platform, source, months.",
       "method": "GET",
       "path": "/api/dashboard/category-trend",
       "params": [
@@ -180,27 +226,52 @@
           "type": "string",
           "location": "query",
           "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number 1-12",
+          "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year",
+          "required": true
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "integer count of trailing months (6 observed)"
         }
       ]
     },
     {
       "name": "dashboard_expiry-alerts",
-      "description": "Expiry alerts for a single platform. Required: platform.",
+      "description": "Expiry alerts for one reporting table. NOTE: the path segment is a TABLE name (see `tables counts`), not a platform slug - passing a platform returns 200 with an empty list, which is a false negative. Required: table.",
       "method": "GET",
-      "path": "/api/dashboard/expiry-alerts/{platform}",
+      "path": "/api/dashboard/expiry-alerts/{table}",
       "params": [
         {
-          "name": "platform",
+          "name": "table",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Reporting-schema table name, case-sensitive.",
           "required": true
         }
       ]
     },
     {
       "name": "dashboard_expiry-alerts-po-items",
-      "description": "Line items for a PO behind an expiry alert. Required: platform, po.",
+      "description": "Line items for a PO behind an expiry alert. Required: platform, po, po_number.",
       "method": "GET",
       "path": "/api/dashboard/platform-expiry-alerts/{platform}/pos/{po}/items",
       "params": [
@@ -216,6 +287,13 @@
           "type": "string",
           "location": "path",
           "description": "Purchase-order number",
+          "required": true
+        },
+        {
+          "name": "po_number",
+          "type": "string",
+          "location": "query",
+          "description": "PO number, URL-encoded (encodeURIComponent in the template); the encodeURIComponent proves PO numbers contain characters needing escaping",
           "required": true
         }
       ]
@@ -235,13 +313,13 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
         }
@@ -290,9 +368,130 @@
     },
     {
       "name": "dashboard_lead-time-report",
-      "description": "Distributor lead-time report (rows, slabs, grand total).",
+      "description": "Distributor lead-time report (rows, slabs, grand total). Optional: platform, month, year (plus 1 more).",
       "method": "GET",
       "path": "/api/dashboard/lead-time-report",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "platform slug"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_penetration-report",
+      "description": "Penetration report (get). Optional: month, year, page (plus 11 more).",
+      "method": "GET",
+      "path": "/api/dashboard/penetration-report",
+      "params": [
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "location": "query",
+          "description": "0-based integer"
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "location": "query",
+          "description": "integer; 1e5 used for export"
+        },
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "array of platform slugs"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "array of item-head keys"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "array of category names"
+        },
+        {
+          "name": "sub_category",
+          "type": "string",
+          "location": "query",
+          "description": "array of sub-category names"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "keys read off the status-ranking map n={live:3,selling:2,stocked:1,inactive:0}; the filter chips use the same keys, but I did not see the chip array itself"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "free text"
+        },
+        {
+          "name": "group_by",
+          "type": "string",
+          "location": "query",
+          "description": "A===`city`?...:A===`sku`?...; empty means no grouping"
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "location": "query",
+          "description": "column key from the table header"
+        },
+        {
+          "name": "dir",
+          "type": "string",
+          "location": "query",
+          "description": "both literals present in the chunk; I did not isolate the toggle that writes them"
+        },
+        {
+          "name": "nocache",
+          "type": "string",
+          "location": "query",
+          "description": "{...F,nocache:1} on the force-refresh path"
+        }
+      ]
+    },
+    {
+      "name": "dashboard_penetration-report-options",
+      "description": "Penetration report options (getOptions).",
+      "method": "GET",
+      "path": "/api/dashboard/penetration-report/options",
       "params": []
     },
     {
@@ -310,13 +509,13 @@
       "params": [
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
         }
@@ -324,7 +523,7 @@
     },
     {
       "name": "dashboard_realise-breakdown",
-      "description": "Realise dashboard: breakdown (net realisation analytics). Optional: platform, source, month (plus 1 more).",
+      "description": "Realise dashboard: breakdown (net realisation analytics). Optional: platform, source, month (plus 4 more).",
       "method": "GET",
       "path": "/api/dashboard/realise-breakdown",
       "params": [
@@ -342,21 +541,38 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "item-head key; omitted when blank"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "category name; omitted when blank"
+        },
+        {
+          "name": "group_by",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "dashboard_realise-overview",
-      "description": "Realise dashboard: overview (net realisation analytics). Optional: platform, source, month (plus 1 more).",
+      "description": "Realise dashboard: overview (net realisation analytics). Optional: platform, source, month (plus 3 more).",
       "method": "GET",
       "path": "/api/dashboard/realise-overview",
       "params": [
@@ -374,21 +590,33 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "item-head key; omitted when blank"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "category name; omitted when blank"
         }
       ]
     },
     {
       "name": "dashboard_realise-trend",
-      "description": "Realise dashboard: trend (net realisation analytics). Optional: platform, source, month (plus 1 more).",
+      "description": "Realise dashboard: trend (net realisation analytics). Optional: platform, source, month (plus 4 more).",
       "method": "GET",
       "path": "/api/dashboard/realise-trend",
       "params": [
@@ -406,21 +634,39 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "item-head key; omitted when blank"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "category name; omitted when blank"
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "integer (12 observed)"
         }
       ]
     },
     {
       "name": "dashboard_realise-waterfall",
-      "description": "Realise dashboard: waterfall (net realisation analytics). Optional: platform, source, month (plus 1 more).",
+      "description": "Realise dashboard: waterfall (net realisation analytics). Optional: platform, source, month (plus 3 more).",
       "method": "GET",
       "path": "/api/dashboard/realise-waterfall",
       "params": [
@@ -438,21 +684,33 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "item-head key; omitted when blank; waterfall has no call site in the downloaded chunks; params inferred from the shared H/U objects in the same screen"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "category name; omitted when blank; waterfall has no call site in the downloaded chunks; params inferred from the shared H/U objects in the same screen"
         }
       ]
     },
     {
       "name": "dashboard_secondary-yoy-growth",
-      "description": "Secondary sales year-over-year growth. Optional: platform.",
+      "description": "Secondary sales year-over-year growth. Optional: platform, year, month.",
       "method": "GET",
       "path": "/api/dashboard/secondary-yoy-growth",
       "params": [
@@ -461,12 +719,24 @@
           "type": "string",
           "location": "query",
           "description": "Filter to a single platform slug"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number"
         }
       ]
     },
     {
       "name": "dashboard_state-sales",
-      "description": "State-wise sales with mapped/unmapped coverage. Optional: metric, mode, platform (plus 2 more).",
+      "description": "State-wise sales with mapped/unmapped coverage. Required: metric. Optional: mode, platform, month (plus 11 more).",
       "method": "GET",
       "path": "/api/dashboard/state-sales",
       "params": [
@@ -474,7 +744,8 @@
           "name": "metric",
           "type": "string",
           "location": "query",
-          "description": "Metric to report (e.g. units, value)"
+          "description": "Metric to report (e.g. units, value)",
+          "required": true
         },
         {
           "name": "mode",
@@ -490,21 +761,81 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; `all` is NOT sent - the key is omitted instead"
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+        },
+        {
+          "name": "from_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "from_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "brand",
+          "type": "string",
+          "location": "query",
+          "description": "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year}..."
+        },
+        {
+          "name": "sub_category",
+          "type": "string",
+          "location": "query",
+          "description": "array of sub-category names; period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "query",
+          "description": "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
         }
       ]
     },
     {
       "name": "dashboard_state-sales-detail",
-      "description": "Detailed state-wise sales rows. Optional: platform, month, year.",
+      "description": "Detailed state-wise sales rows Server requires: state is required. Required: metric. Optional: platform, month, year (plus 10 more).",
       "method": "GET",
       "path": "/api/dashboard/state-sales/detail",
       "params": [
@@ -516,21 +847,87 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "required": true
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; `all` is NOT sent - the key is omitted instead"
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+        },
+        {
+          "name": "from_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "from_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "brand",
+          "type": "string",
+          "location": "query",
+          "description": "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year}..."
+        },
+        {
+          "name": "sub_category",
+          "type": "string",
+          "location": "query",
+          "description": "array of sub-category names; period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "query",
+          "description": "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
         }
       ]
     },
     {
       "name": "dashboard_state-sales-detail-cities",
-      "description": "State-sales detail drilled to cities. Required: state. Optional: metric, dimension, platform (plus 2 more).",
+      "description": "State-sales detail drilled to cities. Required: state, metric. Optional: dimension, platform, month (plus 11 more).",
       "method": "GET",
       "path": "/api/dashboard/state-sales/detail/cities",
       "params": [
@@ -545,7 +942,8 @@
           "name": "metric",
           "type": "string",
           "location": "query",
-          "description": "Metric (units/value)"
+          "description": "Metric (units/value)",
+          "required": true
         },
         {
           "name": "dimension",
@@ -561,21 +959,81 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; `all` is NOT sent - the key is omitted instead"
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+        },
+        {
+          "name": "from_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "from_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "brand",
+          "type": "string",
+          "location": "query",
+          "description": "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year}..."
+        },
+        {
+          "name": "sub_category",
+          "type": "string",
+          "location": "query",
+          "description": "array of sub-category names; period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "query",
+          "description": "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
         }
       ]
     },
     {
       "name": "dashboard_state-sales-detail-city-skus",
-      "description": "State-sales detail drilled to city SKUs. Required: state, city. Optional: metric, platform, month (plus 1 more).",
+      "description": "State-sales detail drilled to city SKUs. Required: state, city, metric. Optional: platform, month, year (plus 11 more).",
       "method": "GET",
       "path": "/api/dashboard/state-sales/detail/city-skus",
       "params": [
@@ -597,7 +1055,8 @@
           "name": "metric",
           "type": "string",
           "location": "query",
-          "description": "Metric"
+          "description": "Metric",
+          "required": true
         },
         {
           "name": "platform",
@@ -607,21 +1066,87 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; `all` is NOT sent - the key is omitted instead"
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+        },
+        {
+          "name": "from_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "from_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "brand",
+          "type": "string",
+          "location": "query",
+          "description": "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year}..."
+        },
+        {
+          "name": "sub_category",
+          "type": "string",
+          "location": "query",
+          "description": "array of sub-category names; period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "query",
+          "description": "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "location": "query",
+          "description": "integer (10 observed)"
         }
       ]
     },
     {
       "name": "dashboard_state-sales-detail-options",
-      "description": "Filter options (skus, cities) for state-sales detail. Optional: platform, state.",
+      "description": "Filter options (skus, cities) for state-sales detail. Required: metric. Optional: platform, state, item_head (plus 11 more).",
       "method": "GET",
       "path": "/api/dashboard/state-sales/detail/options",
       "params": [
@@ -636,12 +1161,90 @@
           "type": "string",
           "location": "query",
           "description": "State name"
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "required": true
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; `all` is NOT sent - the key is omitted instead"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number (single-month mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+        },
+        {
+          "name": "from_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "from_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "brand",
+          "type": "string",
+          "location": "query",
+          "description": "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year}..."
+        },
+        {
+          "name": "sub_category",
+          "type": "string",
+          "location": "query",
+          "description": "array of sub-category names; period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "query",
+          "description": "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
         }
       ]
     },
     {
       "name": "dashboard_state-sales-export",
-      "description": "Export state-wise sales (file/CSV payload). Optional: platform, month, year.",
+      "description": "Export state-wise sales (file/CSV payload). Required: metric. Optional: platform, month, year (plus 10 more).",
       "method": "GET",
       "path": "/api/dashboard/state-sales/export",
       "params": [
@@ -653,21 +1256,87 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "required": true
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; `all` is NOT sent - the key is omitted instead"
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+        },
+        {
+          "name": "from_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "from_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_month",
+          "type": "string",
+          "location": "query",
+          "description": "month number (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "to_year",
+          "type": "string",
+          "location": "query",
+          "description": "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "brand",
+          "type": "string",
+          "location": "query",
+          "description": "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year}..."
+        },
+        {
+          "name": "sub_category",
+          "type": "string",
+          "location": "query",
+          "description": "array of sub-category names; period keys are mutually exclusive: {month,year} OR..."
+        },
+        {
+          "name": "item",
+          "type": "string",
+          "location": "query",
+          "description": "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR..."
         }
       ]
     },
     {
       "name": "dashboard_top-skus",
-      "description": "Top-selling SKUs with top risers and fallers. Optional: platform, month, year.",
+      "description": "Top-selling SKUs with top risers and fallers. Optional: platform, month, year (plus 5 more).",
       "method": "GET",
       "path": "/api/dashboard/top-skus",
       "params": [
@@ -679,34 +1348,63 @@
         },
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12 (default: latest)"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year (default: latest)"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query",
+          "description": "only `secondary` observed on this endpoint; primary/secondary is the general pair elsewhere"
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "location": "query",
+          "description": "integer (1000 observed)"
+        },
+        {
+          "name": "numeric",
+          "type": "string",
+          "location": "query",
+          "description": "key name observed, value domain NOT observed"
+        },
+        {
+          "name": "sensitivity",
+          "type": "string",
+          "location": "query",
+          "description": "key name observed, value domain NOT observed"
+        },
+        {
+          "name": "compare_months",
+          "type": "string",
+          "location": "query",
+          "description": "key name observed, value domain NOT observed"
         }
       ]
     },
     {
       "name": "master_fcs",
-      "description": "List fulfilment centres (paginated). Optional: page, page-size.",
+      "description": "List fulfilment centres (paginated). Optional: page, page_size.",
       "method": "GET",
       "path": "/api/master/fcs",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
         }
@@ -714,20 +1412,19 @@
     },
     {
       "name": "master_products",
-      "description": "List master products (paginated). Optional: page, page-size, search.",
+      "description": "List master products (paginated). Optional: page, page_size, search.",
       "method": "GET",
       "path": "/api/master/products",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
         },
@@ -741,7 +1438,7 @@
     },
     {
       "name": "notifications_get",
-      "description": "Get a single notification by id. Required: id.",
+      "description": "Get a single notification by id. Required: id, notification_id.",
       "method": "GET",
       "path": "/api/notifications/{id}",
       "params": [
@@ -750,6 +1447,13 @@
           "type": "string",
           "location": "path",
           "description": "Notification id",
+          "required": true
+        },
+        {
+          "name": "notification_id",
+          "type": "string",
+          "location": "query",
+          "description": "notification id from /api/notifications",
           "required": true
         }
       ]
@@ -771,14 +1475,27 @@
     },
     {
       "name": "notifications_list",
-      "description": "List notifications with unread count.",
+      "description": "List notifications with unread count. Optional: active_only, limit.",
       "method": "GET",
       "path": "/api/notifications",
-      "params": []
+      "params": [
+        {
+          "name": "active_only",
+          "type": "boolean",
+          "location": "query",
+          "description": "hard-wired by the service, not caller supplied Source writes the JS boolean !0; the URL builder stringifies it to 'true'."
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "location": "query",
+          "description": "hard-wired by the service"
+        }
+      ]
     },
     {
       "name": "platform_ads",
-      "description": "Advertising performance dashboard for a platform. Required: platform.",
+      "description": "Advertising performance dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 6 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/ads-dashboard",
       "params": [
@@ -788,6 +1505,57 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query",
+          "description": "only sent for the amazon slug"
+        },
+        {
+          "name": "dimension",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "as_of_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string; only on the deliver-value query when not in a date/month-wise mode"
         }
       ]
     },
@@ -800,7 +1568,7 @@
     },
     {
       "name": "platform_ads-total-sales",
-      "description": "Ads total-sales for a platform. Required: platform.",
+      "description": "Ads total-sales for a platform. Required: platform. Optional: year, month, from_date (plus 4 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/ads-total-sales",
       "params": [
@@ -810,12 +1578,51 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_bigbasket-ads-daily-dashboard",
-      "description": "Bigbasket Ads Daily Dashboard for a platform. Required: platform.",
+      "description": "Bigbasket Ads Daily Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 3 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/bigbasket-ads-daily-dashboard",
       "params": [
@@ -823,14 +1630,48 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: bigbasket",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_bigbasket-ads-dashboard",
-      "description": "Bigbasket Ads Dashboard for a platform. Required: platform.",
+      "description": "Bigbasket Ads Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 3 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/bigbasket-ads-dashboard",
       "params": [
@@ -838,14 +1679,62 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: bigbasket",
+          "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
+        }
+      ]
+    },
+    {
+      "name": "platform_bigbasket-sales-explorer",
+      "description": "Bigbasket sales explorer (get). Required: platform.",
+      "method": "GET",
+      "path": "/api/platform/bigbasket/sales-explorer",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
           "required": true
         }
       ]
     },
     {
       "name": "platform_blinkit-ads-dashboard",
-      "description": "Blinkit Ads Dashboard for a platform. Required: platform.",
+      "description": "Blinkit Ads Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 3 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/blinkit-ads-dashboard",
       "params": [
@@ -853,14 +1742,48 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: blinkit",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_blinkit-brandfund-dashboard",
-      "description": "Blinkit Brandfund Dashboard for a platform. Required: platform.",
+      "description": "Blinkit Brandfund Dashboard for a platform. Required: platform. Optional: year, month, date.",
       "method": "GET",
       "path": "/api/platform/{platform}/blinkit-brandfund-dashboard",
       "params": [
@@ -868,27 +1791,66 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: blinkit",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "comma-joined month values (v.join(`,`))"
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "date string"
+        }
+      ]
+    },
+    {
+      "name": "platform_blinkit-summary-report",
+      "description": "Blinkit summary report (get). Required: platform. Optional: year.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/blinkit-summary-report",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug. This endpoint is served ONLY for: blinkit",
+          "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
         }
       ]
     },
     {
       "name": "platform_call-center-targets",
-      "description": "Call-center secondary targets (premium/commodity). Required: month, year.",
+      "description": "Call-center secondary targets (premium/commodity) Server requires: `month` (1-12) and `year` (YYYY) are required integers. Required: month, year.",
       "method": "GET",
       "path": "/api/platform/call-center-targets",
       "params": [
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12",
           "required": true
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year",
           "required": true
@@ -912,7 +1874,7 @@
     },
     {
       "name": "platform_coupon",
-      "description": "Coupon performance dashboard for a platform. Required: platform.",
+      "description": "Coupon performance dashboard for a platform. Required: platform. Optional: date.",
       "method": "GET",
       "path": "/api/platform/{platform}/coupon-dashboard",
       "params": [
@@ -922,12 +1884,18 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the picker"
         }
       ]
     },
     {
       "name": "platform_drr",
-      "description": "Daily run-rate (DRR) dashboard for a platform. Required: platform.",
+      "description": "Daily run-rate (DRR) dashboard for a platform. Required: platform. Optional: month.",
       "method": "GET",
       "path": "/api/platform/{platform}/drr-dashboard",
       "params": [
@@ -937,12 +1905,18 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number"
         }
       ]
     },
     {
       "name": "platform_flipkart-ads-dashboard",
-      "description": "Flipkart Ads Dashboard for a platform. Required: platform.",
+      "description": "Flipkart Ads Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 3 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/flipkart-ads-dashboard",
       "params": [
@@ -950,14 +1924,48 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: flipkart",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_flipkart-fsn-dashboard",
-      "description": "Flipkart Fsn Dashboard for a platform. Required: platform.",
+      "description": "Flipkart Fsn Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 4 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/flipkart-fsn-dashboard",
       "params": [
@@ -965,14 +1973,53 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: flipkart",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "dimension",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_inventory-match",
-      "description": "Inventory reconciliation/match for a platform. Required: platform.",
+      "description": "Inventory reconciliation/match for a platform. Required: platform, sku.",
       "method": "GET",
       "path": "/api/platform/{platform}/inventory-match",
       "params": [
@@ -982,12 +2029,19 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "sku",
+          "type": "string",
+          "location": "query",
+          "description": "SKU code; sku is hard-wired as the only query key by the service function itself",
+          "required": true
         }
       ]
     },
     {
       "name": "platform_landing-rate",
-      "description": "Monthly landing rate (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only). Required: platform. Optional: page, page-size.",
+      "description": "Monthly landing rate (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only). Required: platform. Optional: page, page_size, mode (plus 2 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/landing-rate",
       "params": [
@@ -995,27 +2049,43 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: blinkit, zepto, swiggy, bigbasket, flipkart_grocery",
           "required": true
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "YYYY-MM-01 (the picker holds YYYY-MM, the code appends -01)"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "free text"
         }
       ]
     },
     {
       "name": "platform_landing-rate-skus",
-      "description": "Landing-rate SKUs (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only). Required: platform.",
+      "description": "Landing-rate SKUs (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only). Required: platform. Optional: month.",
       "method": "GET",
       "path": "/api/platform/{platform}/landing-rate/skus",
       "params": [
@@ -1023,14 +2093,20 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: blinkit, zepto, swiggy, bigbasket, flipkart_grocery",
           "required": true
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "YYYY-MM-01"
         }
       ]
     },
     {
       "name": "platform_marketplace",
-      "description": "Marketplace dashboard for a platform. Required: platform.",
+      "description": "Marketplace dashboard for a platform. Required: platform. Optional: month, year, nocache.",
       "method": "GET",
       "path": "/api/platform/{platform}/mp-dashboard",
       "params": [
@@ -1040,34 +2116,36 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "nocache",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_meta",
-      "description": "Platform metadata (slugs, labels, config).",
+      "description": "Meta (Facebook/Instagram) advertising dashboard - campaign-level reach, impressions, link clicks, CPC, CPM and amount spent. This is NOT platform metadata; there is no endpoint that returns the platform slug list (use `account me`, field `platforms`).",
       "method": "GET",
       "path": "/api/platform/meta",
       "params": []
     },
     {
-      "name": "platform_month-on-month-sale",
-      "description": "Month-on-month sales for a platform. Required: platform.",
-      "method": "GET",
-      "path": "/api/platform/{platform}/month-on-month-sale",
-      "params": [
-        {
-          "name": "platform",
-          "type": "string",
-          "location": "path",
-          "description": "Platform slug",
-          "required": true
-        }
-      ]
-    },
-    {
       "name": "platform_month-targets",
-      "description": "Secondary monthly targets for a platform. Required: platform.",
+      "description": "Secondary monthly targets for a platform. Required: platform. Optional: month, year.",
       "method": "GET",
       "path": "/api/platform/{platform}/month-targets",
       "params": [
@@ -1077,28 +2155,66 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number / 4-digit year"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "month number / 4-digit year"
         }
       ]
     },
     {
       "name": "platform_month-targets-dashboard",
-      "description": "Secondary month-targets dashboard across platforms. Required: month, year.",
+      "description": "Secondary month-targets dashboard across platforms Server requires: `month` (1–12) and `year` (YYYY) are required. Required: month, year. Optional: nocache.",
       "method": "GET",
       "path": "/api/platform/month-targets/dashboard",
       "params": [
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12",
           "required": true
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year",
           "required": true
+        },
+        {
+          "name": "nocache",
+          "type": "string",
+          "location": "query"
+        }
+      ]
+    },
+    {
+      "name": "platform_monthly-sales-explorer",
+      "description": "Monthly sales explorer (get). Required: platform. Optional: months.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/monthly-sales-explorer",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug. This endpoint is served ONLY for: bigbasket, blinkit, swiggy, zepto",
+          "required": true
+        },
+        {
+          "name": "months",
+          "type": "integer",
+          "location": "query",
+          "description": "integer or list of months; key observed; value form not pinned down"
         }
       ]
     },
@@ -1119,7 +2235,7 @@
     },
     {
       "name": "platform_pendency",
-      "description": "Order pendency dashboard for a platform. Required: platform.",
+      "description": "Order pendency dashboard for a platform. Required: platform. Optional: scope, from_date, to_date (plus 1 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/pendency-dashboard",
       "params": [
@@ -1127,8 +2243,32 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: blinkit, zepto, swiggy, bigbasket",
           "required": true
+        },
+        {
+          "name": "scope",
+          "type": "string",
+          "location": "query",
+          "description": "sent only when no explicit date range is chosen"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker; from_date and to_date are sent as a pair or not at all"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker; from_date and to_date are sent as a pair or not at all"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "only literal ever sent on this endpoint"
         }
       ]
     },
@@ -1149,7 +2289,7 @@
     },
     {
       "name": "platform_price",
-      "description": "Pricing dashboard for a platform. Required: platform.",
+      "description": "Pricing dashboard for a platform. Required: platform. Optional: date.",
       "method": "GET",
       "path": "/api/platform/{platform}/price-dashboard",
       "params": [
@@ -1159,12 +2299,18 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the picker"
         }
       ]
     },
     {
       "name": "platform_primary",
-      "description": "Primary (sell-in / PO) dashboard for a platform. Required: platform.",
+      "description": "Primary (sell-in / PO) dashboard for a platform. Required: platform. Optional: mode, channel, month (plus 1 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/primary-dashboard",
       "params": [
@@ -1174,12 +2320,36 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "location": "query",
+          "description": "key confirmed, but the variable c is not assigned a literal anywhere I could resolve - value set NOT observed"
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "channel name; the sentinel `ALL` is held in state and only sent when a channel filter is active"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
         }
       ]
     },
     {
       "name": "platform_primary-month-targets",
-      "description": "Primary monthly targets for a platform. Required: platform.",
+      "description": "Primary monthly targets for a platform. Required: platform. Optional: month, year, nocache.",
       "method": "GET",
       "path": "/api/platform/{platform}/primary-month-targets",
       "params": [
@@ -1189,48 +2359,76 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number / 4-digit year"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "month number / 4-digit year"
+        },
+        {
+          "name": "nocache",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_primary-month-targets-dashboard",
-      "description": "Primary month-targets dashboard across platforms. Required: month, year.",
+      "description": "Primary month-targets dashboard across platforms Server requires: `month` (1-12) and `year` (YYYY) are required. Required: month, year. Optional: nocache.",
       "method": "GET",
       "path": "/api/platform/primary-month-targets/dashboard",
       "params": [
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12",
           "required": true
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year",
           "required": true
+        },
+        {
+          "name": "nocache",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_primary-overview-total",
-      "description": "Primary overview totals across platforms. Optional: month, year.",
+      "description": "Primary overview totals across platforms. Optional: month, year, slugs.",
       "method": "GET",
       "path": "/api/platform/primary-overview-total",
       "params": [
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
+        },
+        {
+          "name": "slugs",
+          "type": "string",
+          "location": "query",
+          "description": "platform slugs (list/comma-joined)"
         }
       ]
     },
@@ -1242,13 +2440,13 @@
       "params": [
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12"
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year"
         }
@@ -1263,7 +2461,7 @@
     },
     {
       "name": "platform_region-doh",
-      "description": "Region-wise days-of-health dashboard for a platform. Required: platform.",
+      "description": "Region-wise days-of-health dashboard for a platform Served only for: swiggy, zepto. Required: platform. Optional: date.",
       "method": "GET",
       "path": "/api/platform/{platform}/region-doh-dashboard",
       "params": [
@@ -1271,14 +2469,20 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: swiggy, zepto",
           "required": true
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the picker"
         }
       ]
     },
     {
       "name": "platform_secondary",
-      "description": "Secondary (sell-out) dashboard for a platform. Required: platform.",
+      "description": "Secondary (sell-out) dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 4 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/sec-dashboard",
       "params": [
@@ -1288,12 +2492,51 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "metric",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_secondary-monthly",
-      "description": "Monthly secondary-sales dashboard for a platform. Required: platform.",
+      "description": "Monthly secondary-sales dashboard for a platform. Required: platform. Optional: year.",
       "method": "GET",
       "path": "/api/platform/{platform}/sec-monthly-dashboard",
       "params": [
@@ -1303,8 +2546,21 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
         }
       ]
+    },
+    {
+      "name": "platform_secondary-summary-version",
+      "description": "Secondary summary version (getVersion).",
+      "method": "GET",
+      "path": "/api/platform/secondary-summary-version",
+      "params": []
     },
     {
       "name": "platform_secondary-years",
@@ -1353,7 +2609,7 @@
     },
     {
       "name": "platform_swiggy-ads-daily-dashboard",
-      "description": "Swiggy Ads Daily Dashboard for a platform. Required: platform.",
+      "description": "Swiggy Ads Daily Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 3 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/swiggy-ads-daily-dashboard",
       "params": [
@@ -1361,14 +2617,48 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: swiggy",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_swiggy-ads-dashboard",
-      "description": "Swiggy Ads Dashboard for a platform. Required: platform.",
+      "description": "Swiggy Ads Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 3 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/swiggy-ads-dashboard",
       "params": [
@@ -1376,14 +2666,48 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: swiggy",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_swiggy-brandfund-dashboard",
-      "description": "Swiggy Brandfund Dashboard for a platform. Required: platform.",
+      "description": "Swiggy Brandfund Dashboard for a platform. Required: platform. Optional: year, month, date.",
       "method": "GET",
       "path": "/api/platform/{platform}/swiggy-brandfund-dashboard",
       "params": [
@@ -1391,14 +2715,32 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: swiggy",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "comma-joined month values (v.join(`,`))"
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "date string"
         }
       ]
     },
     {
       "name": "platform_zepto-ads-daily-dashboard",
-      "description": "Zepto Ads Daily Dashboard for a platform. Required: platform.",
+      "description": "Zepto Ads Daily Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 3 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/zepto-ads-daily-dashboard",
       "params": [
@@ -1406,14 +2748,48 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: zepto",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_zepto-ads-dashboard",
-      "description": "Zepto Ads Dashboard for a platform. Required: platform.",
+      "description": "Zepto Ads Dashboard for a platform. Required: platform. Optional: year, month, from_date (plus 3 more).",
       "method": "GET",
       "path": "/api/platform/{platform}/zepto-ads-dashboard",
       "params": [
@@ -1421,14 +2797,48 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: zepto",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number or a month name uppercased; `1` when month_wise"
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the range picker"
+        },
+        {
+          "name": "date_wise",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "month_wise",
+          "type": "string",
+          "location": "query"
         }
       ]
     },
     {
       "name": "platform_zepto-brandfund-dashboard",
-      "description": "Zepto Brandfund Dashboard for a platform. Required: platform.",
+      "description": "Zepto Brandfund Dashboard for a platform. Required: platform. Optional: year, month, date.",
       "method": "GET",
       "path": "/api/platform/{platform}/zepto-brandfund-dashboard",
       "params": [
@@ -1436,29 +2846,166 @@
           "name": "platform",
           "type": "string",
           "location": "path",
-          "description": "Platform slug",
+          "description": "Platform slug. This endpoint is served ONLY for: zepto",
           "required": true
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "comma-joined month values (v.join(`,`))"
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "date string"
         }
       ]
     },
     {
       "name": "reports_amazon-po",
-      "description": "Amazon PO report. Optional: page, page-size.",
+      "description": "Amazon PO report. Optional: page, page_size, po_number (plus 11 more).",
       "method": "GET",
       "path": "/api/reports/amazon-po",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "po_number",
+          "type": "string",
+          "location": "query",
+          "description": "PO number string"
+        },
+        {
+          "name": "asin",
+          "type": "string",
+          "location": "query",
+          "description": "ASIN; options come from filter-options.asins; server-driven option list - call /api/reports/amazon-po/filter-options first"
+        },
+        {
+          "name": "fulfillment_center",
+          "type": "string",
+          "location": "query",
+          "description": "FC code; options from filter-options.fulfillment_centers; server-driven option list"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month; options from filter-options.months; server-driven option list"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "year; options from filter-options.years; server-driven option list"
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; staticOptions in the source - this IS the full set"
+        },
+        {
+          "name": "po_status",
+          "type": "string",
+          "location": "query",
+          "description": "options from filter-options.po_statuses; server-driven option list"
+        },
+        {
+          "name": "item_status",
+          "type": "string",
+          "location": "query",
+          "description": "options from filter-options.item_statuses; server-driven option list"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; staticOptions in the source"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "location": "query",
+          "description": "column name; sortBy is attached to a view definition; only expiry_date is written literally"
+        },
+        {
+          "name": "helper",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "status_exact",
+          "type": "string",
+          "location": "query"
+        }
+      ]
+    },
+    {
+      "name": "reports_amazon-po-billing",
+      "description": "Amazon po billing (amazonBilling). Optional: search, billing_status, fulfillment_center (plus 4 more).",
+      "method": "GET",
+      "path": "/api/reports/amazon-po/billing",
+      "params": [
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "free text"
+        },
+        {
+          "name": "billing_status",
+          "type": "string",
+          "location": "query",
+          "description": "g=[{value:``,label:`All statuses`},...] - empty string means all"
+        },
+        {
+          "name": "fulfillment_center",
+          "type": "string",
+          "location": "query",
+          "description": "FC code from /api/reports/amazon-po/sku-pendency/filter-options .fulfillment_centers; server-driven"
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "channel from the same filter-options .channels; server-driven"
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "location": "query",
+          "description": "0-based integer"
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "location": "query",
+          "description": "integer (25 default, options 15/25/50/100)"
+        },
+        {
+          "name": "po",
+          "type": "string",
+          "location": "query",
+          "description": "PO number"
         }
       ]
     },
@@ -1471,31 +3018,133 @@
     },
     {
       "name": "reports_amazon-po-matrix",
-      "description": "Amazon PO matrix (by month/year). Required: month, year.",
+      "description": "Amazon PO matrix (by month/year) Server requires: month and year are required. Required: month, year. Optional: fc, channel.",
       "method": "GET",
       "path": "/api/reports/amazon-po/matrix",
       "params": [
         {
           "name": "month",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Month number 1-12",
           "required": true
         },
         {
           "name": "year",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Four-digit year",
           "required": true
+        },
+        {
+          "name": "fc",
+          "type": "string",
+          "location": "query",
+          "description": "FC code; omitted when blank"
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "same channel vocabulary as /api/reports/amazon-po; not re-declared in this chunk"
         }
       ]
     },
     {
       "name": "reports_amazon-po-new-po",
-      "description": "Amazon new-PO report.",
+      "description": "Amazon new-PO report. Optional: order_date_from, order_date_to, channel.",
       "method": "GET",
       "path": "/api/reports/amazon-po/new-po",
+      "params": [
+        {
+          "name": "order_date_from",
+          "type": "string",
+          "location": "query",
+          "description": "date string"
+        },
+        {
+          "name": "order_date_to",
+          "type": "string",
+          "location": "query",
+          "description": "date string"
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query"
+        }
+      ]
+    },
+    {
+      "name": "reports_amazon-po-sku-pendency",
+      "description": "Amazon po sku pendency (amazonSkuPendency). Optional: page, page_size, search (plus 7 more).",
+      "method": "GET",
+      "path": "/api/reports/amazon-po/sku-pendency",
+      "params": [
+        {
+          "name": "page",
+          "type": "integer",
+          "location": "query",
+          "description": "0-based integer"
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "location": "query",
+          "description": "integer"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "free text"
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "category name"
+        },
+        {
+          "name": "sub_category",
+          "type": "string",
+          "location": "query",
+          "description": "sub-category name"
+        },
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "channel from filter-options.channels"
+        },
+        {
+          "name": "fulfillment_center",
+          "type": "string",
+          "location": "query",
+          "description": "FC from filter-options.fulfillment_centers"
+        },
+        {
+          "name": "have_invoice",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "dispatched",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "only_invoiced",
+          "type": "string",
+          "location": "query"
+        }
+      ]
+    },
+    {
+      "name": "reports_amazon-po-sku-pendency-filter-options",
+      "description": "Amazon po sku pendency filter options (amazonSkuPendencyOptions).",
+      "method": "GET",
+      "path": "/api/reports/amazon-po/sku-pendency/filter-options",
       "params": []
     },
     {
@@ -1507,22 +3156,73 @@
     },
     {
       "name": "reports_appointment",
-      "description": "Appointment report. Optional: page, page-size.",
+      "description": "Appointment report. Optional: page, page_size, sort_by (plus 8 more).",
       "method": "GET",
       "path": "/api/reports/appointment",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "location": "query",
+          "description": "column name; sortBy is attached to a view definition; only expiry_date is written literally"
+        },
+        {
+          "name": "helper",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "status_exact",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "appointment_id",
+          "type": "string",
+          "location": "query",
+          "description": "appointment id"
+        },
+        {
+          "name": "pos",
+          "type": "string",
+          "location": "query",
+          "description": "PO number; options from filter-options.pos_numbers; server-driven option list"
+        },
+        {
+          "name": "destination_fc",
+          "type": "string",
+          "location": "query",
+          "description": "FC code; options from filter-options.destination_fcs; server-driven option list"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Title-case; staticOptions - note the capitalisation differs from every other status field in this API"
+        },
+        {
+          "name": "appointment_time_from",
+          "type": "string",
+          "location": "query",
+          "description": "HTML datetime-local value i.e. YYYY-MM-DDTHH:MM"
+        },
+        {
+          "name": "appointment_time_to",
+          "type": "string",
+          "location": "query",
+          "description": "HTML datetime-local value i.e. YYYY-MM-DDTHH:MM"
         }
       ]
     },
@@ -1542,7 +3242,7 @@
     },
     {
       "name": "reports_columns",
-      "description": "Column definitions for a report view. Required: view.",
+      "description": "Column definitions for one report view. `view` is required - a bare call returns 400 'Unknown report view'. Server requires: Unknown report view: ''. Required: view.",
       "method": "GET",
       "path": "/api/reports/columns",
       "params": [
@@ -1550,14 +3250,60 @@
           "name": "view",
           "type": "string",
           "location": "query",
-          "description": "Report view name",
+          "description": "view name; the sap: ones are colon-delimited triples; the service hard-wires the key: getColumns:e=\u003eX(`/api/reports/columns`,{view:e})",
           "required": true
         }
       ]
     },
     {
+      "name": "reports_live-data",
+      "description": "Live data (data) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Required: report. Optional: sheet, full, page (plus 1 more).",
+      "method": "GET",
+      "path": "/api/reports/live/data",
+      "params": [
+        {
+          "name": "report",
+          "type": "string",
+          "location": "query",
+          "description": "report id from GET /api/reports/live/reports; required - the effect returns early when it is empty",
+          "required": true
+        },
+        {
+          "name": "sheet",
+          "type": "string",
+          "location": "query",
+          "description": "sheet name from the chosen report"
+        },
+        {
+          "name": "full",
+          "type": "string",
+          "location": "query",
+          "description": "mutually exclusive with page/page_size"
+        },
+        {
+          "name": "page",
+          "type": "integer",
+          "location": "query",
+          "description": "0-based integer"
+        },
+        {
+          "name": "page_size",
+          "type": "integer",
+          "location": "query",
+          "description": "integer"
+        }
+      ]
+    },
+    {
+      "name": "reports_live-reports",
+      "description": "Live reports (reports) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).",
+      "method": "GET",
+      "path": "/api/reports/live/reports",
+      "params": []
+    },
+    {
       "name": "reports_raw",
-      "description": "Raw rows for a report view. Required: view. Optional: page, page-size.",
+      "description": "Raw rows for one report view. `view` is required - a bare call returns 400 'Unknown report view'. The `platform` filter on this endpoint takes UPPERCASE display names with spaces (BIG BASKET, FLIPKART GROCERY, CITY MALL), NOT the lowercase slugs every other endpoint uses. Server requires: Unknown report view: ''. Required: view. Optional: page, page_size, date_from (plus 2 more).",
       "method": "GET",
       "path": "/api/reports/raw",
       "params": [
@@ -1565,27 +3311,44 @@
           "name": "view",
           "type": "string",
           "location": "query",
-          "description": "Report view name",
+          "description": "view name",
           "required": true
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "integer",
           "location": "query",
-          "description": "Page number"
+          "description": "0-based integer"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "integer",
           "location": "query",
-          "description": "Rows per page"
+          "description": "integer"
+        },
+        {
+          "name": "date_from",
+          "type": "string",
+          "location": "query",
+          "description": "date string derived from the period preset (this_week/this_month/this_year/custom); the preset names this_week/this_month/this_year/custom are CLIENT-side only - they are never sent; only the resolved dates are"
+        },
+        {
+          "name": "date_to",
+          "type": "string",
+          "location": "query",
+          "description": "date string derived from the period preset (this_week/this_month/this_year/custom); the preset names this_week/this_month/this_year/custom are CLIENT-side only - they are never sent; only the resolved dates are"
+        },
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "query",
+          "description": "comma-joined UPPERCASE display names, NOT slugs; TRAP: this is the only endpoint where `platform` is a display name with a space, not a slug"
         }
       ]
     },
     {
       "name": "sap_distributor",
-      "description": "Get a distributor (profile, addresses, contacts) by card code. Required: code.",
+      "description": "Get a distributor (profile, addresses, contacts) by card code. Required: code, card_code.",
       "method": "GET",
       "path": "/api/sap/distributors/{code}",
       "params": [
@@ -1595,33 +3358,46 @@
           "location": "path",
           "description": "Distributor CardCode",
           "required": true
+        },
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP CardCode",
+          "required": true
         }
       ]
     },
     {
       "name": "sap_distributor-inventory",
-      "description": "Distributor inventory. Optional: page, page-size.",
+      "description": "Distributor inventory. Required: card_code. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/distributor-inventory",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP CardCode; the service hard-wires card_code as the first key; extra keys are caller-supplied and none were observed",
+          "required": true
         }
       ]
     },
     {
       "name": "sap_distributor-invoices",
-      "description": "Invoices for a distributor by card code. Required: code. Optional: page, page-size.",
+      "description": "Invoices for a distributor by card code. Required: code, card_code. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/distributor-invoices/{code}",
       "params": [
@@ -1634,22 +3410,28 @@
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP CardCode",
+          "required": true
         }
       ]
     },
     {
       "name": "sap_distributor-orders",
-      "description": "Orders for a distributor by card code. Required: code. Optional: page, page-size.",
+      "description": "Orders for a distributor by card code. Required: code, card_code. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/distributor-orders/{code}",
       "params": [
@@ -1662,35 +3444,40 @@
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP CardCode",
+          "required": true
         }
       ]
     },
     {
       "name": "sap_distributors",
-      "description": "List SAP distributors. Optional: page, page-size.",
+      "description": "List SAP distributors. Despite the name this is the VENDOR master (OCRD CardType='S') - ad agencies and suppliers, not sales distributors. For distributors use `sap platform-distributors`. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/distributors",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
         }
@@ -1698,31 +3485,49 @@
     },
     {
       "name": "sap_inventory-finished-goods",
-      "description": "Finished-goods inventory. Optional: page, page-size.",
+      "description": "Finished-goods inventory. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide. Optional: page, page_size, source.",
       "method": "GET",
       "path": "/api/sap/inventory-finished-goods",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query",
+          "description": "key confirmed at the call site; the value set is carried over from the sibling SAP filter, not re-declared here"
         }
       ]
     },
     {
       "name": "sap_inventory-overview",
-      "description": "Inventory overview.",
+      "description": "Inventory overview. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide. Optional: page_size, status.",
       "method": "GET",
       "path": "/api/sap/inventory-overview",
-      "params": []
+      "params": [
+        {
+          "name": "page_size",
+          "type": "integer",
+          "location": "query",
+          "description": "integer (1e5)"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Item status: empty = all, Y = active, N = frozen. The dashboard sends Y; a bare CLI call therefore returns MORE rows than the UI shows - it includes frozen items."
+        }
+      ]
     },
     {
       "name": "sap_inventory-warehouse-comparison",
@@ -1733,20 +3538,19 @@
     },
     {
       "name": "sap_items",
-      "description": "SAP item master. Optional: page, page-size.",
+      "description": "SAP item master. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/items",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
         }
@@ -1754,7 +3558,7 @@
     },
     {
       "name": "sap_platform-distributor",
-      "description": "A platform-distributor mapping by card code. Required: platform, code.",
+      "description": "A platform-distributor mapping by card code. Required: platform, code, card_code.",
       "method": "GET",
       "path": "/api/sap/platform-distributors/{platform}/{code}",
       "params": [
@@ -1771,12 +3575,19 @@
           "location": "path",
           "description": "Distributor CardCode",
           "required": true
+        },
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP CardCode from the platform-distributors list",
+          "required": true
         }
       ]
     },
     {
       "name": "sap_platform-distributors",
-      "description": "Distributors mapped to a platform. Required: platform. Optional: page, page-size.",
+      "description": "Distributors mapped to a platform. Required: platform. Optional: page, page_size, search.",
       "method": "GET",
       "path": "/api/sap/platform-distributors/{platform}",
       "params": [
@@ -1789,22 +3600,27 @@
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "free text"
         }
       ]
     },
     {
       "name": "sap_platform-sales-invoices",
-      "description": "Sales invoices for a platform. Required: platform. Optional: page, page-size.",
+      "description": "Sales invoices for a platform. Required: platform. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/platform-sales-invoices/{platform}",
       "params": [
@@ -1817,14 +3633,13 @@
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
         }
@@ -1832,7 +3647,7 @@
     },
     {
       "name": "sap_sales-analysis",
-      "description": "Sales analysis over a date range. Required: from_date, to_date. Optional: page, page-size.",
+      "description": "Sales analysis over a date range. With source=oil this defaults to cardname 'JIVO MART PVT LTD', i.e. it measures Oil-\u003eMart INTERCOMPANY transfers, which JIVO excludes from sales (correction C-0005). Server requires: `from_date` must be YYYY-MM-DD. Required: from_date, to_date. Optional: page, page_size, source (plus 14 more).",
       "method": "GET",
       "path": "/api/sap/sales-analysis",
       "params": [
@@ -1852,22 +3667,111 @@
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "source",
+          "type": "string",
+          "location": "query",
+          "description": "validated against x before use - `mart` and `oil` are the complete set"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "Free-text search"
+        },
+        {
+          "name": "main_group",
+          "type": "string",
+          "location": "query",
+          "description": "master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one"
+        },
+        {
+          "name": "chain",
+          "type": "string",
+          "location": "query",
+          "description": "master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one"
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "location": "query",
+          "description": "State filter; values come back in the response `filters` block"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "location": "query",
+          "description": "Type filter; values come back in the response `filters` block"
+        },
+        {
+          "name": "brand",
+          "type": "string",
+          "location": "query",
+          "description": "Brand filter; values come back in the response `filters` block"
+        },
+        {
+          "name": "location",
+          "type": "string",
+          "location": "query",
+          "description": "master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one"
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "Segment filter (PREMIUM / COMMODITY / OTHERS). Use this rather than matching on item names - JIVO correction C-0003. Valid values come back in the response's `filters` block."
+        },
+        {
+          "name": "sub_group",
+          "type": "string",
+          "location": "query",
+          "description": "master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one"
+        },
+        {
+          "name": "sales_person",
+          "type": "string",
+          "location": "query",
+          "description": "Salesperson filter; values come back in the response `filters` block"
+        },
+        {
+          "name": "cardname",
+          "type": "string",
+          "location": "query",
+          "description": "array of SAP CardName strings (repeated as cardname=A\u0026cardname=B); the only literal card name observed anywhere is `JIVO MART PVT LTD`"
+        },
+        {
+          "name": "aggregate",
+          "type": "string",
+          "location": "query",
+          "description": "Ask the SERVER to aggregate. With aggregate=item_head and page_size=1 the response carries a computed `aggregate[]` block, so headline totals need no paging."
+        },
+        {
+          "name": "nocache",
+          "type": "integer",
+          "location": "query",
+          "description": "Set to 1 to bypass the server-side cache"
+        },
+        {
+          "name": "fresh",
+          "type": "integer",
+          "location": "query",
+          "description": "Set to 1 to force a fresh read"
         }
       ]
     },
     {
       "name": "sap_sales-invoice",
-      "description": "Get a sales invoice by id. Required: id. Optional: page, page-size.",
+      "description": "Get a sales invoice by id. Required: id, card_code. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/sales-invoices/{id}",
       "params": [
@@ -1880,50 +3784,40 @@
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
-        }
-      ]
-    },
-    {
-      "name": "sap_sales-invoice-lines",
-      "description": "Line items for a sales invoice by id (note: upstream SAP query may 500). Required: id.",
-      "method": "GET",
-      "path": "/api/sap/sales-invoice-lines/{id}",
-      "params": [
+        },
         {
-          "name": "id",
+          "name": "card_code",
           "type": "string",
-          "location": "path",
-          "description": "Sales invoice id (DocEntry)",
+          "location": "query",
+          "description": "SAP CardCode",
           "required": true
         }
       ]
     },
     {
       "name": "sap_sales-invoices",
-      "description": "List SAP sales invoices. Optional: page, page-size.",
+      "description": "List SAP sales invoices. Invoice HEADERS only, and the set includes cancelled documents. DocTotal is GST-inclusive. There is no credit-note endpoint here, so JIVO turnover (invoices net of GST minus credit notes, excluding cancelled) is NOT computable from this domain - use SAP directly. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/sales-invoices",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
         }
@@ -1931,66 +3825,101 @@
     },
     {
       "name": "sap_stock-by-warehouse",
-      "description": "Stock levels by warehouse. Optional: page, page-size.",
+      "description": "Stock levels by warehouse. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide. Required: item_code. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/sap/stock-by-warehouse",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP ItemCode; service hard-wires the only key",
+          "required": true
         }
       ]
     },
     {
       "name": "shipment_all-appointments",
-      "description": "All shipment appointments.",
+      "description": "All shipment appointments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Optional: no_paginate.",
       "method": "GET",
-      "path": "/api/shipment/all-appointments",
-      "params": []
+      "path": "/api/shipment/all-appointments/",
+      "params": [
+        {
+          "name": "no_paginate",
+          "type": "boolean",
+          "location": "query",
+          "description": "Source writes the JS boolean !0; the URL builder stringifies it to 'true'."
+        }
+      ]
     },
     {
       "name": "shipment_appointment-commits",
-      "description": "Appointment commit records.",
+      "description": "Appointment commit records Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).",
       "method": "GET",
-      "path": "/api/shipment/appointment-commits",
+      "path": "/api/shipment/appointment-commits/",
       "params": []
     },
     {
       "name": "shipment_appointment-dates",
-      "description": "Available appointment dates.",
+      "description": "Available appointment dates Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).",
       "method": "GET",
-      "path": "/api/shipment/appointments/dates",
+      "path": "/api/shipment/appointments/dates/",
       "params": []
     },
     {
       "name": "shipment_appointment-extra-pos",
-      "description": "Extra POs for an appointment. Required: id.",
+      "description": "Extra POs for an appointment. Required: id, appointment_id.",
       "method": "GET",
-      "path": "/api/shipment/appointments/{id}/extra-pos",
+      "path": "/api/shipment/appointments/{id}/extra-pos/",
       "params": [
         {
           "name": "id",
           "type": "string",
           "location": "path",
           "description": "Appointment id",
+          "required": true
+        },
+        {
+          "name": "appointment_id",
+          "type": "string",
+          "location": "query",
+          "description": "appointment id",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_appointment-families",
+      "description": "Appointment families (getFamilies). Required: appointment_id.",
+      "method": "GET",
+      "path": "/api/shipment/appointments/{appointment_id}/families/",
+      "params": [
+        {
+          "name": "appointment_id",
+          "type": "string",
+          "location": "path",
+          "description": "appointment id",
           "required": true
         }
       ]
     },
     {
       "name": "shipment_appointment-items",
-      "description": "Items for an appointment. Required: id.",
+      "description": "Items for an appointment. Required: id, appointment_id, truck_size. Optional: truck_capacity_liters, priority_premium_pct, priority_commodity_pct (plus 9 more).",
       "method": "GET",
-      "path": "/api/shipment/appointments/{id}/items",
+      "path": "/api/shipment/appointments/{id}/items/",
       "params": [
         {
           "name": "id",
@@ -1998,69 +3927,220 @@
           "location": "path",
           "description": "Appointment id",
           "required": true
+        },
+        {
+          "name": "appointment_id",
+          "type": "string",
+          "location": "query",
+          "description": "numeric/string appointment id from the appointments list",
+          "required": true
+        },
+        {
+          "name": "truck_size",
+          "type": "string",
+          "location": "query",
+          "description": "always set - it is the only unconditional key in the URLSearchParams. UI default is 15_ton",
+          "required": true
+        },
+        {
+          "name": "truck_capacity_liters",
+          "type": "string",
+          "location": "query",
+          "description": "integer litres; 10000 for 10_ton, 15000 for 15_ton, 12000 default for custom"
+        },
+        {
+          "name": "priority_premium_pct",
+          "type": "string",
+          "location": "query",
+          "description": "number as string (percentage); sent as a group of three or not at all"
+        },
+        {
+          "name": "priority_commodity_pct",
+          "type": "string",
+          "location": "query",
+          "description": "number as string (percentage); sent as a group of three or not at all"
+        },
+        {
+          "name": "priority_other_pct",
+          "type": "string",
+          "location": "query",
+          "description": "number as string (percentage); sent as a group of three or not at all"
+        },
+        {
+          "name": "priority_strict",
+          "type": "string",
+          "location": "query",
+          "description": "flag; only ever the string 1"
+        },
+        {
+          "name": "maximize_fill",
+          "type": "string",
+          "location": "query",
+          "description": "always sent; defaults to 1"
+        },
+        {
+          "name": "respect_stock",
+          "type": "boolean",
+          "location": "query",
+          "description": "only ever set to 0 (to switch stock respect OFF); omitted means on"
+        },
+        {
+          "name": "appointment_ids",
+          "type": "string",
+          "location": "query",
+          "description": "comma-joined appointment ids"
+        },
+        {
+          "name": "selected_pos",
+          "type": "string",
+          "location": "query",
+          "description": "comma-joined PO numbers"
+        },
+        {
+          "name": "product_family",
+          "type": "string",
+          "location": "query",
+          "description": "family key from GET /api/shipment/appointments/{id}/families/; not a fixed set - fetch families first"
+        },
+        {
+          "name": "family_asins",
+          "type": "string",
+          "location": "query",
+          "description": "comma-joined ASINs"
+        },
+        {
+          "name": "commit_caps_json",
+          "type": "string",
+          "location": "query",
+          "description": "JSON object {'\u003casin\u003e':{'units':N,'cartons':N}}"
         }
       ]
     },
     {
       "name": "shipment_appointments",
-      "description": "Shipment appointments.",
+      "description": "Shipment appointments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Required: date.",
       "method": "GET",
-      "path": "/api/shipment/appointments",
-      "params": []
+      "path": "/api/shipment/appointments/",
+      "params": [
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "whatever getDates() returns; passed straight through, unquoted; value must come from GET /api/shipment/appointments/dates/ - do not synthesise one",
+          "required": true
+        }
+      ]
     },
     {
       "name": "shipment_asin-catalog",
-      "description": "ASIN catalog.",
+      "description": "ASIN catalog Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).",
       "method": "GET",
-      "path": "/api/shipment/asin-catalog",
+      "path": "/api/shipment/asin-catalog/",
       "params": []
+    },
+    {
+      "name": "shipment_fc-switch-group",
+      "description": "Fc switch group (getSwitchGroup) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Required: fc.",
+      "method": "GET",
+      "path": "/api/shipment/fc-switch-group/",
+      "params": [
+        {
+          "name": "fc",
+          "type": "string",
+          "location": "query",
+          "description": "FC code, URL-encoded; empty string allowed",
+          "required": true
+        }
+      ]
     },
     {
       "name": "shipment_inventory",
-      "description": "Shipment planning inventory.",
+      "description": "Shipment planning inventory Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Optional: warehouse.",
       "method": "GET",
-      "path": "/api/shipment/inventory",
-      "params": []
+      "path": "/api/shipment/inventory/",
+      "params": [
+        {
+          "name": "warehouse",
+          "type": "string",
+          "location": "query",
+          "description": "warehouse code, URL-encoded; GP-FGM is the only warehouse code hard-coded in the bundle; `ALL` is a client-side sentinel, not necessarily a server value"
+        }
+      ]
+    },
+    {
+      "name": "shipment_po-appointments",
+      "description": "Po appointments (getPoAppointments) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Required: pos.",
+      "method": "GET",
+      "path": "/api/shipment/po-appointments/",
+      "params": [
+        {
+          "name": "pos",
+          "type": "string",
+          "location": "query",
+          "description": "comma-joined PO numbers, whole string URL-encoded",
+          "required": true
+        }
+      ]
     },
     {
       "name": "shipment_po-items",
-      "description": "PO items available to ship.",
+      "description": "PO items available to ship Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Optional: no_paginate.",
       "method": "GET",
-      "path": "/api/shipment/po-items",
-      "params": []
+      "path": "/api/shipment/po-items/",
+      "params": [
+        {
+          "name": "no_paginate",
+          "type": "boolean",
+          "location": "query"
+        }
+      ]
     },
     {
       "name": "shipment_po-shipment-lookup",
-      "description": "Lookup shipments for a PO.",
+      "description": "Lookup shipments for a PO Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).",
       "method": "GET",
-      "path": "/api/shipment/po-shipment-lookup",
+      "path": "/api/shipment/po-shipment-lookup/",
       "params": []
     },
     {
       "name": "shipment_po-short-supply",
-      "description": "PO short-supply report.",
+      "description": "PO short-supply report Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).",
       "method": "GET",
-      "path": "/api/shipment/po-short-supply",
+      "path": "/api/shipment/po-short-supply/",
       "params": []
     },
     {
       "name": "shipment_record",
-      "description": "Shipment record.",
+      "description": "Shipment record Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Optional: status.",
       "method": "GET",
-      "path": "/api/shipment/record",
-      "params": []
+      "path": "/api/shipment/record/",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "Shipment lifecycle state. NOTE: shipped / short / not_loaded are client-side row filters in the UI, not values this parameter accepts. Unverified - this endpoint is behind the Shipment Planner permission gate."
+        }
+      ]
     },
     {
       "name": "shipment_shipment",
-      "description": "Get a shipment by id. Required: id.",
+      "description": "Get a shipment by id. Required: id, shipment_id.",
       "method": "GET",
-      "path": "/api/shipment/shipments/{id}",
+      "path": "/api/shipment/shipments/{id}/",
       "params": [
         {
           "name": "id",
           "type": "string",
           "location": "path",
           "description": "Shipment id",
+          "required": true
+        },
+        {
+          "name": "shipment_id",
+          "type": "string",
+          "location": "query",
+          "description": "shipment id from the shipments list",
           "required": true
         }
       ]
@@ -2141,37 +4221,106 @@
     },
     {
       "name": "shipment_shipments",
-      "description": "List shipments.",
+      "description": "List shipments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Optional: status, switch_state.",
       "method": "GET",
-      "path": "/api/shipment/shipments",
-      "params": []
+      "path": "/api/shipment/shipments/",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "omitted entirely when falsy; the UI reads it from the browser URL ?status="
+        },
+        {
+          "name": "switch_state",
+          "type": "string",
+          "location": "query",
+          "description": "`any` is the sentinel the app always sends; the other four are the observed row values"
+        }
+      ]
     },
     {
       "name": "shipment_shipments-deletion-log",
-      "description": "Shipment deletion log.",
+      "description": "Shipment deletion log Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Optional: limit.",
       "method": "GET",
-      "path": "/api/shipment/shipments/deletion-log",
-      "params": []
+      "path": "/api/shipment/shipments/deletion-log/",
+      "params": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "location": "query",
+          "description": "integer"
+        }
+      ]
     },
     {
       "name": "shipment_shipments-doh-auto-fill",
-      "description": "DOH auto-fill suggestions.",
+      "description": "DOH auto-fill suggestions Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Optional: truck_size, truck_capacity_liters, fc (plus 5 more).",
       "method": "GET",
-      "path": "/api/shipment/shipments/doh-auto-fill",
-      "params": []
+      "path": "/api/shipment/shipments/doh-auto-fill/",
+      "params": [
+        {
+          "name": "truck_size",
+          "type": "string",
+          "location": "query",
+          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+        },
+        {
+          "name": "truck_capacity_liters",
+          "type": "string",
+          "location": "query",
+          "description": "integer litres; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+        },
+        {
+          "name": "fc",
+          "type": "string",
+          "location": "query",
+          "description": "FC code string; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+        },
+        {
+          "name": "priority_strict",
+          "type": "string",
+          "location": "query",
+          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+        },
+        {
+          "name": "maximize_fill",
+          "type": "string",
+          "location": "query",
+          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+        },
+        {
+          "name": "priority_premium_pct",
+          "type": "string",
+          "location": "query",
+          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+        },
+        {
+          "name": "priority_commodity_pct",
+          "type": "string",
+          "location": "query",
+          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+        },
+        {
+          "name": "priority_other_pct",
+          "type": "string",
+          "location": "query",
+          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+        }
+      ]
     },
     {
       "name": "shipment_shipments-pending-approvals",
-      "description": "Shipments pending approval.",
+      "description": "Shipments pending approval Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).",
       "method": "GET",
-      "path": "/api/shipment/shipments/pending-approvals",
+      "path": "/api/shipment/shipments/pending-approvals/",
       "params": []
     },
     {
       "name": "shipment_shipments-stats",
-      "description": "Shipment stats.",
+      "description": "Shipment stats Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).",
       "method": "GET",
-      "path": "/api/shipment/shipments/stats",
+      "path": "/api/shipment/shipments/stats/",
       "params": []
     },
     {
@@ -2184,7 +4333,7 @@
           "name": "table",
           "type": "string",
           "location": "path",
-          "description": "Table name",
+          "description": "Reporting-schema table name, case-sensitive.",
           "required": true
         }
       ]
@@ -2199,21 +4348,29 @@
           "name": "table",
           "type": "string",
           "location": "path",
-          "description": "Table name (see 'tables counts')",
+          "description": "Reporting-schema table name, case-sensitive.",
           "required": true
         }
       ]
     },
     {
       "name": "tables_counts",
-      "description": "Row counts for every available data table.",
+      "description": "Row counts for every available data table. Required: tables.",
       "method": "GET",
       "path": "/api/dashboard/table-counts",
-      "params": []
+      "params": [
+        {
+          "name": "tables",
+          "type": "string",
+          "location": "query",
+          "description": "comma-joined table names",
+          "required": true
+        }
+      ]
     },
     {
       "name": "tables_data",
-      "description": "Paginated rows for a table (server-shaped payload). Required: table. Optional: page, page-size.",
+      "description": "Paginated rows for a table (server-shaped payload). Required: table. Optional: page, page_size, search (plus 9 more).",
       "method": "GET",
       "path": "/api/dashboard/table-data/{table}",
       "params": [
@@ -2221,27 +4378,84 @@
           "name": "table",
           "type": "string",
           "location": "path",
-          "description": "Table name",
+          "description": "Reporting-schema table name, case-sensitive.",
           "required": true
         },
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "free text"
+        },
+        {
+          "name": "search_columns",
+          "type": "string",
+          "location": "query",
+          "description": "comma-joined column names"
+        },
+        {
+          "name": "date_column",
+          "type": "string",
+          "location": "query",
+          "description": "column name"
+        },
+        {
+          "name": "sort_by",
+          "type": "string",
+          "location": "query",
+          "description": "column name"
+        },
+        {
+          "name": "sort_dir",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "max_date",
+          "type": "string",
+          "location": "query"
+        },
+        {
+          "name": "year",
+          "type": "integer",
+          "location": "query",
+          "description": "4-digit year"
+        },
+        {
+          "name": "month",
+          "type": "integer",
+          "location": "query",
+          "description": "month number"
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "date string from the picker"
+        },
+        {
+          "name": "column_filters",
+          "type": "string",
+          "location": "query",
+          "description": "JSON array string [{'column':'\u003ccol\u003e','values':[...]}]"
         }
       ]
     },
     {
       "name": "tables_distinct",
-      "description": "Distinct values for a column in a table. Required: table, column.",
+      "description": "Distinct values for a column in a table. Required: table, column. Optional: search, column_filters.",
       "method": "GET",
       "path": "/api/dashboard/table-distinct/{table}/{column}",
       "params": [
@@ -2249,7 +4463,7 @@
           "name": "table",
           "type": "string",
           "location": "path",
-          "description": "Table name",
+          "description": "Reporting-schema table name, case-sensitive.",
           "required": true
         },
         {
@@ -2258,25 +4472,36 @@
           "location": "path",
           "description": "Column name",
           "required": true
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "free text"
+        },
+        {
+          "name": "column_filters",
+          "type": "string",
+          "location": "query",
+          "description": "JSON array string: [{'column':'\u003ccol\u003e','values':[...]}]"
         }
       ]
     },
     {
       "name": "upload_ads-master",
-      "description": "Ads master sheet (columns, rows). Optional: page, page-size.",
+      "description": "Ads master sheet (columns, rows). Optional: page, page_size.",
       "method": "GET",
       "path": "/api/upload/ads-master",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
         }
@@ -2284,41 +4509,45 @@
     },
     {
       "name": "upload_master-sheet",
-      "description": "Master sheet. Optional: page, page-size.",
+      "description": "Master sheet. Optional: page, page_size, search.",
       "method": "GET",
       "path": "/api/upload/master-sheet",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "free text"
         }
       ]
     },
     {
       "name": "upload_pincode-mapping",
-      "description": "Pincode mapping table. Optional: page, page-size.",
+      "description": "Pincode mapping table. Optional: page, page_size.",
       "method": "GET",
       "path": "/api/upload/pincode-mapping",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
         }
@@ -2326,7 +4555,7 @@
     },
     {
       "name": "uploads_get",
-      "description": "Get an upload job (summary, errors, diagnostics) by id. Required: id.",
+      "description": "Get an upload job (summary, errors, diagnostics) by id. Required: id, upload_id.",
       "method": "GET",
       "path": "/api/uploads/{id}",
       "params": [
@@ -2336,27 +4565,57 @@
           "location": "path",
           "description": "Upload job id",
           "required": true
+        },
+        {
+          "name": "upload_id",
+          "type": "string",
+          "location": "query",
+          "description": "upload id from /api/uploads (.upload_id on the row)",
+          "required": true
         }
       ]
     },
     {
       "name": "uploads_list",
-      "description": "List upload jobs. Optional: page, page-size.",
+      "description": "List upload jobs. Optional: page, page_size, report_type (plus 3 more).",
       "method": "GET",
       "path": "/api/uploads",
       "params": [
         {
           "name": "page",
-          "type": "int",
+          "type": "object",
           "location": "query",
           "description": "Page number"
         },
         {
-          "name": "page-size",
-          "wire_name": "page_size",
-          "type": "int",
+          "name": "page_size",
+          "type": "object",
           "location": "query",
           "description": "Rows per page"
+        },
+        {
+          "name": "report_type",
+          "type": "string",
+          "location": "query",
+          "description": "uppercase; empty string means all reports"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "uploadDisplay-Cd6ax7Hv.js documents three MORE server-side statuses that the filter does not offer: queued, validating, processing"
+        },
+        {
+          "name": "date_from",
+          "type": "string",
+          "location": "query",
+          "description": "date string from BkDatePicker"
+        },
+        {
+          "name": "date_to",
+          "type": "string",
+          "location": "query",
+          "description": "date string from BkDatePicker"
         }
       ]
     }

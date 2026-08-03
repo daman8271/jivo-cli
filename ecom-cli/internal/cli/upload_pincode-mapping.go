@@ -13,7 +13,7 @@ import (
 
 func newUploadPincodeMappingCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
 
 	cmd := &cobra.Command{
 		Use:         "pincode-mapping",
@@ -31,7 +31,7 @@ func newUploadPincodeMappingCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "upload", false, path, params, nil, cmd.ErrOrStderr())
@@ -83,7 +83,7 @@ func newUploadPincodeMappingCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
 
 	return cmd
 }

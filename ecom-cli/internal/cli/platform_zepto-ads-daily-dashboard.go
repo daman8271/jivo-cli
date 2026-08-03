@@ -12,15 +12,67 @@ import (
 )
 
 func newPlatformZeptoAdsDailyDashboardCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
+	var flagYear int
+	var flagMonth int
+	var flagFromDate string
+	var flagToDate string
+	var flagDateWise string
+	var flagMonthWise string
 
 	cmd := &cobra.Command{
-		Use:         "zepto-ads-daily-dashboard <platform>",
+		Use:         "zepto-ads-daily-dashboard",
 		Short:       "Zepto Ads Daily Dashboard for a platform",
-		Example:     "  jivo-ecom-pp-cli platform zepto-ads-daily-dashboard amazon",
+		Example:     "  jivo-ecom-pp-cli platform zepto-ads-daily-dashboard --platform zepto",
 		Annotations: map[string]string{"pp:endpoint": "platform.zepto-ads-daily-dashboard", "pp:method": "GET", "pp:path": "/api/platform/{platform}/zepto-ads-daily-dashboard", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("platform") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "platform")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"zepto"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
+			}
+			if cmd.Flags().Changed("date-wise") {
+				allowedDateWise := []string{"1"}
+				validDateWise := false
+				for _, v := range allowedDateWise {
+					if flagDateWise == v {
+						validDateWise = true
+						break
+					}
+				}
+				if !validDateWise {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagDateWise, "date-wise", allowedDateWise)
+				}
+			}
+			if cmd.Flags().Changed("month-wise") {
+				allowedMonthWise := []string{"1"}
+				validMonthWise := false
+				for _, v := range allowedMonthWise {
+					if flagMonthWise == v {
+						validMonthWise = true
+						break
+					}
+				}
+				if !validMonthWise {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagMonthWise, "month-wise", allowedMonthWise)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,8 +80,26 @@ func newPlatformZeptoAdsDailyDashboardCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/platform/{platform}/zepto-ads-daily-dashboard"
-			path = replacePathParam(path, "platform", args[0])
+			path = replacePathParam(path, "platform", formatCLIParamValue(flagPlatform))
 			params := map[string]string{}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagDateWise != "" {
+				params["date_wise"] = formatCLIParamValue(flagDateWise)
+			}
+			if flagMonthWise != "" {
+				params["month_wise"] = formatCLIParamValue(flagMonthWise)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +148,13 @@ func newPlatformZeptoAdsDailyDashboardCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug. This endpoint is served ONLY for: zepto (one of: zepto)")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "4-digit year")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "month number or a month name uppercased; `1` when month_wise")
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "date string from the range picker")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "date string from the range picker")
+	cmd.Flags().StringVar(&flagDateWise, "date-wise", "", " (one of: 1)")
+	cmd.Flags().StringVar(&flagMonthWise, "month-wise", "", " (one of: 1)")
 
 	return cmd
 }

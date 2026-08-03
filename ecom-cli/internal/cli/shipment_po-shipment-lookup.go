@@ -15,16 +15,16 @@ func newShipmentPoShipmentLookupCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "po-shipment-lookup",
-		Short:       "Lookup shipments for a PO",
+		Short:       "Lookup shipments for a PO Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment po-shipment-lookup",
-		Annotations: map[string]string{"pp:endpoint": "shipment.po-shipment-lookup", "pp:method": "GET", "pp:path": "/api/shipment/po-shipment-lookup", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.po-shipment-lookup", "pp:method": "GET", "pp:path": "/api/shipment/po-shipment-lookup/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/po-shipment-lookup"
+			path := "/api/shipment/po-shipment-lookup/"
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {

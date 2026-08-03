@@ -12,15 +12,38 @@ import (
 )
 
 func newPlatformZeptoBrandfundDashboardCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
+	var flagYear int
+	var flagMonth int
+	var flagDate string
 
 	cmd := &cobra.Command{
-		Use:         "zepto-brandfund-dashboard <platform>",
+		Use:         "zepto-brandfund-dashboard",
 		Short:       "Zepto Brandfund Dashboard for a platform",
-		Example:     "  jivo-ecom-pp-cli platform zepto-brandfund-dashboard amazon",
+		Example:     "  jivo-ecom-pp-cli platform zepto-brandfund-dashboard --platform zepto",
 		Annotations: map[string]string{"pp:endpoint": "platform.zepto-brandfund-dashboard", "pp:method": "GET", "pp:path": "/api/platform/{platform}/zepto-brandfund-dashboard", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("platform") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "platform")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"zepto"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,8 +51,17 @@ func newPlatformZeptoBrandfundDashboardCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/platform/{platform}/zepto-brandfund-dashboard"
-			path = replacePathParam(path, "platform", args[0])
+			path = replacePathParam(path, "platform", formatCLIParamValue(flagPlatform))
 			params := map[string]string{}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagDate != "" {
+				params["date"] = formatCLIParamValue(flagDate)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +110,10 @@ func newPlatformZeptoBrandfundDashboardCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug. This endpoint is served ONLY for: zepto (one of: zepto)")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "4-digit year")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "comma-joined month values (v.join(`,`))")
+	cmd.Flags().StringVar(&flagDate, "date", "", "date string")
 
 	return cmd
 }

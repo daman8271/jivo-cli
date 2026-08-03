@@ -13,15 +13,28 @@ import (
 
 func newDashboardCategoryBreakdownCmd(flags *rootFlags) *cobra.Command {
 	var flagPlatform string
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
+	var flagSource string
 
 	cmd := &cobra.Command{
 		Use:         "category-breakdown",
 		Short:       "Premium vs commodity category breakdown",
-		Example:     "  jivo-ecom-pp-cli dashboard category-breakdown",
+		Example:     "  jivo-ecom-pp-cli dashboard category-breakdown --month example-value --year example-value",
 		Annotations: map[string]string{"pp:endpoint": "dashboard.category-breakdown", "pp:method": "GET", "pp:path": "/api/dashboard/category-breakdown", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("month") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "month")
+			}
+			if !cmd.Flags().Changed("year") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "year")
+			}
 			if cmd.Flags().Changed("platform") {
 				allowedPlatform := []string{"amazon", "bigbasket", "blinkit", "citymall", "flipkart", "flipkart_grocery", "jiomart", "swiggy", "zepto", "zomato"}
 				validPlatform := false
@@ -35,6 +48,19 @@ func newDashboardCategoryBreakdownCmd(flags *rootFlags) *cobra.Command {
 					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
 				}
 			}
+			if cmd.Flags().Changed("source") {
+				allowedSource := []string{"primary", "secondary"}
+				validSource := false
+				for _, v := range allowedSource {
+					if flagSource == v {
+						validSource = true
+						break
+					}
+				}
+				if !validSource {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSource, "source", allowedSource)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -45,11 +71,14 @@ func newDashboardCategoryBreakdownCmd(flags *rootFlags) *cobra.Command {
 			if flagPlatform != "" {
 				params["platform"] = formatCLIParamValue(flagPlatform)
 			}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagSource != "" {
+				params["source"] = formatCLIParamValue(flagSource)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -100,8 +129,9 @@ func newDashboardCategoryBreakdownCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Filter to a single platform slug (one of: amazon, bigbasket, blinkit, citymall, flipkart, flipkart_grocery, jiomart, swiggy, zepto, zomato)")
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
+	cmd.Flags().StringVar(&flagSource, "source", "", " (one of: primary, secondary)")
 
 	return cmd
 }

@@ -1,0 +1,5428 @@
+{
+ "/api/auth/change-password": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "current_password",
+   "new_password"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "auth",
+  "fn_names": [
+   "changePassword"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/auth/change-password",
+  "raw_paths": [
+   "/api/auth/change-password"
+  ],
+  "service_vars": [
+   "je"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/auth/feature-flags": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "auth",
+  "fn_names": [
+   "getFeatureFlags"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/auth/feature-flags",
+  "raw_paths": [
+   "/api/auth/feature-flags"
+  ],
+  "service_vars": [
+   "je"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/auth/feature-flags/update": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "auth",
+  "fn_names": [
+   "updateFeatureFlags"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/auth/feature-flags/update",
+  "raw_paths": [
+   "/api/auth/feature-flags/update"
+  ],
+  "service_vars": [
+   "je"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/auth/me": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "auth",
+  "fn_names": [
+   "me"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "account me",
+  "parameterised": false,
+  "path": "/api/auth/me",
+  "raw_paths": [
+   "/api/auth/me"
+  ],
+  "service_vars": [
+   "je"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/auth/permissions": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "auth",
+  "fn_names": [
+   "getPermissions"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "account permissions",
+  "parameterised": false,
+  "path": "/api/auth/permissions",
+  "raw_paths": [
+   "/api/auth/permissions"
+  ],
+  "service_vars": [
+   "je"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/chatbot/conversations": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "chatbot",
+  "fn_names": [
+   "listConversations"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "chatbot conversations",
+  "parameterised": false,
+  "path": "/api/chatbot/conversations",
+  "raw_paths": [
+   "/api/chatbot/conversations"
+  ],
+  "service_vars": [
+   "De"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/chatbot/conversations/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "chatbot",
+  "fn_names": [
+   "getConversation"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "chatbot conversation",
+  "parameterised": true,
+  "path": "/api/chatbot/conversations/{}",
+  "raw_paths": [
+   "/api/chatbot/conversations/${e}"
+  ],
+  "service_vars": [
+   "De"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/chatbot/health": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "chatbot",
+  "fn_names": [
+   "health"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "chatbot health",
+  "parameterised": false,
+  "path": "/api/chatbot/health",
+  "raw_paths": [
+   "/api/chatbot/health"
+  ],
+  "service_vars": [
+   "De"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/chatbot/message": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "conversation_id",
+   "message",
+   "page"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "chatbot",
+  "fn_names": [
+   "sendMessage"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/chatbot/message",
+  "raw_paths": [
+   "/api/chatbot/message"
+  ],
+  "service_vars": [
+   "De"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/dashboard/category-breakdown": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getCategoryBreakdown"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard category-breakdown",
+  "parameterised": false,
+  "path": "/api/dashboard/category-breakdown",
+  "raw_paths": [
+   "/api/dashboard/category-breakdown"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/category-litres": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getCategoryLitres"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard category-litres",
+  "parameterised": false,
+  "path": "/api/dashboard/category-litres",
+  "raw_paths": [
+   "/api/dashboard/category-litres"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/category-platform-breakdown": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getCategoryPlatformBreakdown"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard category-platform-breakdown",
+  "parameterised": false,
+  "path": "/api/dashboard/category-platform-breakdown",
+  "raw_paths": [
+   "/api/dashboard/category-platform-breakdown"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/category-sku-breakdown": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getCategorySkuBreakdown"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard category-sku-breakdown",
+  "parameterised": false,
+  "path": "/api/dashboard/category-sku-breakdown",
+  "raw_paths": [
+   "/api/dashboard/category-sku-breakdown"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/category-trend": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getCategoryTrend"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard category-trend",
+  "parameterised": false,
+  "path": "/api/dashboard/category-trend",
+  "raw_paths": [
+   "/api/dashboard/category-trend"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/expiry-alerts/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "dashboard",
+  "fn_names": [
+   "getExpiryAlerts"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard expiry-alerts",
+  "parameterised": true,
+  "path": "/api/dashboard/expiry-alerts/{}",
+  "raw_paths": [
+   "/api/dashboard/expiry-alerts/${e}"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/dashboard/fulfilment-health": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getFulfilmentHealth"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard fulfilment-health",
+  "parameterised": false,
+  "path": "/api/dashboard/fulfilment-health",
+  "raw_paths": [
+   "/api/dashboard/fulfilment-health"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/inventory-charts": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getInventoryCharts"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard inventory-charts",
+  "parameterised": false,
+  "path": "/api/dashboard/inventory-charts",
+  "raw_paths": [
+   "/api/dashboard/inventory-charts"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/latest-month": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getLatestMonth"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard latest-month",
+  "parameterised": false,
+  "path": "/api/dashboard/latest-month",
+  "raw_paths": [
+   "/api/dashboard/latest-month"
+  ],
+  "service_vars": [
+   "Oe"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/lead-time-report": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getLeadTimeReport"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard lead-time-report",
+  "parameterised": false,
+  "path": "/api/dashboard/lead-time-report",
+  "raw_paths": [
+   "/api/dashboard/lead-time-report"
+  ],
+  "service_vars": [
+   "Oe"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/penetration-report": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/dashboard/penetration-report",
+  "raw_paths": [
+   "/api/dashboard/penetration-report"
+  ],
+  "service_vars": [
+   "Ye"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/dashboard/penetration-report/options": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getOptions"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/dashboard/penetration-report/options",
+  "raw_paths": [
+   "/api/dashboard/penetration-report/options"
+  ],
+  "service_vars": [
+   "Ye"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/dashboard/platform-expiry-alerts": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getPlatformExpiryAlerts"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard platform-expiry-alerts",
+  "parameterised": false,
+  "path": "/api/dashboard/platform-expiry-alerts",
+  "raw_paths": [
+   "/api/dashboard/platform-expiry-alerts"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/platform-expiry-alerts/{}/pos": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "dashboard",
+  "fn_names": [
+   "getPlatformExpiryAlertPos"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard expiry-alerts-pos",
+  "parameterised": true,
+  "path": "/api/dashboard/platform-expiry-alerts/{}/pos",
+  "raw_paths": [
+   "/api/dashboard/platform-expiry-alerts/${e}/pos"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/dashboard/platform-expiry-alerts/{}/pos/{}/items": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "dashboard",
+  "fn_names": [
+   "getPlatformExpiryAlertPoItems"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard expiry-alerts-po-items",
+  "parameterised": true,
+  "path": "/api/dashboard/platform-expiry-alerts/{}/pos/{}/items",
+  "raw_paths": [
+   "/api/dashboard/platform-expiry-alerts/${e}/pos/${encodeURIComponent(t)}/items"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/dashboard/primary-po-litres": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getPrimaryPoLitres"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard primary-po-litres",
+  "parameterised": false,
+  "path": "/api/dashboard/primary-po-litres",
+  "raw_paths": [
+   "/api/dashboard/primary-po-litres"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/realise-breakdown": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "breakdown"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard realise-breakdown",
+  "parameterised": false,
+  "path": "/api/dashboard/realise-breakdown",
+  "raw_paths": [
+   "/api/dashboard/realise-breakdown"
+  ],
+  "service_vars": [
+   "ke"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/realise-overview": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "overview"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard realise-overview",
+  "parameterised": false,
+  "path": "/api/dashboard/realise-overview",
+  "raw_paths": [
+   "/api/dashboard/realise-overview"
+  ],
+  "service_vars": [
+   "ke"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/realise-trend": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "trend"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard realise-trend",
+  "parameterised": false,
+  "path": "/api/dashboard/realise-trend",
+  "raw_paths": [
+   "/api/dashboard/realise-trend"
+  ],
+  "service_vars": [
+   "ke"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/realise-waterfall": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "waterfall"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard realise-waterfall",
+  "parameterised": false,
+  "path": "/api/dashboard/realise-waterfall",
+  "raw_paths": [
+   "/api/dashboard/realise-waterfall"
+  ],
+  "service_vars": [
+   "ke"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/secondary-yoy-growth": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getSecondaryYoyGrowth"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard secondary-yoy-growth",
+  "parameterised": false,
+  "path": "/api/dashboard/secondary-yoy-growth",
+  "raw_paths": [
+   "/api/dashboard/secondary-yoy-growth"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/state-sales": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getStateSales"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard state-sales",
+  "parameterised": false,
+  "path": "/api/dashboard/state-sales",
+  "raw_paths": [
+   "/api/dashboard/state-sales"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/state-sales/detail": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getStateSalesDetail"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard state-sales-detail",
+  "parameterised": false,
+  "path": "/api/dashboard/state-sales/detail",
+  "raw_paths": [
+   "/api/dashboard/state-sales/detail"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/state-sales/detail/cities": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getStateSalesDetailCities"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard state-sales-detail-cities",
+  "parameterised": false,
+  "path": "/api/dashboard/state-sales/detail/cities",
+  "raw_paths": [
+   "/api/dashboard/state-sales/detail/cities"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/state-sales/detail/city-skus": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getStateSalesDetailCitySkus"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard state-sales-detail-city-skus",
+  "parameterised": false,
+  "path": "/api/dashboard/state-sales/detail/city-skus",
+  "raw_paths": [
+   "/api/dashboard/state-sales/detail/city-skus"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/state-sales/detail/options": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getStateSalesDetailOptions"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard state-sales-detail-options",
+  "parameterised": false,
+  "path": "/api/dashboard/state-sales/detail/options",
+  "raw_paths": [
+   "/api/dashboard/state-sales/detail/options"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/state-sales/export": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getStateSalesExport"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard state-sales-export",
+  "parameterised": false,
+  "path": "/api/dashboard/state-sales/export",
+  "raw_paths": [
+   "/api/dashboard/state-sales/export"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/table-columns/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "dashboard",
+  "fn_names": [
+   "getTableColumns"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "tables columns",
+  "parameterised": true,
+  "path": "/api/dashboard/table-columns/{}",
+  "raw_paths": [
+   "/api/dashboard/table-columns/${e}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/dashboard/table-count/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "dashboard",
+  "fn_names": [
+   "getTableCount"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "tables count",
+  "parameterised": true,
+  "path": "/api/dashboard/table-count/{}",
+  "raw_paths": [
+   "/api/dashboard/table-count/${e}"
+  ],
+  "service_vars": [
+   "Oe"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/dashboard/table-counts": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "tables"
+  ],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getTableCounts"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "tables counts",
+  "parameterised": false,
+  "path": "/api/dashboard/table-counts",
+  "raw_paths": [
+   "/api/dashboard/table-counts"
+  ],
+  "service_vars": [
+   "Oe"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/dashboard/table-data/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "dashboard",
+  "fn_names": [
+   "getTableData"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "tables data",
+  "parameterised": true,
+  "path": "/api/dashboard/table-data/{}",
+  "raw_paths": [
+   "/api/dashboard/table-data/${e}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/dashboard/table-distinct/{}/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "dashboard",
+  "fn_names": [
+   "getTableDistinctValues"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "tables distinct",
+  "parameterised": true,
+  "path": "/api/dashboard/table-distinct/{}/{}",
+  "raw_paths": [
+   "/api/dashboard/table-distinct/${e}/${t}"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/dashboard/table-row/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "dashboard",
+  "fn_names": [
+   "updateTableRow"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/dashboard/table-row/{}",
+  "raw_paths": [
+   "/api/dashboard/table-row/${e}"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/dashboard/table-rows/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "dashboard",
+  "fn_names": [
+   "updateTableRows"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/dashboard/table-rows/{}",
+  "raw_paths": [
+   "/api/dashboard/table-rows/${e}"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/dashboard/top-skus": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "dashboard",
+  "fn_names": [
+   "getTopSkus"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "dashboard top-skus",
+  "parameterised": false,
+  "path": "/api/dashboard/top-skus",
+  "raw_paths": [
+   "/api/dashboard/top-skus"
+  ],
+  "service_vars": [
+   "n"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/master/fcs": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "master",
+  "fn_names": [
+   "fcs"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "master fcs",
+  "parameterised": false,
+  "path": "/api/master/fcs",
+  "raw_paths": [
+   "/api/master/fcs"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/master/products": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "master",
+  "fn_names": [
+   "products"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "master products",
+  "parameterised": false,
+  "path": "/api/master/products",
+  "raw_paths": [
+   "/api/master/products"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/notifications": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "active_only",
+   "limit"
+  ],
+  "decision": "PROBE",
+  "domain": "notifications",
+  "fn_names": [
+   "getAll"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "notifications list",
+  "parameterised": false,
+  "path": "/api/notifications",
+  "raw_paths": [
+   "/api/notifications"
+  ],
+  "service_vars": [
+   "Me"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/notifications/inventory-doh/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "notifications",
+  "fn_names": [
+   "getInventoryDohSkuDetail"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "notifications inventory-doh",
+  "parameterised": true,
+  "path": "/api/notifications/inventory-doh/{}",
+  "raw_paths": [
+   "/api/notifications/inventory-doh/${e}"
+  ],
+  "service_vars": [
+   "Me"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/notifications/mark-all-read": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "notifications",
+  "fn_names": [
+   "markAllRead"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/notifications/mark-all-read",
+  "raw_paths": [
+   "/api/notifications/mark-all-read"
+  ],
+  "service_vars": [
+   "Me"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/notifications/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "notifications",
+  "fn_names": [
+   "notifications"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "notifications get",
+  "parameterised": true,
+  "path": "/api/notifications/{}",
+  "raw_paths": [
+   "/api/notifications/${e}"
+  ],
+  "service_vars": [
+   "Me"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/notifications/{}/mark-read": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "notifications",
+  "fn_names": [
+   "markOneRead"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/notifications/{}/mark-read",
+  "raw_paths": [
+   "/api/notifications/${e}/mark-read"
+  ],
+  "service_vars": [
+   "Me"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/ads-summary": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform ads-summary",
+  "parameterised": false,
+  "path": "/api/platform/ads-summary",
+  "raw_paths": [
+   "/api/platform/ads-summary"
+  ],
+  "service_vars": [
+   "pt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/platform/bigbasket/sales-explorer": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/platform/bigbasket/sales-explorer",
+  "raw_paths": [
+   "/api/platform/bigbasket/sales-explorer"
+  ],
+  "service_vars": [
+   "Ke"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/platform/call-center-targets": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "get",
+   "save"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "old_command": "platform call-center-targets",
+  "parameterised": false,
+  "path": "/api/platform/call-center-targets",
+  "raw_paths": [
+   "/api/platform/call-center-targets"
+  ],
+  "service_vars": [
+   "Re"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/platform/meta": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform meta",
+  "parameterised": false,
+  "path": "/api/platform/meta",
+  "raw_paths": [
+   "/api/platform/meta"
+  ],
+  "service_vars": [
+   "$"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/platform/month-targets/dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "dashboard"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform month-targets-dashboard",
+  "parameterised": false,
+  "path": "/api/platform/month-targets/dashboard",
+  "raw_paths": [
+   "/api/platform/month-targets/dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/platform/month-targets/refresh": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "refreshDashboard"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/platform/month-targets/refresh",
+  "raw_paths": [
+   "/api/platform/month-targets/refresh"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/primary-month-targets/dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "dashboard"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform primary-month-targets-dashboard",
+  "parameterised": false,
+  "path": "/api/platform/primary-month-targets/dashboard",
+  "raw_paths": [
+   "/api/platform/primary-month-targets/dashboard"
+  ],
+  "service_vars": [
+   "Le"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/platform/primary-month-targets/refresh": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "refreshDashboard"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/platform/primary-month-targets/refresh",
+  "raw_paths": [
+   "/api/platform/primary-month-targets/refresh"
+  ],
+  "service_vars": [
+   "Le"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/primary-month-targets/set-target": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "setTarget"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/platform/primary-month-targets/set-target",
+  "raw_paths": [
+   "/api/platform/primary-month-targets/set-target"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/primary-overview-total": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform primary-overview-total",
+  "parameterised": false,
+  "path": "/api/platform/primary-overview-total",
+  "raw_paths": [
+   "/api/platform/primary-overview-total"
+  ],
+  "service_vars": [
+   "$e"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/platform/primary-summary": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform primary-summary",
+  "parameterised": false,
+  "path": "/api/platform/primary-summary",
+  "raw_paths": [
+   "/api/platform/primary-summary"
+  ],
+  "service_vars": [
+   "et"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/platform/primary-summary-version": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "getVersion"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform primary-summary-version",
+  "parameterised": false,
+  "path": "/api/platform/primary-summary-version",
+  "raw_paths": [
+   "/api/platform/primary-summary-version"
+  ],
+  "service_vars": [
+   "et"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/platform/secondary-summary-version": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "platform",
+  "fn_names": [
+   "getVersion"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/platform/secondary-summary-version",
+  "raw_paths": [
+   "/api/platform/secondary-summary-version"
+  ],
+  "service_vars": [
+   "tt"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/platform/{}/ads-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform ads",
+  "parameterised": true,
+  "path": "/api/platform/{}/ads-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/ads-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/ads-total-sales": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform ads-total-sales",
+  "parameterised": true,
+  "path": "/api/platform/{}/ads-total-sales",
+  "raw_paths": [
+   "/api/platform/${e}/ads-total-sales"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/bigbasket-ads-daily-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform bigbasket-ads-daily-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/bigbasket-ads-daily-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/bigbasket-ads-daily-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/bigbasket-ads-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform bigbasket-ads-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/bigbasket-ads-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/bigbasket-ads-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/blinkit-ads-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform blinkit-ads-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/blinkit-ads-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/blinkit-ads-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/blinkit-brandfund-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform blinkit-brandfund-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/blinkit-brandfund-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/blinkit-brandfund-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/blinkit-summary-report": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/blinkit-summary-report",
+  "raw_paths": [
+   "/api/platform/${e}/blinkit-summary-report"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "GET-capable in client; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/comparison-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform comparison",
+  "parameterised": true,
+  "path": "/api/platform/{}/comparison-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/comparison-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/coupon-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform coupon",
+  "parameterised": true,
+  "path": "/api/platform/{}/coupon-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/coupon-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/drr-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform drr",
+  "parameterised": true,
+  "path": "/api/platform/{}/drr-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/drr-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/flipkart-ads-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform flipkart-ads-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/flipkart-ads-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/flipkart-ads-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/flipkart-fsn-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform flipkart-fsn-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/flipkart-fsn-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/flipkart-fsn-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/inventory-match": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "sku"
+  ],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "getInventoryMatch"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform inventory-match",
+  "parameterised": true,
+  "path": "/api/platform/{}/inventory-match",
+  "raw_paths": [
+   "/api/platform/${e}/inventory-match"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/landing-rate": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform landing-rate",
+  "parameterised": true,
+  "path": "/api/platform/{}/landing-rate",
+  "raw_paths": [
+   "/api/platform/${e}/landing-rate"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/landing-rate/add": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "add"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/landing-rate/add",
+  "raw_paths": [
+   "/api/platform/${e}/landing-rate/add"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/landing-rate/bulk-upsert": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "bulkUpsert"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/landing-rate/bulk-upsert",
+  "raw_paths": [
+   "/api/platform/${e}/landing-rate/bulk-upsert"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/landing-rate/preview": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "previewBulk"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/landing-rate/preview",
+  "raw_paths": [
+   "/api/platform/${e}/landing-rate/preview"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/landing-rate/skus": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "listSkus"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform landing-rate-skus",
+  "parameterised": true,
+  "path": "/api/platform/{}/landing-rate/skus",
+  "raw_paths": [
+   "/api/platform/${e}/landing-rate/skus"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/landing-rate/update": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "update"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/landing-rate/update",
+  "raw_paths": [
+   "/api/platform/${e}/landing-rate/update"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/month-on-month-sale": {
+  "action_shaped": false,
+  "chunks": [],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [],
+  "get_capable": null,
+  "in_old_spec": true,
+  "methods": [],
+  "old_command": "platform month-on-month-sale",
+  "parameterised": true,
+  "path": "/api/platform/{}/month-on-month-sale",
+  "raw_paths": [],
+  "service_vars": [],
+  "why": "shipped in v0.1.0 but the current client no longer calls it - probe before assuming dead"
+ },
+ "/api/platform/{}/month-targets": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform month-targets",
+  "parameterised": true,
+  "path": "/api/platform/{}/month-targets",
+  "raw_paths": [
+   "/api/platform/${e}/month-targets"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/month-targets/add": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "create"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/month-targets/add",
+  "raw_paths": [
+   "/api/platform/${e}/month-targets/add"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/month-targets/refresh": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "refreshPlatform"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/month-targets/refresh",
+  "raw_paths": [
+   "/api/platform/${e}/month-targets/refresh"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/month-targets/{}/refresh": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "refresh"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/month-targets/{}/refresh",
+  "raw_paths": [
+   "/api/platform/${e}/month-targets/${t}/refresh"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/month-targets/{}/update": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "update"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/month-targets/{}/update",
+  "raw_paths": [
+   "/api/platform/${e}/month-targets/${t}/update"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/monthly-sales-explorer": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/monthly-sales-explorer",
+  "raw_paths": [
+   "/api/platform/${e}/monthly-sales-explorer"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "GET-capable in client; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/mp-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform marketplace",
+  "parameterised": true,
+  "path": "/api/platform/{}/mp-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/mp-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/mp-dashboard-version": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "getVersion"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform mp-dashboard-version",
+  "parameterised": true,
+  "path": "/api/platform/{}/mp-dashboard-version",
+  "raw_paths": [
+   "/api/platform/${e}/mp-dashboard-version"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/pendency-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform pendency",
+  "parameterised": true,
+  "path": "/api/platform/{}/pendency-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/pendency-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/pos": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "getPOs"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform pos",
+  "parameterised": true,
+  "path": "/api/platform/{}/pos",
+  "raw_paths": [
+   "/api/platform/${e}/pos"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/price-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "getPriceDashboard"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform price",
+  "parameterised": true,
+  "path": "/api/platform/{}/price-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/price-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/primary-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform primary",
+  "parameterised": true,
+  "path": "/api/platform/{}/primary-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/primary-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/primary-month-targets": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform primary-month-targets",
+  "parameterised": true,
+  "path": "/api/platform/{}/primary-month-targets",
+  "raw_paths": [
+   "/api/platform/${e}/primary-month-targets"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/primary-month-targets/add": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "create"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/primary-month-targets/add",
+  "raw_paths": [
+   "/api/platform/${e}/primary-month-targets/add"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/primary-month-targets/refresh": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "refreshPlatform"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/primary-month-targets/refresh",
+  "raw_paths": [
+   "/api/platform/${e}/primary-month-targets/refresh"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/primary-month-targets/{}/update": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "platform",
+  "fn_names": [
+   "update"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/platform/{}/primary-month-targets/{}/update",
+  "raw_paths": [
+   "/api/platform/${e}/primary-month-targets/${t}/update"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/platform/{}/region-doh-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform region-doh",
+  "parameterised": true,
+  "path": "/api/platform/{}/region-doh-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/region-doh-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/sec-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform secondary",
+  "parameterised": true,
+  "path": "/api/platform/{}/sec-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/sec-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/sec-dashboard-years": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "getYears"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform secondary-years",
+  "parameterised": true,
+  "path": "/api/platform/{}/sec-dashboard-years",
+  "raw_paths": [
+   "/api/platform/${e}/sec-dashboard-years"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/sec-monthly-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform secondary-monthly",
+  "parameterised": true,
+  "path": "/api/platform/{}/sec-monthly-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/sec-monthly-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/soh-doh-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform soh-doh",
+  "parameterised": true,
+  "path": "/api/platform/{}/soh-doh-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/soh-doh-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/stats": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "getStats"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform stats",
+  "parameterised": true,
+  "path": "/api/platform/{}/stats",
+  "raw_paths": [
+   "/api/platform/${e}/stats"
+  ],
+  "service_vars": [
+   "Ae"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/swiggy-ads-daily-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform swiggy-ads-daily-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/swiggy-ads-daily-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/swiggy-ads-daily-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/swiggy-ads-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform swiggy-ads-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/swiggy-ads-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/swiggy-ads-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/swiggy-brandfund-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform swiggy-brandfund-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/swiggy-brandfund-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/swiggy-brandfund-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/zepto-ads-daily-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform zepto-ads-daily-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/zepto-ads-daily-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/zepto-ads-daily-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/zepto-ads-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform zepto-ads-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/zepto-ads-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/zepto-ads-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/platform/{}/zepto-brandfund-dashboard": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "platform",
+  "fn_names": [
+   "get"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "platform zepto-brandfund-dashboard",
+  "parameterised": true,
+  "path": "/api/platform/{}/zepto-brandfund-dashboard",
+  "raw_paths": [
+   "/api/platform/${e}/zepto-brandfund-dashboard"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/reports/amazon-po": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "amazonPO"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports amazon-po",
+  "parameterised": false,
+  "path": "/api/reports/amazon-po",
+  "raw_paths": [
+   "/api/reports/amazon-po"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/amazon-po/billing": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "amazonBilling"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/reports/amazon-po/billing",
+  "raw_paths": [
+   "/api/reports/amazon-po/billing"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/reports/amazon-po/filter-options": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "amazonPOFilterOptions"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports amazon-po-filter-options",
+  "parameterised": false,
+  "path": "/api/reports/amazon-po/filter-options",
+  "raw_paths": [
+   "/api/reports/amazon-po/filter-options"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/amazon-po/matrix": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "amazonPOMatrix"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports amazon-po-matrix",
+  "parameterised": false,
+  "path": "/api/reports/amazon-po/matrix",
+  "raw_paths": [
+   "/api/reports/amazon-po/matrix"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/amazon-po/new-po": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "amazonNewPO"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports amazon-po-new-po",
+  "parameterised": false,
+  "path": "/api/reports/amazon-po/new-po",
+  "raw_paths": [
+   "/api/reports/amazon-po/new-po"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/amazon-po/sku-pendency": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "amazonSkuPendency"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/reports/amazon-po/sku-pendency",
+  "raw_paths": [
+   "/api/reports/amazon-po/sku-pendency"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/reports/amazon-po/sku-pendency/filter-options": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "amazonSkuPendencyOptions"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/reports/amazon-po/sku-pendency/filter-options",
+  "raw_paths": [
+   "/api/reports/amazon-po/sku-pendency/filter-options"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/reports/amazon-po/summary": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "amazonPOSummary"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports amazon-po-summary",
+  "parameterised": false,
+  "path": "/api/reports/amazon-po/summary",
+  "raw_paths": [
+   "/api/reports/amazon-po/summary"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/appointment": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "appointment"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports appointment",
+  "parameterised": false,
+  "path": "/api/reports/appointment",
+  "raw_paths": [
+   "/api/reports/appointment"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/appointment/filter-options": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "appointmentFilterOptions"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports appointment-filter-options",
+  "parameterised": false,
+  "path": "/api/reports/appointment/filter-options",
+  "raw_paths": [
+   "/api/reports/appointment/filter-options"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/appointment/summary": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "appointmentSummary"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports appointment-summary",
+  "parameterised": false,
+  "path": "/api/reports/appointment/summary",
+  "raw_paths": [
+   "/api/reports/appointment/summary"
+  ],
+  "service_vars": [
+   "xt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/columns": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "view"
+  ],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "getColumns"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports columns",
+  "parameterised": false,
+  "path": "/api/reports/columns",
+  "raw_paths": [
+   "/api/reports/columns"
+  ],
+  "service_vars": [
+   "Je"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/reports/export": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "reports",
+  "fn_names": [
+   "exportRows"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/reports/export",
+  "raw_paths": [
+   "/api/reports/export"
+  ],
+  "service_vars": [
+   "Je"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/reports/live/data": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "data"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/reports/live/data",
+  "raw_paths": [
+   "/api/reports/live/data"
+  ],
+  "service_vars": [
+   "St"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/reports/live/reports": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "reports"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/reports/live/reports",
+  "raw_paths": [
+   "/api/reports/live/reports"
+  ],
+  "service_vars": [
+   "St"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/reports/raw": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "reports",
+  "fn_names": [
+   "getRows"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "reports raw",
+  "parameterised": false,
+  "path": "/api/reports/raw",
+  "raw_paths": [
+   "/api/reports/raw"
+  ],
+  "service_vars": [
+   "Je"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/distributor-inventory": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "card_code"
+  ],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getDistributorInventory"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap distributor-inventory",
+  "parameterised": false,
+  "path": "/api/sap/distributor-inventory",
+  "raw_paths": [
+   "/api/sap/distributor-inventory"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/distributor-invoices/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "sap",
+  "fn_names": [
+   "getDistributorInvoices"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap distributor-invoices",
+  "parameterised": true,
+  "path": "/api/sap/distributor-invoices/{}",
+  "raw_paths": [
+   "/api/sap/distributor-invoices/${e}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/sap/distributor-orders/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "sap",
+  "fn_names": [
+   "getDistributorOrders"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap distributor-orders",
+  "parameterised": true,
+  "path": "/api/sap/distributor-orders/{}",
+  "raw_paths": [
+   "/api/sap/distributor-orders/${e}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/sap/distributors": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getDistributors"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap distributors",
+  "parameterised": false,
+  "path": "/api/sap/distributors",
+  "raw_paths": [
+   "/api/sap/distributors"
+  ],
+  "service_vars": [
+   "yt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/distributors/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "sap",
+  "fn_names": [
+   "getDistributor"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap distributor",
+  "parameterised": true,
+  "path": "/api/sap/distributors/{}",
+  "raw_paths": [
+   "/api/sap/distributors/${e}"
+  ],
+  "service_vars": [
+   "yt"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/sap/inventory-finished-goods": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getInventoryFinishedGoods"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap inventory-finished-goods",
+  "parameterised": false,
+  "path": "/api/sap/inventory-finished-goods",
+  "raw_paths": [
+   "/api/sap/inventory-finished-goods"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/inventory-overview": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getInventoryOverview"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap inventory-overview",
+  "parameterised": false,
+  "path": "/api/sap/inventory-overview",
+  "raw_paths": [
+   "/api/sap/inventory-overview"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/inventory-warehouse-comparison": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getInventoryWarehouseComparison"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap inventory-warehouse-comparison",
+  "parameterised": false,
+  "path": "/api/sap/inventory-warehouse-comparison",
+  "raw_paths": [
+   "/api/sap/inventory-warehouse-comparison"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/items": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getItems"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap items",
+  "parameterised": false,
+  "path": "/api/sap/items",
+  "raw_paths": [
+   "/api/sap/items"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/platform-distributors/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "sap",
+  "fn_names": [
+   "getPlatformDistributors"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap platform-distributors",
+  "parameterised": true,
+  "path": "/api/sap/platform-distributors/{}",
+  "raw_paths": [
+   "/api/sap/platform-distributors/${e}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/sap/platform-distributors/{}/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "sap",
+  "fn_names": [
+   "getPlatformDistributorDetail"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap platform-distributor",
+  "parameterised": true,
+  "path": "/api/sap/platform-distributors/{}/{}",
+  "raw_paths": [
+   "/api/sap/platform-distributors/${e}/${t}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/sap/platform-sales-invoices/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "sap",
+  "fn_names": [
+   "getPlatformSalesInvoices"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap platform-sales-invoices",
+  "parameterised": true,
+  "path": "/api/sap/platform-sales-invoices/{}",
+  "raw_paths": [
+   "/api/sap/platform-sales-invoices/${e}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/sap/sales-analysis": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getSalesAnalysis"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap sales-analysis",
+  "parameterised": false,
+  "path": "/api/sap/sales-analysis",
+  "raw_paths": [
+   "/api/sap/sales-analysis"
+  ],
+  "service_vars": [
+   "yt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/sales-invoice-lines/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "sap",
+  "fn_names": [
+   "getSalesInvoiceLines"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap sales-invoice-lines",
+  "parameterised": true,
+  "path": "/api/sap/sales-invoice-lines/{}",
+  "raw_paths": [
+   "/api/sap/sales-invoice-lines/${e}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/sap/sales-invoices": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getSalesInvoices"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap sales-invoices",
+  "parameterised": false,
+  "path": "/api/sap/sales-invoices",
+  "raw_paths": [
+   "/api/sap/sales-invoices"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/sap/sales-invoices/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "sap",
+  "fn_names": [
+   "getCustomerSalesInvoices"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap sales-invoice",
+  "parameterised": true,
+  "path": "/api/sap/sales-invoices/{}",
+  "raw_paths": [
+   "/api/sap/sales-invoices/${e}"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/sap/stock-by-warehouse": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "item_code"
+  ],
+  "decision": "PROBE",
+  "domain": "sap",
+  "fn_names": [
+   "getStockByWarehouse"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "sap stock-by-warehouse",
+  "parameterised": false,
+  "path": "/api/sap/stock-by-warehouse",
+  "raw_paths": [
+   "/api/sap/stock-by-warehouse"
+  ],
+  "service_vars": [
+   "t"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/all-appointments": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment all-appointments",
+  "parameterised": false,
+  "path": "/api/shipment/all-appointments",
+  "raw_paths": [
+   "/api/shipment/all-appointments/${t?`?${t}`:``}"
+  ],
+  "service_vars": [
+   "c"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/appointment-commits": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment appointment-commits",
+  "parameterised": false,
+  "path": "/api/shipment/appointment-commits",
+  "raw_paths": [
+   "/api/shipment/appointment-commits/"
+  ],
+  "service_vars": [
+   "l"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/appointment-commits/manual-import": {
+  "action_shaped": true,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "shipment",
+  "fn_names": [
+   "import"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/shipment/appointment-commits/manual-import",
+  "raw_paths": [
+   "/api/shipment/appointment-commits/manual-import/"
+  ],
+  "service_vars": [
+   "l"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/shipment/appointments": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [
+   "date"
+  ],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "getByDate"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment appointments",
+  "parameterised": false,
+  "path": "/api/shipment/appointments",
+  "raw_paths": [
+   "/api/shipment/appointments/?date=${e}"
+  ],
+  "service_vars": [
+   "a"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/appointments/dates": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "getDates"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment appointment-dates",
+  "parameterised": false,
+  "path": "/api/shipment/appointments/dates",
+  "raw_paths": [
+   "/api/shipment/appointments/dates/"
+  ],
+  "service_vars": [
+   "a"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/appointments/{}/extra-pos": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "shipment",
+  "fn_names": [
+   "getExtraPos"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment appointment-extra-pos",
+  "parameterised": true,
+  "path": "/api/shipment/appointments/{}/extra-pos",
+  "raw_paths": [
+   "/api/shipment/appointments/${e}/extra-pos/"
+  ],
+  "service_vars": [
+   "e"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/shipment/appointments/{}/families": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "shipment",
+  "fn_names": [
+   "getFamilies"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/shipment/appointments/{}/families",
+  "raw_paths": [
+   "/api/shipment/appointments/${e}/families/"
+  ],
+  "service_vars": [
+   "e"
+  ],
+  "why": "GET-capable in client; parameterised, cannot probe without a real id"
+ },
+ "/api/shipment/appointments/{}/items": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "shipment",
+  "fn_names": [
+   "cartons"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment appointment-items",
+  "parameterised": true,
+  "path": "/api/shipment/appointments/{}/items",
+  "raw_paths": [
+   "/api/shipment/appointments/${e}/items/?${o.toString()}"
+  ],
+  "service_vars": [
+   "e"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/shipment/asin-catalog": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "asinCatalog"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment asin-catalog",
+  "parameterised": false,
+  "path": "/api/shipment/asin-catalog",
+  "raw_paths": [
+   "/api/shipment/asin-catalog/"
+  ],
+  "service_vars": [
+   "s"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/fc-channel": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "shipment",
+  "fn_names": [
+   "setFcChannel"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/shipment/fc-channel",
+  "raw_paths": [
+   "/api/shipment/fc-channel/"
+  ],
+  "service_vars": [
+   "e"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/shipment/fc-switch-group": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [
+   "fc"
+  ],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "getSwitchGroup"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/shipment/fc-switch-group",
+  "raw_paths": [
+   "/api/shipment/fc-switch-group/?fc=${encodeURIComponent(e||``)}"
+  ],
+  "service_vars": [
+   "e"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/shipment/inventory": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [
+   "warehouse"
+  ],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment inventory",
+  "parameterised": false,
+  "path": "/api/shipment/inventory",
+  "raw_paths": [
+   "/api/shipment/inventory/${e?`?warehouse=${encodeURIComponent(e)}`:``}"
+  ],
+  "service_vars": [
+   "d"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/po-appointments": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [
+   "pos"
+  ],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "getPoAppointments"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/shipment/po-appointments",
+  "raw_paths": [
+   "/api/shipment/po-appointments/?pos=${encodeURIComponent((e||[]).join(`,`))}"
+  ],
+  "service_vars": [
+   "e"
+  ],
+  "why": "GET-capable in client"
+ },
+ "/api/shipment/po-items": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "list",
+   "loadAll"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment po-items",
+  "parameterised": false,
+  "path": "/api/shipment/po-items",
+  "raw_paths": [
+   "/api/shipment/po-items/${t?`?${t}`:``}",
+   "/api/shipment/po-items/?${new URLSearchParams({no_paginate:`true`,...Object.fromEntries(Object.entries(e).filter(([,e])=>e))}).toString()}"
+  ],
+  "service_vars": [
+   "s"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/po-shipment-lookup": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "shipmentLookup"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment po-shipment-lookup",
+  "parameterised": false,
+  "path": "/api/shipment/po-shipment-lookup",
+  "raw_paths": [
+   "/api/shipment/po-shipment-lookup/"
+  ],
+  "service_vars": [
+   "s"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/po-short-supply": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "shortSupply"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment po-short-supply",
+  "parameterised": false,
+  "path": "/api/shipment/po-short-supply",
+  "raw_paths": [
+   "/api/shipment/po-short-supply/"
+  ],
+  "service_vars": [
+   "s"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/record": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "record"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment record",
+  "parameterised": false,
+  "path": "/api/shipment/record",
+  "raw_paths": [
+   "/api/shipment/record/${t?`?${t}`:``}"
+  ],
+  "service_vars": [
+   "s"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/shipments": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [
+   "status",
+   "switch_state"
+  ],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "createDraft",
+   "list",
+   "listSwitching"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "old_command": "shipment shipments",
+  "parameterised": false,
+  "path": "/api/shipment/shipments",
+  "raw_paths": [
+   "/api/shipment/shipments/",
+   "/api/shipment/shipments/${e?`?status=${e}`:``}",
+   "/api/shipment/shipments/?switch_state=${encodeURIComponent(e)}"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/shipments/deletion-log": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [
+   "limit"
+  ],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "deletionLog"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment shipments-deletion-log",
+  "parameterised": false,
+  "path": "/api/shipment/shipments/deletion-log",
+  "raw_paths": [
+   "/api/shipment/shipments/deletion-log/${e?`?limit=${e}`:``}"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/shipments/doh-auto-fill": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "dohAutoFill"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment shipments-doh-auto-fill",
+  "parameterised": false,
+  "path": "/api/shipment/shipments/doh-auto-fill",
+  "raw_paths": [
+   "/api/shipment/shipments/doh-auto-fill/${t?`?${t}`:``}"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/shipments/manual-plan": {
+  "action_shaped": true,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "shipment",
+  "fn_names": [
+   "manualPlan"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/shipment/shipments/manual-plan",
+  "raw_paths": [
+   "/api/shipment/shipments/manual-plan/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/shipment/shipments/pending-approvals": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "pendingApprovals"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment shipments-pending-approvals",
+  "parameterised": false,
+  "path": "/api/shipment/shipments/pending-approvals",
+  "raw_paths": [
+   "/api/shipment/shipments/pending-approvals/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/shipments/stats": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "shipment",
+  "fn_names": [
+   "stats"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "shipment shipments-stats",
+  "parameterised": false,
+  "path": "/api/shipment/shipments/stats",
+  "raw_paths": [
+   "/api/shipment/shipments/stats/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/shipment/shipments/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "shipment",
+  "fn_names": [
+   "deleteDraft",
+   "get",
+   "update"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "DELETE",
+   "GET",
+   "PATCH"
+  ],
+  "old_command": "shipment shipment",
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}",
+  "raw_paths": [
+   "/api/shipment/shipments/${e}/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ },
+ "/api/shipment/shipments/{}/approve": {
+  "action_shaped": true,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "shipment",
+  "fn_names": [
+   "approve"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/approve",
+  "raw_paths": [
+   "/api/shipment/shipments/${e}/approve/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/shipment/shipments/{}/dispatch": {
+  "action_shaped": true,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "shipment",
+  "fn_names": [
+   "dispatch"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/dispatch",
+  "raw_paths": [
+   "/api/shipment/shipments/${e}/dispatch/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/shipment/shipments/{}/invoices": {
+  "action_shaped": false,
+  "chunks": [],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "shipment",
+  "fn_names": [],
+  "get_capable": null,
+  "in_old_spec": true,
+  "methods": [],
+  "old_command": "shipment shipment-invoices",
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/invoices",
+  "raw_paths": [],
+  "service_vars": [],
+  "why": "shipped in v0.1.0 but the current client no longer calls it - probe before assuming dead"
+ },
+ "/api/shipment/shipments/{}/invoices/{}/file": {
+  "action_shaped": false,
+  "chunks": [],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "shipment",
+  "fn_names": [],
+  "get_capable": null,
+  "in_old_spec": true,
+  "methods": [],
+  "old_command": "shipment shipment-invoice-file",
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/invoices/{}/file",
+  "raw_paths": [],
+  "service_vars": [],
+  "why": "shipped in v0.1.0 but the current client no longer calls it - probe before assuming dead"
+ },
+ "/api/shipment/shipments/{}/items/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "shipment",
+  "fn_names": [
+   "updateItem"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "PATCH"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/items/{}",
+  "raw_paths": [
+   "/api/shipment/shipments/${e}/items/${t}/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "client only ever PATCHs it; new since v0.1.0"
+ },
+ "/api/shipment/shipments/{}/po-documents": {
+  "action_shaped": false,
+  "chunks": [],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "shipment",
+  "fn_names": [],
+  "get_capable": null,
+  "in_old_spec": true,
+  "methods": [],
+  "old_command": "shipment shipment-po-documents",
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/po-documents",
+  "raw_paths": [],
+  "service_vars": [],
+  "why": "shipped in v0.1.0 but the current client no longer calls it - probe before assuming dead"
+ },
+ "/api/shipment/shipments/{}/po-documents/{}": {
+  "action_shaped": false,
+  "chunks": [],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "shipment",
+  "fn_names": [],
+  "get_capable": null,
+  "in_old_spec": true,
+  "methods": [],
+  "old_command": "shipment shipment-po-document",
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/po-documents/{}",
+  "raw_paths": [],
+  "service_vars": [],
+  "why": "shipped in v0.1.0 but the current client no longer calls it - probe before assuming dead"
+ },
+ "/api/shipment/shipments/{}/reject": {
+  "action_shaped": true,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "shipment",
+  "fn_names": [
+   "reject"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/reject",
+  "raw_paths": [
+   "/api/shipment/shipments/${e}/reject/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/shipment/shipments/{}/submit": {
+  "action_shaped": true,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "shipment",
+  "fn_names": [
+   "submit"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/submit",
+  "raw_paths": [
+   "/api/shipment/shipments/${e}/submit/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/shipment/shipments/{}/switch/verify": {
+  "action_shaped": true,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_ACTION",
+  "domain": "shipment",
+  "fn_names": [
+   "switchVerify",
+   "switchVerifyCheck"
+  ],
+  "get_capable": true,
+  "in_old_spec": false,
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": true,
+  "path": "/api/shipment/shipments/{}/switch/verify",
+  "raw_paths": [
+   "/api/shipment/shipments/${e}/switch/verify/"
+  ],
+  "service_vars": [
+   "o"
+  ],
+  "why": "action-shaped route; not probed (rule 1)"
+ },
+ "/api/upload/ads-master": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "upload",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "upload ads-master",
+  "parameterised": false,
+  "path": "/api/upload/ads-master",
+  "raw_paths": [
+   "/api/upload/ads-master"
+  ],
+  "service_vars": [
+   "Pe"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/upload/ads-master/add": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "create"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/ads-master/add",
+  "raw_paths": [
+   "/api/upload/ads-master/add"
+  ],
+  "service_vars": [
+   "Pe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/ads-master/bulk-upsert": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "rows"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "bulkUpsert"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/ads-master/bulk-upsert",
+  "raw_paths": [
+   "/api/upload/ads-master/bulk-upsert"
+  ],
+  "service_vars": [
+   "Pe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/ads-master/delete": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "row_id"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "delete"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/ads-master/delete",
+  "raw_paths": [
+   "/api/upload/ads-master/delete"
+  ],
+  "service_vars": [
+   "Pe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/ads-master/preview": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "rows"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "previewBulk"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/ads-master/preview",
+  "raw_paths": [
+   "/api/upload/ads-master/preview"
+  ],
+  "service_vars": [
+   "Pe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/ads-master/update": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "row",
+   "row_id"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "update"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/ads-master/update",
+  "raw_paths": [
+   "/api/upload/ads-master/update"
+  ],
+  "service_vars": [
+   "Pe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/batch": {
+  "action_shaped": false,
+  "chunks": [
+   "shipmentAPI-DKVOXJWL.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "importCommits"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/batch",
+  "raw_paths": [
+   "/api/upload/batch"
+  ],
+  "service_vars": [
+   "e"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/master-sheet": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "upload",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "upload master-sheet",
+  "parameterised": false,
+  "path": "/api/upload/master-sheet",
+  "raw_paths": [
+   "/api/upload/master-sheet"
+  ],
+  "service_vars": [
+   "Ne"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/upload/master-sheet/add": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "create"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/master-sheet/add",
+  "raw_paths": [
+   "/api/upload/master-sheet/add"
+  ],
+  "service_vars": [
+   "Ne"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/master-sheet/bulk-upsert": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "rows"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "bulkUpsert"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/master-sheet/bulk-upsert",
+  "raw_paths": [
+   "/api/upload/master-sheet/bulk-upsert"
+  ],
+  "service_vars": [
+   "Ne"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/master-sheet/delete": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "row_id"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "delete"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/master-sheet/delete",
+  "raw_paths": [
+   "/api/upload/master-sheet/delete"
+  ],
+  "service_vars": [
+   "Ne"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/master-sheet/preview": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "rows"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "previewBulk"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/master-sheet/preview",
+  "raw_paths": [
+   "/api/upload/master-sheet/preview"
+  ],
+  "service_vars": [
+   "Ne"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/master-sheet/update": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "row",
+   "row_id"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "update"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/master-sheet/update",
+  "raw_paths": [
+   "/api/upload/master-sheet/update"
+  ],
+  "service_vars": [
+   "Ne"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/pincode-mapping": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "upload",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "upload pincode-mapping",
+  "parameterised": false,
+  "path": "/api/upload/pincode-mapping",
+  "raw_paths": [
+   "/api/upload/pincode-mapping"
+  ],
+  "service_vars": [
+   "Fe"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/upload/pincode-mapping/add": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "create"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/pincode-mapping/add",
+  "raw_paths": [
+   "/api/upload/pincode-mapping/add"
+  ],
+  "service_vars": [
+   "Fe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/pincode-mapping/bulk-upsert": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "rows"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "bulkUpsert"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/pincode-mapping/bulk-upsert",
+  "raw_paths": [
+   "/api/upload/pincode-mapping/bulk-upsert"
+  ],
+  "service_vars": [
+   "Fe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/pincode-mapping/delete": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "row_id"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "delete"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/pincode-mapping/delete",
+  "raw_paths": [
+   "/api/upload/pincode-mapping/delete"
+  ],
+  "service_vars": [
+   "Fe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/pincode-mapping/preview": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "rows"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "previewBulk"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/pincode-mapping/preview",
+  "raw_paths": [
+   "/api/upload/pincode-mapping/preview"
+  ],
+  "service_vars": [
+   "Fe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/upload/pincode-mapping/update": {
+  "action_shaped": true,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [
+   "row",
+   "row_id"
+  ],
+  "decision": "EXCLUDE_WRITE",
+  "domain": "upload",
+  "fn_names": [
+   "update"
+  ],
+  "get_capable": false,
+  "in_old_spec": false,
+  "methods": [
+   "POST"
+  ],
+  "old_command": null,
+  "parameterised": false,
+  "path": "/api/upload/pincode-mapping/update",
+  "raw_paths": [
+   "/api/upload/pincode-mapping/update"
+  ],
+  "service_vars": [
+   "Fe"
+  ],
+  "why": "client only ever POSTs it; new since v0.1.0"
+ },
+ "/api/uploads": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE",
+  "domain": "uploads",
+  "fn_names": [
+   "list"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET",
+   "POST"
+  ],
+  "old_command": "uploads list",
+  "parameterised": false,
+  "path": "/api/uploads",
+  "raw_paths": [
+   "/api/uploads"
+  ],
+  "service_vars": [
+   "bt"
+  ],
+  "why": "shipped in v0.1.0 spec"
+ },
+ "/api/uploads/{}": {
+  "action_shaped": false,
+  "chunks": [
+   "api-De44ElJm.js"
+  ],
+  "client_query_params": [],
+  "decision": "PROBE_SKIP_PARAM",
+  "domain": "uploads",
+  "fn_names": [
+   "detail"
+  ],
+  "get_capable": true,
+  "in_old_spec": true,
+  "methods": [
+   "GET"
+  ],
+  "old_command": "uploads get",
+  "parameterised": true,
+  "path": "/api/uploads/{}",
+  "raw_paths": [
+   "/api/uploads/${e}"
+  ],
+  "service_vars": [
+   "bt"
+  ],
+  "why": "shipped in v0.1.0 spec; parameterised, cannot probe without a real id"
+ }
+}

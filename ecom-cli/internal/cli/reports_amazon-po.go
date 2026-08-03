@@ -13,7 +13,19 @@ import (
 
 func newReportsAmazonPoCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagPoNumber string
+	var flagAsin string
+	var flagFulfillmentCenter string
+	var flagMonth int
+	var flagYear int
+	var flagChannel string
+	var flagPoStatus string
+	var flagItemStatus string
+	var flagItemHead string
+	var flagSortBy string
+	var flagHelper string
+	var flagStatusExact string
 
 	cmd := &cobra.Command{
 		Use:         "amazon-po",
@@ -21,6 +33,71 @@ func newReportsAmazonPoCmd(flags *rootFlags) *cobra.Command {
 		Example:     "  jivo-ecom-pp-cli reports amazon-po",
 		Annotations: map[string]string{"pp:endpoint": "reports.amazon-po", "pp:method": "GET", "pp:path": "/api/reports/amazon-po", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("channel") {
+				allowedChannel := []string{"CORE", "FRESH", "NOW"}
+				validChannel := false
+				for _, v := range allowedChannel {
+					if flagChannel == v {
+						validChannel = true
+						break
+					}
+				}
+				if !validChannel {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagChannel, "channel", allowedChannel)
+				}
+			}
+			if cmd.Flags().Changed("item-head") {
+				allowedItemHead := []string{"PREMIUM", "COMMODITY", "OTHER"}
+				validItemHead := false
+				for _, v := range allowedItemHead {
+					if flagItemHead == v {
+						validItemHead = true
+						break
+					}
+				}
+				if !validItemHead {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagItemHead, "item-head", allowedItemHead)
+				}
+			}
+			if cmd.Flags().Changed("sort-by") {
+				allowedSortBy := []string{"expiry_date"}
+				validSortBy := false
+				for _, v := range allowedSortBy {
+					if flagSortBy == v {
+						validSortBy = true
+						break
+					}
+				}
+				if !validSortBy {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSortBy, "sort-by", allowedSortBy)
+				}
+			}
+			if cmd.Flags().Changed("helper") {
+				allowedHelper := []string{"INCLUDE"}
+				validHelper := false
+				for _, v := range allowedHelper {
+					if flagHelper == v {
+						validHelper = true
+						break
+					}
+				}
+				if !validHelper {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagHelper, "helper", allowedHelper)
+				}
+			}
+			if cmd.Flags().Changed("status-exact") {
+				allowedStatusExact := []string{"confirmed"}
+				validStatusExact := false
+				for _, v := range allowedStatusExact {
+					if flagStatusExact == v {
+						validStatusExact = true
+						break
+					}
+				}
+				if !validStatusExact {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagStatusExact, "status-exact", allowedStatusExact)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -31,8 +108,44 @@ func newReportsAmazonPoCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagPoNumber != "" {
+				params["po_number"] = formatCLIParamValue(flagPoNumber)
+			}
+			if flagAsin != "" {
+				params["asin"] = formatCLIParamValue(flagAsin)
+			}
+			if flagFulfillmentCenter != "" {
+				params["fulfillment_center"] = formatCLIParamValue(flagFulfillmentCenter)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagChannel != "" {
+				params["channel"] = formatCLIParamValue(flagChannel)
+			}
+			if flagPoStatus != "" {
+				params["po_status"] = formatCLIParamValue(flagPoStatus)
+			}
+			if flagItemStatus != "" {
+				params["item_status"] = formatCLIParamValue(flagItemStatus)
+			}
+			if flagItemHead != "" {
+				params["item_head"] = formatCLIParamValue(flagItemHead)
+			}
+			if flagSortBy != "" {
+				params["sort_by"] = formatCLIParamValue(flagSortBy)
+			}
+			if flagHelper != "" {
+				params["helper"] = formatCLIParamValue(flagHelper)
+			}
+			if flagStatusExact != "" {
+				params["status_exact"] = formatCLIParamValue(flagStatusExact)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "reports", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -83,7 +196,19 @@ func newReportsAmazonPoCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagPoNumber, "po-number", "", "PO number string")
+	cmd.Flags().StringVar(&flagAsin, "asin", "", "ASIN; options come from filter-options.")
+	cmd.Flags().StringVar(&flagFulfillmentCenter, "fulfillment-center", "", "FC code; options from filter-options.fulfillment_centers; server-driven option list")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "month; options from filter-options.months; server-driven option list")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "year; options from filter-options.years; server-driven option list")
+	cmd.Flags().StringVar(&flagChannel, "channel", "", "uppercase; staticOptions in the source - this IS the full set (one of: CORE, FRESH, NOW)")
+	cmd.Flags().StringVar(&flagPoStatus, "po-status", "", "options from filter-options.po_statuses; server-driven option list")
+	cmd.Flags().StringVar(&flagItemStatus, "item-status", "", "options from filter-options.item_statuses; server-driven option list")
+	cmd.Flags().StringVar(&flagItemHead, "item-head", "", "uppercase; staticOptions in the source (one of: PREMIUM, COMMODITY, OTHER)")
+	cmd.Flags().StringVar(&flagSortBy, "sort-by", "", "column name; sortBy is attached to a view definition; only expiry_date is written literally (one of: expiry_date)")
+	cmd.Flags().StringVar(&flagHelper, "helper", "", " (one of: INCLUDE)")
+	cmd.Flags().StringVar(&flagStatusExact, "status-exact", "", " (one of: confirmed)")
 
 	return cmd
 }

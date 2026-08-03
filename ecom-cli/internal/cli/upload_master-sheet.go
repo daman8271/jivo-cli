@@ -13,7 +13,8 @@ import (
 
 func newUploadMasterSheetCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "master-sheet",
@@ -31,8 +32,11 @@ func newUploadMasterSheetCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "upload", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -83,7 +87,8 @@ func newUploadMasterSheetCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "free text")
 
 	return cmd
 }

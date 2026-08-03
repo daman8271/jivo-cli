@@ -15,16 +15,16 @@ func newShipmentAppointmentCommitsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "appointment-commits",
-		Short:       "Appointment commit records",
+		Short:       "Appointment commit records Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment appointment-commits",
-		Annotations: map[string]string{"pp:endpoint": "shipment.appointment-commits", "pp:method": "GET", "pp:path": "/api/shipment/appointment-commits", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.appointment-commits", "pp:method": "GET", "pp:path": "/api/shipment/appointment-commits/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/appointment-commits"
+			path := "/api/shipment/appointment-commits/"
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {

@@ -29,7 +29,6 @@ func newSapCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newSapPlatformSalesInvoicesCmd(flags))
 	cmd.AddCommand(newSapSalesAnalysisCmd(flags))
 	cmd.AddCommand(newSapSalesInvoiceCmd(flags))
-	cmd.AddCommand(newSapSalesInvoiceLinesCmd(flags))
 	cmd.AddCommand(newSapSalesInvoicesCmd(flags))
 	cmd.AddCommand(newSapStockByWarehouseCmd(flags))
 	return cmd

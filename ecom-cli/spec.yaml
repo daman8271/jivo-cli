@@ -1,8 +1,6 @@
 name: jivo-ecom
-description: "JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.in) \u2014 read-only dashboards,\
-  \ master data, notifications, and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket,\
-  \ Flipkart, Citymall, JioMart, Zomato"
-version: 0.1.0
+description: JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.in) - read-only dashboards, master data, notifications, SAP mirror, Amazon PO reporting and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato
+version: 0.2.0
 base_url: https://ecom.jivo.in
 health_check_path: /api/auth/me
 auth:
@@ -16,8 +14,14 @@ config:
   path: ~/.config/jivo-ecom-pp-cli/config.toml
 resources:
   account:
-    description: 'Authenticated account: current user and permissions'
+    description: "Authenticated account: current user, permissions and feature flags"
     endpoints:
+      feature-flags:
+        method: GET
+        path: /api/auth/feature-flags
+        description: Feature flags (getFeatureFlags)
+        response:
+          type: object
       me:
         method: GET
         path: /api/auth/me
@@ -30,42 +34,39 @@ resources:
         description: List the permission modules granted to the current user
         response:
           type: object
+  chatbot:
+    description: Read-only access to the ecom app's built-in assistant (health + conversation history)
+    endpoints:
+      conversation:
+        method: GET
+        path: /api/chatbot/conversations/{id}
+        description: Get a chatbot conversation (with messages) by id
+        params:
+        - name: id
+          type: string
+          description: Conversation id
+          required: true
+        - name: conversation_id
+          type: string
+          description: conversation id from /api/chatbot/conversations
+          required: true
+        response:
+          type: object
+      conversations:
+        method: GET
+        path: /api/chatbot/conversations
+        description: List chatbot conversations
+        response:
+          type: array
+      health:
+        method: GET
+        path: /api/chatbot/health
+        description: Chatbot service health
+        response:
+          type: object
   dashboard:
     description: Top-level analytics dashboards aggregated across all platforms
     endpoints:
-      latest-month:
-        method: GET
-        path: /api/dashboard/latest-month
-        description: Latest data month/year available, with source metadata
-        response:
-          type: object
-      top-skus:
-        method: GET
-        path: /api/dashboard/top-skus
-        description: Top-selling SKUs with top risers and fallers
-        params:
-        - name: platform
-          type: string
-          description: 'Filter to a single platform slug (default: all)'
-          enum:
-          - amazon
-          - bigbasket
-          - blinkit
-          - citymall
-          - flipkart
-          - flipkart_grocery
-          - jiomart
-          - swiggy
-          - zepto
-          - zomato
-        - name: month
-          type: int
-          description: 'Month number 1-12 (default: latest)'
-        - name: year
-          type: int
-          description: 'Four-digit year (default: latest)'
-        response:
-          type: object
       category-breakdown:
         method: GET
         path: /api/dashboard/category-breakdown
@@ -86,11 +87,18 @@ resources:
           - zepto
           - zomato
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
+          required: true
         - name: year
-          type: int
+          type: object
           description: Four-digit year
+          required: true
+        - name: source
+          type: string
+          enum:
+          - primary
+          - secondary
         response:
           type: object
       category-litres:
@@ -102,35 +110,51 @@ resources:
           type: string
           description: Filter to a single platform slug
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
         - name: year
-          type: int
+          type: object
           description: Four-digit year
         response:
           type: object
       category-platform-breakdown:
         method: GET
         path: /api/dashboard/category-platform-breakdown
-        description: Category breakdown split by platform
+        description: "Category breakdown split by platform Server requires: name is required."
         params:
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
+          required: true
         - name: year
-          type: int
+          type: object
           description: Four-digit year
+          required: true
+        - name: source
+          type: string
+          enum:
+          - primary
+          - secondary
+        - name: head
+          type: string
+          description: category / item-head key taken from the clicked row (e?.head); values come from a previously fetched breakdown row - NOT a fixed set; no literal member observed
+        - name: dimension
+          type: string
+          description: dimension key taken from the clicked row (e?.dimension); values come from a previously fetched breakdown row - NOT a fixed set; no literal member observed
+        - name: name
+          type: string
+          description: row name taken from the clicked row (e?.name); values come from a previously fetched breakdown row - NOT a fixed set; no literal member observed
         response:
           type: object
       category-sku-breakdown:
         method: GET
         path: /api/dashboard/category-sku-breakdown
-        description: SKU-level breakdown within a category (requires --platform)
+        description: "SKU-level breakdown within a category (requires --platform) Server requires: name is required."
         params:
         - name: platform
           type: string
-          required: true
           description: Platform slug (required by this endpoint)
+          required: true
           enum:
           - amazon
           - bigbasket
@@ -143,10 +167,10 @@ resources:
           - zepto
           - zomato
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
         - name: year
-          type: int
+          type: object
           description: Four-digit year
         response:
           type: object
@@ -158,43 +182,135 @@ resources:
         - name: platform
           type: string
           description: Filter to a single platform slug
+        - name: source
+          type: string
+          enum:
+          - primary
+          - secondary
+        - name: month
+          type: integer
+          description: month number 1-12
+          required: true
+        - name: year
+          type: integer
+          description: 4-digit year
+          required: true
+        - name: months
+          type: integer
+          description: integer count of trailing months (6 observed)
         response:
           type: object
-      state-sales:
+      expiry-alerts:
         method: GET
-        path: /api/dashboard/state-sales
-        description: State-wise sales with mapped/unmapped coverage
+        path: /api/dashboard/expiry-alerts/{table}
+        description: "Expiry alerts for one reporting table. NOTE: the path segment is a TABLE name (see `tables counts`), not a platform slug - passing a platform returns 200 with an empty list, which is a false negative."
         params:
-        - name: metric
+        - name: table
           type: string
-          description: Metric to report (e.g. units, value)
-        - name: mode
-          type: string
-          description: Aggregation mode
-        - name: platform
-          type: string
-          description: Filter to a single platform slug
-        - name: month
-          type: int
-          description: Month number 1-12
-        - name: year
-          type: int
-          description: Four-digit year
+          description: Reporting-schema table name, case-sensitive. The valid set is the key list of `dashboard table-counts`, which is the server's own allowlist - anything else returns 400 "Table not allowed".
+          required: true
+          enum:
+          - all_platform_inventory
+          - amazon_ads
+          - amazon_coupon
+          - amazon_inventory
+          - amazon_mp
+          - amazon_price_data
+          - amazon_sec_city
+          - amazon_sec_daily
+          - amazon_sec_daily_master_view
+          - amazon_sec_range
+          - amazon_sec_range_margins
+          - amazon_sec_range_master_view
+          - bigbasketSec
+          - bigbasket_ads
+          - bigbasket_inventory
+          - bigbasket_sec_range
+          - blinkitSec
+          - blinkit_ads
+          - blinkit_brandfund
+          - blinkit_inventory
+          - citymallSec
+          - citymall_inventory
+          - fk_grocery
+          - flipkartSec
+          - flipkart_ads
+          - flipkart_grocery_master
+          - flipkart_secondary_all
+          - jiomartSec
+          - jiomart_inventory
+          - master_po
+          - prim_master_po
+          - swiggySec
+          - swiggy_ads
+          - swiggy_brandfund
+          - swiggy_inventory
+          - test_master_po
+          - total_po
+          - total_po_zbs
+          - zeptoSec
+          - zepto_ads
+          - zepto_brandfund
+          - zepto_inventory
+          - zomatoSec
+          - zomato_inventory
         response:
           type: object
-      state-sales-detail:
+      expiry-alerts-po-items:
         method: GET
-        path: /api/dashboard/state-sales/detail
-        description: Detailed state-wise sales rows
+        path: /api/dashboard/platform-expiry-alerts/{platform}/pos/{po}/items
+        description: Line items for a PO behind an expiry alert
         params:
         - name: platform
           type: string
-          description: Filter to a single platform slug
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: po
+          type: string
+          description: Purchase-order number
+          required: true
+        - name: po_number
+          type: string
+          description: PO number, URL-encoded (encodeURIComponent in the template); the encodeURIComponent proves PO numbers contain characters needing escaping
+          required: true
+        response:
+          type: object
+      expiry-alerts-pos:
+        method: GET
+        path: /api/dashboard/platform-expiry-alerts/{platform}/pos
+        description: Purchase orders behind a platform expiry alert
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
         - name: year
-          type: int
+          type: object
           description: Four-digit year
         response:
           type: object
@@ -221,17 +337,221 @@ resources:
           description: Filter to a single platform slug
         response:
           type: object
+      latest-month:
+        method: GET
+        path: /api/dashboard/latest-month
+        description: Latest data month/year available, with source metadata
+        response:
+          type: object
+      lead-time-report:
+        method: GET
+        path: /api/dashboard/lead-time-report
+        description: Distributor lead-time report (rows, slabs, grand total)
+        params:
+        - name: platform
+          type: string
+          description: platform slug
+        - name: month
+          type: integer
+        - name: year
+          type: integer
+        - name: item_head
+          type: string
+        response:
+          type: object
+      penetration-report:
+        method: GET
+        path: /api/dashboard/penetration-report
+        description: Penetration report (get)
+        params:
+        - name: month
+          type: integer
+          description: month number
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: page
+          type: integer
+          description: 0-based integer
+        - name: page_size
+          type: integer
+          description: integer; 1e5 used for export
+        - name: platform
+          type: string
+          description: array of platform slugs
+        - name: item_head
+          type: string
+          description: array of item-head keys
+        - name: category
+          type: string
+          description: array of category names
+        - name: sub_category
+          type: string
+          description: array of sub-category names
+        - name: status
+          type: string
+          description: keys read off the status-ranking map n={live:3,selling:2,stocked:1,inactive:0}; the filter chips use the same keys, but I did not see the chip array itself
+          enum:
+          - live
+          - selling
+          - stocked
+          - inactive
+        - name: search
+          type: string
+          description: free text
+        - name: group_by
+          type: string
+          description: A===`city`?...:A===`sku`?...; empty means no grouping
+          enum:
+          - city
+          - sku
+        - name: sort
+          type: string
+          description: column key from the table header
+        - name: dir
+          type: string
+          description: both literals present in the chunk; I did not isolate the toggle that writes them
+          enum:
+          - asc
+          - desc
+        - name: nocache
+          type: string
+          description: "{...F,nocache:1} on the force-refresh path"
+          enum:
+          - 1
+        response:
+          type: object
+      penetration-report-options:
+        method: GET
+        path: /api/dashboard/penetration-report/options
+        description: Penetration report options (getOptions)
+        response:
+          type: object
+      platform-expiry-alerts:
+        method: GET
+        path: /api/dashboard/platform-expiry-alerts
+        description: Expiry alerts aggregated across platforms
+        response:
+          type: object
       primary-po-litres:
         method: GET
         path: /api/dashboard/primary-po-litres
         description: Primary purchase-order volume in litres
         params:
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
         - name: year
-          type: int
+          type: object
           description: Four-digit year
+        response:
+          type: object
+      realise-breakdown:
+        method: GET
+        path: /api/dashboard/realise-breakdown
+        description: "Realise dashboard: breakdown (net realisation analytics)"
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: source
+          type: string
+          description: Data source
+        - name: month
+          type: object
+          description: Month number 1-12
+        - name: year
+          type: object
+          description: Four-digit year
+        - name: item_head
+          type: string
+          description: item-head key; omitted when blank
+        - name: category
+          type: string
+          description: category name; omitted when blank
+        - name: group_by
+          type: string
+          enum:
+          - category
+          - sub_category
+        response:
+          type: object
+      realise-overview:
+        method: GET
+        path: /api/dashboard/realise-overview
+        description: "Realise dashboard: overview (net realisation analytics)"
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: source
+          type: string
+          description: Data source
+        - name: month
+          type: object
+          description: Month number 1-12
+        - name: year
+          type: object
+          description: Four-digit year
+        - name: item_head
+          type: string
+          description: item-head key; omitted when blank
+        - name: category
+          type: string
+          description: category name; omitted when blank
+        response:
+          type: object
+      realise-trend:
+        method: GET
+        path: /api/dashboard/realise-trend
+        description: "Realise dashboard: trend (net realisation analytics)"
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: source
+          type: string
+          description: Data source
+        - name: month
+          type: object
+          description: Month number 1-12
+        - name: year
+          type: object
+          description: Four-digit year
+        - name: item_head
+          type: string
+          description: item-head key; omitted when blank
+        - name: category
+          type: string
+          description: category name; omitted when blank
+        - name: months
+          type: integer
+          description: integer (12 observed)
+        response:
+          type: object
+      realise-waterfall:
+        method: GET
+        path: /api/dashboard/realise-waterfall
+        description: "Realise dashboard: waterfall (net realisation analytics)"
+        params:
+        - name: platform
+          type: string
+          description: Filter to a single platform slug
+        - name: source
+          type: string
+          description: Data source
+        - name: month
+          type: object
+          description: Month number 1-12
+        - name: year
+          type: object
+          description: Four-digit year
+        - name: item_head
+          type: string
+          description: item-head key; omitted when blank; waterfall has no call site in the downloaded chunks; params inferred from the shared H/U objects in the same screen
+        - name: category
+          type: string
+          description: category name; omitted when blank; waterfall has no call site in the downloaded chunks; params inferred from the shared H/U objects in the same screen
         response:
           type: object
       secondary-yoy-growth:
@@ -242,117 +562,144 @@ resources:
         - name: platform
           type: string
           description: Filter to a single platform slug
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number
         response:
           type: object
-      expiry-alerts:
+      state-sales:
         method: GET
-        path: /api/dashboard/expiry-alerts/{platform}
-        description: Expiry alerts for a single platform
+        path: /api/dashboard/state-sales
+        description: State-wise sales with mapped/unmapped coverage
         params:
+        - name: metric
+          type: string
+          description: Metric to report (e.g. units, value)
+          required: true
+          enum:
+          - litres
+          - value
+          - units
+        - name: mode
+          type: string
+          description: Aggregation mode
         - name: platform
           type: string
-          required: true
-          positional: true
-          description: Platform slug
+          description: Filter to a single platform slug
           enum:
           - amazon
-          - bigbasket
-          - blinkit
-          - citymall
           - flipkart
-          - flipkart_grocery
-          - jiomart
           - swiggy
+          - blinkit
           - zepto
-          - zomato
+          - bigbasket
+        - name: month
+          type: object
+          description: Month number 1-12
+        - name: year
+          type: object
+          description: Four-digit year
+        - name: item_head
+          type: string
+          description: uppercase; `all` is NOT sent - the key is omitted instead
+          enum:
+          - PREMIUM
+          - COMMODITY
+          - OTHER
+        - name: months
+          type: integer
+          description: "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: brand
+          type: string
+          description: "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: category
+          type: string
+          description: "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: sub_category
+          type: string
+          description: "array of sub-category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: item
+          type: string
+          description: "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
         response:
           type: object
-      platform-expiry-alerts:
+      state-sales-detail:
         method: GET
-        path: /api/dashboard/platform-expiry-alerts
-        description: Expiry alerts aggregated across platforms
-        response:
-          type: object
-      lead-time-report:
-        method: GET
-        path: /api/dashboard/lead-time-report
-        description: Distributor lead-time report (rows, slabs, grand total)
-        response:
-          type: object
-      realise-overview:
-        method: GET
-        path: /api/dashboard/realise-overview
-        description: 'Realise dashboard: overview (net realisation analytics)'
+        path: /api/dashboard/state-sales/detail
+        description: "Detailed state-wise sales rows Server requires: state is required."
         params:
         - name: platform
           type: string
           description: Filter to a single platform slug
-        - name: source
-          type: string
-          description: Data source
+          enum:
+          - amazon
+          - flipkart
+          - swiggy
+          - blinkit
+          - zepto
+          - bigbasket
         - name: month
-          type: int
-          description: Month number 1-12
-        - name: year
-          type: int
-          description: Four-digit year
-        response:
           type: object
-      realise-breakdown:
-        method: GET
-        path: /api/dashboard/realise-breakdown
-        description: 'Realise dashboard: breakdown (net realisation analytics)'
-        params:
-        - name: platform
-          type: string
-          description: Filter to a single platform slug
-        - name: source
-          type: string
-          description: Data source
-        - name: month
-          type: int
           description: Month number 1-12
         - name: year
-          type: int
-          description: Four-digit year
-        response:
           type: object
-      realise-trend:
-        method: GET
-        path: /api/dashboard/realise-trend
-        description: 'Realise dashboard: trend (net realisation analytics)'
-        params:
-        - name: platform
-          type: string
-          description: Filter to a single platform slug
-        - name: source
-          type: string
-          description: Data source
-        - name: month
-          type: int
-          description: Month number 1-12
-        - name: year
-          type: int
           description: Four-digit year
-        response:
-          type: object
-      realise-waterfall:
-        method: GET
-        path: /api/dashboard/realise-waterfall
-        description: 'Realise dashboard: waterfall (net realisation analytics)'
-        params:
-        - name: platform
+        - name: metric
           type: string
-          description: Filter to a single platform slug
-        - name: source
+          required: true
+          enum:
+          - litres
+          - value
+          - units
+        - name: item_head
           type: string
-          description: Data source
-        - name: month
-          type: int
-          description: Month number 1-12
-        - name: year
-          type: int
-          description: Four-digit year
+          description: uppercase; `all` is NOT sent - the key is omitted instead
+          enum:
+          - PREMIUM
+          - COMMODITY
+          - OTHER
+        - name: months
+          type: integer
+          description: "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: brand
+          type: string
+          description: "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: category
+          type: string
+          description: "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: sub_category
+          type: string
+          description: "array of sub-category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: item
+          type: string
+          description: "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
         response:
           type: object
       state-sales-detail-cities:
@@ -362,23 +709,69 @@ resources:
         params:
         - name: state
           type: string
-          required: true
           description: State name
+          required: true
         - name: metric
           type: string
           description: Metric (units/value)
+          required: true
+          enum:
+          - litres
+          - value
+          - units
         - name: dimension
           type: string
           description: Dimension
         - name: platform
           type: string
           description: Platform slug
+          enum:
+          - amazon
+          - flipkart
+          - swiggy
+          - blinkit
+          - zepto
+          - bigbasket
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
         - name: year
-          type: int
+          type: object
           description: Four-digit year
+        - name: item_head
+          type: string
+          description: uppercase; `all` is NOT sent - the key is omitted instead
+          enum:
+          - PREMIUM
+          - COMMODITY
+          - OTHER
+        - name: months
+          type: integer
+          description: "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: brand
+          type: string
+          description: "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: category
+          type: string
+          description: "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: sub_category
+          type: string
+          description: "array of sub-category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: item
+          type: string
+          description: "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
         response:
           type: object
       state-sales-detail-city-skus:
@@ -388,24 +781,73 @@ resources:
         params:
         - name: state
           type: string
-          required: true
           description: State name
+          required: true
         - name: city
           type: string
-          required: true
           description: City name
+          required: true
         - name: metric
           type: string
           description: Metric
+          required: true
+          enum:
+          - litres
+          - value
+          - units
         - name: platform
           type: string
           description: Platform slug
+          enum:
+          - amazon
+          - flipkart
+          - swiggy
+          - blinkit
+          - zepto
+          - bigbasket
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
         - name: year
-          type: int
+          type: object
           description: Four-digit year
+        - name: item_head
+          type: string
+          description: uppercase; `all` is NOT sent - the key is omitted instead
+          enum:
+          - PREMIUM
+          - COMMODITY
+          - OTHER
+        - name: months
+          type: integer
+          description: "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: brand
+          type: string
+          description: "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: category
+          type: string
+          description: "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: sub_category
+          type: string
+          description: "array of sub-category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: item
+          type: string
+          description: "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: limit
+          type: integer
+          description: integer (10 observed)
         response:
           type: object
       state-sales-detail-options:
@@ -416,9 +858,63 @@ resources:
         - name: platform
           type: string
           description: Platform slug
+          enum:
+          - amazon
+          - flipkart
+          - swiggy
+          - blinkit
+          - zepto
+          - bigbasket
         - name: state
           type: string
           description: State name
+        - name: metric
+          type: string
+          required: true
+          enum:
+          - litres
+          - value
+          - units
+        - name: item_head
+          type: string
+          description: uppercase; `all` is NOT sent - the key is omitted instead
+          enum:
+          - PREMIUM
+          - COMMODITY
+          - OTHER
+        - name: month
+          type: integer
+          description: "month number (single-month mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: year
+          type: integer
+          description: "4-digit year; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: months
+          type: integer
+          description: "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: brand
+          type: string
+          description: "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: category
+          type: string
+          description: "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: sub_category
+          type: string
+          description: "array of sub-category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: item
+          type: string
+          description: "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
         response:
           type: object
       state-sales-export:
@@ -429,25 +925,71 @@ resources:
         - name: platform
           type: string
           description: Platform slug
+          enum:
+          - amazon
+          - flipkart
+          - swiggy
+          - blinkit
+          - zepto
+          - bigbasket
         - name: month
-          type: int
+          type: object
           description: Month number 1-12
         - name: year
-          type: int
+          type: object
           description: Four-digit year
+        - name: metric
+          type: string
+          required: true
+          enum:
+          - litres
+          - value
+          - units
+        - name: item_head
+          type: string
+          description: uppercase; `all` is NOT sent - the key is omitted instead
+          enum:
+          - PREMIUM
+          - COMMODITY
+          - OTHER
+        - name: months
+          type: integer
+          description: "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: from_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_month
+          type: string
+          description: "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: to_year
+          type: string
+          description: "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: brand
+          type: string
+          description: "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: category
+          type: string
+          description: "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: sub_category
+          type: string
+          description: "array of sub-category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
+        - name: item
+          type: string
+          description: "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year,to_month,to_year}"
         response:
           type: object
-      expiry-alerts-pos:
+      top-skus:
         method: GET
-        path: /api/dashboard/platform-expiry-alerts/{platform}/pos
-        description: Purchase orders behind a platform expiry alert
+        path: /api/dashboard/top-skus
+        description: Top-selling SKUs with top risers and fallers
         params:
         - name: platform
           type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: &id001
+          description: "Filter to a single platform slug (default: all)"
+          enum:
           - amazon
           - bigbasket
           - blinkit
@@ -459,145 +1001,65 @@ resources:
           - zepto
           - zomato
         - name: month
-          type: int
-          description: Month number 1-12
+          type: object
+          description: "Month number 1-12 (default: latest)"
         - name: year
-          type: int
-          description: Four-digit year
-        response:
           type: object
-      expiry-alerts-po-items:
-        method: GET
-        path: /api/dashboard/platform-expiry-alerts/{platform}/pos/{po}/items
-        description: Line items for a PO behind an expiry alert
-        params:
-        - name: platform
+          description: "Four-digit year (default: latest)"
+        - name: source
           type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        - name: po
+          description: only `secondary` observed on this endpoint; primary/secondary is the general pair elsewhere
+          enum:
+          - secondary
+        - name: limit
+          type: integer
+          description: integer (1000 observed)
+        - name: numeric
           type: string
-          required: true
-          positional: true
-          description: Purchase-order number
-        response:
-          type: object
-  tables:
-    description: Dynamic data-table browser over the underlying warehouse tables
-    endpoints:
-      counts:
-        method: GET
-        path: /api/dashboard/table-counts
-        description: Row counts for every available data table
-        response:
-          type: object
-      count:
-        method: GET
-        path: /api/dashboard/table-count/{table}
-        description: Row count for a single table
-        params:
-        - name: table
+          description: key name observed, value domain NOT observed
+        - name: sensitivity
           type: string
-          required: true
-          positional: true
-          description: Table name (see 'tables counts')
-        response:
-          type: object
-      columns:
-        method: GET
-        path: /api/dashboard/table-columns/{table}
-        description: Column definitions for a table
-        params:
-        - name: table
+          description: key name observed, value domain NOT observed
+        - name: compare_months
           type: string
-          required: true
-          positional: true
-          description: Table name
-        response:
-          type: object
-      data:
-        method: GET
-        path: /api/dashboard/table-data/{table}
-        description: Paginated rows for a table (server-shaped payload)
-        params:
-        - name: table
-          type: string
-          required: true
-          positional: true
-          description: Table name
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          flag_name: page-size
-          type: int
-          description: Rows per page
-        response:
-          type: object
-      distinct:
-        method: GET
-        path: /api/dashboard/table-distinct/{table}/{column}
-        description: Distinct values for a column in a table
-        params:
-        - name: table
-          type: string
-          required: true
-          positional: true
-          description: Table name
-        - name: column
-          type: string
-          required: true
-          positional: true
-          description: Column name
+          description: key name observed, value domain NOT observed
         response:
           type: object
   master:
-    description: 'Master data: product catalogue and fulfilment centres'
+    description: "Master data: product catalogue and fulfilment centres"
     endpoints:
-      products:
-        method: GET
-        path: /api/master/products
-        description: List master products (paginated)
-        params:
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          flag_name: page-size
-          type: int
-          description: Rows per page
-        - name: search
-          type: string
-          description: Free-text search filter
-        response:
-          type: object
-        response_path: results
       fcs:
         method: GET
         path: /api/master/fcs
         description: List fulfilment centres (paginated)
         params:
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          flag_name: page-size
-          type: int
+          type: object
           description: Rows per page
         response:
           type: object
-        response_path: results
+      products:
+        method: GET
+        path: /api/master/products
+        description: List master products (paginated)
+        params:
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        - name: search
+          type: string
+          description: Free-text search filter
+        response:
+          type: object
   notifications:
     description: Read-only notifications with unread count
     endpoints:
-      list:
-        method: GET
-        path: /api/notifications
-        description: List notifications with unread count
-        response:
-          type: object
       get:
         method: GET
         path: /api/notifications/{id}
@@ -605,9 +1067,12 @@ resources:
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Notification id
+          required: true
+        - name: notification_id
+          type: string
+          description: notification id from /api/notifications
+          required: true
         response:
           type: object
       inventory-doh:
@@ -617,25 +1082,311 @@ resources:
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Inventory/DOH notification id
+          required: true
+        response:
+          type: object
+      list:
+        method: GET
+        path: /api/notifications
+        description: List notifications with unread count
+        params:
+        - name: active_only
+          type: boolean
+          description: hard-wired by the service, not caller supplied Source writes the JS boolean !0; the URL builder stringifies it to "true".
+          enum:
+          - "true"
+        - name: limit
+          type: integer
+          description: hard-wired by the service
+          enum:
+          - 200
         response:
           type: object
   platform:
-    description: Per-platform dashboards (Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall,
-      JioMart, Zomato)
+    description: Per-platform dashboards. Many routes are restricted to specific platforms - see the platform column in DOMAIN-GUIDE-2026-08.md
     endpoints:
-      stats:
+      ads:
         method: GET
-        path: /api/platform/{platform}/stats
-        description: Headline stats for a platform (inventory, sells, open POs, active trucks)
+        path: /api/platform/{platform}/ads-dashboard
+        description: Advertising performance dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        - name: metric
+          type: string
+          description: only sent for the amazon slug
+          enum:
+          - ordered
+          - shipped
+        - name: dimension
+          type: string
+          enum:
+          - portfolio
+        - name: as_of_date
+          type: string
+          description: date string; only on the deliver-value query when not in a date/month-wise mode
+        response:
+          type: object
+      ads-summary:
+        method: GET
+        path: /api/platform/ads-summary
+        description: Cross-platform advertising summary
+        response:
+          type: object
+      ads-total-sales:
+        method: GET
+        path: /api/platform/{platform}/ads-total-sales
+        description: Ads total-sales for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        - name: metric
+          type: string
+          enum:
+          - ordered
+          - shipped
+        response:
+          type: object
+      bigbasket-ads-daily-dashboard:
+        method: GET
+        path: /api/platform/{platform}/bigbasket-ads-daily-dashboard
+        description: Bigbasket Ads Daily Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: bigbasket"
+          required: true
+          enum:
+          - bigbasket
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      bigbasket-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/bigbasket-ads-dashboard
+        description: Bigbasket Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: bigbasket"
+          required: true
+          enum:
+          - bigbasket
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      bigbasket-sales-explorer:
+        method: GET
+        path: /api/platform/bigbasket/sales-explorer
+        description: Bigbasket sales explorer (get)
         params:
         - name: platform
           type: string
           required: true
-          positional: true
+          enum:
+          - bigbasket
+        response:
+          type: object
+      blinkit-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/blinkit-ads-dashboard
+        description: Blinkit Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: blinkit"
+          required: true
+          enum:
+          - blinkit
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      blinkit-brandfund-dashboard:
+        method: GET
+        path: /api/platform/{platform}/blinkit-brandfund-dashboard
+        description: Blinkit Brandfund Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: blinkit"
+          required: true
+          enum:
+          - blinkit
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: comma-joined month values (v.join(`,`))
+        - name: date
+          type: string
+          description: date string
+        response:
+          type: object
+      blinkit-summary-report:
+        method: GET
+        path: /api/platform/{platform}/blinkit-summary-report
+        description: Blinkit summary report (get)
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: blinkit"
+          required: true
+          enum:
+          - blinkit
+        - name: year
+          type: integer
+          description: 4-digit year
+        response:
+          type: object
+      call-center-targets:
+        method: GET
+        path: /api/platform/call-center-targets
+        description: "Call-center secondary targets (premium/commodity) Server requires: `month` (1-12) and `year` (YYYY) are required integers."
+        params:
+        - name: month
+          type: object
+          description: Month number 1-12
+          required: true
+        - name: year
+          type: object
+          description: Four-digit year
+          required: true
+        response:
+          type: object
+      comparison:
+        method: GET
+        path: /api/platform/{platform}/comparison-dashboard
+        description: Comparison dashboard for a platform
+        params:
+        - name: platform
+          type: string
           description: Platform slug
+          required: true
           enum:
           - amazon
           - bigbasket
@@ -649,76 +1400,29 @@ resources:
           - zomato
         response:
           type: object
-      primary:
+      coupon:
         method: GET
-        path: /api/platform/{platform}/primary-dashboard
-        description: Primary (sell-in / PO) dashboard for a platform
+        path: /api/platform/{platform}/coupon-dashboard
+        description: Coupon performance dashboard for a platform
         params:
         - name: platform
           type: string
-          required: true
-          positional: true
           description: Platform slug
-        response:
-          type: object
-      secondary:
-        method: GET
-        path: /api/platform/{platform}/sec-dashboard
-        description: Secondary (sell-out) dashboard for a platform
-        params:
-        - name: platform
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: date
           type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      secondary-years:
-        method: GET
-        path: /api/platform/{platform}/sec-dashboard-years
-        description: Years available for the secondary dashboard
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      secondary-monthly:
-        method: GET
-        path: /api/platform/{platform}/sec-monthly-dashboard
-        description: Monthly secondary-sales dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      ads:
-        method: GET
-        path: /api/platform/{platform}/ads-dashboard
-        description: Advertising performance dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      price:
-        method: GET
-        path: /api/platform/{platform}/price-dashboard
-        description: Pricing dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
+          description: date string from the picker
         response:
           type: object
       drr:
@@ -728,420 +1432,22 @@ resources:
         params:
         - name: platform
           type: string
-          required: true
-          positional: true
           description: Platform slug
-        response:
-          type: object
-      comparison:
-        method: GET
-        path: /api/platform/{platform}/comparison-dashboard
-        description: Comparison dashboard for a platform
-        params:
-        - name: platform
-          type: string
           required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      coupon:
-        method: GET
-        path: /api/platform/{platform}/coupon-dashboard
-        description: Coupon performance dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      marketplace:
-        method: GET
-        path: /api/platform/{platform}/mp-dashboard
-        description: Marketplace dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      pendency:
-        method: GET
-        path: /api/platform/{platform}/pendency-dashboard
-        description: Order pendency dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      region-doh:
-        method: GET
-        path: /api/platform/{platform}/region-doh-dashboard
-        description: Region-wise days-of-health dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      soh-doh:
-        method: GET
-        path: /api/platform/{platform}/soh-doh-dashboard
-        description: Stock-on-hand / days-of-health dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      month-on-month-sale:
-        method: GET
-        path: /api/platform/{platform}/month-on-month-sale
-        description: Month-on-month sales for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      pos:
-        method: GET
-        path: /api/platform/{platform}/pos
-        description: Purchase orders for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      inventory-match:
-        method: GET
-        path: /api/platform/{platform}/inventory-match
-        description: Inventory reconciliation/match for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      month-targets:
-        method: GET
-        path: /api/platform/{platform}/month-targets
-        description: Secondary monthly targets for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      primary-month-targets:
-        method: GET
-        path: /api/platform/{platform}/primary-month-targets
-        description: Primary monthly targets for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-        response:
-          type: object
-      ads-summary:
-        method: GET
-        path: /api/platform/ads-summary
-        description: Cross-platform advertising summary
-        response:
-          type: object
-      meta:
-        method: GET
-        path: /api/platform/meta
-        description: Platform metadata (slugs, labels, config)
-        response:
-          type: object
-      primary-overview-total:
-        method: GET
-        path: /api/platform/primary-overview-total
-        description: Primary overview totals across platforms
-        params:
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
         - name: month
-          type: int
-          description: Month number 1-12
-        - name: year
-          type: int
-          description: Four-digit year
-        response:
-          type: object
-      primary-summary:
-        method: GET
-        path: /api/platform/primary-summary
-        description: Primary sell-in summary across platforms
-        params:
-        - name: month
-          type: int
-          description: Month number 1-12
-        - name: year
-          type: int
-          description: Four-digit year
-        response:
-          type: object
-      primary-summary-version:
-        method: GET
-        path: /api/platform/primary-summary-version
-        description: Data version stamp for the primary summary
-        response:
-          type: object
-      call-center-targets:
-        method: GET
-        path: /api/platform/call-center-targets
-        description: Call-center secondary targets (premium/commodity)
-        params:
-        - name: month
-          type: int
-          required: true
-          description: Month number 1-12
-        - name: year
-          type: int
-          required: true
-          description: Four-digit year
-        response:
-          type: object
-      month-targets-dashboard:
-        method: GET
-        path: /api/platform/month-targets/dashboard
-        description: Secondary month-targets dashboard across platforms
-        params:
-        - name: month
-          type: int
-          required: true
-          description: Month number 1-12
-        - name: year
-          type: int
-          required: true
-          description: Four-digit year
-        response:
-          type: object
-      primary-month-targets-dashboard:
-        method: GET
-        path: /api/platform/primary-month-targets/dashboard
-        description: Primary month-targets dashboard across platforms
-        params:
-        - name: month
-          type: int
-          required: true
-          description: Month number 1-12
-        - name: year
-          type: int
-          required: true
-          description: Four-digit year
-        response:
-          type: object
-      ads-total-sales:
-        method: GET
-        path: /api/platform/{platform}/ads-total-sales
-        description: Ads total-sales for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      mp-dashboard-version:
-        method: GET
-        path: /api/platform/{platform}/mp-dashboard-version
-        description: Data version stamp for a platform marketplace dashboard
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      landing-rate:
-        method: GET
-        path: /api/platform/{platform}/landing-rate
-        description: Monthly landing rate (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
-        response:
-          type: object
-        response_path: data
-      landing-rate-skus:
-        method: GET
-        path: /api/platform/{platform}/landing-rate/skus
-        description: Landing-rate SKUs (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      bigbasket-ads-dashboard:
-        method: GET
-        path: /api/platform/{platform}/bigbasket-ads-dashboard
-        description: Bigbasket Ads Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      bigbasket-ads-daily-dashboard:
-        method: GET
-        path: /api/platform/{platform}/bigbasket-ads-daily-dashboard
-        description: Bigbasket Ads Daily Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      blinkit-ads-dashboard:
-        method: GET
-        path: /api/platform/{platform}/blinkit-ads-dashboard
-        description: Blinkit Ads Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      blinkit-brandfund-dashboard:
-        method: GET
-        path: /api/platform/{platform}/blinkit-brandfund-dashboard
-        description: Blinkit Brandfund Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      swiggy-ads-dashboard:
-        method: GET
-        path: /api/platform/{platform}/swiggy-ads-dashboard
-        description: Swiggy Ads Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      swiggy-ads-daily-dashboard:
-        method: GET
-        path: /api/platform/{platform}/swiggy-ads-daily-dashboard
-        description: Swiggy Ads Daily Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      swiggy-brandfund-dashboard:
-        method: GET
-        path: /api/platform/{platform}/swiggy-brandfund-dashboard
-        description: Swiggy Brandfund Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      zepto-ads-dashboard:
-        method: GET
-        path: /api/platform/{platform}/zepto-ads-dashboard
-        description: Zepto Ads Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      zepto-ads-daily-dashboard:
-        method: GET
-        path: /api/platform/{platform}/zepto-ads-daily-dashboard
-        description: Zepto Ads Daily Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
-        response:
-          type: object
-      zepto-brandfund-dashboard:
-        method: GET
-        path: /api/platform/{platform}/zepto-brandfund-dashboard
-        description: Zepto Brandfund Dashboard for a platform
-        params:
-        - name: platform
-          type: string
-          required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
+          type: integer
+          description: month number
         response:
           type: object
       flipkart-ads-dashboard:
@@ -1151,10 +1457,30 @@ resources:
         params:
         - name: platform
           type: string
+          description: "Platform slug. This endpoint is served ONLY for: flipkart"
           required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
+          enum:
+          - flipkart
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
         response:
           type: object
       flipkart-fsn-dashboard:
@@ -1164,14 +1490,784 @@ resources:
         params:
         - name: platform
           type: string
+          description: "Platform slug. This endpoint is served ONLY for: flipkart"
           required: true
-          positional: true
+          enum:
+          - flipkart
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        - name: dimension
+          type: string
+          enum:
+          - item
+          - sub_category
+          - category
+          - item_head
+          - campaign_name
+        response:
+          type: object
+      inventory-match:
+        method: GET
+        path: /api/platform/{platform}/inventory-match
+        description: Inventory reconciliation/match for a platform
+        params:
+        - name: platform
+          type: string
           description: Platform slug
-          enum: *id001
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: sku
+          type: string
+          description: SKU code; sku is hard-wired as the only query key by the service function itself
+          required: true
+        response:
+          type: object
+      landing-rate:
+        method: GET
+        path: /api/platform/{platform}/landing-rate
+        description: Monthly landing rate (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: blinkit, zepto, swiggy, bigbasket, flipkart_grocery"
+          required: true
+          enum:
+          - blinkit
+          - zepto
+          - swiggy
+          - bigbasket
+          - flipkart_grocery
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        - name: mode
+          type: string
+          enum:
+          - effective
+          - history
+        - name: month
+          type: integer
+          description: YYYY-MM-01 (the picker holds YYYY-MM, the code appends -01)
+        - name: search
+          type: string
+          description: free text
+        response:
+          type: object
+      landing-rate-skus:
+        method: GET
+        path: /api/platform/{platform}/landing-rate/skus
+        description: Landing-rate SKUs (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: blinkit, zepto, swiggy, bigbasket, flipkart_grocery"
+          required: true
+          enum:
+          - blinkit
+          - zepto
+          - swiggy
+          - bigbasket
+          - flipkart_grocery
+        - name: month
+          type: integer
+          description: YYYY-MM-01
+        response:
+          type: object
+      marketplace:
+        method: GET
+        path: /api/platform/{platform}/mp-dashboard
+        description: Marketplace dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: month
+          type: integer
+          description: month number
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: nocache
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      meta:
+        method: GET
+        path: /api/platform/meta
+        description: Meta (Facebook/Instagram) advertising dashboard - campaign-level reach, impressions, link clicks, CPC, CPM and amount spent. This is NOT platform metadata; there is no endpoint that returns the platform slug list (use `account me`, field `platforms`).
+        response:
+          type: object
+      month-targets:
+        method: GET
+        path: /api/platform/{platform}/month-targets
+        description: Secondary monthly targets for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: month
+          type: integer
+          description: month number / 4-digit year
+        - name: year
+          type: integer
+          description: month number / 4-digit year
+        response:
+          type: object
+      month-targets-dashboard:
+        method: GET
+        path: /api/platform/month-targets/dashboard
+        description: "Secondary month-targets dashboard across platforms Server requires: `month` (1–12) and `year` (YYYY) are required."
+        params:
+        - name: month
+          type: object
+          description: Month number 1-12
+          required: true
+        - name: year
+          type: object
+          description: Four-digit year
+          required: true
+        - name: nocache
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      monthly-sales-explorer:
+        method: GET
+        path: /api/platform/{platform}/monthly-sales-explorer
+        description: Monthly sales explorer (get)
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: bigbasket, blinkit, swiggy, zepto"
+          required: true
+          enum:
+          - bigbasket
+          - blinkit
+          - swiggy
+          - zepto
+        - name: months
+          type: integer
+          description: integer or list of months; key observed; value form not pinned down
+        response:
+          type: object
+      mp-dashboard-version:
+        method: GET
+        path: /api/platform/{platform}/mp-dashboard-version
+        description: Data version stamp for a platform marketplace dashboard
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        response:
+          type: object
+      pendency:
+        method: GET
+        path: /api/platform/{platform}/pendency-dashboard
+        description: Order pendency dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: blinkit, zepto, swiggy, bigbasket"
+          required: true
+          enum:
+          - blinkit
+          - zepto
+          - swiggy
+          - bigbasket
+        - name: scope
+          type: string
+          description: sent only when no explicit date range is chosen
+          enum:
+          - all
+        - name: from_date
+          type: string
+          description: date string from the range picker; from_date and to_date are sent as a pair or not at all
+        - name: to_date
+          type: string
+          description: date string from the range picker; from_date and to_date are sent as a pair or not at all
+        - name: status
+          type: string
+          description: only literal ever sent on this endpoint
+          enum:
+          - expired
+        response:
+          type: object
+      pos:
+        method: GET
+        path: /api/platform/{platform}/pos
+        description: Purchase orders for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        response:
+          type: object
+      price:
+        method: GET
+        path: /api/platform/{platform}/price-dashboard
+        description: Pricing dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: date
+          type: string
+          description: date string from the picker
+        response:
+          type: object
+      primary:
+        method: GET
+        path: /api/platform/{platform}/primary-dashboard
+        description: Primary (sell-in / PO) dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: mode
+          type: string
+          description: key confirmed, but the variable c is not assigned a literal anywhere I could resolve - value set NOT observed
+        - name: channel
+          type: string
+          description: channel name; the sentinel `ALL` is held in state and only sent when a channel filter is active
+        - name: month
+          type: integer
+          description: month number
+        - name: year
+          type: integer
+          description: 4-digit year
+        response:
+          type: object
+      primary-month-targets:
+        method: GET
+        path: /api/platform/{platform}/primary-month-targets
+        description: Primary monthly targets for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: month
+          type: integer
+          description: month number / 4-digit year
+        - name: year
+          type: integer
+          description: month number / 4-digit year
+        - name: nocache
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      primary-month-targets-dashboard:
+        method: GET
+        path: /api/platform/primary-month-targets/dashboard
+        description: "Primary month-targets dashboard across platforms Server requires: `month` (1-12) and `year` (YYYY) are required."
+        params:
+        - name: month
+          type: object
+          description: Month number 1-12
+          required: true
+        - name: year
+          type: object
+          description: Four-digit year
+          required: true
+        - name: nocache
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      primary-overview-total:
+        method: GET
+        path: /api/platform/primary-overview-total
+        description: Primary overview totals across platforms
+        params:
+        - name: month
+          type: object
+          description: Month number 1-12
+        - name: year
+          type: object
+          description: Four-digit year
+        - name: slugs
+          type: string
+          description: platform slugs (list/comma-joined)
+        response:
+          type: object
+      primary-summary:
+        method: GET
+        path: /api/platform/primary-summary
+        description: Primary sell-in summary across platforms
+        params:
+        - name: month
+          type: object
+          description: Month number 1-12
+        - name: year
+          type: object
+          description: Four-digit year
+        response:
+          type: object
+      primary-summary-version:
+        method: GET
+        path: /api/platform/primary-summary-version
+        description: Data version stamp for the primary summary
+        response:
+          type: object
+      region-doh:
+        method: GET
+        path: /api/platform/{platform}/region-doh-dashboard
+        description: "Region-wise days-of-health dashboard for a platform Served only for: swiggy, zepto"
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: swiggy, zepto"
+          required: true
+          enum:
+          - swiggy
+          - zepto
+        - name: date
+          type: string
+          description: date string from the picker
+        response:
+          type: object
+      secondary:
+        method: GET
+        path: /api/platform/{platform}/sec-dashboard
+        description: Secondary (sell-out) dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        - name: metric
+          type: string
+          enum:
+          - ordered
+          - shipped
+        response:
+          type: object
+      secondary-monthly:
+        method: GET
+        path: /api/platform/{platform}/sec-monthly-dashboard
+        description: Monthly secondary-sales dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: year
+          type: integer
+          description: 4-digit year
+        response:
+          type: object
+      secondary-summary-version:
+        method: GET
+        path: /api/platform/secondary-summary-version
+        description: Secondary summary version (getVersion)
+        response:
+          type: object
+      secondary-years:
+        method: GET
+        path: /api/platform/{platform}/sec-dashboard-years
+        description: Years available for the secondary dashboard
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        response:
+          type: object
+      soh-doh:
+        method: GET
+        path: /api/platform/{platform}/soh-doh-dashboard
+        description: Stock-on-hand / days-of-health dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        response:
+          type: object
+      stats:
+        method: GET
+        path: /api/platform/{platform}/stats
+        description: Headline stats for a platform (inventory, sells, open POs, active trucks)
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        response:
+          type: object
+      swiggy-ads-daily-dashboard:
+        method: GET
+        path: /api/platform/{platform}/swiggy-ads-daily-dashboard
+        description: Swiggy Ads Daily Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: swiggy"
+          required: true
+          enum:
+          - swiggy
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      swiggy-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/swiggy-ads-dashboard
+        description: Swiggy Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: swiggy"
+          required: true
+          enum:
+          - swiggy
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      swiggy-brandfund-dashboard:
+        method: GET
+        path: /api/platform/{platform}/swiggy-brandfund-dashboard
+        description: Swiggy Brandfund Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: swiggy"
+          required: true
+          enum:
+          - swiggy
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: comma-joined month values (v.join(`,`))
+        - name: date
+          type: string
+          description: date string
+        response:
+          type: object
+      zepto-ads-daily-dashboard:
+        method: GET
+        path: /api/platform/{platform}/zepto-ads-daily-dashboard
+        description: Zepto Ads Daily Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: zepto"
+          required: true
+          enum:
+          - zepto
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      zepto-ads-dashboard:
+        method: GET
+        path: /api/platform/{platform}/zepto-ads-dashboard
+        description: Zepto Ads Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: zepto"
+          required: true
+          enum:
+          - zepto
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number or a month name uppercased; `1` when month_wise
+        - name: from_date
+          type: string
+          description: date string from the range picker
+        - name: to_date
+          type: string
+          description: date string from the range picker
+        - name: date_wise
+          type: string
+          enum:
+          - 1
+        - name: month_wise
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      zepto-brandfund-dashboard:
+        method: GET
+        path: /api/platform/{platform}/zepto-brandfund-dashboard
+        description: Zepto Brandfund Dashboard for a platform
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. This endpoint is served ONLY for: zepto"
+          required: true
+          enum:
+          - zepto
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: comma-joined month values (v.join(`,`))
+        - name: date
+          type: string
+          description: date string
         response:
           type: object
   reports:
-    description: 'Report views: Amazon PO, appointment, and raw report tables'
+    description: "Report views: Amazon PO, appointment, and raw report tables"
     endpoints:
       amazon-po:
         method: GET
@@ -1179,39 +2275,91 @@ resources:
         description: Amazon PO report
         params:
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
-        response:
-          type: object
-      amazon-po-summary:
-        method: GET
-        path: /api/reports/amazon-po/summary
-        description: Amazon PO report summary
-        response:
-          type: object
-      amazon-po-new-po:
-        method: GET
-        path: /api/reports/amazon-po/new-po
-        description: Amazon new-PO report
-        response:
-          type: object
-      amazon-po-matrix:
-        method: GET
-        path: /api/reports/amazon-po/matrix
-        description: Amazon PO matrix (by month/year)
-        params:
+        - name: po_number
+          type: string
+          description: PO number string
+        - name: asin
+          type: string
+          description: ASIN; options come from filter-options.asins; server-driven option list - call /api/reports/amazon-po/filter-options first
+        - name: fulfillment_center
+          type: string
+          description: FC code; options from filter-options.fulfillment_centers; server-driven option list
         - name: month
-          type: int
-          required: true
-          description: Month number 1-12
+          type: integer
+          description: month; options from filter-options.months; server-driven option list
         - name: year
-          type: int
-          required: true
-          description: Four-digit year
+          type: integer
+          description: year; options from filter-options.years; server-driven option list
+        - name: channel
+          type: string
+          description: uppercase; staticOptions in the source - this IS the full set
+          enum:
+          - CORE
+          - FRESH
+          - NOW
+        - name: po_status
+          type: string
+          description: options from filter-options.po_statuses; server-driven option list
+        - name: item_status
+          type: string
+          description: options from filter-options.item_statuses; server-driven option list
+        - name: item_head
+          type: string
+          description: uppercase; staticOptions in the source
+          enum:
+          - PREMIUM
+          - COMMODITY
+          - OTHER
+        - name: sort_by
+          type: string
+          description: column name; sortBy is attached to a view definition; only expiry_date is written literally
+          enum:
+          - expiry_date
+        - name: helper
+          type: string
+          enum:
+          - INCLUDE
+        - name: status_exact
+          type: string
+          enum:
+          - confirmed
+        response:
+          type: object
+      amazon-po-billing:
+        method: GET
+        path: /api/reports/amazon-po/billing
+        description: Amazon po billing (amazonBilling)
+        params:
+        - name: search
+          type: string
+          description: free text
+        - name: billing_status
+          type: string
+          description: g=[{value:``,label:`All statuses`},...] - empty string means all
+          enum:
+          - partial
+          - unbilled
+          - billed
+        - name: fulfillment_center
+          type: string
+          description: FC code from /api/reports/amazon-po/sku-pendency/filter-options .fulfillment_centers; server-driven
+        - name: channel
+          type: string
+          description: channel from the same filter-options .channels; server-driven
+        - name: page
+          type: integer
+          description: 0-based integer
+        - name: page_size
+          type: integer
+          description: integer (25 default, options 15/25/50/100)
+        - name: po
+          type: string
+          description: PO number
         response:
           type: object
       amazon-po-filter-options:
@@ -1220,24 +2368,148 @@ resources:
         description: Filter options for the Amazon PO report
         response:
           type: object
+      amazon-po-matrix:
+        method: GET
+        path: /api/reports/amazon-po/matrix
+        description: "Amazon PO matrix (by month/year) Server requires: month and year are required"
+        params:
+        - name: month
+          type: object
+          description: Month number 1-12
+          required: true
+        - name: year
+          type: object
+          description: Four-digit year
+          required: true
+        - name: fc
+          type: string
+          description: FC code; omitted when blank
+        - name: channel
+          type: string
+          description: same channel vocabulary as /api/reports/amazon-po; not re-declared in this chunk
+          enum:
+          - CORE
+          - FRESH
+          - NOW
+        response:
+          type: object
+      amazon-po-new-po:
+        method: GET
+        path: /api/reports/amazon-po/new-po
+        description: Amazon new-PO report
+        params:
+        - name: order_date_from
+          type: string
+          description: date string
+        - name: order_date_to
+          type: string
+          description: date string
+        - name: channel
+          type: string
+          enum:
+          - CORE
+          - FRESH
+          - NOW
+        response:
+          type: object
+      amazon-po-sku-pendency:
+        method: GET
+        path: /api/reports/amazon-po/sku-pendency
+        description: Amazon po sku pendency (amazonSkuPendency)
+        params:
+        - name: page
+          type: integer
+          description: 0-based integer
+        - name: page_size
+          type: integer
+          description: integer
+        - name: search
+          type: string
+          description: free text
+        - name: category
+          type: string
+          description: category name
+        - name: sub_category
+          type: string
+          description: sub-category name
+        - name: channel
+          type: string
+          description: channel from filter-options.channels
+        - name: fulfillment_center
+          type: string
+          description: FC from filter-options.fulfillment_centers
+        - name: have_invoice
+          type: string
+          enum:
+          - 1
+        - name: dispatched
+          type: string
+          enum:
+          - 1
+        - name: only_invoiced
+          type: string
+          enum:
+          - 1
+        response:
+          type: object
+      amazon-po-sku-pendency-filter-options:
+        method: GET
+        path: /api/reports/amazon-po/sku-pendency/filter-options
+        description: Amazon po sku pendency filter options (amazonSkuPendencyOptions)
+        response:
+          type: object
+      amazon-po-summary:
+        method: GET
+        path: /api/reports/amazon-po/summary
+        description: Amazon PO report summary
+        response:
+          type: object
       appointment:
         method: GET
         path: /api/reports/appointment
         description: Appointment report
         params:
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
-        response:
           type: object
-      appointment-summary:
-        method: GET
-        path: /api/reports/appointment/summary
-        description: Appointment report summary
+          description: Rows per page
+        - name: sort_by
+          type: string
+          description: column name; sortBy is attached to a view definition; only expiry_date is written literally
+          enum:
+          - expiry_date
+        - name: helper
+          type: string
+          enum:
+          - INCLUDE
+        - name: status_exact
+          type: string
+          enum:
+          - confirmed
+        - name: appointment_id
+          type: string
+          description: appointment id
+        - name: pos
+          type: string
+          description: PO number; options from filter-options.pos_numbers; server-driven option list
+        - name: destination_fc
+          type: string
+          description: FC code; options from filter-options.destination_fcs; server-driven option list
+        - name: status
+          type: string
+          description: Title-case; staticOptions - note the capitalisation differs from every other status field in this API
+          enum:
+          - Confirmed
+          - Closed
+          - Cancelled
+        - name: appointment_time_from
+          type: string
+          description: HTML datetime-local value i.e. YYYY-MM-DDTHH:MM
+        - name: appointment_time_to
+          type: string
+          description: HTML datetime-local value i.e. YYYY-MM-DDTHH:MM
         response:
           type: object
       appointment-filter-options:
@@ -1246,55 +2518,117 @@ resources:
         description: Filter options (pos_numbers, destination_fcs) for the appointment report
         response:
           type: object
+      appointment-summary:
+        method: GET
+        path: /api/reports/appointment/summary
+        description: Appointment report summary
+        response:
+          type: object
       columns:
         method: GET
         path: /api/reports/columns
-        description: Column definitions for a report view
+        description: "Column definitions for one report view. `view` is required - a bare call returns 400 \"Unknown report view\". Server requires: Unknown report view: ''"
         params:
-        - &id002
-          name: view
+        - name: view
           type: string
+          description: "view name; the sap: ones are colon-delimited triples; the service hard-wires the key: getColumns:e=>X(`/api/reports/columns`,{view:e})"
           required: true
-          description: Report view name
           enum:
-          - amazon_mp_master_view
-          - amazon_sec_daily_master_view
+          - all_platform_inventory
+          - master_po
+          - total_po
+          - SecMaster
           - amazon_sec_range_master_view
+          - amazon_sec_daily_master_view
+          - amazon_mp_master_view
+          - sap:jm_primary:oil
+          - sap:jm_primary:mart
+          - sap:jm_inventory:oil
+          - sap:jm_inventory:mart
+        response:
+          type: object
+      live-data:
+        method: GET
+        path: /api/reports/live/data
+        description: Live data (data) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: report
+          type: string
+          description: report id from GET /api/reports/live/reports; required - the effect returns early when it is empty
+          required: true
+        - name: sheet
+          type: string
+          description: sheet name from the chosen report
+        - name: full
+          type: string
+          description: mutually exclusive with page/page_size
+          enum:
+          - 1
+        - name: page
+          type: integer
+          description: 0-based integer
+        - name: page_size
+          type: integer
+          description: integer
+        response:
+          type: object
+      live-reports:
+        method: GET
+        path: /api/reports/live/reports
+        description: Live reports (reports) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
         response:
           type: object
       raw:
         method: GET
         path: /api/reports/raw
-        description: Raw rows for a report view
+        description: "Raw rows for one report view. `view` is required - a bare call returns 400 \"Unknown report view\". The `platform` filter on this endpoint takes UPPERCASE display names with spaces (BIG BASKET, FLIPKART GROCERY, CITY MALL), NOT the lowercase slugs every other endpoint uses. Server requires: Unknown report view: ''"
         params:
-        - *id002
+        - name: view
+          type: string
+          description: view name
+          required: true
+          enum:
+          - all_platform_inventory
+          - master_po
+          - total_po
+          - SecMaster
+          - amazon_sec_range_master_view
+          - amazon_sec_daily_master_view
+          - amazon_mp_master_view
+          - sap:jm_primary:oil
+          - sap:jm_primary:mart
+          - sap:jm_inventory:oil
+          - sap:jm_inventory:mart
         - name: page
-          type: int
-          description: Page number
+          type: integer
+          description: 0-based integer
         - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
+          type: integer
+          description: integer
+        - name: date_from
+          type: string
+          description: date string derived from the period preset (this_week/this_month/this_year/custom); the preset names this_week/this_month/this_year/custom are CLIENT-side only - they are never sent; only the resolved dates are
+        - name: date_to
+          type: string
+          description: date string derived from the period preset (this_week/this_month/this_year/custom); the preset names this_week/this_month/this_year/custom are CLIENT-side only - they are never sent; only the resolved dates are
+        - name: platform
+          type: string
+          description: "comma-joined UPPERCASE display names, NOT slugs; TRAP: this is the only endpoint where `platform` is a display name with a space, not a slug"
+          enum:
+          - AMAZON
+          - BLINKIT
+          - ZEPTO
+          - SWIGGY
+          - BIG BASKET
+          - FLIPKART
+          - FLIPKART GROCERY
+          - ZOMATO
+          - CITY MALL
         response:
           type: object
   sap:
-    description: 'SAP HANA read layer: distributors, inventory, sales invoices, stock'
+    description: "SAP HANA read layer: distributors, inventory, sales invoices, stock"
     endpoints:
-      distributors:
-        method: GET
-        path: /api/sap/distributors
-        description: List SAP distributors
-        params:
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
-        response:
-          type: object
-        response_path: data
       distributor:
         method: GET
         path: /api/sap/distributors/{code}
@@ -1302,9 +2636,12 @@ resources:
         params:
         - name: code
           type: string
-          required: true
-          positional: true
           description: Distributor CardCode
+          required: true
+        - name: card_code
+          type: string
+          description: SAP CardCode
+          required: true
         response:
           type: object
       distributor-inventory:
@@ -1313,15 +2650,17 @@ resources:
         description: Distributor inventory
         params:
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
+        - name: card_code
+          type: string
+          description: SAP CardCode; the service hard-wires card_code as the first key; extra keys are caller-supplied and none were observed
+          required: true
         response:
           type: object
-        response_path: data
       distributor-invoices:
         method: GET
         path: /api/sap/distributor-invoices/{code}
@@ -1329,19 +2668,20 @@ resources:
         params:
         - name: code
           type: string
-          required: true
-          positional: true
           description: Distributor CardCode
+          required: true
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
+        - name: card_code
+          type: string
+          description: SAP CardCode
+          required: true
         response:
           type: object
-        response_path: data
       distributor-orders:
         method: GET
         path: /api/sap/distributor-orders/{code}
@@ -1349,40 +2689,88 @@ resources:
         params:
         - name: code
           type: string
-          required: true
-          positional: true
           description: Distributor CardCode
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
-        response:
-          type: object
-        response_path: data
-      platform-distributors:
-        method: GET
-        path: /api/sap/platform-distributors/{platform}
-        description: Distributors mapped to a platform
-        params:
-        - name: platform
-          type: string
           required: true
-          positional: true
-          description: Platform slug
-          enum: *id001
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
+        - name: card_code
+          type: string
+          description: SAP CardCode
+          required: true
         response:
           type: object
-        response_path: data
+      distributors:
+        method: GET
+        path: /api/sap/distributors
+        description: "List SAP distributors. Despite the name this is the VENDOR master (OCRD CardType='S') - ad agencies and suppliers, not sales distributors. For distributors use `sap platform-distributors`. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide."
+        params:
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        response:
+          type: object
+      inventory-finished-goods:
+        method: GET
+        path: /api/sap/inventory-finished-goods
+        description: "Finished-goods inventory. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide."
+        params:
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        - name: source
+          type: string
+          description: key confirmed at the call site; the value set is carried over from the sibling SAP filter, not re-declared here
+          enum:
+          - mart
+          - oil
+        response:
+          type: object
+      inventory-overview:
+        method: GET
+        path: /api/sap/inventory-overview
+        description: "Inventory overview. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide."
+        params:
+        - name: page_size
+          type: integer
+          description: integer (1e5)
+        - name: status
+          type: string
+          description: "Item status: empty = all, Y = active, N = frozen. The dashboard sends Y; a bare CLI call therefore returns MORE rows than the UI shows - it includes frozen items."
+          enum:
+          - ""
+          - Y
+          - N
+        response:
+          type: object
+      inventory-warehouse-comparison:
+        method: GET
+        path: /api/sap/inventory-warehouse-comparison
+        description: Inventory comparison across warehouses
+        response:
+          type: object
+      items:
+        method: GET
+        path: /api/sap/items
+        description: "SAP item master. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide."
+        params:
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        response:
+          type: object
       platform-distributor:
         method: GET
         path: /api/sap/platform-distributors/{platform}/{code}
@@ -1390,15 +2778,58 @@ resources:
         params:
         - name: platform
           type: string
-          required: true
-          positional: true
           description: Platform slug
-          enum: *id001
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
         - name: code
           type: string
-          required: true
-          positional: true
           description: Distributor CardCode
+          required: true
+        - name: card_code
+          type: string
+          description: SAP CardCode from the platform-distributors list
+          required: true
+        response:
+          type: object
+      platform-distributors:
+        method: GET
+        path: /api/sap/platform-distributors/{platform}
+        description: Distributors mapped to a platform
+        params:
+        - name: platform
+          type: string
+          description: Platform slug
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        - name: search
+          type: string
+          description: free text
         response:
           type: object
       platform-sales-invoices:
@@ -1408,92 +2839,98 @@ resources:
         params:
         - name: platform
           type: string
-          required: true
-          positional: true
           description: Platform slug
-          enum: *id001
+          required: true
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart
+          - flipkart_grocery
+          - jiomart
+          - swiggy
+          - zepto
+          - zomato
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
         response:
           type: object
-        response_path: data
-      inventory-finished-goods:
+      sales-analysis:
         method: GET
-        path: /api/sap/inventory-finished-goods
-        description: Finished-goods inventory
+        path: /api/sap/sales-analysis
+        description: "Sales analysis over a date range. With source=oil this defaults to cardname 'JIVO MART PVT LTD', i.e. it measures Oil->Mart INTERCOMPANY transfers, which JIVO excludes from sales (correction C-0005). Server requires: `from_date` must be YYYY-MM-DD."
         params:
+        - name: from_date
+          type: string
+          description: Start date YYYY-MM-DD
+          required: true
+        - name: to_date
+          type: string
+          description: End date YYYY-MM-DD
+          required: true
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
+        - name: source
+          type: string
+          description: validated against x before use - `mart` and `oil` are the complete set
+          enum:
+          - mart
+          - oil
+        - name: search
+          type: string
+          description: Free-text search
+        - name: main_group
+          type: string
+          description: master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one
+        - name: chain
+          type: string
+          description: master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one
+        - name: state
+          type: string
+          description: State filter; values come back in the response `filters` block
+        - name: type
+          type: string
+          description: Type filter; values come back in the response `filters` block
+        - name: brand
+          type: string
+          description: Brand filter; values come back in the response `filters` block
+        - name: location
+          type: string
+          description: master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one
+        - name: item_head
+          type: string
+          description: Segment filter (PREMIUM / COMMODITY / OTHERS). Use this rather than matching on item names - JIVO correction C-0003. Valid values come back in the response's `filters` block.
+        - name: sub_group
+          type: string
+          description: master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one
+        - name: sales_person
+          type: string
+          description: Salesperson filter; values come back in the response `filters` block
+        - name: cardname
+          type: string
+          description: array of SAP CardName strings (repeated as cardname=A&cardname=B); the only literal card name observed anywhere is `JIVO MART PVT LTD`
+        - name: aggregate
+          type: string
+          description: Ask the SERVER to aggregate. With aggregate=item_head and page_size=1 the response carries a computed `aggregate[]` block, so headline totals need no paging.
+          enum:
+          - item_head
+        - name: nocache
+          type: integer
+          description: Set to 1 to bypass the server-side cache
+        - name: fresh
+          type: integer
+          description: Set to 1 to force a fresh read
         response:
           type: object
-        response_path: data
-      inventory-overview:
-        method: GET
-        path: /api/sap/inventory-overview
-        description: Inventory overview
-        response:
-          type: object
-      inventory-warehouse-comparison:
-        method: GET
-        path: /api/sap/inventory-warehouse-comparison
-        description: Inventory comparison across warehouses
-        response:
-          type: object
-      stock-by-warehouse:
-        method: GET
-        path: /api/sap/stock-by-warehouse
-        description: Stock levels by warehouse
-        params:
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
-        response:
-          type: object
-        response_path: data
-      items:
-        method: GET
-        path: /api/sap/items
-        description: SAP item master
-        params:
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
-        response:
-          type: object
-        response_path: data
-      sales-invoices:
-        method: GET
-        path: /api/sap/sales-invoices
-        description: List SAP sales invoices
-        params:
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
-        response:
-          type: object
-        response_path: data
       sales-invoice:
         method: GET
         path: /api/sap/sales-invoices/{id}
@@ -1501,194 +2938,271 @@ resources:
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Sales invoice id (DocEntry)
+          required: true
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
+        - name: card_code
+          type: string
+          description: SAP CardCode
+          required: true
         response:
           type: object
-        response_path: data
-      sales-invoice-lines:
+      sales-invoices:
         method: GET
-        path: /api/sap/sales-invoice-lines/{id}
-        description: 'Line items for a sales invoice by id (note: upstream SAP query may 500)'
+        path: /api/sap/sales-invoices
+        description: "List SAP sales invoices. Invoice HEADERS only, and the set includes cancelled documents. DocTotal is GST-inclusive. There is no credit-note endpoint here, so JIVO turnover (invoices net of GST minus credit notes, excluding cancelled) is NOT computable from this domain - use SAP directly. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide."
         params:
-        - name: id
-          type: string
-          required: true
-          positional: true
-          description: Sales invoice id (DocEntry)
-        response:
-          type: object
-      sales-analysis:
-        method: GET
-        path: /api/sap/sales-analysis
-        description: Sales analysis over a date range
-        params:
-        - name: from_date
-          type: string
-          required: true
-          description: Start date YYYY-MM-DD
-        - name: to_date
-          type: string
-          required: true
-          description: End date YYYY-MM-DD
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
         response:
           type: object
-        response_path: data
+      stock-by-warehouse:
+        method: GET
+        path: /api/sap/stock-by-warehouse
+        description: "Stock levels by warehouse. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide."
+        params:
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        - name: item_code
+          type: string
+          description: SAP ItemCode; service hard-wires the only key
+          required: true
+        response:
+          type: object
   shipment:
-    description: Amazon Shipment Planner (read-only). Requires Shipment Planner access; returns 403 without
-      it.
+    description: Amazon Shipment Planner (read-only). Requires the amazon.shipment_planning.view permission; returns 403 without it.
     endpoints:
       all-appointments:
         method: GET
-        path: /api/shipment/all-appointments
-        description: All shipment appointments
+        path: /api/shipment/all-appointments/
+        description: All shipment appointments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: no_paginate
+          type: boolean
+          description: " Source writes the JS boolean !0; the URL builder stringifies it to \"true\"."
+          enum:
+          - "true"
         response:
           type: object
       appointment-commits:
         method: GET
-        path: /api/shipment/appointment-commits
-        description: Appointment commit records
-        response:
-          type: object
-      appointments:
-        method: GET
-        path: /api/shipment/appointments
-        description: Shipment appointments
+        path: /api/shipment/appointment-commits/
+        description: Appointment commit records Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
         response:
           type: object
       appointment-dates:
         method: GET
-        path: /api/shipment/appointments/dates
-        description: Available appointment dates
-        response:
-          type: object
-      asin-catalog:
-        method: GET
-        path: /api/shipment/asin-catalog
-        description: ASIN catalog
-        response:
-          type: object
-      inventory:
-        method: GET
-        path: /api/shipment/inventory
-        description: Shipment planning inventory
-        response:
-          type: object
-      po-items:
-        method: GET
-        path: /api/shipment/po-items
-        description: PO items available to ship
-        response:
-          type: object
-      po-shipment-lookup:
-        method: GET
-        path: /api/shipment/po-shipment-lookup
-        description: Lookup shipments for a PO
-        response:
-          type: object
-      po-short-supply:
-        method: GET
-        path: /api/shipment/po-short-supply
-        description: PO short-supply report
-        response:
-          type: object
-      record:
-        method: GET
-        path: /api/shipment/record
-        description: Shipment record
-        response:
-          type: object
-      shipments:
-        method: GET
-        path: /api/shipment/shipments
-        description: List shipments
-        response:
-          type: object
-      shipments-deletion-log:
-        method: GET
-        path: /api/shipment/shipments/deletion-log
-        description: Shipment deletion log
-        response:
-          type: object
-      shipments-doh-auto-fill:
-        method: GET
-        path: /api/shipment/shipments/doh-auto-fill
-        description: DOH auto-fill suggestions
-        response:
-          type: object
-      shipments-pending-approvals:
-        method: GET
-        path: /api/shipment/shipments/pending-approvals
-        description: Shipments pending approval
-        response:
-          type: object
-      shipments-stats:
-        method: GET
-        path: /api/shipment/shipments/stats
-        description: Shipment stats
+        path: /api/shipment/appointments/dates/
+        description: Available appointment dates Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
         response:
           type: object
       appointment-extra-pos:
         method: GET
-        path: /api/shipment/appointments/{id}/extra-pos
+        path: /api/shipment/appointments/{id}/extra-pos/
         description: Extra POs for an appointment
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Appointment id
+          required: true
+        - name: appointment_id
+          type: string
+          description: appointment id
+          required: true
+        response:
+          type: object
+      appointment-families:
+        method: GET
+        path: /api/shipment/appointments/{appointment_id}/families/
+        description: Appointment families (getFamilies)
+        params:
+        - name: appointment_id
+          type: string
+          description: appointment id
+          required: true
         response:
           type: object
       appointment-items:
         method: GET
-        path: /api/shipment/appointments/{id}/items
+        path: /api/shipment/appointments/{id}/items/
         description: Items for an appointment
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Appointment id
+          required: true
+        - name: appointment_id
+          type: string
+          description: numeric/string appointment id from the appointments list
+          required: true
+        - name: truck_size
+          type: string
+          description: always set - it is the only unconditional key in the URLSearchParams. UI default is 15_ton
+          required: true
+          enum:
+          - 10_ton
+          - 15_ton
+          - custom
+        - name: truck_capacity_liters
+          type: string
+          description: integer litres; 10000 for 10_ton, 15000 for 15_ton, 12000 default for custom
+        - name: priority_premium_pct
+          type: string
+          description: number as string (percentage); sent as a group of three or not at all
+        - name: priority_commodity_pct
+          type: string
+          description: number as string (percentage); sent as a group of three or not at all
+        - name: priority_other_pct
+          type: string
+          description: number as string (percentage); sent as a group of three or not at all
+        - name: priority_strict
+          type: string
+          description: flag; only ever the string 1
+          enum:
+          - 1
+        - name: maximize_fill
+          type: string
+          description: always sent; defaults to 1
+          enum:
+          - 0
+          - 1
+        - name: respect_stock
+          type: boolean
+          description: only ever set to 0 (to switch stock respect OFF); omitted means on
+          enum:
+          - 0
+        - name: appointment_ids
+          type: string
+          description: comma-joined appointment ids
+        - name: selected_pos
+          type: string
+          description: comma-joined PO numbers
+        - name: product_family
+          type: string
+          description: family key from GET /api/shipment/appointments/{id}/families/; not a fixed set - fetch families first
+        - name: family_asins
+          type: string
+          description: comma-joined ASINs
+        - name: commit_caps_json
+          type: string
+          description: JSON object {"<asin>":{"units":N,"cartons":N}}
+        response:
+          type: object
+      appointments:
+        method: GET
+        path: /api/shipment/appointments/
+        description: Shipment appointments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: date
+          type: string
+          description: whatever getDates() returns; passed straight through, unquoted; value must come from GET /api/shipment/appointments/dates/ - do not synthesise one
+          required: true
+        response:
+          type: object
+      asin-catalog:
+        method: GET
+        path: /api/shipment/asin-catalog/
+        description: ASIN catalog Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        response:
+          type: object
+      fc-switch-group:
+        method: GET
+        path: /api/shipment/fc-switch-group/
+        description: Fc switch group (getSwitchGroup) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: fc
+          type: string
+          description: FC code, URL-encoded; empty string allowed
+          required: true
+        response:
+          type: object
+      inventory:
+        method: GET
+        path: /api/shipment/inventory/
+        description: Shipment planning inventory Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: warehouse
+          type: string
+          description: warehouse code, URL-encoded; GP-FGM is the only warehouse code hard-coded in the bundle; `ALL` is a client-side sentinel, not necessarily a server value
+          enum:
+          - GP-FGM
+        response:
+          type: object
+      po-appointments:
+        method: GET
+        path: /api/shipment/po-appointments/
+        description: Po appointments (getPoAppointments) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: pos
+          type: string
+          description: comma-joined PO numbers, whole string URL-encoded
+          required: true
+        response:
+          type: object
+      po-items:
+        method: GET
+        path: /api/shipment/po-items/
+        description: PO items available to ship Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: no_paginate
+          type: boolean
+          enum:
+          - "true"
+        response:
+          type: object
+      po-shipment-lookup:
+        method: GET
+        path: /api/shipment/po-shipment-lookup/
+        description: Lookup shipments for a PO Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        response:
+          type: object
+      po-short-supply:
+        method: GET
+        path: /api/shipment/po-short-supply/
+        description: PO short-supply report Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        response:
+          type: object
+      record:
+        method: GET
+        path: /api/shipment/record/
+        description: Shipment record Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: status
+          type: string
+          description: "Shipment lifecycle state. NOTE: shipped / short / not_loaded are client-side row filters in the UI, not values this parameter accepts. Unverified - this endpoint is behind the Shipment Planner permission gate."
+          enum:
+          - draft
+          - pending_approval
+          - approved
+          - dispatched
         response:
           type: object
       shipment:
         method: GET
-        path: /api/shipment/shipments/{id}
+        path: /api/shipment/shipments/{id}/
         description: Get a shipment by id
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Shipment id
-        response:
-          type: object
-      shipment-invoices:
-        method: GET
-        path: /api/shipment/shipments/{id}/invoices
-        description: Invoices for a shipment
-        params:
-        - name: id
+          required: true
+        - name: shipment_id
           type: string
+          description: shipment id from the shipments list
           required: true
-          positional: true
-          description: Shipment id
         response:
           type: object
       shipment-invoice-file:
@@ -1698,26 +3212,23 @@ resources:
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Shipment id
+          required: true
         - name: invoice
           type: string
-          required: true
-          positional: true
           description: Invoice id
+          required: true
         response:
           type: object
-      shipment-po-documents:
+      shipment-invoices:
         method: GET
-        path: /api/shipment/shipments/{id}/po-documents
-        description: PO documents for a shipment
+        path: /api/shipment/shipments/{id}/invoices
+        description: Invoices for a shipment
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Shipment id
+          required: true
         response:
           type: object
       shipment-po-document:
@@ -1727,14 +3238,442 @@ resources:
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Shipment id
+          required: true
         - name: document
           type: string
-          required: true
-          positional: true
           description: Document id
+          required: true
+        response:
+          type: object
+      shipment-po-documents:
+        method: GET
+        path: /api/shipment/shipments/{id}/po-documents
+        description: PO documents for a shipment
+        params:
+        - name: id
+          type: string
+          description: Shipment id
+          required: true
+        response:
+          type: object
+      shipments:
+        method: GET
+        path: /api/shipment/shipments/
+        description: List shipments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: status
+          type: string
+          description: omitted entirely when falsy; the UI reads it from the browser URL ?status=
+          enum:
+          - draft
+          - pending_approval
+          - approved
+          - rejected
+          - dispatched
+          - in_transit
+          - delivered
+        - name: switch_state
+          type: string
+          description: "`any` is the sentinel the app always sends; the other four are the observed row values"
+          enum:
+          - any
+          - waiting
+          - email_failed
+          - verified
+          - rejected
+        response:
+          type: object
+      shipments-deletion-log:
+        method: GET
+        path: /api/shipment/shipments/deletion-log/
+        description: Shipment deletion log Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: limit
+          type: integer
+          description: integer
+        response:
+          type: object
+      shipments-doh-auto-fill:
+        method: GET
+        path: /api/shipment/shipments/doh-auto-fill/
+        description: DOH auto-fill suggestions Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        params:
+        - name: truck_size
+          type: string
+          description: "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
+          enum:
+          - 10_ton
+          - 15_ton
+          - custom
+        - name: truck_capacity_liters
+          type: string
+          description: "integer litres; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
+        - name: fc
+          type: string
+          description: "FC code string; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
+        - name: priority_strict
+          type: string
+          description: "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
+          enum:
+          - 1
+        - name: maximize_fill
+          type: string
+          description: "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
+          enum:
+          - 0
+          - 1
+        - name: priority_premium_pct
+          type: string
+          description: "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
+        - name: priority_commodity_pct
+          type: string
+          description: "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
+        - name: priority_other_pct
+          type: string
+          description: "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
+        response:
+          type: object
+      shipments-pending-approvals:
+        method: GET
+        path: /api/shipment/shipments/pending-approvals/
+        description: Shipments pending approval Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        response:
+          type: object
+      shipments-stats:
+        method: GET
+        path: /api/shipment/shipments/stats/
+        description: Shipment stats Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+        response:
+          type: object
+  tables:
+    description: Dynamic data-table browser over the underlying warehouse tables
+    endpoints:
+      columns:
+        method: GET
+        path: /api/dashboard/table-columns/{table}
+        description: Column definitions for a table
+        params:
+        - name: table
+          type: string
+          description: Reporting-schema table name, case-sensitive. The valid set is the key list of `dashboard table-counts`, which is the server's own allowlist - anything else returns 400 "Table not allowed".
+          required: true
+          enum:
+          - all_platform_inventory
+          - amazon_ads
+          - amazon_coupon
+          - amazon_inventory
+          - amazon_mp
+          - amazon_price_data
+          - amazon_sec_city
+          - amazon_sec_daily
+          - amazon_sec_daily_master_view
+          - amazon_sec_range
+          - amazon_sec_range_margins
+          - amazon_sec_range_master_view
+          - bigbasketSec
+          - bigbasket_ads
+          - bigbasket_inventory
+          - bigbasket_sec_range
+          - blinkitSec
+          - blinkit_ads
+          - blinkit_brandfund
+          - blinkit_inventory
+          - citymallSec
+          - citymall_inventory
+          - fk_grocery
+          - flipkartSec
+          - flipkart_ads
+          - flipkart_grocery_master
+          - flipkart_secondary_all
+          - jiomartSec
+          - jiomart_inventory
+          - master_po
+          - prim_master_po
+          - swiggySec
+          - swiggy_ads
+          - swiggy_brandfund
+          - swiggy_inventory
+          - test_master_po
+          - total_po
+          - total_po_zbs
+          - zeptoSec
+          - zepto_ads
+          - zepto_brandfund
+          - zepto_inventory
+          - zomatoSec
+          - zomato_inventory
+        response:
+          type: object
+      count:
+        method: GET
+        path: /api/dashboard/table-count/{table}
+        description: Row count for a single table
+        params:
+        - name: table
+          type: string
+          description: Reporting-schema table name, case-sensitive. The valid set is the key list of `dashboard table-counts`, which is the server's own allowlist - anything else returns 400 "Table not allowed".
+          required: true
+          enum:
+          - all_platform_inventory
+          - amazon_ads
+          - amazon_coupon
+          - amazon_inventory
+          - amazon_mp
+          - amazon_price_data
+          - amazon_sec_city
+          - amazon_sec_daily
+          - amazon_sec_daily_master_view
+          - amazon_sec_range
+          - amazon_sec_range_margins
+          - amazon_sec_range_master_view
+          - bigbasketSec
+          - bigbasket_ads
+          - bigbasket_inventory
+          - bigbasket_sec_range
+          - blinkitSec
+          - blinkit_ads
+          - blinkit_brandfund
+          - blinkit_inventory
+          - citymallSec
+          - citymall_inventory
+          - fk_grocery
+          - flipkartSec
+          - flipkart_ads
+          - flipkart_grocery_master
+          - flipkart_secondary_all
+          - jiomartSec
+          - jiomart_inventory
+          - master_po
+          - prim_master_po
+          - swiggySec
+          - swiggy_ads
+          - swiggy_brandfund
+          - swiggy_inventory
+          - test_master_po
+          - total_po
+          - total_po_zbs
+          - zeptoSec
+          - zepto_ads
+          - zepto_brandfund
+          - zepto_inventory
+          - zomatoSec
+          - zomato_inventory
+        response:
+          type: object
+      counts:
+        method: GET
+        path: /api/dashboard/table-counts
+        description: Row counts for every available data table
+        params:
+        - name: tables
+          type: string
+          description: comma-joined table names
+          required: true
+          enum:
+          - amazon_ads
+          - amazon_coupon
+          - amazon_inventory
+          - amazon_mp
+          - amazon_price_data
+          - amazon_sec_city
+          - amazon_sec_daily
+          - amazon_sec_range
+          - bigbasketSec
+          - bigbasket_ads
+          - bigbasket_inventory
+          - bigbasket_sec_range
+          - blinkitSec
+          - blinkit_ads
+          - blinkit_brandfund
+          - blinkit_inventory
+          - citymallSec
+          - citymall_inventory
+          - consolidated_fsn_report
+          - flipkartSec
+          - flipkart_ads
+          - flipkart_grocery_master
+          - flipkart_state_sales
+          - jiomartSec
+          - jiomart_inventory
+          - meta_data
+          - swiggySec
+          - swiggy_ads
+          - swiggy_brandfund
+          - swiggy_inventory
+          - total_po
+          - total_po_grn_update
+          - total_po_zbs
+          - total_po_zbs_grn_update
+          - zeptoSec
+          - zepto_ads
+          - zepto_brandfund
+          - zepto_inventory
+          - zomatoSec
+          - zomato_inventory
+          - master_po
+          - all_platform_inventory
+          - zeptSec
+        response:
+          type: object
+      data:
+        method: GET
+        path: /api/dashboard/table-data/{table}
+        description: Paginated rows for a table (server-shaped payload)
+        params:
+        - name: table
+          type: string
+          description: Reporting-schema table name, case-sensitive. The valid set is the key list of `dashboard table-counts`, which is the server's own allowlist - anything else returns 400 "Table not allowed".
+          required: true
+          enum:
+          - all_platform_inventory
+          - amazon_ads
+          - amazon_coupon
+          - amazon_inventory
+          - amazon_mp
+          - amazon_price_data
+          - amazon_sec_city
+          - amazon_sec_daily
+          - amazon_sec_daily_master_view
+          - amazon_sec_range
+          - amazon_sec_range_margins
+          - amazon_sec_range_master_view
+          - bigbasketSec
+          - bigbasket_ads
+          - bigbasket_inventory
+          - bigbasket_sec_range
+          - blinkitSec
+          - blinkit_ads
+          - blinkit_brandfund
+          - blinkit_inventory
+          - citymallSec
+          - citymall_inventory
+          - fk_grocery
+          - flipkartSec
+          - flipkart_ads
+          - flipkart_grocery_master
+          - flipkart_secondary_all
+          - jiomartSec
+          - jiomart_inventory
+          - master_po
+          - prim_master_po
+          - swiggySec
+          - swiggy_ads
+          - swiggy_brandfund
+          - swiggy_inventory
+          - test_master_po
+          - total_po
+          - total_po_zbs
+          - zeptoSec
+          - zepto_ads
+          - zepto_brandfund
+          - zepto_inventory
+          - zomatoSec
+          - zomato_inventory
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        - name: search
+          type: string
+          description: free text
+        - name: search_columns
+          type: string
+          description: comma-joined column names
+        - name: date_column
+          type: string
+          description: column name
+        - name: sort_by
+          type: string
+          description: column name
+        - name: sort_dir
+          type: string
+          enum:
+          - desc
+        - name: max_date
+          type: string
+          enum:
+          - 1
+        - name: year
+          type: integer
+          description: 4-digit year
+        - name: month
+          type: integer
+          description: month number
+        - name: date
+          type: string
+          description: date string from the picker
+        - name: column_filters
+          type: string
+          description: JSON array string [{"column":"<col>","values":[...]}]
+        response:
+          type: object
+      distinct:
+        method: GET
+        path: /api/dashboard/table-distinct/{table}/{column}
+        description: Distinct values for a column in a table
+        params:
+        - name: table
+          type: string
+          description: Reporting-schema table name, case-sensitive. The valid set is the key list of `dashboard table-counts`, which is the server's own allowlist - anything else returns 400 "Table not allowed".
+          required: true
+          enum:
+          - all_platform_inventory
+          - amazon_ads
+          - amazon_coupon
+          - amazon_inventory
+          - amazon_mp
+          - amazon_price_data
+          - amazon_sec_city
+          - amazon_sec_daily
+          - amazon_sec_daily_master_view
+          - amazon_sec_range
+          - amazon_sec_range_margins
+          - amazon_sec_range_master_view
+          - bigbasketSec
+          - bigbasket_ads
+          - bigbasket_inventory
+          - bigbasket_sec_range
+          - blinkitSec
+          - blinkit_ads
+          - blinkit_brandfund
+          - blinkit_inventory
+          - citymallSec
+          - citymall_inventory
+          - fk_grocery
+          - flipkartSec
+          - flipkart_ads
+          - flipkart_grocery_master
+          - flipkart_secondary_all
+          - jiomartSec
+          - jiomart_inventory
+          - master_po
+          - prim_master_po
+          - swiggySec
+          - swiggy_ads
+          - swiggy_brandfund
+          - swiggy_inventory
+          - test_master_po
+          - total_po
+          - total_po_zbs
+          - zeptoSec
+          - zepto_ads
+          - zepto_brandfund
+          - zepto_inventory
+          - zomatoSec
+          - zomato_inventory
+        - name: column
+          type: string
+          description: Column name
+          required: true
+        - name: search
+          type: string
+          description: free text
+        - name: column_filters
+          type: string
+          description: "JSON array string: [{\"column\":\"<col>\",\"values\":[...]}]"
         response:
           type: object
   upload:
@@ -1746,62 +3685,45 @@ resources:
         description: Ads master sheet (columns, rows)
         params:
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
         response:
           type: object
-        response_path: rows
       master-sheet:
         method: GET
         path: /api/upload/master-sheet
         description: Master sheet
         params:
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
+        - name: search
+          type: string
+          description: free text
         response:
           type: object
-        response_path: rows
       pincode-mapping:
         method: GET
         path: /api/upload/pincode-mapping
         description: Pincode mapping table
         params:
         - name: page
-          type: int
+          type: object
           description: Page number
         - name: page_size
-          type: int
+          type: object
           description: Rows per page
-          flag_name: page-size
         response:
           type: object
-        response_path: rows
   uploads:
     description: Upload job history (read-only)
     endpoints:
-      list:
-        method: GET
-        path: /api/uploads
-        description: List upload jobs
-        params:
-        - name: page
-          type: int
-          description: Page number
-        - name: page_size
-          type: int
-          description: Rows per page
-          flag_name: page-size
-        response:
-          type: object
       get:
         method: GET
         path: /api/uploads/{id}
@@ -1809,35 +3731,46 @@ resources:
         params:
         - name: id
           type: string
-          required: true
-          positional: true
           description: Upload job id
-        response:
-          type: object
-  chatbot:
-    description: Read-only access to the ecom app's built-in assistant (health + conversation history)
-    endpoints:
-      health:
-        method: GET
-        path: /api/chatbot/health
-        description: Chatbot service health
-        response:
-          type: object
-      conversations:
-        method: GET
-        path: /api/chatbot/conversations
-        description: List chatbot conversations
-        response:
-          type: object
-      conversation:
-        method: GET
-        path: /api/chatbot/conversations/{id}
-        description: Get a chatbot conversation (with messages) by id
-        params:
-        - name: id
-          type: string
           required: true
-          positional: true
-          description: Conversation id
+        - name: upload_id
+          type: string
+          description: upload id from /api/uploads (.upload_id on the row)
+          required: true
+        response:
+          type: object
+      list:
+        method: GET
+        path: /api/uploads
+        description: List upload jobs
+        params:
+        - name: page
+          type: object
+          description: Page number
+        - name: page_size
+          type: object
+          description: Rows per page
+        - name: report_type
+          type: string
+          description: uppercase; empty string means all reports
+          enum:
+          - AMAZON_PO
+          - APPOINTMENT
+        - name: status
+          type: string
+          description: "uploadDisplay-Cd6ax7Hv.js documents three MORE server-side statuses that the filter does not offer: queued, validating, processing"
+          enum:
+          - completed
+          - partially_successful
+          - failed
+          - duplicate
+          - uploaded
+          - staged
+        - name: date_from
+          type: string
+          description: date string from BkDatePicker
+        - name: date_to
+          type: string
+          description: date string from BkDatePicker
         response:
           type: object

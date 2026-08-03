@@ -13,12 +13,12 @@ import (
 
 func newDashboardCategorySkuBreakdownCmd(flags *rootFlags) *cobra.Command {
 	var flagPlatform string
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
 
 	cmd := &cobra.Command{
 		Use:         "category-sku-breakdown",
-		Short:       "SKU-level breakdown within a category (requires --platform)",
+		Short:       "SKU-level breakdown within a category (requires --platform) Server requires: name is required.",
 		Example:     "  jivo-ecom-pp-cli dashboard category-sku-breakdown --platform amazon",
 		Annotations: map[string]string{"pp:endpoint": "dashboard.category-sku-breakdown", "pp:method": "GET", "pp:path": "/api/dashboard/category-sku-breakdown", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -54,10 +54,10 @@ func newDashboardCategorySkuBreakdownCmd(flags *rootFlags) *cobra.Command {
 			if flagPlatform != "" {
 				params["platform"] = formatCLIParamValue(flagPlatform)
 			}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
@@ -109,8 +109,8 @@ func newDashboardCategorySkuBreakdownCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug (required by this endpoint) (one of: amazon, bigbasket, blinkit, citymall, flipkart, flipkart_grocery, jiomart, swiggy, zepto, zomato)")
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
 
 	return cmd
 }

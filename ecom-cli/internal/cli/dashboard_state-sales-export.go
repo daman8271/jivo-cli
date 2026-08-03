@@ -13,15 +13,74 @@ import (
 
 func newDashboardStateSalesExportCmd(flags *rootFlags) *cobra.Command {
 	var flagPlatform string
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
+	var flagMetric string
+	var flagItemHead string
+	var flagMonths int
+	var flagFromMonth string
+	var flagFromYear string
+	var flagToMonth string
+	var flagToYear string
+	var flagBrand string
+	var flagCategory string
+	var flagSubCategory string
+	var flagItem string
 
 	cmd := &cobra.Command{
 		Use:         "state-sales-export",
 		Short:       "Export state-wise sales (file/CSV payload)",
-		Example:     "  jivo-ecom-pp-cli dashboard state-sales-export",
+		Example:     "  jivo-ecom-pp-cli dashboard state-sales-export --metric litres",
 		Annotations: map[string]string{"pp:endpoint": "dashboard.state-sales-export", "pp:method": "GET", "pp:path": "/api/dashboard/state-sales/export", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("metric") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "metric")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"amazon", "flipkart", "swiggy", "blinkit", "zepto", "bigbasket"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
+			}
+			if cmd.Flags().Changed("metric") {
+				allowedMetric := []string{"litres", "value", "units"}
+				validMetric := false
+				for _, v := range allowedMetric {
+					if flagMetric == v {
+						validMetric = true
+						break
+					}
+				}
+				if !validMetric {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagMetric, "metric", allowedMetric)
+				}
+			}
+			if cmd.Flags().Changed("item-head") {
+				allowedItemHead := []string{"PREMIUM", "COMMODITY", "OTHER"}
+				validItemHead := false
+				for _, v := range allowedItemHead {
+					if flagItemHead == v {
+						validItemHead = true
+						break
+					}
+				}
+				if !validItemHead {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagItemHead, "item-head", allowedItemHead)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -32,11 +91,44 @@ func newDashboardStateSalesExportCmd(flags *rootFlags) *cobra.Command {
 			if flagPlatform != "" {
 				params["platform"] = formatCLIParamValue(flagPlatform)
 			}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMetric != "" {
+				params["metric"] = formatCLIParamValue(flagMetric)
+			}
+			if flagItemHead != "" {
+				params["item_head"] = formatCLIParamValue(flagItemHead)
+			}
+			if flagMonths != 0 {
+				params["months"] = formatCLIParamValue(flagMonths)
+			}
+			if flagFromMonth != "" {
+				params["from_month"] = formatCLIParamValue(flagFromMonth)
+			}
+			if flagFromYear != "" {
+				params["from_year"] = formatCLIParamValue(flagFromYear)
+			}
+			if flagToMonth != "" {
+				params["to_month"] = formatCLIParamValue(flagToMonth)
+			}
+			if flagToYear != "" {
+				params["to_year"] = formatCLIParamValue(flagToYear)
+			}
+			if flagBrand != "" {
+				params["brand"] = formatCLIParamValue(flagBrand)
+			}
+			if flagCategory != "" {
+				params["category"] = formatCLIParamValue(flagCategory)
+			}
+			if flagSubCategory != "" {
+				params["sub_category"] = formatCLIParamValue(flagSubCategory)
+			}
+			if flagItem != "" {
+				params["item"] = formatCLIParamValue(flagItem)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -86,9 +178,20 @@ func newDashboardStateSalesExportCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug")
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug (one of: amazon, flipkart, swiggy, blinkit, zepto, bigbasket)")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
+	cmd.Flags().StringVar(&flagMetric, "metric", "", " (one of: litres, value, units)")
+	cmd.Flags().StringVar(&flagItemHead, "item-head", "", "uppercase; `all` is NOT sent - the key is omitted instead (one of: PREMIUM, COMMODITY, OTHER)")
+	cmd.Flags().IntVar(&flagMonths, "months", 0, "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are mutually exclusive: {month")
+	cmd.Flags().StringVar(&flagFromMonth, "from-month", "", "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year")
+	cmd.Flags().StringVar(&flagFromYear, "from-year", "", "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year")
+	cmd.Flags().StringVar(&flagToMonth, "to-month", "", "month number (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year")
+	cmd.Flags().StringVar(&flagToYear, "to-year", "", "4-digit year (range mode); period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year")
+	cmd.Flags().StringVar(&flagBrand, "brand", "", "array of brand names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year")
+	cmd.Flags().StringVar(&flagCategory, "category", "", "array of category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year")
+	cmd.Flags().StringVar(&flagSubCategory, "sub-category", "", "array of sub-category names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month")
+	cmd.Flags().StringVar(&flagItem, "item", "", "array of item names; period keys are mutually exclusive: {month,year} OR {months[],year} OR {from_month,from_year")
 
 	return cmd
 }

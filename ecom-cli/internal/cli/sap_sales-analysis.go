@@ -15,11 +15,26 @@ func newSapSalesAnalysisCmd(flags *rootFlags) *cobra.Command {
 	var flagFromDate string
 	var flagToDate string
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagSource string
+	var flagSearch string
+	var flagMainGroup string
+	var flagChain string
+	var flagState string
+	var flagType string
+	var flagBrand string
+	var flagLocation string
+	var flagItemHead string
+	var flagSubGroup string
+	var flagSalesPerson string
+	var flagCardname string
+	var flagAggregate string
+	var flagNocache int
+	var flagFresh int
 
 	cmd := &cobra.Command{
 		Use:         "sales-analysis",
-		Short:       "Sales analysis over a date range",
+		Short:       "Sales analysis over a date range. With source=oil this defaults to cardname 'JIVO MART PVT LTD', i.e.",
 		Example:     "  jivo-ecom-pp-cli sap sales-analysis --from-date 2026-01-15 --to-date 2026-01-15",
 		Annotations: map[string]string{"pp:endpoint": "sap.sales-analysis", "pp:method": "GET", "pp:path": "/api/sap/sales-analysis", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -34,6 +49,32 @@ func newSapSalesAnalysisCmd(flags *rootFlags) *cobra.Command {
 			}
 			if !cmd.Flags().Changed("to-date") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "to-date")
+			}
+			if cmd.Flags().Changed("source") {
+				allowedSource := []string{"mart", "oil"}
+				validSource := false
+				for _, v := range allowedSource {
+					if flagSource == v {
+						validSource = true
+						break
+					}
+				}
+				if !validSource {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSource, "source", allowedSource)
+				}
+			}
+			if cmd.Flags().Changed("aggregate") {
+				allowedAggregate := []string{"item_head"}
+				validAggregate := false
+				for _, v := range allowedAggregate {
+					if flagAggregate == v {
+						validAggregate = true
+						break
+					}
+				}
+				if !validAggregate {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagAggregate, "aggregate", allowedAggregate)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -51,8 +92,53 @@ func newSapSalesAnalysisCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagSource != "" {
+				params["source"] = formatCLIParamValue(flagSource)
+			}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagMainGroup != "" {
+				params["main_group"] = formatCLIParamValue(flagMainGroup)
+			}
+			if flagChain != "" {
+				params["chain"] = formatCLIParamValue(flagChain)
+			}
+			if flagState != "" {
+				params["state"] = formatCLIParamValue(flagState)
+			}
+			if flagType != "" {
+				params["type"] = formatCLIParamValue(flagType)
+			}
+			if flagBrand != "" {
+				params["brand"] = formatCLIParamValue(flagBrand)
+			}
+			if flagLocation != "" {
+				params["location"] = formatCLIParamValue(flagLocation)
+			}
+			if flagItemHead != "" {
+				params["item_head"] = formatCLIParamValue(flagItemHead)
+			}
+			if flagSubGroup != "" {
+				params["sub_group"] = formatCLIParamValue(flagSubGroup)
+			}
+			if flagSalesPerson != "" {
+				params["sales_person"] = formatCLIParamValue(flagSalesPerson)
+			}
+			if flagCardname != "" {
+				params["cardname"] = formatCLIParamValue(flagCardname)
+			}
+			if flagAggregate != "" {
+				params["aggregate"] = formatCLIParamValue(flagAggregate)
+			}
+			if flagNocache != 0 {
+				params["nocache"] = formatCLIParamValue(flagNocache)
+			}
+			if flagFresh != 0 {
+				params["fresh"] = formatCLIParamValue(flagFresh)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -105,7 +191,22 @@ func newSapSalesAnalysisCmd(flags *rootFlags) *cobra.Command {
 	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "Start date YYYY-MM-DD")
 	cmd.Flags().StringVar(&flagToDate, "to-date", "", "End date YYYY-MM-DD")
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagSource, "source", "", "validated against x before use - `mart` and `oil` are the complete set (one of: mart, oil)")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "Free-text search")
+	cmd.Flags().StringVar(&flagMainGroup, "main-group", "", "master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one")
+	cmd.Flags().StringVar(&flagChain, "chain", "", "master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one")
+	cmd.Flags().StringVar(&flagState, "state", "", "State filter; values come back in the response `filters` block")
+	cmd.Flags().StringVar(&flagType, "type", "", "Type filter; values come back in the response `filters` block")
+	cmd.Flags().StringVar(&flagBrand, "brand", "", "Brand filter; values come back in the response `filters` block")
+	cmd.Flags().StringVar(&flagLocation, "location", "", "master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one")
+	cmd.Flags().StringVar(&flagItemHead, "item-head", "", "Segment filter (PREMIUM / COMMODITY / OTHERS). Use this rather than matching on item names - JIVO correction C-0003.")
+	cmd.Flags().StringVar(&flagSubGroup, "sub-group", "", "master value; free-form filter keyed off SAP master data; no literal value set in the bundle - never invent one")
+	cmd.Flags().StringVar(&flagSalesPerson, "sales-person", "", "Salesperson filter; values come back in the response `filters` block")
+	cmd.Flags().StringVar(&flagCardname, "cardname", "", "array of SAP CardName strings (repeated as cardname=A&cardname=B)")
+	cmd.Flags().StringVar(&flagAggregate, "aggregate", "", "Ask the SERVER to aggregate. (one of: item_head)")
+	cmd.Flags().IntVar(&flagNocache, "nocache", 0, "Set to 1 to bypass the server-side cache")
+	cmd.Flags().IntVar(&flagFresh, "fresh", 0, "Set to 1 to force a fresh read")
 
 	return cmd
 }

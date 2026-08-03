@@ -12,15 +12,26 @@ import (
 )
 
 func newUploadsGetCmd(flags *rootFlags) *cobra.Command {
+	var flagId string
+	var flagUploadId string
 
 	cmd := &cobra.Command{
-		Use:         "get <id>",
+		Use:         "get",
 		Short:       "Get an upload job (summary, errors, diagnostics) by id",
-		Example:     "  jivo-ecom-pp-cli uploads get 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  jivo-ecom-pp-cli uploads get --id 550e8400-e29b-41d4-a716-446655440000 --upload-id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "uploads.get", "pp:method": "GET", "pp:path": "/api/uploads/{id}", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "id")
+			}
+			if !cmd.Flags().Changed("upload-id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "upload-id")
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,8 +39,11 @@ func newUploadsGetCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/uploads/{id}"
-			path = replacePathParam(path, "id", args[0])
+			path = replacePathParam(path, "id", formatCLIParamValue(flagId))
 			params := map[string]string{}
+			if flagUploadId != "" {
+				params["upload_id"] = formatCLIParamValue(flagUploadId)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "uploads", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +92,8 @@ func newUploadsGetCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagId, "id", "", "Upload job id")
+	cmd.Flags().StringVar(&flagUploadId, "upload-id", "", "upload id from /api/uploads (.upload_id on the row)")
 
 	return cmd
 }

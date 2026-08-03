@@ -15,16 +15,16 @@ func newShipmentAsinCatalogCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "asin-catalog",
-		Short:       "ASIN catalog",
+		Short:       "ASIN catalog Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment asin-catalog",
-		Annotations: map[string]string{"pp:endpoint": "shipment.asin-catalog", "pp:method": "GET", "pp:path": "/api/shipment/asin-catalog", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.asin-catalog", "pp:method": "GET", "pp:path": "/api/shipment/asin-catalog/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/asin-catalog"
+			path := "/api/shipment/asin-catalog/"
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {

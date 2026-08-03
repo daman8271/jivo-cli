@@ -12,15 +12,37 @@ import (
 )
 
 func newPlatformMonthTargetsCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
+	var flagMonth int
+	var flagYear int
 
 	cmd := &cobra.Command{
-		Use:         "month-targets <platform>",
+		Use:         "month-targets",
 		Short:       "Secondary monthly targets for a platform",
-		Example:     "  jivo-ecom-pp-cli platform month-targets example-value",
+		Example:     "  jivo-ecom-pp-cli platform month-targets --platform amazon",
 		Annotations: map[string]string{"pp:endpoint": "platform.month-targets", "pp:method": "GET", "pp:path": "/api/platform/{platform}/month-targets", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("platform") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "platform")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"amazon", "bigbasket", "blinkit", "citymall", "flipkart", "flipkart_grocery", "jiomart", "swiggy", "zepto", "zomato"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,8 +50,14 @@ func newPlatformMonthTargetsCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/platform/{platform}/month-targets"
-			path = replacePathParam(path, "platform", args[0])
+			path = replacePathParam(path, "platform", formatCLIParamValue(flagPlatform))
 			params := map[string]string{}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +106,9 @@ func newPlatformMonthTargetsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug (one of: amazon, bigbasket, blinkit, citymall, flipkart, flipkart_grocery, jiomart, swiggy, zepto, zomato)")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "month number / 4-digit year")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "month number / 4-digit year")
 
 	return cmd
 }

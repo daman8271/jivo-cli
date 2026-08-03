@@ -11,26 +11,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newSapSalesInvoiceLinesCmd(flags *rootFlags) *cobra.Command {
+func newReportsAmazonPoSkuPendencyFilterOptionsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:         "sales-invoice-lines <id>",
-		Short:       "Line items for a sales invoice by id (note: upstream SAP query may 500)",
-		Example:     "  jivo-ecom-pp-cli sap sales-invoice-lines 550e8400-e29b-41d4-a716-446655440000",
-		Annotations: map[string]string{"pp:endpoint": "sap.sales-invoice-lines", "pp:method": "GET", "pp:path": "/api/sap/sales-invoice-lines/{id}", "mcp:read-only": "true"},
+		Use:         "amazon-po-sku-pendency-filter-options",
+		Short:       "Amazon po sku pendency filter options (amazonSkuPendencyOptions)",
+		Example:     "  jivo-ecom-pp-cli reports amazon-po-sku-pendency-filter-options",
+		Annotations: map[string]string{"pp:endpoint": "reports.amazon-po-sku-pendency-filter-options", "pp:method": "GET", "pp:path": "/api/reports/amazon-po/sku-pendency/filter-options", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				return cmd.Help()
-			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/sap/sales-invoice-lines/{id}"
-			path = replacePathParam(path, "id", args[0])
+			path := "/api/reports/amazon-po/sku-pendency/filter-options"
 			params := map[string]string{}
-			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
+			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "reports", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}

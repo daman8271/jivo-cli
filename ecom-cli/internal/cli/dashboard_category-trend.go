@@ -13,13 +13,42 @@ import (
 
 func newDashboardCategoryTrendCmd(flags *rootFlags) *cobra.Command {
 	var flagPlatform string
+	var flagSource string
+	var flagMonth int
+	var flagYear int
+	var flagMonths int
 
 	cmd := &cobra.Command{
 		Use:         "category-trend",
 		Short:       "Category sales trend over time",
-		Example:     "  jivo-ecom-pp-cli dashboard category-trend",
+		Example:     "  jivo-ecom-pp-cli dashboard category-trend --month 42 --year 42",
 		Annotations: map[string]string{"pp:endpoint": "dashboard.category-trend", "pp:method": "GET", "pp:path": "/api/dashboard/category-trend", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("month") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "month")
+			}
+			if !cmd.Flags().Changed("year") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "year")
+			}
+			if cmd.Flags().Changed("source") {
+				allowedSource := []string{"primary", "secondary"}
+				validSource := false
+				for _, v := range allowedSource {
+					if flagSource == v {
+						validSource = true
+						break
+					}
+				}
+				if !validSource {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSource, "source", allowedSource)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -29,6 +58,18 @@ func newDashboardCategoryTrendCmd(flags *rootFlags) *cobra.Command {
 			params := map[string]string{}
 			if flagPlatform != "" {
 				params["platform"] = formatCLIParamValue(flagPlatform)
+			}
+			if flagSource != "" {
+				params["source"] = formatCLIParamValue(flagSource)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonths != 0 {
+				params["months"] = formatCLIParamValue(flagMonths)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -79,6 +120,10 @@ func newDashboardCategoryTrendCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Filter to a single platform slug")
+	cmd.Flags().StringVar(&flagSource, "source", "", " (one of: primary, secondary)")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "month number 1-12")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "4-digit year")
+	cmd.Flags().IntVar(&flagMonths, "months", 0, "integer count of trailing months (6 observed)")
 
 	return cmd
 }

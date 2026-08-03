@@ -13,7 +13,16 @@ import (
 
 func newReportsAppointmentCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagSortBy string
+	var flagHelper string
+	var flagStatusExact string
+	var flagAppointmentId string
+	var flagPos string
+	var flagDestinationFc string
+	var flagStatus string
+	var flagAppointmentTimeFrom string
+	var flagAppointmentTimeTo string
 
 	cmd := &cobra.Command{
 		Use:         "appointment",
@@ -21,6 +30,58 @@ func newReportsAppointmentCmd(flags *rootFlags) *cobra.Command {
 		Example:     "  jivo-ecom-pp-cli reports appointment",
 		Annotations: map[string]string{"pp:endpoint": "reports.appointment", "pp:method": "GET", "pp:path": "/api/reports/appointment", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("sort-by") {
+				allowedSortBy := []string{"expiry_date"}
+				validSortBy := false
+				for _, v := range allowedSortBy {
+					if flagSortBy == v {
+						validSortBy = true
+						break
+					}
+				}
+				if !validSortBy {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSortBy, "sort-by", allowedSortBy)
+				}
+			}
+			if cmd.Flags().Changed("helper") {
+				allowedHelper := []string{"INCLUDE"}
+				validHelper := false
+				for _, v := range allowedHelper {
+					if flagHelper == v {
+						validHelper = true
+						break
+					}
+				}
+				if !validHelper {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagHelper, "helper", allowedHelper)
+				}
+			}
+			if cmd.Flags().Changed("status-exact") {
+				allowedStatusExact := []string{"confirmed"}
+				validStatusExact := false
+				for _, v := range allowedStatusExact {
+					if flagStatusExact == v {
+						validStatusExact = true
+						break
+					}
+				}
+				if !validStatusExact {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagStatusExact, "status-exact", allowedStatusExact)
+				}
+			}
+			if cmd.Flags().Changed("status") {
+				allowedStatus := []string{"Confirmed", "Closed", "Cancelled"}
+				validStatus := false
+				for _, v := range allowedStatus {
+					if flagStatus == v {
+						validStatus = true
+						break
+					}
+				}
+				if !validStatus {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagStatus, "status", allowedStatus)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -31,8 +92,35 @@ func newReportsAppointmentCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagSortBy != "" {
+				params["sort_by"] = formatCLIParamValue(flagSortBy)
+			}
+			if flagHelper != "" {
+				params["helper"] = formatCLIParamValue(flagHelper)
+			}
+			if flagStatusExact != "" {
+				params["status_exact"] = formatCLIParamValue(flagStatusExact)
+			}
+			if flagAppointmentId != "" {
+				params["appointment_id"] = formatCLIParamValue(flagAppointmentId)
+			}
+			if flagPos != "" {
+				params["pos"] = formatCLIParamValue(flagPos)
+			}
+			if flagDestinationFc != "" {
+				params["destination_fc"] = formatCLIParamValue(flagDestinationFc)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagAppointmentTimeFrom != "" {
+				params["appointment_time_from"] = formatCLIParamValue(flagAppointmentTimeFrom)
+			}
+			if flagAppointmentTimeTo != "" {
+				params["appointment_time_to"] = formatCLIParamValue(flagAppointmentTimeTo)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "reports", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -83,7 +171,16 @@ func newReportsAppointmentCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagSortBy, "sort-by", "", "column name; sortBy is attached to a view definition; only expiry_date is written literally (one of: expiry_date)")
+	cmd.Flags().StringVar(&flagHelper, "helper", "", " (one of: INCLUDE)")
+	cmd.Flags().StringVar(&flagStatusExact, "status-exact", "", " (one of: confirmed)")
+	cmd.Flags().StringVar(&flagAppointmentId, "appointment-id", "", "appointment id")
+	cmd.Flags().StringVar(&flagPos, "pos", "", "PO number; options from filter-options.pos_numbers; server-driven option list")
+	cmd.Flags().StringVar(&flagDestinationFc, "destination-fc", "", "FC code; options from filter-options.destination_fcs; server-driven option list")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "Title-case; staticOptions - note the capitalisation differs from every other status field in this API (one of: Confirmed, Closed, Cancelled)")
+	cmd.Flags().StringVar(&flagAppointmentTimeFrom, "appointment-time-from", "", "HTML datetime-local value i.e. YYYY-MM-DDTHH:MM")
+	cmd.Flags().StringVar(&flagAppointmentTimeTo, "appointment-time-to", "", "HTML datetime-local value i.e. YYYY-MM-DDTHH:MM")
 
 	return cmd
 }

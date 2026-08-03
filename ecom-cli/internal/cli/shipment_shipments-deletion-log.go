@@ -12,24 +12,30 @@ import (
 )
 
 func newShipmentShipmentsDeletionLogCmd(flags *rootFlags) *cobra.Command {
+	var flagLimit int
 
 	cmd := &cobra.Command{
 		Use:         "shipments-deletion-log",
-		Short:       "Shipment deletion log",
+		Short:       "Shipment deletion log Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment shipments-deletion-log",
-		Annotations: map[string]string{"pp:endpoint": "shipment.shipments-deletion-log", "pp:method": "GET", "pp:path": "/api/shipment/shipments/deletion-log", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.shipments-deletion-log", "pp:method": "GET", "pp:path": "/api/shipment/shipments/deletion-log/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/shipments/deletion-log"
+			path := "/api/shipment/shipments/deletion-log/"
 			params := map[string]string{}
+			if flagLimit != 0 {
+				params["limit"] = formatCLIParamValue(flagLimit)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			// Honor --limit when the API accepts but ignores ?limit=N.
+			data = truncateJSONArray(data, flagLimit)
 			// Print provenance to stderr for human-facing output only.
 			// Machine-format flags (--json, --csv, --compact, --quiet, --plain,
 			// --select) and piped stdout suppress this line; the JSON envelope
@@ -74,6 +80,7 @@ func newShipmentShipmentsDeletionLogCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagLimit, "limit", 0, "integer")
 
 	return cmd
 }

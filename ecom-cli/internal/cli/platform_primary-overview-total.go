@@ -12,8 +12,9 @@ import (
 )
 
 func newPlatformPrimaryOverviewTotalCmd(flags *rootFlags) *cobra.Command {
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
+	var flagSlugs string
 
 	cmd := &cobra.Command{
 		Use:         "primary-overview-total",
@@ -28,11 +29,14 @@ func newPlatformPrimaryOverviewTotalCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/platform/primary-overview-total"
 			params := map[string]string{}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagSlugs != "" {
+				params["slugs"] = formatCLIParamValue(flagSlugs)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -82,8 +86,9 @@ func newPlatformPrimaryOverviewTotalCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
+	cmd.Flags().StringVar(&flagSlugs, "slugs", "", "platform slugs (list/comma-joined)")
 
 	return cmd
 }

@@ -12,15 +12,22 @@ import (
 )
 
 func newShipmentShipmentInvoicesCmd(flags *rootFlags) *cobra.Command {
+	var flagId string
 
 	cmd := &cobra.Command{
-		Use:         "shipment-invoices <id>",
+		Use:         "shipment-invoices",
 		Short:       "Invoices for a shipment",
-		Example:     "  jivo-ecom-pp-cli shipment shipment-invoices 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  jivo-ecom-pp-cli shipment shipment-invoices --id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "shipment.shipment-invoices", "pp:method": "GET", "pp:path": "/api/shipment/shipments/{id}/invoices", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "id")
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,7 +35,7 @@ func newShipmentShipmentInvoicesCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/shipment/shipments/{id}/invoices"
-			path = replacePathParam(path, "id", args[0])
+			path = replacePathParam(path, "id", formatCLIParamValue(flagId))
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -78,6 +85,7 @@ func newShipmentShipmentInvoicesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagId, "id", "", "Shipment id")
 
 	return cmd
 }

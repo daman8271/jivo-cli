@@ -13,8 +13,13 @@ import (
 
 func newDashboardTopSkusCmd(flags *rootFlags) *cobra.Command {
 	var flagPlatform string
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
+	var flagSource string
+	var flagLimit int
+	var flagNumeric string
+	var flagSensitivity string
+	var flagCompareMonths string
 
 	cmd := &cobra.Command{
 		Use:         "top-skus",
@@ -35,6 +40,19 @@ func newDashboardTopSkusCmd(flags *rootFlags) *cobra.Command {
 					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
 				}
 			}
+			if cmd.Flags().Changed("source") {
+				allowedSource := []string{"secondary"}
+				validSource := false
+				for _, v := range allowedSource {
+					if flagSource == v {
+						validSource = true
+						break
+					}
+				}
+				if !validSource {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSource, "source", allowedSource)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -45,16 +63,33 @@ func newDashboardTopSkusCmd(flags *rootFlags) *cobra.Command {
 			if flagPlatform != "" {
 				params["platform"] = formatCLIParamValue(flagPlatform)
 			}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagSource != "" {
+				params["source"] = formatCLIParamValue(flagSource)
+			}
+			if flagLimit != 0 {
+				params["limit"] = formatCLIParamValue(flagLimit)
+			}
+			if flagNumeric != "" {
+				params["numeric"] = formatCLIParamValue(flagNumeric)
+			}
+			if flagSensitivity != "" {
+				params["sensitivity"] = formatCLIParamValue(flagSensitivity)
+			}
+			if flagCompareMonths != "" {
+				params["compare_months"] = formatCLIParamValue(flagCompareMonths)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
 			}
+			// Honor --limit when the API accepts but ignores ?limit=N.
+			data = truncateJSONArray(data, flagLimit)
 			// Print provenance to stderr for human-facing output only.
 			// Machine-format flags (--json, --csv, --compact, --quiet, --plain,
 			// --select) and piped stdout suppress this line; the JSON envelope
@@ -100,8 +135,13 @@ func newDashboardTopSkusCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Filter to a single platform slug (default: all) (one of: amazon, bigbasket, blinkit, citymall, flipkart, flipkart_grocery, jiomart, swiggy, zepto, zomato)")
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12 (default: latest)")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year (default: latest)")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12 (default: latest)")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year (default: latest)")
+	cmd.Flags().StringVar(&flagSource, "source", "", "only `secondary` observed on this endpoint; primary/secondary is the general pair elsewhere (one of: secondary)")
+	cmd.Flags().IntVar(&flagLimit, "limit", 0, "integer (1000 observed)")
+	cmd.Flags().StringVar(&flagNumeric, "numeric", "", "key name observed, value domain NOT observed")
+	cmd.Flags().StringVar(&flagSensitivity, "sensitivity", "", "key name observed, value domain NOT observed")
+	cmd.Flags().StringVar(&flagCompareMonths, "compare-months", "", "key name observed, value domain NOT observed")
 
 	return cmd
 }

@@ -13,8 +13,8 @@ import (
 
 func newDashboardCategoryLitresCmd(flags *rootFlags) *cobra.Command {
 	var flagPlatform string
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
 
 	cmd := &cobra.Command{
 		Use:         "category-litres",
@@ -32,10 +32,10 @@ func newDashboardCategoryLitresCmd(flags *rootFlags) *cobra.Command {
 			if flagPlatform != "" {
 				params["platform"] = formatCLIParamValue(flagPlatform)
 			}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
@@ -87,8 +87,8 @@ func newDashboardCategoryLitresCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Filter to a single platform slug")
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
 
 	return cmd
 }

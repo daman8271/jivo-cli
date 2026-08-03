@@ -12,15 +12,35 @@ import (
 )
 
 func newTablesColumnsCmd(flags *rootFlags) *cobra.Command {
+	var flagTable string
 
 	cmd := &cobra.Command{
-		Use:         "columns <table>",
+		Use:         "columns",
 		Short:       "Column definitions for a table",
-		Example:     "  jivo-ecom-pp-cli tables columns example-value",
+		Example:     "  jivo-ecom-pp-cli tables columns --table all_platform_inventory",
 		Annotations: map[string]string{"pp:endpoint": "tables.columns", "pp:method": "GET", "pp:path": "/api/dashboard/table-columns/{table}", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("table") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "table")
+			}
+			if cmd.Flags().Changed("table") {
+				allowedTable := []string{"all_platform_inventory", "amazon_ads", "amazon_coupon", "amazon_inventory", "amazon_mp", "amazon_price_data", "amazon_sec_city", "amazon_sec_daily", "amazon_sec_daily_master_view", "amazon_sec_range", "amazon_sec_range_margins", "amazon_sec_range_master_view", "bigbasketSec", "bigbasket_ads", "bigbasket_inventory", "bigbasket_sec_range", "blinkitSec", "blinkit_ads", "blinkit_brandfund", "blinkit_inventory", "citymallSec", "citymall_inventory", "fk_grocery", "flipkartSec", "flipkart_ads", "flipkart_grocery_master", "flipkart_secondary_all", "jiomartSec", "jiomart_inventory", "master_po", "prim_master_po", "swiggySec", "swiggy_ads", "swiggy_brandfund", "swiggy_inventory", "test_master_po", "total_po", "total_po_zbs", "zeptoSec", "zepto_ads", "zepto_brandfund", "zepto_inventory", "zomatoSec", "zomato_inventory"}
+				validTable := false
+				for _, v := range allowedTable {
+					if flagTable == v {
+						validTable = true
+						break
+					}
+				}
+				if !validTable {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagTable, "table", allowedTable)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,7 +48,7 @@ func newTablesColumnsCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/dashboard/table-columns/{table}"
-			path = replacePathParam(path, "table", args[0])
+			path = replacePathParam(path, "table", formatCLIParamValue(flagTable))
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "tables", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -78,6 +98,7 @@ func newTablesColumnsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagTable, "table", "", "Reporting-schema table name, case-sensitive. (one of: all_platform_inventory, amazon_ads, amazon_coupon, amazon_inventory, amazon_mp, amazon_price_data, amazon_sec_city, amazon_sec_daily, amazon_sec_daily_master_view, amazon_sec_range, amazon_sec_range_margins, amazon_sec_range_master_view, bigbasketSec, bigbasket_ads, bigbasket_inventory, bigbasket_sec_range, blinkitSec, blinkit_ads, blinkit_brandfund, blinkit_inventory, citymallSec, citymall_inventory, fk_grocery, flipkartSec, flipkart_ads, flipkart_grocery_master, flipkart_secondary_all, jiomartSec, jiomart_inventory, master_po, prim_master_po, swiggySec, swiggy_ads, swiggy_brandfund, swiggy_inventory, test_master_po, total_po, total_po_zbs, zeptoSec, zepto_ads, zepto_brandfund, zepto_inventory, zomatoSec, zomato_inventory)")
 
 	return cmd
 }

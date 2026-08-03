@@ -12,20 +12,37 @@ import (
 )
 
 func newShipmentInventoryCmd(flags *rootFlags) *cobra.Command {
+	var flagWarehouse string
 
 	cmd := &cobra.Command{
 		Use:         "inventory",
-		Short:       "Shipment planning inventory",
+		Short:       "Shipment planning inventory Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment inventory",
-		Annotations: map[string]string{"pp:endpoint": "shipment.inventory", "pp:method": "GET", "pp:path": "/api/shipment/inventory", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.inventory", "pp:method": "GET", "pp:path": "/api/shipment/inventory/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("warehouse") {
+				allowedWarehouse := []string{"GP-FGM"}
+				validWarehouse := false
+				for _, v := range allowedWarehouse {
+					if flagWarehouse == v {
+						validWarehouse = true
+						break
+					}
+				}
+				if !validWarehouse {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagWarehouse, "warehouse", allowedWarehouse)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/inventory"
+			path := "/api/shipment/inventory/"
 			params := map[string]string{}
+			if flagWarehouse != "" {
+				params["warehouse"] = formatCLIParamValue(flagWarehouse)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +91,7 @@ func newShipmentInventoryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagWarehouse, "warehouse", "", "warehouse code, URL-encoded; GP-FGM is the only warehouse code hard-coded in the bundle; `ALL` is a client-side sentinel (one of: GP-FGM)")
 
 	return cmd
 }

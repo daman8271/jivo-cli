@@ -12,15 +12,47 @@ import (
 )
 
 func newTablesDistinctCmd(flags *rootFlags) *cobra.Command {
+	var flagTable string
+	var flagColumn string
+	var flagSearch string
+	var flagColumnFilters string
 
 	cmd := &cobra.Command{
-		Use:         "distinct <table> <column>",
+		Use:         "distinct",
 		Short:       "Distinct values for a column in a table",
-		Example:     "  jivo-ecom-pp-cli tables distinct example-value example-value",
+		Example:     "  jivo-ecom-pp-cli tables distinct --table all_platform_inventory --column example-value",
 		Annotations: map[string]string{"pp:endpoint": "tables.distinct", "pp:method": "GET", "pp:path": "/api/dashboard/table-distinct/{table}/{column}", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("table") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "table")
+			}
+			if !cmd.Flags().Changed("column") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "column")
+			}
+			if cmd.Flags().Changed("table") {
+				allowedTable := []string{"all_platform_inventory", "amazon_ads", "amazon_coupon", "amazon_inventory", "amazon_mp", "amazon_price_data", "amazon_sec_city", "amazon_sec_daily", "amazon_sec_daily_master_view", "amazon_sec_range", "amazon_sec_range_margins", "amazon_sec_range_master_view", "bigbasketSec", "bigbasket_ads", "bigbasket_inventory", "bigbasket_sec_range", "blinkitSec", "blinkit_ads", "blinkit_brandfund", "blinkit_inventory", "citymallSec", "citymall_inventory", "fk_grocery", "flipkartSec", "flipkart_ads", "flipkart_grocery_master", "flipkart_secondary_all", "jiomartSec", "jiomart_inventory", "master_po", "prim_master_po", "swiggySec", "swiggy_ads", "swiggy_brandfund", "swiggy_inventory", "test_master_po", "total_po", "total_po_zbs", "zeptoSec", "zepto_ads", "zepto_brandfund", "zepto_inventory", "zomatoSec", "zomato_inventory"}
+				validTable := false
+				for _, v := range allowedTable {
+					if flagTable == v {
+						validTable = true
+						break
+					}
+				}
+				if !validTable {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagTable, "table", allowedTable)
+				}
+			}
+			if cmd.Flags().Changed("column-filters") {
+				var parsedColumnFilters any
+				if err := json.Unmarshal([]byte(flagColumnFilters), &parsedColumnFilters); err != nil {
+					return fmt.Errorf("--column-filters must be valid JSON: %w", err)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,12 +60,15 @@ func newTablesDistinctCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/dashboard/table-distinct/{table}/{column}"
-			path = replacePathParam(path, "table", args[0])
-			if len(args) < 2 {
-				return usageErr(fmt.Errorf("column is required\nUsage: %s <%s>", cmd.CommandPath(), "column"))
-			}
-			path = replacePathParam(path, "column", args[1])
+			path = replacePathParam(path, "table", formatCLIParamValue(flagTable))
+			path = replacePathParam(path, "column", formatCLIParamValue(flagColumn))
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
+			if flagColumnFilters != "" {
+				params["column_filters"] = formatCLIParamValue(flagColumnFilters)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "tables", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -82,6 +117,10 @@ func newTablesDistinctCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagTable, "table", "", "Reporting-schema table name, case-sensitive. (one of: all_platform_inventory, amazon_ads, amazon_coupon, amazon_inventory, amazon_mp, amazon_price_data, amazon_sec_city, amazon_sec_daily, amazon_sec_daily_master_view, amazon_sec_range, amazon_sec_range_margins, amazon_sec_range_master_view, bigbasketSec, bigbasket_ads, bigbasket_inventory, bigbasket_sec_range, blinkitSec, blinkit_ads, blinkit_brandfund, blinkit_inventory, citymallSec, citymall_inventory, fk_grocery, flipkartSec, flipkart_ads, flipkart_grocery_master, flipkart_secondary_all, jiomartSec, jiomart_inventory, master_po, prim_master_po, swiggySec, swiggy_ads, swiggy_brandfund, swiggy_inventory, test_master_po, total_po, total_po_zbs, zeptoSec, zepto_ads, zepto_brandfund, zepto_inventory, zomatoSec, zomato_inventory)")
+	cmd.Flags().StringVar(&flagColumn, "column", "", "Column name")
+	cmd.Flags().StringVar(&flagSearch, "search", "", "free text")
+	cmd.Flags().StringVar(&flagColumnFilters, "column-filters", "", "JSON array string: [{'column':'<col>','values':[...]}]")
 
 	return cmd
 }

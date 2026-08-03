@@ -12,17 +12,28 @@ import (
 )
 
 func newSapDistributorOrdersCmd(flags *rootFlags) *cobra.Command {
+	var flagCode string
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagCardCode string
 
 	cmd := &cobra.Command{
-		Use:         "distributor-orders <code>",
+		Use:         "distributor-orders",
 		Short:       "Orders for a distributor by card code",
-		Example:     "  jivo-ecom-pp-cli sap distributor-orders example-value",
+		Example:     "  jivo-ecom-pp-cli sap distributor-orders --code example-value --card-code example-value",
 		Annotations: map[string]string{"pp:endpoint": "sap.distributor-orders", "pp:method": "GET", "pp:path": "/api/sap/distributor-orders/{code}", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("code") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "code")
+			}
+			if !cmd.Flags().Changed("card-code") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "card-code")
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -30,13 +41,16 @@ func newSapDistributorOrdersCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/sap/distributor-orders/{code}"
-			path = replacePathParam(path, "code", args[0])
+			path = replacePathParam(path, "code", formatCLIParamValue(flagCode))
 			params := map[string]string{}
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagCardCode != "" {
+				params["card_code"] = formatCLIParamValue(flagCardCode)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -86,8 +100,10 @@ func newSapDistributorOrdersCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagCode, "code", "", "Distributor CardCode")
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagCardCode, "card-code", "", "SAP CardCode")
 
 	return cmd
 }

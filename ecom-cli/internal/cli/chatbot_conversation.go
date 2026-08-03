@@ -12,15 +12,26 @@ import (
 )
 
 func newChatbotConversationCmd(flags *rootFlags) *cobra.Command {
+	var flagId string
+	var flagConversationId string
 
 	cmd := &cobra.Command{
-		Use:         "conversation <id>",
+		Use:         "conversation",
 		Short:       "Get a chatbot conversation (with messages) by id",
-		Example:     "  jivo-ecom-pp-cli chatbot conversation 550e8400-e29b-41d4-a716-446655440000",
+		Example:     "  jivo-ecom-pp-cli chatbot conversation --id 550e8400-e29b-41d4-a716-446655440000 --conversation-id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "chatbot.conversation", "pp:method": "GET", "pp:path": "/api/chatbot/conversations/{id}", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "id")
+			}
+			if !cmd.Flags().Changed("conversation-id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "conversation-id")
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,8 +39,11 @@ func newChatbotConversationCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/chatbot/conversations/{id}"
-			path = replacePathParam(path, "id", args[0])
+			path = replacePathParam(path, "id", formatCLIParamValue(flagId))
 			params := map[string]string{}
+			if flagConversationId != "" {
+				params["conversation_id"] = formatCLIParamValue(flagConversationId)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "chatbot", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +92,8 @@ func newChatbotConversationCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagId, "id", "", "Conversation id")
+	cmd.Flags().StringVar(&flagConversationId, "conversation-id", "", "conversation id from /api/chatbot/conversations")
 
 	return cmd
 }

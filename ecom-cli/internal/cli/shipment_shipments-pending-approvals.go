@@ -15,16 +15,16 @@ func newShipmentShipmentsPendingApprovalsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "shipments-pending-approvals",
-		Short:       "Shipments pending approval",
+		Short:       "Shipments pending approval Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment shipments-pending-approvals",
-		Annotations: map[string]string{"pp:endpoint": "shipment.shipments-pending-approvals", "pp:method": "GET", "pp:path": "/api/shipment/shipments/pending-approvals", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.shipments-pending-approvals", "pp:method": "GET", "pp:path": "/api/shipment/shipments/pending-approvals/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/shipments/pending-approvals"
+			path := "/api/shipment/shipments/pending-approvals/"
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {

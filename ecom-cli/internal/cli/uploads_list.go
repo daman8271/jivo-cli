@@ -13,7 +13,11 @@ import (
 
 func newUploadsListCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagReportType string
+	var flagStatus string
+	var flagDateFrom string
+	var flagDateTo string
 
 	cmd := &cobra.Command{
 		Use:         "list",
@@ -21,6 +25,32 @@ func newUploadsListCmd(flags *rootFlags) *cobra.Command {
 		Example:     "  jivo-ecom-pp-cli uploads list",
 		Annotations: map[string]string{"pp:endpoint": "uploads.list", "pp:method": "GET", "pp:path": "/api/uploads", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("report-type") {
+				allowedReportType := []string{"AMAZON_PO", "APPOINTMENT"}
+				validReportType := false
+				for _, v := range allowedReportType {
+					if flagReportType == v {
+						validReportType = true
+						break
+					}
+				}
+				if !validReportType {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagReportType, "report-type", allowedReportType)
+				}
+			}
+			if cmd.Flags().Changed("status") {
+				allowedStatus := []string{"completed", "partially_successful", "failed", "duplicate", "uploaded", "staged"}
+				validStatus := false
+				for _, v := range allowedStatus {
+					if flagStatus == v {
+						validStatus = true
+						break
+					}
+				}
+				if !validStatus {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagStatus, "status", allowedStatus)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -31,8 +61,20 @@ func newUploadsListCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagReportType != "" {
+				params["report_type"] = formatCLIParamValue(flagReportType)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagDateFrom != "" {
+				params["date_from"] = formatCLIParamValue(flagDateFrom)
+			}
+			if flagDateTo != "" {
+				params["date_to"] = formatCLIParamValue(flagDateTo)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "uploads", true, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -83,7 +125,11 @@ func newUploadsListCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagReportType, "report-type", "", "uppercase; empty string means all reports (one of: AMAZON_PO, APPOINTMENT)")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "uploadDisplay-Cd6ax7Hv. (one of: completed, partially_successful, failed, duplicate, uploaded, staged)")
+	cmd.Flags().StringVar(&flagDateFrom, "date-from", "", "date string from BkDatePicker")
+	cmd.Flags().StringVar(&flagDateTo, "date-to", "", "date string from BkDatePicker")
 
 	return cmd
 }

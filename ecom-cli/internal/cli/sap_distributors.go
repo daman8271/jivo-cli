@@ -13,11 +13,11 @@ import (
 
 func newSapDistributorsCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
 
 	cmd := &cobra.Command{
 		Use:         "distributors",
-		Short:       "List SAP distributors",
+		Short:       "List SAP distributors.",
 		Example:     "  jivo-ecom-pp-cli sap distributors",
 		Annotations: map[string]string{"pp:endpoint": "sap.distributors", "pp:method": "GET", "pp:path": "/api/sap/distributors", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -31,7 +31,7 @@ func newSapDistributorsCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
@@ -83,7 +83,7 @@ func newSapDistributorsCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
 
 	return cmd
 }

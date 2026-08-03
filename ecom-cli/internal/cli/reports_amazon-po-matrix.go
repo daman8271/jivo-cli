@@ -12,13 +12,15 @@ import (
 )
 
 func newReportsAmazonPoMatrixCmd(flags *rootFlags) *cobra.Command {
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
+	var flagFc string
+	var flagChannel string
 
 	cmd := &cobra.Command{
 		Use:         "amazon-po-matrix",
-		Short:       "Amazon PO matrix (by month/year)",
-		Example:     "  jivo-ecom-pp-cli reports amazon-po-matrix --month 42 --year 42",
+		Short:       "Amazon PO matrix (by month/year) Server requires: month and year are required",
+		Example:     "  jivo-ecom-pp-cli reports amazon-po-matrix --month example-value --year example-value",
 		Annotations: map[string]string{"pp:endpoint": "reports.amazon-po-matrix", "pp:method": "GET", "pp:path": "/api/reports/amazon-po/matrix", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -33,6 +35,19 @@ func newReportsAmazonPoMatrixCmd(flags *rootFlags) *cobra.Command {
 			if !cmd.Flags().Changed("year") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "year")
 			}
+			if cmd.Flags().Changed("channel") {
+				allowedChannel := []string{"CORE", "FRESH", "NOW"}
+				validChannel := false
+				for _, v := range allowedChannel {
+					if flagChannel == v {
+						validChannel = true
+						break
+					}
+				}
+				if !validChannel {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagChannel, "channel", allowedChannel)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -40,11 +55,17 @@ func newReportsAmazonPoMatrixCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/reports/amazon-po/matrix"
 			params := map[string]string{}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagFc != "" {
+				params["fc"] = formatCLIParamValue(flagFc)
+			}
+			if flagChannel != "" {
+				params["channel"] = formatCLIParamValue(flagChannel)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "reports", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -94,8 +115,10 @@ func newReportsAmazonPoMatrixCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
+	cmd.Flags().StringVar(&flagFc, "fc", "", "FC code; omitted when blank")
+	cmd.Flags().StringVar(&flagChannel, "channel", "", "same channel vocabulary as /api/reports/amazon-po; not re-declared in this chunk (one of: CORE, FRESH, NOW)")
 
 	return cmd
 }

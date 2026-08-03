@@ -12,8 +12,8 @@ import (
 )
 
 func newPlatformPrimarySummaryCmd(flags *rootFlags) *cobra.Command {
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
 
 	cmd := &cobra.Command{
 		Use:         "primary-summary",
@@ -28,10 +28,10 @@ func newPlatformPrimarySummaryCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/platform/primary-summary"
 			params := map[string]string{}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
@@ -82,8 +82,8 @@ func newPlatformPrimarySummaryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
 
 	return cmd
 }

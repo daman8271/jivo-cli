@@ -27,6 +27,8 @@ func newDashboardCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newDashboardInventoryChartsCmd(flags))
 	cmd.AddCommand(newDashboardLatestMonthCmd(flags))
 	cmd.AddCommand(newDashboardLeadTimeReportCmd(flags))
+	cmd.AddCommand(newDashboardPenetrationReportCmd(flags))
+	cmd.AddCommand(newDashboardPenetrationReportOptionsCmd(flags))
 	cmd.AddCommand(newDashboardPlatformExpiryAlertsCmd(flags))
 	cmd.AddCommand(newDashboardPrimaryPoLitresCmd(flags))
 	cmd.AddCommand(newDashboardRealiseBreakdownCmd(flags))

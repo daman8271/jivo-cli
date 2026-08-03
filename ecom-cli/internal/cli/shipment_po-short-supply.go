@@ -15,16 +15,16 @@ func newShipmentPoShortSupplyCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "po-short-supply",
-		Short:       "PO short-supply report",
+		Short:       "PO short-supply report Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment po-short-supply",
-		Annotations: map[string]string{"pp:endpoint": "shipment.po-short-supply", "pp:method": "GET", "pp:path": "/api/shipment/po-short-supply", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.po-short-supply", "pp:method": "GET", "pp:path": "/api/shipment/po-short-supply/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/po-short-supply"
+			path := "/api/shipment/po-short-supply/"
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {

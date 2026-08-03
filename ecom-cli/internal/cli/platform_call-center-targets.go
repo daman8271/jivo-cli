@@ -12,13 +12,13 @@ import (
 )
 
 func newPlatformCallCenterTargetsCmd(flags *rootFlags) *cobra.Command {
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
 
 	cmd := &cobra.Command{
 		Use:         "call-center-targets",
-		Short:       "Call-center secondary targets (premium/commodity)",
-		Example:     "  jivo-ecom-pp-cli platform call-center-targets --month 42 --year 42",
+		Short:       "Call-center secondary targets (premium/commodity) Server requires: `month` (1-12) and `year` (YYYY)",
+		Example:     "  jivo-ecom-pp-cli platform call-center-targets --month example-value --year example-value",
 		Annotations: map[string]string{"pp:endpoint": "platform.call-center-targets", "pp:method": "GET", "pp:path": "/api/platform/call-center-targets", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -40,10 +40,10 @@ func newPlatformCallCenterTargetsCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/platform/call-center-targets"
 			params := map[string]string{}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
@@ -94,8 +94,8 @@ func newPlatformCallCenterTargetsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
 
 	return cmd
 }

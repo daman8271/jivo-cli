@@ -12,15 +12,43 @@ import (
 )
 
 func newSapPlatformDistributorCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
+	var flagCode string
+	var flagCardCode string
 
 	cmd := &cobra.Command{
-		Use:         "platform-distributor <platform> <code>",
+		Use:         "platform-distributor",
 		Short:       "A platform-distributor mapping by card code",
-		Example:     "  jivo-ecom-pp-cli sap platform-distributor amazon example-value",
+		Example:     "  jivo-ecom-pp-cli sap platform-distributor --platform amazon --code example-value --card-code example-value",
 		Annotations: map[string]string{"pp:endpoint": "sap.platform-distributor", "pp:method": "GET", "pp:path": "/api/sap/platform-distributors/{platform}/{code}", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("platform") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "platform")
+			}
+			if !cmd.Flags().Changed("code") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "code")
+			}
+			if !cmd.Flags().Changed("card-code") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "card-code")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"amazon", "bigbasket", "blinkit", "citymall", "flipkart", "flipkart_grocery", "jiomart", "swiggy", "zepto", "zomato"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,12 +56,12 @@ func newSapPlatformDistributorCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/sap/platform-distributors/{platform}/{code}"
-			path = replacePathParam(path, "platform", args[0])
-			if len(args) < 2 {
-				return usageErr(fmt.Errorf("code is required\nUsage: %s <%s>", cmd.CommandPath(), "code"))
-			}
-			path = replacePathParam(path, "code", args[1])
+			path = replacePathParam(path, "platform", formatCLIParamValue(flagPlatform))
+			path = replacePathParam(path, "code", formatCLIParamValue(flagCode))
 			params := map[string]string{}
+			if flagCardCode != "" {
+				params["card_code"] = formatCLIParamValue(flagCardCode)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -82,6 +110,9 @@ func newSapPlatformDistributorCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug (one of: amazon, bigbasket, blinkit, citymall, flipkart, flipkart_grocery, jiomart, swiggy, zepto, zomato)")
+	cmd.Flags().StringVar(&flagCode, "code", "", "Distributor CardCode")
+	cmd.Flags().StringVar(&flagCardCode, "card-code", "", "SAP CardCode from the platform-distributors list")
 
 	return cmd
 }

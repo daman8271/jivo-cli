@@ -10,11 +10,12 @@ import (
 func newAccountCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "account",
-		Short:       "Authenticated account: current user and permissions",
+		Short:       "Authenticated account: current user, permissions and feature flags",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newAccountFeatureFlagsCmd(flags))
 	cmd.AddCommand(newAccountMeCmd(flags))
 	cmd.AddCommand(newAccountPermissionsCmd(flags))
 	return cmd

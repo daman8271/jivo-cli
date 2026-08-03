@@ -15,16 +15,16 @@ func newShipmentAppointmentDatesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "appointment-dates",
-		Short:       "Available appointment dates",
+		Short:       "Available appointment dates Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment appointment-dates",
-		Annotations: map[string]string{"pp:endpoint": "shipment.appointment-dates", "pp:method": "GET", "pp:path": "/api/shipment/appointments/dates", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.appointment-dates", "pp:method": "GET", "pp:path": "/api/shipment/appointments/dates/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/appointments/dates"
+			path := "/api/shipment/appointments/dates/"
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {

@@ -12,24 +12,38 @@ import (
 )
 
 func newShipmentAppointmentExtraPosCmd(flags *rootFlags) *cobra.Command {
+	var flagId string
+	var flagAppointmentId string
 
 	cmd := &cobra.Command{
-		Use:         "appointment-extra-pos <id>",
+		Use:         "appointment-extra-pos",
 		Short:       "Extra POs for an appointment",
-		Example:     "  jivo-ecom-pp-cli shipment appointment-extra-pos 550e8400-e29b-41d4-a716-446655440000",
-		Annotations: map[string]string{"pp:endpoint": "shipment.appointment-extra-pos", "pp:method": "GET", "pp:path": "/api/shipment/appointments/{id}/extra-pos", "mcp:read-only": "true"},
+		Example:     "  jivo-ecom-pp-cli shipment appointment-extra-pos --id 550e8400-e29b-41d4-a716-446655440000 --appointment-id 550e8400-e29b-41d4-a716-446655440000",
+		Annotations: map[string]string{"pp:endpoint": "shipment.appointment-extra-pos", "pp:method": "GET", "pp:path": "/api/shipment/appointments/{id}/extra-pos/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "id")
+			}
+			if !cmd.Flags().Changed("appointment-id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "appointment-id")
 			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/appointments/{id}/extra-pos"
-			path = replacePathParam(path, "id", args[0])
+			path := "/api/shipment/appointments/{id}/extra-pos/"
+			path = replacePathParam(path, "id", formatCLIParamValue(flagId))
 			params := map[string]string{}
+			if flagAppointmentId != "" {
+				params["appointment_id"] = formatCLIParamValue(flagAppointmentId)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +92,8 @@ func newShipmentAppointmentExtraPosCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagId, "id", "", "Appointment id")
+	cmd.Flags().StringVar(&flagAppointmentId, "appointment-id", "", "appointment id")
 
 	return cmd
 }

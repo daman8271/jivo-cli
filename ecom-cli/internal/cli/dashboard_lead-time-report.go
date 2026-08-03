@@ -12,6 +12,10 @@ import (
 )
 
 func newDashboardLeadTimeReportCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
+	var flagMonth int
+	var flagYear int
+	var flagItemHead string
 
 	cmd := &cobra.Command{
 		Use:         "lead-time-report",
@@ -26,6 +30,18 @@ func newDashboardLeadTimeReportCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/dashboard/lead-time-report"
 			params := map[string]string{}
+			if flagPlatform != "" {
+				params["platform"] = formatCLIParamValue(flagPlatform)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagItemHead != "" {
+				params["item_head"] = formatCLIParamValue(flagItemHead)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +90,10 @@ func newDashboardLeadTimeReportCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "platform slug")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "")
+	cmd.Flags().StringVar(&flagItemHead, "item-head", "", "")
 
 	return cmd
 }

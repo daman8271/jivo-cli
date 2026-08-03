@@ -13,14 +13,28 @@ import (
 
 func newSapInventoryFinishedGoodsCmd(flags *rootFlags) *cobra.Command {
 	var flagPage string
-	var flagPageSize int
+	var flagPageSize string
+	var flagSource string
 
 	cmd := &cobra.Command{
 		Use:         "inventory-finished-goods",
-		Short:       "Finished-goods inventory",
+		Short:       "Finished-goods inventory. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.",
 		Example:     "  jivo-ecom-pp-cli sap inventory-finished-goods",
 		Annotations: map[string]string{"pp:endpoint": "sap.inventory-finished-goods", "pp:method": "GET", "pp:path": "/api/sap/inventory-finished-goods", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("source") {
+				allowedSource := []string{"mart", "oil"}
+				validSource := false
+				for _, v := range allowedSource {
+					if flagSource == v {
+						validSource = true
+						break
+					}
+				}
+				if !validSource {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagSource, "source", allowedSource)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -31,8 +45,11 @@ func newSapInventoryFinishedGoodsCmd(flags *rootFlags) *cobra.Command {
 			if flagPage != "" {
 				params["page"] = formatCLIParamValue(flagPage)
 			}
-			if flagPageSize != 0 {
+			if flagPageSize != "" {
 				params["page_size"] = formatCLIParamValue(flagPageSize)
+			}
+			if flagSource != "" {
+				params["source"] = formatCLIParamValue(flagSource)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "sap", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -83,7 +100,8 @@ func newSapInventoryFinishedGoodsCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagPage, "page", "", "Page number")
-	cmd.Flags().IntVar(&flagPageSize, "page-size", 0, "Rows per page")
+	cmd.Flags().StringVar(&flagPageSize, "page-size", "", "Rows per page")
+	cmd.Flags().StringVar(&flagSource, "source", "", "key confirmed at the call site; the value set is carried over from the sibling SAP filter, not re-declared here (one of: mart, oil)")
 
 	return cmd
 }

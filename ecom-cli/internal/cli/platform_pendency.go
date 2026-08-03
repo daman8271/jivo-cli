@@ -12,15 +12,65 @@ import (
 )
 
 func newPlatformPendencyCmd(flags *rootFlags) *cobra.Command {
+	var flagPlatform string
+	var flagScope string
+	var flagFromDate string
+	var flagToDate string
+	var flagStatus string
 
 	cmd := &cobra.Command{
-		Use:         "pendency <platform>",
+		Use:         "pendency",
 		Short:       "Order pendency dashboard for a platform",
-		Example:     "  jivo-ecom-pp-cli platform pendency example-value",
+		Example:     "  jivo-ecom-pp-cli platform pendency --platform blinkit",
 		Annotations: map[string]string{"pp:endpoint": "platform.pendency", "pp:method": "GET", "pp:path": "/api/platform/{platform}/pendency-dashboard", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("platform") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "platform")
+			}
+			if cmd.Flags().Changed("platform") {
+				allowedPlatform := []string{"blinkit", "zepto", "swiggy", "bigbasket"}
+				validPlatform := false
+				for _, v := range allowedPlatform {
+					if flagPlatform == v {
+						validPlatform = true
+						break
+					}
+				}
+				if !validPlatform {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagPlatform, "platform", allowedPlatform)
+				}
+			}
+			if cmd.Flags().Changed("scope") {
+				allowedScope := []string{"all"}
+				validScope := false
+				for _, v := range allowedScope {
+					if flagScope == v {
+						validScope = true
+						break
+					}
+				}
+				if !validScope {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagScope, "scope", allowedScope)
+				}
+			}
+			if cmd.Flags().Changed("status") {
+				allowedStatus := []string{"expired"}
+				validStatus := false
+				for _, v := range allowedStatus {
+					if flagStatus == v {
+						validStatus = true
+						break
+					}
+				}
+				if !validStatus {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagStatus, "status", allowedStatus)
+				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -28,8 +78,20 @@ func newPlatformPendencyCmd(flags *rootFlags) *cobra.Command {
 			}
 
 			path := "/api/platform/{platform}/pendency-dashboard"
-			path = replacePathParam(path, "platform", args[0])
+			path = replacePathParam(path, "platform", formatCLIParamValue(flagPlatform))
 			params := map[string]string{}
+			if flagScope != "" {
+				params["scope"] = formatCLIParamValue(flagScope)
+			}
+			if flagFromDate != "" {
+				params["from_date"] = formatCLIParamValue(flagFromDate)
+			}
+			if flagToDate != "" {
+				params["to_date"] = formatCLIParamValue(flagToDate)
+			}
+			if flagStatus != "" {
+				params["status"] = formatCLIParamValue(flagStatus)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "platform", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +140,11 @@ func newPlatformPendencyCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Platform slug. This endpoint is served ONLY for: blinkit, zepto, swiggy, bigbasket (one of: blinkit, zepto, swiggy, bigbasket)")
+	cmd.Flags().StringVar(&flagScope, "scope", "", "sent only when no explicit date range is chosen (one of: all)")
+	cmd.Flags().StringVar(&flagFromDate, "from-date", "", "date string from the range picker; from_date and to_date are sent as a pair or not at all")
+	cmd.Flags().StringVar(&flagToDate, "to-date", "", "date string from the range picker; from_date and to_date are sent as a pair or not at all")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "only literal ever sent on this endpoint (one of: expired)")
 
 	return cmd
 }

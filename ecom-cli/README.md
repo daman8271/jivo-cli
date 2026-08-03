@@ -1,15 +1,6 @@
----
-title: "Jivo Ecom CLI"
-created: 2026-07-19
-updated: 2026-07-19
-project: jivogpt
-type: reference
-tags: [jivogpt, ecom-cli, cli]
----
-
 # Jivo Ecom CLI
 
-JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.in) — read-only dashboards, master data, notifications, and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato
+JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.in) - read-only dashboards, master data, notifications, SAP mirror, Amazon PO reporting and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato
 
 Created by [@daman8271](https://github.com/daman8271).
 
@@ -40,9 +31,15 @@ npx -y @mvanhorn/printing-press-library install jivo-ecom --agent claude-code
 npx -y @mvanhorn/printing-press-library install jivo-ecom --agent claude-code --agent codex
 ```
 
-### Without Node
+### Without Node (Go fallback)
 
-The generated install path is category-agnostic until this CLI is published. If `npx` is not available before publish, install Node or use the category-specific Go fallback from the public-library entry after publish.
+If `npx` isn't available (no Node, offline), install the CLI directly via Go (requires Go 1.26.4 or newer):
+
+```bash
+go install github.com/mvanhorn/printing-press-library/library/developer-tools/jivo-ecom/cmd/jivo-ecom-pp-cli@latest
+```
+
+This installs the CLI only — no skill.
 
 ### Pre-built binary
 
@@ -100,7 +97,9 @@ Requires Claude Desktop 1.0.0 or later. Pre-built bundles ship for macOS Apple S
 If you can't use the MCPB bundle (older Claude Desktop, unsupported platform), install the MCP binary and configure it manually.
 
 
-Install the MCP binary from this CLI's published public-library entry or pre-built release.
+```bash
+go install github.com/mvanhorn/printing-press-library/library/developer-tools/jivo-ecom/cmd/jivo-ecom-pp-mcp@latest
+```
 
 Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
@@ -161,8 +160,9 @@ Run `jivo-ecom-pp-cli --help` for the full command reference and flag list.
 
 ### account
 
-Authenticated account: current user and permissions
+Authenticated account: current user, permissions and feature flags
 
+- **`jivo-ecom-pp-cli account feature-flags`** - Feature flags (getFeatureFlags)
 - **`jivo-ecom-pp-cli account me`** - Show the authenticated user (profile, groups, platforms, permissions)
 - **`jivo-ecom-pp-cli account permissions`** - List the permission modules granted to the current user
 
@@ -180,16 +180,18 @@ Top-level analytics dashboards aggregated across all platforms
 
 - **`jivo-ecom-pp-cli dashboard category-breakdown`** - Premium vs commodity category breakdown
 - **`jivo-ecom-pp-cli dashboard category-litres`** - Category sales measured in litres
-- **`jivo-ecom-pp-cli dashboard category-platform-breakdown`** - Category breakdown split by platform
-- **`jivo-ecom-pp-cli dashboard category-sku-breakdown`** - SKU-level breakdown within a category (requires --platform)
+- **`jivo-ecom-pp-cli dashboard category-platform-breakdown`** - Category breakdown split by platform Server requires: name is required.
+- **`jivo-ecom-pp-cli dashboard category-sku-breakdown`** - SKU-level breakdown within a category (requires --platform) Server requires: name is required.
 - **`jivo-ecom-pp-cli dashboard category-trend`** - Category sales trend over time
-- **`jivo-ecom-pp-cli dashboard expiry-alerts`** - Expiry alerts for a single platform
+- **`jivo-ecom-pp-cli dashboard expiry-alerts`** - Expiry alerts for one reporting table. NOTE: the path segment is a TABLE name (see `tables counts`), not a platform slug - passing a platform returns 200 with an empty list, which is a false negative.
 - **`jivo-ecom-pp-cli dashboard expiry-alerts-po-items`** - Line items for a PO behind an expiry alert
 - **`jivo-ecom-pp-cli dashboard expiry-alerts-pos`** - Purchase orders behind a platform expiry alert
 - **`jivo-ecom-pp-cli dashboard fulfilment-health`** - Fulfilment health summary by platform
 - **`jivo-ecom-pp-cli dashboard inventory-charts`** - Inventory chart series
 - **`jivo-ecom-pp-cli dashboard latest-month`** - Latest data month/year available, with source metadata
 - **`jivo-ecom-pp-cli dashboard lead-time-report`** - Distributor lead-time report (rows, slabs, grand total)
+- **`jivo-ecom-pp-cli dashboard penetration-report`** - Penetration report (get)
+- **`jivo-ecom-pp-cli dashboard penetration-report-options`** - Penetration report options (getOptions)
 - **`jivo-ecom-pp-cli dashboard platform-expiry-alerts`** - Expiry alerts aggregated across platforms
 - **`jivo-ecom-pp-cli dashboard primary-po-litres`** - Primary purchase-order volume in litres
 - **`jivo-ecom-pp-cli dashboard realise-breakdown`** - Realise dashboard: breakdown (net realisation analytics)
@@ -198,7 +200,7 @@ Top-level analytics dashboards aggregated across all platforms
 - **`jivo-ecom-pp-cli dashboard realise-waterfall`** - Realise dashboard: waterfall (net realisation analytics)
 - **`jivo-ecom-pp-cli dashboard secondary-yoy-growth`** - Secondary sales year-over-year growth
 - **`jivo-ecom-pp-cli dashboard state-sales`** - State-wise sales with mapped/unmapped coverage
-- **`jivo-ecom-pp-cli dashboard state-sales-detail`** - Detailed state-wise sales rows
+- **`jivo-ecom-pp-cli dashboard state-sales-detail`** - Detailed state-wise sales rows Server requires: state is required.
 - **`jivo-ecom-pp-cli dashboard state-sales-detail-cities`** - State-sales detail drilled to cities
 - **`jivo-ecom-pp-cli dashboard state-sales-detail-city-skus`** - State-sales detail drilled to city SKUs
 - **`jivo-ecom-pp-cli dashboard state-sales-detail-options`** - Filter options (skus, cities) for state-sales detail
@@ -222,16 +224,18 @@ Read-only notifications with unread count
 
 ### platform
 
-Per-platform dashboards (Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato)
+Per-platform dashboards. Many routes are restricted to specific platforms - see the platform column in DOMAIN-GUIDE-2026-08.md
 
 - **`jivo-ecom-pp-cli platform ads`** - Advertising performance dashboard for a platform
 - **`jivo-ecom-pp-cli platform ads-summary`** - Cross-platform advertising summary
 - **`jivo-ecom-pp-cli platform ads-total-sales`** - Ads total-sales for a platform
 - **`jivo-ecom-pp-cli platform bigbasket-ads-daily-dashboard`** - Bigbasket Ads Daily Dashboard for a platform
 - **`jivo-ecom-pp-cli platform bigbasket-ads-dashboard`** - Bigbasket Ads Dashboard for a platform
+- **`jivo-ecom-pp-cli platform bigbasket-sales-explorer`** - Bigbasket sales explorer (get)
 - **`jivo-ecom-pp-cli platform blinkit-ads-dashboard`** - Blinkit Ads Dashboard for a platform
 - **`jivo-ecom-pp-cli platform blinkit-brandfund-dashboard`** - Blinkit Brandfund Dashboard for a platform
-- **`jivo-ecom-pp-cli platform call-center-targets`** - Call-center secondary targets (premium/commodity)
+- **`jivo-ecom-pp-cli platform blinkit-summary-report`** - Blinkit summary report (get)
+- **`jivo-ecom-pp-cli platform call-center-targets`** - Call-center secondary targets (premium/commodity) Server requires: `month` (1-12) and `year` (YYYY) are required integers.
 - **`jivo-ecom-pp-cli platform comparison`** - Comparison dashboard for a platform
 - **`jivo-ecom-pp-cli platform coupon`** - Coupon performance dashboard for a platform
 - **`jivo-ecom-pp-cli platform drr`** - Daily run-rate (DRR) dashboard for a platform
@@ -241,23 +245,24 @@ Per-platform dashboards (Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Ci
 - **`jivo-ecom-pp-cli platform landing-rate`** - Monthly landing rate (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)
 - **`jivo-ecom-pp-cli platform landing-rate-skus`** - Landing-rate SKUs (blinkit/zepto/swiggy/bigbasket/flipkart_grocery only)
 - **`jivo-ecom-pp-cli platform marketplace`** - Marketplace dashboard for a platform
-- **`jivo-ecom-pp-cli platform meta`** - Platform metadata (slugs, labels, config)
-- **`jivo-ecom-pp-cli platform month-on-month-sale`** - Month-on-month sales for a platform
+- **`jivo-ecom-pp-cli platform meta`** - Meta (Facebook/Instagram) advertising dashboard - campaign-level reach, impressions, link clicks, CPC, CPM and amount spent. This is NOT platform metadata; there is no endpoint that returns the platform slug list (use `account me`, field `platforms`).
 - **`jivo-ecom-pp-cli platform month-targets`** - Secondary monthly targets for a platform
-- **`jivo-ecom-pp-cli platform month-targets-dashboard`** - Secondary month-targets dashboard across platforms
+- **`jivo-ecom-pp-cli platform month-targets-dashboard`** - Secondary month-targets dashboard across platforms Server requires: `month` (1–12) and `year` (YYYY) are required.
+- **`jivo-ecom-pp-cli platform monthly-sales-explorer`** - Monthly sales explorer (get)
 - **`jivo-ecom-pp-cli platform mp-dashboard-version`** - Data version stamp for a platform marketplace dashboard
 - **`jivo-ecom-pp-cli platform pendency`** - Order pendency dashboard for a platform
 - **`jivo-ecom-pp-cli platform pos`** - Purchase orders for a platform
 - **`jivo-ecom-pp-cli platform price`** - Pricing dashboard for a platform
 - **`jivo-ecom-pp-cli platform primary`** - Primary (sell-in / PO) dashboard for a platform
 - **`jivo-ecom-pp-cli platform primary-month-targets`** - Primary monthly targets for a platform
-- **`jivo-ecom-pp-cli platform primary-month-targets-dashboard`** - Primary month-targets dashboard across platforms
+- **`jivo-ecom-pp-cli platform primary-month-targets-dashboard`** - Primary month-targets dashboard across platforms Server requires: `month` (1-12) and `year` (YYYY) are required.
 - **`jivo-ecom-pp-cli platform primary-overview-total`** - Primary overview totals across platforms
 - **`jivo-ecom-pp-cli platform primary-summary`** - Primary sell-in summary across platforms
 - **`jivo-ecom-pp-cli platform primary-summary-version`** - Data version stamp for the primary summary
-- **`jivo-ecom-pp-cli platform region-doh`** - Region-wise days-of-health dashboard for a platform
+- **`jivo-ecom-pp-cli platform region-doh`** - Region-wise days-of-health dashboard for a platform Served only for: swiggy, zepto
 - **`jivo-ecom-pp-cli platform secondary`** - Secondary (sell-out) dashboard for a platform
 - **`jivo-ecom-pp-cli platform secondary-monthly`** - Monthly secondary-sales dashboard for a platform
+- **`jivo-ecom-pp-cli platform secondary-summary-version`** - Secondary summary version (getVersion)
 - **`jivo-ecom-pp-cli platform secondary-years`** - Years available for the secondary dashboard
 - **`jivo-ecom-pp-cli platform soh-doh`** - Stock-on-hand / days-of-health dashboard for a platform
 - **`jivo-ecom-pp-cli platform stats`** - Headline stats for a platform (inventory, sells, open POs, active trucks)
@@ -273,15 +278,20 @@ Per-platform dashboards (Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Ci
 Report views: Amazon PO, appointment, and raw report tables
 
 - **`jivo-ecom-pp-cli reports amazon-po`** - Amazon PO report
+- **`jivo-ecom-pp-cli reports amazon-po-billing`** - Amazon po billing (amazonBilling)
 - **`jivo-ecom-pp-cli reports amazon-po-filter-options`** - Filter options for the Amazon PO report
-- **`jivo-ecom-pp-cli reports amazon-po-matrix`** - Amazon PO matrix (by month/year)
+- **`jivo-ecom-pp-cli reports amazon-po-matrix`** - Amazon PO matrix (by month/year) Server requires: month and year are required
 - **`jivo-ecom-pp-cli reports amazon-po-new-po`** - Amazon new-PO report
+- **`jivo-ecom-pp-cli reports amazon-po-sku-pendency`** - Amazon po sku pendency (amazonSkuPendency)
+- **`jivo-ecom-pp-cli reports amazon-po-sku-pendency-filter-options`** - Amazon po sku pendency filter options (amazonSkuPendencyOptions)
 - **`jivo-ecom-pp-cli reports amazon-po-summary`** - Amazon PO report summary
 - **`jivo-ecom-pp-cli reports appointment`** - Appointment report
 - **`jivo-ecom-pp-cli reports appointment-filter-options`** - Filter options (pos_numbers, destination_fcs) for the appointment report
 - **`jivo-ecom-pp-cli reports appointment-summary`** - Appointment report summary
-- **`jivo-ecom-pp-cli reports columns`** - Column definitions for a report view
-- **`jivo-ecom-pp-cli reports raw`** - Raw rows for a report view
+- **`jivo-ecom-pp-cli reports columns`** - Column definitions for one report view. `view` is required - a bare call returns 400 "Unknown report view". Server requires: Unknown report view: ''
+- **`jivo-ecom-pp-cli reports live-data`** - Live data (data) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli reports live-reports`** - Live reports (reports) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli reports raw`** - Raw rows for one report view. `view` is required - a bare call returns 400 "Unknown report view". The `platform` filter on this endpoint takes UPPERCASE display names with spaces (BIG BASKET, FLIPKART GROCERY, CITY MALL), NOT the lowercase slugs every other endpoint uses. Server requires: Unknown report view: ''
 
 ### sap
 
@@ -291,46 +301,48 @@ SAP HANA read layer: distributors, inventory, sales invoices, stock
 - **`jivo-ecom-pp-cli sap distributor-inventory`** - Distributor inventory
 - **`jivo-ecom-pp-cli sap distributor-invoices`** - Invoices for a distributor by card code
 - **`jivo-ecom-pp-cli sap distributor-orders`** - Orders for a distributor by card code
-- **`jivo-ecom-pp-cli sap distributors`** - List SAP distributors
-- **`jivo-ecom-pp-cli sap inventory-finished-goods`** - Finished-goods inventory
-- **`jivo-ecom-pp-cli sap inventory-overview`** - Inventory overview
+- **`jivo-ecom-pp-cli sap distributors`** - List SAP distributors. Despite the name this is the VENDOR master (OCRD CardType='S') - ad agencies and suppliers, not sales distributors. For distributors use `sap platform-distributors`. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.
+- **`jivo-ecom-pp-cli sap inventory-finished-goods`** - Finished-goods inventory. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.
+- **`jivo-ecom-pp-cli sap inventory-overview`** - Inventory overview. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.
 - **`jivo-ecom-pp-cli sap inventory-warehouse-comparison`** - Inventory comparison across warehouses
-- **`jivo-ecom-pp-cli sap items`** - SAP item master
+- **`jivo-ecom-pp-cli sap items`** - SAP item master. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.
 - **`jivo-ecom-pp-cli sap platform-distributor`** - A platform-distributor mapping by card code
 - **`jivo-ecom-pp-cli sap platform-distributors`** - Distributors mapped to a platform
 - **`jivo-ecom-pp-cli sap platform-sales-invoices`** - Sales invoices for a platform
-- **`jivo-ecom-pp-cli sap sales-analysis`** - Sales analysis over a date range
+- **`jivo-ecom-pp-cli sap sales-analysis`** - Sales analysis over a date range. With source=oil this defaults to cardname 'JIVO MART PVT LTD', i.e. it measures Oil->Mart INTERCOMPANY transfers, which JIVO excludes from sales (correction C-0005). Server requires: `from_date` must be YYYY-MM-DD.
 - **`jivo-ecom-pp-cli sap sales-invoice`** - Get a sales invoice by id
-- **`jivo-ecom-pp-cli sap sales-invoice-lines`** - Line items for a sales invoice by id (note: upstream SAP query may 500)
-- **`jivo-ecom-pp-cli sap sales-invoices`** - List SAP sales invoices
-- **`jivo-ecom-pp-cli sap stock-by-warehouse`** - Stock levels by warehouse
+- **`jivo-ecom-pp-cli sap sales-invoices`** - List SAP sales invoices. Invoice HEADERS only, and the set includes cancelled documents. DocTotal is GST-inclusive. There is no credit-note endpoint here, so JIVO turnover (invoices net of GST minus credit notes, excluding cancelled) is NOT computable from this domain - use SAP directly. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.
+- **`jivo-ecom-pp-cli sap stock-by-warehouse`** - Stock levels by warehouse. Company scope: JIVO MART (JIVO_MART_HANADB), not Oil and not group-wide.
 
 ### shipment
 
-Amazon Shipment Planner (read-only). Requires Shipment Planner access; returns 403 without it.
+Amazon Shipment Planner (read-only). Requires the amazon.shipment_planning.view permission; returns 403 without it.
 
-- **`jivo-ecom-pp-cli shipment all-appointments`** - All shipment appointments
-- **`jivo-ecom-pp-cli shipment appointment-commits`** - Appointment commit records
-- **`jivo-ecom-pp-cli shipment appointment-dates`** - Available appointment dates
+- **`jivo-ecom-pp-cli shipment all-appointments`** - All shipment appointments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment appointment-commits`** - Appointment commit records Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment appointment-dates`** - Available appointment dates Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
 - **`jivo-ecom-pp-cli shipment appointment-extra-pos`** - Extra POs for an appointment
+- **`jivo-ecom-pp-cli shipment appointment-families`** - Appointment families (getFamilies)
 - **`jivo-ecom-pp-cli shipment appointment-items`** - Items for an appointment
-- **`jivo-ecom-pp-cli shipment appointments`** - Shipment appointments
-- **`jivo-ecom-pp-cli shipment asin-catalog`** - ASIN catalog
-- **`jivo-ecom-pp-cli shipment inventory`** - Shipment planning inventory
-- **`jivo-ecom-pp-cli shipment po-items`** - PO items available to ship
-- **`jivo-ecom-pp-cli shipment po-shipment-lookup`** - Lookup shipments for a PO
-- **`jivo-ecom-pp-cli shipment po-short-supply`** - PO short-supply report
-- **`jivo-ecom-pp-cli shipment record`** - Shipment record
+- **`jivo-ecom-pp-cli shipment appointments`** - Shipment appointments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment asin-catalog`** - ASIN catalog Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment fc-switch-group`** - Fc switch group (getSwitchGroup) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment inventory`** - Shipment planning inventory Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment po-appointments`** - Po appointments (getPoAppointments) Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment po-items`** - PO items available to ship Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment po-shipment-lookup`** - Lookup shipments for a PO Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment po-short-supply`** - PO short-supply report Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment record`** - Shipment record Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
 - **`jivo-ecom-pp-cli shipment shipment`** - Get a shipment by id
 - **`jivo-ecom-pp-cli shipment shipment-invoice-file`** - Download an invoice file for a shipment
 - **`jivo-ecom-pp-cli shipment shipment-invoices`** - Invoices for a shipment
 - **`jivo-ecom-pp-cli shipment shipment-po-document`** - A PO document for a shipment
 - **`jivo-ecom-pp-cli shipment shipment-po-documents`** - PO documents for a shipment
-- **`jivo-ecom-pp-cli shipment shipments`** - List shipments
-- **`jivo-ecom-pp-cli shipment shipments-deletion-log`** - Shipment deletion log
-- **`jivo-ecom-pp-cli shipment shipments-doh-auto-fill`** - DOH auto-fill suggestions
-- **`jivo-ecom-pp-cli shipment shipments-pending-approvals`** - Shipments pending approval
-- **`jivo-ecom-pp-cli shipment shipments-stats`** - Shipment stats
+- **`jivo-ecom-pp-cli shipment shipments`** - List shipments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment shipments-deletion-log`** - Shipment deletion log Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment shipments-doh-auto-fill`** - DOH auto-fill suggestions Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment shipments-pending-approvals`** - Shipments pending approval Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
+- **`jivo-ecom-pp-cli shipment shipments-stats`** - Shipment stats Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
 
 ### tables
 
@@ -426,5 +438,3 @@ If you use agentcookie to sync secrets across machines, this CLI auto-adopts age
 ---
 
 Generated by [CLI Printing Press](https://github.com/mvanhorn/cli-printing-press)
-
-Linked: [[CLI/ecom-cli/.printing-press-patches/README|Ecom patch ledger]] · [[CLI/ecom-cli/AGENTS|Agent guide]] · [[CLI/ecom-cli/OPERATOR-GUIDE|Operator guide]] · [[CLI/ecom-cli/SETUP|Setup]] · [[CLI/ecom-cli/SKILL|Agent skill]] · [[CLI/ecom-cli/CHANGELOG|Changelog]] · [[docs/ecom/ECOM_MAP|ECOM_MAP]] · [[docs/READ_ONLY_LAW|READ_ONLY_LAW]] · [[/README|JivoGPT]]

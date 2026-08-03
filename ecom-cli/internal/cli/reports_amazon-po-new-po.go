@@ -12,6 +12,9 @@ import (
 )
 
 func newReportsAmazonPoNewPoCmd(flags *rootFlags) *cobra.Command {
+	var flagOrderDateFrom string
+	var flagOrderDateTo string
+	var flagChannel string
 
 	cmd := &cobra.Command{
 		Use:         "amazon-po-new-po",
@@ -19,6 +22,19 @@ func newReportsAmazonPoNewPoCmd(flags *rootFlags) *cobra.Command {
 		Example:     "  jivo-ecom-pp-cli reports amazon-po-new-po",
 		Annotations: map[string]string{"pp:endpoint": "reports.amazon-po-new-po", "pp:method": "GET", "pp:path": "/api/reports/amazon-po/new-po", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Flags().Changed("channel") {
+				allowedChannel := []string{"CORE", "FRESH", "NOW"}
+				validChannel := false
+				for _, v := range allowedChannel {
+					if flagChannel == v {
+						validChannel = true
+						break
+					}
+				}
+				if !validChannel {
+					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagChannel, "channel", allowedChannel)
+				}
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -26,6 +42,15 @@ func newReportsAmazonPoNewPoCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/reports/amazon-po/new-po"
 			params := map[string]string{}
+			if flagOrderDateFrom != "" {
+				params["order_date_from"] = formatCLIParamValue(flagOrderDateFrom)
+			}
+			if flagOrderDateTo != "" {
+				params["order_date_to"] = formatCLIParamValue(flagOrderDateTo)
+			}
+			if flagChannel != "" {
+				params["channel"] = formatCLIParamValue(flagChannel)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "reports", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +99,9 @@ func newReportsAmazonPoNewPoCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagOrderDateFrom, "order-date-from", "", "date string")
+	cmd.Flags().StringVar(&flagOrderDateTo, "order-date-to", "", "date string")
+	cmd.Flags().StringVar(&flagChannel, "channel", "", " (one of: CORE, FRESH, NOW)")
 
 	return cmd
 }

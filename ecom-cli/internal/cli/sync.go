@@ -741,6 +741,8 @@ func determinePaginationDefaults() paginationDefaults {
 
 func resourceSupportsPagination(resource string) bool {
 	switch resource {
+	case "notifications":
+		return true
 	case "uploads":
 		return true
 	}
@@ -1392,6 +1394,7 @@ func parseSinceDuration(s string) (time.Time, error) {
 
 func defaultSyncResources() []string {
 	return []string{
+		"chatbot",
 		"dashboard",
 		"notifications",
 		"shipment",
@@ -1404,6 +1407,7 @@ func defaultSyncResources() []string {
 // validation to reject misspellings before they become silent no-ops.
 func knownSyncResourceNames() []string {
 	names := []string{
+		"chatbot",
 		"dashboard",
 		"notifications",
 		"shipment",
@@ -1417,9 +1421,10 @@ func knownSyncResourceNames() []string {
 // this preserves the actual endpoint path like "/ISteamApps/GetAppList/v2".
 func syncResourcePath(resource string) (string, error) {
 	paths := map[string]string{
+		"chatbot":       "/api/chatbot/conversations",
 		"dashboard":     "/api/dashboard/realise-waterfall",
 		"notifications": "/api/notifications",
-		"shipment":      "/api/shipment/all-appointments",
+		"shipment":      "/api/shipment/all-appointments/",
 		"uploads":       "/api/uploads",
 	}
 	if p, ok := paths[resource]; ok {

@@ -15,16 +15,16 @@ func newShipmentShipmentsStatsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "shipments-stats",
-		Short:       "Shipment stats",
+		Short:       "Shipment stats Requires additional permission; returns 403 otherwise.",
 		Example:     "  jivo-ecom-pp-cli shipment shipments-stats",
-		Annotations: map[string]string{"pp:endpoint": "shipment.shipments-stats", "pp:method": "GET", "pp:path": "/api/shipment/shipments/stats", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "shipment.shipments-stats", "pp:method": "GET", "pp:path": "/api/shipment/shipments/stats/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/api/shipment/shipments/stats"
+			path := "/api/shipment/shipments/stats/"
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "shipment", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {

@@ -14,8 +14,11 @@ import (
 func newDashboardRealiseTrendCmd(flags *rootFlags) *cobra.Command {
 	var flagPlatform string
 	var flagSource string
-	var flagMonth int
-	var flagYear int
+	var flagMonth string
+	var flagYear string
+	var flagItemHead string
+	var flagCategory string
+	var flagMonths int
 
 	cmd := &cobra.Command{
 		Use:         "realise-trend",
@@ -36,11 +39,20 @@ func newDashboardRealiseTrendCmd(flags *rootFlags) *cobra.Command {
 			if flagSource != "" {
 				params["source"] = formatCLIParamValue(flagSource)
 			}
-			if flagMonth != 0 {
+			if flagMonth != "" {
 				params["month"] = formatCLIParamValue(flagMonth)
 			}
-			if flagYear != 0 {
+			if flagYear != "" {
 				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagItemHead != "" {
+				params["item_head"] = formatCLIParamValue(flagItemHead)
+			}
+			if flagCategory != "" {
+				params["category"] = formatCLIParamValue(flagCategory)
+			}
+			if flagMonths != 0 {
+				params["months"] = formatCLIParamValue(flagMonths)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -92,8 +104,11 @@ func newDashboardRealiseTrendCmd(flags *rootFlags) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&flagPlatform, "platform", "", "Filter to a single platform slug")
 	cmd.Flags().StringVar(&flagSource, "source", "", "Data source")
-	cmd.Flags().IntVar(&flagMonth, "month", 0, "Month number 1-12")
-	cmd.Flags().IntVar(&flagYear, "year", 0, "Four-digit year")
+	cmd.Flags().StringVar(&flagMonth, "month", "", "Month number 1-12")
+	cmd.Flags().StringVar(&flagYear, "year", "", "Four-digit year")
+	cmd.Flags().StringVar(&flagItemHead, "item-head", "", "item-head key; omitted when blank")
+	cmd.Flags().StringVar(&flagCategory, "category", "", "category name; omitted when blank")
+	cmd.Flags().IntVar(&flagMonths, "months", 0, "integer (12 observed)")
 
 	return cmd
 }
