@@ -12,6 +12,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0008]** ecom /api/sap/* (ecom-cli 'sap', MCP ecom_sap) is JIVO_MART only - never Oil, never group. Only 'sales-analysis --source oil' reaches Oil; Beverages is unreachable from ecom.
 - **[C-0009]** ecom 'sap distributors' = VENDOR master (OCRD CardType='S', ad agencies/suppliers). For real distributors use 'sap platform-distributors'. An empty distributor-invoices result on a VENDA code means wrong ledger side, not no business.
 - **[C-0010]** OMS /api/hana/* requires branch=OIL|BEVERAGE (no MART); it selects the SAP company DB. Never quote an OMS HANA figure without its branch, and never join card/item codes across branches.
+- **[C-0011]** OMS reads all 3 SAP companies but raises orders only into Oil and Beverages — Mart order/quotation count from OMS is always zero. Do not read Mart parties appearing in OMS as Mart business.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
