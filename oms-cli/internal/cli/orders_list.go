@@ -86,7 +86,7 @@ func newOrdersListCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagStatus, "status", "", "Filter by status code (e.g. BILLING, AUDITOR_APPROVAL)")
+	cmd.Flags().StringVar(&flagStatus, "status", "", "One of")
 	cmd.Flags().BoolVar(&flagBilling, "billing", false, "Only billing-stage orders")
 	cmd.Flags().BoolVar(&flagApprovalPending, "approval-pending", false, "Only approval-pending orders")
 

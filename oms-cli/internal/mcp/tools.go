@@ -193,40 +193,14 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 				break
 			}
 			data, err = c.Get(ctx, path, params)
-		case "POST":
-			if len(headers) > 0 {
-				if readOnly {
-					data, _, err = c.PostQueryWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				} else {
-					data, _, err = c.PostWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				}
-				break
-			}
-			if readOnly {
-				data, _, err = c.PostQueryWithParams(ctx, path, params, bodyArgs)
-			} else {
-				data, _, err = c.PostWithParams(ctx, path, params, bodyArgs)
-			}
-		case "PUT":
-			if len(headers) > 0 {
-				data, _, err = c.PutWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				break
-			}
-			data, _, err = c.PutWithParams(ctx, path, params, bodyArgs)
-		case "PATCH":
-			if len(headers) > 0 {
-				data, _, err = c.PatchWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				break
-			}
-			data, _, err = c.PatchWithParams(ctx, path, params, bodyArgs)
-		case "DELETE":
-			if len(headers) > 0 {
-				data, _, err = c.DeleteWithParamsAndHeaders(ctx, path, params, headers)
-				break
-			}
-			data, _, err = c.DeleteWithParams(ctx, path, params)
 		default:
-			return mcplib.NewToolResultError("unsupported method: " + method), nil
+			// READ-ONLY LAW (docs/READ_ONLY_LAW.md): this CLI never mutates JIVO
+			// source systems, and the MCP surface never exposes a write at all.
+			// The spec is GET-only; refuse every write method by construction so
+			// that a future spec edit cannot silently open a write path through
+			// an agent-trusted surface. Re-apply after every regen. Patch 0005.
+			return mcplib.NewToolResultError("read-only CLI: method " + method +
+				" is not permitted (GET only, per the JivoGPT READ-ONLY LAW)"), nil
 		}
 
 		if err != nil {
@@ -662,7 +636,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 		"api":         "oms",
 		"description": "JIVO OMS (Order Management System) CLI — READ-ONLY.",
 		"archetype":   "payments",
-		"tool_count":  73,
+		"tool_count":  108,
 		// tool_surface tells agents which surface a capability lives on.
 		"tool_surface": "MCP exposes typed endpoint tools plus a runtime mirror of user-facing CLI commands. Endpoint tools keep typed schemas; command-mirror tools shell out to the companion oms-pp-cli binary.",
 		"auth": map[string]any{
@@ -680,60 +654,70 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 		"resources": []map[string]any{
 			{
 				"name":        "account",
-				"description": "Authenticated account, users, roles, and reference master data (companies, states, categories, main groups)",
-				"endpoints":   []string{"categories", "companies", "main-groups", "party-products", "profile", "roles", "states", "user-page-permissions", "user-parties", "users"},
+				"description": "Authenticated account, users, roles, permissions and reference master data (companies, states, categories, main groups)",
+				"endpoints":   []string{"categories", "companies", "device", "device-analytics", "devices", "main-groups", "my-devices", "party-products", "profile", "roles", "states", "ui-label-config", "ui-labels", "user-page-permissions", "user-parties", "users"},
 				"searchable":  true,
 			},
 			{
 				"name":        "dashboard",
-				"description": "Dashboard KPIs and chart series",
+				"description": "Order dashboard widgets and charts",
 				"endpoints":   []string{"charts", "summary"},
 				"searchable":  true,
 			},
 			{
+				"name":      "einvoice",
+				"endpoints": []string{"companies", "health", "invoices", "logs"},
+			},
+			{
 				"name":        "hana",
-				"description": "Live SAP HANA queries — product stock, sales orders, customers, and the order-creation wizard lookups",
-				"endpoints":   []string{"address", "all-customers", "batch-details", "customer-details", "fg-items", "freight-masters", "inventory-details", "item-price", "next-doc-number", "open-parties", "product-so", "product-stock", "salesperson-details", "so"},
-				"syncable":    true,
+				"description": "Live SAP HANA reads.",
+				"endpoints":   []string{"address", "all-customers", "batch-details", "customer-details", "fg-items", "freight-masters", "inventory-details", "invoice-drafts", "item-price", "next-doc-number", "open-parties", "product-so", "product-stock", "salesperson-details", "series", "so", "state-chain", "vendor-states", "warehouse-details"},
 				"searchable":  true,
 			},
 			{
 				"name":        "invoices",
-				"description": "Sales invoices, invoice review, and SKU master/image data",
-				"endpoints":   []string{"all", "history", "sku", "skus", "skus-pending"},
+				"description": "The invoice review-and-approval queue, credit limits and SKU master data",
+				"endpoints":   []string{"all", "credit-limit-cards", "credit-limit-flow", "crystal", "history", "logs", "sku", "skus", "skus-pending"},
 				"syncable":    true,
 				"searchable":  true,
 			},
 			{
+				"name":        "legal",
+				"description": "FSSAI food-label compliance: pack artwork checked against the statutory declarations for an item",
+				"endpoints":   []string{"item-nutrition", "items", "nutrition", "uoms"},
+				"syncable":    true,
+			},
+			{
 				"name":        "orders",
-				"description": "Orders: list, detail, status lifecycle, tracking, dispatch, approval-flow config",
-				"endpoints":   []string{"addresses", "branch", "by-user", "detail", "dispatches", "flow-config", "list", "logs", "notifications", "parties", "party-flow-config", "party-products", "products", "schemes", "staff-products", "status", "status-tracking", "stock-check"},
+				"description": "Sales orders, quotations, schemes, dispatches, approval flows and the order dashboard",
+				"endpoints":   []string{"addresses", "branch", "by-item", "by-user", "dashboard", "dashboard-charts", "detail", "dispatches", "flow-config", "list", "logs", "notifications", "notifications-history", "parties", "party-flow-config", "party-products", "product-filters", "products", "schemes", "schemes-manage", "staff-products", "status", "status-tracking", "stock-check", "template-orders", "template-parties", "web-push-key"},
 				"syncable":    true,
 				"searchable":  true,
 			},
 			{
 				"name":        "quotations",
-				"description": "Sales quotations and their SAP push status",
+				"description": "Quotation overview and per-order quotation status",
 				"endpoints":   []string{"overview", "status"},
 				"searchable":  true,
 			},
 			{
 				"name":        "sap",
-				"description": "SAP Business One sync — history logs and synced master data (branches, parties, products)",
-				"endpoints":   []string{"addresses", "branches", "logs", "parties", "party-categories", "product-varieties", "products", "quotation-log"},
+				"description": "The SAP Business One mirror inside OMS: synced parties, products, addresses, branches and sync logs.",
+				"endpoints":   []string{"addresses", "branches", "logs", "parties", "party-categories", "product-varieties", "products", "quotation-log", "schedules", "sync-status"},
+				"syncable":    true,
 				"searchable":  true,
 			},
 			{
 				"name":        "tracker",
-				"description": "Invoice-tracker sub-app (access-gated: returns 403 for non-tracker roles). Read endpoints for a tracker-enabled account.",
-				"endpoints":   []string{"admin-lookups", "admin-stages", "admin-tracker-users", "admin-users", "alerts", "all-invoices", "all-invoices-export", "invoice-detail", "invoices", "lookups", "my-queue", "reports", "stage-advanced", "vendors"},
+				"description": "The OMS invoice tracker: invoices moving through stages, queues, vendors, alerts and reports.",
+				"endpoints":   []string{"admin-lookups", "admin-stages", "admin-tracker-users", "admin-users", "alerts", "all-invoices", "all-invoices-export", "invoice-detail", "invoice-jsap", "invoices", "lookups", "my-queue", "reports", "stage-advanced", "vendors"},
 				"syncable":    true,
 				"searchable":  true,
 			},
 		},
 		"query_tips": []string{
-			"Pagination uses cursor-based paging. Pass after parameter for subsequent pages.",
-			"Control page size with the limit parameter (default 100).",
+			"Pagination uses cursor-based paging. Pass page parameter for subsequent pages.",
+			"Control page size with the page_size parameter (default 100).",
 			"Use the sql tool for ad-hoc analysis on synced data. Run sync first to populate the local database.",
 			"Use the search tool for full-text search across all synced resources. Faster than iterating list endpoints.",
 			"Prefer sql/search over repeated API calls when the data is already synced.",

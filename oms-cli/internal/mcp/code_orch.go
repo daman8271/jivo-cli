@@ -113,6 +113,36 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		keywords:       codeOrchKeywords("account", "companies", "List companies (Jivo Mart, Jivo Wellness)", "/api/auth/companies/"),
 	},
 	{
+		ID:             "account.device",
+		Method:         "GET",
+		Path:           "/api/admin/devices/{id}/",
+		Summary:        "Full record for one enrolled device — model, OS, app build",
+		Positional:     []string{"id"},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("account", "device", "Full record for one enrolled device — model, OS, app build", "/api/admin/devices/{id}/"),
+	},
+	{
+		ID:             "account.device-analytics",
+		Method:         "GET",
+		Path:           "/api/admin/devices/analytics/",
+		Summary:        "One-screen rollout health for the OMS apps — how many devices are on each Android/iOS/web build",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "days", WireName: "days"}},
+		keywords:       codeOrchKeywords("account", "device-analytics", "One-screen rollout health for the OMS apps — how many devices are on each Android/iOS/web build", "/api/admin/devices/analytics/"),
+	},
+	{
+		ID:             "account.devices",
+		Method:         "GET",
+		Path:           "/api/admin/devices/",
+		Summary:        "The device registry — every browser and phone that has logged into OMS, who was on it, and when it was last seen.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "search", WireName: "search"}, {PublicName: "status", WireName: "status"}, {PublicName: "build_number", WireName: "build_number"}, {PublicName: "ordering", WireName: "ordering"}, {PublicName: "page", WireName: "page"}, {PublicName: "page_size", WireName: "page_size"}},
+		keywords:       codeOrchKeywords("account", "devices", "The device registry — every browser and phone that has logged into OMS, who was on it, and when it was last seen.", "/api/admin/devices/"),
+	},
+	{
 		ID:             "account.main-groups",
 		Method:         "GET",
 		Path:           "/api/auth/mainGroup/",
@@ -123,13 +153,23 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		keywords:       codeOrchKeywords("account", "main-groups", "List main groups (ROI, GT, MT, BRANCH, ...)", "/api/auth/mainGroup/"),
 	},
 	{
+		ID:             "account.my-devices",
+		Method:         "GET",
+		Path:           "/api/devices/me/",
+		Summary:        "Push-notification devices registered to the calling user.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("account", "my-devices", "Push-notification devices registered to the calling user.", "/api/devices/me/"),
+	},
+	{
 		ID:             "account.party-products",
 		Method:         "GET",
 		Path:           "/api/auth/parties/{card_code}/products/",
 		Summary:        "Products assigned to a party (argument is the SAP card_code, not a numeric id)",
 		Positional:     []string{"card_code"},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "category", WireName: "category"}},
 		keywords:       codeOrchKeywords("account", "party-products", "Products assigned to a party (argument is the SAP card_code, not a numeric id)", "/api/auth/parties/{card_code}/products/"),
 	},
 	{
@@ -163,6 +203,26 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		keywords:       codeOrchKeywords("account", "states", "List states", "/api/auth/states/"),
 	},
 	{
+		ID:             "account.ui-label-config",
+		Method:         "GET",
+		Path:           "/api/ui-config/admin/labels/",
+		Summary:        "The editable definitions behind OMS's renameable field labels — the admin view",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("account", "ui-label-config", "The editable definitions behind OMS's renameable field labels — the admin view", "/api/ui-config/admin/labels/"),
+	},
+	{
+		ID:             "account.ui-labels",
+		Method:         "GET",
+		Path:           "/api/ui-config/labels/",
+		Summary:        "The resolved label map the app renders with — what the UI currently calls each renameable field.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("account", "ui-labels", "The resolved label map the app renders with — what the UI currently calls each renameable field.", "/api/ui-config/labels/"),
+	},
+	{
 		ID:             "account.user-page-permissions",
 		Method:         "GET",
 		Path:           "/api/auth/users/{id}/page-permissions/",
@@ -179,7 +239,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Parties (customers) assigned to a user",
 		Positional:     []string{"id"},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "category", WireName: "category"}},
 		keywords:       codeOrchKeywords("account", "user-parties", "Parties (customers) assigned to a user", "/api/auth/users/{id}/parties/"),
 	},
 	{
@@ -199,7 +259,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Dashboard chart series (visual overview, statewise)",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{{PublicName: "status", WireName: "status"}},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "status", WireName: "status"}, {PublicName: "line_year", WireName: "line_year"}, {PublicName: "year", WireName: "year"}, {PublicName: "month", WireName: "month"}},
 		keywords:       codeOrchKeywords("dashboard", "charts", "Dashboard chart series (visual overview, statewise)", "/api/orders/dashboardW/charts/"),
 	},
 	{
@@ -209,8 +269,48 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Dashboard KPI block (total orders, total sales, completion)",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "year", WireName: "year"}, {PublicName: "month", WireName: "month"}},
 		keywords:       codeOrchKeywords("dashboard", "summary", "Dashboard KPI block (total orders, total sales, completion)", "/api/orders/dashboardW/"),
+	},
+	{
+		ID:             "einvoice.companies",
+		Method:         "GET",
+		Path:           "/api/einvoice/companies/",
+		Summary:        "The JIVO legal entities enrolled for GST e-invoicing, with their GSTINs.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("einvoice", "companies", "The JIVO legal entities enrolled for GST e-invoicing, with their GSTINs.", "/api/einvoice/companies/"),
+	},
+	{
+		ID:             "einvoice.health",
+		Method:         "GET",
+		Path:           "/api/einvoice/health/",
+		Summary:        "Whether the GST e-invoicing integration is up and authenticated.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("einvoice", "health", "Whether the GST e-invoicing integration is up and authenticated.", "/api/einvoice/health/"),
+	},
+	{
+		ID:             "einvoice.invoices",
+		Method:         "GET",
+		Path:           "/api/einvoice/invoices/",
+		Summary:        "Invoices that have been through GST e-invoicing, with their IRN status.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("einvoice", "invoices", "Invoices that have been through GST e-invoicing, with their IRN status.", "/api/einvoice/invoices/"),
+	},
+	{
+		ID:             "einvoice.logs",
+		Method:         "GET",
+		Path:           "/api/einvoice/logs/",
+		Summary:        "IRN generation attempts and their outcomes — the place to look when an e-invoice fails.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("einvoice", "logs", "IRN generation attempts and their outcomes — the place to look when an e-invoice fails.", "/api/einvoice/logs/"),
 	},
 	{
 		ID:             "hana.address",
@@ -219,7 +319,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Addresses for a customer. Requires --card-code.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{{PublicName: "card_code", WireName: "card_code"}},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "card_code", WireName: "card_code"}, {PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "address", "Addresses for a customer. Requires --card-code.", "/api/hana/address/"),
 	},
 	{
@@ -229,7 +329,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "All customers from SAP HANA",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "all-customers", "All customers from SAP HANA", "/api/hana/all-customers/"),
 	},
 	{
@@ -239,7 +339,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Batch details for an item in a warehouse. Requires --item-code and --whs-code.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{{PublicName: "item_code", WireName: "item_code"}, {PublicName: "whs_code", WireName: "whs_code"}},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "item_code", WireName: "item_code"}, {PublicName: "whs_code", WireName: "whs_code"}, {PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "batch-details", "Batch details for an item in a warehouse. Requires --item-code and --whs-code.", "/api/hana/batch-details/"),
 	},
 	{
@@ -249,7 +349,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Customer master detail. Requires --card-code.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{{PublicName: "card_code", WireName: "card_code"}},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "card_code", WireName: "card_code"}, {PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "customer-details", "Customer master detail. Requires --card-code.", "/api/hana/customer-details/"),
 	},
 	{
@@ -259,7 +359,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Finished-goods items",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "fg-items", "Finished-goods items", "/api/hana/fg-items/"),
 	},
 	{
@@ -269,7 +369,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Freight master records",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "freight-masters", "Freight master records", "/api/hana/freight-masters/"),
 	},
 	{
@@ -279,8 +379,18 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Per-warehouse inventory for an item. Requires --item-code.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{{PublicName: "item_code", WireName: "item_code"}},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "item_code", WireName: "item_code"}, {PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "inventory-details", "Per-warehouse inventory for an item. Requires --item-code.", "/api/hana/inventory-details/"),
+	},
+	{
+		ID:             "hana.invoice-drafts",
+		Method:         "GET",
+		Path:           "/api/hana/invoice-drafts/",
+		Summary:        "READ of the A/R invoice drafts sitting in SAP for a branch. This reads drafts; it never creates one.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
+		keywords:       codeOrchKeywords("hana", "invoice-drafts", "READ of the A/R invoice drafts sitting in SAP for a branch. This reads drafts; it never creates one.", "/api/hana/invoice-drafts/"),
 	},
 	{
 		ID:             "hana.item-price",
@@ -289,7 +399,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Price for an item on a price list. Requires --item-code and --price-list.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{{PublicName: "item_code", WireName: "item_code"}, {PublicName: "price_list", WireName: "price_list"}},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "item_code", WireName: "item_code"}, {PublicName: "price_list", WireName: "price_list"}, {PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "item-price", "Price for an item on a price list. Requires --item-code and --price-list.", "/api/hana/item-price/"),
 	},
 	{
@@ -299,7 +409,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Next document number for a document type. Requires --doc-type.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{{PublicName: "doc_type", WireName: "doc_type"}},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "doc_type", WireName: "doc_type"}, {PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "next-doc-number", "Next document number for a document type. Requires --doc-type.", "/api/hana/next-doc-number/"),
 	},
 	{
@@ -309,28 +419,28 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Parties with open transactions",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "open-parties", "Parties with open transactions", "/api/hana/open-parties/"),
 	},
 	{
 		ID:             "hana.product-so",
 		Method:         "GET",
 		Path:           "/api/hana/product-so/",
-		Summary:        "Product sales-order data",
+		Summary:        "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'get_sales_orders_for_product()",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
-		keywords:       codeOrchKeywords("hana", "product-so", "Product sales-order data", "/api/hana/product-so/"),
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}, {PublicName: "item_code", WireName: "item_code"}},
+		keywords:       codeOrchKeywords("hana", "product-so", "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'get_sales_orders_for_product()", "/api/hana/product-so/"),
 	},
 	{
 		ID:             "hana.product-stock",
 		Method:         "GET",
 		Path:           "/api/hana/product-stock/",
-		Summary:        "Live product stock from SAP HANA",
+		Summary:        "BROKEN UPSTREAM (2026-08-04)",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
-		keywords:       codeOrchKeywords("hana", "product-stock", "Live product stock from SAP HANA", "/api/hana/product-stock/"),
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
+		keywords:       codeOrchKeywords("hana", "product-stock", "BROKEN UPSTREAM (2026-08-04)", "/api/hana/product-stock/"),
 	},
 	{
 		ID:             "hana.salesperson-details",
@@ -339,38 +449,118 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Salesperson detail. Requires --slp-code.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{{PublicName: "slp_code", WireName: "slp_code"}},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "slp_code", WireName: "slp_code"}, {PublicName: "branch", WireName: "branch"}},
 		keywords:       codeOrchKeywords("hana", "salesperson-details", "Salesperson detail. Requires --slp-code.", "/api/hana/salesperson-details/"),
+	},
+	{
+		ID:             "hana.series",
+		Method:         "GET",
+		Path:           "/api/hana/series/",
+		Summary:        "SAP document numbering series for a branch — the series a document will draw its number from.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
+		keywords:       codeOrchKeywords("hana", "series", "SAP document numbering series for a branch — the series a document will draw its number from.", "/api/hana/series/"),
 	},
 	{
 		ID:             "hana.so",
 		Method:         "GET",
 		Path:           "/api/hana/so/",
-		Summary:        "Sales orders",
+		Summary:        "Sales orders for a party. Requires --card-code.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
-		keywords:       codeOrchKeywords("hana", "so", "Sales orders", "/api/hana/so/"),
+		QueryParams:    []codeOrchParamBinding{{PublicName: "card_code", WireName: "card_code"}, {PublicName: "branch", WireName: "branch"}},
+		keywords:       codeOrchKeywords("hana", "so", "Sales orders for a party. Requires --card-code.", "/api/hana/so/"),
+	},
+	{
+		ID:             "hana.state-chain",
+		Method:         "GET",
+		Path:           "/api/hana/state-chain/",
+		Summary:        "The state-to-state routing chain used for freight and GST place-of-supply decisions.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
+		keywords:       codeOrchKeywords("hana", "state-chain", "The state-to-state routing chain used for freight and GST place-of-supply decisions.", "/api/hana/state-chain/"),
+	},
+	{
+		ID:             "hana.vendor-states",
+		Method:         "GET",
+		Path:           "/api/hana/vendor-states/",
+		Summary:        "States JIVO's vendors operate in, per branch — used to work out interstate vs intrastate GST.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
+		keywords:       codeOrchKeywords("hana", "vendor-states", "States JIVO's vendors operate in, per branch — used to work out interstate vs intrastate GST.", "/api/hana/vendor-states/"),
+	},
+	{
+		ID:             "hana.warehouse-details",
+		Method:         "GET",
+		Path:           "/api/hana/warehouse-details/",
+		Summary:        "Warehouse master for a branch: codes, names and locations behind every WhsCode you see in stock and batch data.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "branch", WireName: "branch"}},
+		keywords:       codeOrchKeywords("hana", "warehouse-details", "Warehouse master for a branch: codes, names and locations behind every WhsCode you see in stock and batch data.", "/api/hana/warehouse-details/"),
 	},
 	{
 		ID:             "invoices.all",
 		Method:         "GET",
 		Path:           "/api/invoice/all/",
-		Summary:        "Invoice review queue (all invoices). Optionally filter by status.",
+		Summary:        "BROKEN UPSTREAM (2026-08-04): returns HTTP 400 'Warehouse Code is a required parameter' for every parameter name tried",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{{PublicName: "status", WireName: "status"}},
-		keywords:       codeOrchKeywords("invoices", "all", "Invoice review queue (all invoices). Optionally filter by status.", "/api/invoice/all/"),
+		keywords:       codeOrchKeywords("invoices", "all", "BROKEN UPSTREAM (2026-08-04): returns HTTP 400 'Warehouse Code is a required parameter' for every parameter name tried", "/api/invoice/all/"),
+	},
+	{
+		ID:             "invoices.credit-limit-cards",
+		Method:         "GET",
+		Path:           "/api/invoice/credit-limit/cards/",
+		Summary:        "The credit-limit master for every customer account in one SAP company — how much each party currently owes",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "company", WireName: "company"}},
+		keywords:       codeOrchKeywords("invoices", "credit-limit-cards", "The credit-limit master for every customer account in one SAP company — how much each party currently owes", "/api/invoice/credit-limit/cards/"),
+	},
+	{
+		ID:             "invoices.credit-limit-flow",
+		Method:         "GET",
+		Path:           "/api/invoice/credit-limit/flow/",
+		Summary:        "The approval chain for a credit-limit override request raised against one invoice — which named approver sits at which",
+		Positional:     []string{"invoice_id"},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "invoice_id", WireName: "invoice_id"}, {PublicName: "company", WireName: "company"}},
+		keywords:       codeOrchKeywords("invoices", "credit-limit-flow", "The approval chain for a credit-limit override request raised against one invoice — which named approver sits at which", "/api/invoice/credit-limit/flow/"),
+	},
+	{
+		ID:             "invoices.crystal",
+		Method:         "GET",
+		Path:           "/api/invoice/crystal/",
+		Summary:        "The Crystal Reports print payload for one posted invoice, by SAP document number.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "docNum", WireName: "docNum"}},
+		keywords:       codeOrchKeywords("invoices", "crystal", "The Crystal Reports print payload for one posted invoice, by SAP document number.", "/api/invoice/crystal/"),
 	},
 	{
 		ID:             "invoices.history",
 		Method:         "GET",
 		Path:           "/api/invoice/history/{id}/",
-		Summary:        "Status-history timeline for an invoice",
+		Summary:        "Status-history timeline for an invoice (BACKEND ROUTE MISSING — unregistered)",
 		Positional:     []string{"id"},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{},
-		keywords:       codeOrchKeywords("invoices", "history", "Status-history timeline for an invoice", "/api/invoice/history/{id}/"),
+		keywords:       codeOrchKeywords("invoices", "history", "Status-history timeline for an invoice (BACKEND ROUTE MISSING — unregistered)", "/api/invoice/history/{id}/"),
+	},
+	{
+		ID:             "invoices.logs",
+		Method:         "GET",
+		Path:           "/api/invoice/logs/all/",
+		Summary:        "The invoice review-and-approval queue.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "status", WireName: "status"}},
+		keywords:       codeOrchKeywords("invoices", "logs", "The invoice review-and-approval queue.", "/api/invoice/logs/all/"),
 	},
 	{
 		ID:             "invoices.sku",
@@ -396,11 +586,51 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		ID:             "invoices.skus-pending",
 		Method:         "GET",
 		Path:           "/api/sku/pending/",
-		Summary:        "SKUs pending review",
+		Summary:        "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'getFGItems() missing 1 required positional argument",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{},
-		keywords:       codeOrchKeywords("invoices", "skus-pending", "SKUs pending review", "/api/sku/pending/"),
+		keywords:       codeOrchKeywords("invoices", "skus-pending", "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'getFGItems() missing 1 required positional argument", "/api/sku/pending/"),
+	},
+	{
+		ID:             "legal.item-nutrition",
+		Method:         "GET",
+		Path:           "/api/legal/item-nutrition/",
+		Summary:        "The nutritional facts JIVO has declared for one product — the reference values an uploaded label is checked against.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "item_id", WireName: "item_id"}},
+		keywords:       codeOrchKeywords("legal", "item-nutrition", "The nutritional facts JIVO has declared for one product — the reference values an uploaded label is checked against.", "/api/legal/item-nutrition/"),
+	},
+	{
+		ID:             "legal.items",
+		Method:         "GET",
+		Path:           "/api/legal/item/",
+		Summary:        "The food products whose pack labels are checked for FSSAI compliance. One row per product.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("legal", "items", "The food products whose pack labels are checked for FSSAI compliance. One row per product.", "/api/legal/item/"),
+	},
+	{
+		ID:             "legal.nutrition",
+		Method:         "GET",
+		Path:           "/api/legal/nutrition/",
+		Summary:        "The master list of nutrition rows (the nutrient lines that can appear in a nutritional-information table).",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("legal", "nutrition", "The master list of nutrition rows (the nutrient lines that can appear in a nutritional-information table).", "/api/legal/nutrition/"),
+	},
+	{
+		ID:             "legal.uoms",
+		Method:         "GET",
+		Path:           "/api/legal/uom/",
+		Summary:        "The units of measure used when declaring nutritional values on a label (g, kcal, mg …).",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("legal", "uoms", "The units of measure used when declaring nutritional values on a label (g, kcal, mg …).", "/api/legal/uom/"),
 	},
 	{
 		ID:             "orders.addresses",
@@ -423,6 +653,16 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		keywords:       codeOrchKeywords("orders", "branch", "SAP branch / BPL list", "/api/orders/branch/"),
 	},
 	{
+		ID:             "orders.by-item",
+		Method:         "GET",
+		Path:           "/api/orders/orders-by-item/",
+		Summary:        "Every order line for one FG item — who ordered it, how much, and in what state.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "item_code", WireName: "item_code"}},
+		keywords:       codeOrchKeywords("orders", "by-item", "Every order line for one FG item — who ordered it, how much, and in what state.", "/api/orders/orders-by-item/"),
+	},
+	{
 		ID:             "orders.by-user",
 		Method:         "GET",
 		Path:           "/api/orders/ordersbyuser/{user_id}/",
@@ -431,6 +671,26 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{},
 		keywords:       codeOrchKeywords("orders", "by-user", "Orders raised by a specific user (source for View Orders / Order Tracking)", "/api/orders/ordersbyuser/{user_id}/"),
+	},
+	{
+		ID:             "orders.dashboard",
+		Method:         "GET",
+		Path:           "/api/orders/dashboard/",
+		Summary:        "Order dashboard headline counters.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("orders", "dashboard", "Order dashboard headline counters.", "/api/orders/dashboard/"),
+	},
+	{
+		ID:             "orders.dashboard-charts",
+		Method:         "GET",
+		Path:           "/api/orders/dashboard/charts/",
+		Summary:        "Chart series behind the order dashboard. Large — 268 KB in one unpaginated response; use --compact or --csv.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("orders", "dashboard-charts", "Chart series behind the order dashboard. Large — 268 KB in one unpaginated response; use --compact or --csv.", "/api/orders/dashboard/charts/"),
 	},
 	{
 		ID:             "orders.detail",
@@ -459,7 +719,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Global order approval-flow configuration",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "flow_type", WireName: "flow_type"}},
 		keywords:       codeOrchKeywords("orders", "flow-config", "Global order approval-flow configuration", "/api/orders/flow-config/"),
 	},
 	{
@@ -493,6 +753,16 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		keywords:       codeOrchKeywords("orders", "notifications", "Order-status notifications for the current user", "/api/orders/notifications/"),
 	},
 	{
+		ID:             "orders.notifications-history",
+		Method:         "GET",
+		Path:           "/api/orders/notifications/history/",
+		Summary:        "The full notification feed for the current user, paged — including alerts already read",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "limit", WireName: "limit"}, {PublicName: "offset", WireName: "offset"}, {PublicName: "filter", WireName: "filter"}},
+		keywords:       codeOrchKeywords("orders", "notifications-history", "The full notification feed for the current user, paged — including alerts already read", "/api/orders/notifications/history/"),
+	},
+	{
 		ID:             "orders.parties",
 		Method:         "GET",
 		Path:           "/api/orders/parties/",
@@ -523,6 +793,16 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		keywords:       codeOrchKeywords("orders", "party-products", "Products (with rates) assigned to a party, for the order product selector", "/api/orders/party-products/{card_code}/"),
 	},
 	{
+		ID:             "orders.product-filters",
+		Method:         "GET",
+		Path:           "/api/orders/product-filters/",
+		Summary:        "The filter options (brand, variety, pack size) offered by the order product selector.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("orders", "product-filters", "The filter options (brand, variety, pack size) offered by the order product selector.", "/api/orders/product-filters/"),
+	},
+	{
 		ID:             "orders.products",
 		Method:         "GET",
 		Path:           "/api/orders/products/",
@@ -539,8 +819,18 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Sales schemes / promotions",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "state_code", WireName: "state_code"}},
 		keywords:       codeOrchKeywords("orders", "schemes", "Sales schemes / promotions", "/api/orders/schemes/"),
+	},
+	{
+		ID:             "orders.schemes-manage",
+		Method:         "GET",
+		Path:           "/api/orders/schemes/manage/",
+		Summary:        "The full scheme table behind the scheme admin screen — each scheme joined to the SKU it applies to, its pack size",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "state_code", WireName: "state_code"}, {PublicName: "search", WireName: "search"}, {PublicName: "include_inactive", WireName: "include_inactive"}},
+		keywords:       codeOrchKeywords("orders", "schemes-manage", "The full scheme table behind the scheme admin screen — each scheme joined to the SKU it applies to, its pack size", "/api/orders/schemes/manage/"),
 	},
 	{
 		ID:             "orders.staff-products",
@@ -583,14 +873,44 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		keywords:       codeOrchKeywords("orders", "stock-check", "Per-order required-qty vs available-stock (legacy view)", "/api/orders/stock-check/"),
 	},
 	{
-		ID:             "quotations.overview",
+		ID:             "orders.template-orders",
 		Method:         "GET",
-		Path:           "/api/orders/quotation-overview/",
-		Summary:        "All quotations with SAP doc numbers and cancellation state",
+		Path:           "/api/orders/templates/orders/",
+		Summary:        "Previous orders for one party, offered as templates for a new order.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "card_code", WireName: "card_code"}},
+		keywords:       codeOrchKeywords("orders", "template-orders", "Previous orders for one party, offered as templates for a new order.", "/api/orders/templates/orders/"),
+	},
+	{
+		ID:             "orders.template-parties",
+		Method:         "GET",
+		Path:           "/api/orders/templates/parties/",
+		Summary:        "Parties available as an order template — the 'repeat a previous order' picker.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{},
-		keywords:       codeOrchKeywords("quotations", "overview", "All quotations with SAP doc numbers and cancellation state", "/api/orders/quotation-overview/"),
+		keywords:       codeOrchKeywords("orders", "template-parties", "Parties available as an order template — the 'repeat a previous order' picker.", "/api/orders/templates/parties/"),
+	},
+	{
+		ID:             "orders.web-push-key",
+		Method:         "GET",
+		Path:           "/api/orders/web-push/public-key/",
+		Summary:        "The VAPID public key the browser needs to register for OMS push notifications. Infrastructure, not business data.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("orders", "web-push-key", "The VAPID public key the browser needs to register for OMS push notifications. Infrastructure, not business data.", "/api/orders/web-push/public-key/"),
+	},
+	{
+		ID:             "quotations.overview",
+		Method:         "GET",
+		Path:           "/api/orders/quotation-overview/",
+		Summary:        "All quotations with SAP doc numbers and cancellation state The SAP doc numbers here are real: sampled (doc_num",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("quotations", "overview", "All quotations with SAP doc numbers and cancellation state The SAP doc numbers here are real: sampled (doc_num", "/api/orders/quotation-overview/"),
 	},
 	{
 		ID:             "quotations.status",
@@ -683,6 +1003,26 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		keywords:       codeOrchKeywords("sap", "quotation-log", "Per-order SAP quotation push record", "/api/sap/quotation-log/{id}/"),
 	},
 	{
+		ID:             "sap.schedules",
+		Method:         "GET",
+		Path:           "/api/sap/schedules/",
+		Summary:        "Configured SAP sync schedules. Read-only view; the toggle that enables one is a write and is not wrapped.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("sap", "schedules", "Configured SAP sync schedules. Read-only view; the toggle that enables one is a write and is not wrapped.", "/api/sap/schedules/"),
+	},
+	{
+		ID:             "sap.sync-status",
+		Method:         "GET",
+		Path:           "/api/sap/status/",
+		Summary:        "Current state of the SAP mirror sync: what ran, when, and whether it finished.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("sap", "sync-status", "Current state of the SAP mirror sync: what ran, when, and whether it finished.", "/api/sap/status/"),
+	},
+	{
 		ID:             "tracker.admin-lookups",
 		Method:         "GET",
 		Path:           "/api/tracker/admin/lookups/{type}/",
@@ -719,7 +1059,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Tracker admin: users",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "search", WireName: "search"}},
 		keywords:       codeOrchKeywords("tracker", "admin-users", "Tracker admin: users", "/api/tracker/admin/users/"),
 	},
 	{
@@ -761,6 +1101,16 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{},
 		keywords:       codeOrchKeywords("tracker", "invoice-detail", "Single tracker invoice", "/api/tracker/invoices/{id}/"),
+	},
+	{
+		ID:             "tracker.invoice-jsap",
+		Method:         "GET",
+		Path:           "/api/tracker/invoices/{id}/jsap/",
+		Summary:        "Whether this tracker invoice has reached **JSAP** (JIVO's internal ops platform at `103.89.45.",
+		Positional:     []string{"id"},
+		TemplateParams: []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("tracker", "invoice-jsap", "Whether this tracker invoice has reached **JSAP** (JIVO's internal ops platform at `103.89.45.", "/api/tracker/invoices/{id}/jsap/"),
 	},
 	{
 		ID:             "tracker.invoices",
@@ -809,7 +1159,7 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		Summary:        "Advanced stage view",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
-		QueryParams:    []codeOrchParamBinding{},
+		QueryParams:    []codeOrchParamBinding{{PublicName: "stage", WireName: "stage"}},
 		keywords:       codeOrchKeywords("tracker", "stage-advanced", "Advanced stage view", "/api/tracker/stage-advanced/"),
 	},
 	{
@@ -974,12 +1324,8 @@ func handleCodeOrchExecute(ctx context.Context, req mcplib.CallToolRequest) (*mc
 	}
 
 	hdrs := ep.HeaderOverrides
-	writeBody := func() any {
-		if ep.BodyIsArray {
-			return codeOrchArrayBody(params)
-		}
-		return codeOrchWriteBody(params)
-	}
+	// write-body closure removed with the write methods (patch 0005);
+	// codeOrchWriteBody / codeOrchArrayBody stay for their unit test.
 	var data json.RawMessage
 	switch ep.Method {
 	case "GET":
@@ -988,35 +1334,14 @@ func handleCodeOrchExecute(ctx context.Context, req mcplib.CallToolRequest) (*mc
 		} else {
 			data, err = c.Get(ctx, path, query)
 		}
-	case "DELETE":
-		if len(hdrs) > 0 {
-			data, _, err = c.DeleteWithParamsAndHeaders(ctx, path, query, hdrs)
-		} else {
-			data, _, err = c.DeleteWithParams(ctx, path, query)
-		}
-	case "POST":
-		body := writeBody()
-		if len(hdrs) > 0 {
-			data, _, err = c.PostWithHeaders(ctx, path, body, hdrs)
-		} else {
-			data, _, err = c.Post(ctx, path, body)
-		}
-	case "PUT":
-		body := writeBody()
-		if len(hdrs) > 0 {
-			data, _, err = c.PutWithHeaders(ctx, path, body, hdrs)
-		} else {
-			data, _, err = c.Put(ctx, path, body)
-		}
-	case "PATCH":
-		body := writeBody()
-		if len(hdrs) > 0 {
-			data, _, err = c.PatchWithHeaders(ctx, path, body, hdrs)
-		} else {
-			data, _, err = c.Patch(ctx, path, body)
-		}
 	default:
-		return mcplib.NewToolResultError(fmt.Sprintf("unsupported method %q", ep.Method)), nil
+		// READ-ONLY LAW (docs/READ_ONLY_LAW.md): guarding only tools.go would
+		// leave THIS executor as a write bypass - it reaches the same client.
+		// Both paths must be guarded, and a fresh generate restores the write
+		// machinery in both. See patch 0005.
+		return mcplib.NewToolResultError(fmt.Sprintf(
+			"read-only CLI: method %q is not permitted (GET only, per the JivoGPT READ-ONLY LAW)",
+			ep.Method)), nil
 	}
 	if err != nil {
 		return mcplib.NewToolResultError(err.Error()), nil

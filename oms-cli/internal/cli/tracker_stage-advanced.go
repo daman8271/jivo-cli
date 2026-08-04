@@ -12,13 +12,23 @@ import (
 )
 
 func newTrackerStageAdvancedCmd(flags *rootFlags) *cobra.Command {
+	var flagStage string
 
 	cmd := &cobra.Command{
 		Use:         "stage-advanced",
 		Short:       "Advanced stage view",
-		Example:     "  oms-pp-cli tracker stage-advanced",
+		Example:     "  oms-pp-cli tracker stage-advanced --stage example-value",
 		Annotations: map[string]string{"pp:endpoint": "tracker.stage-advanced", "pp:method": "GET", "pp:path": "/api/tracker/stage-advanced/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("stage") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "stage")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -26,6 +36,9 @@ func newTrackerStageAdvancedCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/tracker/stage-advanced/"
 			params := map[string]string{}
+			if flagStage != "" {
+				params["stage"] = formatCLIParamValue(flagStage)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "tracker", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +87,7 @@ func newTrackerStageAdvancedCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStage, "stage", "", "string, required (the SPA never calls it without one). **Enum is")
 
 	return cmd
 }

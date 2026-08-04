@@ -14,11 +14,12 @@ import (
 func newHanaBatchDetailsCmd(flags *rootFlags) *cobra.Command {
 	var flagItemCode string
 	var flagWhsCode string
+	var flagBranch string
 
 	cmd := &cobra.Command{
 		Use:         "batch-details",
 		Short:       "Batch details for an item in a warehouse. Requires --item-code and --whs-code.",
-		Example:     "  oms-pp-cli hana batch-details --item-code example-value --whs-code example-value",
+		Example:     "  oms-pp-cli hana batch-details --item-code example-value --whs-code example-value --branch example-value",
 		Annotations: map[string]string{"pp:endpoint": "hana.batch-details", "pp:method": "GET", "pp:path": "/api/hana/batch-details/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -33,6 +34,9 @@ func newHanaBatchDetailsCmd(flags *rootFlags) *cobra.Command {
 			if !cmd.Flags().Changed("whs-code") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "whs-code")
 			}
+			if !cmd.Flags().Changed("branch") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "branch")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -45,6 +49,9 @@ func newHanaBatchDetailsCmd(flags *rootFlags) *cobra.Command {
 			}
 			if flagWhsCode != "" {
 				params["whs_code"] = formatCLIParamValue(flagWhsCode)
+			}
+			if flagBranch != "" {
+				params["branch"] = formatCLIParamValue(flagBranch)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "hana", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -96,6 +103,7 @@ func newHanaBatchDetailsCmd(flags *rootFlags) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&flagItemCode, "item-code", "", "SAP item code")
 	cmd.Flags().StringVar(&flagWhsCode, "whs-code", "", "Warehouse code")
+	cmd.Flags().StringVar(&flagBranch, "branch", "", "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.")
 
 	return cmd
 }

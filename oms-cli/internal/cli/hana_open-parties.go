@@ -12,13 +12,23 @@ import (
 )
 
 func newHanaOpenPartiesCmd(flags *rootFlags) *cobra.Command {
+	var flagBranch string
 
 	cmd := &cobra.Command{
 		Use:         "open-parties",
 		Short:       "Parties with open transactions",
-		Example:     "  oms-pp-cli hana open-parties",
+		Example:     "  oms-pp-cli hana open-parties --branch example-value",
 		Annotations: map[string]string{"pp:endpoint": "hana.open-parties", "pp:method": "GET", "pp:path": "/api/hana/open-parties/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("branch") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "branch")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -26,6 +36,9 @@ func newHanaOpenPartiesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/hana/open-parties/"
 			params := map[string]string{}
+			if flagBranch != "" {
+				params["branch"] = formatCLIParamValue(flagBranch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "hana", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +87,7 @@ func newHanaOpenPartiesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagBranch, "branch", "", "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.")
 
 	return cmd
 }

@@ -10,7 +10,7 @@ import (
 func newQuotationsCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "quotations",
-		Short:       "Sales quotations and their SAP push status",
+		Short:       "Quotation overview and per-order quotation status",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}

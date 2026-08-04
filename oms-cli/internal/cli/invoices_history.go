@@ -15,7 +15,7 @@ func newInvoicesHistoryCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "history <id>",
-		Short:       "Status-history timeline for an invoice",
+		Short:       "Status-history timeline for an invoice (BACKEND ROUTE MISSING — unregistered)",
 		Example:     "  oms-pp-cli invoices history 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "invoices.history", "pp:method": "GET", "pp:path": "/api/invoice/history/{id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

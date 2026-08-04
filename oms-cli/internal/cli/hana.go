@@ -10,7 +10,7 @@ import (
 func newHanaCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "hana",
-		Short:       "Live SAP HANA queries — product stock, sales orders, customers, and the order-creation wizard lookups",
+		Short:       "Live SAP HANA reads.",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
@@ -22,12 +22,17 @@ func newHanaCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newHanaFgItemsCmd(flags))
 	cmd.AddCommand(newHanaFreightMastersCmd(flags))
 	cmd.AddCommand(newHanaInventoryDetailsCmd(flags))
+	cmd.AddCommand(newHanaInvoiceDraftsCmd(flags))
 	cmd.AddCommand(newHanaItemPriceCmd(flags))
 	cmd.AddCommand(newHanaNextDocNumberCmd(flags))
 	cmd.AddCommand(newHanaOpenPartiesCmd(flags))
 	cmd.AddCommand(newHanaProductSoCmd(flags))
 	cmd.AddCommand(newHanaProductStockCmd(flags))
 	cmd.AddCommand(newHanaSalespersonDetailsCmd(flags))
+	cmd.AddCommand(newHanaSeriesCmd(flags))
 	cmd.AddCommand(newHanaSoCmd(flags))
+	cmd.AddCommand(newHanaStateChainCmd(flags))
+	cmd.AddCommand(newHanaVendorStatesCmd(flags))
+	cmd.AddCommand(newHanaWarehouseDetailsCmd(flags))
 	return cmd
 }

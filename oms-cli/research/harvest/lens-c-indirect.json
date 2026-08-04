@@ -1,0 +1,60 @@
+{
+  "_why": "Lens C — relative API paths that reach the axios instance INDIRECTLY, so neither lens A (first-arg-of-a-verb-call) nor lens B (literal starting with /api/) can see them. Two shapes occur in this bundle: (a) the path is concatenated into a local first, `let i=`/orders/list/`+(r.length?`?${...}`:``), await Y.get(i)`; (b) the path is hoisted into a module constant, `var z7=`/legal/item/`` , and the constant is passed to the client elsewhere. Both are invisible to any anchor that requires the literal to sit syntactically at the call. Found by diffing the shipped spec against the merged A+B inventory: `/api/orders/list` was shipped and working yet 'unharvested', which is the structural tell described in harvest.md — a missing collection root is a symptom of extraction bias, not a quirk. Sweeping the remaining non-/api/ literals for that shape then recovered the legal/* and ui-config/labels family too.",
+  "_method_note": "method is recorded ONLY where the bundle shows it. Unproven resolves to excluded (skill rule 1); the bare live probe in phase 2 is what promotes these to publishable.",
+  "entries": [
+    {
+      "path": "/api/orders/list/",
+      "method": "GET",
+      "params": ["status", "billing", "approval_pending"],
+      "evidence": "async getOrders(e,t,n){let r=[];e!=null&&r.push(`status=${e}`),t&&r.push(`billing=true`),n&&r.push(`approval_pending=true`);let i=`/orders/list/`+(r.length?`?${r.join(`&`)}`:``),a=await Y.get(i)",
+      "offset": 756278,
+      "note": "params are OBSERVED in source, so they are safe to send verbatim (skill rule 1). billing/approval_pending are sent as the bare string 'true'."
+    },
+    {
+      "path": "/api/ui-config/labels/",
+      "method": "GET",
+      "params": [],
+      "evidence": "To=`ui_labels`,Eo=`/ui-config/labels/`,Do=Ao()  — fetched then cached into localStorage under 'ui_labels'",
+      "offset": 276459,
+      "note": "read-only label dictionary for the UI. The admin counterpart /api/ui-config/admin/labels/ is GET+POST and was found by lens A."
+    },
+    {
+      "path": "/api/legal/item/",
+      "method": "GET",
+      "params": [],
+      "evidence": "var z7=`/legal/item/`,B7=`/legal/uom/`,V7=`/legal/nutrition/`,ehe=`/legal/item-nutrition/`",
+      "offset": 1841584
+    },
+    {
+      "path": "/api/legal/uom/",
+      "method": "GET",
+      "params": [],
+      "evidence": "var z7=`/legal/item/`,B7=`/legal/uom/`,V7=`/legal/nutrition/`,ehe=`/legal/item-nutrition/`",
+      "offset": 1841543
+    },
+    {
+      "path": "/api/legal/nutrition/",
+      "method": "GET",
+      "params": [],
+      "evidence": "var z7=`/legal/item/`,B7=`/legal/uom/`,V7=`/legal/nutrition/`,ehe=`/legal/item-nutrition/`",
+      "offset": 1841560
+    },
+    {
+      "path": "/api/legal/item-nutrition/",
+      "method": "GET",
+      "params": [],
+      "evidence": "var z7=`/legal/item/`,B7=`/legal/uom/`,V7=`/legal/nutrition/`,ehe=`/legal/item-nutrition/`",
+      "offset": 1841584
+    },
+    {
+      "path": "/api/auth/refresh/",
+      "method": "POST",
+      "params": [],
+      "excluded": true,
+      "exclusion_reason": "auth mutator — never published as a command, never probed",
+      "evidence": "Ta.post(`${Ea}/auth/refresh/`,{refresh:e},...) -> {access, refresh}. Ea='https://oms.jivo.in/api'. Also listed in the interceptor's no-retry set Oa=[`/auth/login/`,`/auth/refresh/`,`/auth/logout/`].",
+      "offset": 271562,
+      "note": "Recorded because phase 7's MCP token rotator needs the exact contract. The response returns a NEW refresh token as well as a new access token, i.e. refresh rotation is ON — a rotator that keeps reusing the original refresh token will expire in 7 days. This is the disease that killed the OMS connector."
+    }
+  ]
+}

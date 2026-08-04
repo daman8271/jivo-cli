@@ -13,11 +13,12 @@ import (
 
 func newHanaNextDocNumberCmd(flags *rootFlags) *cobra.Command {
 	var flagDocType string
+	var flagBranch string
 
 	cmd := &cobra.Command{
 		Use:         "next-doc-number",
 		Short:       "Next document number for a document type. Requires --doc-type.",
-		Example:     "  oms-pp-cli hana next-doc-number --doc-type example-value",
+		Example:     "  oms-pp-cli hana next-doc-number --doc-type example-value --branch example-value",
 		Annotations: map[string]string{"pp:endpoint": "hana.next-doc-number", "pp:method": "GET", "pp:path": "/api/hana/next-doc-number/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -29,6 +30,9 @@ func newHanaNextDocNumberCmd(flags *rootFlags) *cobra.Command {
 			if !cmd.Flags().Changed("doc-type") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "doc-type")
 			}
+			if !cmd.Flags().Changed("branch") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "branch")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -38,6 +42,9 @@ func newHanaNextDocNumberCmd(flags *rootFlags) *cobra.Command {
 			params := map[string]string{}
 			if flagDocType != "" {
 				params["doc_type"] = formatCLIParamValue(flagDocType)
+			}
+			if flagBranch != "" {
+				params["branch"] = formatCLIParamValue(flagBranch)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "hana", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -88,6 +95,7 @@ func newHanaNextDocNumberCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagDocType, "doc-type", "", "Document type")
+	cmd.Flags().StringVar(&flagBranch, "branch", "", "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.")
 
 	return cmd
 }

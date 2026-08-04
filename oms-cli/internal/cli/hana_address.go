@@ -13,11 +13,12 @@ import (
 
 func newHanaAddressCmd(flags *rootFlags) *cobra.Command {
 	var flagCardCode string
+	var flagBranch string
 
 	cmd := &cobra.Command{
 		Use:         "address",
 		Short:       "Addresses for a customer. Requires --card-code.",
-		Example:     "  oms-pp-cli hana address --card-code example-value",
+		Example:     "  oms-pp-cli hana address --card-code example-value --branch example-value",
 		Annotations: map[string]string{"pp:endpoint": "hana.address", "pp:method": "GET", "pp:path": "/api/hana/address/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -29,6 +30,9 @@ func newHanaAddressCmd(flags *rootFlags) *cobra.Command {
 			if !cmd.Flags().Changed("card-code") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "card-code")
 			}
+			if !cmd.Flags().Changed("branch") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "branch")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -38,6 +42,9 @@ func newHanaAddressCmd(flags *rootFlags) *cobra.Command {
 			params := map[string]string{}
 			if flagCardCode != "" {
 				params["card_code"] = formatCLIParamValue(flagCardCode)
+			}
+			if flagBranch != "" {
+				params["branch"] = formatCLIParamValue(flagBranch)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "hana", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -88,6 +95,7 @@ func newHanaAddressCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagCardCode, "card-code", "", "SAP card code")
+	cmd.Flags().StringVar(&flagBranch, "branch", "", "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.")
 
 	return cmd
 }

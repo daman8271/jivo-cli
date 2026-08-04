@@ -12,6 +12,7 @@ import (
 )
 
 func newOrdersFlowConfigCmd(flags *rootFlags) *cobra.Command {
+	var flagFlowType string
 
 	cmd := &cobra.Command{
 		Use:         "flow-config",
@@ -26,6 +27,9 @@ func newOrdersFlowConfigCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/orders/flow-config/"
 			params := map[string]string{}
+			if flagFlowType != "" {
+				params["flow_type"] = formatCLIParamValue(flagFlowType)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "orders", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newOrdersFlowConfigCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagFlowType, "flow-type", "", "string, optional, query. Enum **`ASM` | `BILLING`**. Source:")
 
 	return cmd
 }

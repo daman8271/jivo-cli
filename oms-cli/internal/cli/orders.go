@@ -10,28 +10,37 @@ import (
 func newOrdersCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "orders",
-		Short:       "Orders: list, detail, status lifecycle, tracking, dispatch, approval-flow config",
+		Short:       "Sales orders, quotations, schemes, dispatches, approval flows and the order dashboard",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
 	cmd.AddCommand(newOrdersAddressesCmd(flags))
 	cmd.AddCommand(newOrdersBranchCmd(flags))
+	cmd.AddCommand(newOrdersByItemCmd(flags))
 	cmd.AddCommand(newOrdersByUserCmd(flags))
+	cmd.AddCommand(newOrdersDashboardCmd(flags))
+	cmd.AddCommand(newOrdersDashboardChartsCmd(flags))
 	cmd.AddCommand(newOrdersDetailCmd(flags))
 	cmd.AddCommand(newOrdersDispatchesCmd(flags))
 	cmd.AddCommand(newOrdersFlowConfigCmd(flags))
 	cmd.AddCommand(newOrdersListCmd(flags))
 	cmd.AddCommand(newOrdersLogsCmd(flags))
 	cmd.AddCommand(newOrdersNotificationsCmd(flags))
+	cmd.AddCommand(newOrdersNotificationsHistoryCmd(flags))
 	cmd.AddCommand(newOrdersPartiesCmd(flags))
 	cmd.AddCommand(newOrdersPartyFlowConfigCmd(flags))
 	cmd.AddCommand(newOrdersPartyProductsCmd(flags))
+	cmd.AddCommand(newOrdersProductFiltersCmd(flags))
 	cmd.AddCommand(newOrdersProductsCmd(flags))
 	cmd.AddCommand(newOrdersSchemesCmd(flags))
+	cmd.AddCommand(newOrdersSchemesManageCmd(flags))
 	cmd.AddCommand(newOrdersStaffProductsCmd(flags))
 	cmd.AddCommand(newOrdersStatusCmd(flags))
 	cmd.AddCommand(newOrdersStatusTrackingCmd(flags))
 	cmd.AddCommand(newOrdersStockCheckCmd(flags))
+	cmd.AddCommand(newOrdersTemplateOrdersCmd(flags))
+	cmd.AddCommand(newOrdersTemplatePartiesCmd(flags))
+	cmd.AddCommand(newOrdersWebPushKeyCmd(flags))
 	return cmd
 }

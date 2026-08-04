@@ -13,6 +13,9 @@ import (
 
 func newDashboardChartsCmd(flags *rootFlags) *cobra.Command {
 	var flagStatus string
+	var flagLineYear int
+	var flagYear int
+	var flagMonth int
 
 	cmd := &cobra.Command{
 		Use:         "charts",
@@ -29,6 +32,15 @@ func newDashboardChartsCmd(flags *rootFlags) *cobra.Command {
 			params := map[string]string{}
 			if flagStatus != "" {
 				params["status"] = formatCLIParamValue(flagStatus)
+			}
+			if flagLineYear != 0 {
+				params["line_year"] = formatCLIParamValue(flagLineYear)
+			}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -79,6 +91,9 @@ func newDashboardChartsCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagStatus, "status", "", "Optional status filter for the series")
+	cmd.Flags().IntVar(&flagLineYear, "line-year", 0, "int, optional, query. Source: app call site")
+	cmd.Flags().IntVar(&flagYear, "year", 0, "int, optional, query. Same source.")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "int, optional, query. Same source; `0` = all months.")
 
 	return cmd
 }

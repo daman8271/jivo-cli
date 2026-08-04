@@ -12,13 +12,23 @@ import (
 )
 
 func newHanaProductStockCmd(flags *rootFlags) *cobra.Command {
+	var flagBranch string
 
 	cmd := &cobra.Command{
 		Use:         "product-stock",
-		Short:       "Live product stock from SAP HANA",
-		Example:     "  oms-pp-cli hana product-stock",
+		Short:       "BROKEN UPSTREAM (2026-08-04)",
+		Example:     "  oms-pp-cli hana product-stock --branch example-value",
 		Annotations: map[string]string{"pp:endpoint": "hana.product-stock", "pp:method": "GET", "pp:path": "/api/hana/product-stock/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// Bare invocation of a command with required input prints help
+			// instead of pflag's terse "required flag not set" error. Optional-
+			// only read commands fall through so a bare call still executes.
+			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
+				return cmd.Help()
+			}
+			if !cmd.Flags().Changed("branch") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "branch")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -26,6 +36,9 @@ func newHanaProductStockCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/hana/product-stock/"
 			params := map[string]string{}
+			if flagBranch != "" {
+				params["branch"] = formatCLIParamValue(flagBranch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "hana", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +87,7 @@ func newHanaProductStockCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagBranch, "branch", "", "SAP company database to read. One of: OIL | BEVERAGE.")
 
 	return cmd
 }

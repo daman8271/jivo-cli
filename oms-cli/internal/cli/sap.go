@@ -10,7 +10,7 @@ import (
 func newSapCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "sap",
-		Short:       "SAP Business One sync — history logs and synced master data (branches, parties, products)",
+		Short:       "The SAP Business One mirror inside OMS: synced parties, products, addresses, branches and sync logs.",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
@@ -23,5 +23,7 @@ func newSapCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newSapProductVarietiesCmd(flags))
 	cmd.AddCommand(newSapProductsCmd(flags))
 	cmd.AddCommand(newSapQuotationLogCmd(flags))
+	cmd.AddCommand(newSapSchedulesCmd(flags))
+	cmd.AddCommand(newSapSyncStatusCmd(flags))
 	return cmd
 }

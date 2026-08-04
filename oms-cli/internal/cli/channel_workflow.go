@@ -55,7 +55,7 @@ and full resync. After archiving, use 'search' for instant full-text search.`,
 			}
 			defer s.Close()
 
-			resources := []string{"hana", "invoices", "orders", "tracker", "tracker-all-invoices-export"}
+			resources := []string{"invoices", "legal", "legal-item", "legal-nutrition", "orders", "orders-branch", "orders-dispatches", "orders-notifications", "orders-parties", "orders-products", "orders-schemes", "orders-staff-products", "orders-status", "orders-stock-check", "orders-templates-parties", "sap", "sap-addresses", "sap-branches", "sap-parties", "sap-products", "tracker", "tracker-admin-stages", "tracker-admin-tracker-users", "tracker-admin-users", "tracker-all-invoices", "tracker-all-invoices-export", "tracker-invoices", "tracker-vendors"}
 			totalSynced := 0
 			syncEventWriter := cmd.OutOrStdout()
 			if flags.asJSON {

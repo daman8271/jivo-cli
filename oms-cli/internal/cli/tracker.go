@@ -10,7 +10,7 @@ import (
 func newTrackerCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "tracker",
-		Short:       "Invoice-tracker sub-app (access-gated: returns 403 for non-tracker roles). Read endpoints for a tracker-enabled account.",
+		Short:       "The OMS invoice tracker: invoices moving through stages, queues, vendors, alerts and reports.",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
@@ -23,6 +23,7 @@ func newTrackerCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newTrackerAllInvoicesCmd(flags))
 	cmd.AddCommand(newTrackerAllInvoicesExportCmd(flags))
 	cmd.AddCommand(newTrackerInvoiceDetailCmd(flags))
+	cmd.AddCommand(newTrackerInvoiceJsapCmd(flags))
 	cmd.AddCommand(newTrackerInvoicesCmd(flags))
 	cmd.AddCommand(newTrackerLookupsCmd(flags))
 	cmd.AddCommand(newTrackerMyQueueCmd(flags))

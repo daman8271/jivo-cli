@@ -1,6 +1,6 @@
 name: oms
-description: "JIVO OMS (Order Management System) CLI — READ-ONLY. Orders, quotations, schemes, approvals, party & product assignments, SAP Business One sync, SAP HANA live stock, invoices/SKU, and the invoice tracker at oms.jivo.in. Every command is a GET; no mutating endpoint is wrapped."
-version: "0.1.0"
+description: "JIVO OMS (Order Management System) CLI — READ-ONLY. Orders, quotations, schemes, approvals, party & product assignments, the SAP Business One mirror, live SAP HANA stock and pricing, the invoice review queue, FSSAI label compliance, and the invoice tracker at oms.jivo.in. Every command is a GET; no mutating endpoint is wrapped. HANA commands require --branch (OIL or BEVERAGE) — it picks the SAP company database."
+version: "0.2.0"
 base_url: "https://oms.jivo.in"
 health_check_path: "/api/auth/profile/"
 
@@ -15,9 +15,10 @@ config:
   format: toml
   path: "~/.config/oms-pp-cli/config.toml"
 
+
 resources:
   account:
-    description: "Authenticated account, users, roles, and reference master data (companies, states, categories, main groups)"
+    description: "Authenticated account, users, roles, permissions and reference master data (companies, states, categories, main groups), plus the device registry and UI label config"
     endpoints:
       profile:
         method: GET
@@ -41,6 +42,9 @@ resources:
             required: true
             positional: true
             description: "User id"
+          - name: category
+            type: string
+            description: "string, optional, query. Enum `OIL` | `BEVERAGES` | `MART`."
         response:
           type: object
       user-page-permissions:
@@ -95,20 +99,87 @@ resources:
             required: true
             positional: true
             description: "SAP party card code, e.g. CUSTA000596"
+          - name: category
+            type: string
+            description: "string, optional, query. Enum `OIL` | `BEVERAGES` | `MART`"
         response:
           type: object
-
+      my-devices:
+        method: GET
+        path: "/api/devices/me/"
+        description: "Push-notification devices registered to the calling user. Returns an empty list if you have never enrolled a browser or handset."
+        response:
+          type: object
+      devices:
+        method: GET
+        path: "/api/admin/devices/"
+        description: "The device registry — every browser and phone that has logged into OMS, who was on it, and when it was last seen. This is how you find out which app build a salesperson is actually running before you believe a bug report from the field."
+        params:
+          - name: search
+            type: string
+            description: "string, optional, query. Free text. Server-side matches user name"
+          - name: status
+            type: string
+            description: "string, optional, query. Enum **`online` | `idle` | `offline` |"
+          - name: build_number
+            type: int
+            description: "int, optional, query. Verified live: `?build_number=3` →"
+          - name: ordering
+            type: string
+            description: "string, optional, query. Django-style; prefix `-` for"
+          - name: page
+            type: int
+            description: "int, optional, query, default 1."
+          - name: page_size
+            type: int
+            description: "int, optional, query, default 25 (`ege=25` in the bundle),"
+        response:
+          type: object
+      device-analytics:
+        method: GET
+        path: "/api/admin/devices/analytics/"
+        description: "One-screen rollout health for the OMS apps — how many devices are on each Android/iOS/web build, and how many have been seen recently. Use it to answer \"has everyone updated?\" before blaming the backend."
+        params:
+          - name: days
+            type: int
+            description: "int, optional, query, **default 14**. Controls only the length of"
+        response:
+          type: object
+      device:
+        method: GET
+        path: "/api/admin/devices/{id}/"
+        description: "Full record for one enrolled device — model, OS, app build, first and last login — for when you need to confirm exactly what a specific user was running."
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "int, required, positional. The registry row id, **not** `device_id`"
+        response:
+          type: object
+      ui-label-config:
+        method: GET
+        path: "/api/ui-config/admin/labels/"
+        description: "The editable definitions behind OMS's renameable field labels — the admin view, with the description and the active flag."
+        response:
+          type: object
+      ui-labels:
+        method: GET
+        path: "/api/ui-config/labels/"
+        description: "The resolved label map the app renders with — what the UI currently calls each renameable field. Useful when a user's screenshot says something your data dictionary doesn't."
+        response:
+          type: object
   orders:
-    description: "Orders: list, detail, status lifecycle, tracking, dispatch, approval-flow config, and the party/product lookups the order screens use"
+    description: "Sales orders, quotations, schemes, dispatches, approval flows and the order dashboard"
     endpoints:
       list:
         method: GET
         path: "/api/orders/list/"
-        description: "All orders (admin-wide). Filter by status/stage."
+        description: "All orders (admin-wide). Filter by status/stage. TRAPS: bare `orders list` is NOT the order book - it returns one slice (263 of 2,163 orders). `status` accepts a comma-separated list and unions them. `billing=true` DISCARDS any `status` you also pass (proven: six query strings, byte-identical bodies). `approval_pending=true` alone is a no-op."
         params:
           - name: status
             type: string
-            description: "Filter by status code (e.g. BILLING, AUDITOR_APPROVAL)"
+            description: "One of: ORDER_CREATED | RATE_APPROVAL | BILLING | NEED_APPROVAL | BILLING_PENDING | APPROVED | REJECTED | BILLING_REJECTED | COMPLETED | AUDITOR_APPROVAL | DRAFT. Filter by status code (e.g. BILLING, AUDITOR_APPROVAL)"
           - name: billing
             type: bool
             description: "Only billing-stage orders"
@@ -116,7 +187,7 @@ resources:
             type: bool
             description: "Only approval-pending orders"
         response:
-          type: object
+          type: array
       by-user:
         method: GET
         path: "/api/orders/ordersbyuser/{user_id}/"
@@ -128,7 +199,7 @@ resources:
             positional: true
             description: "User id"
         response:
-          type: object
+          type: array
       detail:
         method: GET
         path: "/api/orders/orderdetailsbyid/{id}/"
@@ -152,13 +223,13 @@ resources:
             positional: true
             description: "Order id"
         response:
-          type: object
+          type: array
       status:
         method: GET
         path: "/api/orders/status/"
         description: "Order status master (id -> name)"
         response:
-          type: object
+          type: array
       status-tracking:
         method: GET
         path: "/api/orders/status-tracking/"
@@ -168,27 +239,26 @@ resources:
             type: string
             required: true
             description: "Approval stage"
-            enum: [auditor, billing, rate_approver]
         response:
-          type: object
+          type: array
       stock-check:
         method: GET
         path: "/api/orders/stock-check/"
         description: "Per-order required-qty vs available-stock (legacy view)"
         response:
-          type: object
+          type: array
       dispatches:
         method: GET
         path: "/api/orders/dispatches/"
         description: "Dispatch-from locations"
         response:
-          type: object
+          type: array
       notifications:
         method: GET
         path: "/api/orders/notifications/"
         description: "Order-status notifications for the current user"
         response:
-          type: object
+          type: array
       addresses:
         method: GET
         path: "/api/orders/addresses/"
@@ -208,25 +278,25 @@ resources:
         path: "/api/orders/branch/"
         description: "SAP branch / BPL list"
         response:
-          type: object
+          type: array
       parties:
         method: GET
         path: "/api/orders/parties/"
         description: "Assigned-party dropdown (card_code -> card_name) for the current user"
         response:
-          type: object
+          type: array
       products:
         method: GET
         path: "/api/orders/products/"
         description: "Global product list"
         response:
-          type: object
+          type: array
       staff-products:
         method: GET
         path: "/api/orders/staff-products/"
         description: "Staff-assigned products"
         response:
-          type: object
+          type: array
       party-products:
         method: GET
         path: "/api/orders/party-products/{card_code}/"
@@ -238,17 +308,25 @@ resources:
             positional: true
             description: "SAP party card code"
         response:
-          type: object
+          type: array
       schemes:
         method: GET
         path: "/api/orders/schemes/"
         description: "Sales schemes / promotions"
+        params:
+          - name: state_code
+            type: string
+            description: "string, optional, query. **Not in the shipped spec.** Source:"
         response:
-          type: object
+          type: array
       flow-config:
         method: GET
         path: "/api/orders/flow-config/"
         description: "Global order approval-flow configuration"
+        params:
+          - name: flow_type
+            type: string
+            description: "string, optional, query. Enum **`ASM` | `BILLING`**. Source:"
         response:
           type: object
       party-flow-config:
@@ -257,14 +335,97 @@ resources:
         description: "Per-party approval-flow configuration"
         response:
           type: object
-
+      dashboard:
+        method: GET
+        path: "/api/orders/dashboard/"
+        description: "Order dashboard headline counters. Note this is a DIFFERENT endpoint from the shipped `orders dashboardW`, which the web app uses; both are live."
+        response:
+          type: object
+      dashboard-charts:
+        method: GET
+        path: "/api/orders/dashboard/charts/"
+        description: "Chart series behind the order dashboard. Large — 268 KB in one unpaginated response; use --compact or --csv."
+        response:
+          type: object
+      product-filters:
+        method: GET
+        path: "/api/orders/product-filters/"
+        description: "The filter options (brand, variety, pack size) offered by the order product selector."
+        response:
+          type: object
+      template-parties:
+        method: GET
+        path: "/api/orders/templates/parties/"
+        description: "Parties available as an order template — the 'repeat a previous order' picker. Empty for a user with no assigned parties."
+        response:
+          type: array
+      template-orders:
+        method: GET
+        path: "/api/orders/templates/orders/"
+        description: "Previous orders for one party, offered as templates for a new order."
+        params:
+          - name: card_code
+            type: string
+            required: true
+            description: "SAP party card code. Server-named requirement; values from `sap parties`."
+        response:
+          type: object
+      by-item:
+        method: GET
+        path: "/api/orders/orders-by-item/"
+        description: "Every order line for one FG item — who ordered it, how much, and in what state."
+        params:
+          - name: item_code
+            type: string
+            required: true
+            description: "SAP item code. Server-named requirement; values from `hana fg-items --branch OIL`."
+        response:
+          type: object
+      notifications-history:
+        method: GET
+        path: "/api/orders/notifications/history/"
+        description: "The full notification feed for the current user, paged — including alerts already read, which the live `orders notifications` call drops."
+        params:
+          - name: limit
+            type: int
+            description: "int, optional, query. Source: app call site"
+          - name: offset
+            type: int
+            description: "int, optional, query. Same source; the app pages by"
+          - name: filter
+            type: string
+            description: "string, optional, query. Enum **`all` | `unread`**. Source: the"
+        response:
+          type: object
+      schemes-manage:
+        method: GET
+        path: "/api/orders/schemes/manage/"
+        description: "The full scheme table behind the scheme admin screen — each scheme joined to the SKU it applies to, its pack size, its state, and whether it is switched on."
+        params:
+          - name: state_code
+            type: string
+            description: "string, optional, query. Source: app call site"
+          - name: search
+            type: string
+            description: "string, optional, query. Same source."
+          - name: include_inactive
+            type: string
+            description: "string `\"true\"`, optional, query. Same source; the app"
+        response:
+          type: object
+      web-push-key:
+        method: GET
+        path: "/api/orders/web-push/public-key/"
+        description: "The VAPID public key the browser needs to register for OMS push notifications. Infrastructure, not business data."
+        response:
+          type: object
   quotations:
-    description: "Sales quotations and their SAP push status"
+    description: "Quotation overview and per-order quotation status"
     endpoints:
       overview:
         method: GET
         path: "/api/orders/quotation-overview/"
-        description: "All quotations with SAP doc numbers and cancellation state"
+        description: "All quotations with SAP doc numbers and cancellation state The SAP doc numbers here are real: sampled (doc_num, doc_entry) pairs resolve exactly to SAP OQUT quotations. Note doc_num is NOT unique across companies - the same number exists in Oil and Beverages, so always pair it with the branch."
         response:
           type: object
       status:
@@ -277,14 +438,20 @@ resources:
             description: "Comma-separated order ids, e.g. 1,2,3"
         response:
           type: object
-
   dashboard:
-    description: "Dashboard KPIs and chart series"
+    description: "Order dashboard widgets and charts"
     endpoints:
       summary:
         method: GET
         path: "/api/orders/dashboardW/"
         description: "Dashboard KPI block (total orders, total sales, completion)"
+        params:
+          - name: year
+            type: int
+            description: "int, optional, query. Source: app call site"
+          - name: month
+            type: int
+            description: "int, optional, query. Source: same call site. `0` = all months"
         response:
           type: object
       charts:
@@ -295,30 +462,38 @@ resources:
           - name: status
             type: string
             description: "Optional status filter for the series"
+          - name: line_year
+            type: int
+            description: "int, optional, query. Source: app call site"
+          - name: year
+            type: int
+            description: "int, optional, query. Same source."
+          - name: month
+            type: int
+            description: "int, optional, query. Same source; `0` = all months."
         response:
           type: object
-
   sap:
-    description: "SAP Business One sync — history logs and synced master data (branches, parties, products)"
+    description: "The SAP Business One mirror inside OMS: synced parties, products, addresses, branches and sync logs. Covers all three SAP companies"
     endpoints:
       logs:
         method: GET
         path: "/api/sap/logs/"
         description: "SAP sync history (sync_type, status, records processed/created/updated, duration)"
         response:
-          type: object
+          type: array
       branches:
         method: GET
         path: "/api/sap/branches/"
         description: "SAP branches"
         response:
-          type: object
+          type: array
       parties:
         method: GET
         path: "/api/sap/parties/"
         description: "SAP parties (business partners)"
         response:
-          type: object
+          type: array
       party-categories:
         method: GET
         path: "/api/sap/parties/category/"
@@ -334,7 +509,7 @@ resources:
         path: "/api/sap/products/"
         description: "SAP products"
         response:
-          type: object
+          type: array
       product-varieties:
         method: GET
         path: "/api/sap/product-varieties/"
@@ -346,7 +521,7 @@ resources:
         path: "/api/sap/addresses/"
         description: "SAP addresses"
         response:
-          type: object
+          type: array
       quotation-log:
         method: GET
         path: "/api/sap/quotation-log/{id}/"
@@ -359,21 +534,41 @@ resources:
             description: "Order id"
         response:
           type: object
-
+      sync-status:
+        method: GET
+        path: "/api/sap/status/"
+        description: "Current state of the SAP mirror sync: what ran, when, and whether it finished."
+        response:
+          type: object
+      schedules:
+        method: GET
+        path: "/api/sap/schedules/"
+        description: "Configured SAP sync schedules. Read-only view; the toggle that enables one is a write and is not wrapped."
+        response:
+          type: object
   hana:
-    description: "Live SAP HANA queries — product stock, sales orders, customers, and the order-creation wizard lookups"
+    description: "Live SAP HANA reads. EVERY command needs --branch (OIL or BEVERAGE) - it selects the SAP company database and the answer is meaningless without it"
     endpoints:
       product-stock:
         method: GET
         path: "/api/hana/product-stock/"
-        description: "Live product stock from SAP HANA"
+        description: "BROKEN UPSTREAM (2026-08-04): the OMS backend raises \"name 'unique_schemas' is not defined\" and returns HTTP 502 on every call, for both branches. Reported to the OMS team. | Live product stock from SAP HANA"
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "SAP company database to read. One of: OIL | BEVERAGE. Required by the server on every hana endpoint; the figures differ per branch, so an answer without it is meaningless."
         response:
           type: object
       product-so:
         method: GET
         path: "/api/hana/product-so/"
-        description: "Product sales-order data for an item. Requires --item-code."
+        description: "BROKEN UPSTREAM (2026-08-04): the OMS backend raises \"get_sales_orders_for_product() takes 1 positional argument but 2 were given\" and returns HTTP 500 on every call. Reported to the OMS team. | Product sales-order data for an item. Requires --item-code."
         params:
+          - name: branch
+            type: string
+            required: true
+            description: "SAP company database to read. One of: OIL | BEVERAGE. Required by the server on every hana endpoint; the figures differ per branch, so an answer without it is meaningless."
           - name: item_code
             type: string
             required: true
@@ -389,32 +584,56 @@ resources:
             type: string
             required: true
             description: "SAP party card code"
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       open-parties:
         method: GET
         path: "/api/hana/open-parties/"
         description: "Parties with open transactions"
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       all-customers:
         method: GET
         path: "/api/hana/all-customers/"
         description: "All customers from SAP HANA"
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       fg-items:
         method: GET
         path: "/api/hana/fg-items/"
         description: "Finished-goods items"
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       freight-masters:
         method: GET
         path: "/api/hana/freight-masters/"
         description: "Freight master records"
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       inventory-details:
         method: GET
         path: "/api/hana/inventory-details/"
@@ -424,8 +643,12 @@ resources:
             type: string
             required: true
             description: "SAP item code"
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       batch-details:
         method: GET
         path: "/api/hana/batch-details/"
@@ -439,8 +662,12 @@ resources:
             type: string
             required: true
             description: "Warehouse code"
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       customer-details:
         method: GET
         path: "/api/hana/customer-details/"
@@ -450,8 +677,12 @@ resources:
             type: string
             required: true
             description: "SAP card code"
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       address:
         method: GET
         path: "/api/hana/address/"
@@ -461,8 +692,12 @@ resources:
             type: string
             required: true
             description: "SAP card code"
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       item-price:
         method: GET
         path: "/api/hana/item-price/"
@@ -476,8 +711,12 @@ resources:
             type: string
             required: true
             description: "Price list id"
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       next-doc-number:
         method: GET
         path: "/api/hana/next-doc-number/"
@@ -487,8 +726,12 @@ resources:
             type: string
             required: true
             description: "Document type"
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
+          type: array
       salesperson-details:
         method: GET
         path: "/api/hana/salesperson-details/"
@@ -498,25 +741,80 @@ resources:
             type: string
             required: true
             description: "Salesperson code"
+          - name: branch
+            type: string
+            required: true
+            description: "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400."
         response:
-          type: object
-
+          type: array
+      series:
+        method: GET
+        path: "/api/hana/series/"
+        description: "SAP document numbering series for a branch — the series a document will draw its number from."
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "SAP company database to read. One of: OIL | BEVERAGE. Required by the server on every hana endpoint; the figures differ per branch, so an answer without it is meaningless."
+        response:
+          type: array
+      warehouse-details:
+        method: GET
+        path: "/api/hana/warehouse-details/"
+        description: "Warehouse master for a branch: codes, names and locations behind every WhsCode you see in stock and batch data."
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "SAP company database to read. One of: OIL | BEVERAGE. Required by the server on every hana endpoint; the figures differ per branch, so an answer without it is meaningless."
+        response:
+          type: array
+      vendor-states:
+        method: GET
+        path: "/api/hana/vendor-states/"
+        description: "States JIVO's vendors operate in, per branch — used to work out interstate vs intrastate GST."
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "SAP company database to read. One of: OIL | BEVERAGE. Required by the server on every hana endpoint; the figures differ per branch, so an answer without it is meaningless."
+        response:
+          type: array
+      state-chain:
+        method: GET
+        path: "/api/hana/state-chain/"
+        description: "The state-to-state routing chain used for freight and GST place-of-supply decisions."
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "SAP company database to read. One of: OIL | BEVERAGE. Required by the server on every hana endpoint; the figures differ per branch, so an answer without it is meaningless."
+        response:
+          type: array
+      invoice-drafts:
+        method: GET
+        path: "/api/hana/invoice-drafts/"
+        description: "READ of the A/R invoice drafts sitting in SAP for a branch. This reads drafts; it never creates one."
+        params:
+          - name: branch
+            type: string
+            required: true
+            description: "SAP company database to read. One of: OIL | BEVERAGE. Required by the server on every hana endpoint; the figures differ per branch, so an answer without it is meaningless."
+        response:
+          type: array
   invoices:
-    description: "Sales invoices, invoice review, and SKU master/image data"
+    description: "The invoice review-and-approval queue, credit limits and SKU master data"
     endpoints:
       all:
         method: GET
         path: "/api/invoice/all/"
-        description: "Invoice review queue (all invoices). Optionally filter by status."
+        description: "BROKEN UPSTREAM (2026-08-04): returns HTTP 400 \"Warehouse Code is a required parameter\" for every parameter name tried, and the OMS web app never calls this route. Use `invoices logs` instead. Reported to the OMS team. | Invoice review queue (all invoices). Optionally filter by status."
         params:
           - name: status
             type: string
             description: "Status filter"
         response:
           type: object
-      # NOTE (Phase-3 verify 2026-07-19): the live backend has NO /api/invoice/history/{id}/
-      # route (only log/create, all, refLogs exist) — deployed API is out of sync with the
-      # SPA bundle. This command is unregistered in the CLI until the backend confirms the route.
       history:
         method: GET
         path: "/api/invoice/history/{id}/"
@@ -528,17 +826,17 @@ resources:
             positional: true
             description: "Invoice id"
         response:
-          type: object
+          type: array
       skus:
         method: GET
         path: "/api/sku/all/"
         description: "All SKUs"
         response:
-          type: object
+          type: array
       skus-pending:
         method: GET
         path: "/api/sku/pending/"
-        description: "SKUs pending review"
+        description: "BROKEN UPSTREAM (2026-08-04): the OMS backend raises \"getFGItems() missing 1 required positional argument: 'branch'\" and returns HTTP 500 on every call. Reported to the OMS team. | SKUs pending review"
         response:
           type: object
       sku:
@@ -553,9 +851,54 @@ resources:
             description: "SKU item code"
         response:
           type: object
-
+      crystal:
+        method: GET
+        path: "/api/invoice/crystal/"
+        description: "The Crystal Reports print payload for one posted invoice, by SAP document number."
+        params:
+          - name: docNum
+            type: string
+            required: true
+            description: "SAP document number. Server-named requirement; values from `invoices logs` (sap_doc_num)."
+        response:
+          type: object
+      logs:
+        method: GET
+        path: "/api/invoice/logs/all/"
+        description: "The invoice review-and-approval queue. One row per invoice a salesperson has submitted out of a sales order, carrying the full SAP B1 document payload, the finished-goods stock position at the time of submission, and where it currently sits between \"submitted\" and \"posted into SAP\"."
+        params:
+          - name: status
+            type: string
+            description: "string, optional, not positional."
+        response:
+          type: array
+      credit-limit-cards:
+        method: GET
+        path: "/api/invoice/credit-limit/cards/"
+        description: "The credit-limit master for every customer account in one SAP company — how much each party currently owes, the credit line they are allowed, and the debt line. This is what the reviewer looks at before releasing an invoice for a party who is close to their limit."
+        params:
+          - name: company
+            type: int
+            description: "string/int, optional (defaults to `1`), not positional."
+        response:
+          type: object
+      credit-limit-flow:
+        method: GET
+        path: "/api/invoice/credit-limit/flow/"
+        description: "The approval chain for a credit-limit override request raised against one invoice — which named approver sits at which stage, in what order, and whether they approved, rejected or have not acted."
+        params:
+          - name: invoice_id
+            type: int
+            required: true
+            positional: true
+            description: "int, **required**, positional. Server's own words:"
+          - name: company
+            type: string
+            description: "optional, values `1`/`2` from `S5(branch)`; the app sends it"
+        response:
+          type: object
   tracker:
-    description: "Invoice-tracker sub-app (access-gated: returns 403 for non-tracker roles). Read endpoints for a tracker-enabled account."
+    description: "The OMS invoice tracker: invoices moving through stages, queues, vendors, alerts and reports. Needs a tracker grant separate from your app role - a plain admin gets HTTP 403"
     endpoints:
       my-queue:
         method: GET
@@ -568,7 +911,7 @@ resources:
         path: "/api/tracker/invoices/"
         description: "Tracker invoices"
         response:
-          type: object
+          type: array
       invoice-detail:
         method: GET
         path: "/api/tracker/invoices/{id}/"
@@ -586,7 +929,7 @@ resources:
         path: "/api/tracker/all-invoices/"
         description: "All tracker invoices"
         response:
-          type: object
+          type: array
       all-invoices-export:
         method: GET
         path: "/api/tracker/all-invoices/export/"
@@ -598,7 +941,7 @@ resources:
         path: "/api/tracker/alerts/"
         description: "Tracker alerts"
         response:
-          type: object
+          type: array
       reports:
         method: GET
         path: "/api/tracker/reports/"
@@ -610,7 +953,7 @@ resources:
         path: "/api/tracker/vendors/"
         description: "Tracker vendors"
         response:
-          type: object
+          type: array
       lookups:
         method: GET
         path: "/api/tracker/lookups/"
@@ -621,26 +964,35 @@ resources:
         method: GET
         path: "/api/tracker/stage-advanced/"
         description: "Advanced stage view"
+        params:
+          - name: stage
+            type: string
+            required: true
+            description: "string, required (the SPA never calls it without one). **Enum is"
         response:
-          type: object
+          type: array
       admin-stages:
         method: GET
         path: "/api/tracker/admin/stages/"
         description: "Tracker admin: stage definitions"
         response:
-          type: object
+          type: array
       admin-users:
         method: GET
         path: "/api/tracker/admin/users/"
         description: "Tracker admin: users"
+        params:
+          - name: search
+            type: string
+            description: "string, optional. Sourced from the call site"
         response:
-          type: object
+          type: array
       admin-tracker-users:
         method: GET
         path: "/api/tracker/admin/tracker-users/"
         description: "Tracker admin: tracker-role users"
         response:
-          type: object
+          type: array
       admin-lookups:
         method: GET
         path: "/api/tracker/admin/lookups/{type}/"
@@ -651,5 +1003,74 @@ resources:
             required: true
             positional: true
             description: "Lookup type"
+        response:
+          type: array
+      invoice-jsap:
+        method: GET
+        path: "/api/tracker/invoices/{id}/jsap/"
+        description: "Whether this tracker invoice has reached **JSAP** (JIVO's internal ops platform at `103.89.45.75:5001`, the system `jsap-cli` talks to) and what JSAP's approvers did with it — approved, rejected, or still sitting there. Answers \"the invoice is stuck at JSAP Approval, has JSAP actually seen it?\""
+        params:
+          - name: id
+            type: int
+            required: true
+            positional: true
+            description: "id path parameter"
+        response:
+          type: object
+  einvoice:
+    endpoints:
+      health:
+        method: GET
+        path: "/api/einvoice/health/"
+        description: "Whether the GST e-invoicing integration is up and authenticated."
+        response:
+          type: object
+      companies:
+        method: GET
+        path: "/api/einvoice/companies/"
+        description: "The JIVO legal entities enrolled for GST e-invoicing, with their GSTINs."
+        response:
+          type: object
+      invoices:
+        method: GET
+        path: "/api/einvoice/invoices/"
+        description: "Invoices that have been through GST e-invoicing, with their IRN status."
+        response:
+          type: object
+      logs:
+        method: GET
+        path: "/api/einvoice/logs/"
+        description: "IRN generation attempts and their outcomes — the place to look when an e-invoice fails."
+        response:
+          type: object
+  legal:
+    description: "FSSAI food-label compliance: pack artwork checked against the statutory declarations for an item"
+    endpoints:
+      items:
+        method: GET
+        path: "/api/legal/item/"
+        description: "The food products whose pack labels are checked for FSSAI compliance. One row per product."
+        response:
+          type: array
+      uoms:
+        method: GET
+        path: "/api/legal/uom/"
+        description: "The units of measure used when declaring nutritional values on a label (g, kcal, mg …)."
+        response:
+          type: array
+      nutrition:
+        method: GET
+        path: "/api/legal/nutrition/"
+        description: "The master list of nutrition rows (the nutrient lines that can appear in a nutritional-information table)."
+        response:
+          type: array
+      item-nutrition:
+        method: GET
+        path: "/api/legal/item-nutrition/"
+        description: "The nutritional facts JIVO has declared for one product — the reference values an uploaded label is checked against."
+        params:
+          - name: item_id
+            type: int
+            description: "int, optional in practice, not positional. Value source: the"
         response:
           type: object

@@ -12,6 +12,7 @@ import (
 )
 
 func newOrdersSchemesCmd(flags *rootFlags) *cobra.Command {
+	var flagStateCode string
 
 	cmd := &cobra.Command{
 		Use:         "schemes",
@@ -26,6 +27,9 @@ func newOrdersSchemesCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/orders/schemes/"
 			params := map[string]string{}
+			if flagStateCode != "" {
+				params["state_code"] = formatCLIParamValue(flagStateCode)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "orders", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newOrdersSchemesCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagStateCode, "state-code", "", "string, optional, query. **Not in the shipped spec.** Source:")
 
 	return cmd
 }

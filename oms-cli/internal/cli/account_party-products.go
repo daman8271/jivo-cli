@@ -12,6 +12,7 @@ import (
 )
 
 func newAccountPartyProductsCmd(flags *rootFlags) *cobra.Command {
+	var flagCategory string
 
 	cmd := &cobra.Command{
 		Use:         "party-products <card_code>",
@@ -30,6 +31,9 @@ func newAccountPartyProductsCmd(flags *rootFlags) *cobra.Command {
 			path := "/api/auth/parties/{card_code}/products/"
 			path = replacePathParam(path, "card_code", args[0])
 			params := map[string]string{}
+			if flagCategory != "" {
+				params["category"] = formatCLIParamValue(flagCategory)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "account", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -78,6 +82,7 @@ func newAccountPartyProductsCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagCategory, "category", "", "string, optional, query. Enum `OIL` | `BEVERAGES` | `MART`")
 
 	return cmd
 }

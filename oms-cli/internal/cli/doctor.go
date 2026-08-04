@@ -64,79 +64,6 @@ func looksLikeDoctorInterstitial(body []byte) string {
 	return ""
 }
 
-// suggestReadCommand walks the Cobra tree to find an endpoint-mirror command
-// an operator can run to confirm credentials work end-to-end. Picks the
-// first leaf that (a) carries the `pp:endpoint` annotation, so it actually
-// dials the API rather than reading a local file like `feedback list` or
-// `profile list`; (b) has a list/get verb; and (c) takes no positional
-// arguments, so the suggestion is copy-paste runnable. Returns the dotted
-// command path (e.g. "issues list") or "" when no such command exists —
-// common in mutation-only CLIs and in CLIs where every read command has
-// required positional arguments.
-func suggestReadCommand(root *cobra.Command) string {
-	if root == nil {
-		return ""
-	}
-	var found string
-	var walk func(*cobra.Command, []string)
-	walk = func(cmd *cobra.Command, path []string) {
-		if found != "" {
-			return
-		}
-		for _, child := range cmd.Commands() {
-			childPath := append(append([]string{}, path...), child.Name())
-			if isSuggestableReadLeaf(child) {
-				found = strings.Join(childPath, " ")
-				return
-			}
-			// Recurse even into Hidden parents: printed CLIs mark raw
-			// resource parents Hidden to keep --help curated, but their
-			// endpoint leaves remain runnable (`<cli> projects list`
-			// works). Skipping hidden subtrees would make this return ""
-			// in nearly every CLI. isSuggestableReadLeaf still rejects a
-			// leaf that is itself Hidden.
-			walk(child, childPath)
-			if found != "" {
-				return
-			}
-		}
-	}
-	walk(root, nil)
-	return found
-}
-
-func isSuggestableReadLeaf(cmd *cobra.Command) bool {
-	if cmd == nil || cmd.Hidden || cmd.HasSubCommands() || !cmd.Runnable() {
-		return false
-	}
-	// Only endpoint-mirror commands count; framework commands like
-	// `feedback list` and `profile list` read local files and would
-	// recreate the false-confidence failure mode the suggestion is
-	// supposed to avoid.
-	if cmd.Annotations["pp:endpoint"] == "" {
-		return false
-	}
-	verb := strings.ToLower(strings.SplitN(cmd.Use, " ", 2)[0])
-	if verb != "list" && verb != "get" {
-		return false
-	}
-	// Endpoint commands with positional path params advertise them in
-	// Use as `<id>` (required) or `[id]` (optional). The runtime body
-	// rejects empty args by printing help, so suggesting one would not
-	// actually exercise the token — reject before the Args probe below.
-	if strings.ContainsAny(cmd.Use, "<[") {
-		return false
-	}
-	// Probe the Args validator with an empty positional-arg list. A nil
-	// validator accepts anything (including zero args); a non-nil validator
-	// that returns nil for [] accepts zero args. Either qualifies — the
-	// suggestion `<cli> list` is then a complete command.
-	if cmd.Args == nil {
-		return true
-	}
-	return cmd.Args(cmd, []string{}) == nil
-}
-
 func newDoctorCmd(flags *rootFlags) *cobra.Command {
 	var failOn string
 	cmd := &cobra.Command{
@@ -269,11 +196,36 @@ func newDoctorCmd(flags *rootFlags) *cobra.Command {
 					} else if reachErr != nil && !errors.As(reachErr, &reachAPIErr) {
 						report["credentials"] = "skipped (API unreachable)"
 					} else {
-						suggestion := suggestReadCommand(cmd.Root())
-						if suggestion != "" {
-							report["credentials"] = fmt.Sprintf("present, not verified. Run `%s %s` to confirm the token works end-to-end.", "oms-pp-cli", suggestion)
-						} else {
-							report["credentials"] = "present, not verified. Run any read command to confirm the token works end-to-end."
+						// Shared auth-header setup for both probe variants below.
+						// Kept hoisted out of the per-probe branches because the
+						// per-API auth-placement, RequiredHeaders, and User-Agent
+						// fallback logic is independent of which verb the probe
+						// dials.
+						authParams := map[string]string{}
+						authHeaders := map[string]string{}
+						authHeaders["Authorization"] = authHeader
+						authHeaders["User-Agent"] = "oms-pp-cli"
+						verifyPath := "/api/devices/me/"
+						if !strings.HasPrefix(verifyPath, "/") {
+							verifyPath = "/" + verifyPath
+						}
+						_, authErr := c.GetWithHeaders(cmd.Context(), verifyPath, authParams, authHeaders)
+						var authAPIErr *client.APIError
+						switch {
+						case authErr == nil:
+							report["credentials"] = "valid"
+						case errors.As(authErr, &authAPIErr):
+							switch {
+							case authAPIErr.StatusCode == 401:
+								report["credentials"] = fmt.Sprintf("invalid (HTTP %d) — check your credentials", authAPIErr.StatusCode)
+							case authAPIErr.StatusCode == 403:
+								report["credentials"] = fmt.Sprintf("scope-limited (HTTP %d) — credentials are valid but lack permission for this endpoint. Check your dashboard's API key scope.", authAPIErr.StatusCode)
+							default:
+								// Non-auth HTTP error (404, 500, etc.) — don't blame credentials
+								report["credentials"] = fmt.Sprintf("ok (HTTP %d from %s, but auth was accepted)", authAPIErr.StatusCode, verifyPath)
+							}
+						default:
+							report["credentials"] = fmt.Sprintf("error: %s", authErr)
 						}
 					}
 				}

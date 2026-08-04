@@ -12,6 +12,7 @@ import (
 )
 
 func newTrackerAdminUsersCmd(flags *rootFlags) *cobra.Command {
+	var flagSearch string
 
 	cmd := &cobra.Command{
 		Use:         "admin-users",
@@ -26,6 +27,9 @@ func newTrackerAdminUsersCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/tracker/admin/users/"
 			params := map[string]string{}
+			if flagSearch != "" {
+				params["search"] = formatCLIParamValue(flagSearch)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "tracker", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +78,7 @@ func newTrackerAdminUsersCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().StringVar(&flagSearch, "search", "", "string, optional. Sourced from the call site")
 
 	return cmd
 }

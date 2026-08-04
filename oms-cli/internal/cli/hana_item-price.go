@@ -14,11 +14,12 @@ import (
 func newHanaItemPriceCmd(flags *rootFlags) *cobra.Command {
 	var flagItemCode string
 	var flagPriceList string
+	var flagBranch string
 
 	cmd := &cobra.Command{
 		Use:         "item-price",
 		Short:       "Price for an item on a price list. Requires --item-code and --price-list.",
-		Example:     "  oms-pp-cli hana item-price --item-code example-value --price-list example-value",
+		Example:     "  oms-pp-cli hana item-price --item-code example-value --price-list example-value --branch example-value",
 		Annotations: map[string]string{"pp:endpoint": "hana.item-price", "pp:method": "GET", "pp:path": "/api/hana/item-price/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -33,6 +34,9 @@ func newHanaItemPriceCmd(flags *rootFlags) *cobra.Command {
 			if !cmd.Flags().Changed("price-list") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "price-list")
 			}
+			if !cmd.Flags().Changed("branch") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "branch")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -45,6 +49,9 @@ func newHanaItemPriceCmd(flags *rootFlags) *cobra.Command {
 			}
 			if flagPriceList != "" {
 				params["price_list"] = formatCLIParamValue(flagPriceList)
+			}
+			if flagBranch != "" {
+				params["branch"] = formatCLIParamValue(flagBranch)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "hana", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -96,6 +103,7 @@ func newHanaItemPriceCmd(flags *rootFlags) *cobra.Command {
 	}
 	cmd.Flags().StringVar(&flagItemCode, "item-code", "", "SAP item code")
 	cmd.Flags().StringVar(&flagPriceList, "price-list", "", "Price list id")
+	cmd.Flags().StringVar(&flagBranch, "branch", "", "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.")
 
 	return cmd
 }

@@ -16,7 +16,7 @@ func newInvoicesAllCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "all",
-		Short:       "Invoice review queue (all invoices). Optionally filter by status.",
+		Short:       "BROKEN UPSTREAM (2026-08-04): returns HTTP 400 'Warehouse Code is a required parameter' for every parameter name tried",
 		Example:     "  oms-pp-cli invoices all",
 		Annotations: map[string]string{"pp:endpoint": "invoices.all", "pp:method": "GET", "pp:path": "/api/invoice/all/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

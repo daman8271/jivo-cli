@@ -1,7 +1,7 @@
 {
   "api_name": "oms",
   "base_url": "https://oms.jivo.in",
-  "description": "JIVO OMS (Order Management System) CLI — READ-ONLY. Orders, quotations, schemes, approvals, party \u0026 product assignments, SAP Business One sync, SAP HANA live stock, invoices/SKU, and the invoice tracker at oms.jivo.in. Every command is a GET; no mutating endpoint is wrapped.",
+  "description": "JIVO OMS (Order Management System) CLI — READ-ONLY. Orders, quotations, schemes, approvals, party \u0026 product assignments, the SAP Business One mirror, live SAP HANA stock and pricing, the invoice review queue, FSSAI label compliance, and the invoice tracker at oms.jivo.in. Every command is a GET; no mutating endpoint is wrapped. HANA commands require --branch (OIL or BEVERAGE) — it picks the SAP company database.",
   "mcp_ready": "full",
   "http_transport": "standard",
   "mcp": {
@@ -42,6 +42,79 @@
       "params": []
     },
     {
+      "name": "account_device",
+      "description": "Full record for one enrolled device — model, OS, app build, first and last login — for when you need to confirm exactly what a specific user was running. Required: id.",
+      "method": "GET",
+      "path": "/api/admin/devices/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "int, required, positional. The registry row id, **not** `device_id`",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "account_device-analytics",
+      "description": "One-screen rollout health for the OMS apps — how many devices are on each Android/iOS/web build, and how many have been seen recently. Use it to answer 'has everyone updated?' before blaming the backend. Optional: days.",
+      "method": "GET",
+      "path": "/api/admin/devices/analytics/",
+      "params": [
+        {
+          "name": "days",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query, **default 14**. Controls only the length of"
+        }
+      ]
+    },
+    {
+      "name": "account_devices",
+      "description": "The device registry — every browser and phone that has logged into OMS, who was on it, and when it was last seen. This is how you find out which app build a salesperson is actually running before you believe a bug report from the field. Optional: search, status, build_number (plus 3 more).",
+      "method": "GET",
+      "path": "/api/admin/devices/",
+      "params": [
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Free text. Server-side matches user name"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Enum **`online` | `idle` | `offline` |"
+        },
+        {
+          "name": "build_number",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query. Verified live: `?build_number=3` →"
+        },
+        {
+          "name": "ordering",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Django-style; prefix `-` for"
+        },
+        {
+          "name": "page",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query, default 1."
+        },
+        {
+          "name": "page_size",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query, default 25 (`ege=25` in the bundle),"
+        }
+      ]
+    },
+    {
       "name": "account_main-groups",
       "description": "List main groups (ROI, GT, MT, BRANCH, ...).",
       "method": "GET",
@@ -49,8 +122,15 @@
       "params": []
     },
     {
+      "name": "account_my-devices",
+      "description": "Push-notification devices registered to the calling user. Returns an empty list if you have never enrolled a browser or handset.",
+      "method": "GET",
+      "path": "/api/devices/me/",
+      "params": []
+    },
+    {
       "name": "account_party-products",
-      "description": "Products assigned to a party (argument is the SAP card_code, not a numeric id). Required: card_code.",
+      "description": "Products assigned to a party (argument is the SAP card_code, not a numeric id). Required: card_code. Optional: category.",
       "method": "GET",
       "path": "/api/auth/parties/{card_code}/products/",
       "params": [
@@ -60,6 +140,12 @@
           "location": "path",
           "description": "SAP party card code, e.g. CUSTA000596",
           "required": true
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Enum `OIL` | `BEVERAGES` | `MART`"
         }
       ]
     },
@@ -85,6 +171,20 @@
       "params": []
     },
     {
+      "name": "account_ui-label-config",
+      "description": "The editable definitions behind OMS's renameable field labels — the admin view, with the description and the active flag.",
+      "method": "GET",
+      "path": "/api/ui-config/admin/labels/",
+      "params": []
+    },
+    {
+      "name": "account_ui-labels",
+      "description": "The resolved label map the app renders with — what the UI currently calls each renameable field. Useful when a user's screenshot says something your data dictionary doesn't.",
+      "method": "GET",
+      "path": "/api/ui-config/labels/",
+      "params": []
+    },
+    {
       "name": "account_user-page-permissions",
       "description": "Page-permission grants for a user. Required: id.",
       "method": "GET",
@@ -101,7 +201,7 @@
     },
     {
       "name": "account_user-parties",
-      "description": "Parties (customers) assigned to a user. Required: id.",
+      "description": "Parties (customers) assigned to a user. Required: id. Optional: category.",
       "method": "GET",
       "path": "/api/auth/users/{id}/parties/",
       "params": [
@@ -111,6 +211,12 @@
           "location": "path",
           "description": "User id",
           "required": true
+        },
+        {
+          "name": "category",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Enum `OIL` | `BEVERAGES` | `MART`."
         }
       ]
     },
@@ -123,7 +229,7 @@
     },
     {
       "name": "dashboard_charts",
-      "description": "Dashboard chart series (visual overview, statewise). Optional: status.",
+      "description": "Dashboard chart series (visual overview, statewise). Optional: status, line_year, year (plus 1 more).",
       "method": "GET",
       "path": "/api/orders/dashboardW/charts/",
       "params": [
@@ -132,19 +238,78 @@
           "type": "string",
           "location": "query",
           "description": "Optional status filter for the series"
+        },
+        {
+          "name": "line_year",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query. Source: app call site"
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query. Same source."
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query. Same source; `0` = all months."
         }
       ]
     },
     {
       "name": "dashboard_summary",
-      "description": "Dashboard KPI block (total orders, total sales, completion).",
+      "description": "Dashboard KPI block (total orders, total sales, completion). Optional: year, month.",
       "method": "GET",
       "path": "/api/orders/dashboardW/",
+      "params": [
+        {
+          "name": "year",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query. Source: app call site"
+        },
+        {
+          "name": "month",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query. Source: same call site. `0` = all months"
+        }
+      ]
+    },
+    {
+      "name": "einvoice_companies",
+      "description": "The JIVO legal entities enrolled for GST e-invoicing, with their GSTINs.",
+      "method": "GET",
+      "path": "/api/einvoice/companies/",
+      "params": []
+    },
+    {
+      "name": "einvoice_health",
+      "description": "Whether the GST e-invoicing integration is up and authenticated.",
+      "method": "GET",
+      "path": "/api/einvoice/health/",
+      "params": []
+    },
+    {
+      "name": "einvoice_invoices",
+      "description": "Invoices that have been through GST e-invoicing, with their IRN status.",
+      "method": "GET",
+      "path": "/api/einvoice/invoices/",
+      "params": []
+    },
+    {
+      "name": "einvoice_logs",
+      "description": "IRN generation attempts and their outcomes — the place to look when an e-invoice fails.",
+      "method": "GET",
+      "path": "/api/einvoice/logs/",
       "params": []
     },
     {
       "name": "hana_address",
-      "description": "Addresses for a customer. Requires --card-code. Required: card_code.",
+      "description": "Addresses for a customer. Requires --card-code. Required: card_code, branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/address/",
       "params": [
@@ -154,19 +319,34 @@
           "location": "query",
           "description": "SAP card code",
           "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
         }
       ]
     },
     {
       "name": "hana_all-customers",
-      "description": "All customers from SAP HANA.",
+      "description": "All customers from SAP HANA. Required: branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/all-customers/",
-      "params": []
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
+        }
+      ]
     },
     {
       "name": "hana_batch-details",
-      "description": "Batch details for an item in a warehouse. Requires --item-code and --whs-code. Required: item_code, whs_code.",
+      "description": "Batch details for an item in a warehouse. Requires --item-code and --whs-code. Required: item_code, whs_code, branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/batch-details/",
       "params": [
@@ -183,12 +363,19 @@
           "location": "query",
           "description": "Warehouse code",
           "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
         }
       ]
     },
     {
       "name": "hana_customer-details",
-      "description": "Customer master detail. Requires --card-code. Required: card_code.",
+      "description": "Customer master detail. Requires --card-code. Required: card_code, branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/customer-details/",
       "params": [
@@ -198,26 +385,49 @@
           "location": "query",
           "description": "SAP card code",
           "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
         }
       ]
     },
     {
       "name": "hana_fg-items",
-      "description": "Finished-goods items.",
+      "description": "Finished-goods items. Required: branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/fg-items/",
-      "params": []
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
+        }
+      ]
     },
     {
       "name": "hana_freight-masters",
-      "description": "Freight master records.",
+      "description": "Freight master records. Required: branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/freight-masters/",
-      "params": []
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
+        }
+      ]
     },
     {
       "name": "hana_inventory-details",
-      "description": "Per-warehouse inventory for an item. Requires --item-code. Required: item_code.",
+      "description": "Per-warehouse inventory for an item. Requires --item-code. Required: item_code, branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/inventory-details/",
       "params": [
@@ -227,12 +437,34 @@
           "location": "query",
           "description": "SAP item code",
           "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_invoice-drafts",
+      "description": "READ of the A/R invoice drafts sitting in SAP for a branch. This reads drafts; it never creates one. Required: branch. Returns array.",
+      "method": "GET",
+      "path": "/api/hana/invoice-drafts/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "SAP company database to read.",
+          "required": true
         }
       ]
     },
     {
       "name": "hana_item-price",
-      "description": "Price for an item on a price list. Requires --item-code and --price-list. Required: item_code, price_list.",
+      "description": "Price for an item on a price list. Requires --item-code and --price-list. Required: item_code, price_list, branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/item-price/",
       "params": [
@@ -249,12 +481,19 @@
           "location": "query",
           "description": "Price list id",
           "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
         }
       ]
     },
     {
       "name": "hana_next-doc-number",
-      "description": "Next document number for a document type. Requires --doc-type. Required: doc_type.",
+      "description": "Next document number for a document type. Requires --doc-type. Required: doc_type, branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/next-doc-number/",
       "params": [
@@ -264,33 +503,71 @@
           "location": "query",
           "description": "Document type",
           "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
         }
       ]
     },
     {
       "name": "hana_open-parties",
-      "description": "Parties with open transactions.",
+      "description": "Parties with open transactions. Required: branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/open-parties/",
-      "params": []
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
+        }
+      ]
     },
     {
       "name": "hana_product-so",
-      "description": "Product sales-order data.",
+      "description": "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'get_sales_orders_for_product() takes 1 positional argument but 2 were given' and returns HTTP 500 on every call. Reported to the OMS team. | Product sales-order data for an item. Requires --item-code. Required: branch, item_code.",
       "method": "GET",
       "path": "/api/hana/product-so/",
-      "params": []
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "SAP company database to read.",
+          "required": true
+        },
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP item code",
+          "required": true
+        }
+      ]
     },
     {
       "name": "hana_product-stock",
-      "description": "Live product stock from SAP HANA.",
+      "description": "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'name 'unique_schemas' is not defined' and returns HTTP 502 on every call, for both branches. Reported to the OMS team. | Live product stock from SAP HANA. Required: branch.",
       "method": "GET",
       "path": "/api/hana/product-stock/",
-      "params": []
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "SAP company database to read.",
+          "required": true
+        }
+      ]
     },
     {
       "name": "hana_salesperson-details",
-      "description": "Salesperson detail. Requires --slp-code. Required: slp_code.",
+      "description": "Salesperson detail. Requires --slp-code. Required: slp_code, branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/salesperson-details/",
       "params": [
@@ -300,19 +577,101 @@
           "location": "query",
           "description": "Salesperson code",
           "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_series",
+      "description": "SAP document numbering series for a branch — the series a document will draw its number from. Required: branch. Returns array.",
+      "method": "GET",
+      "path": "/api/hana/series/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "SAP company database to read.",
+          "required": true
         }
       ]
     },
     {
       "name": "hana_so",
-      "description": "Sales orders.",
+      "description": "Sales orders for a party. Requires --card-code. Required: card_code, branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/so/",
-      "params": []
+      "params": [
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP party card code",
+          "required": true
+        },
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_state-chain",
+      "description": "The state-to-state routing chain used for freight and GST place-of-supply decisions. Required: branch. Returns array.",
+      "method": "GET",
+      "path": "/api/hana/state-chain/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "SAP company database to read.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_vendor-states",
+      "description": "States JIVO's vendors operate in, per branch — used to work out interstate vs intrastate GST. Required: branch. Returns array.",
+      "method": "GET",
+      "path": "/api/hana/vendor-states/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "SAP company database to read.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_warehouse-details",
+      "description": "Warehouse master for a branch: codes, names and locations behind every WhsCode you see in stock and batch data. Required: branch. Returns array.",
+      "method": "GET",
+      "path": "/api/hana/warehouse-details/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "SAP company database to read.",
+          "required": true
+        }
+      ]
     },
     {
       "name": "invoices_all",
-      "description": "Invoice review queue (all invoices). Optionally filter by status. Optional: status.",
+      "description": "BROKEN UPSTREAM (2026-08-04): returns HTTP 400 'Warehouse Code is a required parameter' for every parameter name tried, and the OMS web app never calls this route. Use `invoices logs` instead. Reported to the OMS team. | Invoice review queue (all invoices). Optionally filter by status. Optional: status.",
       "method": "GET",
       "path": "/api/invoice/all/",
       "params": [
@@ -325,8 +684,58 @@
       ]
     },
     {
+      "name": "invoices_credit-limit-cards",
+      "description": "The credit-limit master for every customer account in one SAP company — how much each party currently owes, the credit line they are allowed, and the debt line. This is what the reviewer looks at before releasing an invoice for a party who is close to their limit. Optional: company.",
+      "method": "GET",
+      "path": "/api/invoice/credit-limit/cards/",
+      "params": [
+        {
+          "name": "company",
+          "type": "int",
+          "location": "query",
+          "description": "string/int, optional (defaults to `1`), not positional."
+        }
+      ]
+    },
+    {
+      "name": "invoices_credit-limit-flow",
+      "description": "The approval chain for a credit-limit override request raised against one invoice — which named approver sits at which stage, in what order, and whether they approved, rejected or have not acted. Required: invoice_id. Optional: company.",
+      "method": "GET",
+      "path": "/api/invoice/credit-limit/flow/",
+      "params": [
+        {
+          "name": "invoice_id",
+          "type": "int",
+          "location": "path",
+          "description": "int, **required**, positional. Server's own words:",
+          "required": true
+        },
+        {
+          "name": "company",
+          "type": "string",
+          "location": "query",
+          "description": "optional, values `1`/`2` from `S5(branch)`; the app sends it"
+        }
+      ]
+    },
+    {
+      "name": "invoices_crystal",
+      "description": "The Crystal Reports print payload for one posted invoice, by SAP document number. Required: docNum.",
+      "method": "GET",
+      "path": "/api/invoice/crystal/",
+      "params": [
+        {
+          "name": "docNum",
+          "type": "string",
+          "location": "query",
+          "description": "SAP document number. Server-named requirement; values from `invoices logs` (sap_doc_num).",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "invoices_history",
-      "description": "Status-history timeline for an invoice. Required: id.",
+      "description": "Status-history timeline for an invoice (BACKEND ROUTE MISSING — unregistered). Required: id. Returns array.",
       "method": "GET",
       "path": "/api/invoice/history/{id}/",
       "params": [
@@ -336,6 +745,20 @@
           "location": "path",
           "description": "Invoice id",
           "required": true
+        }
+      ]
+    },
+    {
+      "name": "invoices_logs",
+      "description": "The invoice review-and-approval queue. One row per invoice a salesperson has submitted out of a sales order, carrying the full SAP B1 document payload, the finished-goods stock position at the time of submission, and where it currently sits between 'submitted' and 'posted into SAP'. Optional: status. Returns array.",
+      "method": "GET",
+      "path": "/api/invoice/logs/all/",
+      "params": [
+        {
+          "name": "status",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, not positional."
         }
       ]
     },
@@ -356,16 +779,51 @@
     },
     {
       "name": "invoices_skus",
-      "description": "All SKUs.",
+      "description": "All SKUs. Returns array.",
       "method": "GET",
       "path": "/api/sku/all/",
       "params": []
     },
     {
       "name": "invoices_skus-pending",
-      "description": "SKUs pending review.",
+      "description": "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'getFGItems() missing 1 required positional argument: 'branch'' and returns HTTP 500 on every call. Reported to the OMS team. | SKUs pending review.",
       "method": "GET",
       "path": "/api/sku/pending/",
+      "params": []
+    },
+    {
+      "name": "legal_item-nutrition",
+      "description": "The nutritional facts JIVO has declared for one product — the reference values an uploaded label is checked against. Optional: item_id.",
+      "method": "GET",
+      "path": "/api/legal/item-nutrition/",
+      "params": [
+        {
+          "name": "item_id",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional in practice, not positional. Value source: the"
+        }
+      ]
+    },
+    {
+      "name": "legal_items",
+      "description": "The food products whose pack labels are checked for FSSAI compliance. One row per product. Returns array.",
+      "method": "GET",
+      "path": "/api/legal/item/",
+      "params": []
+    },
+    {
+      "name": "legal_nutrition",
+      "description": "The master list of nutrition rows (the nutrient lines that can appear in a nutritional-information table). Returns array.",
+      "method": "GET",
+      "path": "/api/legal/nutrition/",
+      "params": []
+    },
+    {
+      "name": "legal_uoms",
+      "description": "The units of measure used when declaring nutritional values on a label (g, kcal, mg …). Returns array.",
+      "method": "GET",
+      "path": "/api/legal/uom/",
       "params": []
     },
     {
@@ -391,14 +849,29 @@
     },
     {
       "name": "orders_branch",
-      "description": "SAP branch / BPL list.",
+      "description": "SAP branch / BPL list. Returns array.",
       "method": "GET",
       "path": "/api/orders/branch/",
       "params": []
     },
     {
+      "name": "orders_by-item",
+      "description": "Every order line for one FG item — who ordered it, how much, and in what state. Required: item_code.",
+      "method": "GET",
+      "path": "/api/orders/orders-by-item/",
+      "params": [
+        {
+          "name": "item_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP item code. Server-named requirement; values from `hana fg-items --branch OIL`.",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "orders_by-user",
-      "description": "Orders raised by a specific user (source for View Orders / Order Tracking). Required: user_id.",
+      "description": "Orders raised by a specific user (source for View Orders / Order Tracking). Required: user_id. Returns array.",
       "method": "GET",
       "path": "/api/orders/ordersbyuser/{user_id}/",
       "params": [
@@ -410,6 +883,20 @@
           "required": true
         }
       ]
+    },
+    {
+      "name": "orders_dashboard",
+      "description": "Order dashboard headline counters. Note this is a DIFFERENT endpoint from the shipped `orders dashboardW`, which the web app uses; both are live.",
+      "method": "GET",
+      "path": "/api/orders/dashboard/",
+      "params": []
+    },
+    {
+      "name": "orders_dashboard-charts",
+      "description": "Chart series behind the order dashboard. Large — 268 KB in one unpaginated response; use --compact or --csv.",
+      "method": "GET",
+      "path": "/api/orders/dashboard/charts/",
+      "params": []
     },
     {
       "name": "orders_detail",
@@ -428,21 +915,28 @@
     },
     {
       "name": "orders_dispatches",
-      "description": "Dispatch-from locations.",
+      "description": "Dispatch-from locations. Returns array.",
       "method": "GET",
       "path": "/api/orders/dispatches/",
       "params": []
     },
     {
       "name": "orders_flow-config",
-      "description": "Global order approval-flow configuration.",
+      "description": "Global order approval-flow configuration. Optional: flow_type.",
       "method": "GET",
       "path": "/api/orders/flow-config/",
-      "params": []
+      "params": [
+        {
+          "name": "flow_type",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Enum **`ASM` | `BILLING`**. Source:"
+        }
+      ]
     },
     {
       "name": "orders_list",
-      "description": "All orders (admin-wide). Filter by status/stage. Optional: status, billing, approval_pending.",
+      "description": "All orders (admin-wide). Filter by status/stage. TRAPS: bare `orders list` is NOT the order book - it returns one slice (263 of 2,163 orders). `status` accepts a comma-separated list and unions them. `billing=true` DISCARDS any `status` you also pass (proven: six query strings, byte-identical bodies). `approval_pending=true` alone is a no-op. Optional: status, billing, approval_pending.",
       "method": "GET",
       "path": "/api/orders/list/",
       "params": [
@@ -450,7 +944,7 @@
           "name": "status",
           "type": "string",
           "location": "query",
-          "description": "Filter by status code (e.g. BILLING, AUDITOR_APPROVAL)"
+          "description": "One of: ORDER_CREATED | RATE_APPROVAL | BILLING | NEED_APPROVAL | BILLING_PENDING | APPROVED | REJECTED | BILLING_REJECTED | COMPLETED | AUDITOR_APPROVAL | DRAFT. Filter by status code (e.g. BILLING, AUDITOR_APPROVAL)"
         },
         {
           "name": "billing",
@@ -468,7 +962,7 @@
     },
     {
       "name": "orders_logs",
-      "description": "Status-change audit trail for an order (drives the tracking timeline). Required: id.",
+      "description": "Status-change audit trail for an order (drives the tracking timeline). Required: id. Returns array.",
       "method": "GET",
       "path": "/api/orders/{id}/orderlogs/",
       "params": [
@@ -483,14 +977,40 @@
     },
     {
       "name": "orders_notifications",
-      "description": "Order-status notifications for the current user.",
+      "description": "Order-status notifications for the current user. Returns array.",
       "method": "GET",
       "path": "/api/orders/notifications/",
       "params": []
     },
     {
+      "name": "orders_notifications-history",
+      "description": "The full notification feed for the current user, paged — including alerts already read, which the live `orders notifications` call drops. Optional: limit, offset, filter.",
+      "method": "GET",
+      "path": "/api/orders/notifications/history/",
+      "params": [
+        {
+          "name": "limit",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query. Source: app call site"
+        },
+        {
+          "name": "offset",
+          "type": "int",
+          "location": "query",
+          "description": "int, optional, query. Same source; the app pages by"
+        },
+        {
+          "name": "filter",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Enum **`all` | `unread`**. Source: the"
+        }
+      ]
+    },
+    {
       "name": "orders_parties",
-      "description": "Assigned-party dropdown (card_code -\u003e card_name) for the current user.",
+      "description": "Assigned-party dropdown (card_code -\u003e card_name) for the current user. Returns array.",
       "method": "GET",
       "path": "/api/orders/parties/",
       "params": []
@@ -504,7 +1024,7 @@
     },
     {
       "name": "orders_party-products",
-      "description": "Products (with rates) assigned to a party, for the order product selector. Required: card_code.",
+      "description": "Products (with rates) assigned to a party, for the order product selector. Required: card_code. Returns array.",
       "method": "GET",
       "path": "/api/orders/party-products/{card_code}/",
       "params": [
@@ -518,36 +1038,76 @@
       ]
     },
     {
+      "name": "orders_product-filters",
+      "description": "The filter options (brand, variety, pack size) offered by the order product selector.",
+      "method": "GET",
+      "path": "/api/orders/product-filters/",
+      "params": []
+    },
+    {
       "name": "orders_products",
-      "description": "Global product list.",
+      "description": "Global product list. Returns array.",
       "method": "GET",
       "path": "/api/orders/products/",
       "params": []
     },
     {
       "name": "orders_schemes",
-      "description": "Sales schemes / promotions.",
+      "description": "Sales schemes / promotions. Optional: state_code. Returns array.",
       "method": "GET",
       "path": "/api/orders/schemes/",
-      "params": []
+      "params": [
+        {
+          "name": "state_code",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. **Not in the shipped spec.** Source:"
+        }
+      ]
+    },
+    {
+      "name": "orders_schemes-manage",
+      "description": "The full scheme table behind the scheme admin screen — each scheme joined to the SKU it applies to, its pack size, its state, and whether it is switched on. Optional: state_code, search, include_inactive.",
+      "method": "GET",
+      "path": "/api/orders/schemes/manage/",
+      "params": [
+        {
+          "name": "state_code",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Source: app call site"
+        },
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional, query. Same source."
+        },
+        {
+          "name": "include_inactive",
+          "type": "string",
+          "location": "query",
+          "description": "string `'true'`, optional, query. Same source; the app"
+        }
+      ]
     },
     {
       "name": "orders_staff-products",
-      "description": "Staff-assigned products.",
+      "description": "Staff-assigned products. Returns array.",
       "method": "GET",
       "path": "/api/orders/staff-products/",
       "params": []
     },
     {
       "name": "orders_status",
-      "description": "Order status master (id -\u003e name).",
+      "description": "Order status master (id -\u003e name). Returns array.",
       "method": "GET",
       "path": "/api/orders/status/",
       "params": []
     },
     {
       "name": "orders_status-tracking",
-      "description": "Approval queue for a stage. Requires --mode. Required: mode.",
+      "description": "Approval queue for a stage. Requires --mode. Required: mode. Returns array.",
       "method": "GET",
       "path": "/api/orders/status-tracking/",
       "params": [
@@ -562,14 +1122,43 @@
     },
     {
       "name": "orders_stock-check",
-      "description": "Per-order required-qty vs available-stock (legacy view).",
+      "description": "Per-order required-qty vs available-stock (legacy view). Returns array.",
       "method": "GET",
       "path": "/api/orders/stock-check/",
       "params": []
     },
     {
+      "name": "orders_template-orders",
+      "description": "Previous orders for one party, offered as templates for a new order. Required: card_code.",
+      "method": "GET",
+      "path": "/api/orders/templates/orders/",
+      "params": [
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "SAP party card code. Server-named requirement; values from `sap parties`.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "orders_template-parties",
+      "description": "Parties available as an order template — the 'repeat a previous order' picker. Empty for a user with no assigned parties. Returns array.",
+      "method": "GET",
+      "path": "/api/orders/templates/parties/",
+      "params": []
+    },
+    {
+      "name": "orders_web-push-key",
+      "description": "The VAPID public key the browser needs to register for OMS push notifications. Infrastructure, not business data.",
+      "method": "GET",
+      "path": "/api/orders/web-push/public-key/",
+      "params": []
+    },
+    {
       "name": "quotations_overview",
-      "description": "All quotations with SAP doc numbers and cancellation state.",
+      "description": "All quotations with SAP doc numbers and cancellation state The SAP doc numbers here are real: sampled (doc_num, doc_entry) pairs resolve exactly to SAP OQUT quotations. Note doc_num is NOT unique across companies - the same number exists in Oil and Beverages, so always pair it with the branch.",
       "method": "GET",
       "path": "/api/orders/quotation-overview/",
       "params": []
@@ -590,28 +1179,28 @@
     },
     {
       "name": "sap_addresses",
-      "description": "SAP addresses.",
+      "description": "SAP addresses. Returns array.",
       "method": "GET",
       "path": "/api/sap/addresses/",
       "params": []
     },
     {
       "name": "sap_branches",
-      "description": "SAP branches.",
+      "description": "SAP branches. Returns array.",
       "method": "GET",
       "path": "/api/sap/branches/",
       "params": []
     },
     {
       "name": "sap_logs",
-      "description": "SAP sync history (sync_type, status, records processed/created/updated, duration).",
+      "description": "SAP sync history (sync_type, status, records processed/created/updated, duration). Returns array.",
       "method": "GET",
       "path": "/api/sap/logs/",
       "params": []
     },
     {
       "name": "sap_parties",
-      "description": "SAP parties (business partners).",
+      "description": "SAP parties (business partners). Returns array.",
       "method": "GET",
       "path": "/api/sap/parties/",
       "params": []
@@ -639,7 +1228,7 @@
     },
     {
       "name": "sap_products",
-      "description": "SAP products.",
+      "description": "SAP products. Returns array.",
       "method": "GET",
       "path": "/api/sap/products/",
       "params": []
@@ -660,8 +1249,22 @@
       ]
     },
     {
+      "name": "sap_schedules",
+      "description": "Configured SAP sync schedules. Read-only view; the toggle that enables one is a write and is not wrapped.",
+      "method": "GET",
+      "path": "/api/sap/schedules/",
+      "params": []
+    },
+    {
+      "name": "sap_sync-status",
+      "description": "Current state of the SAP mirror sync: what ran, when, and whether it finished.",
+      "method": "GET",
+      "path": "/api/sap/status/",
+      "params": []
+    },
+    {
       "name": "tracker_admin-lookups",
-      "description": "Tracker admin: lookup set by type. Required: type.",
+      "description": "Tracker admin: lookup set by type. Required: type. Returns array.",
       "method": "GET",
       "path": "/api/tracker/admin/lookups/{type}/",
       "params": [
@@ -676,35 +1279,42 @@
     },
     {
       "name": "tracker_admin-stages",
-      "description": "Tracker admin: stage definitions.",
+      "description": "Tracker admin: stage definitions. Returns array.",
       "method": "GET",
       "path": "/api/tracker/admin/stages/",
       "params": []
     },
     {
       "name": "tracker_admin-tracker-users",
-      "description": "Tracker admin: tracker-role users.",
+      "description": "Tracker admin: tracker-role users. Returns array.",
       "method": "GET",
       "path": "/api/tracker/admin/tracker-users/",
       "params": []
     },
     {
       "name": "tracker_admin-users",
-      "description": "Tracker admin: users.",
+      "description": "Tracker admin: users. Optional: search. Returns array.",
       "method": "GET",
       "path": "/api/tracker/admin/users/",
-      "params": []
+      "params": [
+        {
+          "name": "search",
+          "type": "string",
+          "location": "query",
+          "description": "string, optional. Sourced from the call site"
+        }
+      ]
     },
     {
       "name": "tracker_alerts",
-      "description": "Tracker alerts.",
+      "description": "Tracker alerts. Returns array.",
       "method": "GET",
       "path": "/api/tracker/alerts/",
       "params": []
     },
     {
       "name": "tracker_all-invoices",
-      "description": "All tracker invoices.",
+      "description": "All tracker invoices. Returns array.",
       "method": "GET",
       "path": "/api/tracker/all-invoices/",
       "params": []
@@ -732,8 +1342,23 @@
       ]
     },
     {
+      "name": "tracker_invoice-jsap",
+      "description": "Whether this tracker invoice has reached **JSAP** (JIVO's internal ops platform at `103.89.45.75:5001`, the system `jsap-cli` talks to) and what JSAP's approvers did with it — approved, rejected, or still sitting there. Answers 'the invoice is stuck at JSAP Approval, has JSAP actually seen it?'. Required: id.",
+      "method": "GET",
+      "path": "/api/tracker/invoices/{id}/jsap/",
+      "params": [
+        {
+          "name": "id",
+          "type": "int",
+          "location": "path",
+          "description": "id path parameter",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "tracker_invoices",
-      "description": "Tracker invoices.",
+      "description": "Tracker invoices. Returns array.",
       "method": "GET",
       "path": "/api/tracker/invoices/",
       "params": []
@@ -761,14 +1386,22 @@
     },
     {
       "name": "tracker_stage-advanced",
-      "description": "Advanced stage view.",
+      "description": "Advanced stage view. Required: stage. Returns array.",
       "method": "GET",
       "path": "/api/tracker/stage-advanced/",
-      "params": []
+      "params": [
+        {
+          "name": "stage",
+          "type": "string",
+          "location": "query",
+          "description": "string, required (the SPA never calls it without one). **Enum is",
+          "required": true
+        }
+      ]
     },
     {
       "name": "tracker_vendors",
-      "description": "Tracker vendors.",
+      "description": "Tracker vendors. Returns array.",
       "method": "GET",
       "path": "/api/tracker/vendors/",
       "params": []

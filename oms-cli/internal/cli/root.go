@@ -224,8 +224,10 @@ Run 'oms-pp-cli doctor' to verify auth and connectivity.`,
 	}
 	rootCmd.AddCommand(newAccountCmd(flags))
 	rootCmd.AddCommand(newDashboardCmd(flags))
+	rootCmd.AddCommand(newEinvoiceCmd(flags))
 	rootCmd.AddCommand(newHanaCmd(flags))
 	rootCmd.AddCommand(newInvoicesCmd(flags))
+	rootCmd.AddCommand(newLegalCmd(flags))
 	rootCmd.AddCommand(newOrdersCmd(flags))
 	rootCmd.AddCommand(newQuotationsCmd(flags))
 	rootCmd.AddCommand(newSapCmd(flags))

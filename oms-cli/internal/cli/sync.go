@@ -732,9 +732,9 @@ type paginationDefaults struct {
 // Values are detected from the API spec by the profiler at generation time.
 func determinePaginationDefaults() paginationDefaults {
 	return paginationDefaults{
-		cursorParam: "after",
+		cursorParam: "page",
 		cursorType:  "",
-		limitParam:  "limit",
+		limitParam:  "page_size",
 		limit:       100,
 	}
 }
@@ -1390,11 +1390,34 @@ func parseSinceDuration(s string) (time.Time, error) {
 
 func defaultSyncResources() []string {
 	return []string{
-		"hana",
 		"invoices",
+		"legal",
+		"legal-item",
+		"legal-nutrition",
 		"orders",
+		"orders-branch",
+		"orders-dispatches",
+		"orders-notifications",
+		"orders-parties",
+		"orders-products",
+		"orders-schemes",
+		"orders-staff-products",
+		"orders-status",
+		"orders-stock-check",
+		"orders-templates-parties",
+		"sap",
+		"sap-addresses",
+		"sap-branches",
+		"sap-parties",
+		"sap-products",
 		"tracker",
+		"tracker-admin-stages",
+		"tracker-admin-tracker-users",
+		"tracker-admin-users",
+		"tracker-all-invoices",
 		"tracker-all-invoices-export",
+		"tracker-invoices",
+		"tracker-vendors",
 	}
 }
 
@@ -1403,11 +1426,34 @@ func defaultSyncResources() []string {
 // validation to reject misspellings before they become silent no-ops.
 func knownSyncResourceNames() []string {
 	names := []string{
-		"hana",
 		"invoices",
+		"legal",
+		"legal-item",
+		"legal-nutrition",
 		"orders",
+		"orders-branch",
+		"orders-dispatches",
+		"orders-notifications",
+		"orders-parties",
+		"orders-products",
+		"orders-schemes",
+		"orders-staff-products",
+		"orders-status",
+		"orders-stock-check",
+		"orders-templates-parties",
+		"sap",
+		"sap-addresses",
+		"sap-branches",
+		"sap-parties",
+		"sap-products",
 		"tracker",
+		"tracker-admin-stages",
+		"tracker-admin-tracker-users",
+		"tracker-admin-users",
+		"tracker-all-invoices",
 		"tracker-all-invoices-export",
+		"tracker-invoices",
+		"tracker-vendors",
 	}
 	return names
 }
@@ -1417,11 +1463,34 @@ func knownSyncResourceNames() []string {
 // this preserves the actual endpoint path like "/ISteamApps/GetAppList/v2".
 func syncResourcePath(resource string) (string, error) {
 	paths := map[string]string{
-		"hana":                        "/api/hana/all-customers/",
-		"invoices":                    "/api/invoice/all/",
+		"invoices":                    "/api/sku/all/",
+		"legal":                       "/api/legal/uom/",
+		"legal-item":                  "/api/legal/item/",
+		"legal-nutrition":             "/api/legal/nutrition/",
 		"orders":                      "/api/orders/list/",
-		"tracker":                     "/api/tracker/all-invoices/",
+		"orders-branch":               "/api/orders/branch/",
+		"orders-dispatches":           "/api/orders/dispatches/",
+		"orders-notifications":        "/api/orders/notifications/",
+		"orders-parties":              "/api/orders/parties/",
+		"orders-products":             "/api/orders/products/",
+		"orders-schemes":              "/api/orders/schemes/",
+		"orders-staff-products":       "/api/orders/staff-products/",
+		"orders-status":               "/api/orders/status/",
+		"orders-stock-check":          "/api/orders/stock-check/",
+		"orders-templates-parties":    "/api/orders/templates/parties/",
+		"sap":                         "/api/sap/logs/",
+		"sap-addresses":               "/api/sap/addresses/",
+		"sap-branches":                "/api/sap/branches/",
+		"sap-parties":                 "/api/sap/parties/",
+		"sap-products":                "/api/sap/products/",
+		"tracker":                     "/api/tracker/alerts/",
+		"tracker-admin-stages":        "/api/tracker/admin/stages/",
+		"tracker-admin-tracker-users": "/api/tracker/admin/tracker-users/",
+		"tracker-admin-users":         "/api/tracker/admin/users/",
+		"tracker-all-invoices":        "/api/tracker/all-invoices/",
 		"tracker-all-invoices-export": "/api/tracker/all-invoices/export/",
+		"tracker-invoices":            "/api/tracker/invoices/",
+		"tracker-vendors":             "/api/tracker/vendors/",
 	}
 	if p, ok := paths[resource]; ok {
 		return p, nil

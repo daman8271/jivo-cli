@@ -116,8 +116,10 @@ func tailKnownResources() []string {
 	return []string{
 		"account",
 		"dashboard",
+		"einvoice",
 		"hana",
 		"invoices",
+		"legal",
 		"orders",
 		"quotations",
 		"sap",

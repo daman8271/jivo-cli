@@ -10,18 +10,24 @@ import (
 func newAccountCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "account",
-		Short:       "Authenticated account, users, roles, and reference master data (companies, states, categories, main groups)",
+		Short:       "Authenticated account, users, roles, permissions and reference master data (companies, states, categories, main groups)",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
 	cmd.AddCommand(newAccountCategoriesCmd(flags))
 	cmd.AddCommand(newAccountCompaniesCmd(flags))
+	cmd.AddCommand(newAccountDeviceCmd(flags))
+	cmd.AddCommand(newAccountDeviceAnalyticsCmd(flags))
+	cmd.AddCommand(newAccountDevicesCmd(flags))
 	cmd.AddCommand(newAccountMainGroupsCmd(flags))
+	cmd.AddCommand(newAccountMyDevicesCmd(flags))
 	cmd.AddCommand(newAccountPartyProductsCmd(flags))
 	cmd.AddCommand(newAccountProfileCmd(flags))
 	cmd.AddCommand(newAccountRolesCmd(flags))
 	cmd.AddCommand(newAccountStatesCmd(flags))
+	cmd.AddCommand(newAccountUiLabelConfigCmd(flags))
+	cmd.AddCommand(newAccountUiLabelsCmd(flags))
 	cmd.AddCommand(newAccountUserPagePermissionsCmd(flags))
 	cmd.AddCommand(newAccountUserPartiesCmd(flags))
 	cmd.AddCommand(newAccountUsersCmd(flags))

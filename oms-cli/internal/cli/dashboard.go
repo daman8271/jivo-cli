@@ -10,7 +10,7 @@ import (
 func newDashboardCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "dashboard",
-		Short:       "Dashboard KPIs and chart series",
+		Short:       "Order dashboard widgets and charts",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}

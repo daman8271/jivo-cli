@@ -10,17 +10,20 @@ import (
 func newInvoicesCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "invoices",
-		Short:       "Sales invoices, invoice review, and SKU master/image data",
+		Short:       "The invoice review-and-approval queue, credit limits and SKU master data",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
 	cmd.AddCommand(newInvoicesAllCmd(flags))
-	// Phase-3 verification (2026-07-19): /api/invoice/history/{id}/ has NO route on
-	// the live backend (only log/create, all, refLogs exist) — the deployed API is
-	// out of sync with the SPA bundle/spec on this path, so the command always 404s.
-	// Unregistered until the backend team confirms the route. See docs/oms/OMS_VERIFICATION.md.
+	cmd.AddCommand(newInvoicesCreditLimitCardsCmd(flags))
+	cmd.AddCommand(newInvoicesCreditLimitFlowCmd(flags))
+	cmd.AddCommand(newInvoicesCrystalCmd(flags))
+	// Live verification (2026-07-19, re-verified 2026-08-04): the deployed OMS
+	// backend has no /api/invoice/history/{id}/ route, so this command always
+	// 404s. Unregistered until the backend team confirms the route.
 	// cmd.AddCommand(newInvoicesHistoryCmd(flags))
+	cmd.AddCommand(newInvoicesLogsCmd(flags))
 	cmd.AddCommand(newInvoicesSkuCmd(flags))
 	cmd.AddCommand(newInvoicesSkusCmd(flags))
 	cmd.AddCommand(newInvoicesSkusPendingCmd(flags))

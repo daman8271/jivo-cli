@@ -12,6 +12,8 @@ import (
 )
 
 func newDashboardSummaryCmd(flags *rootFlags) *cobra.Command {
+	var flagYear int
+	var flagMonth int
 
 	cmd := &cobra.Command{
 		Use:         "summary",
@@ -26,6 +28,12 @@ func newDashboardSummaryCmd(flags *rootFlags) *cobra.Command {
 
 			path := "/api/orders/dashboardW/"
 			params := map[string]string{}
+			if flagYear != 0 {
+				params["year"] = formatCLIParamValue(flagYear)
+			}
+			if flagMonth != 0 {
+				params["month"] = formatCLIParamValue(flagMonth)
+			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "dashboard", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -74,6 +82,8 @@ func newDashboardSummaryCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
+	cmd.Flags().IntVar(&flagYear, "year", 0, "int, optional, query. Source: app call site")
+	cmd.Flags().IntVar(&flagMonth, "month", 0, "int, optional, query. Source: same call site. `0` = all months")
 
 	return cmd
 }

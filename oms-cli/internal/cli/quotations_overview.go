@@ -15,7 +15,7 @@ func newQuotationsOverviewCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "overview",
-		Short:       "All quotations with SAP doc numbers and cancellation state",
+		Short:       "All quotations with SAP doc numbers and cancellation state The SAP doc numbers here are real: sampled (doc_num",
 		Example:     "  oms-pp-cli quotations overview",
 		Annotations: map[string]string{"pp:endpoint": "quotations.overview", "pp:method": "GET", "pp:path": "/api/orders/quotation-overview/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

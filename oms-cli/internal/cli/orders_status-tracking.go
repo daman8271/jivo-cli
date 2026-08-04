@@ -17,7 +17,7 @@ func newOrdersStatusTrackingCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:         "status-tracking",
 		Short:       "Approval queue for a stage. Requires --mode.",
-		Example:     "  oms-pp-cli orders status-tracking --mode auditor",
+		Example:     "  oms-pp-cli orders status-tracking --mode example-value",
 		Annotations: map[string]string{"pp:endpoint": "orders.status-tracking", "pp:method": "GET", "pp:path": "/api/orders/status-tracking/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -28,19 +28,6 @@ func newOrdersStatusTrackingCmd(flags *rootFlags) *cobra.Command {
 			}
 			if !cmd.Flags().Changed("mode") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "mode")
-			}
-			if cmd.Flags().Changed("mode") {
-				allowedMode := []string{"auditor", "billing", "rate_approver"}
-				validMode := false
-				for _, v := range allowedMode {
-					if flagMode == v {
-						validMode = true
-						break
-					}
-				}
-				if !validMode {
-					return fmt.Errorf("invalid value %q for --%s: must be one of %v", flagMode, "mode", allowedMode)
-				}
 			}
 			c, err := flags.newClient()
 			if err != nil {
@@ -100,7 +87,7 @@ func newOrdersStatusTrackingCmd(flags *rootFlags) *cobra.Command {
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagMode, "mode", "", "Approval stage (one of: auditor, billing, rate_approver)")
+	cmd.Flags().StringVar(&flagMode, "mode", "", "Approval stage")
 
 	return cmd
 }

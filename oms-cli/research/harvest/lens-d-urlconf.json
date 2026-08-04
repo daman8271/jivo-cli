@@ -1,0 +1,459 @@
+{
+ "_why": "Lens D \u2014 routes that exist on the server but that the SPA never calls, so lenses A/B/C are structurally blind to all of them. Recovered from Django's own 404 debug page, which lists every pattern in the resolver it reached (see scripts/enumerate_urlconf.py). 228 routes exist; the bundle harvest found 125. This is also why OMS should turn DEBUG off \u2014 the same page is served to an anonymous caller.",
+ "_safety": "Every entry below was probed with a BARE GET, no query parameters, which is the sanctioned safe probe. Nothing here was probed with an invented parameter value. Anything write-shaped by name, or that answered 405, or that reached SAP's document API, is in `excluded` and was never called again.",
+ "_confidence": "These are published on live-probe evidence (a 200, or a 400 naming its own required params) but WITHOUT the depth of a phase-3 domain study: no response-field walkthrough, no tenant matrix, no trap analysis. Descriptions say what the probe proved and no more. Treat them as sound but shallower than the rest of the spec.",
+ "publish": [
+  {
+   "path": "/api/devices/me/",
+   "resource": "account",
+   "command": "my-devices",
+   "description": "Push-notification devices registered to the calling user. Returns an empty list if you have never enrolled a browser or handset.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 56 B, empty for this credential"
+  },
+  {
+   "path": "/api/orders/dashboard/",
+   "resource": "orders",
+   "command": "dashboard",
+   "description": "Order dashboard headline counters. Note this is a DIFFERENT endpoint from the shipped `orders dashboardW`, which the web app uses; both are live.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 436 B"
+  },
+  {
+   "path": "/api/orders/dashboard/charts/",
+   "resource": "orders",
+   "command": "dashboard-charts",
+   "description": "Chart series behind the order dashboard. Large \u2014 268 KB in one unpaginated response; use --compact or --csv.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 268,652 B"
+  },
+  {
+   "path": "/api/orders/product-filters/",
+   "resource": "orders",
+   "command": "product-filters",
+   "description": "The filter options (brand, variety, pack size) offered by the order product selector.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 55 B"
+  },
+  {
+   "path": "/api/orders/templates/parties/",
+   "resource": "orders",
+   "command": "template-parties",
+   "description": "Parties available as an order template \u2014 the 'repeat a previous order' picker. Empty for a user with no assigned parties.",
+   "response": "array",
+   "evidence": "bare GET -> 200, empty list for this credential"
+  },
+  {
+   "path": "/api/orders/templates/orders/",
+   "resource": "orders",
+   "command": "template-orders",
+   "description": "Previous orders for one party, offered as templates for a new order.",
+   "response": "object",
+   "evidence": "bare GET -> 400 {\"error\":\"card_code is required\"}",
+   "params": [
+    {
+     "name": "card_code",
+     "type": "string",
+     "required": true,
+     "description": "SAP party card code. Server-named requirement; values from `sap parties`."
+    }
+   ]
+  },
+  {
+   "path": "/api/orders/orders-by-item/",
+   "resource": "orders",
+   "command": "by-item",
+   "description": "Every order line for one FG item \u2014 who ordered it, how much, and in what state.",
+   "response": "object",
+   "evidence": "bare GET -> 400 {\"error\":\"item_code is required\"}",
+   "params": [
+    {
+     "name": "item_code",
+     "type": "string",
+     "required": true,
+     "description": "SAP item code. Server-named requirement; values from `hana fg-items --branch OIL`."
+    }
+   ]
+  },
+  {
+   "path": "/api/sap/status/",
+   "resource": "sap",
+   "command": "sync-status",
+   "description": "Current state of the SAP mirror sync: what ran, when, and whether it finished.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 369 B"
+  },
+  {
+   "path": "/api/sap/schedules/",
+   "resource": "sap",
+   "command": "schedules",
+   "description": "Configured SAP sync schedules. Read-only view; the toggle that enables one is a write and is not wrapped.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 26 B, zero rows"
+  },
+  {
+   "path": "/api/hana/series/",
+   "resource": "hana",
+   "command": "series",
+   "description": "SAP document numbering series for a branch \u2014 the series a document will draw its number from.",
+   "response": "array",
+   "evidence": "bare GET -> 400 branch required"
+  },
+  {
+   "path": "/api/hana/warehouse-details/",
+   "resource": "hana",
+   "command": "warehouse-details",
+   "description": "Warehouse master for a branch: codes, names and locations behind every WhsCode you see in stock and batch data.",
+   "response": "array",
+   "evidence": "bare GET -> 400 branch required"
+  },
+  {
+   "path": "/api/hana/vendor-states/",
+   "resource": "hana",
+   "command": "vendor-states",
+   "description": "States JIVO's vendors operate in, per branch \u2014 used to work out interstate vs intrastate GST.",
+   "response": "array",
+   "evidence": "bare GET -> 400 branch required"
+  },
+  {
+   "path": "/api/hana/state-chain/",
+   "resource": "hana",
+   "command": "state-chain",
+   "description": "The state-to-state routing chain used for freight and GST place-of-supply decisions.",
+   "response": "array",
+   "evidence": "bare GET -> 400 branch required"
+  },
+  {
+   "path": "/api/hana/invoice-drafts/",
+   "resource": "hana",
+   "command": "invoice-drafts",
+   "description": "READ of the A/R invoice drafts sitting in SAP for a branch. This reads drafts; it never creates one.",
+   "response": "array",
+   "evidence": "bare GET -> 400 branch required"
+  },
+  {
+   "path": "/api/invoice/crystal/",
+   "resource": "invoices",
+   "command": "crystal",
+   "description": "The Crystal Reports print payload for one posted invoice, by SAP document number.",
+   "response": "object",
+   "evidence": "bare GET -> 400 {\"error\":\"docNum is required\"}",
+   "params": [
+    {
+     "name": "docNum",
+     "type": "string",
+     "required": true,
+     "description": "SAP document number. Server-named requirement; values from `invoices logs` (sap_doc_num)."
+    }
+   ]
+  },
+  {
+   "path": "/api/einvoice/health/",
+   "resource": "einvoice",
+   "command": "health",
+   "description": "Whether the GST e-invoicing integration is up and authenticated.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 174 B"
+  },
+  {
+   "path": "/api/einvoice/companies/",
+   "resource": "einvoice",
+   "command": "companies",
+   "description": "The JIVO legal entities enrolled for GST e-invoicing, with their GSTINs.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 2 rows"
+  },
+  {
+   "path": "/api/einvoice/invoices/",
+   "resource": "einvoice",
+   "command": "invoices",
+   "description": "Invoices that have been through GST e-invoicing, with their IRN status.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 25 rows"
+  },
+  {
+   "path": "/api/einvoice/logs/",
+   "resource": "einvoice",
+   "command": "logs",
+   "description": "IRN generation attempts and their outcomes \u2014 the place to look when an e-invoice fails.",
+   "response": "object",
+   "evidence": "bare GET -> 200, 16 rows"
+  }
+ ],
+ "excluded": [
+  {
+   "path": "/api/service-layer/draft/",
+   "reason": "unsafe",
+   "note": "A bare GET reached SAP Business One's document API and came back with SAP error 203 'Bad Request'. A read endpoint does not talk to SAP's document layer; this is part of the draft-creation path. Never called again."
+  },
+  {
+   "path": "/api/service-layer/draft-action/",
+   "reason": "write verb"
+  },
+  {
+   "path": "/api/ewaybill/json/",
+   "reason": "unsafe",
+   "note": "A bare GET produced 'EWB read failed / The request is invalid' from the GST e-way-bill gateway. It reaches a statutory external system; not wrapped."
+  },
+  {
+   "path": "/api/ewaybill/api/",
+   "reason": "unsafe",
+   "note": "same module as above"
+  },
+  {
+   "path": "/api/einvoice/qr/",
+   "reason": "write-only",
+   "note": "405 Method GET not allowed"
+  },
+  {
+   "path": "/api/invoice/refLogs/",
+   "reason": "write-only",
+   "note": "405 Method GET not allowed"
+  },
+  {
+   "path": "/api/sap/test-quotation/",
+   "reason": "write-only",
+   "note": "405 Method GET not allowed"
+  },
+  {
+   "path": "/api/hana/draft/verify/",
+   "reason": "proven dead",
+   "note": "404 \u2014 not routed under this prefix"
+  },
+  {
+   "path": "/api/sku/json/",
+   "reason": "proven dead",
+   "note": "404 {\"detail\":\"No SKU matches the given query.\"} \u2014 a detail route needing a key we have no observed value for"
+  },
+  {
+   "path": "/api/orders/api/ai-order-summary/",
+   "reason": "known broken",
+   "note": "500 JSONDecodeError on a bare GET \u2014 the view calls an LLM backend that returned a non-JSON body. Reported to the OMS team."
+  },
+  {
+   "path": "/api/invoice/log/{id}/",
+   "reason": "unstudied",
+   "note": "parameterised; no observed id source, so never probed"
+  },
+  {
+   "path": "/api/legal/item/{id}/",
+   "reason": "unstudied",
+   "note": "parameterised; masters are empty so no observed id exists"
+  },
+  {
+   "path": "/api/legal/nutrition/{id}/",
+   "reason": "unstudied",
+   "note": "as above"
+  },
+  {
+   "path": "/api/legal/uom/{id}/",
+   "reason": "unstudied",
+   "note": "as above"
+  },
+  {
+   "path": "/api/sap/parties/{id}/",
+   "reason": "unstudied",
+   "note": "parameterised, not probed this run"
+  },
+  {
+   "path": "/api/sap/parties/code/{code}/",
+   "reason": "unstudied"
+  },
+  {
+   "path": "/api/sap/products/{id}/",
+   "reason": "unstudied"
+  },
+  {
+   "path": "/api/sap/products/code/{code}/",
+   "reason": "unstudied"
+  },
+  {
+   "path": "/api/sap/schedules/{id}/",
+   "reason": "unstudied"
+  },
+  {
+   "path": "/api/auth/parties/{card_code}/users/",
+   "reason": "known broken",
+   "note": "500 TypeError: Object of type UserRole is not JSON serializable. Reported to the OMS team."
+  },
+  {
+   "path": "/api/auth/users/{id}/",
+   "reason": "policy",
+   "note": "It IS a working GET (200, 23 fields) and was wrongly called write-only by the account study. Deliberately not published anyway: the response includes the user's full pbkdf2 password hash, and this CLI's MCP surface is agent-accessible. Publishing it would put 54 credential hashes one tool call away from an agent context. The already-shipped `account users` covers the legitimate need. Revisit once the OMS team drops `password` from the serializer."
+  },
+  {
+   "path": "/api/orders/{id}/orderdetails/",
+   "reason": "superseded",
+   "note": "duplicate of the shipped /api/orders/orderdetailsbyid/{id}/ which is already published as `orders orderdetailsbyid`"
+  },
+  {
+   "path": "/api/einvoice/irn/{irn}/qr.png",
+   "reason": "non-json",
+   "note": "returns a PNG image, not data; nothing useful for a CLI/MCP read surface"
+  }
+ ],
+ "_writes_denied_count": 32,
+ "_note_on_scope": "41 read-shaped routes were found; 19 are published here. The remainder are parameterised with no observed key value, or are duplicates, or belong to modules (einvoice IRN lifecycle, ewaybill) whose reads and writes share prefixes closely enough that studying them properly is its own job. They are listed in `excluded` with a reason rather than left unmentioned, so the next run starts from a complete picture.",
+ "writes_denied": [
+  {
+   "path": "/api/auth/party-product/add",
+   "name": "add-product-to-party",
+   "app": "auth"
+  },
+  {
+   "path": "/api/auth/users/{}/delete",
+   "name": "delete-user",
+   "app": "auth"
+  },
+  {
+   "path": "/api/devices/update",
+   "name": "device-update",
+   "app": "auth"
+  },
+  {
+   "path": "/api/einvoice/ewb",
+   "name": "einvoice-generate-ewb",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/ewb/{}",
+   "name": "einvoice-ewb-by-irn",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/gstin/{}/sync",
+   "name": "einvoice-sync-gstin",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/heartbeat",
+   "name": "einvoice-heartbeat",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn",
+   "name": "einvoice-generate-irn",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn/by-doc",
+   "name": "einvoice-irn-by-doc",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn/cancel",
+   "name": "einvoice-cancel-irn",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn/from-invoice/{}",
+   "name": "einvoice-irn-from-invoice",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn/rejected",
+   "name": "einvoice-rejected-irns",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn/sample",
+   "name": "einvoice-generate-irn-sample",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn/validate",
+   "name": "einvoice-validate-irn",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn/{}",
+   "name": "einvoice-irn-details",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/irn/{}/qr.png",
+   "name": "einvoice-irn-qr-png",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/logs/retry",
+   "name": "einvoice-retry-generation",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/einvoice/token",
+   "name": "einvoice-get-token",
+   "app": "einvoice"
+  },
+  {
+   "path": "/api/orders/push-token",
+   "name": "push-token",
+   "app": "orders"
+  },
+  {
+   "path": "/api/orders/{}/approve",
+   "name": "approve_list",
+   "app": "orders"
+  },
+  {
+   "path": "/api/orders/{}/reject",
+   "name": "reject_list",
+   "app": "orders"
+  },
+  {
+   "path": "/api/orders/{}/update",
+   "name": "update-order",
+   "app": "orders"
+  },
+  {
+   "path": "/api/sap/approve-order",
+   "name": "approve-order",
+   "app": "sap"
+  },
+  {
+   "path": "/api/sap/push-order",
+   "name": "push-order",
+   "app": "sap"
+  },
+  {
+   "path": "/api/sap/push-quotation",
+   "name": "push-quotation",
+   "app": "sap"
+  },
+  {
+   "path": "/api/sap/schedules/{}/toggle",
+   "name": "schedule-toggle",
+   "app": "sap"
+  },
+  {
+   "path": "/api/sap/sync/addresses",
+   "name": "sync-addresses",
+   "app": "sap"
+  },
+  {
+   "path": "/api/sap/sync/all",
+   "name": "sync-all",
+   "app": "sap"
+  },
+  {
+   "path": "/api/sap/sync/branches",
+   "name": "sync-branches",
+   "app": "sap"
+  },
+  {
+   "path": "/api/sap/sync/parties",
+   "name": "sync-parties",
+   "app": "sap"
+  },
+  {
+   "path": "/api/sap/sync/products",
+   "name": "sync-products",
+   "app": "sap"
+  },
+  {
+   "path": "/api/service-layer/draft-action",
+   "name": null,
+   "app": "service-layer"
+  }
+ ]
+}

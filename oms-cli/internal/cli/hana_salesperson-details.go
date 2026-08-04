@@ -13,11 +13,12 @@ import (
 
 func newHanaSalespersonDetailsCmd(flags *rootFlags) *cobra.Command {
 	var flagSlpCode string
+	var flagBranch string
 
 	cmd := &cobra.Command{
 		Use:         "salesperson-details",
 		Short:       "Salesperson detail. Requires --slp-code.",
-		Example:     "  oms-pp-cli hana salesperson-details --slp-code example-value",
+		Example:     "  oms-pp-cli hana salesperson-details --slp-code example-value --branch example-value",
 		Annotations: map[string]string{"pp:endpoint": "hana.salesperson-details", "pp:method": "GET", "pp:path": "/api/hana/salesperson-details/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
@@ -29,6 +30,9 @@ func newHanaSalespersonDetailsCmd(flags *rootFlags) *cobra.Command {
 			if !cmd.Flags().Changed("slp-code") && !flags.dryRun {
 				return fmt.Errorf("required flag \"%s\" not set", "slp-code")
 			}
+			if !cmd.Flags().Changed("branch") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "branch")
+			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
@@ -38,6 +42,9 @@ func newHanaSalespersonDetailsCmd(flags *rootFlags) *cobra.Command {
 			params := map[string]string{}
 			if flagSlpCode != "" {
 				params["slp_code"] = formatCLIParamValue(flagSlpCode)
+			}
+			if flagBranch != "" {
+				params["branch"] = formatCLIParamValue(flagBranch)
 			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "hana", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
@@ -88,6 +95,7 @@ func newHanaSalespersonDetailsCmd(flags *rootFlags) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&flagSlpCode, "slp-code", "", "Salesperson code")
+	cmd.Flags().StringVar(&flagBranch, "branch", "", "One of: OIL | BEVERAGE. string, required, not positional. `OIL | BEVERAGE`. Source: server 400.")
 
 	return cmd
 }

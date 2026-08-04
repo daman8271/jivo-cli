@@ -15,7 +15,7 @@ func newInvoicesSkusPendingCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "skus-pending",
-		Short:       "SKUs pending review",
+		Short:       "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'getFGItems() missing 1 required positional argument",
 		Example:     "  oms-pp-cli invoices skus-pending",
 		Annotations: map[string]string{"pp:endpoint": "invoices.skus-pending", "pp:method": "GET", "pp:path": "/api/sku/pending/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
