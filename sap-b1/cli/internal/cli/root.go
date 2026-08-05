@@ -26,28 +26,13 @@ var (
 func NewRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:   "sapb1",
-		Short: "CLI for the SAP Business One Service Layer (read-only by default)",
+		Short: rootShort,
 		Long: `sapb1 is a command-line client for the SAP Business One Service Layer
 (b1s/v1), built for SAP B1 for HANA.
 
-Everything is a read unless you explicitly run a write command. The reads
-(orders, invoices, items, partners, query, fields, doctor) are plain OData GETs
-and can't change anything.
-
-Three commands can write, and only when you type them:
-
-  draft <doctype>    create a DRAFT document — inert until a human opens SAP B1
-                     → Document Drafts, reviews it, and presses Add. This is the
-                     intended way to write.
-  post <EntitySet>   create an object live, no draft — for master data
-                     (BusinessPartners, Items, …). Prefer draft for documents.
-  patch <Entity(key)> update fields on one existing object.
-
-Each of those previews the exact request, asks you to confirm (or takes --yes),
-and appends every attempt to a local write log (~/.sapb1-writes.jsonl, or
-$SAPB1_WRITE_LOG). There is no delete command. The MCP server (sapb1 mcp) stays
-strictly read-only — no write tool is exposed to agents.
-
+The reads (orders, invoices, items, partners, query, fields, doctor) are plain
+OData GETs and can't change anything.
+` + writeHelpSection + `
 Configuration is read from .env in the current directory (copy .env.example),
 from SAPB1_* environment variables, and can be overridden per-invocation with
 the flags below. Get on the company VPN (or get your IP whitelisted) before
@@ -81,15 +66,13 @@ using anything beyond --help.`,
 	root.AddCommand(newPartnersCmd())
 	root.AddCommand(newQueryCmd())
 
-	// Writes. Nothing here runs unless an operator explicitly types the command:
-	// each one previews the request, requires a confirmation (or --yes), and is
-	// appended to the local write log. `draft` is the intended path — it creates
-	// a Drafts row that stays inert until a human reviews and adds it in the SAP
-	// client; `post`/`patch` are the direct escape hatches. There is deliberately
-	// no delete, and the MCP surface exposes none of these.
-	root.AddCommand(newDraftCmd())
-	root.AddCommand(newPostCmd())
-	root.AddCommand(newPatchCmd())
+	// Writes. Registered only in a default build. A binary built with
+	// `-tags readonly` compiles the write commands out entirely — see
+	// write_enabled.go / write_disabled.go. That is how the access
+	// distributor mints a read-only sapb1 for a read-only grant; it is
+	// defence in depth, NOT the primary control. The primary control is
+	// which SAP account's credentials are in the .env.
+	addWriteCommands(root)
 
 	// Read-only MCP server over stdio (for AI agents).
 	root.AddCommand(newMCPCmd())
