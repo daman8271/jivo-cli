@@ -1,0 +1,1039 @@
+{
+  "components": [
+    {
+      "component": "sap-b1",
+      "distributable": true,
+      "ui_name": "SAP B1 (sapb1)",
+      "ui_description": "Ask JIVO's SAP Business One for live answers — ledger balances, turnover, invoices, orders, stock across the three companies — read-only by default, with drafts-first writes only on explicit command.",
+      "tools": [
+        {
+          "name": "sapb1 (Mac/Linux CLI + read-only MCP server)",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "sap-b1/cli/sapb1",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": "cd sap-b1/cli && go build -o sapb1 ./cmd/sapb1"
+            }
+          ],
+          "env": [
+            {
+              "path": "sap-b1/cli/.env",
+              "required": true,
+              "secrets": true,
+              "resolution": "godotenv.Load() with no argument in internal/config/config.go:81 — loads .env from the CURRENT WORKING DIRECTORY only; precedence is CLI flag > real env var > .env > built-in default. The `mcp` subcommand ADDITIONALLY loads .env from the directory holding the binary (internal/cli/mcp.go:66, filepath.Dir(os.Executable())), so MCP works from any cwd but plain CLI use requires cd-ing next to the .env or exporting SAPB1_* vars. Vars: SAPB1_HOST, SAPB1_PORT, SAPB1_COMPANYDB, SAPB1_USER, SAPB1_PASSWORD, SAPB1_INSECURE, SAPB1_TIMEOUT (+ optional SAPB1_WRITE_LOG). No --password flag exists by design."
+            },
+            {
+              "path": "sap-b1/cli/.env.example",
+              "required": false,
+              "secrets": false,
+              "resolution": "Committed template; operator copies to .env and fills in. Ship this, not the real .env, unless the bundle is explicitly meant to carry live creds."
+            },
+            {
+              "path": "sap-b1/cli/lovepreet-veerji.env",
+              "required": false,
+              "secrets": true,
+              "resolution": "Per-operator named SAP connection (USER06) — NOT referenced anywhere in the Go source; it is a manual convention (copy over .env or source it) used so writes are attributed to a named SAP user. Omit from generic bundles."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "cd <bundle>/sap-b1/cli && ./sapb1 --help  (exits 0 with no config; ./sapb1 entities also works fully offline from the embedded catalog)"
+        },
+        {
+          "name": "accounts-kit (Windows sapb1.exe + Claude Desktop kit for the Accounts team)",
+          "binaries": [
+            {
+              "os": "windows",
+              "path": "sap-b1/accounts-kit/sapb1.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": "cd sap-b1/cli && GOOS=windows GOARCH=amd64 go build -o ../accounts-kit/sapb1.exe ./cmd/sapb1"
+            }
+          ],
+          "env": [
+            {
+              "path": "sap-b1/accounts-kit/.env",
+              "required": true,
+              "secrets": true,
+              "resolution": "Same binary/source as cli/: reads .env from the current working directory (SETUP.md has the operator `cd C:\\jivo-sap` first), and the `mcp` subcommand also reads .env next to the exe. The documented Claude Desktop path instead injects SAPB1_* vars via the env block of claude_desktop_config.json, which overrides any .env."
+            },
+            {
+              "path": "sap-b1/accounts-kit/claude_desktop_config.json",
+              "required": false,
+              "secrets": false,
+              "resolution": "Template the operator pastes into %APPDATA%\\Claude\\claude_desktop_config.json; committed copy holds only the placeholder REPLACE_WITH_SAP_PASSWORD plus real host/user values. Hardcodes command path C:\\jivo-sap\\sapb1.exe."
+            }
+          ],
+          "companion_files": [
+            "sap-b1/accounts-kit/SETUP.md",
+            "sap-b1/accounts-kit/ASK-EXAMPLES.md",
+            "sap-b1/accounts-kit/claude_desktop_config.json"
+          ],
+          "offline_check": "sapb1.exe --help  (run in cmd on Windows; same codebase verified offline-clean on the Mac build — no config needed for --help/entities/catalog)"
+        }
+      ],
+      "docs_to_ship": [
+        "sap-b1/accounts-kit/SETUP.md",
+        "sap-b1/accounts-kit/ASK-EXAMPLES.md",
+        "sap-b1/README.md",
+        "sap-b1/cli/README.md",
+        "sap-b1/cli/MCP.md",
+        "sap-b1/vault/02-Query-Cookbook.md"
+      ],
+      "zip_gotchas": "1) SECRETS ON DISK: sap-b1/cli/.env, sap-b1/accounts-kit/.env and sap-b1/cli/lovepreet-veerji.env all exist locally with live manager/USER06 credentials (gitignored, chmod 600) — a naive zip of the folder ships the SAP production password; bundle .env.example instead unless creds are intended. 2) CWD-DEPENDENT CONFIG: the CLI only auto-loads .env from the current directory (mcp subcommand additionally from next-to-binary), so a recipient who unzips and runs the binary from elsewhere gets 'missing required config' — instruct them to cd into the tool folder or export SAPB1_* vars. 3) HARDCODED PATH: accounts-kit/claude_desktop_config.json hardcodes C:\\\\jivo-sap\\\\sapb1.exe; the exe must land exactly there or the config must be edited. 4) EXEC BIT: sap-b1/cli/sapb1 (Mach-O arm64) needs its execute permission preserved through zip/unzip; a Windows-made zip or some transfer paths strip it (fix: chmod +x), and a downloaded unsigned binary may need `xattr -d com.apple.quarantine` on macOS. 5) ARCH: the Mac binary is arm64-only — Intel Macs need a rebuild (GOOS=darwin GOARCH=amd64); Windows exe is x86-64. 6) WRITE-LOG LAYOUT ASSUMPTION: config.WriteLogPath() walks up from cwd and the binary's dir looking for harness/.operator to log writes to queries/<operator>/sap-writes.jsonl; outside a registered repo checkout (i.e. in a standalone zip) it silently falls back to ~/.sapb1-writes.jsonl, so the shared audit trail becomes local-only — behavioral change, not a crash. 7) No runtime data files needed: the 498-service catalog is compiled in via go:embed (internal/catalog/services.json), and session cache goes to ~/.sapb1-session-*.json. 8) vault/ (500+ notes) and api-reference/ (raw SAP HTML, mock server) are reference/study material — large and unnecessary for an operator bundle.",
+      "notes": "Folder holds four subdirs: cli/ (Go source + committed Mac arm64 binary — deliberately NOT gitignored so non-Go operators get it), accounts-kit/ (prebuilt Windows exe + operator onboarding kit), vault/ and api-reference/ (knowledge/reference only, no runtime role). Both binaries are built from the same source (go 1.25.5, module sapb1); the exe was rebuilt 2026-07-31 and the Mac binary 2026-08-09, both after write support (draft/post/patch) landed. Reads are plain OData GETs; the three write commands preview + require typed 'yes' + append to a JSONL audit log; MCP server exposes no write tools. Offline check verified live on the Mac binary (--help and entities exit 0 with no .env). Windows exe not executable on this machine — its offline check is asserted from shared source, not run."
+    },
+    {
+      "component": "hana-sql",
+      "distributable": true,
+      "ui_name": "HANA SQL (direct SAP database)",
+      "ui_description": "Run read-only SQL straight into SAP B1's HANA database (Oil/Mart/Beverages schemas) — real SUM/GROUP BY/JOIN, so a turnover or balance is one query returning one number; also serves a read-only MCP server for AI clients.",
+      "tools": [
+        {
+          "name": "hana-sql",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "hana-sql/hana-sql",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": "cd hana-sql && go build -o hana-sql ."
+            },
+            {
+              "os": "windows",
+              "path": "hana-sql/hana-sql.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": "cd hana-sql && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o hana-sql.exe ."
+            }
+          ],
+          "env": [
+            {
+              "path": "connections/hana.env",
+              "required": true,
+              "secrets": true,
+              "resolution": "From source (internal/config/config.go): precedence is (1) process env vars HANA_HOST/HANA_PORT/HANA_USER/HANA_PASSWORD override everything; (2) env file at the -env flag path, else $HANA_ENV, else the nearest 'connections/hana.env' found by walking UP from the current working directory to filesystem root. NOT next-to-binary and NOT ~/. Port alone defaults to 30015. Host, user and password are mandatory — the tool errors out (exit 1) without them."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "./hana-sql --help (Windows: hana-sql.exe --help) — prints full usage without any network or env file; note it exits 2 (stdlib flag help convention), so check the usage text, not the exit code. Alternatively './hana-sql \"DELETE FROM X\"' exits 1 with a guard refusal before any credential is read or connection attempted."
+        }
+      ],
+      "docs_to_ship": [
+        "hana-sql/README.md",
+        "hana-sql/MCP.md"
+      ],
+      "zip_gotchas": "1) The env file lives OUTSIDE the tool folder at repo-root connections/hana.env and is found by walking UP from the operator's cwd — a bundle must either recreate a connections/hana.env directory at/above where the operator runs the tool, or set HANA_ENV (or -env flag, or plain HANA_* env vars). It is NOT read from next to the binary. 2) hana-sql.exe is STALE: built Jul 31, verified (via strings) to lack the hana_turnover / hana_sales_by_variety / hana_payments MCP domain tools present in the Aug-2 mac binary — rebuild it before shipping to a Windows operator. 3) The mac binary needs its exec bit preserved through zip/unzip (chmod +x after extraction if lost), and macOS may quarantine the unsigned Go binary on extraction (xattr -d com.apple.quarantine). 4) Only mac-arm64 and windows-x64 prebuilts exist — no mac-intel or linux binary (cross-compile with CGO_ENABLED=0, pure-Go driver). 5) Network prerequisite: hana.env points at HANA directly (103.89.45.192:30015), reachable only from office/whitelisted networks — a connection attempt from this Mac at analysis time timed out; off-office access needs the SSH tunnel documented in connections/SAP-HOME-ACCESS.md. 6) No hardcoded absolute paths or symlinks in the tool itself; queries/turnover-oil-july.sql is referenced in usage examples via a relative path only.",
+      "notes": "Single tool, two front ends in one binary: 'hana-sql \\\"<sql>\\\"' (human CLI, TSV/CSV) and 'hana-sql mcp' (read-only MCP server, stdio or HTTP on 127.0.0.1:7706, optional bearer token via --auth-token/$HANA_MCP_TOKEN). Strictly read-only via a 5-layer guard (lexer, first-token allowlist, single-statement, 33 banned keywords incl. NEXTVAL, HANA READ ONLY tx + always-rollback) — but README states plainly the DB credential is a FULL SAP user (ZIA), so the env file is a production secret and handing it to an operator grants more than the tool exposes; the dedicated read-only HANA user is still a TODO. No runtime companion files: the domain-tool SQL and column facts are compiled into the binary; hana-sql/queries/turnover-oil-july.sql is an optional example worth including since the README/usage reference it. Verified offline execution on the mac binary (usage prints with no env file present). Confidence high on env resolution and read-only design (read from source: internal/config/config.go, main.go); the exe-staleness finding is from strings inspection, not a Windows run."
+    },
+    {
+      "component": "ecom-cli",
+      "distributable": true,
+      "docs_to_ship": [
+        "ecom-cli/README.md",
+        "ecom-cli/SETUP.md",
+        "ecom-cli/OPERATOR-GUIDE.md",
+        "ecom-cli/DOMAIN-GUIDE-2026-08.md",
+        "ecom-cli/SKILL.md"
+      ],
+      "notes": "Evidence-based inventory. Auth model (from internal/config/config.go and internal/cli/jivo_login.go): config path resolves --config flag > $JIVO_ECOM_CONFIG > ~/.config/jivo-ecom-pp-cli/config.toml; $JIVO_ECOM_TOKEN env always beats the file token; base URL https://ecom.jivo.in is compiled in ($JIVO_ECOM_BASE_URL overrides). There is NO godotenv/.env reading anywhere in the source — the tool never picks up a cwd or next-to-binary .env, so a bundle cannot ship a credential file the binary auto-finds. The JWT expires in ~24h (SETUP.md), so recipients must self-provision: `jivo-ecom-pp-cli auth login` (reads $JIVO_ECOM_EMAIL/$JIVO_ECOM_PASSWORD or --email/--password-stdin; known account ecom4@jivo.in per SETUP.md, password not in repo docs) or `auth set-token`. Local sync/analytics DB is created on demand at ~/.local/share/jivo-ecom-pp-cli/data.db (internal/cli/helpers.go defaultDBPath), overridable per-command with --db. The MCP server shells out to the CLI, resolving it sibling-of-executable first, then $JIVO_ECOM_CLI_PATH, then PATH (internal/mcp/cobratree/cli_path.go) — read-only tool surface only. spec.yaml/tools-manifest.json/research/ are generation-time artifacts (printing-press), not runtime dependencies; safe to omit from a bundle. env-vault/all-env.txt contains JIVO_ECOM credentials but is never read by the binary and must not be bundled. MIGRATION-2026-08.md and AGENTS.md are maintainer-facing; skipped from docs_to_ship. Both mac binaries verified running offline today (--version exit 0, prints 1.0.0; mcp --help exit 0).",
+      "tools": [
+        {
+          "name": "jivo-ecom-pp-cli",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "ecom-cli/jivo-ecom-pp-cli",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "ecom-cli/jivo-ecom-pp-cli.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": ""
+            },
+            {
+              "os": "linux",
+              "path": "ecom-cli/bin/jivo-ecom-pp-cli-linux",
+              "exists": false,
+              "format": "go-binary",
+              "build_cmd": "cd ecom-cli && GOOS=linux GOARCH=amd64 go build -o bin/jivo-ecom-pp-cli-linux ./cmd/jivo-ecom-pp-cli"
+            }
+          ],
+          "env": [
+            {
+              "path": "~/.config/jivo-ecom-pp-cli/config.toml",
+              "required": false,
+              "secrets": true,
+              "resolution": "NOT in the repo and NOT a .env: created by the tool itself (`auth login` / `auth set-token`, mode 0600). Lookup order from internal/config/config.go Load(): --config flag > $JIVO_ECOM_CONFIG env > ~/.config/jivo-ecom-pp-cli/config.toml. $JIVO_ECOM_TOKEN env var overrides the file token entirely; $JIVO_ECOM_BASE_URL overrides the baked-in https://ecom.jivo.in. A token source (env var or this file) is REQUIRED for any API call, but the JWT lasts ~24h, so the recipient must run `auth login` ($JIVO_ECOM_EMAIL/$JIVO_ECOM_PASSWORD or --password-stdin) rather than receive a token in the zip. No cwd/next-to-binary .env is ever read (zero godotenv usage in source)."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "./jivo-ecom-pp-cli --version   (verified: exit 0, prints 'jivo-ecom-pp-cli 1.0.0'; --help also works with no network and no credentials)"
+        },
+        {
+          "name": "jivo-ecom-pp-mcp",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "ecom-cli/jivo-ecom-pp-mcp",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "ecom-cli/jivo-ecom-pp-mcp.exe",
+              "exists": false,
+              "format": "exe",
+              "build_cmd": "cd ecom-cli && GOOS=windows GOARCH=amd64 go build -o jivo-ecom-pp-mcp.exe ./cmd/jivo-ecom-pp-mcp"
+            }
+          ],
+          "env": [
+            {
+              "path": "~/.config/jivo-ecom-pp-cli/config.toml",
+              "required": false,
+              "secrets": true,
+              "resolution": "Same auth chain as the CLI (it drives the CLI, not the API directly). Extra env: $PP_MCP_TRANSPORT sets stdio|http (default stdio), --addr for http (default :7777). It locates the companion CLI via: sibling file named jivo-ecom-pp-cli(.exe) in its own directory > $JIVO_ECOM_CLI_PATH > PATH (internal/mcp/cobratree/cli_path.go)."
+            }
+          ],
+          "companion_files": [
+            "ecom-cli/jivo-ecom-pp-cli"
+          ],
+          "offline_check": "./jivo-ecom-pp-mcp --help   (verified: exit 0, prints flag usage; serves stdio MCP when run bare)"
+        }
+      ],
+      "ui_name": "E-com Analytics CLI",
+      "ui_description": "Query JIVO's ecom.jivo.in dashboards from the terminal — sales, inventory, ads, POs and shipments across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart and more, read-only.",
+      "zip_gotchas": "1) Exec bits: jivo-ecom-pp-cli and jivo-ecom-pp-mcp are mode 755 and must stay executable — zip with permissions preserved or tell recipients `chmod +x`; 2) macOS Gatekeeper: downloaded binaries need `xattr -d com.apple.quarantine <binary>` (documented in README); 3) The MCP server finds the CLI as a SIBLING in its own directory first — keep both binaries in the same folder when unzipping, or set $JIVO_ECOM_CLI_PATH; 4) No credential file can ship in the zip that the binary would auto-find: it reads no .env at all, config lives at ~/.config/jivo-ecom-pp-cli/config.toml and the JWT expires ~24h, so the recipient must run `auth login` or export $JIVO_ECOM_TOKEN; 5) No hardcoded absolute paths in code — base URL is compiled in, config and the sync DB (~/.local/share/jivo-ecom-pp-cli/data.db) are per-user-home and created on demand, no repo-layout assumptions; 6) Windows gets only the CLI .exe — no prebuilt Windows MCP binary; 7) Do NOT bundle env-vault/all-env.txt (plaintext credentials, already a known leak) — the binary never reads it."
+    },
+    {
+      "component": "exim",
+      "distributable": true,
+      "ui_name": "EXIM CLI",
+      "ui_description": "Read-only window into JIVO EXIM (exim.jivo.in): tanks, import stock lots, licenses, domestic contracts, rates, SAP-synced ledgers and inventory.",
+      "tools": [
+        {
+          "name": "exim (wrapper: exim/exim → binary: exim-pp-cli)",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "exim/cli/exim-pp-cli/exim-pp-cli",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": "cd exim/cli/exim-pp-cli && go build -o exim-pp-cli ./cmd/exim-pp-cli"
+            },
+            {
+              "os": "windows",
+              "path": "exim/cli/exim-pp-cli/exim-pp-cli.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": "cd exim/cli/exim-pp-cli && GOOS=windows GOARCH=amd64 go build -o exim-pp-cli.exe ./cmd/exim-pp-cli"
+            },
+            {
+              "os": "mac-arm64",
+              "path": "exim/exim",
+              "exists": true,
+              "format": "shell",
+              "build_cmd": ""
+            }
+          ],
+          "env": [
+            {
+              "path": ".env",
+              "required": true,
+              "secrets": true,
+              "resolution": "Read by exim/scripts/eximapi.py, which walks UP from exim/ to the nearest .env (in this repo: the repo-root .env). Needs EXIM_API, EXIM_WEB, EXIM_EMAIL, EXIM_PASSWORD (EXIM_API/EXIM_WEB are hard KeyErrors if absent). The Go binary itself never reads .env for queries — it takes env var EXIM_TOKEN, or config at $EXIM_CONFIG else ~/.config/exim-pp-cli/config.toml (written by 'auth login'); base URL is hardcoded https://eximbe.jivo.in, overridable via EXIM_BASE_URL. 'auth login' cred fallback order: --email flag → env EXIM_EMAIL/EXIM_PASSWORD → hardcoded ~/jivogpt/.env (home-anchored, will not exist on recipient machines)."
+            },
+            {
+              "path": "exim/.secrets/token.json",
+              "required": false,
+              "secrets": true,
+              "resolution": "Runtime JWT cache, always at <exim>/.secrets/token.json relative to the wrapper root (eximapi.py SEC = ROOT/.secrets). Auto-minted on first run — EXCLUDE from bundle (holds live access+refresh tokens); ship the empty .secrets/ dir instead, since eximapi.py never mkdirs it."
+            }
+          ],
+          "companion_files": [
+            "exim/scripts/eximapi.py",
+            "exim/endpoints.json"
+          ],
+          "offline_check": "exim/cli/exim-pp-cli/exim-pp-cli version"
+        }
+      ],
+      "docs_to_ship": [
+        "exim/README.md",
+        "exim/OPERATOR-GUIDE.md",
+        "exim/HARD-RULE.md",
+        "exim/API-INVENTORY.md",
+        "exim/AUTH.md",
+        "exim/DOMAIN-MODEL.md",
+        "exim/CLAUDE.md",
+        "exim/cli/exim-pp-cli/README.md"
+      ],
+      "zip_gotchas": "1) Exec bits: exim/exim (wrapper) and exim/cli/exim-pp-cli/exim-pp-cli must stay +x; zip must preserve permissions or recipient runs chmod +x. macOS may also quarantine the unzipped binary (xattr -d com.apple.quarantine). 2) Relative layout is load-bearing: the wrapper resolves everything from its own dir — cli/exim-pp-cli/exim-pp-cli[.exe] and scripts/eximapi.py must keep their positions under exim/. 3) No .env ships inside exim/ — the creds live in the REPO-ROOT .env, outside the folder; eximapi.py walks upward from exim/, so the recipient must place a .env (EXIM_API, EXIM_WEB, EXIM_EMAIL, EXIM_PASSWORD) inside exim/ or any parent of the unzip location. 4) eximapi.py does NOT create .secrets/ — zips commonly drop empty dirs, and first login then dies with FileNotFoundError; ship .secrets/ with a placeholder file (never ship the existing token.json — live JWTs). 5) Hardcoded stale paths: the Go binary's 'auth login' fallback reads ~/jivogpt/.env (old layout, absolute home path — silently dead elsewhere); legacy exim/scripts/login.sh and get.sh source $ROOT/../../.env, which resolves outside the bundle — omit them or warn. 6) Windows: the wrapper needs Git Bash + python (it auto-falls back from python3 to python because python3 is often a Store stub); calling exim-pp-cli.exe directly works but bypasses the wrapper's GET-that-writes blocklist — the read-only raw guard exists only in the wrapper. 7) Mac binary is arm64-only (no Intel build, no Linux build); Intel Mac/Linux recipients must rebuild with Go 1.26. 8) Exclude from bundle: exim/.secrets/token.json, exim/_raw/ (raw captures), exim/.gstack/.",
+      "notes": "Single-tool folder: a Printing Press-generated read-only Go CLI (65 GET endpoints, zero write operations in the spec; non-GET hard-blocked in internal/client/client.go) plus the exim/exim bash wrapper that auto-mints the JWT via scripts/eximapi.py and blocklists the mutating-GET paths (/sap_sync/, /daily-price/fetch/, /jivo-rate/fetch/, /account/logout/, /stock-status/opening-stock/). Recipients should always enter through the wrapper, not the bare binary. Binary verified offline: 'version' prints exim-pp-cli 1.0.0, exit 0. Binary needs no companion files at runtime (spec is compiled in); endpoints.json is shipped as agent/operator reference for query-param shapes. Local state is created at runtime under ~/.config/exim-pp-cli/ (config.toml from 'auth login') and ~/.local/share/exim-pp-cli/ (sync SQLite data.db, feedback.jsonl) — nothing to ship. An MCP server exists in source (cmd/exim-pp-mcp) but has no prebuilt binary (build: cd exim/cli/exim-pp-cli && go build -o bin/exim-pp-mcp ./cmd/exim-pp-mcp) — internal, not needed in an operator bundle. Warning for rebuilds: regenerating the CLI (not merely 'go build' from current source) overwrites three load-bearing patches in .printing-press-patches/. The endpoints/ and pages/ note folders (138 notes) are optional extra reference docs if bundle size allows."
+    },
+    {
+      "component": "factory-cli",
+      "distributable": true,
+      "ui_name": "Factory CLI",
+      "ui_description": "Query JIVO's factory system read-only — gate entries, vehicles, QC, GRPO, barcode traceability, dispatch, production, warehouse, attendance — across all three companies.",
+      "tools": [
+        {
+          "name": "jivo-factory-pp-cli",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "factory-cli/jivo-factory-pp-cli",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "factory-cli/jivo-factory-pp-cli.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": ""
+            },
+            {
+              "os": "linux",
+              "path": "factory-cli/jivo-factory-pp-cli-linux",
+              "exists": false,
+              "format": "go-binary",
+              "build_cmd": "cd factory-cli && GOOS=linux GOARCH=amd64 go build -o jivo-factory-pp-cli-linux ./cmd/jivo-factory-pp-cli"
+            },
+            {
+              "os": "mac-intel",
+              "path": "factory-cli/jivo-factory-pp-cli-amd64",
+              "exists": false,
+              "format": "go-binary",
+              "build_cmd": "cd factory-cli && GOOS=darwin GOARCH=amd64 go build -o jivo-factory-pp-cli-amd64 ./cmd/jivo-factory-pp-cli"
+            }
+          ],
+          "env": [
+            {
+              "path": "~/.config/jivo-factory-pp-cli/config.toml",
+              "required": true,
+              "secrets": true,
+              "resolution": "internal/config/config.go Load(): --config flag, else $JIVO_FACTORY_CONFIG, else ~/.config/jivo-factory-pp-cli/config.toml. Created by `auth login`; stores rotating access+refresh JWTs (never the password). Alternative: set $JIVO_FACTORY_TOKEN env var, which overrides the file. One of the two is required for live queries."
+            },
+            {
+              "path": "~/jivogpt/.env",
+              "required": false,
+              "secrets": true,
+              "resolution": "internal/cli/factory_login.go: read ONLY by `auth login` as the last-resort source of JIVO_FACTORY_EMAIL / JIVO_FACTORY_PASSWORD, after --email/--password flags and env vars. Hardcoded to $HOME/jivogpt/.env — exists only on the owner's machine; recipients use flags or env vars instead."
+            },
+            {
+              "path": "env-vault/all-env.txt",
+              "required": false,
+              "secrets": true,
+              "resolution": "NOT read by the binary. Repo-root consolidated credential file (git submodule) containing JIVO_FACTORY_* values; an operator sources/copies them into env vars manually. Known-leaked 08-05, rotation pending — do not bundle without an explicit decision."
+            }
+          ],
+          "companion_files": [
+            "product-identity/v1/product-identity-map.json"
+          ],
+          "offline_check": "./jivo-factory-pp-cli version   (also: ./jivo-factory-pp-cli doctor --dry-run — prints requests without sending; both verified exit 0)"
+        },
+        {
+          "name": "jivo-factory-pp-mcp",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "factory-cli/jivo-factory-pp-mcp",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "factory-cli/jivo-factory-pp-mcp.exe",
+              "exists": false,
+              "format": "exe",
+              "build_cmd": "cd factory-cli && GOOS=windows GOARCH=amd64 go build -o jivo-factory-pp-mcp.exe ./cmd/jivo-factory-pp-mcp"
+            }
+          ],
+          "env": [
+            {
+              "path": "~/.config/jivo-factory-pp-cli/config.toml",
+              "required": true,
+              "secrets": true,
+              "resolution": "internal/mcp/tools.go newMCPClient(): hardcoded ~/.config/jivo-factory-pp-cli/config.toml (same store as the CLI; $JIVO_FACTORY_TOKEN env override applies via config.Load). Also resolves its companion CLI binary: sibling-of-executable, then $JIVO_FACTORY_CLI_PATH, then PATH (internal/mcp/cobratree/cli_path.go) — keep both binaries in the same directory."
+            }
+          ],
+          "companion_files": [
+            "factory-cli/jivo-factory-pp-cli"
+          ],
+          "offline_check": "./jivo-factory-pp-mcp --help   (verified exit 0; flags: -transport stdio|http, -addr :7777)"
+        }
+      ],
+      "docs_to_ship": [
+        "factory-cli/README.md",
+        "factory-cli/SKILL.md",
+        "factory-cli/DOMAIN-GUIDE-2026-08.md",
+        "factory-cli/DATA-MODEL.md"
+      ],
+      "zip_gotchas": "1) Credentials live OUTSIDE the repo: ~/.config/jivo-factory-pp-cli/config.toml (created by `auth login`) and ~/jivogpt/.env — a zip ships no working auth; recipient must run `jivo-factory-pp-cli auth login --email ... --password-stdin` once (tokens then self-refresh ~7 days) or export JIVO_FACTORY_TOKEN. 2) product-identity-map.json sits at REPO ROOT (product-identity/v1/), outside factory-cli/ — zip only factory-cli/ and the `product` subcommands fail; include product-identity/v1/product-identity-map.json at the zip root (cwd-upward search finds it) or at <bindir>/../product-identity/v1/, or set JIVO_PRODUCT_IDENTITY_MAP. 3) Mac binaries need the exec bit preserved (zip built on Windows loses it → chmod +x) and Gatekeeper clearing on the recipient Mac: xattr -d com.apple.quarantine. 4) EXCLUDE factory-cli/bin/ from operator bundles: factory_daily.sh/factory_refresh.sh hardcode /root/jivo-factory-intel and /root/jivo-data-bank (VPS-only paths), and refresh_token.py writes ~/.config/jivo-factory/ (a different dir from the CLI's config). 5) MCP binary finds the CLI as a sibling file — ship both in one directory. 6) Runtime SQLite cache is written to ~/.local/share/jivo-factory-pp-cli/data.db (created on demand, nothing to bundle). 7) raw/, research/, spec.yaml, tools-manifest.json, app-model/ are build/study artifacts (~1MB+) — not needed at runtime, safe to exclude.",
+      "notes": "Verified from source, not guessed: config resolution in internal/config/config.go (flag > $JIVO_FACTORY_CONFIG > ~/.config/jivo-factory-pp-cli/config.toml; $JIVO_FACTORY_TOKEN env wins over stored tokens), login fallback chain in internal/cli/factory_login.go, identity-map search in internal/cli/product_identity.go, MCP config+CLI-path in internal/mcp/. Other env vars: JIVO_FACTORY_COMPANY (company scope: JIVO_MART default / JIVO_OIL / JIVO_BEVERAGES, also --company), JIVO_FACTORY_BASE_URL (endpoint override), JIVO_FACTORY_CLI_PATH (MCP-to-CLI). Entity catalog is compiled into the binary — no runtime spec files. Read-only by design; but warn operators of the known trap (memory 2026-08-03): GET /marketplace/settings/ on the upstream API CREATES rows, and marketplace endpoints are Mart-only while barcode production-release-oil is Oil-only. Windows .exe is CLI only — no prebuilt Windows MCP. Version 1.0.0. Offline checks run and passed on this machine 2026-08-10."
+    },
+    {
+      "component": "oms-cli",
+      "distributable": true,
+      "docs_to_ship": [
+        "oms-cli/README.md",
+        "oms-cli/DOMAIN-GUIDE-2026-08.md",
+        "oms-cli/AGENTS.md",
+        "oms-cli/SKILL.md",
+        "oms-cli/MIGRATION-2026-08.md"
+      ],
+      "ui_name": "OMS CLI",
+      "ui_description": "Query JIVO's order management system (oms.jivo.in) read-only: orders, quotations, schemes, invoice approval queue, SAP mirror, live HANA stock/pricing, e-invoicing and the invoice tracker.",
+      "tools": [
+        {
+          "name": "oms-pp-cli",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "oms-cli/oms-pp-cli",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "oms-cli/oms-pp-cli.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": ""
+            },
+            {
+              "os": "mac-intel",
+              "path": "oms-cli/bin/oms-pp-cli-darwin-amd64",
+              "exists": false,
+              "format": "go-binary",
+              "build_cmd": "cd /Users/damanpreetsingh/jivo-cli/oms-cli && GOOS=darwin GOARCH=amd64 go build -o bin/oms-pp-cli-darwin-amd64 ./cmd/oms-pp-cli"
+            },
+            {
+              "os": "linux",
+              "path": "oms-cli/bin/oms-pp-cli-linux-amd64",
+              "exists": false,
+              "format": "go-binary",
+              "build_cmd": "cd /Users/damanpreetsingh/jivo-cli/oms-cli && GOOS=linux GOARCH=amd64 go build -o bin/oms-pp-cli-linux-amd64 ./cmd/oms-pp-cli"
+            }
+          ],
+          "env": [
+            {
+              "path": "~/.config/oms-pp-cli/config.toml",
+              "required": true,
+              "secrets": true,
+              "resolution": "NOT repo-relative and NOT next-to-binary. Source (internal/config/config.go): --config flag -> OMS_CONFIG env var -> ~/.config/oms-pp-cli/config.toml (Go os.UserHomeDir, so %USERPROFILE%\\.config\\oms-pp-cli\\config.toml on Windows). Holds token/access_token (short-lived OMS JWT). Alternative that overrides the file entirely: OMS_TOKEN env var. Recipients should mint their own token via `oms-pp-cli auth login` (--username/OMS_USERNAME + --password/OMS_PASSWORD or --password-stdin) rather than receive a copied JWT, which expires. OMS_BASE_URL optionally overrides the hardcoded https://oms.jivo.in. There is NO .env-file support anywhere in this tool (no godotenv)."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "oms-cli/oms-pp-cli --version  (verified: prints 'oms-pp-cli 1.0.0', exit 0, no network, no config needed; same flag works on the .exe)"
+        },
+        {
+          "name": "oms-pp-mcp (read-only MCP server, optional)",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "oms-cli/bin/oms-pp-mcp",
+              "exists": false,
+              "format": "go-binary",
+              "build_cmd": "cd /Users/damanpreetsingh/jivo-cli/oms-cli && go build -o bin/oms-pp-mcp ./cmd/oms-pp-mcp  (Makefile target: make build-mcp; for Windows add GOOS=windows GOARCH=amd64 and .exe suffix)"
+            }
+          ],
+          "env": [
+            {
+              "path": "~/.config/oms-pp-cli/config.toml",
+              "required": true,
+              "secrets": true,
+              "resolution": "Same config/OMS_TOKEN resolution as the CLI. Additionally resolves the companion CLI binary as: sibling of its own executable -> OMS_CLI_PATH env var -> PATH (internal/mcp/cobratree/cli_path.go), so ship it in the same directory as oms-pp-cli. PP_MCP_TRANSPORT env var optionally selects transport."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "oms-cli/bin/oms-pp-mcp --help (after building; not prebuilt in the repo)"
+        }
+      ],
+      "zip_gotchas": "1) Exec bit: oms-cli/oms-pp-cli must keep +x through zip/unzip (chmod +x after extract on Unix); macOS downloads also need `xattr -d com.apple.quarantine`. 2) The mac binary is arm64-only — Intel Macs and Linux need a fresh go build (Go >= 1.26 per go.mod toolchain). 3) Credentials do NOT live next to the binary: unlike sapb1's accounts-kit .env convention, this CLI only reads ~/.config/oms-pp-cli/config.toml or OMS_TOKEN/OMS_CONFIG env vars — a .env dropped in the zip is silently ignored, so the bundle README must tell recipients to run `oms-pp-cli auth login` (their own OMS username/password; the JWT in a copied config.toml expires). 4) No hardcoded absolute paths in source (verified grep; the 103.89.45.75 strings are help-text only); base URL https://oms.jivo.in is compiled in. 5) sync/analytics commands create ~/.local/share/oms-pp-cli/data.db at runtime — nothing to ship. 6) If bundling the MCP server, it finds the CLI sibling-of-executable first, so keep both binaries in one directory. 7) oms-spec.yaml and tools-manifest.json are generation-time artifacts, not runtime dependencies — safe to omit.",
+      "notes": "Operator-facing and read-only by design (every command is a GET; login is the only session write; MCP hides even login via mcp:hidden annotation, consistent with the repo's MCP-never-writes rule). Known upstream breakages documented in README/DOMAIN-GUIDE as of 2026-08-04: `hana product-stock`, `hana product-so`, `invoices all`, `invoices skus-pending` fail server-side — not a bundle defect. HANA commands require --branch (OIL|BEVERAGE). Tracker commands need a separate tracker grant (plain admin gets 403). Credential source caution: env-vault/all-env.txt contains OMS credentials but the CLI never reads it, and that file is the known public-leak artifact (memory 2026-08-05) — do not ship it in any bundle; have recipients log in with their own OMS account. research/ and .printing-press-patches/ are internal study/regen material, not for recipients. Confidence: high — all resolution claims read from source (internal/config/config.go, internal/cli/oms_login.go, internal/mcp/cobratree/cli_path.go) and the offline check was executed live."
+    },
+    {
+      "component": "jsap-cli",
+      "distributable": true,
+      "docs_to_ship": [
+        "jsap-cli/README.md"
+      ],
+      "notes": "Read-only CLI for JSAP (JIVO's internal ops platform at http://103.89.45.75:5001). Pure Python 3 standard library — zero pip dependencies, no build step, no compiled binaries. 13 modules / ~146 read commands (dashboards, inventory, documents, users, reports, bpmaster, qc, tasks, tickets, hierarchy, bills, dochub, meta). Read-only is enforced in code (jsap/client.py exposes only get() plus a guarded read_post() that refuses non-read action names) and by tests/test_readonly.py (6/6 pass, verified 2026-08-10). Env resolution (from jsap/config.py, verified): per key, os.environ wins first, then the NEAREST ancestor directory of jsap/config.py that contains a .env file, then built-in defaults. In this repo the resolved file is the repo-root /Users/damanpreetsingh/jivo-cli/.env (jsap-cli/ itself has no .env). Defaults: JSAP_URL=http://103.89.45.75:5001, JSAP_USER_ID=68; JSAP_USERNAME/JSAP_PASSWORD default empty and require_creds() aborts with a clear message if missing. Session cookie cached at ~/.jsap/session.json (chmod 0600, 1h TTL), directory overridable via JSAP_STATE_DIR — created at runtime, nothing to ship. README links to docs/jsap/JSAP_MAP.md and docs/READ_ONLY_LAW.md are stale (those files exist nowhere in the repo); README.md itself is the complete usage doc. tests/test_readonly.py is worth including as a recipient self-check but is not a doc. Runtime needs network reachability to 103.89.45.75:5001 (works from office LAN / wherever that IP is routable).",
+      "tools": [
+        {
+          "name": "jsap",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "jsap-cli/jsap-cli",
+              "exists": true,
+              "format": "python",
+              "build_cmd": ""
+            },
+            {
+              "os": "linux",
+              "path": "jsap-cli/jsap-cli",
+              "exists": true,
+              "format": "python",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "jsap-cli/jsap-cli",
+              "exists": true,
+              "format": "python",
+              "build_cmd": ""
+            }
+          ],
+          "companion_files": [
+            "jsap-cli/jsap/__init__.py",
+            "jsap-cli/jsap/__main__.py",
+            "jsap-cli/jsap/_reg.py",
+            "jsap-cli/jsap/cli.py",
+            "jsap-cli/jsap/client.py",
+            "jsap-cli/jsap/config.py",
+            "jsap-cli/jsap/output.py",
+            "jsap-cli/jsap/modules/",
+            "jsap-cli/tests/test_readonly.py"
+          ],
+          "env": [
+            {
+              "path": ".env",
+              "required": true,
+              "secrets": true,
+              "resolution": "jsap/config.py walks UP from the jsap package directory through every parent and uses the FIRST ancestor directory containing a .env (in this repo: repo-root .env; a .env placed inside jsap-cli/ would win in a standalone zip). Per key, os.environ overrides the .env value; built-in defaults fill the rest. Keys: JSAP_USERNAME + JSAP_PASSWORD (required — CLI exits with 'Missing ...' if absent), JSAP_URL (optional, defaults to http://103.89.45.75:5001), JSAP_USER_ID (optional, defaults to 68). Bundle must place a .env containing the three JSAP_* keys inside the jsap-cli folder (or any ancestor of it)."
+            }
+          ],
+          "offline_check": "cd jsap-cli && ./jsap-cli --help   (or: python3 -m jsap --help; verified exit 0, no network touched). Deeper check: python3 tests/test_readonly.py -> '6/6 read-only checks passed'"
+        }
+      ],
+      "ui_name": "JSAP ops platform",
+      "ui_description": "Query JIVO's internal JSAP ops platform from the terminal — tickets, tasks, bill verification, inventory audits, budgets, hierarchy and dashboards — strictly read-only.",
+      "zip_gotchas": "No hardcoded absolute paths anywhere in the source (grep-verified). Three layout requirements: (1) the `jsap-cli` wrapper script must keep its exec bit (currently 755, shebang #!/usr/bin/env python3) AND must sit in the same directory as the `jsap/` package — it inserts its own directory into sys.path; on Windows run `python -m jsap` (or `python jsap-cli`) from inside the jsap-cli folder instead. (2) The repo-root .env is OUTSIDE this folder — zipping jsap-cli alone ships no credentials; the bundle builder must generate a .env with JSAP_USERNAME/JSAP_PASSWORD/JSAP_URL inside the jsap-cli directory, which config.py's nearest-ancestor walk will find first. (3) Exclude jsap/__pycache__, jsap/modules/__pycache__ and tests/__pycache__ (they embed absolute paths in .pyc metadata and are dead weight). Requires python3 on PATH (stdlib only, no pip install). Writes a runtime cookie cache to ~/.jsap/session.json (0600) — harmless, override location with JSAP_STATE_DIR. README's [[docs/...]] wiki-links point at files that don't exist in this repo."
+    },
+    {
+      "component": "postsql",
+      "distributable": true,
+      "ui_name": "Postgres Browser (postsql)",
+      "ui_description": "Explore and query all 16 JIVO Postgres databases (tables, schemas, row samples, arbitrary SELECTs) with writes impossible by design.",
+      "tools": [
+        {
+          "name": "postsql",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "postsql/postsql",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "postsql/postsql.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": ""
+            },
+            {
+              "os": "linux",
+              "path": "postsql/postsql-linux",
+              "exists": false,
+              "format": "go-binary",
+              "build_cmd": "cd postsql && GOOS=linux GOARCH=amd64 go build -o postsql-linux ."
+            },
+            {
+              "os": "mac-intel",
+              "path": "postsql/postsql-darwin-amd64",
+              "exists": false,
+              "format": "go-binary",
+              "build_cmd": "cd postsql && GOOS=darwin GOARCH=amd64 go build -o postsql-darwin-amd64 ."
+            }
+          ],
+          "env": [
+            {
+              "path": "~/.postsql/config.toml",
+              "required": true,
+              "secrets": true,
+              "resolution": "Verified in internal/config/config.go: Path() returns $POSTSQL_CONFIG if set, else ~/.postsql/config.toml (os.UserHomeDir + .postsql/config.toml). NOT cwd, NOT next-to-binary, no .env/godotenv anywhere. A missing file is not an error — every field can instead come from env vars: POSTSQL_HOST/PORT/USER/PASSWORD/DATABASE/PROFILE win, libpq PGHOST/PGPORT/PGUSER/PGPASSWORD/PGDATABASE are fallbacks, then profile values. Defaults: host 127.0.0.1, port 5432, database postgres. Fails closed with a clear error if no user is configured (never silently defaults to 'postgres'). File holds the DB password in plaintext TOML — README says keep it chmod 600. This file is NOT in the repo; the bundle must generate it (or a filled template + install instruction) for the recipient."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "./postsql --help (verified: prints full usage and exits without any network call; 'doctor' is the online health check once creds are in place)"
+        }
+      ],
+      "docs_to_ship": [
+        "postsql/README.md"
+      ],
+      "zip_gotchas": "1) The credential file lives OUTSIDE the repo at ~/.postsql/config.toml — zipping the folder ships a binary with no credentials; the bundle must include a config.toml template plus an instruction to place it at ~/.postsql/config.toml (or set POSTSQL_* env vars). 2) Exec bit: postsql/postsql is -rwxr-xr-x and must survive the zip (use zip/tar that preserves modes; Windows-built zips can drop it → 'permission denied', fix with chmod +x). 3) macOS Gatekeeper: the arm64 binary is unsigned; a downloaded zip gets com.apple.quarantine and the first run may be blocked (fix: xattr -d com.apple.quarantine postsql). 4) Stale absolute path in README.md line ~212: the MCP stdio example hardcodes \\\"/Users/damanpreetsingh/postsql/postsql\\\" and the Install section says 'cd ~/postsql' — both predate the move into jivo-cli/; recipients must substitute their own unzip path. 5) Mac binary is arm64-only (Apple Silicon); Intel Macs and Linux need a cross-compile (commands given per-binary). 6) No other runtime file dependencies: no catalogs, templates, or repo-relative reads — binary + config.toml is the complete runtime set. 7) The bundled 'jivo' profile credential is the postgres superuser per README; also note MEMORY.md (2026-08-06) recorded that password failing fleet-wide (28P01) — verify the credential works before shipping the bundle.",
+      "notes": "Single-tool folder: one Go CLI (cobra + pgx/v5 + BurntSushi/toml), main.go -> internal/{cli,config,db,render}. Strictly read-only via three layers (BEGIN READ ONLY transaction, default_transaction_read_only=on, first-token statement allowlist) — safe to hand to operators. Also doubles as an MCP server (stdio or HTTP :7779) via 'postsql mcp', exposing 6 read-only tools. Binaries verified with file(1): postsql = Mach-O arm64, postsql.exe = PE32+ x86-64. Build requires Go 1.24+ (go.mod pins go 1.26.1). Typed exit codes: 0 ok, 2 usage, 3 connection, 4 query, 5 read-only violation. No 'version' subcommand exists — use --help as the offline proof. Grep confirmed zero os.Getenv/os.ReadFile calls outside internal/config/config.go, so the env resolution stated is the complete picture."
+    },
+    {
+      "component": "portals",
+      "distributable": true,
+      "ui_name": "Seller-portal CLIs",
+      "ui_description": "Read-only lookups into JIVO's seller portals — Blinkit, Zepto, Amazon, Flipkart, Swiggy Instamart — plus TankhaPay HR/payroll: POs, sales, stock, payments, invoices, reports pulled live from each portal.",
+      "tools": [
+        {
+          "name": "blinkit-partner",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "portals/blinkit/cli/blinkit-partner",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "portals/blinkit/cli/blinkit-partner.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": ""
+            }
+          ],
+          "env": [
+            {
+              "path": "~/Library/Application Support/blinkit-cli/config.json (out of repo; %AppData%\\blinkit-cli\\config.json on Windows)",
+              "required": true,
+              "secrets": true,
+              "resolution": "config.go: env vars BLINKIT_TOKEN / BLINKIT_API_KEY / BLINKIT_ENTITY_ID (all three required) + optional BLINKIT_BASE / BLINKIT_ENTITY_TYPE win; any unset field falls back to os.UserConfigDir()/blinkit-cli/config.json. The CLI does NOT read any .env file. Token is short-lived, minted by ~/ecomcliauto/orchestrate/blinkit-login.sh (not in this repo) or `blinkit-partner auth import <curlfile>`."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "portals/blinkit/cli/blinkit-partner --help"
+        },
+        {
+          "name": "zepto-portal",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "portals/zepto/cli/zepto-portal",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "portals/zepto/cli/zepto-portal.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": ""
+            }
+          ],
+          "env": [
+            {
+              "path": "~/Library/Application Support/zepto-cli/config.json (out of repo)",
+              "required": true,
+              "secrets": true,
+              "resolution": "config.go: env vars ZEPTO_JWT (required) + optional ZEPTO_BASE / ZEPTO_ADS_BASE / ZEPTO_BRAND_ID win; unset fields fall back to os.UserConfigDir()/zepto-cli/config.json. No .env file reading. JWT expires daily 23:59:59 IST and Zepto is single-concurrent-session; refreshed by ~/ecomcliauto/orchestrate/zepto-login.sh (not in this repo) or `zepto-portal auth import`."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "portals/zepto/cli/zepto-portal --help"
+        },
+        {
+          "name": "amazon-portal",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "portals/amazon/cli/amazon-portal",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "portals/amazon/cli/amazon-portal.exe",
+              "exists": false,
+              "format": "exe",
+              "build_cmd": "cd portals/amazon/cli && GOOS=windows GOARCH=amd64 go build -o amazon-portal.exe ."
+            }
+          ],
+          "env": [
+            {
+              "path": "~/ecomcliauto/auth/login/out/amazon-mp.cookies.json (out of repo)",
+              "required": true,
+              "secrets": true,
+              "resolution": "config.go: $AMAZON_SC_COOKIE_JAR overrides the jar path; default is the hardcoded home-relative path above. The CLI parses the JSON cookie jar into a Cookie header at each run. It does NOT read .env (portals/amazon/.env.example is documentation only; AMAZON_VC_CONFIG mentioned there is not wired in source). Offline/catalog commands still run with no jar present."
+            },
+            {
+              "path": "portals/amazon/.env.example",
+              "required": false,
+              "secrets": false,
+              "resolution": "Template/documentation only — never read by the binary."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "portals/amazon/cli/amazon-portal --help"
+        },
+        {
+          "name": "flipkart-portal",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "portals/flipkart/cli/flipkart-portal",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "portals/flipkart/cli/flipkart-portal.exe",
+              "exists": false,
+              "format": "exe",
+              "build_cmd": "cd portals/flipkart/cli && GOOS=windows GOARCH=amd64 go build -o flipkart-portal.exe ."
+            }
+          ],
+          "env": [
+            {
+              "path": "portals/flipkart/.env.example",
+              "required": false,
+              "secrets": false,
+              "resolution": "client.go reads ONLY process env vars: FLIPKART_SELLER_COOKIE / FLIPKART_SELLER_CSRF (Seller Hub) and FLIPKART_VENDOR_COOKIE / FLIPKART_VENDOR_CSRF (Vendor Hub). No .env parsing, no config file, no cookie jar — the operator must export the vars (at least one lane) before running. Sessions come from ~/ecomcliauto login scripts on HO-IT-PC10; the CLI never logs in."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "portals/flipkart/cli/flipkart-portal --help"
+        },
+        {
+          "name": "swiggy-instamart-portal",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "portals/swiggy-instamart/cli/swiggy-instamart-portal",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "portals/swiggy-instamart/cli/swiggy-instamart-portal.exe",
+              "exists": false,
+              "format": "exe",
+              "build_cmd": "cd portals/swiggy-instamart/cli && GOOS=windows GOARCH=amd64 go build -o swiggy-instamart-portal.exe ."
+            }
+          ],
+          "env": [
+            {
+              "path": "~/.config/swiggy-instamart-cli/config.json (out of repo)",
+              "required": true,
+              "secrets": true,
+              "resolution": "config.go: $SWIGGY_CONFIG overrides the config path; default ~/.config/swiggy-instamart-cli/config.json. Env vars SWIGGY_TOKEN / SWIGGY_SUPPLY_TOKEN / SWIGGY_EMAIL override file fields; at least one token is required. SWIGGY_SIGN_PEPPER (env only, secret, not in repo) is needed to sign brand-portal-service-http calls; SWIGGY_APP_VERSION optional. No .env parsing. The CLI never logs in or refreshes — the ozone refresh token is single-use."
+            },
+            {
+              "path": "portals/swiggy-instamart/.env.example",
+              "required": false,
+              "secrets": false,
+              "resolution": "Template/documentation only — never read by the binary."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "portals/swiggy-instamart/cli/swiggy-instamart-portal --help"
+        },
+        {
+          "name": "tankhapay-portal",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "portals/tankhapay/cli/tankhapay-portal",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "portals/tankhapay/cli/tankhapay-portal.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": ""
+            }
+          ],
+          "env": [
+            {
+              "path": "portals/tankhapay/.env",
+              "required": true,
+              "secrets": true,
+              "resolution": "config.go: env vars win; gaps filled from the FIRST .env found in this order: $TANKHAPAY_ENV path -> cwd/.env -> cwd/../.env -> <exe dir>/.env -> <exe dir>/../.env -> ~/jivo-cli/portals/tankhapay/.env. Required: TPAY_USERNAME + TPAY_PASSWORD; TPAY_BODY_KEY defaults to the known AES key; the four backend base URLs are defaulted. This is the only portal CLI that logs in itself (sanctioned headless token exchange); 24h JWT cached at ~/.config/tankhapay-portal/token.json (0600)."
+            },
+            {
+              "path": "portals/tankhapay/.env.example",
+              "required": false,
+              "secrets": false,
+              "resolution": "Template listing the TPAY_* variable names."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "portals/tankhapay/cli/tankhapay-portal --help"
+        }
+      ],
+      "companion_files_note": "",
+      "docs_to_ship": [
+        "portals/blinkit/cli/README.md",
+        "portals/zepto/cli/README.md",
+        "portals/amazon/cli/README.md",
+        "portals/amazon/.env.example",
+        "portals/flipkart/cli/README.md",
+        "portals/flipkart/.env.example",
+        "portals/swiggy-instamart/cli/README.md",
+        "portals/swiggy-instamart/.env.example",
+        "portals/tankhapay/cli/README.md",
+        "portals/tankhapay/.env.example"
+      ],
+      "zip_gotchas": "1) Exec bits: the three Mach-O arm64 binaries (blinkit-partner, and all others) must keep +x through zip/unzip — use `zip -y`/`ditto` or `chmod +x` after extract. 2) OS coverage is uneven: only blinkit, zepto and tankhapay ship a Windows .exe; amazon, flipkart and swiggy are mac-arm64 ONLY (cross-compile with GOOS=windows GOARCH=amd64; no mac-intel builds exist anywhere — Intel Macs need GOARCH=amd64 rebuilds, Go 1.23 + cobra from go.sum). 3) Hardcoded home-relative paths: amazon defaults its cookie jar to ~/ecomcliauto/auth/login/out/amazon-mp.cookies.json (recipient must set AMAZON_SC_COOKIE_JAR); tankhapay's last-resort .env fallback is ~/jivo-cli/portals/tankhapay/.env — but its exe-dir/.env resolution means a .env placed next to the unzipped binary Just Works, the only tool in the folder with that property. 4) Credential freshness limits standalone use: blinkit/zepto/swiggy/flipkart/amazon NEVER log in (G9 — they consume sessions minted by ~/ecomcliauto automation that is NOT in this repo); zepto's JWT dies daily at 23:59:59 IST and blinkit's token is short-lived, so a zipped bundle without that automation gives a recipient read access only until the current token expires. Only tankhapay-portal self-authenticates from its .env. 5) blinkit/zepto/swiggy read fallback config from the USER CONFIG DIR (~/Library/Application Support/{blinkit-cli,zepto-cli}/config.json, ~/.config/swiggy-instamart-cli/config.json) — these live outside the repo and won't be in a naive zip; ship env vars instead. 6) Do NOT bundle captures/ (amazon's alone is ~99 MB JS corpus with live session data, gitignored) or portals/tankhapay/.env|.token (real payroll-portal credentials, 593 employees; this folder was already involved in a public-repo leak — see memory 07-31). vault/ study notes are optional reading, not runtime deps. 7) No runtime companion files anywhere: every endpoint catalog/allowlist/manifest is compiled into the binary; swiggy's `endpoints`, flipkart's `list` and every `--help` work offline.",
+      "notes": "Six portals, one read-only Go/cobra CLI each, all sources in portals/<portal>/cli/. All six binaries verified executable offline (--help exit 0 on this mac-arm64 box); arch verified with `file`. All are triple-guardrailed read-only (transport method guard + generated allowlist/path guard + guardrail tests) — no write can be sent, which makes them safe to hand to operators. Practical distributability ranking: tankhapay-portal is fully standalone (self-login from a .env next to the binary, both mac+win prebuilt) but is the most sensitive (live payroll data — gate who gets it); blinkit/zepto are prebuilt for both OSes but need externally-minted short-lived tokens; flipkart/amazon need exported cookie strings/jar from the ecomcliauto login machine; swiggy is the weakest live surface (brand-portal host sits behind a server-side session-activation wall and usually 403s — vendor lane via SWIGGY_SUPPLY_TOKEN is the lane that returns data, plus SWIGGY_SIGN_PEPPER secret needed for signed hosts). The amazon and flipkart .env.example files are documentation only — those binaries never parse .env; variables must be in the process environment. Folder-level READMEs (portals/<portal>/README.md) are study write-ups, useful context but not required to operate."
+    },
+    {
+      "component": "dsr-cli",
+      "distributable": true,
+      "ui_name": "DSR field-sales CLI",
+      "ui_description": "Query the JIVO DSR field-sales system (retailers, beats, attendance, GPS tracks, secondary sales, schemes, targets, stock) read-only from the terminal.",
+      "tools": [
+        {
+          "name": "dsr",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "dsr-cli/dsr",
+              "format": "go-binary",
+              "exists": true,
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "dsr-cli/dsr.exe",
+              "format": "exe",
+              "exists": true,
+              "build_cmd": ""
+            }
+          ],
+          "env": [
+            {
+              "path": "dsr-cli/.env",
+              "required": true,
+              "secrets": true,
+              "resolution": "config.LoadDotEnv() search order (first found wins, real env vars always override): $DSR_ENV_FILE path -> ./.env (cwd) -> <directory of the executable>/.env -> ~/.dsr/.env. Required keys: DSR_USER + DSR_PASSWORD (Resolve() fails closed with 'no database user configured' if DSR_USER is empty). Optional overrides: DSR_HOST (default 103.89.45.75), DSR_PORT (1433), DSR_DATABASE (DSR_V6), DSR_ENCRYPT (disable), DSR_PORTAL_URL (http://103.89.45.75:90). DSR_PORTAL_USER/DSR_PORTAL_PASSWORD are needed only for the `dsr portal ...` subcommands. NOTE: no .env or .env.example currently exists anywhere in the folder (.env is gitignored) — the bundle builder must generate the .env next to the binary."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "./dsr --help (verified: prints full command list, exit 0, no network). Windows: dsr.exe --help"
+        }
+      ],
+      "docs_to_ship": [
+        "dsr-cli/README.md",
+        "dsr-cli/ASK-EXAMPLES.md"
+      ],
+      "zip_gotchas": "1) README and ASK-EXAMPLES both say `cp .env.example .env` but NO .env.example exists in the folder — the bundle must ship a generated .env (or a template) next to the binary or the setup instructions dead-end. 2) The mac binary `dsr-cli/dsr` needs its exec bit preserved (rwxr-xr-x) and, being an unsigned Go Mach-O, may hit macOS Gatekeeper quarantine after unzip (`xattr -d com.apple.quarantine dsr` fixes it). 3) Mac build is arm64-only — no Intel-mac binary; rebuild with `cd dsr-cli && go build -o dsr .` (GOOS/GOARCH cross-compile for other targets, e.g. `GOOS=windows GOARCH=amd64 go build -o dsr.exe .`). 4) No hardcoded absolute filesystem paths in source (verified by grep; study/ mentions are comments only) and no symlinks; binary is self-contained — the `study/` folder (~schema dump + vault notes) is documentation, not a runtime dependency, and can be omitted from a minimal bundle. 5) Server defaults (103.89.45.75:1433 DB, :90 portal) are compiled in — the tool only works from a network that can reach that host (office LAN/VPN/tunnel); nothing in the zip layout affects this.",
+      "notes": "Single-tool folder: one Go CLI (module `dsr`, entry main.go), read-only by construction (SELECT/WITH-only token guard, always-rolled-back READ UNCOMMITTED transaction, Query-never-Exec) against SQL Server DSR_V6, plus GET-only portal report wrappers. 71 sub-commands across 18 domain groups plus doctor/query/count/peek/schema. Binaries are committed to the repo deliberately (see .gitignore comment: operators cannot build Go). Env resolution stated from source (internal/config/config.go lines 47-62, 111-135), not guessed. Offline check run live on the mac binary: exit 0. Credentials caveat from README: the shared `ab` SQL login is sysadmin — the recipient's .env carries a highly privileged secret; doctor warns about it."
+    },
+    {
+      "component": "jivo-scraping-cli",
+      "distributable": true,
+      "docs_to_ship": [
+        "jivo-scraping-cli/README.md",
+        "jivo-scraping-cli/SOURCES.md"
+      ],
+      "notes": "One tool, two identical entry names (bin/jivo-scrape and bin/jivo-desk — byte-identical scripts, verified with diff). Pure Python 3 stdlib, ZERO third-party deps, ZERO network calls, ZERO credentials/env files — nothing secret in this folder. The same script runs on Linux/macOS as ./bin/jivo-scrape and on Windows as `python bin\\jivo-scrape` (I listed one binaries row per OS but the path is the same script). IMPORTANT distribution caveat: the operational commands (price/avail/compare/match/drr/today/files/doctor/history/asof/runs/vault/reports) read a local checkout of the private data repo daman8271/ecom-intel; root resolves from env var JIVO_SCRAPE_ROOT, default /opt/ecom-intel (the VPS godown) — util.py line 17. DRR panel path from env var JIVO_DRR_PANEL, default /root/jivo-drr-panel/build/panel.json (VPS-only) — util.py line 26. On a machine without that data, those commands exit 3 \"source missing\"; only --help/--version and the `product` command group work. The `product` commands need the identity bundle: discovery order is --identity-map flag > env var JIVO_PRODUCT_IDENTITY_MAP > ancestor-walk from cwd AND the installed package dir looking for CLI/product-identity/v1/product-identity-map.json or product-identity/v1/product-identity-map.json (identity.py find_map_path, lines 317-355). In this repo the bundle lives at repo ROOT product-identity/v1/ — one level ABOVE the tool folder — which is how `product verify` passed offline on this Mac. The bundle's release-attestation.json SHA-256 is compiled into identity.py (TRUSTED_ATTESTATION_SHA256, line ~30) and the attestation pins SHA-256s of the 7.9MB map plus 6 evidence files (sources/ecom-master-products.json, factory-catalogs.json, jid-registry.json, pricematch-master-v2.json, pricematch-sku-map.json, review-decisions.json) — ship them byte-identical or every product command fails closed with exit 6, by design with no override. asof/runs additionally need the data root to be a git checkout and `git` on PATH (read-only verb allowlist: rev-list/show/log/rev-parse/ls-tree); they degrade with a note, not a crash. PLAN.md is build history, not operator doc. Distributable verdict: yes as an operator query tool, but a bundle for an off-VPS operator is only fully useful if it also points JIVO_SCRAPE_ROOT at a synced ecom-intel clone; product-identity resolution works fully offline out of the zip.",
+      "tools": [
+        {
+          "name": "jivo-scrape (alias jivo-desk)",
+          "binaries": [
+            {
+              "os": "linux",
+              "path": "jivo-scraping-cli/bin/jivo-scrape",
+              "exists": true,
+              "format": "python",
+              "build_cmd": ""
+            },
+            {
+              "os": "mac-arm64",
+              "path": "jivo-scraping-cli/bin/jivo-scrape",
+              "exists": true,
+              "format": "python",
+              "build_cmd": ""
+            },
+            {
+              "os": "windows",
+              "path": "jivo-scraping-cli/bin/jivo-scrape",
+              "exists": true,
+              "format": "python",
+              "build_cmd": ""
+            }
+          ],
+          "env": [],
+          "companion_files": [
+            "jivo-scraping-cli/jivo_scrape/ (entire package — bin script imports it via bin/../jivo_scrape, must stay adjacent)",
+            "product-identity/v1/product-identity-map.json (repo ROOT, outside the tool folder; 7.9MB; needed by all `product` + SKU-filtered commands)",
+            "product-identity/v1/release-attestation.json (digest pinned in identity.py; must ship byte-identical)",
+            "product-identity/v1/sources/ecom-master-products.json",
+            "product-identity/v1/sources/factory-catalogs.json",
+            "product-identity/v1/sources/jid-registry.json",
+            "product-identity/v1/sources/pricematch-master-v2.json",
+            "product-identity/v1/sources/pricematch-sku-map.json",
+            "product-identity/v1/review-decisions.json",
+            "product-identity/v1/sources/source-manifest.json (not hash-pinned but part of the bundle dir)"
+          ],
+          "offline_check": "python3 jivo-scraping-cli/bin/jivo-scrape --version  (verified: prints 'jivo-scrape 0.3.0'; stronger full-stack check: `python3 jivo-scraping-cli/bin/jivo-scrape product verify` — verified exit 0 fully offline against the repo's product-identity/v1 bundle)"
+        }
+      ],
+      "ui_name": "Q-commerce Price Desk (jivo-scrape)",
+      "ui_description": "Ask about JIVO's daily quick-commerce sweeps — prices, stock/OOS, price-match verdicts and DRR run-rate across 10 platforms (Amazon, Blinkit, Zepto, Instamart...), for today, yesterday, or any archived date, plus exact product-identity resolution.",
+      "why_not": "",
+      "zip_gotchas": "1) Hardcoded absolute defaults: data root /opt/ecom-intel and DRR panel /root/jivo-drr-panel/build/panel.json (util.py:17,26) — both VPS paths; recipients must set JIVO_SCRAPE_ROOT (and optionally JIVO_DRR_PANEL) to a local ecom-intel checkout or all non-`product` commands exit 3. 2) The product-identity bundle lives at repo ROOT (product-identity/v1/), OUTSIDE jivo-scraping-cli/ — zipping only the tool folder silently breaks every `product` and --sku command; either preserve the layout (bundle dir at an ancestor of the package, e.g. put jivo-scraping-cli/ and product-identity/ side by side in the zip root) or set JIVO_PRODUCT_IDENTITY_MAP. 3) Attestation is tamper-evident by design: identity.py compiles in the attestation's SHA-256, and the attestation pins the map + 6 evidence-file hashes — any re-encoding, CRLF conversion, or git-attribute mangling of those JSON files makes product commands fail closed exit 6 with no override; zip them as binary. 4) bin/jivo-scrape and bin/jivo-desk are shebang scripts needing the exec bit on mac/linux (zip must preserve mode, or document `python3 bin/jivo-scrape`); on Windows run via `python bin\\\\jivo-scrape`. 5) bin script locates the package via its own realpath (bin/../jivo_scrape) — safe to symlink, but bin/ must stay next to jivo_scrape/ in the zip. 6) asof/runs need the data root to be a real git checkout with `git` installed (read-only verbs only); they degrade gracefully if not. No .env files, no secrets anywhere in this tool."
+    },
+    {
+      "component": "control-panel",
+      "distributable": true,
+      "ui_name": "Control Panel CLI (jivo)",
+      "ui_description": "Pull sales, targets, OIH, customer aging, payments, master data, stock and production reports from the internal Jivo Group Control Panel ERP, read-only, from the terminal.",
+      "tools": [
+        {
+          "name": "jivo (Control Panel CLI)",
+          "binaries": [
+            {
+              "os": "mac-arm64",
+              "path": "control-panel/cli/jivo/jivo",
+              "exists": true,
+              "format": "go-binary",
+              "build_cmd": "cd control-panel/cli/jivo && go build -o jivo ./cmd/jivo-pp-cli"
+            },
+            {
+              "os": "windows",
+              "path": "control-panel/cli/jivo/jivo.exe",
+              "exists": true,
+              "format": "exe",
+              "build_cmd": "cd control-panel/cli/jivo && GOOS=windows GOARCH=amd64 go build -o jivo.exe ./cmd/jivo-pp-cli"
+            }
+          ],
+          "env": [
+            {
+              "path": "control-panel/.env",
+              "required": true,
+              "secrets": true,
+              "resolution": "NOT auto-discovered. Source (internal/cli/jivo_login.go): `jivo auth login` reads creds as flags (--username/--password) -> env vars JIVO_USER/JIVO_PASS -> an env file whose default path is $HOME/software/.env (hardcoded home-relative constant defaultEnvFile=\"software/.env\"), overridable with --env-file <path>. So a recipient must run `jivo auth login --env-file <unzipped>/control-panel/.env`, or export JIVO_USER/JIVO_PASS, or place the file at ~/software/.env. Base URL is compiled in (http://103.89.45.75:9080, internal/config/config.go:27) and overridable via config file, $JIVO_BASE_URL, or JIVO_BASE in the env file. After login the session cookie is persisted to --config -> $JIVO_CONFIG -> ~/.config/jivo-pp-cli/config.toml (mode 0600); every later command needs only that."
+            }
+          ],
+          "companion_files": [],
+          "offline_check": "control-panel/cli/jivo/jivo version   (prints 'jivo-pp-cli 1.0.0'; `--help` also works — both verified offline, no network touched)"
+        }
+      ],
+      "companion_files_note": "none — spec and manifest are build-time only; nothing read next to the binary at runtime",
+      "docs_to_ship": [
+        "control-panel/README.md",
+        "control-panel/cli/BUILD_NOTES.md",
+        "control-panel/cli/jivo/README.md",
+        "control-panel/cli/jivo/SKILL.md",
+        "control-panel/vault/00-INDEX.md",
+        "control-panel/vault/architecture.md"
+      ],
+      "zip_gotchas": "1) The CLI's default credentials file is ~/software/.env (home-relative, compiled in) — the repo's control-panel/.env is NOT found automatically after unzip; recipient must pass --env-file, export JIVO_USER/JIVO_PASS, or copy the file to ~/software/.env. 2) control-panel/.env line JIVO_COOKIES= contains a hardcoded absolute path (/Users/damanpreetsingh/jivo-cli/control-panel/recon/cookies.txt) — used only by the recon shell scripts, ignored by the Go CLI, but stale on any other machine. 3) EXCLUDE control-panel/recon/ from any bundle: cookies*.txt hold live admin Django session cookies for the production ERP, plus login.sh embeds the credential flow; it is scrape scaffolding, not operator tooling. 4) The mac binary needs its exec bit preserved (zip/unzip with permissions) and, being unsigned, may hit macOS Gatekeeper quarantine if downloaded (fix: xattr -d com.apple.quarantine). 5) Server is plain HTTP on 103.89.45.75:9080; the client hard-refuses sending credentials over HTTP to any host other than 103.89.45.75 or loopback (internal/client/jivo_headers.go InternalHost), so repointing the base URL at a proxy will fail unless HTTPS. 6) Login is an Admin account on a LIVE production system — the CLI is read-only by construction (0 mutating endpoints), but the .env grants admin web login too; handle accordingly. 7) vault/ is a 94-note Obsidian knowledge base — useful reference but ~100 files; ship only the two index docs listed unless the recipient wants the full vault.",
+      "notes": "Single-tool folder. Binary is the generated Go CLI `jivo-pp-cli` (42 read commands across sales/targets/oih/accounts/masterdata/inventory/users/credit + auth/sync/search/doctor). Both prebuilt binaries verified: jivo = Mach-O 64-bit arm64, jivo.exe = PE32+ x86-64 (via `file`), both dated Jul 31. An MCP server target exists (cmd/jivo-pp-mcp, `make build-mcp`) but no prebuilt MCP binary is present — not needed for an operator bundle. No Linux or mac-intel binary prebuilt; build_cmd provided. `doctor` and all report commands hit the network; the offline proof is `version`/`--help`. Everything is read-only against the live ERP; all write/OTP/export endpoints were excluded from the CLI by construction (cli/BUILD_NOTES.md)."
+    }
+  ],
+  "envmap": {
+    "structure": "env-vault/ holds exactly three files: README.md, harvest.py, and the generated all-env.txt. all-env.txt is a single flat file, machine-generated by harvest.py (never hand-edited), which sweeps every .env-named file (.env, .env.local, .env.production, *.env; .example/.sample/.template/.dist excluded) from three hosts — this Mac (~ at depth 4 + ~/jivo-cli fully) plus fleet boxes vps and macpro over SSH — filters paths through IN_SCOPE/OUT_OF_SCOPE keyword tuples, and emits one block per unique file body. Block format: a '# ====' bar, a '# [host] path' provenance header, optional '#  ALSO [host] path (identical copy)' lines (identical file bodies are merged), the closing bar, then bare KEY=VALUE lines plus occasional '# NOTE: <credential comment>' lines (real creds operators wrote in comments are preserved). Blocks are rank-ordered: sap/hana first, then jivo-mcp/jivo-truth, then jivo-cli, then the rest; within a rank vps beats local. The current file has 15 credential blocks (~150 live vars, lines 9-221) followed by three comment-only footers: 'NOT ENV FILES' (pointers to non-env credential files whose contents are NOT copied: ~/.ssh keys, ~/.postsql/config.toml, ~/.config/gh/hosts.yml, ~/.npmrc), 'OUT OF SCOPE' (paths of real credential files deliberately excluded — Hermes/Neo/Paperclip/jivogpt/marketing sites), and an EMPTY section when present. Regenerate with `python3 env-vault/harvest.py` (--dry-run / --local / --all).",
+    "per_cli_sources": [
+      {
+        "cli": "sapb1",
+        "source": "sap-b1/accounts-kit/.env (identical copy at sap-b1/cli/.env) — vault block '# [local] ~/jivo-cli/sap-b1/accounts-kit/.env' at all-env.txt:47; keys SAPB1_HOST/PORT/COMPANYDB/USER/PASSWORD/INSECURE. A second, server-side SAPB1_ block exists ([vps] /opt/jivo-mcp/env/sapb1/.env, line 19) for the MCP gateway — not the CLI's file. Per-operator named-connection env files also sit next to the sapb1 binary for writes (not vault-tracked)."
+      },
+      {
+        "cli": "hana-sql",
+        "source": "connections/hana.env (gitignored; the CLI walks up from cwd to find connections/hana.env, overridable via -env or $HANA_ENV) — vault block '# [vps] /root/sap-size-watch/hana.env' with ALSO '[local] ~/jivo-cli/connections/hana.env' at all-env.txt:30; keys HANA_HOST/PORT/USER/PASSWORD. Two sibling variants: connections/hana-tunnel.env (from-home tunnel, block at line 39, different HANA_HOST) and [vps] /opt/jivo-mcp/env/hana/hana.env (VPS direct, line 9). A bundle must pick direct vs tunnel per deployment network."
+      },
+      {
+        "cli": "ecom-cli",
+        "source": "repo root .env — vault block '# [local] ~/jivo-cli/.env' at all-env.txt:70; keys ECOM_URL/ECOM_EMAIL/ECOM_PASSWORD + JIVO_ECOM_TOKEN/JIVO_ECOM_REFRESH (code reads JIVO_ECOM_* from process env / JIVO_ECOM_CONFIG). Login creds also duplicated as JIVO_ECOM_EMAIL/PASSWORD in the [vps] /root/jivo-intel/.env block (line 170)."
+      },
+      {
+        "cli": "exim",
+        "source": "repo root .env — same '# [local] ~/jivo-cli/.env' block (all-env.txt:70); keys EXIM_EMAIL/EXIM_PASSWORD/EXIM_API/EXIM_WEB. exim/README.md still points at the older ~/jivogpt/.env consolidation, but jivogpt is OUT_OF_SCOPE in the vault and the EXIM_* keys are carried in the jivo-cli root .env block — that block is the authoritative bundle source."
+      },
+      {
+        "cli": "factory-cli",
+        "source": "repo root .env — same '# [local] ~/jivo-cli/.env' block (all-env.txt:70); keys JIVO_FACTORY_WEB/API/EMAIL/PASSWORD/COMPANIES (code fallback chain: flags -> JIVO_FACTORY_* env -> ~/jivogpt/.env, the last being legacy/out-of-scope)."
+      },
+      {
+        "cli": "oms-cli",
+        "source": "repo root .env — same '# [local] ~/jivo-cli/.env' block (all-env.txt:70); keys OMS_URL/OMS_USERNAME/OMS_PASSWORD."
+      },
+      {
+        "cli": "jsap-cli",
+        "source": "repo root .env — same '# [local] ~/jivo-cli/.env' block (all-env.txt:70); keys JSAP_URL/JSAP_USERNAME/JSAP_PASSWORD (jsap-cli/config.py reads the project .env)."
+      },
+      {
+        "cli": "postsql",
+        "source": "NOT in all-env.txt — pointer only, in the 'NOT ENV FILES' footer (all-env.txt:229): ~/.postsql/config.toml (TOML, not .env; contents never copied into the vault). A bundle-builder must copy that file itself. Caveat from memory 2026-08-06: that Postgres password was failing fleet-wide (28P01) — verify before bundling."
+      },
+      {
+        "cli": "portals",
+        "source": "Split by portal. tankhapay: portals/tankhapay/.env — two NON-identical vault blocks, '# [vps] /root/jivo-cli/portals/tankhapay/.env' (line 59) and '# [local] ~/jivo-cli/portals/tankhapay/.env' (line 141), keys TPAY_*; TPAY_* is ALSO duplicated inside the repo-root .env block. blinkit/zepto/amazon/flipkart (+swiggy automation): '# [local] ~/ecomcliauto/.env' block (line 185: ZEPTO_*, BLINKIT_*, AMAZON_*, FLIPKART_*, GOOGLE_* IMAP) plus TOTP seeds block '# [local] ~/Documents/ecomcliauto/auth/totp/seeds.local.env' (line 178) and _deliver-to-windows.local.env (line 218) — these live OUTSIDE the repo, under ~/ecomcliauto."
+      },
+      {
+        "cli": "dsr-cli",
+        "source": "NO vault section and no DSR_* keys anywhere in all-env.txt, even though 'dsr' is in harvest.py IN_SCOPE — no DSR .env existed on any harvested host. Authoritative source per dsr-cli/internal/config/config.go: gitignored .env next to the binary, search order $DSR_ENV_FILE -> ./.env -> <exe dir>/.env -> ~/.dsr/.env; keys DSR_HOST/PORT/DATABASE/ENCRYPT/USER/PASSWORD/PORTAL_URL (defaults 103.89.45.75:1433, DB DSR_V6). Verified absent on this Mac (~/.dsr does not exist). A bundle-builder must source DSR creds out-of-band (see memory dsr-portal-access.md / provisioned operator boxes)."
+      }
+    ],
+    "all_env_splittable": true,
+    "split_how": "Yes — the format is deterministically parseable with a ~30-line state machine. Algorithm: scan line-by-line; a block starts at '# [host] path' (regex ^#\\s\\[(\\w+)\\]\\s(.+)$) sandwiched between '# ===...' bars, followed by optional '#  ALSO [host] path' lines; body = every subsequent line matching ^[A-Za-z_][A-Za-z0-9_]*=.* (plus '# NOTE:' lines, which carry real credentials and should travel with the block) until the next bar. The three footers are comment-only and contain no KEY=VALUE lines, so emitting only matched KV lines auto-excludes them. Route each block to a per-system file either (a) by source path — reuse harvest.py's own IN_SCOPE keyword matching (path contains 'sap-b1'->sapb1.env, 'hana'->hana.env, 'tankhapay'->tankhapay.env, 'ecomcliauto'->portals.env, root ~/jivo-cli/.env->apps.env) — or (b) by key prefix, which is clean because the vault's vars follow strict prefixes: SAPB1_*->sapb1, HANA_*->hana-sql, JSAP_*/OMS_*/EXIM_*/JIVO_FACTORY_*/ECOM_*/JIVO_ECOM_*->the app CLIs, TPAY_*->tankhapay, ZEPTO_*/BLINKIT_*/AMAZON_*/FLIPKART_*/GOOGLE_*->portals. Four caveats: (1) duplicate-key collisions across blocks with DIFFERENT values — TPAY_* appears in 3 blocks, HANA_* in 3 (direct vs tunnel hosts), SAPB1_* in 2 (vps MCP vs local CLI) — the splitter needs a precedence rule (harvest.py's rank(): vps first, or pick tunnel-vs-direct by target network); (2) '# NOTE:' lines hold secrets in comment form — don't strip comments blindly; (3) postsql and SSH-key material are pointer-only and can never be split out of this file — copy the referenced files separately; (4) dsr-cli has no block at all, so a 'split all-env.txt' bundle will silently lack DSR creds.",
+    "notes": "Verified against /Users/damanpreetsingh/jivo-cli/env-vault/harvest.py (scope tuples lines 38-49, block builder lines 172-230), env-vault/README.md, and each CLI's env-loading code (hana-sql/README.md:197-199, dsr-cli/internal/config/config.go:44-57, oms/ecom/factory internal/config, jsap-cli/README.md:32, exim/README.md:39-47). Confidence high on the mapping; two dated caveats from project memory: all-env.txt was publicly readable on GitHub (verified 2026-08-05, rotation ordered — a bundle-builder should treat current values as burn-listed until rotated), and the postsql password was dead fleet-wide as of 2026-08-06. Current file stats: 15 credential blocks, ~150 live vars, sources 'local, vps' (macpro contributed nothing at last harvest). Header keys and section headers were inspected; no secret values were read into this report."
+  },
+  "lessons": {
+    "full_kit_files": [
+      "/.env  (repo root — consolidated creds for ecom-cli, exim, factory-cli, oms-cli, jsap-cli)",
+      "/sap-b1/cli/.env  (SAPB1_HOST/PORT/COMPANYDB/USER/PASSWORD + SAPB1_INSECURE=true — the main SAP login)",
+      "/sap-b1/cli/lovepreet-veerji.env  (per-operator named SAP connection, USER06 — used so writes carry the operator's SAP user)",
+      "/sap-b1/accounts-kit/.env  (creds next to sapb1.exe — the Windows kit reads this, not sap-b1/cli/.env)",
+      "/control-panel/.env  (Jivo Group Control Panel 103.89.45.75:9080)",
+      "/portals/tankhapay/.env  (TankhaPay portal)",
+      "/connections/hana.env  (HANA direct SQL — on tunnel-routed boxes this points at 127.0.0.1:30015)",
+      "/connections/hana-tunnel.env  (tunnel variant of the HANA connection)",
+      "/connections/fleet-access.env  (fleet/SSH infrastructure keys — NOTE: Daman deliberately EXCLUDED this from Avtar's business-creds-only kit; the bundler should treat it as infra, not a default tick)",
+      "— Out-of-repo extras a zip of the repo tree misses: ~/.postsql/config.toml (postsql), ~/.dsr/.env (dsr.exe resolves creds from the home path when run outside the repo tree — Avtar needed dsr-cli/.env AND ~/.dsr/.env), ~/.jsap/ (jsap auto-bootstraps its session there)",
+      "— These exact 9 repo files were what rsync delivered to Karanpreet's MacBook Air on 2026-08-08 (claude-mem obs #4476/#4489/#4492: '9 distinct .env files across 5 subsystems, ~13.8KB'), and the set present in this checkout today matches it file-for-file"
+    ],
+    "windows_notes": "Verified pattern (accounts-kit + Avtar's JIVO201, 2026-08-05/06): sapb1.exe lives in a folder with its .env NEXT TO IT (accounts-kit pattern; C:\\jivo-sap for the Claude Desktop flow, with claude_desktop_config.json pasted into %APPDATA%\\Claude\\ and the password filled in by hand — keep that file private). Interpreter names differ: `python` not `python3` (harness setup, jsap-cli = `python jsap-cli\\jsap-cli`); exim only runs via `bash exim/exim` so Windows needs Git Bash. CMD quoting for write payloads needs \\\" escapes — point recipients at --data-file instead. HARD BLOCKER for any Windows bundle: `sap-b1/vault/services/Entities:.md` has a colon in its name — illegal on NTFS, it can never check out or unzip on Windows; the bundler must exclude or rename it or extraction fails/skips. Private repo = non-interactive `git pull` fails on operator boxes (credential store unreachable over SSH); ship updates as `git bundle` + `git pull <bundle> main`, or re-zip. Token refresh: ecom/oms/control-panel JWTs die in ~24h — Avtar got a 'JIVO Token Refresh' scheduled task, daily 08:30 PLUS at-logon; the logon trigger is load-bearing because the task is Interactive logonType and the daily trigger alone silently never fires on a laptop. Outside a registered checkout the write log falls back to C:\\Users\\<you>\\.sapb1-writes.jsonl — running harness setup.py re-points it into the repo. SAP-without-VPN route (done for JIVO201): a separate JivoSapTunnel scheduled task (never merged with JivoRevTunnel — ExitOnForwardFailure would take port 22 down with it) forwards 127.0.0.1:50000→VPS:47500 and 127.0.0.1:30015→VPS:47301, then the kit's .env just changes SAPB1_HOST=localhost, port unchanged. Also on record: stale 0-byte .git\\index.lock silently blocked all git writes for 7h on Avtar's box.",
+    "mac_notes": "All measured on Karanpreet's MacBook Air (macOS 26.5.1, onboarded 2026-08-08) and the fleet-README macOS section. (1) QUARANTINE: anything that arrives by download/AirDrop carries com.apple.quarantine — Gatekeeper blocks the unsigned Go binaries (and .command installers) extracted from a downloaded zip with 'unidentified developer'. Bundle README must include `xattr -dr com.apple.quarantine <folder>` (or right-click → Open once per binary). The 08-08 transfer dodged this only because rsync/scp does NOT set the attribute — a browser-downloaded zip WILL. (2) EXEC BITS: rsync preserved modes; a zip pipeline must be verified to keep unix permissions or the README needs a `chmod +x` line for each CLI binary (sapb1, oms-pp-cli, jivo-factory-pp-cli, jivo-ecom-pp-cli, exim, postsql, dsr, hana-sql, jsap-cli, control-panel/cli/jivo/jivo). (3) TCC: SSH sessions get 'Operation not permitted' enumerating ~/Documents, ~/Desktop, ~/Downloads (hit live on Karanpreet's Air) — writes to exact known paths still work, but the standing fix is: unzip to the HOME ROOT (~/jivo-cli), not Documents; or flip System Settings → Sharing → Remote Login → 'Allow full disk access for remote users'. Karanpreet ended up with dual copies (~/jivo-cli + ~/Documents/jivo-cli) needing a credential sync script — ship ONE copy. (4) Arch: committed darwin binaries are arm64 (hana-sql was explicitly rebuilt darwin/arm64); an Intel Mac (like danny's Mac Pro) needs a rebuild or a fat bundle. (5) chmod 600 every env file after extraction (control-panel/.env has shipped 644 before). (6) If the box should stay reachable: laptop lids sleep despite pmset sleep 0; disablesleep 1 was set by hand on Karanpreet's Air — but on battery that drains it flat, so 'keep it plugged in' belongs in the handover note.",
+    "network_requirements": "Split by backend, verified on the Avtar (08-06) and Karanpreet (08-08) installs: SAP B1 Service Layer (103.89.45.192:50000) and HANA (:30015) are IP-whitelisted to the office — reachable ONLY from (a) office LAN, (b) FortiClient VPN profile 'Mieux' → 103.178.248.2:20443, or (c) the fleet-VPS tunnel route (box's JivoSapTunnel forwards localhost:50000/30015 through the VPS to the SAP box's parked tunnels; then SAPB1_HOST=localhost — 'localhost' specifically, never a bridge/LAN IP, because SAP's Apache 403s unrecognised Host headers). Karanpreet's Mac proved the failure mode: all 9 creds correct, internet fine, sapb1 doctor still dead from home until a route existed. Everything else in the kit works over plain internet from any network (verified 'home and office alike' for Avtar as of 08-06): ecom/oms/factory/exim (*.jivo.in web apps), jsap (103.89.45.75:5001), control-panel (103.89.45.75:9080), DSR (103.89.45.75:90 + SQL 1433), postsql (103.89.45.76 — though its password is dead fleet-wide as of 08-06). Blinkit/Zepto portals are internet-reachable but their JWT-minting automations live on Daman's Mac only. So the bundle README needs a two-line matrix: 'SAP + HANA: office/VPN/tunnel required; everything else: any internet.'",
+    "readme_must_say": [
+      "THIS ZIP CONTAINS LIVE CREDENTIALS. Do not forward it, upload it to a drive/email, or leave it in Downloads; delete the zip after installing. (Daman's own rule for the bundle-builder: generated zips never get committed or publicly deployed.)",
+      "Where to unzip — Mac: your home folder, i.e. ~/jivo-cli, NOT Documents/Desktop/Downloads (macOS blocks remote-support access there). Windows: a short path without spaces, e.g. C:\\jivo-cli.",
+      "Mac first run: run `xattr -dr com.apple.quarantine ~/jivo-cli` once, or every binary will be blocked as 'unidentified developer'; if a command says 'permission denied', `chmod +x` it.",
+      "First command, yourself, not whoever set the machine up: `python3 harness/bin/setup.py` (Windows: `python harness/bin/setup.py`) — your name and department go on your reports and route your team's rules.",
+      "Second command: your department's doctor from the SETUP.md table (e.g. Accounts Mac: ./sap-b1/cli/sapb1 doctor). Green = ready. Red = credentials or network, message Daman — do not guess.",
+      "Network: SAP and HANA answers need the office network, the FortiClient VPN, or the tunnel this kit was configured with — from plain home Wi-Fi the SAP doctor WILL fail even with perfect credentials. Everything else (sales/factory/ecom/imports/ops portals) works from any internet.",
+      "Logins expire: ecom/oms/factory/control-panel sessions last about a day — the re-login one-liners are in the root README 'Credentials & auth' section (or your box got a scheduled refresh task).",
+      "Reading is safe everywhere and changes nothing. SAP is the only writable system, only via draft/post/patch typed by you, always previewing and requiring the full word 'yes'. If a write ever says 'outcome unknown' (exit 7): STOP, do not re-run, check SAP, tell Daman.",
+      "Windows users: use `python` not `python3`; imports (exim) needs Git Bash; write payloads are easier via --data-file than escaped quotes.",
+      "Don't edit CLAUDE.md, .claude/, or harness/bin — the daily sync reverts and reports it. Don't copy your credential files anywhere else.",
+      "If an answer looks wrong, say so in the chat — corrections you make reach every other operator's copy by the next day."
+    ],
+    "pitfalls": [
+      "Windows zip killer: sap-b1/vault/services/'Entities:.md' (colon in filename) cannot exist on NTFS — every Windows checkout/extract hits it. The bundler must exclude or rename it per-platform.",
+      "macOS quarantine: the 08-08 Karanpreet install worked only because rsync doesn't set com.apple.quarantine — a downloaded zip does, and Gatekeeper then blocks every unsigned Go binary. Bake `xattr -dr` into the README and ideally a post-unzip script.",
+      "Exec-bit loss: verify the zip library preserves unix modes; otherwise all Mac/Linux binaries land non-executable.",
+      "macOS TCC: SSH can't enumerate ~/Documents/~/Desktop/~/Downloads (hit live on Karanpreet's Air); writes to exact paths still work. Standardise install at ~/jivo-cli; two repo copies on one box forced a credential-sync script — ship one copy.",
+      "The repo tree is not the whole kit: ~/.postsql/config.toml, ~/.dsr/.env (dsr.exe reads the home path when run outside the repo) and ~/.jsap/ live OUTSIDE the repo — a repo-only zip silently ships broken postsql/dsr.",
+      "postsql password is dead fleet-wide (28P01, as of 08-06) — bundling today's postsql creds ships a guaranteed-red doctor; fix or drop that tick.",
+      "env-vault leaked publicly (all-env.txt, verified 08-05) — never include the env-vault submodule in a bundle, and only bake creds post-rotation.",
+      "connections/fleet-access.env is infrastructure (SSH/fleet keys), not business creds — Daman explicitly excluded it from Avtar's kit; don't make it a default part of the 9-file set.",
+      "SAPB1_INSECURE=true must be in the SAP env (self-signed cert) or doctor fails with x509; and when the kit is tunnel-routed, SAPB1_HOST must be exactly 'localhost' (Host-header 403 trap on any other name/IP).",
+      "JWT expiry ~24h (ecom/oms/control-panel): without a refresh mechanism the kit 'stops working' the next day; on Windows the refresh task needs an at-logon trigger, not just a daily one (Interactive logonType never fires unattended on a laptop).",
+      "Exclude .git from bundles: 376MB of the ~1.2GB checkout; the Karanpreet rsync shipped ~824MB without it. Also note operator boxes can't `git pull` this private repo non-interactively — updates go out as git bundles or fresh zips.",
+      "SAP write traps for any recipient who will write: BPL_IDAssignedToInvoice is mandatory (else -5002 'Specify an active branch'), and exit code 7 = outcome unknown, never blind-retry.",
+      "Don't clone portal (Blinkit/Zepto) token automations onto a second machine — two boxes fight over one session.",
+      "chmod 600 every env file in the bundle post-extract (control-panel/.env has shipped world-readable before).",
+      "Stale 0-byte .git/index.lock after an interrupted git op silently blocks all git writes (cost 7h on Avtar's box) — worth a line in troubleshooting.",
+      "Sources: NEW-DEVICE.md, SETUP.md, sap-b1/accounts-kit/SETUP.md, connections/fleet/README.md (Karanpreet + JIVO201 rows), memory avtar-jivo201-setup.md (08-06), claude-mem observations #4476–#4492 (08-08 Karanpreet sync). The 9-file list is verified against the live checkout today; network claims are as-of 08-06/08-08."
+    ]
+  }
+}

@@ -1,0 +1,171 @@
+==============================================================================
+JIVO KIT  —  Mac (Apple Silicon)
+Built for : karanpreet
+Built on  : Mon 10 Aug 2026, 14:30 IST
+Bundle    : 20260810-1430-a1b2
+==============================================================================
+
+READ THIS FIRST
+
+   1. THIS ZIP CONTAINS LIVE CREDENTIALS. Do not forward it, upload it to a
+      drive/email, or leave it in Downloads; delete the zip after installing.
+      (Daman's own rule for the bundle-builder: generated zips never get
+      committed or publicly deployed.)
+   2. Where to unzip — Mac: your home folder, i.e. ~/jivo-cli, NOT
+      Documents/Desktop/Downloads (macOS blocks remote-support access there).
+      Windows: a short path without spaces, e.g. C:\jivo-cli.
+   3. Mac first run: run `xattr -dr com.apple.quarantine ~/jivo-cli` once, or
+      every binary will be blocked as 'unidentified developer'; if a command
+      says 'permission denied', `chmod +x` it.
+   4. This kit is a standalone bundle, NOT a git checkout of the toolkit, so
+      there is no harness/ folder and no setup.py to run — skip that step if
+      a colleague mentions it. One consequence: if you write to SAP, the audit
+      log lands in your home folder (~/.sapb1-writes.jsonl) instead of the
+      shared history. Start at the doctor command for your tool, below.
+   5. Second command: your department's doctor from the SETUP.md table (e.g.
+      Accounts Mac: ./sap-b1/cli/sapb1 doctor). Green = ready. Red =
+      credentials or network, message Daman — do not guess.
+   6. Network: SAP and HANA answers need the office network, the FortiClient
+      VPN, or the tunnel this kit was configured with — from plain home
+      Wi-Fi the SAP doctor WILL fail even with perfect credentials. Everything
+      else (sales/factory/ecom/imports/ops portals) works from any internet.
+   7. Logins expire: ecom/oms/factory/control-panel sessions last about a day
+      — the re-login one-liners are in the root README 'Credentials & auth'
+      section (or your box got a scheduled refresh task).
+   8. Reading is safe everywhere and changes nothing. SAP is the only writable
+      system, only via draft/post/patch typed by you, always previewing and
+      requiring the full word 'yes'. If a write ever says 'outcome unknown'
+      (exit 7): STOP, do not re-run, check SAP, tell Daman.
+   9. Windows users: use `python` not `python3`; imports (exim) needs Git
+      Bash; write payloads are easier via --data-file than escaped quotes.
+  10. Don't edit CLAUDE.md, .claude/, or harness/bin — the daily sync
+      reverts and reports it. Don't copy your credential files anywhere else.
+  11. If an answer looks wrong, say so in the chat — corrections you make
+      reach every other operator's copy by the next day.
+
+WHAT IS IN THIS KIT
+
+  - HANA SQL (direct SAP database) — Run read-only SQL straight into SAP
+    B1's HANA database (Oil/Mart/Beverages schemas)
+  - JSAP ops platform — Query JIVO's internal JSAP ops platform from the
+    terminal
+
+FIRST RUN
+
+   1. Unzip into your HOME folder so you end up with ~/jivo-cli — not
+      Documents, Desktop or Downloads. macOS blocks remote support from those
+      three folders.
+   2. Open Terminal and run: cd ~/jivo-cli
+   3. Clear the download quarantine, once, or macOS blocks every tool as an
+      'unidentified developer':
+          xattr -dr com.apple.quarantine ~/jivo-cli
+   4. If a command says 'permission denied', restore the execute bit:
+          chmod +x \
+            ~/jivo-cli/hana-sql/hana-sql \
+            ~/jivo-cli/jsap-cli/jsap-cli
+   5. Lock the credential files down: on Mac `chmod 600 $(find ~/jivo-cli
+      -name '*.env')`; on Windows leave them where they are and do not copy
+      them anywhere.
+   6. Run the offline check for your tool from its section below. That proves
+      the tool runs. Then run its doctor, which also proves the network and
+      the credentials.
+
+NETWORK — WHICH TOOLS NEED WHAT
+
+  - SAP B1 and HANA: office LAN, the FortiClient VPN profile 'Mieux', or the
+    tunnel this kit was configured with. From plain home Wi-Fi the SAP doctor
+    WILL fail even though the credentials are perfect — that is the network,
+    not the kit.
+  - Everything else (sales, factory, ecom, imports, ops portals, DSR, control
+    panel): any internet connection, home or office.
+
+------------------------------------------------------------------------------
+HANA SQL (DIRECT SAP DATABASE)
+
+  Run read-only SQL straight into SAP B1's HANA database (Oil/Mart/Beverages
+  schemas) — real SUM/GROUP BY/JOIN, so a turnover or balance is one query
+  returning one number; also serves a read-only MCP server for AI clients.
+
+  HOW TO RUN IT
+    Run it from anywhere inside ~/jivo-cli — it finds its own settings by
+    looking upward through the folders.
+    Included here: ./hana-sql/hana-sql
+
+  CREDENTIALS
+    Ready to use — the credentials are in this kit and the tool reads them
+    itself.
+    Both connection variants ship: connections/hana.env (direct, office
+    network) and connections/hana-tunnel.env (from home, through the tunnel).
+    hana-sql walks UP from wherever you run it to find connections/hana.env
+    — so keep the folder layout, and to use the tunnel variant copy it over
+    connections/hana.env.
+
+  CHECK IT WORKS (no network needed)
+    ./hana-sql --help (Windows: hana-sql.exe --help) — prints full usage
+    without any network or env file; note it exits 2 (stdlib flag help
+    convention), so check the usage text, not the exit code. Alternatively
+    './hana-sql "DELETE FROM X"' exits 1 with a guard refusal before any
+    credential is read or connection attempted.
+
+  WORTH KNOWING
+    - To switch between office and home routes, copy
+      connections/hana-tunnel.env over connections/hana.env (keep a copy of
+      the original first).
+    - --help exits with code 2. That is normal for this tool — if you see
+      the usage text, it works.
+    - hana-sql: HANA (103.89.45.192:30015) is IP-whitelisted to the office,
+      same as SAP. The bundle ships both connections/hana.env (direct) and
+      connections/hana-tunnel.env (from-home) — the recipient uses whichever
+      matches their route.
+    - hana-sql: the database credential is a FULL SAP user (ZIA), not a
+      read-only account. The tool's guard is read-only, the credential is not
+      — hand it out accordingly.
+
+------------------------------------------------------------------------------
+JSAP OPS PLATFORM
+
+  Query JIVO's internal JSAP ops platform from the terminal — tickets,
+  tasks, bill verification, inventory audits, budgets, hierarchy and
+  dashboards — strictly read-only.
+
+  HOW TO RUN IT
+    cd ~/jivo-cli/jsap-cli — this tool reads its credentials from the folder
+    you are standing in, so run it from there.
+    Included here: ./jsap-cli/jsap-cli
+
+  CREDENTIALS
+    Ready to use — the credentials are in this kit and the tool reads them
+    itself.
+    jsap walks up from jsap-cli/jsap/ and finds the bundle's root .env —
+    nothing to configure.
+
+  CHECK IT WORKS (no network needed)
+    cd jsap-cli && ./jsap-cli --help (or: python3 -m jsap --help; verified
+    exit 0, no network touched). Deeper check: python3 tests/test_readonly.py
+    -> '6/6 read-only checks passed'
+
+------------------------------------------------------------------------------
+WARNINGS FROM THIS BUILD
+
+  - env-vault/all-env.txt was publicly readable on GitHub (verified
+    2026-08-05) — treat every credential in this bundle as burn-listed until
+    it has been rotated. env-vault/ itself is never bundled.
+  - hana-sql: HANA (103.89.45.192:30015) is IP-whitelisted to the office, same
+    as SAP. The bundle ships both connections/hana.env (direct) and
+    connections/hana-tunnel.env (from-home) — the recipient uses whichever
+    matches their route.
+  - hana-sql: the database credential is a FULL SAP user (ZIA), not a
+    read-only account. The tool's guard is read-only, the credential is not
+    — hand it out accordingly.
+
+------------------------------------------------------------------------------
+IF SOMETHING IS WRONG
+
+  - A red doctor is almost always credentials or network, in that order.
+    Message Daman with the exact command and the exact message — do not
+    guess and do not retry a write.
+  - If an answer looks wrong, say so in the chat. Corrections you make reach
+    every other operator's copy by the next day.
+  - Delete the zip once this folder is in place. Keep the folder; the
+    credentials inside it are live.
+

@@ -1,0 +1,155 @@
+==============================================================================
+JIVO KIT  —  Windows (64-bit)
+Built for : accounts
+Built on  : Mon 10 Aug 2026, 14:30 IST
+Bundle    : 20260810-1430-a1b2
+==============================================================================
+
+READ THIS FIRST
+
+   1. THIS ZIP CONTAINS LIVE CREDENTIALS. Do not forward it, upload it to a
+      drive/email, or leave it in Downloads; delete the zip after installing.
+      (Daman's own rule for the bundle-builder: generated zips never get
+      committed or publicly deployed.)
+   2. Where to unzip — Mac: your home folder, i.e. ~/jivo-cli, NOT
+      Documents/Desktop/Downloads (macOS blocks remote-support access there).
+      Windows: a short path without spaces, e.g. C:\jivo-cli.
+   3. Mac first run: run `xattr -dr com.apple.quarantine ~/jivo-cli` once, or
+      every binary will be blocked as 'unidentified developer'; if a command
+      says 'permission denied', `chmod +x` it.
+   4. This kit is a standalone bundle, NOT a git checkout of the toolkit, so
+      there is no harness/ folder and no setup.py to run — skip that step if
+      a colleague mentions it. One consequence: if you write to SAP, the audit
+      log lands in your home folder (~/.sapb1-writes.jsonl) instead of the
+      shared history. Start at the doctor command for your tool, below.
+   5. Second command: your department's doctor from the SETUP.md table (e.g.
+      Accounts Mac: ./sap-b1/cli/sapb1 doctor). Green = ready. Red =
+      credentials or network, message Daman — do not guess.
+   6. Network: SAP and HANA answers need the office network, the FortiClient
+      VPN, or the tunnel this kit was configured with — from plain home
+      Wi-Fi the SAP doctor WILL fail even with perfect credentials. Everything
+      else (sales/factory/ecom/imports/ops portals) works from any internet.
+   7. Logins expire: ecom/oms/factory/control-panel sessions last about a day
+      — the re-login one-liners are in the root README 'Credentials & auth'
+      section (or your box got a scheduled refresh task).
+   8. Reading is safe everywhere and changes nothing. SAP is the only writable
+      system, only via draft/post/patch typed by you, always previewing and
+      requiring the full word 'yes'. If a write ever says 'outcome unknown'
+      (exit 7): STOP, do not re-run, check SAP, tell Daman.
+   9. Windows users: use `python` not `python3`; imports (exim) needs Git
+      Bash; write payloads are easier via --data-file than escaped quotes.
+  10. Don't edit CLAUDE.md, .claude/, or harness/bin — the daily sync
+      reverts and reports it. Don't copy your credential files anywhere else.
+  11. If an answer looks wrong, say so in the chat — corrections you make
+      reach every other operator's copy by the next day.
+
+WHAT IS IN THIS KIT
+
+  - SAP B1 (sapb1) — Ask JIVO's SAP Business One for live answers
+
+FIRST RUN
+
+   1. Unzip to a short path with no spaces: C:\jivo-cli. You should end up
+      with C:\jivo-cli\ containing this README.txt.
+   2. Open Command Prompt there: press Win+R, type cmd, then `cd C:\jivo-cli`.
+   3. Windows quirks that bite: use `python`, not `python3`. The imports tool
+      (exim) only runs under Git Bash. For write payloads use --data-file
+      instead of escaping quotes in cmd.
+   4. Lock the credential files down: on Mac `chmod 600 $(find ~/jivo-cli
+      -name '*.env')`; on Windows leave them where they are and do not copy
+      them anywhere.
+   5. Run the offline check for your tool from its section below. That proves
+      the tool runs. Then run its doctor, which also proves the network and
+      the credentials.
+
+NETWORK — WHICH TOOLS NEED WHAT
+
+  - SAP B1 and HANA: office LAN, the FortiClient VPN profile 'Mieux', or the
+    tunnel this kit was configured with. From plain home Wi-Fi the SAP doctor
+    WILL fail even though the credentials are perfect — that is the network,
+    not the kit.
+  - Everything else (sales, factory, ecom, imports, ops portals, DSR, control
+    panel): any internet connection, home or office.
+
+------------------------------------------------------------------------------
+SAP B1 (SAPB1)
+
+  Ask JIVO's SAP Business One for live answers — ledger balances, turnover,
+  invoices, orders, stock across the three companies — read-only by default,
+  with drafts-first writes only on explicit command.
+
+  HOW TO RUN IT
+    cd C:\jivo-cli\sap-b1\accounts-kit — this tool reads its credentials
+    from the folder you are standing in, so run it from there.
+    Included here: sap-b1\accounts-kit\sapb1.exe
+
+  CREDENTIALS
+    Ready to use — the credentials are in this kit and the tool reads them
+    itself.
+    The SAP login is already in the .env next to the tool. Run it from that
+    folder — the CLI only reads .env from the current directory.
+
+  CHECK IT WORKS (no network needed)
+    (These are written Mac-style. In cmd, drop the leading ./ and use the .exe
+    name — e.g. `hana-sql.exe --help`.)
+    sapb1.exe --help (run in cmd on Windows; same codebase verified
+    offline-clean on the Mac build — no config needed for
+    --help/entities/catalog)
+
+  WORTH KNOWING
+    - Reading is safe and changes nothing. SAP is the only system in this kit
+      you can write to, and only by typing draft/post/patch yourself — every
+      write previews first and needs the full word 'yes'.
+    - If a write ever says the outcome is unknown (exit code 7): STOP. Do not
+      run it again. Check SAP for what actually exists, and tell Daman.
+    - Because this is a standalone kit and not a repo checkout, your SAP write
+      log goes to your home folder (~/.sapb1-writes.jsonl on Mac,
+      C:\Users\<you>\.sapb1-writes.jsonl on Windows) instead of the shared
+      team history.
+    - claude_desktop_config.json in this kit points at C:\jivo-sap\sapb1.exe.
+      Either copy the sap-b1\accounts-kit folder to C:\jivo-sap, or edit that
+      path in the file before pasting it into
+      %APPDATA%\Claude\claude_desktop_config.json. Fill in the password by
+      hand and keep that file private.
+    - If the SAP box is reached through the tunnel, SAPB1_HOST must be exactly
+      'localhost' — any other name or IP gets a 403 from SAP's web server.
+    - sap-b1: SAP Service Layer (103.89.45.192:50000) is IP-whitelisted to the
+      office — from plain home Wi-Fi the doctor fails even with perfect
+      credentials. The recipient needs office LAN, the FortiClient 'Mieux'
+      VPN, or a configured tunnel.
+    - sap-b1/accounts-kit/claude_desktop_config.json hardcodes
+      C:\jivo-sap\sapb1.exe — either the recipient copies the accounts-kit
+      folder to C:\jivo-sap, or that path in the config must be edited by
+      hand.
+
+------------------------------------------------------------------------------
+WARNINGS FROM THIS BUILD
+
+  - env-vault/all-env.txt was publicly readable on GitHub (verified
+    2026-08-05) — treat every credential in this bundle as burn-listed until
+    it has been rotated. env-vault/ itself is never bundled.
+  - sap-b1: SAP Service Layer (103.89.45.192:50000) is IP-whitelisted to the
+    office — from plain home Wi-Fi the doctor fails even with perfect
+    credentials. The recipient needs office LAN, the FortiClient 'Mieux' VPN,
+    or a configured tunnel.
+  - sap-b1/accounts-kit/claude_desktop_config.json hardcodes
+    C:\jivo-sap\sapb1.exe — either the recipient copies the accounts-kit
+    folder to C:\jivo-sap, or that path in the config must be edited by hand.
+
+------------------------------------------------------------------------------
+NOT IN THIS KIT
+
+  - sap-b1 / sapb1 (Mac/Linux CLI + read-only MCP server) — no windows
+    binary prebuilt (the manifest has only: mac-arm64)
+
+------------------------------------------------------------------------------
+IF SOMETHING IS WRONG
+
+  - A red doctor is almost always credentials or network, in that order.
+    Message Daman with the exact command and the exact message — do not
+    guess and do not retry a write.
+  - If an answer looks wrong, say so in the chat. Corrections you make reach
+    every other operator's copy by the next day.
+  - Delete the zip once this folder is in place. Keep the folder; the
+    credentials inside it are live.
+

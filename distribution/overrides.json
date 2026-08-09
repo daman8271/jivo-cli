@@ -1,0 +1,54 @@
+{
+  "_comment": "Hand-maintained warnings the manifest cannot know: staleness, dead passwords, credentials pending rotation. Loaded by internal/manifest.LoadOverrides. `global` applies to every bundle, `components` is keyed by component id, `binaries` by repo-relative binary path (fires only when that artefact ships, i.e. only for its target). A warning may start with a target scope in square brackets — \"[windows] ...\" or \"[mac-arm64] ...\" — and is then dropped from bundles for any other target. Date every entry; an undated warning goes stale silently.",
+
+  "global": [
+    "env-vault/all-env.txt was publicly readable on GitHub (verified 2026-08-05) — treat every credential in this bundle as burn-listed until it has been rotated. env-vault/ itself is never bundled."
+  ],
+
+  "components": {
+    "postsql": [
+      "postsql: the Postgres password was failing fleet-wide (28P01) as of 2026-08-06 — this bundle will ship a guaranteed-red postsql doctor unless it has been fixed since. Verify before sending, or drop postsql from the selection."
+    ],
+    "portals": [
+      "portals: blinkit/zepto/amazon/flipkart/swiggy sessions are minted by the token automation on Daman's Mac only. This bundle carries read access until the current session expires and cannot refresh itself — do not clone the token automation to a second machine, two boxes fight over one session.",
+      "portals/tankhapay carries live payroll (HR) credentials — treat this bundle as confidential and send it to HR-cleared recipients only."
+    ],
+    "ecom-cli": [
+      "ecom-cli: JWTs expire in about 24h. The recipient re-runs `auth login` with the baked credentials; on Windows a refresh scheduled task needs an at-logon trigger, not just a daily one."
+    ],
+    "oms-cli": [
+      "oms-cli: JWTs expire in about 24h — the recipient re-runs `auth login` with the baked credentials."
+    ],
+    "control-panel": [
+      "control-panel: JWTs expire in about 24h, and the binary's compiled-in credential path is ~/software/.env — the recipient must pass `--env-file` at `jivo auth login` or copy the file there."
+    ],
+    "dsr-cli": [
+      "dsr-cli: dsr.exe also looks in ~/.dsr/.env when run outside the repo tree — Avtar's box (2026-08-06) needed both dsr-cli/.env and ~/.dsr/.env."
+    ],
+    "jsap-cli": [
+      "[windows] jsap-cli ships as a Python script, not an .exe — run it as `python jsap-cli\\jsap-cli` (or `cd jsap-cli && python -m jsap`). Use `python`, not `python3`. Corrected 2026-08-10: the manifest previously named the jsap package DIRECTORY as the Windows entry point, which silently dropped jsap from every Windows kit."
+    ],
+    "exim": [
+      "[windows] exim: the bash wrapper exim/exim is tagged mac-arm64 in the manifest, so it is not in a Windows bundle. Windows operators run exim\\cli\\exim-pp-cli\\exim-pp-cli.exe directly, or install Git Bash and use the wrapper from a Mac/Linux copy."
+    ],
+    "sap-b1": [
+      "sap-b1: SAP Service Layer (103.89.45.192:50000) is IP-whitelisted to the office — from plain home Wi-Fi the doctor fails even with perfect credentials. The recipient needs office LAN, the FortiClient 'Mieux' VPN, or a configured tunnel."
+    ],
+    "hana-sql": [
+      "hana-sql: HANA (103.89.45.192:30015) is IP-whitelisted to the office, same as SAP. The bundle ships both connections/hana.env (direct) and connections/hana-tunnel.env (from-home) — the recipient uses whichever matches their route.",
+      "hana-sql: the database credential is a FULL SAP user (ZIA), not a read-only account. The tool's guard is read-only, the credential is not — hand it out accordingly."
+    ]
+  },
+
+  "binaries": {
+    "hana-sql/hana-sql.exe": [
+      "hana-sql.exe is STALE: built 2026-07-31, and lacks the hana_turnover / hana_sales_by_variety / hana_payments MCP domain tools that the 2026-08-02 Mac binary has. Rebuild before shipping to a Windows operator: cd hana-sql && CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o hana-sql.exe ."
+    ],
+    "sap-b1/accounts-kit/sapb1.exe": [
+      "sap-b1/accounts-kit/claude_desktop_config.json hardcodes C:\\jivo-sap\\sapb1.exe — either the recipient copies the accounts-kit folder to C:\\jivo-sap, or that path in the config must be edited by hand."
+    ],
+    "portals/tankhapay/cli/tankhapay-portal": [
+      "tankhapay lives only on Daman's Mac (the whole portals/tankhapay/ folder is gitignored) — it cannot be bundled from any other machine."
+    ]
+  }
+}
