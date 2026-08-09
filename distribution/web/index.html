@@ -1,71 +1,149 @@
 <!--
-THESIS: Composing a toolkit bundle is chalking a godown load board — the page IS the board,
-and the output composes itself as a paper dispatch slip. Refused: the SaaS card-grid picker
-with a floating cart drawer.
-OWN-WORLD: Board black-green (#171C19) ground, warm chalk (#E9E7DF) hand-ruled hairlines,
-one marigold chalk stick (#E8A63D) for ticks/stamp/active plate, red chalk for warnings only,
-a cream paper slip (#F4EDDC) with typewritten mono ink. Zero radius, flat except the slip's lift.
-STORY: Daman scans the board, ticks tools, watches the slip type itself, stamps DISPATCH,
-hands over the zip. Warnings surface on the row and repeat on the slip before the stamp.
-FIRST VIEWPORT: Painted "JIVO — DISPATCH" header with MAC/WINDOWS plates top-right; left ~70%
-the chalk-ruled load board (grouped tool rows, tick boxes, sizes right-aligned); right ~30%
-the pinned slip, stamp at its foot. Primary action = the stamp on the slip.
-FORM: Godown chalk load board — candidate 6 of 7 on my resonance list, seed bc77af97
-(assigned index 6); staging: board-plus-composing-slip, committed over the dealt stagings.
+THESIS: Handing a colleague a toolkit is a macOS desktop ritual — you drop files into a folder,
+then extract the archive. The page IS that desktop. Refused: the SaaS card-grid checkout with a
+cart drawer, and the chalk load board this replaces (previous world, see git history).
+OWN-WORLD: A near-black desk (#0B0D10) lit by one blue glow, and exactly one object standing on
+it — a macOS-blue folder (#3B82F6→#5AA2F7) built from three stacked panels in CSS 3D, so paper
+lands BETWEEN the back and the front. Tools are matte tiles that light blue when ticked; amber
+carries a note, coral carries trouble. Glossy where the folder is, flat everywhere else.
+STORY: Scan the grid, tick a tool, watch its name fly into the folder and the paper stack rise,
+name the consignee, choose MAC or WINDOWS, press EXTRACT — the folder closes and hands back one zip.
+FIRST VIEWPORT: Menubar strip; left, the tool grid in labelled groups; right, the folder standing
+alone with its fill meter, target toggle and EXTRACT beneath it.
+FORM: "The Blue Folder" — CSS 3D panels + FLIP chip flights. No three.js, no CDN, nothing fetched.
 -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JIVO Dispatch — Godown Load Board</title>
+<title>JIVO Kit — The Blue Folder</title>
 <link rel="stylesheet" href="board.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%23171C19'/><path d='M3 9l3 3 7-8' stroke='%23E8A63D' stroke-width='2.2' fill='none'/></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230B0D10'/><path d='M2 5.4a1 1 0 0 1 1-1h3.6l1 1.2H13a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z' fill='%233B82F6'/><path d='M2 7.6h12V12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z' fill='%235AA2F7'/></svg>">
 </head>
 <body>
-<header class="board-head">
-  <h1 class="brand">JIVO — DISPATCH
-    <svg class="brand-rule" viewBox="0 0 320 8" preserveAspectRatio="none" aria-hidden="true"><path d="M2 5 C 60 2, 120 7, 180 4 S 290 3, 318 5" fill="none"/></svg>
-  </h1>
-  <p class="board-sub">godown load board · tick what goes in the kit</p>
-  <div class="plates" role="group" aria-label="Target machine">
-    <button type="button" class="plate" data-target="mac-arm64" aria-pressed="true">MAC</button>
-    <button type="button" class="plate" data-target="windows" aria-pressed="false">WINDOWS</button>
-  </div>
+<div class="desk">
+
+<header class="menubar">
+  <svg class="mb-mark" viewBox="0 0 16 16" aria-hidden="true">
+    <path d="M1 4.4a1 1 0 0 1 1-1h4.2l1 1.2H14a1 1 0 0 1 1 1V12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" fill="#3B82F6"/>
+    <path d="M1 6.9h14V12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1z" fill="#5AA2F7"/>
+  </svg>
+  <span class="mb-app">JIVO</span>
+  <span class="mb-item">Distribution kit</span>
+  <span class="mb-right" id="mb-right">reading the manifest…</span>
 </header>
 
-<main class="layout">
-  <section class="board" aria-label="Load board">
-    <div id="board-groups"></div>
-    <div class="board-foot">
-      <h2 class="group-head">SENT FROM THIS DESK</h2>
+<p class="banner" id="banner" hidden></p>
+
+<main class="workspace">
+
+  <section class="shelf" aria-label="Tools you can put in the folder">
+    <div id="grid-groups"></div>
+
+    <section class="archives" aria-label="Archives on this desk">
+      <h2 class="sec-head">ARCHIVES ON THIS DESK</h2>
       <ul id="past-bundles" class="past"></ul>
-      <p class="foot-note" id="foot-note">board reads live from the manifest — nothing here is hardcoded</p>
-    </div>
+      <p class="foot-note" id="foot-note">every tile is read live from the manifest — nothing here is hardcoded</p>
+    </section>
   </section>
 
-  <aside class="slip-col" aria-label="Dispatch slip">
-    <div class="slip">
-      <div class="clip" aria-hidden="true"><span class="clip-hole"></span></div>
-      <div class="slip-paper">
-      <p class="slip-co">JIVO WELLNESS PVT. LTD.</p>
-      <p class="slip-title">DISPATCH SLIP</p>
-      <p class="slip-meta"><span id="slip-date"></span> · <span id="slip-target">MAC</span></p>
-      <label class="slip-consignee">CONSIGNEE
-        <input id="recipient" type="text" autocomplete="off" spellcheck="false" placeholder="name" maxlength="40">
-      </label>
-      <div class="slip-body" id="slip-items" aria-live="polite"></div>
-      <div class="slip-total" id="slip-total"></div>
-      <label class="slip-docs"><input type="checkbox" id="include-docs" checked>
-        <span class="slip-docs-box" aria-hidden="true"></span>INCLUDE GUIDES &amp; EXAMPLES</label>
-      <div class="slip-global" id="slip-global"></div>
-      <div class="slip-status" id="slip-status" role="status"></div>
-      <button type="button" class="stamp" id="dispatch" disabled>DISPATCH ZIP</button>
+  <aside class="folder-col" aria-label="The folder">
+    <div class="folder-stage">
+      <div class="folder" id="folder">
+        <div class="folder-3d">
+
+          <div class="panel back" aria-hidden="true">
+            <svg viewBox="0 0 320 210" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="gBack" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#3E7FE4"/>
+                  <stop offset="0.45" stop-color="#3572D6"/>
+                  <stop offset="1" stop-color="#2A5DBE"/>
+                </linearGradient>
+                <linearGradient id="gTabLight" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="rgba(255,255,255,0.28)"/>
+                  <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+                </linearGradient>
+              </defs>
+              <!-- back body + tab: tab spans the left ~38%, its shoulder blends
+                   into the body top with one continuous S-curve, Big Sur style -->
+              <path d="M10 182 V42 Q10 30 22 30 H96 Q106 30 112 36.5 L124 49.5 Q129 55 138 55 H298 Q310 55 310 67 V182 Q310 194 298 194 H22 Q10 194 10 182 Z" fill="url(#gBack)"/>
+              <!-- soft light falling on the tab's top surface -->
+              <path d="M10 42 Q10 30 22 30 H96 Q106 30 112 36.5 L124 49.5 Q129 55 138 55 H298 Q310 55 310 67 V70 H10 Z" fill="url(#gTabLight)"/>
+              <!-- hairline crease where tab meets the body -->
+              <path d="M10 55 H124" stroke="rgba(13,32,74,0.25)" stroke-width="1" fill="none"/>
+            </svg>
+          </div>
+
+          <div class="stack" id="stack"></div>
+
+          <div class="panel front" id="folder-front" aria-hidden="true">
+            <svg viewBox="0 0 320 210" preserveAspectRatio="xMidYMid meet">
+              <defs>
+                <linearGradient id="gFront" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#71B1FB"/>
+                  <stop offset="0.42" stop-color="#549AF6"/>
+                  <stop offset="1" stop-color="#3B7BE8"/>
+                </linearGradient>
+                <linearGradient id="gSheen" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="rgba(255,255,255,0.30)"/>
+                  <stop offset="0.5" stop-color="rgba(255,255,255,0.08)"/>
+                  <stop offset="1" stop-color="rgba(255,255,255,0)"/>
+                </linearGradient>
+                <linearGradient id="gWeight" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="rgba(21,44,96,0)"/>
+                  <stop offset="1" stop-color="rgba(21,44,96,0.22)"/>
+                </linearGradient>
+                <clipPath id="frontClip">
+                  <path d="M10 90 Q10 76 24 76 H296 Q310 76 310 90 V180 Q310 194 296 194 H24 Q10 194 10 180 Z"/>
+                </clipPath>
+              </defs>
+              <path d="M10 90 Q10 76 24 76 H296 Q310 76 310 90 V180 Q310 194 296 194 H24 Q10 194 10 180 Z" fill="url(#gFront)"/>
+              <g clip-path="url(#frontClip)">
+                <!-- sheen falling from the top edge -->
+                <rect x="10" y="76" width="300" height="34" fill="url(#gSheen)"/>
+                <!-- weight gathering at the bottom -->
+                <rect x="10" y="150" width="300" height="44" fill="url(#gWeight)"/>
+                <!-- crisp top rim catching the light -->
+                <path d="M12 90 Q12 78 24 78 H296 Q308 78 308 90" stroke="rgba(255,255,255,0.55)" stroke-width="1.5" fill="none"/>
+              </g>
+            </svg>
+          </div>
+
+          <div class="sweep" aria-hidden="true"></div>
+          <div class="mouth" id="folder-mouth" aria-hidden="true"></div>
+          <span class="folder-count" id="folder-count" aria-hidden="true">0</span>
+          <span class="stamp" id="folder-stamp" aria-hidden="true">EXTRACTED</span>
+
+        </div>
       </div>
+      <p class="meter" id="meter" aria-live="polite">folder is empty — tick a tool</p>
+    </div>
+
+    <div class="controls">
+      <label class="field">
+        <span class="field-label">CONSIGNEE</span>
+        <input id="recipient" type="text" autocomplete="off" spellcheck="false" placeholder="who is this kit for" maxlength="40">
+      </label>
+
+      <div class="targets" id="targets" role="group" aria-label="Target machine"></div>
+
+      <label class="switch">
+        <input type="checkbox" id="include-docs" checked>
+        <span>Include guides &amp; examples</span>
+      </label>
+
+      <div class="global-warn" id="global-warn"></div>
+
+      <button type="button" class="extract" id="extract" disabled>EXTRACT ZIP</button>
+
+      <div class="status" id="status" role="status"></div>
     </div>
   </aside>
-</main>
 
+</main>
+</div>
 <script src="board.js"></script>
 <!-- jivo-mark:v1 -->
 <div id="jivo-mark" aria-hidden="true">
