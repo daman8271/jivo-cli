@@ -5418,7 +5418,7 @@
     },
     {
       "name": "production-execution_costs-analytics",
-      "description": "The run-cost ledger: every run's stored cost record with its component cost lines. Optional: date_from, date_to, line. Returns array.",
+      "description": "One stored cost record per costed run — raw material, labour, machine, electricity, water, gas, compressed air, overhead, the waste-recovery credit, total and net, each with its component lines. TRAP: per_unit_cost is total over produced_qty in CASES and reads 0.00 on the 48% of records whose run posted no produced quantity, so never average it across records. Optional: date_from, date_to, line. Returns array.",
       "method": "GET",
       "path": "/production-execution/costs/analytics/",
       "params": [
@@ -5464,7 +5464,7 @@
     },
     {
       "name": "production-execution_line-clearance-detail",
-      "description": "Full detail of one line clearance including every checkpoint and its result. Required: id.",
+      "description": "One line clearance in full: every checkpoint and its result, the QA approver and their remarks, attachments, and the decision history each time the call changed (cleared / not cleared / on hold) before the line started. Required: id.",
       "method": "GET",
       "path": "/production-execution/line-clearance/{id}/",
       "params": [
@@ -5478,8 +5478,23 @@
       ]
     },
     {
+      "name": "production-execution_line-config-detail",
+      "description": "One saved line configuration by its id — config name, rated speed in bottles/hr, pieces per case, the optional SKU, and the standard crew. Required: id. Returns object.",
+      "method": "GET",
+      "path": "/production-execution/line-configs/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "integer",
+          "location": "path",
+          "description": "Config id from /production-execution/line-configs/. Verified live on JIVO_OIL id 7. int",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "production-execution_line-configs",
-      "description": "List the saved line presets (line + SKU + rated speed + labour/manpower counts) that pre-fill a new run. Optional: line_id. Returns array.",
+      "description": "The named configurations saved for a line — several per line (e.g. '1 LTR', '250ml'), each holding a rated speed in bottles/hr, pieces per case, an OPTIONAL SKU and the standard crew. The operator picks one by name when starting a run and it fills the form. Optional: line_id. Returns array.",
       "method": "GET",
       "path": "/production-execution/line-configs/",
       "params": [
@@ -5493,7 +5508,7 @@
     },
     {
       "name": "production-execution_line-configs-auto-fill",
-      "description": "Look up the matching saved preset for a line + SKU, as the Start Run screen does before pre-filling the form. Required: line_id.",
+      "description": "The configuration the Start Run screen pre-applies for a line, optionally narrowed to a SKU. Returns an object wrapping one config: {\"config\": {...}}, or {\"config\": null} when nothing matches. Required: line_id.",
       "method": "GET",
       "path": "/production-execution/line-configs/auto-fill/",
       "params": [
@@ -5514,7 +5529,7 @@
     },
     {
       "name": "production-execution_lines",
-      "description": "List the physical filling/packing lines in the plant, with standard running hours per day and month. Optional: is_active. Returns array.",
+      "description": "The plant's filling/packing lines with their costing basis — standard running hours per day and per month (the denominators that spread fixed daily and monthly cost onto a run) and the electricity units (kWh) drawn per running hour. Optional: is_active. Returns array.",
       "method": "GET",
       "path": "/production-execution/lines/",
       "params": [
@@ -5724,7 +5739,7 @@
     },
     {
       "name": "production-execution_reports-analytics-downtime-pareto",
-      "description": "Downtime Pareto by breakdown category, plus by machine, a daily trend and MTBF/MTTR. Optional: date_from, date_to, line.",
+      "description": "Downtime for a period ranked by breakdown category — count, minutes, share and cumulative share, the individual reasons inside each category, a daily trend, and MTBF/MTTR. The by-machine split is a single 'Unknown' bucket because no machines are registered in any company. Optional: date_from, date_to, line.",
       "method": "GET",
       "path": "/production-execution/reports/analytics/downtime-pareto/",
       "params": [
@@ -6057,7 +6072,7 @@
     },
     {
       "name": "production-execution_run-detail",
-      "description": "Full detail of one production run including every timing segment and every logged breakdown. Required: id.",
+      "description": "One production run in full: every timing segment (start, end, minutes, produced_cases), every logged breakdown, and the crew — labour count, other manpower, supervisor and operators — none of which the run list carries. Segments exist ONLY here; there is no segments endpoint. Required: id.",
       "method": "GET",
       "path": "/production-execution/runs/{id}/",
       "params": [
@@ -6222,7 +6237,7 @@
     },
     {
       "name": "production-execution_runs",
-      "description": "List production runs — the core shift-level record: date, line, SKU, required vs produced quantity, running minutes, breakdown minutes and status. Optional: status, date, date_from (plus 3 more). Returns array.",
+      "description": "Production runs — the shift-level record: date, line, SKU, required vs produced cases, running and breakdown minutes. Carries TWO statuses: status (DRAFT/IN_PROGRESS/COMPLETED) and live_status, what the line is doing now (DRAFT/RUNNING/STOPPED/BREAKDOWN/COMPLETED). Optional: status, date, date_from (plus 3 more). Returns array.",
       "method": "GET",
       "path": "/production-execution/runs/",
       "params": [

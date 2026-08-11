@@ -16,7 +16,7 @@ func newProductionExecutionRunDetailCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "run-detail",
-		Short:       "Full detail of one production run including every timing segment and every logged breakdown. Required: id.",
+		Short:       "One production run in full: every timing segment (start, end, minutes, produced_cases), every logged breakdown",
 		Example:     "  jivo-factory-pp-cli production-execution run-detail --id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.run-detail", "pp:method": "GET", "pp:path": "/production-execution/runs/{id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

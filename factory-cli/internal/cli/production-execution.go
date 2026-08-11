@@ -22,6 +22,7 @@ func newProductionExecutionCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newProductionExecutionCostsAnalyticsCmd(flags))
 	cmd.AddCommand(newProductionExecutionLineClearanceCmd(flags))
 	cmd.AddCommand(newProductionExecutionLineClearanceDetailCmd(flags))
+	cmd.AddCommand(newProductionExecutionLineConfigDetailCmd(flags))
 	cmd.AddCommand(newProductionExecutionLineConfigsCmd(flags))
 	cmd.AddCommand(newProductionExecutionLineConfigsAutoFillCmd(flags))
 	cmd.AddCommand(newProductionExecutionLinesCmd(flags))

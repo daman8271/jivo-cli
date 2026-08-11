@@ -3574,7 +3574,7 @@ resources:
       costs-analytics:
         method: GET
         path: /production-execution/costs/analytics/
-        description: 'The run-cost ledger: every run''s stored cost record with its component cost lines.'
+        description: 'One stored cost record per costed run — raw material, labour, machine, electricity, water, gas, compressed air, overhead, the waste-recovery credit, total and net, each with its component lines. TRAP: per_unit_cost is total over produced_qty in CASES and reads 0.00 on the 48% of records whose run posted no produced quantity, so never average it across records.'
         response:
           type: array
         params:
@@ -3603,7 +3603,7 @@ resources:
       line-clearance-detail:
         method: GET
         path: /production-execution/line-clearance/{id}/
-        description: 'Full detail of one line clearance including every checkpoint and its result. Required: id.'
+        description: 'One line clearance in full: every checkpoint and its result, the QA approver and their remarks, attachments, and the decision history each time the call changed (cleared / not cleared / on hold) before the line started. Required: id.'
         response:
           type: object
         params:
@@ -3611,10 +3611,21 @@ resources:
           type: integer
           required: true
           description: 'Clearance id from /production-execution/line-clearance/ int'
+      line-config-detail:
+        method: GET
+        path: /production-execution/line-configs/{id}/
+        description: 'One saved line configuration by its id — config name, rated speed in bottles/hr, pieces per case, the optional SKU, and the standard crew. Required: id.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Config id from /production-execution/line-configs/. Verified live on JIVO_OIL id 7. int'
       line-configs:
         method: GET
         path: /production-execution/line-configs/
-        description: 'List the saved line presets (line + SKU + rated speed + labour/manpower counts) that pre-fill a new run.'
+        description: 'The named configurations saved for a line — several per line (e.g. ''1 LTR'', ''250ml''), each holding a rated speed in bottles/hr, pieces per case, an OPTIONAL SKU and the standard crew. The operator picks one by name when starting a run and it fills the form.'
         response:
           type: array
         params:
@@ -3624,7 +3635,7 @@ resources:
       line-configs-auto-fill:
         method: GET
         path: /production-execution/line-configs/auto-fill/
-        description: 'Look up the matching saved preset for a line + SKU, as the Start Run screen does before pre-filling the form. Required: line_id.'
+        description: 'The configuration the Start Run screen pre-applies for a line, optionally narrowed to a SKU. Returns an object wrapping one config: {"config": {...}}, or {"config": null} when nothing matches. Required: line_id.'
         response:
           type: object
         params:
@@ -3638,7 +3649,7 @@ resources:
       lines:
         method: GET
         path: /production-execution/lines/
-        description: 'List the physical filling/packing lines in the plant, with standard running hours per day and month.'
+        description: 'The plant''s filling/packing lines with their costing basis — standard running hours per day and per month (the denominators that spread fixed daily and monthly cost onto a run) and the electricity units (kWh) drawn per running hour.'
         response:
           type: array
         params:
@@ -3709,7 +3720,7 @@ resources:
       reports-analytics-downtime-pareto:
         method: GET
         path: /production-execution/reports/analytics/downtime-pareto/
-        description: 'Downtime Pareto by breakdown category, plus by machine, a daily trend and MTBF/MTTR.'
+        description: 'Downtime for a period ranked by breakdown category — count, minutes, share and cumulative share, the individual reasons inside each category, a daily trend, and MTBF/MTTR. The by-machine split is a single ''Unknown'' bucket because no machines are registered in any company.'
         response:
           type: object
         params:
@@ -3972,7 +3983,7 @@ resources:
       runs:
         method: GET
         path: /production-execution/runs/
-        description: 'List production runs — the core shift-level record: date, line, SKU, required vs produced quantity, running minutes, breakdown minutes and status.'
+        description: 'Production runs — the shift-level record: date, line, SKU, required vs produced cases, running and breakdown minutes. Carries TWO statuses: status (DRAFT/IN_PROGRESS/COMPLETED) and live_status, what the line is doing now (DRAFT/RUNNING/STOPPED/BREAKDOWN/COMPLETED).'
         response:
           type: array
         params:
@@ -3997,7 +4008,7 @@ resources:
       run-detail:
         method: GET
         path: /production-execution/runs/{id}/
-        description: 'Full detail of one production run including every timing segment and every logged breakdown. Required: id.'
+        description: 'One production run in full: every timing segment (start, end, minutes, produced_cases), every logged breakdown, and the crew — labour count, other manpower, supervisor and operators — none of which the run list carries. Segments exist ONLY here; there is no segments endpoint. Required: id.'
         response:
           type: object
         params:

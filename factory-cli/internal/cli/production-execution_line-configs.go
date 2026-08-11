@@ -16,7 +16,7 @@ func newProductionExecutionLineConfigsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "line-configs",
-		Short:       "List the saved line presets (line + SKU + rated speed + labour/manpower counts) that pre-fill a new run.",
+		Short:       "The named configurations saved for a line — several per line (e.g. '1 LTR', '250ml')",
 		Example:     "  jivo-factory-pp-cli production-execution line-configs",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.line-configs", "pp:method": "GET", "pp:path": "/production-execution/line-configs/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

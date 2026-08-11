@@ -18,7 +18,7 @@ func newProductionExecutionReportsAnalyticsDowntimeParetoCmd(flags *rootFlags) *
 
 	cmd := &cobra.Command{
 		Use:         "reports-analytics-downtime-pareto",
-		Short:       "Downtime Pareto by breakdown category, plus by machine, a daily trend and MTBF/MTTR.",
+		Short:       "Downtime for a period ranked by breakdown category — count, minutes, share and cumulative share",
 		Example:     "  jivo-factory-pp-cli production-execution reports-analytics-downtime-pareto",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.reports-analytics-downtime-pareto", "pp:method": "GET", "pp:path": "/production-execution/reports/analytics/downtime-pareto/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

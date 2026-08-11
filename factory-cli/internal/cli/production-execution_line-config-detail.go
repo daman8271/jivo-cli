@@ -11,15 +11,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newProductionExecutionLineConfigsAutoFillCmd(flags *rootFlags) *cobra.Command {
-	var flagLineId string
-	var flagSkuCode string
+func newProductionExecutionLineConfigDetailCmd(flags *rootFlags) *cobra.Command {
+	var flagId string
 
 	cmd := &cobra.Command{
-		Use:         "line-configs-auto-fill",
-		Short:       "The configuration the Start Run screen pre-applies for a line, optionally narrowed to a SKU.",
-		Example:     "  jivo-factory-pp-cli production-execution line-configs-auto-fill --line-id 550e8400-e29b-41d4-a716-446655440000",
-		Annotations: map[string]string{"pp:endpoint": "production-execution.line-configs-auto-fill", "pp:method": "GET", "pp:path": "/production-execution/line-configs/auto-fill/", "mcp:read-only": "true"},
+		Use:         "line-config-detail",
+		Short:       "One saved line configuration by its id — config name, rated speed in bottles/hr, pieces per case, the optional SKU, and the standard crew. Required: id.",
+		Example:     "  jivo-factory-pp-cli production-execution line-config-detail --id 550e8400-e29b-41d4-a716-446655440000",
+		Annotations: map[string]string{"pp:endpoint": "production-execution.line-config-detail", "pp:method": "GET", "pp:path": "/production-execution/line-configs/{id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Bare invocation of a command with required input prints help
 			// instead of pflag's terse "required flag not set" error. Optional-
@@ -27,22 +26,17 @@ func newProductionExecutionLineConfigsAutoFillCmd(flags *rootFlags) *cobra.Comma
 			if cmd.Flags().NFlag() == 0 && len(args) == 0 && !flags.dryRun {
 				return cmd.Help()
 			}
-			if !cmd.Flags().Changed("line-id") && !flags.dryRun {
-				return fmt.Errorf("required flag \"%s\" not set", "line-id")
+			if !cmd.Flags().Changed("id") && !flags.dryRun {
+				return fmt.Errorf("required flag \"%s\" not set", "id")
 			}
 			c, err := flags.newClient()
 			if err != nil {
 				return err
 			}
 
-			path := "/production-execution/line-configs/auto-fill/"
+			path := "/production-execution/line-configs/{id}/"
+			path = replacePathParam(path, "id", formatCLIParamValue(flagId))
 			params := map[string]string{}
-			if flagLineId != "" {
-				params["line_id"] = formatCLIParamValue(flagLineId)
-			}
-			if flagSkuCode != "" {
-				params["sku_code"] = formatCLIParamValue(flagSkuCode)
-			}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "production-execution", false, path, params, nil, cmd.ErrOrStderr())
 			if err != nil {
 				return classifyAPIError(err, flags)
@@ -91,8 +85,7 @@ func newProductionExecutionLineConfigsAutoFillCmd(flags *rootFlags) *cobra.Comma
 			return printOutputWithFlags(cmd.OutOrStdout(), data, flags)
 		},
 	}
-	cmd.Flags().StringVar(&flagLineId, "line-id", "", "Missing → 400 {'error':'line_id is required'} int")
-	cmd.Flags().StringVar(&flagSkuCode, "sku-code", "", "SAP item code, e.g. FG0000227. The UI sends '' when unknown.")
+	cmd.Flags().StringVar(&flagId, "id", "", "Config id from /production-execution/line-configs/. Verified live on JIVO_OIL id 7. int")
 
 	return cmd
 }

@@ -16,7 +16,7 @@ func newProductionExecutionLinesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "lines",
-		Short:       "List the physical filling/packing lines in the plant, with standard running hours per day and month.",
+		Short:       "The plant's filling/packing lines with their costing basis",
 		Example:     "  jivo-factory-pp-cli production-execution lines",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.lines", "pp:method": "GET", "pp:path": "/production-execution/lines/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

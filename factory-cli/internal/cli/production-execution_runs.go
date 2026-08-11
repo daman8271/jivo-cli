@@ -21,7 +21,7 @@ func newProductionExecutionRunsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "runs",
-		Short:       "List production runs — the core shift-level record: date, line, SKU, required vs produced quantity, running minutes",
+		Short:       "Production runs — the shift-level record: date, line, SKU, required vs produced cases, running and breakdown minutes.",
 		Example:     "  jivo-factory-pp-cli production-execution runs",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.runs", "pp:method": "GET", "pp:path": "/production-execution/runs/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

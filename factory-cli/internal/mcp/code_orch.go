@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	neturl "net/url"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -2666,11 +2667,11 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		ID:             "production-execution.costs-analytics",
 		Method:         "GET",
 		Path:           "/production-execution/costs/analytics/",
-		Summary:        "The run-cost ledger: every run's stored cost record with its component cost lines.",
+		Summary:        "One stored cost record per costed run — raw material, labour, machine, electricity, water, gas, compressed air, overhead, the waste-recovery credit, total and net, each with its component lines. TRAP: per_unit_cost is total over produced_qty in CASES and reads 0.00 on the 48% of records whose run posted no produced quantity, so never average it across records.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{{PublicName: "date_from", WireName: "date_from"}, {PublicName: "date_to", WireName: "date_to"}, {PublicName: "line", WireName: "line"}},
-		keywords:       codeOrchKeywords("production-execution", "costs-analytics", "The run-cost ledger: every run's stored cost record with its component cost lines.", "/production-execution/costs/analytics/"),
+		keywords:       codeOrchKeywords("production-execution", "costs-analytics", "One stored cost record per costed run — raw material, labour, machine, electricity, water, gas, compressed air, overhead, the waste-recovery credit, total and net, each with its component lines. TRAP: per_unit_cost is total over produced_qty in CASES and reads 0.00 on the 48% of records whose run posted no produced quantity, so never average it across records.", "/production-execution/costs/analytics/"),
 	},
 	{
 		ID:             "production-execution.line-clearance",
@@ -2686,41 +2687,51 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		ID:             "production-execution.line-clearance-detail",
 		Method:         "GET",
 		Path:           "/production-execution/line-clearance/{id}/",
-		Summary:        "Full detail of one line clearance including every checkpoint and its result. Required: id.",
+		Summary:        "One line clearance in full: every checkpoint and its result, the QA approver and their remarks, attachments, and the decision history each time the call changed (cleared / not cleared / on hold) before the line started. Required: id.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{},
-		keywords:       codeOrchKeywords("production-execution", "line-clearance-detail", "Full detail of one line clearance including every checkpoint and its result. Required: id.", "/production-execution/line-clearance/{id}/"),
+		keywords:       codeOrchKeywords("production-execution", "line-clearance-detail", "One line clearance in full: every checkpoint and its result, the QA approver and their remarks, attachments, and the decision history each time the call changed (cleared / not cleared / on hold) before the line started. Required: id.", "/production-execution/line-clearance/{id}/"),
+	},
+	{
+		ID:             "production-execution.line-config-detail",
+		Method:         "GET",
+		Path:           "/production-execution/line-configs/{id}/",
+		Summary:        "One saved line configuration by its id — config name, rated speed in bottles/hr, pieces per case, the optional SKU, and the standard crew. Required: id.",
+		Positional:     []string{},
+		TemplateParams: []codeOrchParamBinding{{PublicName: "id", WireName: "id"}},
+		QueryParams:    []codeOrchParamBinding{},
+		keywords:       codeOrchKeywords("production-execution", "line-config-detail", "One saved line configuration by its id — config name, rated speed in bottles/hr, pieces per case, the optional SKU, and the standard crew. Required: id.", "/production-execution/line-configs/{id}/"),
 	},
 	{
 		ID:             "production-execution.line-configs",
 		Method:         "GET",
 		Path:           "/production-execution/line-configs/",
-		Summary:        "List the saved line presets (line + SKU + rated speed + labour/manpower counts) that pre-fill a new run.",
+		Summary:        "The named configurations saved for a line — several per line (e.g. '1 LTR', '250ml'), each holding a rated speed in bottles/hr, pieces per case, an OPTIONAL SKU and the standard crew. The operator picks one by name when starting a run and it fills the form.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{{PublicName: "line_id", WireName: "line_id"}},
-		keywords:       codeOrchKeywords("production-execution", "line-configs", "List the saved line presets (line + SKU + rated speed + labour/manpower counts) that pre-fill a new run.", "/production-execution/line-configs/"),
+		keywords:       codeOrchKeywords("production-execution", "line-configs", "The named configurations saved for a line — several per line (e.g. '1 LTR', '250ml'), each holding a rated speed in bottles/hr, pieces per case, an OPTIONAL SKU and the standard crew. The operator picks one by name when starting a run and it fills the form.", "/production-execution/line-configs/"),
 	},
 	{
 		ID:             "production-execution.line-configs-auto-fill",
 		Method:         "GET",
 		Path:           "/production-execution/line-configs/auto-fill/",
-		Summary:        "Look up the matching saved preset for a line + SKU, as the Start Run screen does before pre-filling the form.",
+		Summary:        "The configuration the Start Run screen pre-applies for a line, optionally narrowed to a SKU. Returns an object wrapping one config: {\"config\": {...}}, or {\"config\": null} when nothing matches. Required: line_id.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{{PublicName: "line_id", WireName: "line_id"}, {PublicName: "sku_code", WireName: "sku_code"}},
-		keywords:       codeOrchKeywords("production-execution", "line-configs-auto-fill", "Look up the matching saved preset for a line + SKU, as the Start Run screen does before pre-filling the form.", "/production-execution/line-configs/auto-fill/"),
+		keywords:       codeOrchKeywords("production-execution", "line-configs-auto-fill", "The configuration the Start Run screen pre-applies for a line, optionally narrowed to a SKU. Returns an object wrapping one config: {\"config\": {...}}, or {\"config\": null} when nothing matches. Required: line_id.", "/production-execution/line-configs/auto-fill/"),
 	},
 	{
 		ID:             "production-execution.lines",
 		Method:         "GET",
 		Path:           "/production-execution/lines/",
-		Summary:        "List the physical filling/packing lines in the plant, with standard running hours per day and month.",
+		Summary:        "The plant's filling/packing lines with their costing basis — standard running hours per day and per month (the denominators that spread fixed daily and monthly cost onto a run) and the electricity units (kWh) drawn per running hour.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{{PublicName: "is_active", WireName: "is_active"}},
-		keywords:       codeOrchKeywords("production-execution", "lines", "List the physical filling/packing lines in the plant, with standard running hours per day and month.", "/production-execution/lines/"),
+		keywords:       codeOrchKeywords("production-execution", "lines", "The plant's filling/packing lines with their costing basis — standard running hours per day and per month (the denominators that spread fixed daily and monthly cost onto a run) and the electricity units (kWh) drawn per running hour.", "/production-execution/lines/"),
 	},
 	{
 		ID:             "production-execution.machine-checklists",
@@ -2806,11 +2817,11 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		ID:             "production-execution.reports-analytics-downtime-pareto",
 		Method:         "GET",
 		Path:           "/production-execution/reports/analytics/downtime-pareto/",
-		Summary:        "Downtime Pareto by breakdown category, plus by machine, a daily trend and MTBF/MTTR.",
+		Summary:        "Downtime for a period ranked by breakdown category — count, minutes, share and cumulative share, the individual reasons inside each category, a daily trend, and MTBF/MTTR. The by-machine split is a single 'Unknown' bucket because no machines are registered in any company.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{{PublicName: "date_from", WireName: "date_from"}, {PublicName: "date_to", WireName: "date_to"}, {PublicName: "line", WireName: "line"}},
-		keywords:       codeOrchKeywords("production-execution", "reports-analytics-downtime-pareto", "Downtime Pareto by breakdown category, plus by machine, a daily trend and MTBF/MTTR.", "/production-execution/reports/analytics/downtime-pareto/"),
+		keywords:       codeOrchKeywords("production-execution", "reports-analytics-downtime-pareto", "Downtime for a period ranked by breakdown category — count, minutes, share and cumulative share, the individual reasons inside each category, a daily trend, and MTBF/MTTR. The by-machine split is a single 'Unknown' bucket because no machines are registered in any company.", "/production-execution/reports/analytics/downtime-pareto/"),
 	},
 	{
 		ID:             "production-execution.reports-analytics-monthly-summary",
@@ -2956,11 +2967,11 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		ID:             "production-execution.run-detail",
 		Method:         "GET",
 		Path:           "/production-execution/runs/{id}/",
-		Summary:        "Full detail of one production run including every timing segment and every logged breakdown. Required: id.",
+		Summary:        "One production run in full: every timing segment (start, end, minutes, produced_cases), every logged breakdown, and the crew — labour count, other manpower, supervisor and operators — none of which the run list carries. Segments exist ONLY here; there is no segments endpoint. Required: id.",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{},
-		keywords:       codeOrchKeywords("production-execution", "run-detail", "Full detail of one production run including every timing segment and every logged breakdown. Required: id.", "/production-execution/runs/{id}/"),
+		keywords:       codeOrchKeywords("production-execution", "run-detail", "One production run in full: every timing segment (start, end, minutes, produced_cases), every logged breakdown, and the crew — labour count, other manpower, supervisor and operators — none of which the run list carries. Segments exist ONLY here; there is no segments endpoint. Required: id.", "/production-execution/runs/{id}/"),
 	},
 	{
 		ID:             "production-execution.run-electricity",
@@ -3066,11 +3077,11 @@ var codeOrchEndpoints = []codeOrchEndpoint{
 		ID:             "production-execution.runs",
 		Method:         "GET",
 		Path:           "/production-execution/runs/",
-		Summary:        "List production runs — the core shift-level record: date, line, SKU, required vs produced quantity, running minutes",
+		Summary:        "Production runs — the shift-level record: date, line, SKU, required vs produced cases, running and breakdown minutes. Carries TWO statuses: status (DRAFT/IN_PROGRESS/COMPLETED) and live_status, what the line is doing now (DRAFT/RUNNING/STOPPED/BREAKDOWN/COMPLETED).",
 		Positional:     []string{},
 		TemplateParams: []codeOrchParamBinding{},
 		QueryParams:    []codeOrchParamBinding{{PublicName: "status", WireName: "status"}, {PublicName: "date", WireName: "date"}, {PublicName: "date_from", WireName: "date_from"}, {PublicName: "date_to", WireName: "date_to"}, {PublicName: "line_id", WireName: "line_id"}, {PublicName: "search", WireName: "search"}},
-		keywords:       codeOrchKeywords("production-execution", "runs", "List production runs — the core shift-level record: date, line, SKU, required vs produced quantity, running minutes", "/production-execution/runs/"),
+		keywords:       codeOrchKeywords("production-execution", "runs", "Production runs — the shift-level record: date, line, SKU, required vs produced cases, running and breakdown minutes. Carries TWO statuses: status (DRAFT/IN_PROGRESS/COMPLETED) and live_status, what the line is doing now (DRAFT/RUNNING/STOPPED/BREAKDOWN/COMPLETED).", "/production-execution/runs/"),
 	},
 	{
 		ID:             "production-execution.sap-bom",
@@ -4044,6 +4055,22 @@ func handleCodeOrchSearch(ctx context.Context, req mcplib.CallToolRequest) (*mcp
 	return mcplib.NewToolResultText(string(data)), nil
 }
 
+// pathPlaceholderNames returns the "{name}" placeholders still present in a
+// path template, in order of appearance.
+func pathPlaceholderNames(path string) []string {
+	m := pathPlaceholderRE.FindAllStringSubmatch(path, -1)
+	if len(m) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(m))
+	for _, g := range m {
+		out = append(out, g[1])
+	}
+	return out
+}
+
+var pathPlaceholderRE = regexp.MustCompile(`\{([^}/]+)\}`)
+
 func handleCodeOrchExecute(ctx context.Context, req mcplib.CallToolRequest) (*mcplib.CallToolResult, error) {
 	args := req.GetArguments()
 	id, ok := args["endpoint_id"].(string)
@@ -4078,6 +4105,31 @@ func handleCodeOrchExecute(ctx context.Context, req mcplib.CallToolRequest) (*mc
 			path = strings.ReplaceAll(path, "{"+p+"}", formatMCPParamValue(v))
 			delete(params, p)
 		}
+	}
+	// Positional is empty for every endpoint the press generated, so on its own
+	// the loop above substitutes nothing and a "{id}" survives into the request
+	// URL — which is how all 109 detail endpoints served 404 through MCP while
+	// working fine from the CLI. Bind the remaining placeholders explicitly:
+	// first through any TemplateParams public->wire mapping, then by name.
+	for _, b := range ep.TemplateParams {
+		if v, ok := params[b.PublicName]; ok {
+			path = strings.ReplaceAll(path, "{"+b.WireName+"}", formatMCPParamValue(v))
+			delete(params, b.PublicName)
+		}
+	}
+	for _, name := range pathPlaceholderNames(path) {
+		if v, ok := params[name]; ok {
+			path = strings.ReplaceAll(path, "{"+name+"}", formatMCPParamValue(v))
+			delete(params, name)
+		}
+	}
+	// Never issue a request with an unresolved placeholder. The server answers
+	// such a URL with an HTML 404 that reads like "this endpoint does not
+	// exist", sending the caller to debug the wrong thing entirely.
+	if missing := pathPlaceholderNames(path); len(missing) > 0 {
+		return mcplib.NewToolResultError(fmt.Sprintf(
+			"endpoint %s needs path parameter(s) %s — pass them in params, e.g. {\"params\":{%q:\"<value>\"}}",
+			ep.ID, strings.Join(missing, ", "), missing[0])), nil
 	}
 
 	// Route params to their runtime slots. GET/DELETE params are query

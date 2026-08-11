@@ -18,7 +18,7 @@ func newProductionExecutionCostsAnalyticsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "costs-analytics",
-		Short:       "The run-cost ledger: every run's stored cost record with its component cost lines.",
+		Short:       "One stored cost record per costed run — raw material, labour, machine, electricity, water, gas, compressed air",
 		Example:     "  jivo-factory-pp-cli production-execution costs-analytics",
 		Annotations: map[string]string{"pp:endpoint": "production-execution.costs-analytics", "pp:method": "GET", "pp:path": "/production-execution/costs/analytics/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
