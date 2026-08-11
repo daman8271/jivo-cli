@@ -117,6 +117,7 @@ Validation is deliberately strict — the submitted key is shape-checked *and* r
 | `Register-ScheduledTask` fails 0x80070002 on Win11 26100 | cmdlet bug on that build | Create with `schtasks`, then adjust settings via `Set-ScheduledTask` |
 | Tunnel dies after 3 days | Task default `ExecutionTimeLimit` is 72h | `ExecutionTimeLimit PT0S` (unlimited) |
 | `nc -z <host> 22` says closed on a working box | Generic TCP probes misreport over overlay/proxied paths | Test with `ssh` itself; read its error text — *refused* (no listener) ≠ *timed out* (filtered) |
+| Installer prints `STEPS OK … verify-tunnel` **and** `SSHD : Stopped`; VPS listener binds but `ssh <box>` gives `kex_exchange_identification: Connection closed by remote host` | The tunnel forwards to `localhost:22`, so a **stopped sshd** looks identical to a broken tunnel. Step 6d starts the service with `-ErrorAction SilentlyContinue`, so a failed start is swallowed and the run still reports success. Seen where OpenSSH was **already present** (`openssh-server(already)`) — a pre-existing install with missing host keys refuses to start | Read the `SSHD :` line of the installer summary before trusting `STEPS OK`. On the box: `Set-Service sshd -StartupType Automatic; Start-Service sshd`; if it refuses, `ssh-keygen -A` then start again. Hit on `DILPREETSINGH` (23009, dead 24 h) and `DESKTOP-73N6JE8` (23011) |
 
 **Not a bug:** `<Duration>PT10M</Duration>` in the task XML is under `<IdleSettings>`,
 **not** the trigger. The trigger is `<Repetition><Interval>PT1M</Interval></Repetition>`
@@ -213,6 +214,14 @@ the dialer the instant it exits, instead of Windows polling every minute.
   it. A closed MacBook on battery will drop off; that is deliberate.
 - **`plutil -lint` before loading.** A malformed plist that launchd refuses leaves the
   box with no tunnel and no error anyone will see.
+- **SSH sessions cannot LIST `~/Documents`, `~/Desktop`, `~/Downloads`** (TCC returns
+  `Operation not permitted` — hit on Karanpreet's Air 2026-08-08). But it is
+  enumeration that's blocked, not everything: **creating files at exact known paths
+  (`mkdir -p` + `cp` to a full path) worked, and even cd+exec succeeded minutes later**
+  — so credentials CAN be placed into a Documents checkout remotely if you know the
+  paths. Still, prefer repos in the home root (`~/jivo-cli`), or flip
+  System Settings → General → Sharing → Remote Login (ⓘ) →
+  **"Allow full disk access for remote users"** on the box.
 
 ## Operate
 
@@ -228,6 +237,47 @@ ssh <box>-vps 'schtasks /Query /TN JivoRevTunnel /V /FO LIST | Select-String "La
 **55s** (design target ≤60s). The VPS's `ClientAliveInterval 30` / `CountMax 3` reaps a
 stale listener in ~90s, so a hard-dead box doesn't wedge its port.
 
+## Monitoring — added 2026-08-11 after a 13.5 h silent outage
+
+Self-healing covers a *dropped* tunnel. It does nothing for a box whose dialer has
+stopped altogether, and **nothing was watching for that**. `DESKTOP-5VCMOAS` (Manav,
+23005) last dialed at **04:23 on 2026-08-11** and the outage was found 13.5 h later,
+by hand, only because someone needed the box. Every tunnel had the same blind spot.
+
+`fleet-tunnel-health.vps.sh` → `/root/bin/fleet-tunnel-health.sh`, cron `*/10`.
+It diffs the registry against the kernel's listen table, remembers how long each box
+has been gone, and alerts over Telegram.
+
+```sh
+ssh vps 'cat /root/fleet-tunnel-status.txt'          # last computed state, all boxes
+ssh vps '/root/bin/fleet-tunnel-health.sh report'    # recompute now, never alerts
+ssh vps 'tail /root/fleet-tunnel-health.log'
+```
+
+**Alerting is deliberately quiet.** Office PCs are switched off nightly; alerting on
+that trains everyone to ignore the alerts. So a box must be down **>4 h** *and* it must
+be **10:00–19:00 IST** before it is reported, with a 12 h per-host cooldown. An
+overnight shutdown is silent; a genuinely dead box is reported the next morning.
+Tune with `ALERT_AFTER_MIN` / `HOUR_FROM` / `HOUR_TO` / `COOLDOWN_MIN`.
+
+### The disk guard is part of the same script, and it is not optional
+
+The same day, the VPS root filesystem was found **100% full — 0 bytes free**. Cause:
+**39,671 leaked `/tmp/tirith-install-*` directories inside the `hermes` container**
+(8.5 MB each, ~36 GB), created one-per-run by hermes' installer and never removed.
+
+A full disk is a **fleet-wide outage that looks like nothing**: the registrar cannot
+append to `authorized_keys` or `fleet-tunnels.txt`, so **no new box can ever enrol**,
+and it surfaces only as a stray `No space left on device` from some unrelated command.
+The health script therefore also alerts at **≥85%**, and `hermes-tmp-gc.vps.sh`
+(cron `17 * * * *`) reaps leak dirs older than 2 h. That GC is a mitigation — the leak
+itself is upstream in hermes.
+
+| Trap | Detail |
+|---|---|
+| `grep -c` exits **1** on a zero count | so `count=$(... grep -c ... \|\| echo 0)` fires the fallback on the *healthy* path and yields `"0\n0"`, which blows up the arithmetic. Swallow the status inside the container (`\|\| true`) and default in the shell. Hit while writing the GC script. |
+| Docker stores layers under containerd's **`moby`** namespace | `ctr -n default c ls` shows **zero containers** on a box running 15 of them, which makes 44 GB of live images look like prunable junk. Check `docker ps` before concluding anything is orphaned. |
+
 ## Revoke a box
 
 ```sh
@@ -236,6 +286,66 @@ ssh <box>-vps 'schtasks /Delete /TN JivoRevTunnel /F; Remove-Item C:\ProgramData
 ```
 Removing the VPS line alone is enough to cut it off — the box can then dial but not listen.
 
+## Give an operator SAP with **no VPN** (done for `JIVO201` 2026-08-05)
+
+The office PCs reach SAP only over the FortiClient VPN (profile `Mieux` →
+`103.178.248.2:20443`), because `103.89.45.192` is IP-whitelisted to the office. An
+operator working from home who forgets the VPN gets `cannot reach
+103.89.45.192:50000 over TCP` and nothing runs.
+
+They don't need the VPN. The SAP box already parks its own outbound tunnels on the
+VPS — `127.0.0.1:47500` → Service Layer `:50000` and `127.0.0.1:47301` → HANA
+`:30015` (see [`../reverse-tunnel/`](../reverse-tunnel/README.md) §8b). A box that
+already has a fleet tunnel just needs permission to reach *in* to those two ports.
+
+**Two changes. Both small.**
+
+```sh
+# 1. VPS — widen that ONE key's permitopen (it ships locked to 127.0.0.1:1 = deny-all)
+ssh vps 'cp ~/.ssh/authorized_keys ~/.ssh/authorized_keys.bak-$(date +%F-%H%M%S)'
+#   restrict,port-forwarding,permitlisten="127.0.0.1:<PORT>",permitopen="127.0.0.1:1"
+#     ->  ...,permitopen="127.0.0.1:47500",permitopen="127.0.0.1:47301"
+```
+
+```powershell
+# 2. On the box — a SECOND dialer + task, never merged into dial.ps1
+#    C:\ProgramData\jivo-revtun\dial-sap.ps1  (same key, adds only -L)
+ssh.exe -N -T -n -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 `
+  -i C:\ProgramData\jivo-revtun\id_ed25519 `
+  -L 127.0.0.1:50000:127.0.0.1:47500 `
+  -L 127.0.0.1:30015:127.0.0.1:47301 root@187.127.129.132
+schtasks /Create /TN JivoSapTunnel /TR "...-File C:\ProgramData\jivo-revtun\dial-sap.ps1" `
+  /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /F
+```
+
+⚠️ **Keep it a separate task from `JivoRevTunnel`.** `ExitOnForwardFailure=yes` means
+a local 50000/30015 clash kills the process. Separate, that costs only SAP; merged, it
+would take port-22 with it and lock you out of the box. Same reason `dial-ports.sh` is
+split from `dial.sh` on the SAP box. Check both ports are free *before* installing, and
+extend `watchdog.ps1` to kick the new task too.
+
+Then point their kit at the tunnel — **host only, the port number is unchanged**:
+
+```
+SAPB1_HOST=localhost      # was 103.89.45.192
+SAPB1_PORT=50000
+```
+
+`localhost:50000` is safe for the Host-header trap: SAP's Apache 403s unrecognised
+`Host` values, but `127.0.0.1:*` and `localhost:*` are both accepted (measured — see
+[`../SAP-HOME-ACCESS.md`](../SAP-HOME-ACCESS.md) §8b). Never point `SAPB1_HOST` at a
+bridge/LAN IP.
+
+This is strictly better than the VPN for them: one config that works at home, on a
+hotspot **and** in the office, since the path never touches the office network. It adds
+no write capability — RULE 0 is untouched, it's a route not a permission. Trade-off:
+the chain is longer (`box → VPS → SAP box`), so a VPS or SAP-tunnel outage now costs
+them SAP even while sitting in the office; the VPN remains the fallback.
+
+Measured on `JIVO201`: `sapb1 doctor` → **All checks passed** from a non-whitelisted
+home IP; all 3 company DBs returned counts; killing the tunnel recovered in **40 s**
+with the port-22 tunnel untouched.
+
 ## Status
 
 | Box | Port | Alias | State |
@@ -243,6 +353,10 @@ Removing the VPS line alone is enough to cut it off — the box can then dial bu
 | `VICTUS` | 23001 | `victus-vps` | ✅ live, hardened, clean-room verified end to end |
 | `JIVO-B1` (Diljeet's) | 23002 | `diljeet` | ✅ live, hardened; **reaches SAP** (50000/30015/22 all open) |
 | `dannys-Mac-Pro` | 23003 | `macpro-vps` | ✅ live, hardened (macOS 12.7.6); launchd restart verified ~1 s |
+| `JIVO201` (avtar's) | 23010 | `avtar` | ✅ live 2026-08-05; Dell Inspiron 15 3511, i5-1135G7, 8 GB, Win 11; dialer + watchdog verified, battery traps clear. **+ `JivoSapTunnel` — SAP with no VPN** (see section above); `.env` → `localhost:50000`, `doctor` passes from home |
+| `DESKTOP-73N6JE8` (Ziyaul's) | 23011 | `ziyaul` | ⚠️ 2026-08-05: tunnel + always-on installed and live, but **sshd Stopped** on the box → unreachable. Needs a local `Start-Service sshd` (see troubleshooting) |
+| `DILPREETSINGH` | 23009 | `dilpreet` | ⚠️ same fault as above, unreachable since 2026-08-04 |
+| `Karanpreets-MacBook-Air` | 23012 | `karanpreet` | ✅ live 2026-08-08; macOS 26.5.1, installer AirDropped + double-clicked, verified end to end. Daemon KeepAlive+watchdog confirmed running. `disablesleep 1` set by hand 2026-08-08 (verified `SleepDisabled=1`) — lid-proof, but it's a battery laptop: **keep it plugged in** or it drains to empty with the lid shut |
 | harsh, kanhaiya, neelesh | — | — | not yet onboarded; send them the installer |
 
 `JIVO-B1` sits inside the office network, so `Mac → VPS → JIVO-B1 → SAP` works from

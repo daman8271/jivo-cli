@@ -321,7 +321,24 @@ Step 'openssh-server' {
   }
   if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw 'OpenSSH Server could not be installed by either route' }
   Set-Service -Name sshd -StartupType Automatic -ErrorAction Stop
+  # A STOPPED sshd is indistinguishable from a broken tunnel when seen from the
+  # VPS: the reverse tunnel forwards to localhost:22, so with no listener there
+  # `ssh <box>` dies with "kex_exchange_identification: Connection closed by
+  # remote host" while the dialer, the task and the VPS listener all look fine.
+  # SilentlyContinue alone swallowed a failed start and still reported the step
+  # OK -- which shipped two silently unreachable boxes (DILPREETSINGH 23009,
+  # DESKTOP-73N6JE8 23011, the latter with 'openssh-server(already)'). Fail loud.
   Start-Service sshd -ErrorAction SilentlyContinue
+  if ((Get-Service sshd).Status -ne 'Running') {
+    # Commonest cause on a box where OpenSSH was ALREADY present: host keys were
+    # never generated, and sshd refuses to start without them. -A creates only
+    # the missing ones and leaves an existing, working set alone.
+    if (Test-Path $KEYGEN) { & $KEYGEN -A 2>&1 | Out-Null }
+    Start-Service sshd -ErrorAction SilentlyContinue
+  }
+  if ((Get-Service sshd).Status -ne 'Running') {
+    throw ("sshd is installed but REFUSES TO START (status {0}) - this box will be UNREACHABLE even though the tunnel comes up. As admin: 'ssh-keygen -A', then 'Start-Service sshd'; if it still fails check nothing else holds port 22 (Get-NetTCPConnection -LocalPort 22)" -f (Get-Service sshd).Status)
+  }
 }
 
 # ---- 7. verify the tunnel actually came up ----
@@ -340,7 +357,14 @@ Write-Host "  =========== SEND THIS BLOCK BACK ===========" -ForegroundColor Gre
 Write-Host ("  COMPUTERNAME : " + $env:COMPUTERNAME)
 Write-Host ("  USERNAME     : " + $env:USERNAME)
 Write-Host ("  VPS PORT     : " + $(if($PORT){$PORT}else{'NOT ASSIGNED'}))
-Write-Host ("  SSHD         : " + (Get-Service sshd -EA SilentlyContinue).Status)
+$sshdStatus = (Get-Service sshd -EA SilentlyContinue).Status
+if ($sshdStatus -eq 'Running') {
+  Write-Host ("  SSHD         : " + $sshdStatus)
+} else {
+  # Anything other than Running means the box is unreachable no matter how
+  # healthy the tunnel looks. Do not let this scroll past as one grey word.
+  Write-Host ("  SSHD         : " + $sshdStatus + "  <-- NOT RUNNING: THIS PC IS UNREACHABLE") -ForegroundColor Red
+}
 Write-Host ("  TUNNEL       : " + $(if($tunnelUp){'UP - dialing the VPS'}else{'not up yet (task retries every minute)'}))
 Write-Host ("  ALWAYS-ON    : sleep off, hibernate off, watchdog every 15 min, survives reboot")
 Write-Host ("  STEPS OK     : " + ($ok -join ', '))
