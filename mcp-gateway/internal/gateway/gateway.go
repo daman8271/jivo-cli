@@ -17,7 +17,7 @@ const statusToolName = "gateway_status"
 // JSON so the bytes we advertise are exactly these (no map-marshal surprises).
 const statusToolDefJSON = `{
   "name": "gateway_status",
-  "description": "Health of this gateway and of the six read-only JIVO MCP backends behind it (SAP B1, Postgres, ecom, oms, factory, HANA): which are reachable, how many tools each contributes, and the last error per backend. Always live: calling this re-lists every backend first (short per-backend timeout) instead of reporting the cached tool list, so it is a real health check and not an echo of the cache. The last_refresh field is when that list was last rebuilt. It also reports which corrections digest clients are being handed: count, source, sha256 of the exact bytes served, when the content last changed (loaded_at) and when the file was last re-read (checked_at). Takes no arguments.",
+  "description": "Health of this gateway and of the eight read-only JIVO MCP backends behind it (SAP B1, Postgres, ecom, oms, factory, HANA, EXIM, JSAP): which are reachable, how many tools each contributes, and the last error per backend. Always live: calling this re-lists every backend first (short per-backend timeout) instead of reporting the cached tool list, so it is a real health check and not an echo of the cache. The last_refresh field is when that list was last rebuilt. It also reports which corrections digest clients are being handed: count, source, sha256 of the exact bytes served, when the content last changed (loaded_at) and when the file was last re-read (checked_at). Takes no arguments.",
   "inputSchema": {"type": "object", "properties": {}},
   "annotations": {"title": "Gateway status", "readOnlyHint": true, "destructiveHint": false, "idempotentHint": true, "openWorldHint": false}
 }`
@@ -32,10 +32,13 @@ const statusRefreshBudget = 5 * time.Second
 // Every configured backend is named. It used to list five and omit hana_, which
 // meant a client was handed JIVO's SAP corrections and never told that the tools
 // which encode those corrections exist — the same shape of gap the corrections
-// digest itself was added to close.
-const instructions = "Unified read-only gateway to six JIVO backends. " +
+// digest itself was added to close. TestAdvertisedSurfaceNamesEveryBackend is
+// what keeps this string honest as backends are added.
+const instructions = "Unified read-only gateway to eight JIVO backends. " +
 	"Tool prefixes: sap_ (SAP B1 Service Layer), pg_ (Postgres), ecom_, oms_, fct_ (factory), " +
-	"hana_ (SAP B1's HANA database direct — its hana_sales_by_variety, hana_turnover and hana_payments tools compute JIVO's settled definitions, so prefer them to hand-written SQL for sales, turnover and payment totals). " +
+	"hana_ (SAP B1's HANA database direct — its hana_sales_by_variety, hana_turnover and hana_payments tools compute JIVO's settled definitions, so prefer them to hand-written SQL for sales, turnover and payment totals), " +
+	"exim_ (EXIM — imports/exports: licences, shipments, tanks, stock status), " +
+	"jsap_ (JSAP — JIVO's internal ops platform: budget approvals, tickets, tasks, org hierarchy, Document Hub, inventory audits). " +
 	"Every tool is strictly read-only; nothing here can create, update, or delete. " +
 	"gateway_status reports backend health."
 

@@ -1,8 +1,8 @@
-# jivo-gateway — one read-only MCP endpoint for all six JIVO backends
+# jivo-gateway — one read-only MCP endpoint for all eight JIVO backends
 
-A single MCP server that fronts the six existing read-only MCP backends and
+A single MCP server that fronts the eight existing read-only MCP backends and
 presents them as one tool list. Clients (claude.ai, Claude Desktop, Claude Code)
-connect once instead of six times.
+connect once instead of eight times.
 
 | Backend | Prefix | Strips | Compiled-in URL |
 |---|---|---|---|
@@ -12,6 +12,8 @@ connect once instead of six times.
 | oms | `oms_` | — | `http://oms:7704/mcp` |
 | factory | `fct_` | — | `http://factory:7705/mcp` |
 | HANA (`hana`) | `hana_` | `hana_` | `http://hana:7706/mcp` |
+| EXIM (`exim`) | `exim_` | — | `http://exim:7707/mcp` |
+| JSAP (`jsap`) | `jsap_` | `jsap_` | `http://jsap:7711/mcp` |
 
 Plus one native tool, `gateway_status`, which reports gateway + backend health.
 
@@ -26,12 +28,26 @@ is the identity in both directions and there is no `hana_hana_` stutter.
 tool names, removed before the gateway prefix goes on, so sapb1's `sapb1_query`
 is advertised as `sap_query` rather than `sap_sapb1_query`. It is set only where
 *every* tool of that backend shares it (verified against their real tool
-registrations): sapb1 names all nine `sapb1_*`; postsql (`postgres_query`,
-`list_databases`, `search`, …) and ecom / oms / factory (`<api>_search`,
-`<api>_execute` next to bare `search` / `sql` / `context` and the Cobra-tree
-mirror) share nothing, so they strip nothing. Routing is the exact inverse: the
-gateway prefix comes off and the strip goes back on, so a backend always receives
-its own original tool name.
+registrations): sapb1 names all nine `sapb1_*`, jsap all ten `jsap_*`; postsql
+(`postgres_query`, `list_databases`, `search`, …) and ecom / oms / factory / exim
+(`<api>_search`, `<api>_execute` next to bare `search` / `sql` / `context` and the
+Cobra-tree mirror) share nothing, so they strip nothing. Routing is the exact
+inverse: the gateway prefix comes off and the strip goes back on, so a backend
+always receives its own original tool name.
+
+**"Every tool or nothing" is a correctness rule, not a style rule.** The two
+halves of the rename are deliberately asymmetric — advertising strips with
+`strings.TrimPrefix` (a no-op on a tool that lacks it) while routing re-adds the
+strip *unconditionally*. So a `StripPrefix` that only some tools carry does not
+merely look untidy: the tools without it keep their advertised name but every
+call to one is forwarded upstream under a **different tool's** name, with no
+error anywhere. Configuring exim with `StripPrefix: "exim_"`, for instance, would
+collide its `search` and `exim_search` onto one advertised name (one silently
+dropped as a duplicate) and misdirect the other nine. The
+`exim_exim_search` / `exim_exim_execute` stutter is the correct, cheap outcome —
+the same one `oms_oms_search` and `fct_jivo-factory_execute` already have in
+production. `TestStripPrefixSetOnlyWhenEveryToolSharesIt` enforces this against
+each backend's real tool-name list.
 
 ## ⛔ Read-only
 
@@ -45,7 +61,7 @@ Two different guarantees, worth stating separately:
   JSON-RPC method is `-32601 method not found`. The gateway itself never creates,
   updates or deletes anything, and holds no compiled-in credential.
 - **Downstream, and each backend's own.** Whether a given `tools/call` can change
-  anything is a property the *backend* enforces (all six JIVO MCP backends are
+  anything is a property the *backend* enforces (all eight JIVO MCP backends are
   read-only by construction; SAP B1's Service Layer tools are GET-only, postsql
   refuses anything but `SELECT`/`WITH`, and so on). The gateway forwards a
   `tools/call` to the backend that owns the prefix and does not, and cannot,
@@ -213,7 +229,7 @@ like an outage.
   errors are forwarded with their code, message and data intact.
 - **A refresh is never charged to one client's request.** The fan-out runs on a
   context detached from whoever triggered it and bounded only by the per-backend
-  `--list-timeout`, so a client that disconnects mid-refresh cannot mark all six
+  `--list-timeout`, so a client that disconnects mid-refresh cannot mark all eight
   backends down for a whole TTL. A backend that answers healthily with *zero*
   tools keeps its last known list (`last_error` says so) rather than making every
   one of its tools vanish; a backend whose pagination loops or never terminates is
@@ -235,7 +251,7 @@ like an outage.
 Each of these was raised in review and kept on purpose. They are listed so the
 next reader does not have to rediscover the reasoning.
 
-- **Corrections reach gateway clients only.** The six per-system MCP endpoints,
+- **Corrections reach gateway clients only.** The eight per-system MCP endpoints,
   when connected to directly rather than through the gateway, still hand out no
   corrections. Fixing that means the same loader in each backend; this change
   covers the unified endpoint the phone actually uses.
@@ -261,7 +277,7 @@ next reader does not have to rediscover the reasoning.
   Every *value* — description, `inputSchema`, `outputSchema`, `annotations`,
   anything the backend invented — is byte-identical.
 - **Backend error bodies are relayed, up to 512 bytes**, into the error text.
-  The six backends are trusted internal infrastructure and their message is the
+  The eight backends are trusted internal infrastructure and their message is the
   most useful thing an operator can be given.
 - **Internal topology is visible in `gateway_status` and in error text.** Backend
   `host:port` URLs are reported as-is, on purpose: this is a read-only service
@@ -292,9 +308,9 @@ next reader does not have to rediscover the reasoning.
   which the merge's duplicate-name drop already nets out. A backend that rejects
   a foreign cursor fails the refresh, which keeps the last complete list.
 
-## Deploy (docker compose, seventh service)
+## Deploy (docker compose)
 
-Add alongside the six existing MCP services. The gateway needs no credentials
+Add alongside the existing MCP services. The gateway needs no credentials
 and no backend env — the compiled defaults are the compose service names.
 
 ```yaml

@@ -352,12 +352,34 @@ func TestAdvertisedSurfaceNamesEveryBackend(t *testing.T) {
 			t.Fatalf("instructions never mention the %s backend (%q):\n%s", b.Name, b.Prefix, instructions)
 		}
 	}
-	if strings.Contains(instructions, "five JIVO backends") || strings.Contains(def.Description, "five read-only") {
-		t.Fatal("the advertised backend count is still five; DefaultBackends returns six")
+	// The count words are spelled out in both strings, so a backend added to
+	// DefaultBackends without touching them leaves the client miscounted. Every
+	// stale count this surface has ever carried is named here on purpose: each
+	// one was true once, and each one silently under-advertised the gateway.
+	countWord := map[int]string{5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+	want := countWord[len(DefaultBackends())]
+	if want == "" {
+		t.Fatalf("DefaultBackends returns %d backends and this test has no word for that; "+
+			"add it, then fix the instructions and the gateway_status description", len(DefaultBackends()))
 	}
-	for _, want := range []string{"six", "HANA"} {
-		if !strings.Contains(def.Description, want) {
-			t.Fatalf("gateway_status description missing %q:\n%s", want, def.Description)
+	for _, stale := range []string{"five", "six", "seven"} {
+		if stale == want {
+			continue
+		}
+		if strings.Contains(instructions, stale+" JIVO backends") {
+			t.Fatalf("instructions still say %q JIVO backends; DefaultBackends returns %d", stale, len(DefaultBackends()))
+		}
+		if strings.Contains(def.Description, stale+" read-only") {
+			t.Fatalf("gateway_status still says %q read-only backends; DefaultBackends returns %d", stale, len(DefaultBackends()))
+		}
+	}
+	if !strings.Contains(instructions, want+" JIVO backends") {
+		t.Fatalf("instructions do not say %q JIVO backends:\n%s", want, instructions)
+	}
+	// Named, not just counted: the description has to say which systems.
+	for _, name := range []string{want, "HANA", "EXIM", "JSAP"} {
+		if !strings.Contains(def.Description, name) {
+			t.Fatalf("gateway_status description missing %q:\n%s", name, def.Description)
 		}
 	}
 }

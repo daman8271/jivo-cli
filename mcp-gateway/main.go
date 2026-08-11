@@ -1,7 +1,7 @@
 // Command jivo-gateway serves one strictly read-only MCP endpoint that fronts
-// JIVO's six MCP backends (SAP B1, Postgres, ecom, oms, factory, HANA), merging
-// their tools under the prefixes sap_ / pg_ / ecom_ / oms_ / fct_ / hana_ and
-// adding a native gateway_status tool.
+// JIVO's eight MCP backends (SAP B1, Postgres, ecom, oms, factory, HANA, EXIM,
+// JSAP), merging their tools under the prefixes sap_ / pg_ / ecom_ / oms_ /
+// fct_ / hana_ / exim_ / jsap_ and adding a native gateway_status tool.
 //
 // Front side: stateless streamable HTTP at /mcp (POST one JSON-RPC message, get
 // one JSON response). Back side: one lazily-initialized session per backend.
@@ -147,7 +147,7 @@ func logCorrections(st map[string]any) {
 }
 
 func usage() {
-	fmt.Fprint(os.Stderr, `jivo-gateway — one read-only MCP endpoint in front of six JIVO backends
+	fmt.Fprint(os.Stderr, `jivo-gateway — one read-only MCP endpoint in front of eight JIVO backends
 
 Backends and the prefix each contributes:
   sapb1    sap_   SAP B1 Service Layer
@@ -158,6 +158,9 @@ Backends and the prefix each contributes:
   hana     hana_  SAP B1's HANA database direct (hana_sales_by_variety,
                   hana_turnover and hana_payments compute JIVO's settled
                   definitions; prefer them to hand-written SQL)
+  exim     exim_  imports/exports (licences, shipments, tanks, stock status)
+  jsap     jsap_  JSAP ops platform (budget approvals, tickets, tasks,
+                  org hierarchy, Document Hub, inventory audits)
 
 Usage:
   jivo-gateway [flags]
@@ -168,7 +171,8 @@ Environment (flags win):
   JIVO_GW_CORRECTIONS  path to the JIVO corrections digest served on initialize
   JIVO_GW_ALLOW_ORIGIN comma-separated browser Origins to accept (default: none)
   JIVO_GW_ALLOW_HOST   comma-separated Host values to accept (default: any)
-  JIVO_GW_URL_<NAME>   backend URL: SAPB1, POSTSQL, ECOM, OMS, FACTORY, HANA
+  JIVO_GW_URL_<NAME>   backend URL: SAPB1, POSTSQL, ECOM, OMS, FACTORY, HANA,
+                       EXIM, JSAP
 
 Flags:
 `)

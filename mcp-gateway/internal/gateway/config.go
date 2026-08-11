@@ -1,5 +1,6 @@
 // Package gateway is a unified, strictly read-only MCP gateway in front of
-// JIVO's six MCP backends (SAP B1, Postgres, ecom, oms, factory, HANA).
+// JIVO's eight MCP backends (SAP B1, Postgres, ecom, oms, factory, HANA, EXIM,
+// JSAP).
 //
 // The front side speaks the stateless "streamable HTTP" transport that postsql
 // serves: one JSON-RPC message per POST, one JSON response back, no sessions.
@@ -22,7 +23,7 @@ import (
 )
 
 // Compiled-in defaults. The URLs are the docker-compose service names of the
-// six backends; nothing here is a credential.
+// eight backends; nothing here is a credential.
 const (
 	defaultAddr        = "127.0.0.1:7700"
 	defaultToolsTTL    = 5 * time.Minute
@@ -84,9 +85,9 @@ type Config struct {
 	AllowedHosts []string
 }
 
-// DefaultBackends returns the six compiled-in backends in merge order.
+// DefaultBackends returns the eight compiled-in backends in merge order.
 //
-// StripPrefix is set only where every single tool of that backend shares one
+// StripPrefix is set only where EVERY single tool of that backend shares one
 // redundant prefix, verified against the backends' real tool registrations:
 //
 //   - sapb1 registers sapb1_doctor / _entities / _fields / _invoices / _items /
@@ -94,11 +95,17 @@ type Config struct {
 //     stripped.
 //   - postsql registers postgres_query, list_databases, list_tables,
 //     describe_table, search, schema_dump — no shared prefix.
-//   - ecom, oms and factory register <api>_search + <api>_execute alongside the
-//     un-prefixed search / sql / context tools and the Cobra-tree mirror, so
-//     they have no shared prefix either.
+//   - ecom, oms, factory and exim register <api>_search + <api>_execute
+//     alongside the un-prefixed search / sql / context tools and the Cobra-tree
+//     mirror, so they have no shared prefix either.
 //
-// Stripping anything else would corrupt names, so those four strip nothing.
+// Stripping anything else would corrupt names — and worse than corrupt them.
+// renameTool strips with strings.TrimPrefix (a no-op on a tool that does not
+// carry it) while resolve re-adds StripPrefix unconditionally, so a StripPrefix
+// that only SOME tools share is asymmetric: the un-prefixed tools keep their
+// advertised name but every call to one is forwarded upstream under a different
+// tool's name. That is silent mis-routing, not a cosmetic wart, which is why the
+// rule here is "every tool or nothing".
 func DefaultBackends() []BackendConf {
 	return []BackendConf{
 		{Name: "sapb1", Prefix: "sap_", StripPrefix: "sapb1_", URL: "http://sapb1:7701/mcp"},
@@ -113,6 +120,23 @@ func DefaultBackends() []BackendConf {
 		// directions: the tools read as hana_query standalone and behind the
 		// gateway alike, with no hana_hana_ stutter.
 		{Name: "hana", Prefix: "hana_", StripPrefix: "hana_", URL: "http://hana:7706/mcp"},
+		// exim (imports/exports) registers eleven tools: analytics, context,
+		// exim_execute, exim_search, search, sql, sync, tail, workflow,
+		// workflow_archive and workflow_status. Only two of the eleven carry
+		// "exim_", so NOTHING is stripped — the same shape as ecom/oms/factory,
+		// and it produces the same familiar exim_exim_search / exim_exim_execute
+		// stutter on exactly those two (compare oms_oms_search today). Setting
+		// StripPrefix here would make exim_search and search collide on one
+		// advertised name and forward the nine bare tools to the wrong upstream
+		// name; the stutter is the cheap, correct outcome.
+		{Name: "exim", Prefix: "exim_", URL: "http://exim:7707/mcp"},
+		// jsap (JIVO's internal ops platform) registers ten tools — jsap_context,
+		// jsap_search, jsap_execute, jsap_budget_approvals, jsap_tickets,
+		// jsap_tasks, jsap_hierarchy, jsap_dochub, jsap_inventory_audit and
+		// jsap_admin. All ten already start with "jsap_", so, like hana, Prefix
+		// and StripPrefix are the same string and the rename is the identity in
+		// both directions: no jsap_jsap_ stutter.
+		{Name: "jsap", Prefix: "jsap_", StripPrefix: "jsap_", URL: "http://jsap:7711/mcp"},
 	}
 }
 
@@ -135,7 +159,7 @@ func DefaultConfig() Config {
 //	JIVO_GW_ALLOW_ORIGIN  comma-separated browser Origins to accept (default: none)
 //	JIVO_GW_ALLOW_HOST    comma-separated Host values to accept (default: any)
 //	JIVO_GW_URL_<NAME>    URL of one backend (NAME upper-cased: SAPB1, POSTSQL,
-//	                      ECOM, OMS, FACTORY, HANA)
+//	                      ECOM, OMS, FACTORY, HANA, EXIM, JSAP)
 //
 // getenv is injected so this is testable without touching the real process
 // environment. Unparseable values are ignored in favour of the default.
@@ -222,7 +246,7 @@ func (c Config) Validate() error {
 //     the host:port survive on purpose — this is a secret-path, read-only
 //     service on a private network and topology is what makes it diagnosable.
 //   - user/pass: the credentials, if any, sent as an HTTP basic-auth header
-//     instead. None of the six JIVO backends uses auth; this only keeps an
+//     instead. None of the eight JIVO backends uses auth; this only keeps an
 //     operator-supplied credential working while keeping it out of every log.
 //
 // A URL with no userinfo (the normal case) comes back unchanged.

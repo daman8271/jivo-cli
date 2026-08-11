@@ -362,8 +362,9 @@ func TestInitializeCarriesCorrections(t *testing.T) {
 	// and omit hana_, so a client was handed JIVO's SAP corrections and never
 	// told that the tools which encode them exist.
 	for _, want := range []string{
-		"read-only", "gateway_status", "six JIVO backends",
+		"read-only", "gateway_status", "eight JIVO backends",
 		"sap_ (SAP B1", "pg_ (Postgres)", "ecom_", "oms_", "fct_ (factory)", "hana_ (SAP B1's HANA",
+		"exim_ (EXIM", "jsap_ (JSAP",
 	} {
 		if !strings.Contains(instr, want) {
 			t.Fatalf("instructions lost the gateway guidance %q:\n%s", want, instr)

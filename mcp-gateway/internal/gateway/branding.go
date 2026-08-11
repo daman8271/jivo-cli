@@ -69,7 +69,8 @@ const (
 	serverTitle = "JIVO"
 
 	serverDescription = "Read-only access to JIVO's live business systems — " +
-		"SAP B1 (all three companies), HANA SQL, Postgres, e-commerce, orders and factory."
+		"SAP B1 (all three companies), HANA SQL, Postgres, e-commerce, orders, factory, " +
+		"EXIM (imports/exports) and JSAP (ops platform)."
 
 	serverWebsiteURL = "https://jivo.in"
 )

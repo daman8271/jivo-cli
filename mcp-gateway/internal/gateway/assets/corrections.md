@@ -8,7 +8,14 @@ any default assumption. If one contradicts your instinct, the correction wins.
 
 ## all
 - **[C-0001]** INV1.Quantity is in PIECES (single bottles), not cartons — InvntryUom=PCS, NumInSale=1. The '20 PCS' in item names is carton config only; multiplying by it inflates volume ~20x.
-- **[C-0002]** JIVO Mart (CardCode CUSTA000606) is Oil's biggest customer — Oil+Mart double-counts the stock transfer. Report external (excluding CUSTA000606) alongside gross, and say which one you quoted.
+- **[C-0005]** Intercompany is 23 group CardCodes, not just CUSTA000606: Oil CUSTA000001/2/3/4/606/827/906/1099/1113, Mart CUSTA000001/827/874/875/876/877/878/926, Bev CUSTA000001/2/3/4/606/827. Exclude all; name them.
+- **[C-0008]** ecom /api/sap/* (ecom-cli 'sap', MCP ecom_sap) is JIVO_MART only - never Oil, never group. Only 'sales-analysis --source oil' reaches Oil; Beverages is unreachable from ecom.
+- **[C-0009]** ecom 'sap distributors' = VENDOR master (OCRD CardType='S', ad agencies/suppliers). For real distributors use 'sap platform-distributors'. An empty distributor-invoices result on a VENDA code means wrong ledger side, not no business.
+- **[C-0010]** OMS /api/hana/* requires branch=OIL|BEVERAGE (no MART); it selects the SAP company DB. Never quote an OMS HANA figure without its branch, and never join card/item codes across branches.
+- **[C-0011]** OMS reads all 3 SAP companies but raises orders only into Oil and Beverages — Mart order/quotation count from OMS is always zero. Do not read Mart parties appearing in OMS as Mart business.
+- **[C-0012]** Source every report from SAP (sapb1/hana-sql), never OMS/ecom/factory — they mirror SAP only partially: OMS has no MART branch, so an OMS-sourced report silently drops all Mart business.
+## factory
+- **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
-- **[C-0004]** Variety totals from OITM.U_Sub_Group over-credit combo packs: 66 olive-tagged SKUs are ItmsGrpNam='SALES BOM' bundling olive with canola/mustard. Split SALES BOM out, or say it is counted whole.
+- **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.

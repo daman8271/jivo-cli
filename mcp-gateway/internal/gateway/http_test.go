@@ -432,9 +432,12 @@ func TestHTTPUnknownToolCall(t *testing.T) {
 	if !strings.HasPrefix(text, "unknown tool: no_such_tool") {
 		t.Fatalf("text = %q, want prefix \"unknown tool: no_such_tool\"", text)
 	}
-	for _, prefix := range []string{"sap_", "pg_", "ecom_", "oms_", "fct_"} {
-		if !strings.Contains(text, prefix) {
-			t.Fatalf("text = %q, want it to list prefix %q", text, prefix)
+	// Every configured backend's prefix, read from the config rather than a
+	// hand-kept literal: the error is the only hint a caller gets about what
+	// namespaces exist, so it must never silently omit a newly added backend.
+	for _, b := range DefaultBackends() {
+		if !strings.Contains(text, b.Prefix) {
+			t.Fatalf("text = %q, want it to list the %s backend's prefix %q", text, b.Name, b.Prefix)
 		}
 	}
 }
