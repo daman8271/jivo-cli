@@ -68,3 +68,13 @@ tankhapay/
 
 # one-shot handoff briefings — self-deleting, never committed
 HANDOFF-*.md
+
+# Linux deploy artifacts. mcp-gateway/bin/ is a local STAGING area: the deploy
+# scripts build from source and scp the result to the VPS, so these are rebuilt
+# output, not source. Committing them put ~117 MB of binaries into a PUBLIC
+# repo's permanent history and made every office clone pay for them forever.
+# The Windows .exe files ARE tracked, deliberately — office PCs run those
+# directly from a pull, and there is no build step on those machines.
+mcp-gateway/bin/*.linux-amd64
+jsap-mcp/dist/
+distribution/server/*.linux-amd64
