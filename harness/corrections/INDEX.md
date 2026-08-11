@@ -14,6 +14,8 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0010]** OMS /api/hana/* requires branch=OIL|BEVERAGE (no MART); it selects the SAP company DB. Never quote an OMS HANA figure without its branch, and never join card/item codes across branches.
 - **[C-0011]** OMS reads all 3 SAP companies but raises orders only into Oil and Beverages — Mart order/quotation count from OMS is always zero. Do not read Mart parties appearing in OMS as Mart business.
 - **[C-0012]** Source every report from SAP (sapb1/hana-sql), never OMS/ecom/factory — they mirror SAP only partially: OMS has no MART branch, so an OMS-sourced report silently drops all Mart business.
+## accounts
+- **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
