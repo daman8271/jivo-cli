@@ -18,7 +18,7 @@ func newMaintenanceMaintenanceMaterialIndentsCmd(flags *rootFlags) *cobra.Comman
 
 	cmd := &cobra.Command{
 		Use:         "maintenance-material-indents",
-		Short:       "Maintenance purchase demands through their 6-step life — submitted to store, pending purchase approval, approved",
+		Short:       "Maintenance purchase demands through their full life — draft, submitted to store, issued from store",
 		Example:     "  jivo-factory-pp-cli maintenance maintenance-material-indents",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.maintenance-material-indents", "pp:method": "GET", "pp:path": "/maintenance/material-indents/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

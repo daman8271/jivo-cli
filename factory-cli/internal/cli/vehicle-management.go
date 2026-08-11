@@ -16,8 +16,10 @@ func newVehicleManagementCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newVehicleManagementTransporterCmd(flags))
 	cmd.AddCommand(newVehicleManagementTransportersCmd(flags))
 	cmd.AddCommand(newVehicleManagementTransportersNamesCmd(flags))
+	cmd.AddCommand(newVehicleManagementVehicleCmd(flags))
 	cmd.AddCommand(newVehicleManagementVehicleEntriesCmd(flags))
 	cmd.AddCommand(newVehicleManagementVehicleEntriesCountCmd(flags))
 	cmd.AddCommand(newVehicleManagementVehicleEntriesListByStatusCmd(flags))

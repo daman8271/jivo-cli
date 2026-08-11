@@ -15,7 +15,7 @@ func newReturnableItemsDashboardCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "dashboard",
-		Short:       "One-glance returnable summary — how many passes sit in each state, how many are outstanding",
+		Short:       "Say plainly: outstanding_value read 0 on Oil despite 7 outstanding passes",
 		Example:     "  jivo-factory-pp-cli returnable-items dashboard",
 		Annotations: map[string]string{"pp:endpoint": "returnable-items.dashboard", "pp:method": "GET", "pp:path": "/returnable-items/dashboard/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

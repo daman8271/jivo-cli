@@ -18,7 +18,7 @@ func newBlowingRunsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "runs",
-		Short:       "List blowing production runs — date, machine, bottle size, production, rejection %, ₹/bottle, net cost and status.",
+		Short:       "List blowing production runs — one machine and one bottle size for one day: date and run number, machine",
 		Example:     "  jivo-factory-pp-cli blowing runs",
 		Annotations: map[string]string{"pp:endpoint": "blowing.runs", "pp:method": "GET", "pp:path": "/blowing/runs/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

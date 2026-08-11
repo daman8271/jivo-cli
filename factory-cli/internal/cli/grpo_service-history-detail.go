@@ -15,9 +15,9 @@ func newGrpoServiceHistoryDetailCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "service-history-detail <posting_id>",
-		Short:       "GET /grpo/service/history/{posting_id}/",
+		Short:       "One freight (bilty) GRPO posting in full — the transporter and bilty booked, the amount and cost allocation",
 		Example:     "  jivo-factory-pp-cli grpo service-history-detail 550e8400-e29b-41d4-a716-446655440000",
-		Annotations: map[string]string{"pp:endpoint": "grpo.service-history-detail", "pp:method": "GET", "pp:path": "/grpo/service/history/{posting_id}/", "mcp:read-only": "true"},
+		Annotations: map[string]string{"pp:endpoint": "grpo.service-history-detail", "pp:method": "GET", "pp:path": "/grpo/service/{posting_id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 {
 				return cmd.Help()
@@ -27,7 +27,7 @@ func newGrpoServiceHistoryDetailCmd(flags *rootFlags) *cobra.Command {
 				return err
 			}
 
-			path := "/grpo/service/history/{posting_id}/"
+			path := "/grpo/service/{posting_id}/"
 			path = replacePathParam(path, "posting_id", args[0])
 			params := map[string]string{}
 			data, prov, err := resolveReadWithStrategy(cmd.Context(), c, flags, "auto", "grpo", false, path, params, nil, cmd.ErrOrStderr())

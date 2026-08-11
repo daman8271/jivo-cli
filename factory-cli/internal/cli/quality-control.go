@@ -43,6 +43,7 @@ func newQualityControlCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newQualityControlQcOnlineMonitoringRunsCmd(flags))
 	cmd.AddCommand(newQualityControlQcOnlineMonitoringSpecsCmd(flags))
 	cmd.AddCommand(newQualityControlQcParameterGetCmd(flags))
+	cmd.AddCommand(newQualityControlQcPrintDocumentGetCmd(flags))
 	cmd.AddCommand(newQualityControlQcProductionRunningRunsCmd(flags))
 	cmd.AddCommand(newQualityControlQcProductionSessionGetCmd(flags))
 	cmd.AddCommand(newQualityControlSapItemsCmd(flags))

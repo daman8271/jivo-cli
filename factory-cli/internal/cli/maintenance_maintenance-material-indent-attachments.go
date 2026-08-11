@@ -18,7 +18,7 @@ func newMaintenanceMaintenanceMaterialIndentAttachmentsCmd(flags *rootFlags) *co
 
 	cmd := &cobra.Command{
 		Use:         "maintenance-material-indent-attachments",
-		Short:       "Files attached to a material indent (quotations, photos, bills).",
+		Short:       "Files attached to a material indent — quotations, photos and bills",
 		Example:     "  jivo-factory-pp-cli maintenance maintenance-material-indent-attachments",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.maintenance-material-indent-attachments", "pp:method": "GET", "pp:path": "/maintenance/material-indent-attachments/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

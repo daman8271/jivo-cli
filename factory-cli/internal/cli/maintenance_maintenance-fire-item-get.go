@@ -16,7 +16,7 @@ func newMaintenanceMaintenanceFireItemGetCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "maintenance-fire-item-get",
-		Short:       "One fire-safety store item. Required: id.",
+		Short:       "One fire-safety store item — its category, part number, stock against minimum and reorder levels",
 		Example:     "  jivo-factory-pp-cli maintenance maintenance-fire-item-get --id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.maintenance-fire-item-get", "pp:method": "GET", "pp:path": "/maintenance/fire/{id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -19,7 +19,7 @@ func newMaintenanceMaintenanceSafetyFinesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "maintenance-safety-fines",
-		Short:       "Safety fines raised against a worker or contractor — what PPE was missing, where, how much",
+		Short:       "Safety fines raised against a worker or contractor — which rule was broken (missing PPE, no hair net",
 		Example:     "  jivo-factory-pp-cli maintenance maintenance-safety-fines",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.maintenance-safety-fines", "pp:method": "GET", "pp:path": "/maintenance/safety-fines/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

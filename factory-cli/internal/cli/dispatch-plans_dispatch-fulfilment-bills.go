@@ -21,7 +21,7 @@ func newDispatchPlansDispatchFulfilmentBillsCmd(flags *rootFlags) *cobra.Command
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-fulfilment-bills",
-		Short:       "Bill-by-bill fulfilment list — what was billed versus what actually went out the gate, with the fulfilment rate",
+		Short:       "Bill-by-bill fulfilment list across ALL THREE JIVO companies at once",
 		Example:     "  jivo-factory-pp-cli dispatch-plans dispatch-fulfilment-bills",
 		Annotations: map[string]string{"pp:endpoint": "dispatch-plans.dispatch-fulfilment-bills", "pp:method": "GET", "pp:path": "/dispatch-plans/dashboard/bills/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

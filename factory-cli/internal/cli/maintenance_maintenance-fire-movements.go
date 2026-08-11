@@ -19,7 +19,7 @@ func newMaintenanceMaintenanceFireMovementsCmd(flags *rootFlags) *cobra.Command 
 
 	cmd := &cobra.Command{
 		Use:         "maintenance-fire-movements",
-		Short:       "Fire & safety store stock ledger — every issue, return, consumption and adjustment with quantity and value.",
+		Short:       "Fire & safety store stock ledger — every receipt, issue, return, consumption and adjustment with quantity and value.",
 		Example:     "  jivo-factory-pp-cli maintenance maintenance-fire-movements",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.maintenance-fire-movements", "pp:method": "GET", "pp:path": "/maintenance/fire-movements/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

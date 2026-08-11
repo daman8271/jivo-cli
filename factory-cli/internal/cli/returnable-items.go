@@ -16,6 +16,7 @@ func newReturnableItemsCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newReturnableItemsAttachmentCmd(flags))
 	cmd.AddCommand(newReturnableItemsAttachmentsCmd(flags))
 	cmd.AddCommand(newReturnableItemsDashboardCmd(flags))
 	cmd.AddCommand(newReturnableItemsGatepassCmd(flags))

@@ -20,7 +20,7 @@ func newGrpoServicePendingCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "service-pending",
-		Short:       "Dispatched vehicles whose transporter freight (bilty)",
+		Short:       "The freight-booking backlog",
 		Example:     "  jivo-factory-pp-cli grpo service-pending",
 		Annotations: map[string]string{"pp:endpoint": "grpo.service-pending", "pp:method": "GET", "pp:path": "/grpo/service/pending/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

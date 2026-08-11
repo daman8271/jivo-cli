@@ -17,7 +17,7 @@ func newDispatchPlansDispatchFulfilmentSummaryCmd(flags *rootFlags) *cobra.Comma
 
 	cmd := &cobra.Command{
 		Use:         "dispatch-fulfilment-summary",
-		Short:       "Dispatch fulfilment headline for a date range — value/weight/litres/trucks dispatched, open backlog by booking status",
+		Short:       "Dispatch fulfilment headline for a date range, covering ALL THREE JIVO companies at once",
 		Example:     "  jivo-factory-pp-cli dispatch-plans dispatch-fulfilment-summary",
 		Annotations: map[string]string{"pp:endpoint": "dispatch-plans.dispatch-fulfilment-summary", "pp:method": "GET", "pp:path": "/dispatch-plans/dashboard/summary/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

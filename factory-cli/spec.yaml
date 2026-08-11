@@ -41,6 +41,29 @@ resources:
         description: 'List every factory app user (name, email, employee code, active/staff flags) — the notification-recipient picker.'
         response:
           type: array
+  activity-center:
+    description: 'The activity feed behind the app''s home screen — what each user did today and what the whole plant did today, used to see who is actually working in the system rather than to audit records.'
+    endpoints:
+      my-today:
+        method: GET
+        path: /activity-center/me/today/
+        description: 'Your own daily job sheet: every routine job the system expects of you today (approve a work order, start a run, log a gate entry…), grouped by how often it is due, with how many you have done, how many are still open, and how long the oldest untouched one has been waiting.'
+        response:
+          type: object
+        params:
+        - name: date
+          type: string
+          description: 'YYYY-MM-DD. Omit for today. Viewing an earlier day needs the activity_center.can_view_activity_reports permission (the UI disables the back arrow without it), so a past-date call may 403 on an ordinary account.'
+      team-today:
+        method: GET
+        path: /activity-center/users/today/
+        description: 'The whole team''s day on one board — every user, how many of their expected daily jobs they have done, how many records they created, when they first and last touched the system, and which modules they worked in.'
+        response:
+          type: object
+        params:
+        - name: date
+          type: string
+          description: 'YYYY-MM-DD. Omit for today. Past dates need activity_center.can_view_activity_reports.'
   attendance:
     description: 'This group covers three small, separate parts of the gate operation. (1) **Attendance** is the manual attendance register — the app''s own subtitle is "Manual attendance register — used when the punchi'
     endpoints:
@@ -110,6 +133,41 @@ resources:
   barcode:
     description: 'This is JIVO''s carton-level traceability system — the barcode that gets stuck on every box coming off a filling line, and everything that happens to that box afterwards. A production run generates BOX'
     endpoints:
+      activity:
+        method: GET
+        path: /barcode/activity/
+        description: 'The full barcode event feed — every label print, pallet move, dispatch scan and branch-transfer scan, newest first, with who did it and when.'
+        response:
+          type: object
+        params:
+        - name: kind
+          type: string
+          description: 'Event type. Values from the app''s own dropdown: LABEL_PRINT, PALLET_MOVEMENT, DISPATCH_SCAN, BST_SCAN, BST_RECEIVE. Read out of the bundle, not counter-verified against a live count.'
+        - name: search
+          type: string
+          description: 'Free text, matched against the event title/detail. UI-sourced, not counter-verified.'
+        - name: date_from
+          type: string
+          description: 'YYYY-MM-DD. UI-sourced, not counter-verified.'
+        - name: date_to
+          type: string
+          description: 'YYYY-MM-DD. UI-sourced, not counter-verified.'
+        - name: page
+          type: integer
+          description: '1-based page number.'
+        - name: page_size
+          type: integer
+          description: 'Rows per page; the app sends 25. The server''s default when omitted was not observed — always send it.'
+      activity-recent:
+        method: GET
+        path: /barcode/activity/recent/
+        description: 'The last handful of barcode events — the live ''what just happened on the floor'' strip from the barcode dashboard.'
+        response:
+          type: object
+        params:
+        - name: limit
+          type: integer
+          description: 'How many events to return. A bare call returned exactly 15 in all three companies, so the server default is 15; the app also sends 15.'
       boxes:
         method: GET
         path: /barcode/boxes/
@@ -149,7 +207,7 @@ resources:
       box-history:
         method: GET
         path: /barcode/boxes/{id}/history/
-        description: 'Movement log for one carton — but it returns an empty list for every box I tried; use `box` instead. Required: id.'
+        description: 'Dead endpoint — always returns an empty list, in both this study and the last. The movement history you want is the `movements` list inside `barcode box`. Required: id.'
         response:
           type: object
         params:
@@ -377,6 +435,12 @@ resources:
           type: integer
           required: true
           description: 'path param, session id int'
+      dispatch-settings:
+        method: GET
+        path: /barcode/dispatch/settings/
+        description: 'The dispatch rulebook for this company — whether part-loads are allowed, whether a box can be pulled off a pallet, whether items must be scanned in order, and whether a supervisor can close or override a load.'
+        response:
+          type: object
       intercompany-dashboard:
         method: GET
         path: /barcode/intercompany/dashboard/
@@ -421,6 +485,17 @@ resources:
           type: integer
           required: true
           description: 'path param int'
+      intercompany-warehouses:
+        method: GET
+        path: /barcode/intercompany/warehouses/
+        description: 'The warehouses a chosen JIVO company can receive intercompany stock into — the ''receive into warehouse'' picklist. Required: company_code.'
+        response:
+          type: array
+        params:
+        - name: company_code
+          type: string
+          required: true
+          description: 'REQUIRED — a bare call returns HTTP 400 in all three companies. The parameter name is taken verbatim from the app''s own call (params:{company_code}); the 400 body itself was not captured. Values are the JIVO company codes: JIVO_OIL, JIVO_MART, JIVO_BEVERAGES.'
       items-oitm:
         method: GET
         path: /barcode/items/oitm/
@@ -489,6 +564,16 @@ resources:
           type: integer
           required: true
           description: 'path param int'
+      loose-summary:
+        method: GET
+        path: /barcode/loose/summary/
+        description: 'Loose stock rolled up per item — how many single bottles of each product are sitting opened and available to repack, and which batches they span.'
+        response:
+          type: array
+        params:
+        - name: search
+          type: string
+          description: 'Free text over the item; the only param the app ever sends here.'
       pallets:
         method: GET
         path: /barcode/pallets/
@@ -522,7 +607,7 @@ resources:
       pallet-history:
         method: GET
         path: /barcode/pallets/{id}/history/
-        description: 'Movement log for one pallet — returns an empty list in practice; use `pallet` instead. Required: id.'
+        description: 'Dead endpoint — always returns an empty list, in both this study and the last. The movement history you want is the `movements` list inside `barcode pallet`. Required: id.'
         response:
           type: object
         params:
@@ -789,7 +874,7 @@ resources:
       runs:
         method: GET
         path: /blowing/runs/
-        description: 'List blowing production runs — date, machine, bottle size, production, rejection %, ₹/bottle, net cost and status.'
+        description: 'List blowing production runs — one machine and one bottle size for one day: date and run number, machine, preform make and gram, preforms consumed, bottles counted off the machine, rejection %, manpower, net cost and ₹/bottle, plus three separate statuses: the stored status, the live status the shop floor sees, and whether the warehouse has approved the preform issue.'
         response:
           type: array
         params:
@@ -918,7 +1003,7 @@ resources:
       sales-planning-requirement-report:
         method: GET
         path: /dashboards/sales-planning-requirement/report/
-        description: 'Monthly forecast demand vs stock in hand, minimum stock and open POs — the net shortage per item for the current planning month.'
+        description: 'Forecast demand versus stock in hand, minimum stock and open POs, with the net shortage per item — for whichever forecast month the last refresh loaded, which is NOT necessarily the current month. Comes with a totals summary and the refresh stamp; check the status command for how old the snapshot is.'
         response:
           type: object
         params:
@@ -943,7 +1028,7 @@ resources:
       stock:
         method: GET
         path: /dashboards/stock/
-        description: 'On-hand stock vs its minimum-stock benchmark, per item per warehouse, flagged healthy / low / critical.'
+        description: 'On-hand stock against each item''s minimum-stock benchmark, one row per item per warehouse, flagged healthy / low / critical — or ''none'' where no benchmark has been set (filter value: unset) — plus a recent/slow moving flag and the days since the item was last consumed.'
         response:
           type: object
         params:
@@ -1025,6 +1110,35 @@ resources:
           type: string
           required: true
           description: 'Genuinely required — 400 {"detail":"Invalid query parameters.","errors":{"warehouse":["This field is required."]}} without it. Verified live: PM0000015 with warehouse=BH-PM,BH-FP returned both warehouse rows on JIVO_OIL, and RM0000022 with warehouse=BH-GR returned one row on JIVO_MART. (query, CSV)'
+      stock-export:
+        method: GET
+        path: /dashboards/stock/export/
+        description: 'Download the whole stock-benchmark view as an Excel file (.xlsx) — the same rows and filters as the on-screen stock dashboard, but not capped to a page.'
+        response:
+          type: object
+        params:
+        - name: search
+          type: string
+          description: 'Same as the stock dashboard; upper-cased by the app before sending.'
+        - name: item_group
+          type: string
+          description: 'Item group NAME.'
+        - name: warehouse
+          type: string
+          description: 'Comma-separated warehouse codes.'
+        - name: status
+          type: string
+          description: 'Comma-separated; critical | healthy | low | unset.'
+        - name: movement_status
+          type: string
+          description: 'recent | slow.'
+        - name: sort_by
+          type: string
+        - name: sort_dir
+          type: string
+        - name: as_of_date
+          type: string
+          description: 'YYYY-MM-DD. The app''s export builder forwards as_of_date, so the same command can export a point-in-time sheet; the downloaded file is named stock_benchmark_<date>.xlsx.'
   dispatch:
     description: 'The dispatch domain follows a SAP sales invoice from the moment it becomes a "dispatch bill" to the moment the truck clears the gate and the transporter gets paid. /dispatch-plans/ is the planning hal'
     endpoints:
@@ -1149,7 +1263,7 @@ resources:
       dispatch-fulfilment-bills:
         method: GET
         path: /dispatch-plans/dashboard/bills/
-        description: 'Bill-by-bill fulfilment list — what was billed versus what actually went out the gate, with the fulfilment rate, gatepass number and the individual gate-out events per invoice.'
+        description: 'Bill-by-bill fulfilment list across ALL THREE JIVO companies at once — what was billed versus what actually went out the gate, with the fulfilment rate, gatepass number and the individual gate-out events per invoice. Choosing a company does not narrow it.'
         response:
           type: object
         params:
@@ -1174,7 +1288,7 @@ resources:
       dispatch-fulfilment-summary:
         method: GET
         path: /dispatch-plans/dashboard/summary/
-        description: 'Dispatch fulfilment headline for a date range — value/weight/litres/trucks dispatched, open backlog by booking status, a daily trend line and the top 50 customers by dispatched value.'
+        description: 'Dispatch fulfilment headline for a date range, covering ALL THREE JIVO companies at once — value/weight/litres/trucks dispatched by actual gate-out date, the open backlog by booking status, a daily trend line and the top 50 customers by dispatched value.'
         response:
           type: object
         params:
@@ -1235,6 +1349,17 @@ resources:
   driver-management:
     description: 'This is the factory''s transport master file plus the gate''s vehicle-entry log. Three master lists sit under it — Vehicles (registration number, type, capacity, owning transporter), Transporters (conta'
     endpoints:
+      driver:
+        method: GET
+        path: /driver-management/drivers/{id}/
+        description: 'One driver''s record — name, mobile, licence number, ID proof and when they were added.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Numeric driver id from the drivers or drivers-names command (path segment). Not the licence number and not the mobile.'
       drivers:
         method: GET
         path: /driver-management/drivers/
@@ -1429,6 +1554,19 @@ resources:
         - name: page_size
           type: integer
           description: 'UI default 25'
+      dispatch-tracking-summary:
+        method: GET
+        path: /gate-core/dispatch-tracking/summary/
+        description: 'One-look scoreboard for trucks on the road in a date window — how many are dispatched, in transit, delivered, short-delivered, returned or overdue, plus the on-time rate, the average days in transit and the list of late trucks with how many days each is past its reach-by date.'
+        response:
+          type: object
+        params:
+        - name: from_date
+          type: string
+          description: 'YYYY-MM-DD. The only two params the app ever sends (its tracking dashboard defaults to the 1st of the current month, the dispatch dashboard to today-1-month).'
+        - name: to_date
+          type: string
+          description: 'YYYY-MM-DD'
       dispatch-tracking-updates:
         method: GET
         path: /gate-core/dispatch-tracking/{arrival_id}/updates/
@@ -1523,7 +1661,7 @@ resources:
       empty-vehicle-outs-eligible-entries:
         method: GET
         path: /gate-core/empty-vehicle-outs/eligible-entries/
-        description: 'Vehicle entries that are allowed to leave empty right now — the pick-list for recording an empty gate-out.'
+        description: 'Vehicle entries that still have no empty gate-out recorded against them — the pick-list when recording one, and a standing backlog (about 1,200 entries in Beverages) rather than a list of trucks that are inside right now.'
         response:
           type: array
         params:
@@ -1849,6 +1987,37 @@ resources:
         description: 'The units of measure the gate apps offer — use it to resolve or validate a unit id.'
         response:
           type: array
+  goods-return:
+    description: 'Goods Return handles stock coming BACK from customers into the plant. Someone raises a return entry against the paperwork the customer is returning on (an invoice, a debit note, or plain letter-pad), lists the items and their condition, records the vehicle and when it is expected, and submits it. The gate then marks the vehicle in when it actually shows up, and the warehouse confirms receipt into one of a handful of dedicated goods-return warehouses (BH-GR, DL-GR, PB-RG…) — which is the step that posts the return into SAP. Larger returns need an approval before that happens. The whole module is brand new and absent from the shipped CLI; at probe time it was live and routed in all three companies but had no entries in any of them yet, so only the warehouse picklist returned rows.'
+    endpoints:
+      gate-expected:
+        method: GET
+        path: /goods-return/gate/expected/
+        description: 'Customer return vehicles the gate is still waiting for — the arrivals list a guard works from, showing the customer, driver, vehicle number and expected time, before marking each vehicle in.'
+        response:
+          type: array
+      list:
+        method: GET
+        path: /goods-return/
+        description: 'Customer goods returns coming back to the plant — one row per return entry: which customer, what paperwork it is returning against, the vehicle, how many item lines, when it is expected, and how far it has got (draft, awaiting arrival, arrived, posted, cancelled).'
+        response:
+          type: array
+        params:
+        - name: status
+          type: string
+          description: 'Keep only entries at one stage. Exact values: DRAFT, AWAITING_ARRIVAL, ARRIVED, POSTED, CANCELLED. Omit for all.'
+        - name: approval
+          type: string
+          description: 'Set to PENDING to see only returns waiting for someone to approve them. This is the approvals queue.'
+        - name: all_companies
+          type: boolean
+          description: 'Look across Oil, Mart and Beverages at once instead of just the company you are signed in to.'
+      warehouses:
+        method: GET
+        path: /goods-return/warehouses/
+        description: 'The warehouses a customer return is allowed to be booked into when it is received — code and name only, e.g. DL-GR / Mayapuri GR. This is the picklist behind the ''Confirm Receipt'' step.'
+        response:
+          type: array
   grpo:
     description: 'GRPO = "Goods Receipt PO" — the step where material that has physically arrived at a JIVO plant gets booked into SAP as a purchase receipt. It has two completely separate halves that share the /grpo/'
     endpoints:
@@ -1877,6 +2046,66 @@ resources:
         - name: page_size
           type: integer
           description: 'UI default 25; server HARD-CAPS at 100 — asking 500 returns 100 int'
+      fg-all-entries:
+        method: GET
+        path: /grpo/fg/all-entries/
+        description: 'Every finished-goods gate entry on the GRPO board — bought-in finished product still at the gate, with QC, or cleared — the finished-goods twin of the material GRPO board.'
+        response:
+          type: object
+        params:
+        - name: phase
+          type: string
+          description: 'INFERRED, not exercised: GATE | QC | DONE, by symmetry with /grpo/all-entries/ and because the response carries the same counts block {ALL, GATE, QC, DONE}.'
+        - name: search
+          type: string
+          description: 'INFERRED, not exercised: free text over entry / supplier / PO (the sibling /grpo/fg/pending/ takes `search` at the app''s own call site).'
+        - name: page
+          type: integer
+          description: '1-based; the response envelope carries page/total_pages/next/previous.'
+        - name: page_size
+          type: integer
+          description: 'Server default 25 observed. Cap not tested here; the material siblings cap at 100.'
+      fg-history:
+        method: GET
+        path: /grpo/fg/history/
+        description: 'Log of finished-goods GRPO posting attempts to SAP — the finished-goods twin of the material posting log — currently holding no rows in any company.'
+        response:
+          type: object
+        params:
+        - name: status
+          type: string
+          description: 'INFERRED, not exercised: DRAFT | PENDING | POSTED | FAILED | PARTIALLY_POSTED, the shared GRPO status constant used by /grpo/history/.'
+        - name: search
+          type: string
+          description: 'INFERRED, not exercised, by symmetry with /grpo/history/.'
+        - name: page
+          type: integer
+          description: '1-based; envelope carries page/total_pages/next/previous.'
+        - name: page_size
+          type: integer
+          description: 'Server default 25 observed.'
+      fg-pending:
+        method: GET
+        path: /grpo/fg/pending/
+        description: 'The finished-goods posting queue — completed finished-goods gate entries waiting to be booked into SAP as a goods receipt against their purchase order.'
+        response:
+          type: object
+        params:
+        - name: search
+          type: string
+          description: 'Free text over entry / supplier / PO — passed by the app''s own Finished Goods GRPO screen (placeholder ''Search entry / supplier / PO…''), debounced 300 ms.'
+        - name: page
+          type: integer
+          description: '1-based; envelope carries page/total_pages/next/previous.'
+        - name: page_size
+          type: integer
+          description: 'Server default 25 observed.'
+      fg-summary:
+        method: GET
+        path: /grpo/fg/summary/
+        description: 'Finished-goods GRPO dashboard totals for one company — entries and POs waiting to be posted, a QC accepted/rejected quantity, and posted / failed / partially-posted posting counts.'
+        response:
+          type: object
       history:
         method: GET
         path: /grpo/history/
@@ -1907,8 +2136,8 @@ resources:
           description: 'capped at 100 int'
       history-detail:
         method: GET
-        path: /grpo/history/{posting_id}/
-        description: 'GET /grpo/history/{posting_id}/'
+        path: /grpo/{posting_id}/
+        description: 'One material GRPO posting attempt in full — the PO lines and quantities that were sent, the SAP document it became or the SAP error it hit, who posted it and when, and its attachments.'
         response:
           type: object
       inspection-report:
@@ -1958,7 +2187,7 @@ resources:
       service-history:
         method: GET
         path: /grpo/service/history/
-        description: 'Log of transport-service GRPO postings — which bilty was booked against which transporter, for how much, and its SAP document number.'
+        description: 'Log of transport-freight (bilty) GRPO postings to SAP — which bilty was booked against which transporter for how much, its SAP document number, and the cost allocation it was booked under: SAC code, location, branch delivery point, sub-account, product variety and litres carried.'
         response:
           type: object
         params:
@@ -1984,8 +2213,8 @@ resources:
           description: 'capped at 100 int'
       service-history-detail:
         method: GET
-        path: /grpo/service/history/{posting_id}/
-        description: 'GET /grpo/service/history/{posting_id}/'
+        path: /grpo/service/{posting_id}/
+        description: 'One freight (bilty) GRPO posting in full — the transporter and bilty booked, the amount and cost allocation, the SAP document number or SAP error, and the attached bilty/invoice documents.'
         response:
           type: object
       service-options:
@@ -1997,7 +2226,7 @@ resources:
       service-pending:
         method: GET
         path: /grpo/service/pending/
-        description: 'Dispatched vehicles whose transporter freight (bilty) has not yet been booked to SAP as a service purchase — the freight-booking backlog.'
+        description: 'The freight-booking backlog — dispatch plans whose transporter bilty has not yet been booked into SAP as a service purchase, including vehicles that have not left the plant yet.'
         response:
           type: object
         params:
@@ -2019,7 +2248,7 @@ resources:
       summary:
         method: GET
         path: /grpo/summary/
-        description: 'GRPO dashboard totals for one company: entries and POs awaiting posting, QC accepted/rejected quantity, and posted/failed posting counts.'
+        description: 'Material GRPO dashboard totals for one company — how many gate entries and POs are waiting to be posted, the posted / failed / partially-posted attempt counts, and a QC accepted/rejected quantity that is a raw sum across mixed units (pieces, kg, MT) and is therefore not a tonnage.'
         response:
           type: object
       attachments:
@@ -2143,6 +2372,66 @@ resources:
         - name: document_type
           type: string
           description: 'MANUAL | WARRANTY | AMC | SERVICE_REPORT | CALIBRATION | OTHER — filter support INFERRED, not verified (table empty)'
+      daily-electricity-readings:
+        method: GET
+        path: /maintenance/daily-electricity-readings/
+        description: 'The factory''s daily electricity meter book — for each meter and each day, the opening and closing reading, the units burnt, the rate applied and what those units cost in rupees.'
+        response:
+          type: array
+        params:
+        - name: date_from
+          type: string
+          description: 'YYYY-MM-DD — the UI defaults this to the 1st of the current month'
+        - name: date_to
+          type: string
+          description: 'YYYY-MM-DD — the UI defaults this to today'
+        - name: meter
+          type: integer
+          description: 'electricity-meter id (see `maintenance electricity-meters`), NOT the printed meter number'
+      daily-wastage-logs:
+        method: GET
+        path: /maintenance/daily-wastage-logs/
+        description: 'The daily wastage register — what material was wasted on a given day, how much and in what unit, the reason given, and the photo of it.'
+        response:
+          type: array
+        params:
+        - name: date_from
+          type: string
+          description: 'YYYY-MM-DD — the UI defaults this to the 1st of the current month'
+        - name: date_to
+          type: string
+          description: 'YYYY-MM-DD — the UI defaults this to today'
+        - name: search
+          type: string
+          description: 'free text; the UI''s only text filter on this register'
+      electricity-meters:
+        method: GET
+        path: /maintenance/electricity-meters/
+        description: 'The meter master behind the daily electricity register — each meter''s name, meter number, where in the plant it sits, and its rupee rate per unit.'
+        response:
+          type: array
+      maintenance-asset-category-get:
+        method: GET
+        path: /maintenance/asset-categories/{id}/
+        description: 'One asset category — its name, description, whether it is still in use, and how many assets are filed under it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'asset-category id, a path segment — get it from `maintenance asset-categories`, do not guess'
+      maintenance-asset-department-get:
+        method: GET
+        path: /maintenance/asset-departments/{id}/
+        description: 'One maintenance department — its short code, name and how many assets belong to it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'asset-department id, a path segment — get it from `maintenance asset-departments`'
       maintenance-asset-document-get:
         method: GET
         path: /maintenance/asset-documents/{id}/
@@ -2174,6 +2463,17 @@ resources:
         - name: asset
           type: integer
           description: 'the UI always scopes by asset; unfiltered works and returns everything int'
+      maintenance-asset-location-get:
+        method: GET
+        path: /maintenance/asset-locations/{id}/
+        description: 'One asset location — the plant area and line it names, and how many assets sit there.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'asset-location id, a path segment — get it from `maintenance asset-locations`'
       maintenance-asset-photo-get:
         method: GET
         path: /maintenance/asset-photos/{id}/
@@ -2188,7 +2488,7 @@ resources:
       assets:
         method: GET
         path: /maintenance/assets/
-        description: 'The plant asset register — every machine/component with its category, location, department, status, make/model/serial, warranty and AMC dates.'
+        description: 'The plant asset register — every machine and component with its code, category, location, department, running status, make/model/serial, warranty and AMC dates, plus where it sits in the plant/area/line/machine/component hierarchy and which production machine it belongs to.'
         response:
           type: array
         params:
@@ -2215,7 +2515,7 @@ resources:
       maintenance-asset-get:
         method: GET
         path: /maintenance/assets/{id}/
-        description: 'Full record for one asset. Required: id.'
+        description: 'Full record for one asset, including its place in the asset hierarchy, the production machine it belongs to, warranty/AMC dates and its photo and document counts. Required: id.'
         response:
           type: object
         params:
@@ -2245,12 +2545,34 @@ resources:
         - name: date_to
           type: string
           description: 'YYYY-MM-DD date'
+      maintenance-asset-qr:
+        method: GET
+        path: /maintenance/assets/{id}/qr/
+        description: 'The QR-tag record for one asset — the asset in full plus the code printed on its shop-floor tag, used for label printing and scan lookup.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'asset id, a path segment — get it from `maintenance assets`'
       maintenance-fire-categories:
         method: GET
         path: /maintenance/fire-categories/
         description: 'Fire & safety item category master (Helmets, Reflective jacket, …) with item counts.'
         response:
           type: array
+      maintenance-fire-category-get:
+        method: GET
+        path: /maintenance/fire-categories/{id}/
+        description: 'One fire & safety item category — its name and how many store items are filed under it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'fire-category id, a path segment — get it from `maintenance maintenance-fire-categories`'
       maintenance-fire-issues:
         method: GET
         path: /maintenance/fire-issues/
@@ -2281,7 +2603,7 @@ resources:
       maintenance-fire-movements:
         method: GET
         path: /maintenance/fire-movements/
-        description: 'Fire & safety store stock ledger — every issue, return, consumption and adjustment with quantity and value.'
+        description: 'Fire & safety store stock ledger — every receipt, issue, return, consumption and adjustment with quantity and value.'
         response:
           type: array
         params:
@@ -2310,6 +2632,17 @@ resources:
         - name: is_active
           type: boolean
           description: 'bool'
+      maintenance-fire-report-item-get:
+        method: GET
+        path: /maintenance/fire-report-items/{id}/
+        description: 'One equipment line on a fire inspection round — which pump/hydrant/extinguisher was checked, whether it was OK, its reading and the inspector''s remarks.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'fire-report-ITEM id, a path segment — get it from `maintenance maintenance-fire-report-items`, not the report id'
       maintenance-fire-report-items:
         method: GET
         path: /maintenance/fire-report-items/
@@ -2329,6 +2662,17 @@ resources:
         - name: is_active
           type: boolean
           description: 'bool'
+      maintenance-fire-report-photo-get:
+        method: GET
+        path: /maintenance/fire-report-photos/{id}/
+        description: 'One photo filed against a fire-inspection checklist line, with its caption and the date it was taken.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'fire-report-photo id, a path segment — get it from `maintenance maintenance-fire-report-photos`'
       maintenance-fire-report-photos:
         method: GET
         path: /maintenance/fire-report-photos/
@@ -2436,7 +2780,7 @@ resources:
       maintenance-fire-item-get:
         method: GET
         path: /maintenance/fire/{id}/
-        description: 'One fire-safety store item. Required: id.'
+        description: 'One fire-safety store item — its category, part number, stock against minimum and reorder levels, unit cost and where it is stored. Required: id.'
         response:
           type: object
         params:
@@ -2444,10 +2788,21 @@ resources:
           type: integer
           required: true
           description: 'path segment int'
+      maintenance-material-indent-attachment-get:
+        method: GET
+        path: /maintenance/material-indent-attachments/{id}/
+        description: 'One file attached to a material indent — or to one specific company''s quotation on it — with its document type and who uploaded it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'attachment id, a path segment — get it from `maintenance maintenance-material-indent-attachments`'
       maintenance-material-indent-attachments:
         method: GET
         path: /maintenance/material-indent-attachments/
-        description: 'Files attached to a material indent (quotations, photos, bills).'
+        description: 'Files attached to a material indent — quotations, photos and bills — including files pinned to one specific company''s quotation on that indent.'
         response:
           type: array
         params:
@@ -2460,10 +2815,20 @@ resources:
         - name: is_active
           type: boolean
           description: 'bool'
+      maintenance-material-indent-quotations:
+        method: GET
+        path: /maintenance/material-indent-quotations/
+        description: 'The competing company quotations recorded against a material indent — each company''s contact, quote number, delivery days, payment terms, per-item rates, freight and total, so the approver can pick who to buy from.'
+        response:
+          type: array
+        params:
+        - name: indent
+          type: integer
+          description: 'material-indent id — the only param the web app ever sends; scope every call to one indent'
       maintenance-material-indents:
         method: GET
         path: /maintenance/material-indents/
-        description: 'Maintenance purchase demands through their 6-step life — submitted to store, pending purchase approval, approved, purchased, arrived at gate, received into store — with line items, shortfalls and attachments.'
+        description: 'Maintenance purchase demands through their full life — draft, submitted to store, issued from store, pending purchase approval, approved for purchase, quotations collected and a company chosen, purchased, arrived at gate, received into store — with line items, shortfalls, the competing company quotations and attachments.'
         response:
           type: array
         params:
@@ -2479,7 +2844,7 @@ resources:
       maintenance-material-indent-get:
         method: GET
         path: /maintenance/material-indents/{id}/
-        description: 'One material indent with all its line items, shortfalls and step-by-step approval trail. Required: id.'
+        description: 'One material indent in full — its line items and shortfalls, the competing company quotations with the one that was chosen, the attachments and the step-by-step approval trail. Required: id.'
         response:
           type: object
         params:
@@ -2487,6 +2852,39 @@ resources:
           type: integer
           required: true
           description: 'path segment int'
+      maintenance-safety-fine-photo-get:
+        method: GET
+        path: /maintenance/safety-fine-photos/{id}/
+        description: 'One evidence photo attached to a safety fine, with its caption.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'safety-fine-photo id, a path segment — get it from `maintenance maintenance-safety-fine-photos`'
+      maintenance-safety-violation-type-get:
+        method: GET
+        path: /maintenance/safety-violation-types/{id}/
+        description: 'One safety violation type — its default fine amount in rupees and how many fines have been raised under it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'violation-type id, a path segment — get it from `maintenance maintenance-safety-violation-types`'
+      maintenance-work-permit-worker-get:
+        method: GET
+        path: /maintenance/work-permit-workers/{id}/
+        description: 'One named worker on a permit-to-work — their role on the job and whether they have signed on, with the sign-on time.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'work-permit-WORKER id, a path segment — get it from `maintenance maintenance-work-permit-workers`, not the permit id'
       options:
         method: GET
         path: /maintenance/options/
@@ -2591,7 +2989,7 @@ resources:
       maintenance-safety-fines:
         method: GET
         path: /maintenance/safety-fines/
-        description: 'Safety fines raised against a worker or contractor — what PPE was missing, where, how much, and whether it has been recovered.'
+        description: 'Safety fines raised against a worker or contractor — which rule was broken (missing PPE, no hair net, general rule-breaking), where and when, the rupee amount, and whether it has been settled.'
         response:
           type: array
         params:
@@ -2633,7 +3031,7 @@ resources:
       spare-categories:
         method: GET
         path: /maintenance/spare-categories/
-        description: 'Spare category master.'
+        description: 'The categories used to group maintenance spare parts — the picklist behind the Category field on the spare master.'
         response:
           type: array
         params:
@@ -2909,7 +3307,7 @@ resources:
       batches:
         method: GET
         path: /marketplace/batches/
-        description: 'List uploaded marketplace order sheets (imports) with parse counts and status.'
+        description: 'Every order sheet uploaded from a seller portal, newest first — rows in the file, how many orders and tracking IDs came out of it, who uploaded it, and what the parser did with each row (created, updated, skipped, or merged in from an earlier sheet).'
         response:
           type: array
         params:
@@ -2919,7 +3317,7 @@ resources:
       batch:
         method: GET
         path: /marketplace/batches/{id}/
-        description: 'Show one uploaded order sheet — filename, status, row/order/line counts and its import summary. Required: id.'
+        description: 'One uploaded order sheet in full — filename, who uploaded it, its status, how many file rows became how many orders and tracking IDs, and the parser''s tally including any orders merged in from an earlier sheet. Required: id.'
         response:
           type: object
         params:
@@ -2970,6 +3368,17 @@ resources:
         - name: channel
           type: string
           description: 'FLIPKART|AMAZON. Honoured (AMAZON returns 0 rows). Omit for all channels.'
+      dispatch:
+        method: GET
+        path: /marketplace/dispatches/{id}/
+        description: 'One outward dispatch in full — the order and buyer, every barcode scanned against it and by whom, what the sheet said it should contain, and how far the scanning got, plus its SAP delivery-note and posting status. Required: id.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Dispatch id taken from `marketplace dispatches-list` output (path segment). NOT an order id and NOT a sheet/batch id — those are different numbers on the same row.'
       dn-posted:
         method: GET
         path: /marketplace/delivery-notes/posted/
@@ -3120,6 +3529,17 @@ resources:
           type: string
           required: true
           description: 'REQUIRED as a query param. Verified: /marketplace/gate/51/ without channel -> 400 ''channel is required.'''
+      issue-request:
+        method: GET
+        path: /marketplace/issue-requests/{id}/
+        description: 'One stock issue request in full — every item the warehouse was asked for, what stock it had, and what it approved, issued and received against each line. Required: id.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Issue-request id from `marketplace issue-requests-list` (path segment). This is the number the UI shows as MPIR-<id>.'
       issue-requests-list:
         method: GET
         path: /marketplace/issue-requests/
@@ -3155,7 +3575,7 @@ resources:
       packing-queue:
         method: GET
         path: /marketplace/packing/queue/
-        description: 'Orders waiting to be packed, with how many lines each has.'
+        description: 'Orders the server still counts as unpacked, with how many order lines each has. Note packing_status is null on every row — no screen in this build of the app writes it, so it is not a maintained workflow state.'
         response:
           type: object
         params:
@@ -3231,6 +3651,17 @@ resources:
         - name: status
           type: string
           description: 'ONLY offered for slug=orders. Values: PENDING | PARTIAL | SCANNED | CONFIRMED | CANCELLED (the UI''s ''ALL'' just omits the param).'
+      return:
+        method: GET
+        path: /marketplace/returns/{id}/
+        description: 'One inward return in full — the order it came back from, every item scanned in with the condition it arrived in and who scanned it, and how much of the order has been accounted for. Required: id.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Return id from `marketplace returns-list` (path segment).'
       returns-list:
         method: GET
         path: /marketplace/returns/
@@ -3317,6 +3748,17 @@ resources:
   notifications:
     description: 'The "platform" group is the plumbing the rest of the factory app sits on: who you are, who else exists, what the app tells people, and the one hand-off point with JIVO''s separate order system. /accoun'
     endpoints:
+      detail:
+        method: GET
+        path: /notifications/{id}/
+        description: 'One alert in full — its title and message, what it points at (the gate entry, inspection or dispatch it came from), whether it has been read, and the extra data the app uses to deep-link it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Notification id from the feed (path segment).'
       list:
         method: GET
         path: /notifications/
@@ -3339,6 +3781,12 @@ resources:
         - name: page_size
           type: integer
           description: 'rows per page; sets limit. int'
+      preferences:
+        method: GET
+        path: /notifications/preferences/
+        description: 'Which alert types this account is subscribed to — 65 named events (Gate Entry Created, QC Inspection Submitted, Weighment Recorded…) each with an on/off flag.'
+        response:
+          type: array
       unread-count:
         method: GET
         path: /notifications/unread-count/
@@ -3395,6 +3843,102 @@ resources:
           type: integer
           required: true
           description: 'path segment; invoice id from the queue listing int'
+  order-processing:
+    description: 'Order Processing is the factory app''s mirror of OMS sales orders and the planning engine sitting on top of it. It pulls orders out of the OMS database on a schedule, checks each line against SAP stock, and works out what must be produced, which raw/packing materials fall short after exploding the BOM, and what has to be bought. Nothing here posts to SAP: it mirrors, checks and plans, and every production/procurement row is a planning record a human still has to act on. It also flags order lines it cannot trust — no warehouse, no item code, zero quantity, or a quantity that disagrees with cases x pack size — because those lines can never reach a stock answer.'
+    endpoints:
+      dashboard:
+        method: GET
+        path: /order-processing/dashboard/
+        description: 'One screen of counts for the whole OMS-to-production pipeline: how many orders are mirrored and how they split by state, how many are ready to fulfil, open production and procurement requirements, materials short, flagged lines, and the last order-pull run.'
+        response:
+          type: object
+      line-issues:
+        method: GET
+        path: /order-processing/line-issues/
+        description: 'Order lines the engine will not trust, one flag at a time — no warehouse to check stock against, a quantity that disagrees with cases x pack size, no item code, or no quantity — with how many orders those lines block and the worst-affected items.'
+        response:
+          type: object
+        params:
+        - name: issue
+          type: string
+          description: 'Which flag to list. NO_WAREHOUSE (the app''s default), QTY_DISAGREES, NO_ITEM_CODE, ZERO_QTY, or `any` for all flagged lines.'
+      materials:
+        method: GET
+        path: /order-processing/materials/
+        description: 'The material requirement worked out by exploding the BOM of everything that must be produced: per item and warehouse, how much is needed in total, what SAP shows on hand, what is already committed, what is on order, and the net shortfall.'
+        response:
+          type: array
+        params:
+        - name: short_only
+          type: boolean
+          description: 'Keep only the shortfalls. The app sends the literal string ''true'' and omits the param entirely otherwise; sending short_only=false was never observed.'
+      order:
+        method: GET
+        path: /order-processing/orders/{id}/
+        description: 'One mirrored order in full — customer, branch, PO number, ship-to, value, free-of-charge flag, SAP push status and OMS timestamps, plus every line with item, quantity, pack size, cases, litres, price, warehouse and any flags raised against it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Path param — the factory app''s own order id (the `id` field in the orders list), NOT oms_order_id.'
+      order-timeline:
+        method: GET
+        path: /order-processing/orders/{id}/timeline/
+        description: 'The history recorded against one order since it was mirrored — each event with its timestamp, what happened, the state it moved from and to, any error, plus the stock checks run on it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Path param — the factory app''s own order id (the `id` field in the orders list), NOT oms_order_id.'
+      orders:
+        method: GET
+        path: /order-processing/orders/
+        description: 'The mirrored OMS sales orders — one row per order with customer, branch, delivery date, value, line count, how many of its lines are flagged, whether it was pushed to SAP, and where it sits in the stock-check pipeline. Read-only copy; the app itself says ''Mirrored from OMS. Read-only here.'''
+        response:
+          type: object
+        params:
+        - name: state
+          type: string
+          description: 'Pipeline state. Values the app offers: RECEIVED (mirrored, stock never checked), STOCK_CHECKED (checked, unresolved), PRODUCTION_REQUIRED (needs production), READY_FOR_FULFILLMENT (ready). The app''s badge map also knows PARTIALLY_AVAILABLE and CANCELLED. Omit for all.'
+        - name: issue
+          type: string
+          description: 'Keep only orders carrying a flagged line. NO_WAREHOUSE is the only value wired to a button in the app; the flag vocabulary is shared with line-issues (NO_WAREHOUSE, QTY_DISAGREES, NO_ITEM_CODE, ZERO_QTY) but only NO_WAREHOUSE was observed at a call site.'
+        - name: search
+          type: string
+          description: 'Free text. The app''s own placeholder is ''Order, customer or item code''.'
+        - name: page
+          type: integer
+          description: '1-based page number. 2281 orders at page_size 50 = 46 pages.'
+      procurement:
+        method: GET
+        path: /order-processing/procurement/
+        description: 'The buy list — materials the plan says must be purchased, with how much to buy, how much is already on order, the date it is needed by and the request''s status. Planning records only; no SAP purchase order is raised from here.'
+        response:
+          type: array
+        params:
+        - name: status
+          type: string
+          description: 'Filter keyword; the app always sends ''open''. A bare call returned the same 37 rows the dashboard counts as procurement.open, so no param behaves like open.'
+      production:
+        method: GET
+        path: /order-processing/production/
+        description: 'What has to be manufactured to cover order shortfalls — per item and warehouse, the quantity, the date it is needed, the orders and shortfalls driving it, and the BOM components with how short each one is.'
+        response:
+          type: array
+        params:
+        - name: status
+          type: string
+          description: 'Filter keyword; the app always sends ''open''. A bare call returned the same 14 rows the dashboard counts as production.open, so no param behaves like open.'
+      sync-status:
+        method: GET
+        path: /order-processing/sync/
+        description: 'Whether the OMS database can be reached right now, plus the log of order-pull runs — orders seen, created and updated, lines written, issues found, the slice of OMS time each run covered, and any error.'
+        response:
+          type: object
   person-gatein:
     description: 'This is the factory''s people register at the gate — who walked into the plant, when, through which gate, why, and whether they have walked back out. It covers two kinds of person: **visitors** (outsid'
     endpoints:
@@ -3574,7 +4118,7 @@ resources:
       costs-analytics:
         method: GET
         path: /production-execution/costs/analytics/
-        description: 'One stored cost record per costed run — raw material, labour, machine, electricity, water, gas, compressed air, overhead, the waste-recovery credit, total and net, each with its component lines. TRAP: per_unit_cost is total over produced_qty in CASES and reads 0.00 on the 48% of records whose run posted no produced quantity, so never average it across records.'
+        description: 'One stored cost record per costed run — raw material, labour, machine, electricity, water, gas, compressed air, overhead, the waste-recovery credit, total and net, each with its component lines. TWO TRAPS: the row carries NO run, date or line reference, so it cannot answer ''what did run X cost'' — use reports-analytics-cost-analysis (per_run) for that; and per_unit_cost is total over produced_qty in CASES, reading 0.00 on the 48% of records whose run posted no produced quantity, so it must never be averaged.'
         response:
           type: array
         params:
@@ -4319,7 +4863,7 @@ resources:
       qc-inspections-decision-changed:
         method: GET
         path: /quality-control/inspections/decision-changed/
-        description: 'Inspections where the QA Manager overturned an earlier verdict — the audit queue for changed decisions.'
+        description: 'Inspections where the QA Manager recorded a decision more than once — the audit list of re-decided lots. Times changed = manager_decision_count minus 1, and the row shows only the CURRENT decision, which is often the same verdict the lot already had.'
         response:
           type: array
         params:
@@ -4371,7 +4915,7 @@ resources:
       inspections-return-to-vendor:
         method: GET
         path: /quality-control/inspections/return-to-vendor/
-        description: 'Rejected lots that are to go back to the vendor, with the gate return-entry number once one is raised.'
+        description: 'The rejected-lot list as the return-to-vendor desk sees it, carrying the gate return-entry number once a return entry is raised. In practice it returns the same rows as inspections-rejected, not a narrower subset.'
         response:
           type: array
         params:
@@ -4506,6 +5050,17 @@ resources:
         description: 'Production QC sessions submitted and waiting for approval — the FG-release approval queue.'
         response:
           type: array
+      qc-print-document-get:
+        method: GET
+        path: /quality-control/print-documents/{id}/
+        description: 'Show one QC form''s printed document ID — which form it belongs to, the ID string that appears on the printout, any notes, and when it was last changed.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Print-document row id, from quality-control print-documents. Company-scoped.'
       qc-production-running-runs:
         method: GET
         path: /quality-control/production-qc/running-runs/
@@ -4530,7 +5085,7 @@ resources:
       sap-items:
         method: GET
         path: /quality-control/sap-items/
-        description: 'Search the SAP item master from inside QC, to find the item code to map to a material type.'
+        description: 'Search the SAP item master from inside QC to find the item code to map to a material type. A bare call returns nothing — you must pass search.'
         response:
           type: array
         params:
@@ -4543,10 +5098,21 @@ resources:
   returnable-items:
     description: 'This is JIVO''s RGP/NRGP gate-pass book — the register of material that leaves the factory gate and is meant to come back. A department raises a pass for a pump, motor, mould shaft, cutter, cooler, or'
     endpoints:
+      attachment:
+        method: GET
+        path: /returnable-items/returnable-attachments/{id}/
+        description: 'One attachment on a gate pass — its file link, whether it is a delivery challan or a photo, its caption, and who uploaded it when.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Attachment id from the attachments list (path segment). Not the gate-pass id.'
       dashboard:
         method: GET
         path: /returnable-items/dashboard/
-        description: 'One-glance returnable summary — how many passes sit in each state, how many are outstanding, and how old the outstanding ones are.'
+        description: 'Say plainly: outstanding_value read 0 on Oil despite 7 outstanding passes, because gate-pass lines carry estimated_value null — it is not populated and must not be quoted as the value of material outside the gate. The usable outstanding number is the pending-gate-in list (7 passes on Oil), aged on expected_return_date.'
         response:
           type: object
       options:
@@ -4774,9 +5340,137 @@ resources:
         - name: sku
           type: string
           description: 'SAP finished-good item code, e.g. FG0000030. Must be UPPERCASE. Verified (OIL 201 -> 7).'
+  supply-chain:
+    description: '"Smart Supply Chain" is the factory app''s buy-and-build planner — it answers "what must we order today so the plant doesn''t run dry, and can the lines actually run the plan?" It has three layers. (1) The Daily Run grades every enrolled finished-good material RED/AMBER/GREEN/UNKNOWN on days-of-stock-cover against how long the supplier takes, gets reviewed, published to the buyer and HODs, and then collects the buyer''s verdict after each phone call (real shortage / wrong data / already handled) — the Weekly Review scores whether those alarms were worth raising. (2) The Planning dashboard turns a SAP sales forecast into a procurement list plus a machine-hours capacity check plus a stock-buffer policy check. (3) The Live Trail is a live read straight out of SAP''s open order book, stock, work orders and BOMs, working out what to produce tomorrow, what to buy, and which department is holding up each order. CRITICAL CONTEXT: as of the 2026-08-11 probe the whole module is unconfigured in all three companies — no monitored SKUs, no lead times, no machines, no SKU-to-machine mappings, no reference workbook ever uploaded. Most endpoints therefore return empty or zero, and the ones that look healthy (capacity "feasible: true", floors "0 divergent") are green only because nothing was checked.'
+    endpoints:
+      alarms-preview:
+        method: GET
+        path: /supply-chain/alarms/preview/
+        description: 'Dry run of the morning shortage alarm: which departments would be notified and how many people would receive it — without sending anything.'
+        response:
+          type: object
+      capacity:
+        method: GET
+        path: /supply-chain/capacity/
+        description: 'Machine-by-machine check of whether the filling lines have enough usable hours to run the current plan, including changeover time, plus the SKUs that have no machine or output rate on file at all.'
+        response:
+          type: object
+      dashboard:
+        method: GET
+        path: /supply-chain/dashboard/
+        description: 'The morning planning board for one SAP sales forecast: every material that must be ordered and the date it had to be ordered by, whether each filling line has the hours to run the plan, and whether the stock buffers we keep match the policy floor.'
+        response:
+          type: object
+        params:
+        - name: forecast_id
+          type: string
+          description: 'Which SAP sales forecast to plan against (the same forecasts the Sales Planning vs Requirement dashboard lists). Omit for the current/default forecast — the SPA omits the param entirely rather than sending an empty value.'
+      floor-convention:
+        method: GET
+        path: /supply-chain/floor-convention/
+        description: 'A diagnostic that works out, from SAP''s own numbers, whether the stock buffer is meant to be ADDED to the requirement or SUBTRACTED from it — the two readings of the written procedure give different order quantities.'
+        response:
+          type: object
+      floors:
+        method: GET
+        path: /supply-chain/floors/
+        description: 'Compares the minimum stock actually set in SAP against the buffer the policy says we should keep (a percentage of recent sales), item by item, and flags the ones that differ.'
+        response:
+          type: object
+      live-trail:
+        method: GET
+        path: /supply-chain/live-trail/
+        description: 'A live read straight out of SAP: every open sales order line, what stock and work-in-progress already covers it, what must still be produced tomorrow, which bought-in components that will eat, what has to be purchased, and which department is holding up each order.'
+        response:
+          type: object
+        params:
+        - name: scope
+          type: string
+          description: 'EXTERNAL (the app''s default — real customer demand only, intercompany lines excluded) or ALL (includes intercompany). The app always sends one of the two explicitly.'
+      monitored-skus:
+        method: GET
+        path: /supply-chain/monitored-skus/
+        description: 'The finished goods enrolled in the daily run — the list that decides which materials get checked for shortages at all.'
+        response:
+          type: array
+      parameters:
+        method: GET
+        path: /supply-chain/parameters/
+        description: 'The tuning knobs behind the daily run: which percentile of past deliveries counts as a supplier''s lead time, how many deliveries before that is trusted, how close to the lead time turns a material amber, and how many red rows in one run means the data is not believable.'
+        response:
+          type: object
+      policy:
+        method: GET
+        path: /supply-chain/policy/
+        description: 'The company''s supply-chain planning rules: how big a stock buffer to keep and measured against what, how many days ahead counts as urgent, and whether shortages are netted against open POs, rounded up to supplier minimums, and charged for changeover time.'
+        response:
+          type: object
+      procurement:
+        method: GET
+        path: /supply-chain/procurement/
+        description: 'Every material the current plan is short of: what is on hand, what is already on open purchase orders, how much to order, the supplier''s lead time, and the last date the order can be placed without running dry.'
+        response:
+          type: object
+      reference-imports:
+        method: GET
+        path: /supply-chain/reference/imports/
+        description: 'The history of reference workbooks that have been uploaded — who loaded what and when, and how many lead times, machines and SKU mappings each file brought in.'
+        response:
+          type: array
+      reference-lead-times:
+        method: GET
+        path: /supply-chain/reference/lead-times/
+        description: 'The supplier lead times Procurement typed into the reference workbook — how many days each material takes to arrive once ordered.'
+        response:
+          type: array
+      reference-machines:
+        method: GET
+        path: /supply-chain/reference/machines/
+        description: 'The filling and packing machines the capacity check plans against, with the hours each one can actually run.'
+        response:
+          type: array
+      reference-sku-machines:
+        method: GET
+        path: /supply-chain/reference/sku-machines/
+        description: 'Which machine each finished-good SKU can be run on and how fast — the mapping that turns a production plan into machine hours.'
+        response:
+          type: array
+      run-latest:
+        method: GET
+        path: /supply-chain/runs/latest/
+        description: 'The most recent daily shortage run in full: every monitored material graded order-today / getting-close / fine / cannot-judge, the arithmetic behind each grade, the data problems that stopped it judging some of them, and how many red rows the buyer has since given a verdict on.'
+        response:
+          type: object
+      runs:
+        method: GET
+        path: /supply-chain/runs/
+        description: 'Every daily shortage run that has been built for this company — the date it covers, how far through review it got, and how many materials came out red.'
+        response:
+          type: array
+      weekly:
+        method: GET
+        path: /supply-chain/weekly/
+        description: 'Was raising the alarm worth it? Counts the buyer''s verdicts on red materials week by week — how many turned out to be real shortages, how many were bad data, how many were already handled — and says in plain words what to do about it.'
+        response:
+          type: object
+        params:
+        - name: weeks
+          type: integer
+          description: 'How many weeks back to score. The app defaults to 4 and offers 2, 4 and 8. The from/to dates in the response are derived from this — you cannot pass arbitrary dates.'
   vehicle-management:
     description: 'This is the factory''s transport master file plus the gate''s vehicle-entry log. Three master lists sit under it — Vehicles (registration number, type, capacity, owning transporter), Transporters (conta'
     endpoints:
+      transporter:
+        method: GET
+        path: /vehicle-management/transporters/{id}/
+        description: 'One transport company''s record — name, contact person, mobile, GSTIN and when it was added.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Transporter id from the transporters or transporters-names command (path segment).'
       transporters:
         method: GET
         path: /vehicle-management/transporters/
@@ -4789,6 +5483,17 @@ resources:
         description: 'Slim id + name list of transporters, for pickers.'
         response:
           type: array
+      vehicle:
+        method: GET
+        path: /vehicle-management/vehicles/{id}/
+        description: 'One vehicle''s record — registration number, category, capacity in tonnes and the transporter that owns it.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'Numeric vehicle id from the vehicles or vehicles-names command (path segment). NOT the registration number — the by-number route is a different endpoint.'
       vehicle-entries:
         method: GET
         path: /vehicle-management/vehicle-entries/

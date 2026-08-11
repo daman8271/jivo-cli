@@ -16,7 +16,9 @@ func newNotificationsCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newNotificationsDetailCmd(flags))
 	cmd.AddCommand(newNotificationsListCmd(flags))
+	cmd.AddCommand(newNotificationsPreferencesCmd(flags))
 	cmd.AddCommand(newNotificationsUnreadCountCmd(flags))
 	return cmd
 }

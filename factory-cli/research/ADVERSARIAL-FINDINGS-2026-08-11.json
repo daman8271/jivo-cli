@@ -1,0 +1,467 @@
+{
+ "generated": "2026-08-11",
+ "note": "Adversarial-review findings from the 12-domain study. WRONGLY_EXCLUDED means an adversary found a safe read the study dropped \u2014 adding a read back to the published surface is a human decision, so these were NOT applied automatically.",
+ "wrongly_excluded": [
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/runs/{id}/",
+   "claim": "The study documents /supply-chain/runs/ and /supply-chain/runs/latest/ but omits the per-run detail read entirely; its only mention of /runs/{id}/ is the POST review and publish sub-paths, presented as writes that do not belong in a read-only CLI.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "The SPA's own API client defines it as a GET: in harvest/chunks/supply-chain.queries-D9ihw9Jc.js, `async detail(e){return(await t.get(a.RUN_DETAIL(e))).data}`, and harvest/chunks/index-5_u9QFsU.js maps RUN_DETAIL:e=>`/supply-chain/runs/${e}/` (sibling of RUN_REVIEW/RUN_PUBLISH, which are POST-only and correctly excluded). It takes a plain numeric run id \u2014 /supply-chain/runs/ returns id 5 (Mart) and id 6 (Oil) \u2014 so it is the ordinary detail read behind a list, and the only way to open any run other than the newest once a second run exists. Honest caveat: it is a param path, so the probe never called it (it is in probe/paths-param.txt, absent from sweep.jsonl) and no live status was observed; the SPA also wraps it in no hook, so it has no rendering call site to copy field names from.",
+   "correction": "Add it as a new read, e.g. command_name \"supply-chain run\", description: \"One daily shortage run in full by its id \u2014 the same detail as run-latest, for any run in the list, not just the newest.\" Expect the /supply-chain/runs/latest/ shape (run, rows, issues, verdict_progress, unassigned_red_rows), mark the shape UNPROBED, and render a 404 as 'no run with that id' the same way run-latest's NO_RUN 404 is rendered as an empty state."
+  },
+  {
+   "domain": "maintenance",
+   "path": "/maintenance/scan/lookup/",
+   "claim": "Endpoint omitted from the study entirely (not published, no exclusion reason given).",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "It is a live, GET-only, read-only resolver and it is the shop-floor entry point for the whole module: scan the QR/barcode on a machine or spare and get the record back. SPA (maintenance.queries-C80VC0jM.js): `async lookupScan(e){return(await n.get(r.SCAN_LOOKUP,{params:{code:e}})).data}` \u2014 GET with a single `code` param; the hook is gated on `e.trim().length>0`. The sweep GET (no code) returned 404 with a business body in all three tenants: {\"found\":false,\"code\":\"\",\"detail\":\"No maintenance asset or spare matched this code.\"} \u2014 a get_or_create would have created a row and returned 200, so this one demonstrably does not write (confidence ~90%; residual doubt is that no hit-path body was captured). The write half of the scan flow is a different URL: POST /maintenance/scan/work-order/ (createWorkOrderFromScan), which returns 405 to GET and must never be generated.",
+   "correction": "Publish as a read: `maintenance scan-lookup --code <printed code>` \u2014 'Scan lookup: find the asset or spare behind a QR/barcode printed on the shop floor.' Required param `code` (string, from the tag, not an id). Trap: a miss returns HTTP 404 with found:false and a plain detail line \u2014 that is 'no such tag', not a broken endpoint. Never generate anything for /maintenance/scan/work-order/ (POST-only, creates a work order)."
+  },
+  {
+   "domain": "maintenance",
+   "path": "/maintenance/spares/stock/",
+   "claim": "Endpoint omitted from the study entirely (not published, no exclusion reason given).",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Live GET, read-only stock lookup for one spare. SPA (maintenance.queries-C80VC0jM.js): `async getSpareStock(e){return(await n.get(r.SPARE_STOCK,{params:S(e)})).data}`, and the hook is enabled only when `e.spare || e.code` \u2014 so it takes either the spare id or the printed part code, with S() stripping '', undefined and 'ALL' before the request. The sweep GET (no params) returned 404 in all three tenants with {\"detail\":\"Spare was not found for the selected code.\"} \u2014 it answers 'not found' rather than creating anything, so it is safe to publish (same ~90% confidence as scan-lookup; no hit-path body was captured because the spares table is empty everywhere).",
+   "correction": "Publish as a read: `maintenance spare-stock --spare <id> | --code <part code>` \u2014 'On-hand stock for one maintenance spare, by its id or the part code on the bin.' Traps: one of --spare/--code is required (a bare call 404s); never send an empty string or 'ALL'; the spare master is empty in all three companies today so every lookup 404s \u2014 that is a data fact, and this is the local maintenance store, never SAP stock."
+  },
+  {
+   "domain": "misc",
+   "path": "/dashboards/stock/{id}/warehouses/",
+   "claim": "not published in the misc surface (absent from the study's endpoint list)",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "This is an already-shipped safe read that the study drops while its own trap points operators at it: 'the per-warehouse split is only recoverable from the stock-benchmark-item-warehouses command'. It is in shipped-command-names.json as 'dashboards stock-benchmark-item-warehouses', it is still in the live SPA registry (STOCK_DASHBOARD.ITEM_DETAIL), and its only call site is a plain GET: getItemDetail does axios.get(ITEM_DETAIL(itemCode), {params:{warehouse: codes.join(',')}}) in chunks/stock-level.queries-D36DYT2e.js. Nothing in the bundle shows it dead \u2014 it was simply never probed this round (it needs an item code in the path).",
+   "correction": "Restore it with its shipped name verbatim: 'dashboards stock-benchmark-item-warehouses'. Path param is the SAP item code (not a numeric id); optional param warehouse = comma-separated warehouse codes. Description: the per-warehouse breakdown of one item's on-hand stock \u2014 the split the main stock dashboard merges into a single '2 warehouses' row."
+  },
+  {
+   "domain": "misc",
+   "path": "/returnable-items/returnable-gatepass-items/{id}/",
+   "claim": "not published in the misc surface (absent from the study's endpoint list)",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Another shipped read the study describes but does not publish: its gatepass-items trap says 'The sibling detail route /returnable-items/returnable-gatepass-items/{id}/ takes the LINE-ITEM id, not the gate-pass id'. It is shipped as 'returnable-items gatepass-item' in shipped-command-names.json and still in the SPA registry (RETURNABLE.ITEM_DETAIL). There is no 404/5xx anywhere in the bundle \u2014 it was not probed, which is not evidence of death.",
+   "correction": "Restore with the shipped name verbatim: 'returnable-items gatepass-item'. One line on a gate pass \u2014 item, serial, quantity out, quantity returned and what is still pending. Fields as per the list rows (id, company, gate_pass, line_num, item_code, item_name, serial_no, uom, quantity_out, quantity_returned, condition_out, pending_return_qty, is_fully_returned). Keep the trap that the same integer means a different thing here than on the gate-pass routes."
+  },
+  {
+   "domain": "misc",
+   "path": "/dispatch-plans/bills/by-number/{id}/",
+   "claim": "not published in the misc surface (absent from the study's endpoint list)",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Shipped as 'dispatch-plans dispatch-plans-bill-by-number' and still live in the SPA (DISPATCH_PLANS.BILL_BY_NUMBER). The harvest classifies it get_safe and its two call sites are pure GETs \u2014 getBillByNumber does axios.get(BILL_BY_NUMBER(no), {headers: company ? {'Company-Code': company} : undefined}) and returns null on 404 (chunks/dispatch-plans.api-DZ7kPpsj.js). It is the only way to look a dispatch bill up by its invoice number, which matters because the study's own dispatch-plans bills command is date-window-only. No evidence of death in the bundle.",
+   "correction": "Restore with the shipped name verbatim: 'dispatch-plans dispatch-plans-bill-by-number'. Path key is the bill / SAP invoice number (URL-encoded), not a numeric id; a bill that does not exist returns 404 (the app treats that as 'not found', not an error). GET only."
+  },
+  {
+   "domain": "misc",
+   "path": "/warehouse/bst/sap-transfers/{id}/",
+   "claim": "not published in the misc surface (absent from the study's endpoint list)",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Shipped as 'warehouse bst-sap-transfer-get' and still in the SPA registry (WAREHOUSE.BST_SAP_TRANSFER_DETAIL). The harvest classifies it get_safe and the call site is a plain read: getSapTransfer does axios.get(BST_SAP_TRANSFER_DETAIL(docEntry), {params: document_type ? {document_type} : undefined}). It is the drill-down for the picker the study does publish (bst-sap-transfers, capped at 50 rows), so dropping it leaves the operator with a truncated list and no way to open a document. Nothing in the bundle shows it dead.",
+   "correction": "Restore with the shipped name verbatim: 'warehouse bst-sap-transfer-get'. Path key is the SAP DocEntry from the bst-sap-transfers list (not doc_num, not the factory's BST id); optional param document_type = STOCK_TRANSFER | INVOICE, which must match the type the doc_entry belongs to."
+  },
+  {
+   "domain": "misc",
+   "path": "/dashboards/inventory-age/report/",
+   "claim": "not published in the misc surface (absent from the study's endpoint list, along with /dashboards/inventory-age/filter-options/)",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Both are shipped commands ('dashboards inventory-age-report' and 'dashboards inventory-age-filter-options') and both silently vanish from the new surface. There is no positive evidence they are dead: they were never probed this round (they appear in no evidence file and in no sweep row) and delta.json's 'gone' set is empty. Confidence is lower than my other exclusion findings \u2014 they are also absent from the current SPA bundle, which may mean the screen was retired \u2014 but absence of a harvest reference is not a 404, and the standing rule is that a shipped read is not dropped without one.",
+   "correction": "Do not delete them on absence of evidence. Either keep both entries with their shipped names verbatim and a note that they were not re-verified in this round, or probe them live (a single GET each) and drop them only on a real 404/5xx."
+  },
+  {
+   "domain": "barcode",
+   "path": "/barcode/intercompany/transfers/{id}/",
+   "claim": "The endpoint list omits this path entirely, dropping the already-shipped command `barcode intercompany-transfer` from the surface.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "This is a shipped command (probe/shipped-command-names.json: '/barcode/intercompany/transfers/{id}/' -> 'barcode intercompany-transfer') and it is demonstrably alive and safe. probe/detail.jsonl records GET /barcode/intercompany/transfers/3345/ in JIVO_BEVERAGES -> HTTP 200 with a full body (transfer_number ICBT-20260804102701233155, source/destination company, entity_type PALLET, status COMPLETED, total_barcodes 52, total_qty 208.000 PCS, sap_enabled false, reversed_at, plus a `lines` array where each line carries id, box, barcode, item_code, item_name, batch_number, qty, uom, from_warehouse, from/to company codes, created_at), and GET with a bad id -> HTTP 404 {\"error\":\"Transfer not found.\"}. The SPA's own call site is a GET (getIntercompanyTransfer in barcode.api-CUxAOtrq.js). Nothing here is dead or unsafe, so there is no ground to drop it \u2014 and dropping it breaks every script and MCP endpoint_id using `barcode intercompany-transfer`.",
+   "correction": "Restore it with its shipped name `barcode intercompany-transfer` verbatim. Description: 'One inter-company transfer in full, with every box on it \u2014 source and destination company, warehouse, quantity and whether it was reversed. Required: id.' key_fields as observed above; param id = numeric transfer id (path), per-company, wrong/unknown id returns 404 {\"error\":\"Transfer not found.\"}. Traps worth carrying over from the list endpoint: sap_enabled is false, so the physical move has no SAP document behind it; total_qty is PIECES (bottles) while total_barcodes counts boxes-or-pallets depending on entity_type; a line id is not a transfer id (transfers/88279 is a line key and 404s)."
+  },
+  {
+   "domain": "barcode",
+   "path": "/barcode/dispatch/reports/{id}/",
+   "claim": "The endpoint list omits this path entirely, dropping the already-shipped command `barcode dispatch-report-detail` from the surface.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Shipped command per probe/shipped-command-names.json ('/barcode/dispatch/reports/{id}/' -> 'barcode dispatch-report-detail'), registered in the SPA as DISPATCH_REPORT_DETAIL and read with a plain GET (barcode.api-CUxAOtrq.js: `async getDispatchDetailReport(t){return(await e.get(s.DISPATCH_REPORT_DETAIL(t))).data}`). It is a GET-only detail view sitting under the dispatch reports the study did publish. There is no 404/5xx and no write verb against it anywhere in the evidence \u2014 it simply was not probed, and 'not probed' is not evidence a shipped read is dead.",
+   "correction": "Keep it on the surface under its shipped name `barcode dispatch-report-detail`, with the id param marked as the numeric dispatch-report/bill key and the row shape flagged as UNVERIFIED IN THIS SURVEY (not probed) rather than invented. Same standing traps as `barcode dispatch-reports`: SAP sync state is NOT_CONFIGURED so quantities will not match SAP deliveries, and quantities are PIECES (bottles)."
+  },
+  {
+   "domain": "barcode",
+   "path": "/barcode/lookup/{id}/",
+   "claim": "The endpoint list omits this path entirely, dropping the already-shipped command `barcode lookup` \u2014 while the study's own `barcode box` trap tells operators to use it ('To go from a scanned barcode to an id, use `barcode lookup`').",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Shipped command per probe/shipped-command-names.json ('/barcode/lookup/{id}/' -> 'barcode lookup'), registered in the SPA as LOOKUP:e=>`/barcode/lookup/${encodeURIComponent(e)}/` and called with a plain GET (barcode.api-CUxAOtrq.js: `async lookupBarcode(t){return(await e.get(s.LOOKUP(t))).data}`). No 404/5xx and no write verb in the evidence. The study drops the command and then routes operators to it by name in a trap on `barcode box` \u2014 a broken instruction the moment the spec regenerates.",
+   "correction": "Restore under the shipped name `barcode lookup`. Critically, its path segment is NOT a numeric id: the SPA URL-encodes a barcode STRING into it (BOX-... or PLT-...), so the param must be documented as the scanned barcode, not an integer, even though the shipped template spells it {id}. Mark the response shape UNVERIFIED (not probed in this survey). If it is kept, it is the missing barcode-string -> numeric-id step that `barcode box`, `barcode pallet` and `barcode loose-item` all depend on."
+  },
+  {
+   "domain": "barcode",
+   "path": "/barcode/dispatch/sessions/from-bill/",
+   "claim": "exclude: true \u2014 'MUST NOT SHIP \u2026 it is a duplicate command whose name promises a bill lookup while sitting on a write URL.'",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "The exclusion grounds are duplication and an ugly name, not death or danger, and neither meets the bar for removing an already-shipped command ('/barcode/dispatch/sessions/from-bill/' -> 'barcode dispatch-sessions-from-bill'). The GET is observed live and harmless: probe/sweep.jsonl gives HTTP 200 in JIVO_BEVERAGES (2 bytes, 0 rows) and HTTP 200 in JIVO_MART (4,501,974 bytes, 57 rows) \u2014 byte-for-byte the same response as /barcode/dispatch/sessions/ in the same sweep (also 4,501,974 bytes / 57 rows), i.e. a read, with no evidence of any side effect. A generated GET command can only ever issue GET; the POST on the same URL is reached by createDispatchSession, which the CLI never emits. Deleting the command breaks the shipped name and its MCP endpoint_id for a cosmetic gain. (Stated plainly: I agree the command is redundant and badly named \u2014 that argues for a truthful description, not for removal.)",
+   "correction": "Ship it, keeping the shipped command name `barcode dispatch-sessions-from-bill` verbatim, and replace the placeholder description ('GET /barcode/dispatch/sessions/from-bill/', which is what is live today) with the truth: 'Same list as `barcode dispatch-sessions` \u2014 this URL's real job is creating a session from a SAP bill, and its GET just falls through to the full session list. For one bill use `barcode dispatch-sessions --search <bill_number>`.' Carry the trap that the path's real verb is POST, so any method filter must key on the methods array, and the same page_size/timeout warning as the sessions list (JIVO_OIL returned HTTP 0 / RemoteDisconnected on both paths \u2014 a payload timeout, not a missing route)."
+  },
+  {
+   "domain": "marketplace",
+   "path": "/marketplace/dispatches/board/{id}/",
+   "claim": "The study's endpoints[] contains 29 marketplace paths and this is not one of them \u2014 the Outward board endpoint is absent entirely (not marked exclude, just gone).",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "It is a SHIPPED command: /Users/damanpreetsingh/jivo-cli/factory-cli/tools-manifest.json carries `marketplace_dispatch-board` GET /marketplace/dispatches/board/{id}/ and the file /Users/damanpreetsingh/jivo-cli/factory-cli/internal/cli/marketplace_dispatch-board.go exists. It is also live in THIS build: the registry in harvest/chunks/index-5_u9QFsU.js defines `DISPATCH_BOARD:e=>`/marketplace/dispatches/board/${e}/``, marketplace.api-D9k3x0v1.js defines `dispatchBoard(channel,batchId)` as a plain GET, marketplace.queries-DGnyk6f6.js wraps it in a useQuery hook, and MpOutwardPage-NLfNEdNO.js imports that hook \u2014 it powers the very Outward screen the module_summary describes. There is zero evidence it is dead (never probed this run, so no 404/5xx), so dropping it violates the rule that a shipped endpoint stays unless positively shown dead.",
+   "correction": "Restore the endpoint with command_name \"marketplace dispatch-board\" copied verbatim from shipped-command-names.json. Required params per the shipped manifest: id (path segment \u2014 the SHEET/BATCH id, NOT a dispatch id) and channel (FLIPKART|AMAZON)."
+  },
+  {
+   "domain": "marketplace",
+   "path": "/marketplace/gate/{id}/",
+   "claim": "endpoints[] covers /marketplace/gate/queue/ but omits the per-sheet gate detail endpoint entirely.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "SHIPPED as `marketplace_gate-sheet` (tools-manifest.json; internal/cli/marketplace_gate-sheet.go). Live in this build: registry `GATE_DETAIL:e=>`/marketplace/gate/${e}/``, api function `gateSheetDetail(t,a)` is a plain GET, and MpGatePage-CjHvSJFw.js calls it (`queryFn:()=>w.gateSheetDetail(c,s.batch_id)`) when an operator expands a sheet on the Gate screen. No 404/5xx anywhere in the evidence. Worse, the study's own gate-queue trap tells operators the grouping key is batch_id and warns about \"the per-sheet gate route\" \u2014 the route it then deletes.",
+   "correction": "Restore with command_name \"marketplace gate-sheet\" verbatim. Params: id (path segment \u2014 the BATCH/SHEET id from gate-queue, not a dispatch id) and channel (required, FLIPKART|AMAZON)."
+  },
+  {
+   "domain": "marketplace",
+   "path": "/marketplace/delivery-notes/{id}/export.csv",
+   "claim": "endpoints[] omits the delivery-note CSV export, while the dn-posted trap simultaneously instructs operators that \"dn-export-csv takes doc_entry, and feeding it doc_num 404s\".",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "The study references the command by name but never lists the endpoint, so a generator built from this spec ships a trap pointing at a command that no longer exists. It is SHIPPED (`marketplace_dn-export-csv`, internal/cli/marketplace_dn-export-csv.go) and live in this build: registry `DELIVERY_NOTE_EXPORT:e=>`/marketplace/delivery-notes/${e}/export.csv``, api `exportDeliveryNoteCsv(docEntry, channel)` is a GET with responseType:\"blob\", called from MpDeliveryNotesPage-C10ht2cj.js. No evidence of death.",
+   "correction": "Restore with command_name \"marketplace dn-export-csv\" verbatim. Note the path has NO trailing slash and returns text/csv (blob), not JSON. id = SAP doc_entry from dn-posted (e.g. 12339), NOT doc_num (1508264508); channel optional."
+  },
+  {
+   "domain": "marketplace",
+   "path": "/marketplace/reports/{id}/export.csv",
+   "claim": "endpoints[] contains no /marketplace/reports/* path at all \u2014 the whole Reports screen is missing from the domain.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "SHIPPED as `marketplace_report-export-csv` (shipped-command-names.json keys it /marketplace/reports/{id}/export.csv; the manifest spells the segment {slug}). Live in this build: registry `REPORT_EXPORT:e=>`/marketplace/reports/${e}/export.csv``, api `exportReport(slug, params)` GET\u2192blob, and MpReportsPage-C9UkzDoe.js calls it with {channel, from, to, date_field, status}. The SPA even hardcodes the slug enum: orders | invoices | delivery-notes | returns | reconciliation, plus status enum [\"ALL\",\"PENDING\",\"PARTIAL\",\"SCANNED\",\"CONFIRMED\",\"CANCELLED\"]. The SPA route /marketplace/reports is registered. No evidence of death.",
+   "correction": "Restore with command_name \"marketplace report-export-csv\" verbatim. Path param is the report slug (closed enum orders|invoices|delivery-notes|returns|reconciliation); query params channel, from, to, date_field, status. Returns text/csv, not JSON."
+  },
+  {
+   "domain": "marketplace",
+   "path": "/marketplace/reports/reconciliation/export.csv",
+   "claim": "endpoints[] omits this path, while the /marketplace/reconciliation/ trap says \"the working date-scoped path is /marketplace/reports/reconciliation/export.csv, which uses from/to\".",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "This is a separately SHIPPED command name (`marketplace_reconciliation-export-csv`, internal/cli/marketplace_reconciliation-export-csv.go) \u2014 it is the ONLY date-scoped route to the reconciliation report now that from_date/to_date 500 on /marketplace/reconciliation/. The study documents that fact in a trap and then deletes the command that implements it, leaving an operator who needs a date-scoped deviation report with no command at all.",
+   "correction": "Restore with command_name \"marketplace reconciliation-export-csv\" verbatim, channel required (FLIPKART|AMAZON), from/to as YYYY-MM-DD, returns text/csv."
+  },
+  {
+   "domain": "grpo",
+   "path": "/grpo/fg/preview/{vehicle_entry_id}/",
+   "claim": "Dropped from the surface \u2014 \"is not shipped or probed \u2014 no FG entry exists yet to exercise it.\"",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "This is a safe read, GET-only, with a known shape, and it is the only way to see what a finished-goods entry actually contains. harvest/methods.json puts it in the get_safe bucket with verbs ['get'] (its neighbour /grpo/fg/post/ is the ['post'] one). chunks/fgGrpo.queries-BSdR9DQ_.js: `async getPreview(e){return(await r.get(s.GRPO.FG_PREVIEW(e))).data}` \u2014 a bare GET, no mutation. Its shape is not unknown: chunks/FGGRPOPreviewPage-CWJz-Hd9.js holds it as `{data:x=[]}` and calls `x.filter(s=>s.grpo_status!==\"POSTED\")`, then walks `t.items` reading po_item_receipt_id, accepted_qty, unit_price, and `c[0]?.branch_id` \u2014 i.e. the same bare array of PO-receipt objects as the shipped material twin /grpo/preview/{id}/. \"No FG entry exists yet\" is a data fact, not a reason to withhold the read.",
+   "correction": "Publish it as `grpo fg-preview` \u2014 response_type array (bare array of PO-receipt objects; grpo_status, branch_id, items[] with po_item_receipt_id / item_code / received_qty / unit_price). Required path param vehicle_entry_id, taken from a /grpo/fg/pending/ row's vehicle_entry_id (chunks/FGPendingEntriesPage-C79W8nTG.js navigates to `/warehouse/grpo/fg/preview/${t.vehicle_entry_id}`). Traps: rows with grpo_status POSTED stay in the array (the screen filters them); it sits next to the write /grpo/fg/post/ \u2014 read only; nothing to return today in any company. Also add vehicle_entry_id to the fg-pending key_fields \u2014 the study's field list omits it, and it is the id the preview needs."
+  },
+  {
+   "domain": "grpo",
+   "path": "/grpo/draft/{posting_id}/",
+   "claim": "Not mentioned anywhere in the study \u2014 the whole /grpo/draft/* family is silently absent from the domain.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "GET on this path is a safe read that the app itself performs, and it is the only way to see what is inside a saved-but-unposted GRPO. harvest/methods.json lists /grpo/draft/{id}/ in the get_safe bucket with verbs ['delete','get','patch']; chunks/grpo.queries-B-0U0kEm.js has `async getDraft(e){return(await r.get(s.GRPO.DRAFT_DETAIL(e))).data}` behind a live hook. The id space is unambiguous: chunks/GRPOHistoryPage-CwJZXoii.js links a DRAFT / FAILED / PARTIALLY_POSTED history row to `/warehouse/grpo/material/preview/${s.vehicle_entry}?draft=${s.id}`, and chunks/GRPOPreviewPage-DGzojiLg.js reads that `draft` query param and feeds it straight to getDraft \u2014 so the key is the `id` of a /grpo/history/ row, the same id space as `grpo history-detail`. The study documents DRAFT as a real /grpo/history/ status but gives the operator no way to open one.",
+   "correction": "Publish the GET as a new command (e.g. `grpo draft`), required path param posting_id = the `id` of a /grpo/history/ row with status DRAFT. Traps that must ship with it: (1) the SAME URL takes PATCH (overwrite the draft) and DELETE (destroy it) \u2014 GET only; (2) NEVER touch the bare collection form /grpo/draft/ \u2014 it is the create route (registry key GRPO.DRAFT_CREATE, POST) and a GET on it returned HTTP 500 with a Django HTML body in all three tenants (probe/sweep.jsonl); (3) /grpo/draft/{id}/post/ is a POST that pushes the draft to SAP \u2014 never call it; (4) shape not probed live (path-param endpoint), so describe it as the saved posting payload rather than promising columns."
+  },
+  {
+   "domain": "grpo",
+   "path": "/grpo/service/preview/{dispatch_plan_id}/",
+   "claim": "Absent from the study \u2014 four /grpo/service/* reads are published (pending, options, history, {id}) but this fifth one is not mentioned at all.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "It is the same class of endpoint as the four the study does ship, and its twin is a confirmed safe read. harvest/registry.json defines GRPO.SERVICE_PREVIEW = /grpo/service/${id}/ alongside SERVICE_PENDING / SERVICE_OPTIONS / SERVICE_HISTORY / SERVICE_DETAIL, all five of which sit in methods.json's 'unknown' bucket purely because the app calls the /dispatch/bilty-grpo/ aliases instead (chunks/grpo.queries-B-0U0kEm.js: getServicePreview \u2192 DISPATCH.BILTY_GRPO_PREVIEW). That /dispatch/ twin IS in get_safe with verbs ['get']. The study accepted exactly this reasoning to publish `grpo service-history-detail` at the unprobed /grpo/service/{posting_id}/, so dropping the preview is inconsistent, and it is the read that shows what a freight booking is about to be coded to before anyone posts it.",
+   "correction": "Publish as `grpo service-preview` with the same caveats the study applied to service-history-detail: path from the registry constant, NOT probed live (~90% it is routed, since its four siblings all returned 200), required path param dispatch_plan_id from a /grpo/service/pending/ row. Traps: it is a legacy alias of /dispatch/bilty-grpo/preview/{id}/ which is what the app actually calls \u2014 same record, do not present as two sources; its neighbour /grpo/service/post/ is the write (405 on GET, verified) \u2014 never call it; the values it returns are SAP defaults a human overwrites before posting."
+  },
+  {
+   "domain": "goods-return",
+   "path": "/goods-return/{id}/",
+   "claim": "Excluded from the published surface: \"A detail read GET /goods-return/{id}/ does exist (with an optional with_invoice_preview=1 flag), but it could not be probed because no return entry existed in any company. Do not ship a detail command on an unverified shape.\"",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "This is the 'no data' vs 'not available' confusion, and it is applied inconsistently. The endpoint is a confirmed safe read \u2014 methods.json path_verbs gives `/goods-return/{id}/ -> ['get','patch']`, the SPA's api layer has `async get(e,t=!1){return(await ae.get(Ne.GOODS_RETURN.BY_ID(e),{params:t?{with_invoice_preview:1}:void 0})).data}`, and its hook takes a numeric id (`enabled:e!==null&&e>0`), so there is no get_or_create risk. The stated reason for dropping it \u2014 no rows existed to probe \u2014 is exactly the reason the LIST endpoint's shape was also unobserved, yet `goods-return list` was published anyway. 'Empty module at probe time' is a data fact about today, not a property of the endpoint; the module is live and routed in all three companies and the first entry makes the detail read the only way to see basis, invoice_refs, gate/receipt timestamps and the SAP doc.",
+   "correction": "Publish it as `goods-return get <id>` (GET only, optional --with-invoice-preview \u2192 with_invoice_preview=1), with the same 'row shape SPA-derived, never observed against a payload' caveat already carried on the list command. From the detail page the response is known to carry at least: entry_no, basis, status, requires_approval, approval_status, approval_remarks, customer_name/customer_code, company_name, vehicle_no, driver_name, expected_arrival_at, gated_in_at, received_at, invoice_refs[].sap_invoice_doc_num, sap_gr_doc_num, sap_return_warehouse, attachments[].original_filename/attachment_type."
+  },
+  {
+   "domain": "goods-return",
+   "path": "/goods-return/{id}/attachments/",
+   "claim": "\"invoice-refs and attachments have POST and DELETE\" \u2014 attachments is listed among the writes that do not belong in a read-only CLI, and no attachments read is published.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Attachments is not write-only. methods.json path_verbs: `/goods-return/{id}/attachments/ -> ['get','post']` (DELETE lives on the separate `/attachments/{id}/` path), and the SPA api layer has a dedicated reader `async listAttachments(e){return(await ae.get(Ne.GOODS_RETURN.ATTACHMENTS(e))).data}` whose result the detail page renders as original_filename + attachment_type. Contrast invoice-refs, which genuinely is POST-only on the collection and DELETE on the item \u2014 lumping the two together buried a safe read. It takes the numeric return id, returns a list, and has no get_or_create shape.",
+   "correction": "State the verbs per path: invoice-refs = POST (collection) / DELETE (item), attachments = **GET** + POST (collection) / DELETE (item). Publish the GET as `goods-return attachments <id>` \u2014 it lists which paperwork (invoice copy, debit note, letter-pad) is attached to a return, metadata only. Keep POST/DELETE unpublished."
+  },
+  {
+   "domain": "gate-core",
+   "path": "/gate-core/arrivals/{id}/gatepass/readiness/",
+   "claim": "The study's endpoint list omits this path entirely \u2014 it does not appear among the 33 endpoints, so it would be dropped from the gate-core surface even though it is already shipped as `gate-core arrival-gatepass-readiness`.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "It was probed in THIS round and is alive and safe. /private/tmp/claude-501/-Users-damanpreetsingh-jivo-cli/b2acf681-5cd3-4fc0-92a9-70bab5f9fbf8/scratchpad/probe/detail.jsonl: GET /gate-core/arrivals/886/gatepass/readiness/ (JIVO_BEVERAGES) -> 200, body {\"ready\":true,\"companies\":[{\"docking_id\":1035,\"entry_no\":\"DOCK-20260811-0018\",\"company_code\":\"JIVO_BEVERAGES\",\"company_name\":\"Jivo Beverages\",\"status\":\"PRINT_COMMITTED\",\"ready\":true,\"missing\":[],\"gatepass_no\":\"DCK/JIVO_BEVERAGES/2026-27/000609\"}],\"locked_companies\":[],\"arrival_gatepass_no\":null}. The SPA calls it GET-only (harvest/chunks/arrivals.queries-9wZXQ20z.js: `async gatepassReadiness(e){return(await r.get(a.GATE_CORE.ARRIVAL_GATEPASS_READINESS_BY_ID(e))).data}`) and SalesDispatchGatepassPage-CwwITLuJ.js renders the operator message from it (`e.gatepass_readiness.missing.join(\", \")` -> \"Gatepass is not ready. Missing: ...\"). The prior verified study the author cites (factory-cli/DOMAIN-GUIDE-2026-08.md, line 384) names /gatepass/readiness/ as one of the computed-object GETs with no id/created_at, i.e. explicitly NOT a get_or_create suspect. Nothing in this evidence shows it dead, so Rule 4 forbids dropping it. It also matters commercially: it is the only endpoint that answers, per company on one truck, whether the gatepass can be printed and what is missing, and its `locked_companies` array is a second zero-risk substitute for the excluded /sales-dispatch/lock/.",
+   "correction": "Restore the endpoint with its shipped command name verbatim: `gate-core arrival-gatepass-readiness`, path /gate-core/arrivals/{id}/gatepass/readiness/, response_type object, key_fields ready, companies[] (docking_id, entry_no, company_code, company_name, status, ready, missing, gatepass_no), locked_companies, arrival_gatepass_no. Description: 'Can this truck's gatepass be printed yet \u2014 per company on the truck, whether it is ready and exactly what is still missing, plus any company whose printing is locked. Required: arrival id.' Trap to carry: pass the ARRIVAL id, not the gate-in id \u2014 /gate-core/arrivals/1047/gatepass/readiness/ returned 404 {\"detail\":\"No VehicleArrival matches the given query.\"} because 1047 is an empty-vehicle-in id. Second trap: companies[] is per company-leg, so a truck can be ready for one company and blocked for another."
+  },
+  {
+   "domain": "gate-core",
+   "path": "/gate-core/",
+   "claim": "The study presents 33 endpoints as the gate-core domain (31 shipped + 2 new). Taken as the domain's surface, it silently drops 16 already-shipped gate-core commands.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Diffed against probe/shipped-command-names.json: the 16 missing are arrival-gatepass-readiness, bst-in, bst-outs-sap-transfer, bst-out, bst-return, construction-gate-entry, daily-need-gate-entry, dispatch-tracking-updates, gate-attachments, job-work-sap-grpo, job-work-sap-production-order, maintenance-gate-entry, raw-material-gate-entry, rejected-qc-return, sales-dispatch-document, unit-choices. None has evidence of being dead: probe/delta.json 'gone' is EMPTY for the whole API, none returned 404/5xx anywhere in sweep.jsonl or detail.jsonl, and 15 of them were simply never re-probed this round (no ids existed for the empty BST/QC lists; /gate-core/unit-choices/ is not even in probe/paths-plain.txt, so it was never swept). The prior verified study documents several as live reads: raw-material-gate-entry/{id}/ is 'verified returning nested security_check + weighment in all three companies' and is the recommended read-only substitute for the two get_or_create suspects (DOMAIN-GUIDE-2026-08.md lines 101, 109); construction/daily-need/maintenance gate-entry/{id}/ 'verified 200 on construction/366' (line 473); unit-choices is listed as truck-level with byte-identical payloads across the three headers (lines 392, 417). The study even relies on one of the dropped paths in its own text \u2014 the sap-production-orders trap says 'component detail is only on the single-order path /gate-core/job-work/sap-production-orders/{doc_entry}/' \u2014 and then omits that path.",
+   "correction": "Carry all 16 forward unchanged, each keeping its shipped command name verbatim from probe/shipped-command-names.json. An endpoint absent from this probe's evidence bundle is 'not re-probed', not 'gone'; only delta.json 'gone' or a live 404/5xx justifies removing a shipped command."
+  },
+  {
+   "domain": "quality-control",
+   "path": "/quality-control/material-types/{id}/parameters/",
+   "claim": "The study's endpoint list omits this path entirely, while its module_summary asserts 'Behind all three sits master data: material types and their parameter sets' and the arrival-material story says each inspection 'is checked against the parameter list for that material type'.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "This is an already-shipped command ('quality-control qc-material-type-parameters' in shipped-command-names.json line 323) and dropping it is a regression under hard rule 4 \u2014 there is no 404/5xx evidence against it, the opposite in fact. detail.jsonl probed /quality-control/material-types/70/parameters/ on JIVO_BEVERAGES: HTTP 200, array of {id, material_type, parameter_name, parameter_code, standard_value, parameter_type, min_value, max_value, uom, sequence, is_mandatory, is_active, created_at, updated_at}, sample row id 514 'Appearance' / APPEARANCE / 'Should_Be_Free_From_Dust_&_Deformation' / BOOLEAN. The SPA GETs it read-only via qcParameter.queries getByMaterialType. It is a plain numeric-id sub-list, not get_or_create. This is the ONLY endpoint in the domain that actually shows the parameter set the module_summary describes \u2014 dropping it removes the answer to 'what does QA actually check on a preform?'.",
+   "correction": "Restore the endpoint under its verbatim shipped name 'quality-control qc-material-type-parameters', response_type array, required param id (material type id from material-types, company-scoped, 404 'No MaterialType matches the given query' on a wrong-company id). Description for ops: 'The checklist QA runs against one material type \u2014 each parameter, its standard value, whether it is a pass/fail or a numeric range, and whether it is mandatory.' Trap: parameter_type is one of NUMERIC / TEXT / BOOLEAN / RANGE, which the app labels 'Numeric Value' / 'Text Value' / 'Pass/Fail' / 'Numeric Range' (qc.constants-2yr3dwgT.js) \u2014 show the label, not the code; min_value/max_value are null on BOOLEAN and TEXT parameters."
+  },
+  {
+   "domain": "quality-control",
+   "path": "/quality-control/arrival-slips/{id}/",
+   "claim": "The study's endpoint list omits this path entirely, yet its own inspections trap tells operators 'arrival_slip_id feeds the arrival-slip detail command'.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Internally contradictory and a shipped-command regression. shipped-command-names.json line 308 has '/quality-control/arrival-slips/{id}/': 'quality-control qc-arrival-slip-get'. detail.jsonl probed /quality-control/arrival-slips/1407/ on JIVO_BEVERAGES: HTTP 200 with the full slip object (same 29 fields as the list plus a fully expanded attachments array carrying attachment_type and uploaded_at, which the list sample truncates). /quality-control/arrival-slips/1329/ returned a clean 404 'No MaterialArrivalSlip matches the given query' \u2014 proof it is a plain lookup that misses safely, not a get_or_create. Registry key ARRIVAL_SLIP_BY_ID, SPA verb GET. No evidence it is dead or unsafe.",
+   "correction": "Restore under the verbatim shipped name 'quality-control qc-arrival-slip-get', response_type object, required param id (arrival slip id \u2014 the arrival_slip_id column on every inspections row, NOT inspection_id). Note in the description that this is where the full attachment records (COA/COQ scans, with attachment_type) are visible. Do NOT confuse it with registry key ARRIVAL_SLIP_GET, which resolves to /quality-control/po-items/{id}/arrival-slip/ and shares its URL with ARRIVAL_SLIP_CREATE \u2014 that one stays excluded."
+  },
+  {
+   "domain": "quality-control",
+   "path": "/quality-control/inspections/{id}/",
+   "claim": "The study's endpoint list omits this path entirely, yet its own traps twice send operators to it \u2014 'inspection_id feeds the inspection detail command' and 'To see what it was before, open the inspection detail'.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Shipped-command regression with no supporting evidence. shipped-command-names.json line 320: '/quality-control/inspections/{id}/': 'quality-control qc-inspection-get'. Registry key INSPECTION_BY_ID; inspection.queries-CRAW2sOW.js calls it read-only: 'async getById(e){return(await a.get(i.QUALITY_CONTROL_V2.INSPECTION_BY_ID(e))).data}'. Numeric primary key, plain GET, no create-on-miss. Hard rule 4 forbids dropping a shipped endpoint without positive evidence it is dead or unsafe; there is none, and the study itself depends on the command existing for its decision-changed trap to be actionable.",
+   "correction": "Restore under the verbatim shipped name 'quality-control qc-inspection-get', response_type object, required param id (inspection_id from any inspections list \u2014 null on NOT_STARTED rows, so check it first). This is the only place the prior manager decision behind a 'Times Changed' row can be read, which the study's own decision-changed trap promises."
+  },
+  {
+   "domain": "quality-control",
+   "path": "/quality-control/production-qc/sessions/{id}/",
+   "claim": "The study's endpoint list omits this path entirely while publishing production-qc, production-qc-counts and production-qc-pending, so a QC session can be counted but never opened.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Shipped-command regression. shipped-command-names.json line 335: '/quality-control/production-qc/sessions/{id}/': 'quality-control qc-production-session-get'. Registry key PRODUCTION_QC_SESSION_DETAIL; productionQC.queries-DG20dUuq.js: 'async getSession(e){return(await u.get(i.PRODUCTION_QC_SESSION_DETAIL(e))).data}' \u2014 plain GET on a numeric id. No 404/5xx evidence against it. It matters operationally: RunDetailPage-C2Hbgy9c.js gates finished-goods release on the FINAL session (canSendFG is true only when workflow_status==='APPROVED' && overall_result==='PASS'), so the session detail is where 'why is this run blocked' is answered.",
+   "correction": "Restore under the verbatim shipped name 'quality-control qc-production-session-get', response_type object, required param id (the `id` column on the production-qc list, not run_number and not production_run)."
+  },
+  {
+   "domain": "quality-control",
+   "path": "/quality-control/parameters/{id}/",
+   "claim": "The study's endpoint list omits this path entirely.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Shipped-command regression. shipped-command-names.json line 329: '/quality-control/parameters/{id}/': 'quality-control qc-parameter-get'. Registry key QC_PARAMETER_BY_ID; qcParameter.queries-C10fhFR0.js has a read-only GET call site: 'async getById(e){return(await n.get(s.QUALITY_CONTROL_V2.QC_PARAMETER_BY_ID(e))).data}'. Numeric primary key. It was not probed in this sweep, but hard rule 4 is explicit: 'I could not tell what it does' is not a reason to drop a shipped endpoint \u2014 only a 404/5xx or an unsafe verb is, and neither exists here.",
+   "correction": "Restore under the verbatim shipped name 'quality-control qc-parameter-get', response_type object, required param id (a parameter row id from qc-material-type-parameters). Mark the shape as inferred from the parameters list row (id, material_type, parameter_name, parameter_code, standard_value, parameter_type, min_value, max_value, uom, sequence, is_mandatory, is_active) rather than observed, since this sweep did not probe it."
+  },
+  {
+   "domain": "quality-control",
+   "path": "/quality-control/material-types/{id}/",
+   "claim": "The study's endpoint list omits this path entirely, while its material-types trap says 'ids are company-scoped; the same id in another company is a 404' \u2014 a fact only reachable through the detail command it drops.",
+   "verdict": "WRONGLY_EXCLUDED",
+   "reason": "Shipped-command regression. shipped-command-names.json line 322: '/quality-control/material-types/{id}/': 'quality-control qc-material-type-get'. detail.jsonl probed /quality-control/material-types/70/ on JIVO_BEVERAGES: HTTP 200 returning the full material type with its nested sap_items; /quality-control/material-types/160/ returned 404 'No MaterialType matches the given query'. Registry key MATERIAL_TYPE_BY_ID, GET call site in materialType.queries-CtIdKsL0.js getById. Safe, live, and already shipped.",
+   "correction": "Restore under the verbatim shipped name 'quality-control qc-material-type-get', response_type object, required param id (material type id, company-scoped). Keep MATERIAL_TYPE_BY_SAP_ITEM (/quality-control/material-types/by-sap-item/{code}/) excluded \u2014 that one takes a lookup KEY rather than a numeric id and is exactly the get_or_create shape to avoid."
+  }
+ ],
+ "studies_excluded": [
+  [
+   "barcode",
+   "/barcode/dispatch/sessions/from-bill/",
+   "MUST NOT SHIP. The app's only call site is createDispatchSession(), a POST \u2014 this is the session-creating endpoint. The GET returns exactly the same body as /barcode/dispatch/sessions/ (57 rows in MART on both, 0 on BEVERAGES on both), so it is a duplicate command whose name promises a bill lookup while sitting on a write URL. The current spec.yaml ships it with the placeholder description 'GET /barcode/dispatch/sessions/from-bill/'; the previous study already called for its removal and it is still published. Operators wanting a bill's session should use `barcode dispatch-sessions --search <bill_number>`."
+  ],
+  [
+   "marketplace",
+   "/marketplace/orders/resolve/",
+   "SAME SHAPE AS THE KNOWN get_or_create, and never cleared. It is a GET keyed on two NATURAL business keys (channel + order_id) with a verb \u2014 'resolve' \u2014 for a name, which is exactly the profile that made /marketplace/settings/ create six production rows. The 2026-08-03 study argued it was safe by snapshotting order/dispatch/return counts before and after a call, but that call used an EXISTING order id, which exercises the get branch and proves nothing about the create branch; the July reviewer accordingly kept it on the kill list pending someone reading the Django view, and nothing in this run's evidence changes that. This run observed only a bare 400 (missing channel) \u2014 the 200 body has never been captured, so its response shape is unverified as well. Keep it out of the CLI and out of MCP until the backend view is read. It is also fully covered for read purposes by `marketplace orders-list --search <order_id>`, so excluding it costs an operator nothing."
+  ],
+  [
+   "marketplace",
+   "/marketplace/settings/",
+   "CONFIRMED get_or_create \u2014 the exclusion still holds and this run re-verified the mechanism from the bundle rather than from the API. The SPA's marketplace API module defines `settings(channel)` as GET `/marketplace/settings/?channel=X` and `updateSettings(channel, body)` as PUT to the IDENTICAL URL: one path, a natural business key, a read and a write. On 2026-08-03 a GET with novel channel values created six live rows (AMAZON, MEESHO, JIOMART, BLINKIT, ZEPTO and a junk INVALID_XYZ) purely by being read. This run's probe was bare (no channel) and returned 400, so nothing was created this time \u2014 the 200 body has never been fetched and must not be. No CLI command, no MCP tool, no 'just to check the config' call. It also sits inside the same registry block a generator sweeps, so it must be moved out of any endpoints[] list into an excluded array rather than left in with a DO-NOT-PUBLISH marker; safety must not depend on a downstream tool reading a magic string."
+  ],
+  [
+   "gate-core",
+   "/gate-core/sales-dispatch/lock/",
+   "SUSPECTED get_or_create ON GET \u2014 do not publish. The prior verified study (factory-cli/DOMAIN-GUIDE-2026-08.md) ruled it unpublishable on the fingerprint of three per-company singleton rows with three different created_at values and changed_by null on all three, and nothing in this evidence settles it (I cannot read the Django view and I will not run the deciding probe \u2014 a GET under a company code with no row is exactly what created six junk marketplace rows on this API on 2026-08-03). One new datum WEAKENS the suspicion without clearing it: the Beverages row has created_at 2026-06-15T11:47:56 with updated_at identical, so it predates all probing and nothing was created by this read; the key is also bounded (one row per company, and all three companies already have one because the SPA GETs this on every docking-dashboard load), unlike the unbounded ?channel= key that caused the marketplace incident. Confidence it is actually harmless: ~75%; what is stopping certainty is that only the view source or a probe against a company with no row can prove it, and a fourth company being onboarded would recreate the risk. It is also NOT NEEDED: /gate-core/sales-dispatch/ already returns gatepass_print_locked and gatepass_lock_reason on every row \u2014 verified in this evidence and confirmed in the SPA, which renders its 'Gate pass printing is locked' banner from exactly those two fields. Ship that zero-risk substitute instead."
+  ],
+  [
+   "blowing",
+   "/blowing/runs/{id}/cost/",
+   "GET that may write. It is in the app's registry as getRunCost, but no React-Query hook fires it, so there is zero live evidence and it must not be probed. The run's costing is materialised in the database (cost.calculated_at plus cost_lines rows with real primary keys), so a GET whose whole job is 'give me the cost' is a realistic recompute-and-persist \u2014 call it 50/50, and this API already has a GET that writes (/marketplace/settings/). Cost of excluding it is zero: /blowing/runs/{id}/ returns the identical cost object and cost_lines array. Do not publish it as a CLI command or an MCP tool."
+  ]
+ ],
+ "refuted_claims": [
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/dashboard/",
+   "claim": "key_fields stops at floor_convention.verdict; the headline counters are relegated to a trap that says \"The captured sample was truncated before reaching it\"",
+   "verdict": "REFUTED",
+   "reason": "The complete JIVO_MART body (958 bytes, probe/sweep.jsonl) ends with \"headline\": {\"needs_ordering_today\": 0, \"missing_lead_times\": 0, \"lines_over_capacity\": 0, \"plan_is_feasible\": true, \"floors_below_policy\": 0}, and the JIVO_OIL observed shape types them (int/int/int/bool/int). headline is observed, not inferred, and it is the block the app puts at the top of the page \u2014 yet it is absent from key_fields while every floor_convention sub-key is listed.",
+   "correction": "Add headline, headline.needs_ordering_today, headline.missing_lead_times, headline.lines_over_capacity, headline.plan_is_feasible and headline.floors_below_policy to key_fields and mark them observed. Keep the reading warning: with no lead times loaded, needs_ordering_today=0 means nothing could be timed, and missing_lead_times is the counter that actually tells the story."
+  },
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/procurement/",
+   "claim": "description: \"Every material the current plan is short of: what is on hand, what is already on open purchase orders, how much to order\u2026\" plus the trap that shortage netting is governed only by policy.use_net_of_open_po",
+   "verdict": "REFUTED",
+   "reason": "shortage_qty and order_qty ignore stock_in_hand entirely. Beverages row FG0000314: required_qty 21475, stock_in_hand 38525, open_po_qty 0, shortage_qty 21475, order_qty 21475 \u2014 an item with 1.8x the required stock is listed with a full order quantity. Oil row FG0000006: required 3, stock 2, shortage 3. The floor-convention block in the SAME dashboard response nets the same items against the same stock (FG0000314 base_demand 21475, stock 38525, if_additive 0; FG0000004 41933-3067=38866; FG0000006 3-2=1), so the two sibling blocks disagree by exactly stock_in_hand. Evidence: probe/evidence/supply-chain.md lines 84 and 37, and probe/sweep.jsonl (JIVO_OIL procurement + floor-convention samples).",
+   "correction": "Describe it as \"every material the plan requires, with what is on hand, what is on open POs, and how much the planner says to order\" \u2014 and add a trap: shortage_qty = required_qty minus open POs ONLY; stock_in_hand is displayed but NOT deducted, so an item with surplus stock still shows a full order_qty. Never read order_qty as 'what to buy' without subtracting stock_in_hand yourself; floor_convention.if_additive is the stock-netted figure for the same item."
+  },
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/floors/",
+   "claim": "trap: \"In the live data totals.compared is 0 and totals.no_trend_on_file is 21 \u2014 no item has a sales trend loaded.\"",
+   "verdict": "REFUTED",
+   "reason": "21 is the Beverages figure only. probe/sweep.jsonl: JIVO_BEVERAGES no_trend_on_file 21, JIVO_MART 0, JIVO_OIL 294. compared=0 and divergent=0 in all three, so the 'empty test' half is right, but the single number is presented as a module-wide fact and is wrong in two of three companies.",
+   "correction": "Say: totals.compared is 0 in all three companies, so '0 divergent' is an empty test, not a clean bill of health. Items with no sales trend land in no_trend_on_file, which is per-company and per-item-master size \u2014 294 in Oil, 21 in Beverages, 0 in Mart (Mart has nothing to compare at all). Never quote 21 as the module's number."
+  },
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/policy/",
+   "claim": "trap: this endpoint is \"the same silhouette /marketplace/settings/ had when a plain GET turned out to be a Django get_or_create\" (repeated verbatim for /supply-chain/parameters/)",
+   "verdict": "REFUTED",
+   "reason": "The two features that made /marketplace/settings/ a get_or_create risk are both absent here. That endpoint took a lookup KEY in the query string (?channel=X) and returned an object with id/created_at; /supply-chain/policy/ takes no params at all and its observed body has no id and no created_at (floor_percent, floor_basis, urgency_window_days, use_net_of_open_po, apply_moq_rounding, include_changeover_in_capacity, updated_at) \u2014 same for /supply-chain/parameters/. Both return byte-identical bodies in all three tenants (189 and 230 bytes), and the policy block is already served inside /supply-chain/dashboard/, which the SPA calls constantly with a 5-minute staleTime.",
+   "correction": "Keep the endpoints published and re-base the caution honestly: they do not match the /marketplace/settings/ silhouette (no lookup key, no id/created_at), so the get_or_create analogy should be dropped; what remains is only the generic 'unnamed singleton settings object with updated_at=null, no SPA call site' suspicion. Serving policy from the dashboard's embedded copy is still a fine default because it is one fewer round trip and carries floor_source \u2014 not because the standalone URL matches a known-dangerous shape."
+  },
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/parameters/",
+   "claim": "trap: \"amber_multiplier, working_days_per_month and calendar_days_per_month are STRINGS; the rest are ints.\"",
+   "verdict": "REFUTED",
+   "reason": "Observed shape (probe/evidence/supply-chain.md line 67): last_changed_reason is str (\"\"), updated_by is str (\"\"), updated_at is null. Only lead_time_percentile (80), min_delivery_samples (3) and max_red_before_block (25) are ints. A CLI that casts 'the rest' to int breaks on three of the nine fields.",
+   "correction": "Say: three ints (lead_time_percentile, min_delivery_samples, max_red_before_block), three decimal-as-STRING numbers (amber_multiplier \"1.25\", working_days_per_month \"26.00\", calendar_days_per_month \"30.00\"), two free-text strings (last_changed_reason, updated_by, both empty) and updated_at=null."
+  },
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/runs/",
+   "claim": "key_fields: [] and trap: \"The captured sample was the empty tenant, so no field names were observed. The run object served by /supply-chain/runs/latest/ is the shape to expect\u2026\"",
+   "verdict": "REFUTED",
+   "reason": "The array element shape WAS observed live in two tenants (probe/sweep.jsonl). JIVO_MART: [{id 5, company_code JIVO_MART, run_date 2026-08-10, status GENERATED, red_count 0, amber_count 0, green_count 0, unknown_count 0, issue_count 1, comment \"\", parameters_snapshot{amber_multiplier, lead_time_percentile, max_red_before_block, min_delivery_samples, working_days_per_month, calendar_days_per_month}, is_credible true, generated_at, reviewed_by \"\", reviewed_at null, published_by \"\", published_at null, recipients 0}]. JIVO_OIL: id 6, status REVIEWED, reviewed_by bhupinder@jivo.in, reviewed_at 2026-08-10T15:35:07+05:30.",
+   "correction": "Populate key_fields with the observed row fields (id, company_code, run_date, status, red_count, amber_count, green_count, unknown_count, issue_count, comment, parameters_snapshot, is_credible, generated_at, reviewed_by, reviewed_at, published_by, published_at, recipients) and mark them OBSERVED rather than inferred from runs/latest. Concrete live state worth carrying: Mart run 5 is GENERATED (nobody has seen it), Oil run 6 is REVIEWED by bhupinder@jivo.in but never PUBLISHED \u2014 so no run has ever reached the buyer."
+  },
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/weekly/",
+   "claim": "trap: \"runs counts the runs in the window; it was 0 in the live data even though a run exists, because the window is the last 4 weeks and verdicts drive the report.\"",
+   "verdict": "REFUTED",
+   "reason": "JIVO_MART returns runs: 1 (probe/sweep.jsonl, full 298-byte body: {\"from\": \"2026-07-14\", \"to\": \"2026-08-11\", \"runs\": 1, \u2026}). The Mart run is dated 2026-08-10, which is inside the 07-14 -> 08-11 window, and it IS counted. The runs:0 in the study's sample is the JIVO_BEVERAGES body \u2014 Beverages has no run at all (rows 0 on /supply-chain/runs/). The stated reason is also self-contradictory: a 4-week window ending 08-11 contains an 08-10 run.",
+   "correction": "runs is simply how many daily runs fall in the window: 1 in Mart and Oil, 0 in Beverages because none has ever been built there. Drop the 'even though a run exists' explanation. The genuinely useful point survives on its own: runs>0 with totals.verdicts=0 means the run happened and nobody logged a verdict."
+  },
+  {
+   "domain": "supply-chain",
+   "path": "/supply-chain/live-trail/",
+   "claim": "tenant_note: \"Only one tenant's body was captured, so whether the production/demand pairing changes with the calling tenant was not observed and should not be assumed.\" (and the same hedge in the trap \"whether the pairing varies by caller is unverified\")",
+   "verdict": "REFUTED",
+   "reason": "Three bodies were captured, one per tenant, in probe/sweep.jsonl. All three return production_company=JIVO_OIL with demand_companies=[JIVO_OIL, JIVO_MART] and byte-for-byte identical figures (open_orders 789, open_lines 2792, demand_value 528677817.94, units_to_produce 1324168.0; response sizes 1418091/1418091/1418092 bytes, differing only in the generated_at timestamp). The pairing WAS observed across all three callers and it does not vary: calling with --company JIVO_BEVERAGES or JIVO_MART still returns JIVO Oil's production plan.",
+   "correction": "tenant_note should read: routed and 200 in all three companies, but the answer is company-FIXED \u2014 every tenant gets production_company=JIVO_OIL planned against Oil+Mart demand, with identical numbers. The CLI must echo production_company and demand_companies and warn that --company does not change this report; a Beverages or Mart operator reading it is looking at Oil's book, not their own."
+  },
+  {
+   "domain": "order-processing",
+   "path": "/order-processing/orders/{id}/",
+   "claim": "Param `id`: 'Path param \u2014 the factory app's own order id (the `id` field in the orders list), NOT oms_order_id.' Trap: 'Probing id=2 returned the order whose oms_order_id is 1 (ORD-20260417-0001). The app's own order links pass oms_order_id, which lands on a DIFFERENT order \u2014 do not copy that behaviour.'",
+   "verdict": "REFUTED",
+   "reason": "Exactly inverted, and the study's own cited probe is misread. The raw probe log /private/tmp/claude-501/-Users-damanpreetsingh-jivo-cli/b2acf681-5cd3-4fc0-92a9-70bab5f9fbf8/scratchpad/probe/detail.jsonl lines 89-90 carry one record per request with its own path and its own response body:\n  * GET /order-processing/orders/1/ -> {\"id\":2,\"oms_order_id\":1,\"order_number\":\"ORD-20260417-0001\"}\n  * GET /order-processing/orders/2/ -> {\"id\":1,\"oms_order_id\":2,\"order_number\":\"ORD-20260417-0002\"}\nIn both probes the path segment equals oms_order_id and does NOT equal the row `id`. The study was misled by the evidence file's '- probed with real id: 2' line, which is an exporter artifact: export_evidence.py overwrites id_used on every detail record but keeps the FIRST sample ('and not ev[p][\"sample\"]'), so the md pairs the id=1 body with the id=2 label. The SPA agrees with the API, not with the study: chunks/OrdersPage-B-bx7cVB.js links to:`/order-processing/orders/${s.oms_order_id}` and chunks/DataQualityPage-DgqyZUFq.js does the same. Confidence high \u2014 2/2 probes, and the pair is deliberately swapped (id 1<->oms 2) so it is the ideal discriminator. Shipping this as written makes every `order-processing order <n>` call return the wrong order, silently, with a plausible-looking body.",
+   "correction": "The path key is `oms_order_id`, not the factory row `id`. Take oms_order_id from the orders list (or from line-issues results, which also carry it) and pass that. Passing the list's `id` returns a different order with no error. Rewrite the trap as: 'The path takes oms_order_id \u2014 the same value the app's own order links use. The list also returns a factory row `id`, and the two are different numbers (row id=1 has oms_order_id=2), so never pass `id` here: you get a different order back and nothing flags it.'"
+  },
+  {
+   "domain": "order-processing",
+   "path": "/order-processing/orders/{id}/timeline/",
+   "claim": "Param `id`: 'Path param \u2014 the factory app's own order id (the `id` field in the orders list), NOT oms_order_id.' Trap: 'Same id trap as `order` \u2014 the path takes the factory row id, not oms_order_id.'",
+   "verdict": "REFUTED",
+   "reason": "Same inversion, same evidence. detail.jsonl lines 91-92 probed /order-processing/orders/1/timeline/ and /order-processing/orders/2/timeline/; the route is the same prefix as the detail route, which resolves on oms_order_id (see the paired bodies in lines 89-90). chunks/OrderDetailPage-BzwYBcAa.js reads one route param (`const{orderId:o}=N(),n=Number(o)`) and feeds the same `n` to both the detail hook and the timeline hook, so the two routes cannot key on different fields. Both timeline probes returned {\"events\":[],\"checks\":[]}, so they do not independently discriminate \u2014 the finding rests on the detail probes plus the shared route param.",
+   "correction": "Change the param description to: 'Path param \u2014 the order's `oms_order_id` (same value as `order-processing order`), not the factory row `id`.' Drop the 'do not copy the app' warning here too."
+  },
+  {
+   "domain": "order-processing",
+   "path": "/order-processing/materials/",
+   "claim": "Trap: 'gross_required = the quantity being produced x quantity_per_unit (3000 x 24 = 72000). quantity_per_unit is BOM consumption per unit made, NOT a pack or carton size.' And: 'Quantities are PIECES of the material (e.g. 269400 caps/bottles), not cartons and not tonnes.'",
+   "verdict": "REFUTED",
+   "reason": "Two separate errors. (a) 'NOT a pack or carton size': for every per-bottle component observed, quantity_per_unit is numerically exactly the pack count, because the unit made is the case \u2014 24.00000000 on both PM rows of the 24-PCS FG0000314, and 20.00000000 on all four GP-FG PM rows plus RM0000009. Telling a reader it is 'not a pack size' invites them to treat 24 as a genuine per-bottle consumption rate. (b) 'Quantities are PIECES of the material' is contradicted by the RM rows in the same payload: RM0000134 has on_hand 88.3000, committed 0.1600 and gross_required 11520 \u2014 fractional stock is not a piece count, and 11520 is litres (3000 cases x 3.84 L). The hedge that follows ('Don't convert without knowing the item's own UoM') is correct but is buried under a leading assertion that is wrong for every RM row. The formula itself is verified and stands: 72000-19228+51-0 = 52823, 72000-25464+121-0 = 46657, 11520-88.30+0.16 = 11431.86.",
+   "correction": "'gross_required = units made x quantity_per_unit. quantity_per_unit is BOM consumption per UNIT MADE, and the unit made is a case \u2014 so for per-bottle components it comes out equal to the pack count (24 for a 24-PCS item, 20 for a 20-PCS one). The quantity's UoM is the MATERIAL's own UoM, not always pieces: PM rows are pieces (269400 caps/bottles) but RM rows can be litres or kg (RM0000134: on_hand 88.3, gross 11520 L). Fractional on_hand/committed is the tell. Resolve the code against SAP (OITM.InvntryUom) before converting.'"
+  },
+  {
+   "domain": "order-processing",
+   "path": "/order-processing/production/",
+   "claim": "Trap: 'quantity is in PIECES (3000 bottles of a 24-PCS item), not cartons. Don't multiply by the pack count in the item name.'",
+   "verdict": "REFUTED",
+   "reason": "The row's own BOM arithmetic proves `quantity` counts CASES, not bottles. Sampled row (sweep.jsonl, /order-processing/production/): item FG0000314 'PET BOTTLE 160 MLS PUNJABI  JEERA 24 PCS', quantity 3000, with materials:\n  * PM0000777 quantity_per_unit 24.00000000 -> gross_required 72000\n  * PM0000584 quantity_per_unit 24.00000000 -> gross_required 72000\n  * RM0000134 quantity_per_unit 3.84000000 -> gross_required 11520\n3.84 / 24 = 0.16 exactly, i.e. 160 ml \u2014 so one 'unit made' contains 24 x 160 ml. If a unit were one bottle the liquid line would be 3000 x 0.16 = 480 L, not 11520 L; 11520 L is 3000 x 24 x 160 ml, the volume of 3000 cases. Two packing materials at exactly 24 per unit only make sense as 1-per-bottle x 24 bottles. The same pattern repeats independently on the GP-FG rows in /order-processing/materials/ (quantity_per_unit 20.00000000 on four PM codes AND on RM0000009, gross 269400 -> 13470 units made) \u2014 a 20-per-unit consumption of a raw material is only coherent if the unit is a 20-pack. Confidence high; what would settle it beyond doubt is RM0000134's UoM in SAP (OITM.InvntryUom), which was not read. Note this is the opposite of the ORDER-line convention, which the study got right (order line quantity 120, pack_size 12, cases 10 \u2014 genuinely pieces). Shipped as written, an operator multiplies 3000 by 24 and reports a 24x-inflated production plan.",
+   "correction": "'quantity is the number of UNITS MADE, and the BOM shows that unit is the CASE/carton, not the bottle: 3000 units of a 24-PCS item = 3000 cases = 72,000 bottles = 11,520 L (the row's own RM line). Note this is the reverse of order lines, where quantity IS pieces. Multiply by the pack count to get bottles; do not treat 3000 as bottles.'"
+  },
+  {
+   "domain": "order-processing",
+   "path": "/order-processing/sync/",
+   "claim": "Trap: 'triggered_by names the job (\"sync_oms_orders\"), not a person.'",
+   "verdict": "REFUTED",
+   "reason": "The observed run log contains a person. sweep.jsonl /order-processing/sync/ sample: runs[1] = {\"id\":4, \"started_at\":\"2026-08-11T12:35:33...\", \"status\":\"SUCCESS\", \"orders_seen\":3, \"triggered_by\":\"test@jivo.in\"}. Runs 3 and 5 say \"sync_oms_orders\"; run 4 says an email address. That is exactly what the SPA predicts: chunks/order-processing.queries-4AS4g0rg.js exposes `sync(e=!1){return(await n.post(t.SYNC,{full:e})).data}` wired to the dashboard's 'Sync OMS' button (chunks/OrderProcessingDashboardPage-0GJIpy6V.js, gated on the SYNC permission), so a human-triggered run is a normal case, not an anomaly. Told 'never a person', an operator would report a manual 12:35 pull as a scheduled job run.",
+   "correction": "'triggered_by is either the job name (\"sync_oms_orders\") for an automatic pull or the email of the operator who pressed Sync OMS in the app (\"test@jivo.in\" on run 4 of the sample). If it contains an @, a person ran it by hand.'"
+  },
+  {
+   "domain": "maintenance",
+   "path": "/maintenance/fire-report-items/{id}/",
+   "claim": "'`photos` on this record came back empty even for lines that do have photos filed under maintenance-fire-report-photos \u2014 do not treat an empty photos array as no photo exists.' (same claim on /maintenance/fire-reports/{id}/: nested items[] photos[] 'came back empty on the live report even where photos exist').",
+   "verdict": "REFUTED",
+   "reason": "The nested array does populate. In the Oil list body, checklist line id 2 ('Electric pump with jocky pump') carries photos:[{id:1, item:2, photo:.../image.jpg, taken_on:2026-07-04, ...}]. The lines that came back with photos:[] are line id 1 and line id 5 \u2014 and /maintenance/fire-report-photos/ shows its 6 rows hang off items 2, 3 and 4 only, so lines 1 and 5 genuinely have no photo. The probed report was id 5, whose only line is id 5; nothing was missing.",
+   "correction": "Drop the trap. The nested photos[] on a checklist line reflects the real photo set (line 2 shows its photo inline); an empty array means no photo was filed against that line. Keep the separate photos endpoint as the way to pull captions/taken_on across a whole round, not as a correction for a broken nesting."
+  },
+  {
+   "domain": "misc",
+   "path": "/dashboards/stock/export/",
+   "claim": "response_type: \"object\"",
+   "verdict": "REFUTED",
+   "reason": "The observed body is not JSON at all. The evidence records 'observed shape: \"non-json\"' and a sample starting with the PK zip header and docProps/app.xml, and the SPA fetches it with responseType:\"blob\" (chunks/stock-level.queries-D36DYT2e.js: exportStockLevels does axios.get(EXPORT, {params, responseType:\"blob\"})). Declaring it an object will make a generator try to parse and print JSON, which is exactly the failure the study's own trap warns about.",
+   "correction": "Set response_type to the bundle's binary/file value (not 'object'), keep key_fields empty, and require an --out/--output path defaulting to stock_benchmark_<date>.xlsx. The rest of the export entry is verified: the SPA does delete page and page_size before calling, and does forward as_of_date through the same param builder."
+  },
+  {
+   "domain": "misc",
+   "path": "/notifications/{id}/",
+   "claim": "tenant_note: 'The FEED is company-scoped but this detail route is NOT \u2014 an Oil notification id fetched under a Mart header returns the Oil row. Selecting a company changes the list and silently does nothing here.'",
+   "verdict": "REFUTED",
+   "reason": "No cross-tenant fetch was ever made. probe/detail.jsonl holds exactly two calls on this route, both under Company-Code JIVO_BEVERAGES: /notifications/86820/ and /notifications/86813/. Both ids come from the Beverages feed itself \u2014 86820 is literally the first row of the Beverages /notifications/ sample ('QC Completed \u2026 GE-2026-9271'), and 86813 the second. No Oil id was ever requested, and no Mart header was ever used (Oil's newest notification in the same sweep is 86771). The evidence line 'live status per tenant: {\"JIVO_BEVERAGES\": 200}' is the whole record.",
+   "correction": "Delete the cross-company claim. Write: probed only under JIVO_BEVERAGES with ids taken from that company's own feed; whether a notification id resolves under another company's header was not tested, so keep passing --company and treat the id as belonging to the feed it came from."
+  },
+  {
+   "domain": "misc",
+   "path": "/returnable-items/dashboard/",
+   "claim": "description: 'how many are still outstanding (with the value of the material that is out)'; trap: 'outstanding_value is INR of material currently outside the gate \u2014 the one number a manager actually wants from this module.'",
+   "verdict": "REFUTED",
+   "reason": "On the only company that has any gate passes, the field is zero. Oil's dashboard (probe/sweep.jsonl) reads status_counts OUT 7, outstanding_count 7, ageing_buckets 0_7:1 / 8_15:4 \u2014 and outstanding_value 0. The reason is visible in the line register: /returnable-items/returnable-gatepass-items/ rows on Oil carry \"estimated_value\": null, so nothing feeds the total. Publishing it as the headline number ships 'about \u20b90 of material is outside the gate' while seven passes are actually out.",
+   "correction": "Say plainly: outstanding_value read 0 on Oil despite 7 outstanding passes, because gate-pass lines carry estimated_value null \u2014 it is not populated and must not be quoted as the value of material outside the gate. The usable outstanding number is the pending-gate-in list (7 passes on Oil), aged on expected_return_date."
+  },
+  {
+   "domain": "barcode",
+   "path": "/barcode/dispatch/settings/",
+   "claim": "Trap: 'require_sap_sync_on_completion is FALSE, which is why every session sits at sap_sync_status NOT_CONFIGURED \u2014 that is a deliberate setting, not a broken feed.'",
+   "verdict": "REFUTED",
+   "reason": "The settings row is per-company and the three companies do NOT agree \u2014 the evidence file only carried the Beverages sample, and the study generalised it. Live GETs captured in probe/sweep.jsonl: JIVO_BEVERAGES require_sap_sync_on_completion=false; JIVO_MART require_sap_sync_on_completion=TRUE; JIVO_OIL=false. Mart is the only company in the bundle with real dispatch sessions, and Mart session 188 (evidence barcode.md) still reads sap_sync_status NOT_CONFIGURED / sap_update_status NOT_CONFIGURED while its company flag is TRUE. So the flag does not cause NOT_CONFIGURED and cannot be quoted as the explanation. The same generalisation error hits a second flag: require_sequential_item_scanning is true in Beverages and Mart but FALSE in Oil \u2014 an operator told 'items must be scanned in order' would be wrong about the busiest company.",
+   "correction": "Keep the observation ('barcode dispatch is not posting to SAP \u2014 every session seen reads NOT_CONFIGURED') and delete the causal sentence. Say instead: this is the dispatch rulebook FOR THE COMPANY YOU QUERIED and the three companies are set differently \u2014 read it per company before interpreting that company's dispatch data. Only these are identical in all three today: allow_partial_dispatch true, allow_partial_pallet_dispatch true, allow_box_dispatch_from_pallet true, allow_manual_close true, allow_admin_override false. require_sap_sync_on_completion (Oil false, Mart true, Beverages false) and require_sequential_item_scanning (Oil false, Mart true, Beverages true) must never be quoted as a fixed value."
+  },
+  {
+   "domain": "barcode",
+   "path": "/barcode/intercompany/warehouses/",
+   "claim": "Param company_code: 'The parameter name is taken verbatim from the app's own call (params:{company_code}); the 400 body itself was not captured.' / Trap: 'No successful sample was captured \u2014 every probe was a bare call that 400'd.'",
+   "verdict": "REFUTED",
+   "reason": "The 400 body WAS captured, in all three companies. probe/sweep.jsonl: GET /barcode/intercompany/warehouses/ -> HTTP 400 {\"error\":\"company_code is required.\"} for JIVO_BEVERAGES, JIVO_MART and JIVO_OIL alike. So the required param is server-confirmed by name, not merely inferred from the SPA \u2014 the study understates its own evidence and leaves a shipped required param looking like a guess. (The rest of the entry checks out: barcode.api-CUxAOtrq.js sends params:{company_code}, and IntercompanyTransferPage-C1H6odH8.js calls it with the DESTINATION company and renders warehouse_code/warehouse_name off a bare array, with the error text 'Could not load the destination company's warehouses.')",
+   "correction": "Change the param description to: 'REQUIRED \u2014 a bare call returns HTTP 400 {\"error\": \"company_code is required.\"}, confirmed live in all three companies. Values are the JIVO company codes: JIVO_OIL, JIVO_MART, JIVO_BEVERAGES.' Keep the honest caveat that no 200 body was sampled, so the row shape (warehouse_code, warehouse_name, bare array) is SPA-derived."
+  },
+  {
+   "domain": "grpo",
+   "path": "/grpo/fg/summary/",
+   "claim": "\"posted_count/failed_count here are almost certainly the SHARED material posting log ... (~85% confident; what is missing is the server code \u2014 the numbers coinciding is strong but circumstantial)\", and the endpoint description still sells all three counters as finished-goods posting counts.",
+   "verdict": "REFUTED",
+   "reason": "The hedge is far too weak and the description is wrong. The coincidence was not observed in one company \u2014 the sweep captured it in ALL THREE tenants, and the numbers are tenant-specific, not a constant: /grpo/fg/summary/ returns BEVERAGES posted 26 / failed 9 / partial 0, MART 0/0/0, OIL 228/16/0, and /grpo/summary/ returns byte-identical triples in the same three tenants (probe/sweep.jsonl, both paths, all companies). Three independent tenants matching on a distinctive value like 228/16 while /grpo/fg/history/ and /grpo/fg/pending/ return 0 rows in every tenant is not circumstantial. Related: the module_summary line \"the FG half ... returns zero rows everywhere\" reads as \"all FG numbers are zero\", which /grpo/fg/summary/ on OIL (posted_count 228) will immediately contradict for an operator.",
+   "correction": "Raise the confidence: verified across all three tenants (BEV 26/9/0, MART 0/0/0, OIL 228/16/0, identical to /grpo/summary/ in each) \u2014 posted_count / failed_count / partially_posted_count on this path are NOT finished-goods-scoped. Description should read: \"Finished-goods GRPO dashboard totals \u2014 the pending side (entries, POs, QC accepted/rejected quantity) is genuinely finished-goods and is currently zero in all three companies; the posted / failed / partially-posted counters repeat the material GRPO posting log and must never be quoted as finished-goods postings.\" Keep the pending-side reporting rule."
+  },
+  {
+   "domain": "goods-return",
+   "path": "/goods-return/",
+   "claim": "Module summary and list trap both state flatly that confirming receipt is the step that posts the return into SAP: \"the warehouse confirms receipt into one of a handful of dedicated goods-return warehouses (BH-GR, DL-GR, PB-RG\u2026) \u2014 which is the step that posts the return into SAP\" and \"Confirming receipt is the step that posts the return into SAP.\"",
+   "verdict": "REFUTED",
+   "reason": "The SPA's own Confirm Receipt panel makes SAP posting conditional on basis. In GoodsReturnDetailPage-B7a3Dl9T.js the component computes `const c=t.basis===\"INVOICE\"` and renders: \"Confirm the goods physically arrived\" + (c ? \" \u2014 this posts an A/R Returns document to SAP for the returned stock.\" : \". No SAP posting is done for non-invoice returns.\"). The same flag gates the warehouse control and the payload: `if(c&&!u){error(\"Select the goods-return warehouse.\")}` then `mutateAsync(c?u:void 0)`, i.e. receive() is called with no warehouse_code at all for DEBIT_NOTE and LETTER_PAD returns. Written as a flat rule, an operator reading `status=POSTED` as \"in SAP\" will silently mis-state stock and returns for every non-invoice return.",
+   "correction": "Say it conditionally: receipt posts an A/R Returns document to SAP **only when basis is INVOICE** \u2014 and that is also the only case where a goods-return warehouse is chosen. DEBIT_NOTE and LETTER_PAD returns are received with no SAP posting and no warehouse. SPA-derived from the Confirm Receipt panel, not confirmed against a live return (none existed)."
+  },
+  {
+   "domain": "goods-return",
+   "path": "/goods-return/gate/expected/",
+   "claim": "Trap: \"Cross-company by design: every card shows its own company_code, and the app sends no company filter.\"",
+   "verdict": "REFUTED",
+   "reason": "The 'no company filter' half is verified (`async listExpected(){return(await ae.get(Ne.GOODS_RETURN.GATE_EXPECTED)).data}` \u2014 no params). The 'cross-company by design' conclusion is not observed and the module's own convention points the other way: the sibling list endpoint is company-scoped and needs an explicit all_companies escape hatch, which this endpoint does not offer, and the probe returned 0 rows in all three tenants so nothing establishes it ever returns another company's vehicle. A rendered company_code badge on a shared gate card is not evidence of scope. Stated as fact, it tells a guard or an operator that one call covers all three companies \u2014 the same silent under-count the study warns about on the list endpoint.",
+   "correction": "Keep: takes no query parameters, and each row carries its own company_code. Replace the scope claim with: scope was not observed (0 rows in all three companies at probe time); the platform scopes by the signed-in company everywhere else in this module, so run it per company rather than assuming one call covers Oil, Mart and Beverages."
+  },
+  {
+   "domain": "goods-return",
+   "path": "/goods-return/warehouses/",
+   "claim": "Description: \"The warehouses a customer return is allowed to be booked into when it is received \u2026 This is the picklist behind the 'Confirm Receipt' step.\"",
+   "verdict": "REFUTED",
+   "reason": "Incomplete in a way that misleads: the picklist is rendered and required only for INVOICE-basis returns. In GoodsReturnDetailPage-B7a3Dl9T.js the warehouse `<select>` is inside `c&&\u2026` where `c=t.basis===\"INVOICE\"`, receipt validation is `if(c&&!u){error(\"Select the goods-return warehouse.\")}`, and the receive call passes `c?u:void 0`. So this is not the picklist behind every Confirm Receipt \u2014 it is the picklist behind the SAP-posting half of it. As written it implies every received return lands in one of these warehouses, which is false for debit-note and letter-pad returns.",
+   "correction": "\"The goods-return warehouses a return can be booked into when it is received against an invoice \u2014 code and name only, e.g. DL-GR / Mayapuri GR. This is the picklist behind 'Confirm Receipt', which only appears for invoice-basis returns; non-invoice returns are received without a warehouse.\""
+  },
+  {
+   "domain": "quality-control",
+   "path": "/quality-control/print-documents/{id}/",
+   "claim": "Trap: 'This is a plain detail route on its own primary key \u2014 it is NOT one of the get-or-create GET paths in this app (those take a foreign key and create a row on a miss). It is safe to read; do not confuse it with /quality-control/arrival-slips/{id}/inspection/.'",
+   "verdict": "REFUTED",
+   "reason": "The first half is right; the cited counter-example is wrong. /quality-control/arrival-slips/{id}/inspection/ does not create a row on a miss. inspection.queries-CRAW2sOW.js wraps the GET specifically to handle a miss: 'async getForSlip(e){try{return(await a.get(i.QUALITY_CONTROL_V2.INSPECTION_FOR_SLIP(e))).data}catch(t){if(t.status===404)return null;throw t}}' \u2014 a get_or_create would never 404, so the 404 handler is proof the server returns one. Creation on that URL is a separate explicit POST ('async create(e,t){\u2026await a.post(s,t)}'). The probe agrees: /quality-control/arrival-slips/1407/inspection/ returned 200 with a full inspection object (report_no, internal_lot_no, supplier_batch_lot_no, qa_chemist_approved_at and the rest) and 1329/inspection/ returned 404 'No MaterialArrivalSlip matches the given query'. Naming a safe endpoint as this app's canonical dangerous-GET example teaches the wrong lesson, and the real get-or-create risks in this registry go unnamed.",
+   "correction": "Fix the trap to cite the actual risky shapes in QUALITY_CONTROL_V2: ARRIVAL_SLIP_GET, which resolves to the same URL as ARRIVAL_SLIP_CREATE (/quality-control/po-items/{id}/arrival-slip/), and MATERIAL_TYPE_BY_SAP_ITEM (/quality-control/material-types/by-sap-item/{CODE}/), which takes a lookup key rather than a numeric id \u2014 both correctly left unpublished. Separately, /quality-control/arrival-slips/{id}/inspection/ is a safe GET-or-404 returning the full raw-material inspection record and is a reasonable candidate to publish as a new read (it is absent from shipped-command-names.json, so it would take a new name); if it is left out, leave it out for scope reasons, not on a false get-or-create claim."
+  }
+ ]
+}

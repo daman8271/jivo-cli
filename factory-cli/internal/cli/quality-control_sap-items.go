@@ -17,7 +17,7 @@ func newQualityControlSapItemsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "sap-items",
-		Short:       "Search the SAP item master from inside QC, to find the item code to map to a material type.",
+		Short:       "Search the SAP item master from inside QC to find the item code to map to a material type.",
 		Example:     "  jivo-factory-pp-cli quality-control sap-items",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.sap-items", "pp:method": "GET", "pp:path": "/quality-control/sap-items/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -16,7 +16,7 @@ func newMaintenanceSpareCategoriesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "spare-categories",
-		Short:       "Spare category master.",
+		Short:       "The categories used to group maintenance spare parts — the picklist behind the Category field on the spare master.",
 		Example:     "  jivo-factory-pp-cli maintenance spare-categories",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.spare-categories", "pp:method": "GET", "pp:path": "/maintenance/spare-categories/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

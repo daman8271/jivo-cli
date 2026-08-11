@@ -16,7 +16,7 @@ func newMarketplaceBatchCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "batch",
-		Short:       "Show one uploaded order sheet — filename, status, row/order/line counts and its import summary. Required: id.",
+		Short:       "One uploaded order sheet in full — filename, who uploaded it, its status",
 		Example:     "  jivo-factory-pp-cli marketplace batch --id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "marketplace.batch", "pp:method": "GET", "pp:path": "/marketplace/batches/{id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -16,7 +16,7 @@ func newMaintenanceMaintenanceAssetGetCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "maintenance-asset-get",
-		Short:       "Full record for one asset. Required: id.",
+		Short:       "Full record for one asset, including its place in the asset hierarchy, the production machine it belongs to",
 		Example:     "  jivo-factory-pp-cli maintenance maintenance-asset-get --id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.maintenance-asset-get", "pp:method": "GET", "pp:path": "/maintenance/assets/{id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

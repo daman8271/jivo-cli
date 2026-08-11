@@ -16,7 +16,7 @@ func newBarcodePalletHistoryCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "pallet-history",
-		Short:       "Movement log for one pallet — returns an empty list in practice; use `pallet` instead. Required: id.",
+		Short:       "Dead endpoint — always returns an empty list, in both this study and the last.",
 		Example:     "  jivo-factory-pp-cli barcode pallet-history --id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "barcode.pallet-history", "pp:method": "GET", "pp:path": "/barcode/pallets/{id}/history/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -16,6 +16,7 @@ func newDriverManagementCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newDriverManagementDriverCmd(flags))
 	cmd.AddCommand(newDriverManagementDriversCmd(flags))
 	cmd.AddCommand(newDriverManagementDriversNamesCmd(flags))
 	return cmd

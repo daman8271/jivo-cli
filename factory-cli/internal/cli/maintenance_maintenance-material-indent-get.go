@@ -16,7 +16,7 @@ func newMaintenanceMaintenanceMaterialIndentGetCmd(flags *rootFlags) *cobra.Comm
 
 	cmd := &cobra.Command{
 		Use:         "maintenance-material-indent-get",
-		Short:       "One material indent with all its line items, shortfalls and step-by-step approval trail. Required: id.",
+		Short:       "One material indent in full — its line items and shortfalls",
 		Example:     "  jivo-factory-pp-cli maintenance maintenance-material-indent-get --id 550e8400-e29b-41d4-a716-446655440000",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.maintenance-material-indent-get", "pp:method": "GET", "pp:path": "/maintenance/material-indents/{id}/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

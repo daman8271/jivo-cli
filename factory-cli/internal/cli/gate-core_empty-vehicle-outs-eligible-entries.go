@@ -19,7 +19,7 @@ func newGateCoreEmptyVehicleOutsEligibleEntriesCmd(flags *rootFlags) *cobra.Comm
 
 	cmd := &cobra.Command{
 		Use:         "empty-vehicle-outs-eligible-entries",
-		Short:       "Vehicle entries that are allowed to leave empty right now — the pick-list for recording an empty gate-out.",
+		Short:       "Vehicle entries that still have no empty gate-out recorded against them — the pick-list when recording one",
 		Example:     "  jivo-factory-pp-cli gate-core empty-vehicle-outs-eligible-entries",
 		Annotations: map[string]string{"pp:endpoint": "gate-core.empty-vehicle-outs-eligible-entries", "pp:method": "GET", "pp:path": "/gate-core/empty-vehicle-outs/eligible-entries/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

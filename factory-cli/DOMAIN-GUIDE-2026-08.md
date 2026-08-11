@@ -1146,3 +1146,105 @@ WHAT I COULD NOT DETERMINE: whether the eight dead WMS analytics endpoints were 
 
 ONE CAVEAT ON THE /wms/ TREE: it sits outside my assigned /warehouse/ segment and appears in no other agent's input either (zero rows in the company matrix). I have included it because the task asked what replaced the WMS sub-tree, but the orchestrator should decide whether it belongs in the warehouse command group or its own.
 
+
+
+---
+
+## New domains added 2026-08-11
+
+These four modules existed in the app but were entirely absent from the CLI.
+Everything below was verified live across all three companies on 2026-08-11.
+
+
+### Smart Supply Chain — the buy-and-build planner
+
+"Smart Supply Chain" is the factory app's buy-and-build planner — it answers "what must we order today so the plant doesn't run dry, and can the lines actually run the plan?" It has three layers. (1) The Daily Run grades every enrolled finished-good material RED/AMBER/GREEN/UNKNOWN on days-of-stock-cover against how long the supplier takes, gets reviewed, published to the buyer and HODs, and then collects the buyer's verdict after each phone call (real shortage / wrong data / already handled) — the Weekly Review scores whether those alarms were worth raising. (2) The Planning dashboard turns a SAP sales forecast into a procurement list plus a machine-hours capacity check plus a stock-buffer policy check. (3) The Live Trail is a live read straight out of SAP's open order book, stock, work orders and BOMs, working out what to produce tomorrow, what to buy, and which department is holding up each order. CRITICAL CONTEXT: as of the 2026-08-11 probe the whole module is unconfigured in all three companies — no monitored SKUs, no lead times, no machines, no SKU-to-machine mappings, no reference workbook ever uploaded. Most endpoints therefore return empty or zero, and the ones that look healthy (capacity "feasible: true", floors "0 divergent") are green only because nothing was checked.
+
+
+**Traps (86):**
+
+- **supply-chain dashboard** — The four headline counters the app shows on top — needs_ordering_today, missing_lead_times, lines_over_capacity, floors_below_policy, plan_is_feasible — live under a `headline` object. The captured sample was truncated before reaching it, so do not assume the response ends at floor_convention.
+- **supply-chain dashboard** — This one call bundles four sibling endpoints verbatim: procurement == /supply-chain/procurement/, production == /supply-chain/capacity/, floors == /supply-chain/floors/, floor_convention == /supply-chain/floor-convention/. Calling all five is four wasted round trips against a slow planner.
+- **supply-chain dashboard** — With no reference workbook loaded (the live state in all three companies) every procurement row returns alarm=NO_LEAD_TIME and order_by=null. '0 things to order today' then means 'nothing could be timed', NOT 'nothing is short'.
+- **supply-chain dashboard** — floor_source PROCEDURE means the buffer came from the ERP's own minimum-stock field; POLICY means the percentage rule was applied. The two are not interchangeable.
+- **supply-chain dashboard** — Quantities are in the item's own unit — for bottles that is PIECES (single bottles), not cartons.
+- **supply-chain dashboard** — policy here carries floor_source, which the standalone /supply-chain/policy/ response does not.
+- **supply-chain procurement** — alarm is one of OVERDUE, ORDER_NOW, NO_LEAD_TIME, SCHEDULED, COVERED. Only OVERDUE and ORDER_NOW need action today; NO_LEAD_TIME means the system could not judge, not that the item is fine.
+- **supply-chain procurement** — Every quantity comes back as a STRING ("21475", "0"), not a number. Sorting or comparing them as text gives wrong answers; cast before totalling.
+- **supply-chain procurement** — order_qty can exceed shortage_qty because of supplier minimum-order rounding — the UI shows the MOQ only when the two differ. Check policy.apply_moq_rounding before explaining a gap.
+- **supply-chain procurement** — shortage_qty is netted against open POs only when policy.use_net_of_open_po is true. Quoting a shortage without reading the policy misstates it.
+- **supply-chain procurement** — In the live data every row has lead_time_days=null, order_by=null, days_until_order_by=null and alarm=NO_LEAD_TIME, because the lead-time reference sheet has never been uploaded in any company.
+- **supply-chain procurement** — days_until_order_by is negative when the order date has already passed (the UI renders it as "Nd late"); 0 means today.
+- **supply-chain procurement** — Rows are keyed by item_code in the UI, so an item appearing twice would collide — do not assume uniqueness when joining.
+- **supply-chain procurement** — The dashboard takes forecast_id; whether this sibling accepts it too was not observed.
+
+**Corrected by adversarial review (10):**
+
+- `/supply-chain/live-trail/` — Three bodies were captured, one per tenant, in probe/sweep.jsonl. All three return production_company=JIVO_OIL with demand_companies=[JIVO_OIL, JIVO_MART] and byte-for-byte identical figures (open_ord
+- `/supply-chain/procurement/` — shortage_qty and order_qty ignore stock_in_hand entirely. Beverages row FG0000314: required_qty 21475, stock_in_hand 38525, open_po_qty 0, shortage_qty 21475, order_qty 21475 — an item with 1.8x the r
+- `/supply-chain/live-trail/` — probe/sweep.jsonl carries the FULL observed shape for JIVO_OIL — the names are observed, not SPA-derived, and the list is both incomplete and wrong in one place. Observed top level: generated_at, prod
+- `/supply-chain/weekly/` — JIVO_MART returns runs: 1 (probe/sweep.jsonl, full 298-byte body: {"from": "2026-07-14", "to": "2026-08-11", "runs": 1, …}). The Mart run is dated 2026-08-10, which is inside the 07-14 -> 08-11 window
+- `/supply-chain/floors/` — 21 is the Beverages figure only. probe/sweep.jsonl: JIVO_BEVERAGES no_trend_on_file 21, JIVO_MART 0, JIVO_OIL 294. compared=0 and divergent=0 in all three, so the 'empty test' half is right, but the s
+- `/supply-chain/runs/` — The array element shape WAS observed live in two tenants (probe/sweep.jsonl). JIVO_MART: [{id 5, company_code JIVO_MART, run_date 2026-08-10, status GENERATED, red_count 0, amber_count 0, green_count 
+
+### Order Processing — the OMS mirror and planning engine
+
+Order Processing is the factory app's mirror of OMS sales orders and the planning engine sitting on top of it. It pulls orders out of the OMS database on a schedule, checks each line against SAP stock, and works out what must be produced, which raw/packing materials fall short after exploding the BOM, and what has to be bought. Nothing here posts to SAP: it mirrors, checks and plans, and every production/procurement row is a planning record a human still has to act on. It also flags order lines it cannot trust — no warehouse, no item code, zero quantity, or a quantity that disagrees with cases x pack size — because those lines can never reach a stock answer.
+
+
+**Traps (52):**
+
+- **order-processing dashboard** — orders.waiting_for_stock is NOT 'orders waiting to be stock-checked'. In the sample it equals by_state.PRODUCTION_REQUIRED exactly (7), and the app labels that tile 'Need production'. Orders never checked are by_state.RECEIVED.
+- **order-processing dashboard** — orders.ready / unresolved / waiting_for_stock only describe the CHECKED orders. In the sample 2239 of 2281 (98%) are RECEIVED = never stock-checked, so '34 ready' is 34 out of 42 checked, not out of 2281. The by_state map sums to total (34+1+7+2239 = 2281).
+- **order-processing dashboard** — orders.unresolved is the STOCK_CHECKED count — stock was checked and no answer came out; it does not mean 'not yet checked'.
+- **order-processing dashboard** — data_quality.lines_with_issues (6) does NOT match the flagged-line total the line-issues endpoint reports (26 QTY_DISAGREES + 1 ZERO_QTY = 27). The app labels this tile 'Orders with data issues', so the field name looks wrong. Take the real breakdown from line-issues, never from this tile.
+- **order-processing dashboard** — last_sync is a copy of the newest row in sync-status runs. It says nothing about whether OMS is reachable NOW — only sync-status probes that, and at capture time OMS was unreachable while last_sync still read SUCCESS.
+- **order-processing dashboard** — A SUCCESS sync means orders were copied from OMS into the factory app. It does not mean anything reached SAP; this module never posts to SAP.
+- **order-processing orders** — The response is an ENVELOPE object {count, page, page_size, results}, not a bare array. A command that assumes an array gets nothing.
+- **order-processing orders** — State names read backwards from what they sound like: RECEIVED means 'not checked yet', STOCK_CHECKED means 'checked but unresolved'. Use the app's own labels — Ready / Production needed / Partial / Unresolved / Not checked / Cancelled.
+- **order-processing orders** — id and oms_order_id are DIFFERENT numbers and are trivially swapped: in the sample, row id=1 has oms_order_id=2 and row id=2 has oms_order_id=1. The detail and timeline endpoints take the factory `id`.
+- **order-processing orders** — sap_created: true with sap_doc_number: '' is the norm in this data. The flag is mirrored from OMS and the doc number is usually blank, so you cannot use it to locate the SAP document.
+- **order-processing orders** — total_amount is an INR decimal delivered as a string; parse it as decimal, don't add strings or float-round.
+- **order-processing orders** — Only `page` was ever observed being sent. page_size comes back in the envelope (50) but was never seen accepted as a query param — don't assume you can raise it.
+- **order-processing order** — The path id is the factory row `id`, not `oms_order_id`. Probing id=2 returned the order whose oms_order_id is 1 (ORD-20260417-0001). The app's own order links pass oms_order_id, which lands on a DIFFERENT order — do not copy that behaviour.
+- **order-processing order** — Line `quantity` is in PIECES (single bottles/units), not cartons: cases = quantity / pack_size (120 / 12 = 10 in the sample), and litres came out 120 for a 1 LTR item at 120 pieces. Never multiply quantity by the '12 PCS' in the item name.
+
+**Corrected by adversarial review (8):**
+
+- `/order-processing/orders/{id}/` — Exactly inverted, and the study's own cited probe is misread. The raw probe log /private/tmp/claude-501/-Users-damanpreetsingh-jivo-cli/b2acf681-5cd3-4fc0-92a9-70bab5f9fbf8/scratchpad/probe/detail.jso
+- `/order-processing/orders/{id}/timeline/` — Same inversion, same evidence. detail.jsonl lines 91-92 probed /order-processing/orders/1/timeline/ and /order-processing/orders/2/timeline/; the route is the same prefix as the detail route, which re
+- `/order-processing/production/` — The row's own BOM arithmetic proves `quantity` counts CASES, not bottles. Sampled row (sweep.jsonl, /order-processing/production/): item FG0000314 'PET BOTTLE 160 MLS PUNJABI  JEERA 24 PCS', quantity 
+- `/order-processing/materials/` — Two separate errors. (a) 'NOT a pack or carton size': for every per-bottle component observed, quantity_per_unit is numerically exactly the pack count, because the unit made is the case — 24.00000000 
+- `/order-processing/orders/{id}/` — Both fields WERE captured, and one observed field is missing from the study entirely. detail.jsonl line 89 records the shape as ... "lines": [{... "has_warehouse":"...", "issues":"...", "is_trustworth
+- `/order-processing/materials/` — warehouse_code does not identify the company in any way the evidence supports, and the phrasing invites the obvious wrong inference. The only observed warehouse->company pairs are in the sister payloa
+
+### Goods Return — stock coming back from customers
+
+Goods Return handles stock coming BACK from customers into the plant. Someone raises a return entry against the paperwork the customer is returning on (an invoice, a debit note, or plain letter-pad), lists the items and their condition, records the vehicle and when it is expected, and submits it. The gate then marks the vehicle in when it actually shows up, and the warehouse confirms receipt into one of a handful of dedicated goods-return warehouses (BH-GR, DL-GR, PB-RG…) — which is the step that posts the return into SAP. Larger returns need an approval before that happens. The whole module is brand new and absent from the shipped CLI; at probe time it was live and routed in all three companies but had no entries in any of them yet, so only the warehouse picklist returned rows.
+
+
+**Traps (20):**
+
+- **goods-return list** — The SAME url is the create endpoint: the app does POST /goods-return/ to raise a new return. Only GET may be published — a verb slip here creates a live return entry.
+- **goods-return list** — Zero rows in all three companies at probe time (Oil 0, Mart 0, Beverages 0). That is an empty module, not a broken endpoint — the response was a clean 200 with []. Do not report it as unavailable.
+- **goods-return list** — Row shape could NOT be observed (no rows existed anywhere). The SPA renders id, entry_no, basis, customer_name, customer_code, company_code, line_count, vehicle_no, expected_arrival_at, status, requires_approval, approval_status — that list is read off the app's own table code, NOT confirmed against a real payload. Do not print it as a verified schema.
+- **goods-return list** — Scoped to the signed-in company by default. An operator asking 'show me every return waiting for approval' needs all_companies=1, or they silently see one company's slice and think that is the lot.
+- **goods-return list** — status is an exact enum, not free text — 'arrived' or 'Posted' will not match. AWAITING_ARRIVAL and CANCELLED use the spellings above.
+- **goods-return list** — There is no server-side search. The app pulls the whole list and filters entry_no / customer / vehicle in the browser. A search= or q= parameter does nothing — fetch, then match locally.
+- **goods-return list** — basis is which paperwork the goods are coming back on (INVOICE = against invoice, DEBIT_NOTE, LETTER_PAD). It is NOT a reason code. Why the stock came back (DAMAGED / GOOD / EXPIRED / OTHER) sits per-item on the return's item lines, not on this row.
+- **goods-return list** — approval=PENDING returns only entries where requires_approval is true and approval_status is PENDING. Entries whose approval_status is NOT_REQUIRED never appear there, so it is not a count of open returns.
+- **goods-return list** — This module is mostly writes and none of them belong in a read-only CLI: submit, receive, approve, reject and gate mark-in are POSTs, the item lines are a PUT, the header a PATCH, and invoice-refs and attachments have POST and DELETE. Confirming receipt is the step that posts the return into SAP.
+- **goods-return list** — A detail read GET /goods-return/{id}/ does exist (with an optional with_invoice_preview=1 flag), but it could not be probed because no return entry existed in any company. Do not ship a detail command on an unverified shape.
+- **goods-return gate-expected** — Empty in all three companies at probe time (200 with []). That means no return vehicle was pending at the gate right then — the endpoint itself is routed and healthy everywhere.
+- **goods-return gate-expected** — Row shape unobserved. The gate cards render id, entry_no, company_code, customer_name, customer_code, driver_name, line_count, vehicle_no and expected_arrival_at — SPA-derived, not confirmed against a payload.
+- **goods-return gate-expected** — This is a live queue, not a history. A row vanishes the moment the vehicle is marked in. Answering 'how many customer returns came in today' from this endpoint gives the wrong number — use the list with status=ARRIVED or POSTED instead.
+- **goods-return gate-expected** — Cross-company by design: every card shows its own company_code, and the app sends no company filter. Do not invent a company parameter for it.
+
+**Corrected by adversarial review (7):**
+
+- `/goods-return/` — The SPA's own Confirm Receipt panel makes SAP posting conditional on basis. In GoodsReturnDetailPage-B7a3Dl9T.js the component computes `const c=t.basis==="INVOICE"` and renders: "Confirm the goods ph
+- `/goods-return/` — There is no size, value or quantity threshold anywhere in the module — `rg -i 'threshold|amount|value_limit|total_value'` over GoodsReturnStep1Page and GoodsReturnItemsPage returns nothing. requires_a
+- `/goods-return/warehouses/` — Incomplete in a way that misleads: the picklist is rendered and required only for INVOICE-basis returns. In GoodsReturnDetailPage-B7a3Dl9T.js the warehouse `<select>` is inside `c&&…` where `c=t.basis
+- `/goods-return/` — company_code is not read off this endpoint's consumers. The two screens that call GOODS_RETURN.LIST use company_**name**: GoodsReturnApprovalsPage-Cu1TZxW6.js searches `[a.entry_no,a.customer_name,a.c
+- `/goods-return/warehouses/` — Contradicted by the study's own evidence file for Mart, which it did not quote. The observed Mart sample (sweep.jsonl, 4 rows) is BH-GR Bhakharpur GR, **BH-GRM Bhakharpur Return Stock**, DL-GR Mayapur
+- `/goods-return/gate/expected/` — The 'no company filter' half is verified (`async listExpected(){return(await ae.get(Ne.GOODS_RETURN.GATE_EXPECTED)).data}` — no params). The 'cross-company by design' conclusion is not observed and th

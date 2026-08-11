@@ -32,6 +32,7 @@ func newGateCoreCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newGateCoreConstructionGateEntryCmd(flags))
 	cmd.AddCommand(newGateCoreDailyNeedGateEntryCmd(flags))
 	cmd.AddCommand(newGateCoreDispatchTrackingCmd(flags))
+	cmd.AddCommand(newGateCoreDispatchTrackingSummaryCmd(flags))
 	cmd.AddCommand(newGateCoreDispatchTrackingUpdatesCmd(flags))
 	cmd.AddCommand(newGateCoreEmptyVehicleInCmd(flags))
 	cmd.AddCommand(newGateCoreEmptyVehicleInsCmd(flags))

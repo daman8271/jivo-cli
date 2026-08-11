@@ -17,7 +17,7 @@ func newQualityControlQcInspectionsDecisionChangedCmd(flags *rootFlags) *cobra.C
 
 	cmd := &cobra.Command{
 		Use:         "qc-inspections-decision-changed",
-		Short:       "Inspections where the QA Manager overturned an earlier verdict — the audit queue for changed decisions.",
+		Short:       "Inspections where the QA Manager recorded a decision more than once — the audit list of re-decided lots.",
 		Example:     "  jivo-factory-pp-cli quality-control qc-inspections-decision-changed",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.qc-inspections-decision-changed", "pp:method": "GET", "pp:path": "/quality-control/inspections/decision-changed/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -16,6 +16,8 @@ func newBarcodeCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newBarcodeActivityCmd(flags))
+	cmd.AddCommand(newBarcodeActivityRecentCmd(flags))
 	cmd.AddCommand(newBarcodeBoxCmd(flags))
 	cmd.AddCommand(newBarcodeBoxHistoryCmd(flags))
 	cmd.AddCommand(newBarcodeBoxesCmd(flags))
@@ -32,15 +34,18 @@ func newBarcodeCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newBarcodeDispatchSessionsClosedCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchSessionsCompletedCmd(flags))
 	cmd.AddCommand(newBarcodeDispatchSessionsFromBillCmd(flags))
+	cmd.AddCommand(newBarcodeDispatchSettingsCmd(flags))
 	cmd.AddCommand(newBarcodeIntercompanyDashboardCmd(flags))
 	cmd.AddCommand(newBarcodeIntercompanyTraceCmd(flags))
 	cmd.AddCommand(newBarcodeIntercompanyTransferCmd(flags))
 	cmd.AddCommand(newBarcodeIntercompanyTransfersCmd(flags))
+	cmd.AddCommand(newBarcodeIntercompanyWarehousesCmd(flags))
 	cmd.AddCommand(newBarcodeItemDetailCmd(flags))
 	cmd.AddCommand(newBarcodeItemsOitmCmd(flags))
 	cmd.AddCommand(newBarcodeLookupCmd(flags))
 	cmd.AddCommand(newBarcodeLooseCmd(flags))
 	cmd.AddCommand(newBarcodeLooseItemCmd(flags))
+	cmd.AddCommand(newBarcodeLooseSummaryCmd(flags))
 	cmd.AddCommand(newBarcodePalletCmd(flags))
 	cmd.AddCommand(newBarcodePalletHistoryCmd(flags))
 	cmd.AddCommand(newBarcodePalletsCmd(flags))

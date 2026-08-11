@@ -18,7 +18,7 @@ func newMarketplacePackingQueueCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "packing-queue",
-		Short:       "Orders waiting to be packed, with how many lines each has.",
+		Short:       "Orders the server still counts as unpacked, with how many order lines each has.",
 		Example:     "  jivo-factory-pp-cli marketplace packing-queue",
 		Annotations: map[string]string{"pp:endpoint": "marketplace.packing-queue", "pp:method": "GET", "pp:path": "/marketplace/packing/queue/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

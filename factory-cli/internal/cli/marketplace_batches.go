@@ -16,7 +16,7 @@ func newMarketplaceBatchesCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "batches",
-		Short:       "List uploaded marketplace order sheets (imports) with parse counts and status.",
+		Short:       "Every order sheet uploaded from a seller portal, newest first — rows in the file",
 		Example:     "  jivo-factory-pp-cli marketplace batches",
 		Annotations: map[string]string{"pp:endpoint": "marketplace.batches", "pp:method": "GET", "pp:path": "/marketplace/batches/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

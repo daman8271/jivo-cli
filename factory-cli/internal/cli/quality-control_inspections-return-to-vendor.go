@@ -17,7 +17,7 @@ func newQualityControlInspectionsReturnToVendorCmd(flags *rootFlags) *cobra.Comm
 
 	cmd := &cobra.Command{
 		Use:         "inspections-return-to-vendor",
-		Short:       "Rejected lots that are to go back to the vendor, with the gate return-entry number once one is raised.",
+		Short:       "The rejected-lot list as the return-to-vendor desk sees it",
 		Example:     "  jivo-factory-pp-cli quality-control inspections-return-to-vendor",
 		Annotations: map[string]string{"pp:endpoint": "quality-control.inspections-return-to-vendor", "pp:method": "GET", "pp:path": "/quality-control/inspections/return-to-vendor/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

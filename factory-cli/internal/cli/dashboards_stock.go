@@ -24,7 +24,7 @@ func newDashboardsStockCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "stock",
-		Short:       "On-hand stock vs its minimum-stock benchmark, per item per warehouse, flagged healthy / low / critical.",
+		Short:       "On-hand stock against each item's minimum-stock benchmark, one row per item per warehouse",
 		Example:     "  jivo-factory-pp-cli dashboards stock",
 		Annotations: map[string]string{"pp:endpoint": "dashboards.stock", "pp:method": "GET", "pp:path": "/dashboards/stock/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

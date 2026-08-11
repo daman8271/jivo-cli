@@ -19,7 +19,7 @@ func newDashboardsSalesPlanningRequirementReportCmd(flags *rootFlags) *cobra.Com
 
 	cmd := &cobra.Command{
 		Use:         "sales-planning-requirement-report",
-		Short:       "Monthly forecast demand vs stock in hand",
+		Short:       "Forecast demand versus stock in hand, minimum stock and open POs, with the net shortage per item",
 		Example:     "  jivo-factory-pp-cli dashboards sales-planning-requirement-report",
 		Annotations: map[string]string{"pp:endpoint": "dashboards.sales-planning-requirement-report", "pp:method": "GET", "pp:path": "/dashboards/sales-planning-requirement/report/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

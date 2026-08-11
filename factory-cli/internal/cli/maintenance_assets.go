@@ -22,7 +22,7 @@ func newMaintenanceAssetsCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "assets",
-		Short:       "The plant asset register — every machine/component with its category, location, department, status, make/model/serial",
+		Short:       "The plant asset register — every machine and component with its code, category, location, department, running status",
 		Example:     "  jivo-factory-pp-cli maintenance assets",
 		Annotations: map[string]string{"pp:endpoint": "maintenance.assets", "pp:method": "GET", "pp:path": "/maintenance/assets/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {

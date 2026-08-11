@@ -24,5 +24,6 @@ func newDashboardsCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newDashboardsStockCmd(flags))
 	cmd.AddCommand(newDashboardsStockAsOfCmd(flags))
 	cmd.AddCommand(newDashboardsStockBenchmarkItemWarehousesCmd(flags))
+	cmd.AddCommand(newDashboardsStockExportCmd(flags))
 	return cmd
 }

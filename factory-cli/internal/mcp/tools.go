@@ -656,6 +656,13 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 				"syncable":    true,
 			},
 			{
+				"name":        "activity-center",
+				"description": "The activity feed behind the app's home screen — what each user did today and what the whole plant did today",
+				"endpoints":   []string{"my-today", "team-today"},
+				"syncable":    true,
+				"searchable":  true,
+			},
+			{
 				"name":        "attendance",
 				"description": "This group covers three small, separate parts of the gate operation.",
 				"endpoints":   []string{"attendance-employees", "attendance-export", "attendance-records"},
@@ -665,7 +672,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			{
 				"name":        "barcode",
 				"description": "This is JIVO's carton-level traceability system — the barcode that gets stuck on every box coming off a filling line",
-				"endpoints":   []string{"box", "box-history", "boxes", "dispatch-report-detail", "dispatch-reports", "dispatch-reports-boxes", "dispatch-reports-pallets", "dispatch-reports-rejected-scans", "dispatch-sap-sync-logs", "dispatch-scan-logs", "dispatch-session", "dispatch-sessions", "dispatch-sessions-active", "dispatch-sessions-closed", "dispatch-sessions-completed", "dispatch-sessions-from-bill", "intercompany-dashboard", "intercompany-trace", "intercompany-transfer", "intercompany-transfers", "item-detail", "items-oitm", "lookup", "loose", "loose-item", "pallet", "pallet-history", "pallets", "print-history", "production-release-oil", "scan-history", "verify-request", "verify-requests", "voided-boxes", "voided-pallets"},
+				"endpoints":   []string{"activity", "activity-recent", "box", "box-history", "boxes", "dispatch-report-detail", "dispatch-reports", "dispatch-reports-boxes", "dispatch-reports-pallets", "dispatch-reports-rejected-scans", "dispatch-sap-sync-logs", "dispatch-scan-logs", "dispatch-session", "dispatch-sessions", "dispatch-sessions-active", "dispatch-sessions-closed", "dispatch-sessions-completed", "dispatch-sessions-from-bill", "dispatch-settings", "intercompany-dashboard", "intercompany-trace", "intercompany-transfer", "intercompany-transfers", "intercompany-warehouses", "item-detail", "items-oitm", "lookup", "loose", "loose-item", "loose-summary", "pallet", "pallet-history", "pallets", "print-history", "production-release-oil", "scan-history", "verify-request", "verify-requests", "voided-boxes", "voided-pallets"},
 				"syncable":    true,
 				"searchable":  true,
 			},
@@ -696,7 +703,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			{
 				"name":        "dashboards",
 				"description": "This is the factory app's read-only reporting corner — the five 'management dashboard' screens the plant and purchase",
-				"endpoints":   []string{"inventory-age-filter-options", "inventory-age-report", "sales-planning-requirement-analysis", "sales-planning-requirement-report", "sales-planning-requirement-status", "stock", "stock-as-of", "stock-benchmark-item-warehouses"},
+				"endpoints":   []string{"inventory-age-filter-options", "inventory-age-report", "sales-planning-requirement-analysis", "sales-planning-requirement-report", "sales-planning-requirement-status", "stock", "stock-as-of", "stock-benchmark-item-warehouses", "stock-export"},
 				"searchable":  true,
 			},
 			{
@@ -722,7 +729,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			{
 				"name":        "driver-management",
 				"description": "This is the factory's transport master file plus the gate's vehicle-entry log.",
-				"endpoints":   []string{"drivers", "drivers-names"},
+				"endpoints":   []string{"driver", "drivers", "drivers-names"},
 				"syncable":    true,
 			},
 			{
@@ -734,14 +741,21 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			{
 				"name":        "gate-core",
 				"description": "gate-core is the shared gate engine underneath every category-specific gate app (raw-material, daily-needs, maintenance",
-				"endpoints":   []string{"arrival-gatepass-readiness", "arrivals", "arrivals-expected", "bst-in", "bst-ins", "bst-ins-eligible-outs", "bst-out", "bst-outs", "bst-outs-sap-transfer", "bst-outs-sap-transfers", "bst-return", "bst-returns", "bst-returns-eligible-outs", "construction-gate-entry", "daily-need-gate-entry", "dispatch-tracking", "dispatch-tracking-updates", "empty-vehicle-in", "empty-vehicle-ins", "empty-vehicle-ins-eligible", "empty-vehicle-ins-reasons", "empty-vehicle-out", "empty-vehicle-outs", "empty-vehicle-outs-eligible-entries", "gate-attachments", "inside-dispatch-vehicles", "job-work", "job-work-detail", "job-work-sap-grpo", "job-work-sap-grpos", "job-work-sap-production-order", "job-work-sap-production-orders", "maintenance-gate-entry", "raw-material-gate-entry", "rejected-qc-return", "rejected-qc-returns", "sales-dispatch", "sales-dispatch-attachments", "sales-dispatch-barcode-scans", "sales-dispatch-box-scans", "sales-dispatch-detail", "sales-dispatch-document", "sales-dispatch-documents", "sales-dispatch-gatepass-prints", "sales-dispatch-pending-bookings", "sales-dispatch-reports", "unit-choices"},
+				"endpoints":   []string{"arrival-gatepass-readiness", "arrivals", "arrivals-expected", "bst-in", "bst-ins", "bst-ins-eligible-outs", "bst-out", "bst-outs", "bst-outs-sap-transfer", "bst-outs-sap-transfers", "bst-return", "bst-returns", "bst-returns-eligible-outs", "construction-gate-entry", "daily-need-gate-entry", "dispatch-tracking", "dispatch-tracking-summary", "dispatch-tracking-updates", "empty-vehicle-in", "empty-vehicle-ins", "empty-vehicle-ins-eligible", "empty-vehicle-ins-reasons", "empty-vehicle-out", "empty-vehicle-outs", "empty-vehicle-outs-eligible-entries", "gate-attachments", "inside-dispatch-vehicles", "job-work", "job-work-detail", "job-work-sap-grpo", "job-work-sap-grpos", "job-work-sap-production-order", "job-work-sap-production-orders", "maintenance-gate-entry", "raw-material-gate-entry", "rejected-qc-return", "rejected-qc-returns", "sales-dispatch", "sales-dispatch-attachments", "sales-dispatch-barcode-scans", "sales-dispatch-box-scans", "sales-dispatch-detail", "sales-dispatch-document", "sales-dispatch-documents", "sales-dispatch-gatepass-prints", "sales-dispatch-pending-bookings", "sales-dispatch-reports", "unit-choices"},
+				"syncable":    true,
+				"searchable":  true,
+			},
+			{
+				"name":        "goods-return",
+				"description": "Goods Return handles stock coming BACK from customers into the plant",
+				"endpoints":   []string{"gate-expected", "list", "warehouses"},
 				"syncable":    true,
 				"searchable":  true,
 			},
 			{
 				"name":        "grpo",
 				"description": "GRPO = 'Goods Receipt PO' — the step where material that has physically arrived at a JIVO plant gets booked into SAP as",
-				"endpoints":   []string{"all-entries", "attachments", "history", "history-detail", "inspection-report", "pending", "preview", "service-history", "service-history-detail", "service-options", "service-pending", "summary"},
+				"endpoints":   []string{"all-entries", "attachments", "fg-all-entries", "fg-history", "fg-pending", "fg-summary", "history", "history-detail", "inspection-report", "pending", "preview", "service-history", "service-history-detail", "service-options", "service-pending", "summary"},
 				"syncable":    true,
 				"searchable":  true,
 			},
@@ -760,7 +774,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			{
 				"name":        "maintenance",
 				"description": "The `/maintenance/` group is the factory's plant-engineering system — everything that keeps machines running and the",
-				"endpoints":   []string{"alerts", "asset-categories", "asset-departments", "asset-documents", "asset-locations", "asset-photos", "assets", "dashboard", "maintenance-asset-document-get", "maintenance-asset-get", "maintenance-asset-photo-get", "maintenance-fire-categories", "maintenance-fire-issue-get", "maintenance-fire-issues", "maintenance-fire-item-get", "maintenance-fire-items", "maintenance-fire-low-stock", "maintenance-fire-movements", "maintenance-fire-report-attachments", "maintenance-fire-report-get", "maintenance-fire-report-items", "maintenance-fire-report-photos", "maintenance-fire-reports", "maintenance-fire-request-get", "maintenance-fire-requests", "maintenance-material-indent-attachments", "maintenance-material-indent-get", "maintenance-material-indents", "maintenance-pm-execution-get", "maintenance-safety-fine-get", "maintenance-safety-fine-photos", "maintenance-safety-fines", "maintenance-safety-violation-types", "maintenance-spare-get", "maintenance-spare-request-get", "maintenance-vendor-visit-get", "maintenance-work-order-get", "maintenance-work-order-photo-get", "maintenance-work-permit-attachments", "maintenance-work-permit-get", "maintenance-work-permit-workers", "maintenance-work-permits", "options", "pm-checklist-items", "pm-executions", "pm-plans", "reports", "spare-categories", "spare-movements", "spare-requests", "spares", "spares-low-stock", "vendor-visits", "work-order-photos", "work-orders"},
+				"endpoints":   []string{"alerts", "asset-categories", "asset-departments", "asset-documents", "asset-locations", "asset-photos", "assets", "daily-electricity-readings", "daily-wastage-logs", "dashboard", "electricity-meters", "maintenance-asset-category-get", "maintenance-asset-department-get", "maintenance-asset-document-get", "maintenance-asset-get", "maintenance-asset-location-get", "maintenance-asset-photo-get", "maintenance-asset-qr", "maintenance-fire-categories", "maintenance-fire-category-get", "maintenance-fire-issue-get", "maintenance-fire-issues", "maintenance-fire-item-get", "maintenance-fire-items", "maintenance-fire-low-stock", "maintenance-fire-movements", "maintenance-fire-report-attachments", "maintenance-fire-report-get", "maintenance-fire-report-item-get", "maintenance-fire-report-items", "maintenance-fire-report-photo-get", "maintenance-fire-report-photos", "maintenance-fire-reports", "maintenance-fire-request-get", "maintenance-fire-requests", "maintenance-material-indent-attachment-get", "maintenance-material-indent-attachments", "maintenance-material-indent-get", "maintenance-material-indent-quotations", "maintenance-material-indents", "maintenance-pm-execution-get", "maintenance-safety-fine-get", "maintenance-safety-fine-photo-get", "maintenance-safety-fine-photos", "maintenance-safety-fines", "maintenance-safety-violation-type-get", "maintenance-safety-violation-types", "maintenance-spare-get", "maintenance-spare-request-get", "maintenance-vendor-visit-get", "maintenance-work-order-get", "maintenance-work-order-photo-get", "maintenance-work-permit-attachments", "maintenance-work-permit-get", "maintenance-work-permit-worker-get", "maintenance-work-permit-workers", "maintenance-work-permits", "options", "pm-checklist-items", "pm-executions", "pm-plans", "reports", "spare-categories", "spare-movements", "spare-requests", "spares", "spares-low-stock", "vendor-visits", "work-order-photos", "work-orders"},
 				"syncable":    true,
 				"searchable":  true,
 			},
@@ -773,7 +787,7 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			{
 				"name":        "marketplace",
 				"description": "This is the catalogue and reconciliation half of JIVO's Marketplace module — the cell that fulfils Flipkart/Amazon",
-				"endpoints":   []string{"batch", "batch-issuance-csv", "batch-stock-list", "batch-variants", "batches", "combos", "dispatch-board", "dispatch-orders-in-range", "dispatch-sheets", "dispatches-list", "dn-awaiting-approval", "dn-export-csv", "dn-posted", "dn-sheets", "dn-summary", "gate-queue", "gate-sheet", "issue-requests-list", "orders-list", "packing-queue", "packing-summary", "reconciliation", "reconciliation-export-csv", "report-export-csv", "returns-list", "sap-items", "sku-mappings", "warehouse-insights", "warehouses"},
+				"endpoints":   []string{"batch", "batch-issuance-csv", "batch-stock-list", "batch-variants", "batches", "combos", "dispatch", "dispatch-board", "dispatch-orders-in-range", "dispatch-sheets", "dispatches-list", "dn-awaiting-approval", "dn-export-csv", "dn-posted", "dn-sheets", "dn-summary", "gate-queue", "gate-sheet", "issue-request", "issue-requests-list", "orders-list", "packing-queue", "packing-summary", "reconciliation", "reconciliation-export-csv", "report-export-csv", "return", "returns-list", "sap-items", "sku-mappings", "warehouse-insights", "warehouses"},
 				"syncable":    true,
 				"searchable":  true,
 			},
@@ -785,13 +799,20 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			{
 				"name":        "notifications",
 				"description": "The 'platform' group is the plumbing the rest of the factory app sits on: who you are, who else exists",
-				"endpoints":   []string{"list", "unread-count"},
+				"endpoints":   []string{"detail", "list", "preferences", "unread-count"},
 				"syncable":    true,
 			},
 			{
 				"name":        "oms",
 				"description": "The 'platform' group is the plumbing the rest of the factory app sits on: who you are, who else exists",
 				"endpoints":   []string{"invoice-audit", "invoice-history", "invoices", "pending-count"},
+				"searchable":  true,
+			},
+			{
+				"name":        "order-processing",
+				"description": "Order Processing is the factory app's mirror of OMS sales orders and the planning engine sitting on top of it",
+				"endpoints":   []string{"dashboard", "line-issues", "materials", "order", "order-timeline", "orders", "procurement", "production", "sync-status"},
+				"syncable":    true,
 				"searchable":  true,
 			},
 			{
@@ -818,14 +839,14 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 			{
 				"name":        "quality-control",
 				"description": "Quality Control is the QA department's own workflow inside the factory app",
-				"endpoints":   []string{"arrival-slips", "inspections", "inspections-actionable", "inspections-awaiting-chemist", "inspections-awaiting-qam", "inspections-completed", "inspections-counts", "inspections-draft", "inspections-pending", "inspections-rejected", "inspections-return-to-vendor", "material-types", "print-documents", "production-qc", "production-qc-counts", "production-qc-pending", "qc-arrival-slip-get", "qc-inspection-get", "qc-inspections-decision-changed", "qc-material-type-get", "qc-material-type-parameters", "qc-online-monitoring", "qc-online-monitoring-get", "qc-online-monitoring-lines", "qc-online-monitoring-runs", "qc-online-monitoring-specs", "qc-parameter-get", "qc-production-running-runs", "qc-production-session-get", "sap-items"},
+				"endpoints":   []string{"arrival-slips", "inspections", "inspections-actionable", "inspections-awaiting-chemist", "inspections-awaiting-qam", "inspections-completed", "inspections-counts", "inspections-draft", "inspections-pending", "inspections-rejected", "inspections-return-to-vendor", "material-types", "print-documents", "production-qc", "production-qc-counts", "production-qc-pending", "qc-arrival-slip-get", "qc-inspection-get", "qc-inspections-decision-changed", "qc-material-type-get", "qc-material-type-parameters", "qc-online-monitoring", "qc-online-monitoring-get", "qc-online-monitoring-lines", "qc-online-monitoring-runs", "qc-online-monitoring-specs", "qc-parameter-get", "qc-print-document-get", "qc-production-running-runs", "qc-production-session-get", "sap-items"},
 				"syncable":    true,
 				"searchable":  true,
 			},
 			{
 				"name":        "returnable-items",
 				"description": "This is JIVO's RGP/NRGP gate-pass book — the register of material that leaves the factory gate and is meant to come",
-				"endpoints":   []string{"attachments", "dashboard", "gatepass", "gatepass-item", "gatepass-items", "gatepasses", "options", "pending-approval", "pending-gate-in", "pending-gate-out", "report", "return-events", "sap-items", "timeline"},
+				"endpoints":   []string{"attachment", "attachments", "dashboard", "gatepass", "gatepass-item", "gatepass-items", "gatepasses", "options", "pending-approval", "pending-gate-in", "pending-gate-out", "report", "return-events", "sap-items", "timeline"},
 				"syncable":    true,
 				"searchable":  true,
 			},
@@ -836,9 +857,16 @@ func handleContext(_ context.Context, _ mcplib.CallToolRequest) (*mcplib.CallToo
 				"searchable":  true,
 			},
 			{
+				"name":        "supply-chain",
+				"description": "\"Smart Supply Chain\" is the factory app's buy-and-build planner",
+				"endpoints":   []string{"alarms-preview", "capacity", "dashboard", "floor-convention", "floors", "live-trail", "monitored-skus", "parameters", "policy", "procurement", "reference-imports", "reference-lead-times", "reference-machines", "reference-sku-machines", "run-latest", "runs", "weekly"},
+				"syncable":    true,
+				"searchable":  true,
+			},
+			{
 				"name":        "vehicle-management",
 				"description": "This is the factory's transport master file plus the gate's vehicle-entry log.",
-				"endpoints":   []string{"transporters", "transporters-names", "vehicle-entries", "vehicle-entries-count", "vehicle-entries-list-by-status", "vehicle-types", "vehicles", "vehicles-names"},
+				"endpoints":   []string{"transporter", "transporters", "transporters-names", "vehicle", "vehicle-entries", "vehicle-entries-count", "vehicle-entries-list-by-status", "vehicle-types", "vehicles", "vehicles-names"},
 				"syncable":    true,
 				"searchable":  true,
 			},

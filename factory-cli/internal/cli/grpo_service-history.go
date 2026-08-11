@@ -22,7 +22,7 @@ func newGrpoServiceHistoryCmd(flags *rootFlags) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:         "service-history",
-		Short:       "Log of transport-service GRPO postings — which bilty was booked against which transporter, for how much",
+		Short:       "Log of transport-freight (bilty) GRPO postings to SAP — which bilty was booked against which transporter for how much",
 		Example:     "  jivo-factory-pp-cli grpo service-history",
 		Annotations: map[string]string{"pp:endpoint": "grpo.service-history", "pp:method": "GET", "pp:path": "/grpo/service/history/", "mcp:read-only": "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
