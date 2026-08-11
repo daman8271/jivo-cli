@@ -17,10 +17,8 @@ import (
 
 	mcplib "github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	"jivo-pp-cli/internal/cli"
 	"jivo-pp-cli/internal/client"
 	"jivo-pp-cli/internal/config"
-	"jivo-pp-cli/internal/mcp/cobratree"
 	"jivo-pp-cli/internal/store"
 )
 
@@ -510,28 +508,6 @@ func RegisterTools(s *server.MCPServer) {
 		),
 		makeAPIHandler("GET", "/users/", true, false, nil, []mcpParamBinding{}, []string{}),
 	)
-	// Search tool — faster than iterating list endpoints for finding specific items
-	s.AddTool(
-		mcplib.NewTool("search",
-			mcplib.WithDescription("Full-text search across all synced data. Faster than paginating list endpoints. Requires sync first."),
-			mcplib.WithString("query", mcplib.Required(), mcplib.Description("Search query (supports FTS5 syntax: AND, OR, NOT, quotes for phrases)")),
-			mcplib.WithNumber("limit", mcplib.Description("Max results (default 25)")),
-			mcplib.WithReadOnlyHintAnnotation(true),
-			mcplib.WithDestructiveHintAnnotation(false),
-		),
-		handleSearch,
-	)
-	// SQL tool — ad-hoc analysis on synced data without API calls
-	s.AddTool(
-		mcplib.NewTool("sql",
-			mcplib.WithDescription("Run read-only SQL against local database. Use for ad-hoc analysis, aggregations, and joins across synced resources. Requires sync first."),
-			mcplib.WithString("query", mcplib.Required(), mcplib.Description("SQL query (SELECT or WITH...SELECT). Synced records live in resources(resource_type, id, data); filter by resource_type and use json_extract on data, e.g. SELECT json_extract(data,'$.name') FROM resources WHERE resource_type='items'.")),
-			mcplib.WithReadOnlyHintAnnotation(true),
-			mcplib.WithDestructiveHintAnnotation(false),
-		),
-		handleSQL,
-	)
-
 	// Context tool — front-loaded domain knowledge for agents.
 	// Call this first to understand the API taxonomy, query patterns, and capabilities.
 	s.AddTool(
@@ -543,9 +519,35 @@ func RegisterTools(s *server.MCPServer) {
 		handleContext,
 	)
 
-	// Runtime Cobra-tree mirror — exposes every user-facing command that is
-	// not already covered by a typed endpoint or framework MCP tool.
-	cobratree.RegisterAll(s, cli.RootCmd(), cobratree.SiblingCLIPath)
+	// ---- LOCAL-STORE AND COBRA-MIRROR TOOLS: DELIBERATELY NOT REGISTERED ----
+	//
+	// The generator also emits `search` + `sql` (local SQLite readers) and a
+	// runtime Cobra-tree mirror, `cobratree.RegisterAll(s, cli.RootCmd(),
+	// cobratree.SiblingCLIPath)`, which shells out to a sibling jivo-pp-cli for
+	// every user-facing command not already covered by a typed tool. Both are
+	// removed here. handleSearch, handleSQL and validateReadOnlyQuery remain
+	// defined and unit-tested — like newImportCmd in internal/cli/root.go, the
+	// code stays, the registration does not.
+	//
+	// Two independent reasons, either sufficient:
+	//
+	//  1. READ-ONLY LAW. The mirror registered `sync` and `workflow_archive`
+	//     with readOnlyHint=false and destructiveHint=true — the only two tools
+	//     on this surface that advertised themselves as mutators. They write
+	//     only a local cache, never the ERP, but "it only writes a cache" is an
+	//     argument, and the JIVO MCP contract is meant to hold by construction.
+	//     Dropping them makes "no tool here writes anything" a fact about the
+	//     tool set rather than a claim about intent.
+	//
+	//  2. They cannot work as deployed anyway. `search` and `sql` read
+	//     $HOME/.local/share/jivo-pp-cli/data.db, which only `sync` populates.
+	//     In the gateway's alpine container that file does not exist, there is
+	//     no volume behind it, and anything synced is lost on restart — so the
+	//     pair could only ever return errors. The typed endpoint tools query
+	//     the live Control Panel directly and need no local store at all.
+	//
+	// readonly_guard_test.go pins this removal; re-apply it after any
+	// `cli-printing-press generate --force`.
 }
 
 type mcpParamBinding struct {
@@ -580,6 +582,32 @@ func formatMCPParamValue(v any) string {
 	default:
 		return fmt.Sprintf("%v", v)
 	}
+}
+
+// readOnlyPOSTPaths is the closed allowlist of Control Panel endpoints that are
+// POST-shaped but semantically reads. The Django app posts its date-range and
+// filter payloads as JSON because they do not fit a query string (call pattern
+// 1, control-panel/vault/architecture.md); none of these eleven creates,
+// updates or deletes anything. Each was exercised against the live app before
+// being listed.
+//
+// Adding an entry here is a deliberate, evidence-backed act, not housekeeping.
+// Nothing may be added that matches the app's mutation vocabulary
+// (save | delete | upload | remark | lock | verify-pin | cogs | export) —
+// readonly_guard_test.go pins both this list and that denylist, so an
+// accidental widening fails the build rather than reaching production.
+var readOnlyPOSTPaths = map[string]bool{
+	"/realise/api/open-payments/":         true,
+	"/realise/api/beverages-data/":        true,
+	"/realise/api/sales-cn/":              true,
+	"/realise/api/compare-docs/":          true,
+	"/realise/api/sales-data/":            true,
+	"/realise/api/dispatch-details/":      true,
+	"/realise/api/drill-down/":            true,
+	"/realise/api/sales-flow/":            true,
+	"/realise/api/sales-flow/open-items/": true,
+	"/realise/api/hidden-sales/":          true,
+	"/realise/api/historical-realise/":    true,
 }
 
 // makeAPIHandler creates a generic MCP tool handler for an API endpoint.
@@ -648,11 +676,38 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 			if pathParams[k] || knownArgs[k] {
 				continue
 			}
-			switch method {
-			case "POST", "PUT", "PATCH":
+			if method == "POST" {
 				bodyArgs[k] = v
-			default:
-				params[k] = formatMCPParamValue(v)
+				continue
+			}
+			params[k] = formatMCPParamValue(v)
+		}
+
+		// ---- READ-ONLY LAW ---------------------------------------------------
+		// The JIVO MCP surface is read-only forever (repo CLAUDE.md RULE 0 and
+		// memory [[mcp-never-exposes-writes]]). The CLI may write when an
+		// operator explicitly asks for it; the MCP may not, because an
+		// agent-trusted surface has no operator in the loop to ask.
+		//
+		// Unlike its sibling CLIs (sap-b1, oms, ecom), control-panel cannot
+		// simply ban every non-GET: the Django app takes eleven date-range READ
+		// queries as POST-JSON because the filter payload does not fit a query
+		// string (call pattern 1 in control-panel/vault/architecture.md). So the
+		// guard is narrower and explicit — a POST is dispatched only when the
+		// registration marked it readOnly AND its path template is in the closed
+		// readOnlyPOSTPaths allowlist below. Everything else is refused here
+		// rather than dispatched, and the generic PUT/PATCH/DELETE machinery the
+		// printing press ships has been deleted outright, so a regeneration has
+		// to re-add code (not just re-add a spec entry) to write anything.
+		//
+		// `cli-printing-press generate --force` restores all of that machinery.
+		// internal/mcp/readonly_guard_test.go fails loudly when it does.
+		if method != "GET" {
+			if method != "POST" || !readOnly || !readOnlyPOSTPaths[pathTemplate] {
+				return mcplib.NewToolResultError(fmt.Sprintf(
+					"%s %s is not permitted (GET only, plus a closed allowlist of "+
+						"POST-shaped read queries) — the JIVO MCP surface is "+
+						"read-only forever", method, pathTemplate)), nil
 			}
 		}
 
@@ -665,37 +720,15 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 			}
 			data, err = c.Get(ctx, path, params)
 		case "POST":
+			// readOnly and the allowlist were already proven by the READ-ONLY
+			// LAW guard above, so only the PostQuery* (read) path exists here.
+			// The mutating c.PostWithParams* twins are deliberately not called
+			// from this file at all — see readonly_guard_test.go.
 			if len(headers) > 0 {
-				if readOnly {
-					data, _, err = c.PostQueryWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				} else {
-					data, _, err = c.PostWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				}
+				data, _, err = c.PostQueryWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
 				break
 			}
-			if readOnly {
-				data, _, err = c.PostQueryWithParams(ctx, path, params, bodyArgs)
-			} else {
-				data, _, err = c.PostWithParams(ctx, path, params, bodyArgs)
-			}
-		case "PUT":
-			if len(headers) > 0 {
-				data, _, err = c.PutWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				break
-			}
-			data, _, err = c.PutWithParams(ctx, path, params, bodyArgs)
-		case "PATCH":
-			if len(headers) > 0 {
-				data, _, err = c.PatchWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				break
-			}
-			data, _, err = c.PatchWithParams(ctx, path, params, bodyArgs)
-		case "DELETE":
-			if len(headers) > 0 {
-				data, _, err = c.DeleteWithParamsAndHeaders(ctx, path, params, headers)
-				break
-			}
-			data, _, err = c.DeleteWithParams(ctx, path, params)
+			data, _, err = c.PostQueryWithParams(ctx, path, params, bodyArgs)
 		default:
 			return mcplib.NewToolResultError("unsupported method: " + method), nil
 		}
@@ -714,9 +747,9 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 					"\nhint: this API is configured without credentials; the service may be blocking the request by rate limit, geography, bot protection, or endpoint policy." +
 					"\n      Run 'jivo-pp-cli doctor' to check auth status."), nil
 			case strings.Contains(msg, "HTTP 404"):
-				if method == "DELETE" {
-					return mcplib.NewToolResultText("already deleted (no-op)"), nil
-				}
+				// The generator's "already deleted (no-op)" DELETE branch was
+				// removed with the rest of the write machinery: DELETE can no
+				// longer reach this point (READ-ONLY LAW guard above).
 				return mcplib.NewToolResultError("not found: " + msg), nil
 			case strings.Contains(msg, "HTTP 429"):
 				return mcplib.NewToolResultError("rate limited: " + msg), nil

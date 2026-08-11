@@ -35,6 +35,12 @@ func RegisterCodeOrchestrationTools(s *server.MCPServer) {
 			mcplib.WithDescription("Search the exim API for endpoints matching a natural-language query. Returns a ranked list of {endpoint_id, method, path, summary} entries. Call this first to find the endpoint to execute."),
 			mcplib.WithString("query", mcplib.Required(), mcplib.Description("Natural-language description of what you want to do.")),
 			mcplib.WithNumber("limit", mcplib.Description("Max endpoints to return (default 10).")),
+			// Purely a lookup over the in-binary endpoint catalog: no network
+			// call, no local state touched. Without these hints hosts default
+			// to "could write or delete" and prompt per call, which trains
+			// operators to click through prompts on a read-only surface.
+			mcplib.WithReadOnlyHintAnnotation(true),
+			mcplib.WithDestructiveHintAnnotation(false),
 		),
 		handleCodeOrchSearch,
 	)
@@ -43,7 +49,12 @@ func RegisterCodeOrchestrationTools(s *server.MCPServer) {
 		mcplib.NewTool("exim_execute",
 			mcplib.WithDescription("Execute one exim API endpoint by its endpoint_id (from exim_search). Params are passed as a JSON object; path placeholders and query strings are resolved automatically."),
 			mcplib.WithString("endpoint_id", mcplib.Required(), mcplib.Description("Endpoint identifier returned by exim_search (e.g., \"users.list\").")),
-			mcplib.WithObject("params", mcplib.Description("Parameters for the endpoint. Path placeholders match by name; remaining entries become query string on GET/DELETE or JSON body on POST/PUT/PATCH.")),
+			mcplib.WithObject("params", mcplib.Description("Parameters for the endpoint. Path placeholders match by name; remaining entries become the query string. Only catalogued GET endpoints are executable.")),
+			// Executes only a catalogued endpoint_id, every one of which is a
+			// GET, and the executor refuses any other method by construction
+			// (READ-ONLY LAW guard below). It cannot modify EXIM.
+			mcplib.WithReadOnlyHintAnnotation(true),
+			mcplib.WithDestructiveHintAnnotation(false),
 		),
 		handleCodeOrchExecute,
 	)
@@ -894,12 +905,6 @@ func handleCodeOrchExecute(ctx context.Context, req mcplib.CallToolRequest) (*mc
 	}
 
 	hdrs := ep.HeaderOverrides
-	writeBody := func() any {
-		if ep.BodyIsArray {
-			return codeOrchArrayBody(params)
-		}
-		return codeOrchWriteBody(params)
-	}
 	var data json.RawMessage
 	switch ep.Method {
 	case "GET":
@@ -908,35 +913,14 @@ func handleCodeOrchExecute(ctx context.Context, req mcplib.CallToolRequest) (*mc
 		} else {
 			data, err = c.Get(ctx, path, query)
 		}
-	case "DELETE":
-		if len(hdrs) > 0 {
-			data, _, err = c.DeleteWithParamsAndHeaders(ctx, path, query, hdrs)
-		} else {
-			data, _, err = c.DeleteWithParams(ctx, path, query)
-		}
-	case "POST":
-		body := writeBody()
-		if len(hdrs) > 0 {
-			data, _, err = c.PostWithHeaders(ctx, path, body, hdrs)
-		} else {
-			data, _, err = c.Post(ctx, path, body)
-		}
-	case "PUT":
-		body := writeBody()
-		if len(hdrs) > 0 {
-			data, _, err = c.PutWithHeaders(ctx, path, body, hdrs)
-		} else {
-			data, _, err = c.Put(ctx, path, body)
-		}
-	case "PATCH":
-		body := writeBody()
-		if len(hdrs) > 0 {
-			data, _, err = c.PatchWithHeaders(ctx, path, body, hdrs)
-		} else {
-			data, _, err = c.Patch(ctx, path, body)
-		}
 	default:
-		return mcplib.NewToolResultError(fmt.Sprintf("unsupported method %q", ep.Method)), nil
+		// READ-ONLY LAW (jivogpt): guarding only tools.go would leave THIS
+		// executor as a write bypass - it reaches the same client. Both
+		// paths must be guarded, and a fresh generate restores the write
+		// machinery in both. See patch 0004.
+		return mcplib.NewToolResultError(fmt.Sprintf(
+			"read-only CLI: method %q is not permitted (GET only, per the JivoGPT READ-ONLY LAW)",
+			ep.Method)), nil
 	}
 	if err != nil {
 		return mcplib.NewToolResultError(err.Error()), nil

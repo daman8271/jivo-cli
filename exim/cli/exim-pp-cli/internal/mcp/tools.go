@@ -193,40 +193,14 @@ func makeAPIHandler(method, pathTemplate string, readOnly bool, binaryResponse b
 				break
 			}
 			data, err = c.Get(ctx, path, params)
-		case "POST":
-			if len(headers) > 0 {
-				if readOnly {
-					data, _, err = c.PostQueryWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				} else {
-					data, _, err = c.PostWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				}
-				break
-			}
-			if readOnly {
-				data, _, err = c.PostQueryWithParams(ctx, path, params, bodyArgs)
-			} else {
-				data, _, err = c.PostWithParams(ctx, path, params, bodyArgs)
-			}
-		case "PUT":
-			if len(headers) > 0 {
-				data, _, err = c.PutWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				break
-			}
-			data, _, err = c.PutWithParams(ctx, path, params, bodyArgs)
-		case "PATCH":
-			if len(headers) > 0 {
-				data, _, err = c.PatchWithParamsAndHeaders(ctx, path, params, bodyArgs, headers)
-				break
-			}
-			data, _, err = c.PatchWithParams(ctx, path, params, bodyArgs)
-		case "DELETE":
-			if len(headers) > 0 {
-				data, _, err = c.DeleteWithParamsAndHeaders(ctx, path, params, headers)
-				break
-			}
-			data, _, err = c.DeleteWithParams(ctx, path, params)
 		default:
-			return mcplib.NewToolResultError("unsupported method: " + method), nil
+			// READ-ONLY LAW (jivogpt): this CLI never mutates JIVO source
+			// systems, and the MCP surface never exposes a write at all. The
+			// spec is GET-only; refuse every write method by construction so
+			// that a future spec edit cannot silently open a write path
+			// through an agent-trusted surface. Re-apply after every regen.
+			return mcplib.NewToolResultError("read-only CLI: method " + method +
+				" is not permitted (GET only, per the JivoGPT READ-ONLY LAW)"), nil
 		}
 
 		if err != nil {
