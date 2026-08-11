@@ -184,10 +184,32 @@ func (d *DB) Close() {
 
 var allowedPrefixes = []string{"select", "with"}
 
-// GuardReadOnly rejects statements that don't begin with SELECT or WITH. It is
-// the first line of defense; the always-rolled-back transaction is the backstop.
+// GuardReadOnly rejects anything that is not exactly ONE leading-SELECT (or
+// leading-WITH) statement. It is the first line of defense; the
+// always-rolled-back transaction is the backstop.
+//
+// Two separate bypasses are closed here, both of which used to pass:
+//
+//  1. Comment prefixing. `stripLeading` removes the whitespace, line comments
+//     (-- to end of line), block comments and statement separators that SQL
+//     Server itself skips before parsing the first keyword, so
+//     "/* x */ EXEC ..." is judged on EXEC, not on the comment.
+//
+//  2. Batching. A first-token check alone accepts
+//     "SELECT 1; DECLARE @x int" — the second statement reaches SQL Server,
+//     and the rolled-back transaction is NOT a complete backstop for it
+//     (rollback undoes DML/DDL but not out-of-band effects such as
+//     xp_cmdshell, sp_configure, BACKUP or a linked-server call, and does not
+//     stop a WAITFOR-style stall). The connecting DSR login is a sysadmin, so
+//     that gap is not theoretical. hasTrailingStatement therefore rejects any
+//     statement separator followed by more executable SQL; a trailing
+//     semicolon on its own is still fine.
 func GuardReadOnly(sql string) error {
 	s := strings.ToLower(stripLeading(sql))
+	if hasTrailingStatement(s) {
+		return &Error{"readonly", CodeReadOnly, fmt.Errorf(
+			"read-only mode: only a SINGLE SELECT or WITH statement is allowed (a second statement was found after a ';')")}
+	}
 	for _, p := range allowedPrefixes {
 		if strings.HasPrefix(s, p) && (len(s) == len(p) || !isIdentChar(rune(s[len(p)]))) {
 			return nil
@@ -197,9 +219,13 @@ func GuardReadOnly(sql string) error {
 		"read-only mode: %q is not an allowed statement (only SELECT and WITH are permitted)", firstWord(s))}
 }
 
+// stripLeading removes leading whitespace, SQL line comments (-- to end of
+// line), block comments (/* ... */) and statement separators (;) — everything
+// the server skips before it parses the first keyword. A gate that does not
+// strip them is judging different text than the one the driver executes.
 func stripLeading(s string) string {
 	for {
-		s = strings.TrimLeftFunc(s, unicode.IsSpace)
+		s = strings.TrimLeft(strings.TrimLeftFunc(s, unicode.IsSpace), ";")
 		switch {
 		case strings.HasPrefix(s, "--"):
 			if i := strings.IndexByte(s, '\n'); i >= 0 {
@@ -216,6 +242,80 @@ func stripLeading(s string) string {
 		}
 		return s
 	}
+}
+
+// hasTrailingStatement reports whether s contains a statement terminator
+// followed by more executable SQL. A trailing semicolon (with only whitespace
+// or comments after it) is allowed; a second statement is not. Semicolons
+// inside string literals, quoted identifiers, [bracket] identifiers and
+// comments are ignored, so a legitimate "WHERE note = 'a;b'" still passes.
+func hasTrailingStatement(s string) bool {
+	var inSingle, inDouble, inBracket, inLineComment, inBlockComment bool
+
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		var next byte
+		if i+1 < len(s) {
+			next = s[i+1]
+		}
+
+		switch {
+		case inLineComment:
+			if ch == '\n' {
+				inLineComment = false
+			}
+			continue
+		case inBlockComment:
+			if ch == '*' && next == '/' {
+				inBlockComment = false
+				i++
+			}
+			continue
+		case inSingle:
+			// '' is an escaped quote inside a T-SQL string literal.
+			if ch == '\'' {
+				if next == '\'' {
+					i++
+					continue
+				}
+				inSingle = false
+			}
+			continue
+		case inDouble:
+			if ch == '"' {
+				if next == '"' {
+					i++
+					continue
+				}
+				inDouble = false
+			}
+			continue
+		case inBracket:
+			if ch == ']' {
+				inBracket = false
+			}
+			continue
+		}
+
+		switch {
+		case ch == '-' && next == '-':
+			inLineComment = true
+			i++
+		case ch == '/' && next == '*':
+			inBlockComment = true
+			i++
+		case ch == '\'':
+			inSingle = true
+		case ch == '"':
+			inDouble = true
+		case ch == '[':
+			inBracket = true
+		case ch == ';':
+			// Anything executable after the separator makes this a batch.
+			return stripLeading(s[i+1:]) != ""
+		}
+	}
+	return false
 }
 
 func firstWord(s string) string {
