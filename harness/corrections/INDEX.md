@@ -16,6 +16,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0012]** Source every report from SAP (sapb1/hana-sql), never OMS/ecom/factory — they mirror SAP only partially: OMS has no MART branch, so an OMS-sourced report silently drops all Mart business.
 ## accounts
 - **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
+- **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
