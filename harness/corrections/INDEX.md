@@ -15,6 +15,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0011]** OMS reads all 3 SAP companies but raises orders only into Oil and Beverages — Mart order/quotation count from OMS is always zero. Do not read Mart parties appearing in OMS as Mart business.
 - **[C-0012]** Source every report from SAP (sapb1/hana-sql), never OMS/ecom/factory — they mirror SAP only partially: OMS has no MART branch, so an OMS-sourced report silently drops all Mart business.
 - **[C-0015]** U_Main_Group differs across company books for 129 customers - Oil 'CALL CENTER' vs Mart 'CALL CENTRE' (111), plus 4 HORECA mismatches. Never segment across companies on this tag alone.
+- **[C-0016]** A blank in SAP usually means the value lives elsewhere. Before calling it a defect check the paired column, the other company books, and the document vs master level - and confirm COUNT(*) counts documents, not add-on rows.
 ## accounts
 - **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
 - **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.
