@@ -14,6 +14,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0010]** OMS /api/hana/* requires branch=OIL|BEVERAGE (no MART); it selects the SAP company DB. Never quote an OMS HANA figure without its branch, and never join card/item codes across branches.
 - **[C-0011]** OMS reads all 3 SAP companies but raises orders only into Oil and Beverages — Mart order/quotation count from OMS is always zero. Do not read Mart parties appearing in OMS as Mart business.
 - **[C-0012]** Source every report from SAP (sapb1/hana-sql), never OMS/ecom/factory — they mirror SAP only partially: OMS has no MART branch, so an OMS-sourced report silently drops all Mart business.
+- **[C-0015]** U_Main_Group differs across company books for 129 customers - Oil 'CALL CENTER' vs Mart 'CALL CENTRE' (111), plus 4 HORECA mismatches. Never segment across companies on this tag alone.
 ## accounts
 - **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
 - **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.
