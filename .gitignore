@@ -12,6 +12,14 @@
 .env*
 *.local.md
 
+# Credential files copied aside during a migration or edit are STILL live
+# credentials, and this repo is public. Neither rule above catches them:
+# `*.env` needs the name to END in .env and `.env*` needs it to START with
+# .env, so `hana.env.pre-migration-2026-08-17.bak` slipped past both and sat
+# untracked-but-committable on 2026-08-17. Match the .env anywhere in the name.
+*.env.*
+*.env-*
+
 # live session tokens — NEVER commit
 *.token
 .token

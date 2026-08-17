@@ -259,6 +259,15 @@ Step 'harden-always-on' {
 # deleted or disabled, sshd stopped, or power settings drifting back after a
 # Windows update. Verified on VICTUS: task deleted + tunnel killed -> watchdog
 # rebuilt both and the VPS listener returned.
+# sshd is the case it used to only PRETEND to repair (one Start-Service, no
+# Automatic, no host keys, no check) -- see the block below, which now handles
+# absent-vs-stopped, sets Automatic, runs ssh-keygen -A on a failed start,
+# restarts a wedged sshd (at most once an hour), and refuses to call itself done
+# until 127.0.0.1:22 answers with an SSH- banner -- the same bar the VPS monitor
+# applies (fleet-tunnel-health.vps.sh, sshd_answers).
+# The TUNNEL repair runs FIRST inside the generated script: sshd work touches a
+# service that may be wedged, and it must never be able to cost this box its
+# tunnel. See the ordering note in the script itself.
 Step 'watchdog' {
   $wd = "$DIR\watchdog.ps1"
   $psExe2 = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
@@ -270,12 +279,238 @@ function L(`$m){ "`$(Get-Date -Format s) `$m" | Add-Content -Path `$log }
 if ((Test-Path `$log) -and ((Get-Item `$log).Length -gt 1MB)) { Move-Item `$log "`$log.1" -Force }
 powercfg /change standby-timeout-ac 0
 powercfg /change hibernate-timeout-ac 0
-if ((Get-Service sshd).Status -ne 'Running') { L 'sshd down - starting'; Start-Service sshd }
+# ---- 1. the dial task and the tunnel. FIRST, and the order is load-bearing ----
+# This used to run LAST, after the sshd repair. The sshd repair touches a service
+# that may be wedged, and a call that blocks there ends the run before this point
+# -- leaving the TUNNEL unmaintained, which is strictly worse than never touching
+# sshd at all: without the tunnel nothing about this box is reachable, sshd
+# healthy or not. So the cheap, load-bearing work happens first and
+# unconditionally, and sshd is best-effort behind it (in its own try/catch).
 `$t = Get-ScheduledTask -TaskName 'JivoRevTunnel'
 if (-not `$t) { L 'dial task MISSING - recreating'; schtasks /Create /TN JivoRevTunnel /TR "$dialTr" /SC MINUTE /MO 1 /RU SYSTEM /RL HIGHEST /F | Out-Null }
 elseif (`$t.State -eq 'Disabled') { L 'dial task disabled - enabling'; Enable-ScheduledTask -TaskName 'JivoRevTunnel' }
 `$alive = Get-CimInstance Win32_Process | Where-Object { `$_.Name -eq 'ssh.exe' -and `$_.CommandLine -match '127\.0\.0\.1:$PORT' }
 if (-not `$alive) { L 'tunnel DOWN - kicking dialer'; schtasks /Run /TN JivoRevTunnel | Out-Null }
+else { L 'tunnel up - ssh.exe is dialing VPS port $PORT' }
+# ---- 2. sshd: the front door. Repairing it is the OTHER half of this watchdog ----
+# A dead sshd is invisible from the VPS: the dialer, the task and the VPS
+# listener all look perfect, so the monitor reports UNREACHABLE (port listens,
+# nothing answers) instead of DOWN, and nobody is told. What lived here was one
+# line -- if ((Get-Service sshd).Status -ne 'Running') { Start-Service sshd } --
+# which (a) threw on a box that has no sshd at all, (b) never set StartupType,
+# so a Manual service came back dead after every reboot and this played
+# whack-a-mole forever, (c) gave up SILENTLY when Start-Service failed for
+# missing host keys, which is the documented failure on these boxes (see 6d),
+# and (d) never checked that anything ended up listening. Cost: DESKTOP-73N6JE8
+# 23011, JIVO 23008 and JIVO201 23010 unreachable for 4+ days with this running
+# every 15 minutes. So: repair every case, then PROVE it, and log both outcomes.
+# When the last sshd restart happened, kept beside the log so it survives runs
+# (each run is a fresh process; an in-memory variable would forget every time).
+`$stamp='$DIR\sshd-restart.stamp'
+function Test-Ssh22 {
+  # Test the front door the way the VPS tests it -- not the service's own opinion
+  # of itself, and not a bare TCP connect either. The monitor
+  # (fleet-tunnel-health.vps.sh, sshd_answers) calls a box UP only when the first
+  # line off the socket starts with 'SSH-'. A wedged sshd ACCEPTS the connection
+  # and then never speaks: connect-only would log 'ok' on exactly the box the
+  # monitor is reporting UNREACHABLE, which is the divergence this watchdog
+  # exists to close. So: connect, then read the banner.
+  # TWO probes 1.5s apart, because what we do about a failure is RESTART sshd,
+  # and a restart drops live sessions: two failures 1.5s apart mean the door is
+  # genuinely shut, so there is no session left to drop.
+  # BeginConnect+WaitOne, not Connect: a connect to a filtered port can hang far
+  # past any task time limit. On a REFUSED port WaitOne returns true at once and
+  # EndConnect throws -- which is why the try/catch is inside the loop.
+  for (`$i=0; `$i -lt 2; `$i++) {
+    if (`$i) { Start-Sleep -Milliseconds 1500 }
+    `$c = `$null
+    try {
+      `$c = New-Object Net.Sockets.TcpClient
+      `$a = `$c.BeginConnect('127.0.0.1',22,`$null,`$null)
+      if (`$a.AsyncWaitHandle.WaitOne(3000,`$false)) {
+        `$c.EndConnect(`$a)
+        # ReceiveTimeout is what bounds a connected-but-silent sshd: without it
+        # Read() waits for a peer that is never going to speak. It throws on
+        # expiry, and the catch below scores that as a failed probe.
+        `$c.ReceiveTimeout = 5000
+        `$buf = New-Object byte[] 4
+        `$got = 0
+        # Read may hand back fewer bytes than asked for; each call is bounded by
+        # ReceiveTimeout, so this cannot spin (worst case ~20s per probe).
+        while (`$got -lt 4) {
+          `$r = `$c.GetStream().Read(`$buf,`$got,4-`$got)
+          if (`$r -le 0) { break }
+          `$got += `$r
+        }
+        if ((`$got -eq 4) -and ([Text.Encoding]::ASCII.GetString(`$buf) -eq 'SSH-')) { `$c.Close(); return `$true }
+      }
+    } catch { }
+    if (`$c) { `$c.Close() }
+  }
+  return `$false
+}
+function Get-Port22Listener {
+  # Whoever actually holds 22, by name, AND on which address. Seen from the VPS,
+  # "sshd wedged", "port stolen by other software", "service dead" and "sshd
+  # bound to the wrong address" are one identical symptom; here they are four
+  # different repairs, and this is the only thing that tells them apart.
+  # LocalAddress is not optional: the reverse tunnel forwards to 127.0.0.1:22, so
+  # an sshd with a ListenAddress of (say) 192.168.1.x is Running and Listening
+  # and still refuses the loopback connect. Filtering on the port alone read that
+  # as "nobody home" and bounced a healthy service every 15 minutes forever
+  # without ever naming the real fault.
+  `$o = New-Object psobject -Property @{ Name=''; Loopback=`$false; Addresses='' }
+  `$c = @(Get-NetTCPConnection -LocalPort 22 -State Listen -ErrorAction SilentlyContinue)
+  if (`$c.Count -eq 0) { return `$o }
+  # 0.0.0.0 and :: are all-interfaces binds and DO cover loopback.
+  `$lb = @(`$c | Where-Object { @('127.0.0.1','::1','0.0.0.0','::') -contains `$_.LocalAddress })
+  `$o.Loopback  = (`$lb.Count -gt 0)
+  `$o.Addresses = ((`$c | ForEach-Object { `$_.LocalAddress }) -join ',')
+  `$own = if (`$lb.Count -gt 0) { `$lb[0] } else { `$c[0] }
+  `$p = Get-Process -Id `$own.OwningProcess -ErrorAction SilentlyContinue
+  if (`$p) { `$o.Name = `$p.ProcessName } else { `$o.Name = "pid `$(`$own.OwningProcess)" }
+  return `$o
+}
+function Stop-SshdBounded {
+  # NOT Stop-Service -Force: it has no deadline, and a wedged service is exactly
+  # where it blocks. Nothing here may hang -- the task's ExecutionTimeLimit is no
+  # safety net (schtasks /Create defaults to 72h and the 10-minute setting is
+  # applied best-effort afterwards, with a warning on failure).
+  # ServiceController.Stop() only SENDS the control and returns; the wait is a
+  # separate call that takes a timespan. WaitForStatus THROWS on expiry, so the
+  # timeout is caught, logged, and we go on to the start attempt instead of
+  # hanging. A start over a stuck-stopping service may fail -- that is logged too,
+  # and a logged failure beats a run that never ends.
+  `$sc = Get-Service sshd -ErrorAction SilentlyContinue
+  if (-not `$sc) { L 'stop skipped - no sshd service object'; return }
+  if (`$sc.Status -eq 'Stopped') { L 'sshd already stopped - nothing to stop'; return }
+  try { `$sc.Stop() } catch { L "sshd stop control refused: `$(`$_.Exception.Message)" }
+  try {
+    `$sc.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped, (New-TimeSpan -Seconds 20))
+    L 'sshd stopped'
+  } catch {
+    L 'sshd did NOT stop within 20s (wedged, not merely busy) - not waiting any longer, trying the start'
+  }
+}
+function Start-Sshd(`$why) {
+  # One start, and if it refuses, the ssh-keygen -A retry the old watchdog never
+  # had -- it stopped at the failed start, which is the exact point where these
+  # boxes need help. Always logs the REAL error text: 'sshd down - starting' told
+  # us nothing for four days; the SCM's own message would have named the fault.
+  `$e = `$null
+  Start-Service sshd -ErrorAction SilentlyContinue -ErrorVariable e
+  if ((Get-Service sshd).Status -eq 'Running') { L "`$why - started"; return }
+  L "`$why - Start-Service FAILED: `$(if(`$e){`$e[0].Exception.Message}else{'no error text'})"
+  # Missing host keys are THE documented reason a start fails here: every box
+  # installed by the version of 6d that returned early has none. -A creates only
+  # what is missing and leaves an existing, working set alone.
+  # Resolved at RUN time, never baked in: this runs as SYSTEM, which does not
+  # find OpenSSH on PATH (same reason the task calls powershell.exe by full
+  # path), and the watchdog is written BEFORE step 6d decides whether the inbox
+  # capability (System32\OpenSSH) or the MSI (Program Files\OpenSSH) provides it.
+  `$kg = @('$KEYGEN', "`$env:WINDIR\System32\OpenSSH\ssh-keygen.exe", "`$env:ProgramFiles\OpenSSH\ssh-keygen.exe") | Where-Object { `$_ -and (Test-Path `$_) } | Select-Object -First 1
+  if (-not `$kg) { L 'ssh-keygen.exe is in neither System32\OpenSSH nor Program Files\OpenSSH - cannot regenerate host keys'; return }
+  `$kd = "`$env:ProgramData\ssh"
+  if (-not (Test-Path `$kd)) {
+    # ssh-keygen -A writes into %ProgramData%\ssh and fails outright when it is
+    # not there. Create it LOCKED: inheriting ProgramData's ACL leaves the new
+    # PRIVATE host keys readable by Users, and sshd refuses to start on a host
+    # key with open permissions -- a "repair" that swaps one dead sshd for another.
+    New-Item -ItemType Directory -Force -Path `$kd | Out-Null
+    icacls.exe `$kd /inheritance:r /grant 'SYSTEM:(OI)(CI)F' /grant 'BUILTIN\Administrators:(OI)(CI)F' | Out-Null
+  }
+  L "running '`$kg -A' (missing host keys) and retrying the start"
+  & `$kg -A 2>&1 | Out-Null
+  `$e = `$null
+  Start-Service sshd -ErrorAction SilentlyContinue -ErrorVariable e
+  if ((Get-Service sshd).Status -eq 'Running') { L 'started after ssh-keygen -A' }
+  else { L "STILL not running after ssh-keygen -A: `$(if(`$e){`$e[0].Exception.Message}else{'no error text'})" }
+}
+# The whole sshd repair sits in ONE try/catch. It is best-effort plumbing behind
+# the tunnel work, which has already run; an exception in here must produce a log
+# line, not a dead run.
+try {
+  `$svc = Get-Service sshd -ErrorAction SilentlyContinue
+  if (-not `$svc) {
+    # ABSENT is not STOPPED -- there is nothing to start. Installing OpenSSH from an
+    # unattended SYSTEM task is not something to do behind a colleague's back (the
+    # capability pull has been measured at 14+ min and the MSI fallback needs the
+    # internet), so say so every single run: this log is the only place it shows.
+    L 'sshd NOT INSTALLED - the watchdog cannot repair that; re-run JIVO-VPS-TUNNEL.cmd on this PC. UNREACHABLE until then.'
+  } else {
+    # Automatic FIRST, before any start attempt: a Manual or Disabled sshd is dead
+    # again at the next reboot, and restarting it every 15 min forever is not a fix.
+    # Win32_Service.StartMode, not Get-Service's .StartType -- that property is
+    # missing on older PowerShell 5.1 builds and would read empty on exactly the
+    # old boxes this is meant to save. StartMode is 'Auto'/'Manual'/'Disabled'.
+    `$mode = (Get-CimInstance Win32_Service -Filter "Name='sshd'" -ErrorAction SilentlyContinue).StartMode
+    if (`$mode -and `$mode -ne 'Auto') {
+      L "sshd StartMode=`$mode - setting Automatic (Manual means it dies again at the next reboot)"
+      Set-Service -Name sshd -StartupType Automatic
+      `$m2 = (Get-CimInstance Win32_Service -Filter "Name='sshd'" -ErrorAction SilentlyContinue).StartMode
+      if (`$m2 -ne 'Auto') { L "could NOT set sshd Automatic (still `$m2) - it will be dead again after the next reboot" }
+    }
+    `$tried = `$false
+    if (`$svc.Status -ne 'Running') { Start-Sshd "sshd `$(`$svc.Status)"; `$tried = `$true }
+    # Outcome, EVERY run, pass or fail. A watchdog whose log cannot tell "fixed it"
+    # from "gave up" is the reason four days went by unnoticed; and the pass line
+    # doubles as the heartbeat that proves the task itself is still firing, which
+    # a silent log can never prove.
+    if (Test-Ssh22) { L "ok - sshd `$((Get-Service sshd).Status), 127.0.0.1:22 answered with an SSH- banner" }
+    else {
+      `$lsn  = Get-Port22Listener
+      `$who  = `$lsn.Name
+      `$addr = if (`$lsn.Addresses) { `$lsn.Addresses } else { 'none' }
+      if (`$who -and (`$who -ne 'sshd')) {
+        # Somebody else's software owns 22, so sshd can never bind it and no amount
+        # of restarting helps. We do NOT kill that process -- it is a colleague's
+        # software, not our plumbing. Name it and let a human decide.
+        L "SSHD BROKEN - '`$who' is holding port 22 (listening on `$addr), sshd cannot bind it. THIS PC IS UNREACHABLE until that process is stopped (a restart would not help, so we do not try)."
+      } elseif ((`$who -eq 'sshd') -and (-not `$lsn.Loopback)) {
+        # sshd is up and listening, just nowhere the tunnel can reach it: a
+        # ListenAddress line in %ProgramData%\ssh\sshd_config binds one NIC only,
+        # while the reverse tunnel forwards to 127.0.0.1:22. Restarting cannot
+        # change a config file, so name the actual fault instead of bouncing the
+        # service every 15 minutes forever.
+        L "SSHD BROKEN - sshd is listening on `$addr only, NOT on 127.0.0.1, and the tunnel forwards to 127.0.0.1:22. THIS PC IS UNREACHABLE. Fix by hand: remove the ListenAddress line in %ProgramData%\ssh\sshd_config (or add 'ListenAddress 127.0.0.1'), then restart sshd. Not restarting - a bounce cannot change a config file."
+      } elseif (`$tried) {
+        # Start + ssh-keygen -A already ran this pass and the door is still shut;
+        # bouncing the service again in the same 15-minute pass just churns it.
+        L "SSHD BROKEN - start and ssh-keygen -A already tried this run, service `$((Get-Service sshd).Status), listener `$addr, 127.0.0.1:22 still dead. THIS PC IS UNREACHABLE - needs a human: 'ssh-keygen -A', 'Start-Service sshd', 'Get-NetTCPConnection -LocalPort 22'."
+      } else {
+        # The service says Running and the door does not open: sshd is WEDGED. This
+        # is the state the old watchdog scored as healthy and left alone forever.
+        # Restarting is safe here precisely because Test-Ssh22 probed twice -- if 22
+        # gives no banner twice there is no usable session to drop.
+        # At most ONE bounce an hour, remembered across runs in a stamp file beside
+        # this log: a restart every 15 minutes forever is not a repair, it is a loop
+        # that hides a permanent fault and kills any session a human just got in on.
+        # The stamp's LastWriteTime is the clock -- no date parsing, so no locale
+        # setting on any box can break it.
+        `$last = (Get-Item `$stamp -ErrorAction SilentlyContinue).LastWriteTime
+        `$mins = 9999
+        # Parens around the whole member access, not just the subtraction: casting
+        # a TimeSpan to [int] fails, `$mins would land null, and null -lt 60 is TRUE
+        # -- i.e. a typo here would silently disable every restart, forever.
+        if (`$last) { `$mins = [int](((Get-Date) - `$last).TotalMinutes) }
+        if (`$mins -lt 60) {
+          L "SSHD BROKEN - sshd says `$(`$svc.Status) but 127.0.0.1:22 gave no SSH- banner on two probes (listener: `$addr); last restart was `$mins min ago, SKIPPING (at most one restart an hour). THIS PC IS UNREACHABLE - restarting has not fixed it, so it needs a human."
+        } else {
+          L "sshd says `$(`$svc.Status) but 127.0.0.1:22 gave no SSH- banner on two probes (listener: `$addr) - restarting sshd"
+          # Stamped BEFORE the bounce, so a restart that goes badly still counts
+          # against the hourly budget.
+          Set-Content -Path `$stamp -Value (Get-Date -Format s)
+          Stop-SshdBounded
+          Start-Sshd 'sshd restart'
+          if (Test-Ssh22) { L 'FIXED - 127.0.0.1:22 answering with an SSH- banner after restart' }
+          else { L "SSHD BROKEN - the restart did not fix it, service `$((Get-Service sshd).Status), 127.0.0.1:22 still silent. THIS PC IS UNREACHABLE." }
+        }
+      }
+    }
+  }
+} catch {
+  L "sshd repair ERRORED and was abandoned: `$(`$_.Exception.Message) - the tunnel maintenance above already ran, so the box is only unreachable if sshd itself is down."
+}
 "@ | Set-Content -Path $wd -Encoding ascii
   if ($wd -match '\s') { throw "watchdog path has a space: $wd" }
   $r = schtasks /Create /TN JivoTunnelWatchdog /TR "$psExe2 -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File $wd" /SC MINUTE /MO 15 /RU SYSTEM /RL HIGHEST /F 2>&1
@@ -285,17 +520,26 @@ if (-not `$alive) { L 'tunnel DOWN - kicking dialer'; schtasks /Run /TN JivoRevT
 
 # ---- 6d. collect the background OpenSSH install (bounded, with a fallback) ----
 Step 'openssh-server' {
-  if (-not $sshJob) { if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw 'sshd missing and no install was started' }; return }
-  $sw = [Diagnostics.Stopwatch]::StartNew()
-  while ($sshJob.State -eq 'Running' -and $sw.Elapsed.TotalSeconds -lt 150) {
-    Start-Sleep 10
-    Write-Host ("    OpenSSH Server still installing... {0}s" -f [int]$sw.Elapsed.TotalSeconds) -ForegroundColor DarkGray
+  # Collecting the background install is CONDITIONAL (there is only a job when we
+  # started one). Making sshd actually RUN is NOT -- it must happen on every path.
+  # This used to `return` early whenever $sshJob was null, i.e. on exactly the
+  # 'openssh-server(already)' path, which skipped every line below: the service
+  # was never set to Automatic, never started, host keys were never generated,
+  # and the loud failure below could not fire. Result: the step printed OK on a
+  # box that was unreachable (DESKTOP-73N6JE8 23011, 2026-08-13 -- and VICTUS
+  # 23001 and JIVO 23008 found in the same state). Never re-add an early return.
+  if ($sshJob) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    while ($sshJob.State -eq 'Running' -and $sw.Elapsed.TotalSeconds -lt 150) {
+      Start-Sleep 10
+      Write-Host ("    OpenSSH Server still installing... {0}s" -f [int]$sw.Elapsed.TotalSeconds) -ForegroundColor DarkGray
+    }
+    if ($sshJob.State -eq 'Running') {
+      Write-Host "  Windows Update is too slow - switching to the direct installer." -ForegroundColor Yellow
+      Stop-Job $sshJob -ErrorAction SilentlyContinue
+    }
+    Remove-Job $sshJob -Force -ErrorAction SilentlyContinue
   }
-  if ($sshJob.State -eq 'Running') {
-    Write-Host "  Windows Update is too slow - switching to the direct installer." -ForegroundColor Yellow
-    Stop-Job $sshJob -ErrorAction SilentlyContinue
-  }
-  Remove-Job $sshJob -Force -ErrorAction SilentlyContinue
 
   if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
     # Fallback: Microsoft's own Win32-OpenSSH MSI. A direct HTTPS download of a

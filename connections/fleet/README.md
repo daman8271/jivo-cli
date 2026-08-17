@@ -278,6 +278,22 @@ itself is upstream in hermes.
 | `grep -c` exits **1** on a zero count | so `count=$(... grep -c ... \|\| echo 0)` fires the fallback on the *healthy* path and yields `"0\n0"`, which blows up the arithmetic. Swallow the status inside the container (`\|\| true`) and default in the shell. Hit while writing the GC script. |
 | Docker stores layers under containerd's **`moby`** namespace | `ctr -n default c ls` shows **zero containers** on a box running 15 of them, which makes 44 GB of live images look like prunable junk. Check `docker ps` before concluding anything is orphaned. |
 
+## When one is broken → [`RECOVERY-RUNBOOK.md`](RECOVERY-RUNBOOK.md)
+
+This file is how a tunnel gets *built*. [`RECOVERY-RUNBOOK.md`](RECOVERY-RUNBOOK.md) is
+what to do when one is **down**: a decision table of state → which channel to try in what
+order (reverse tunnel → Tailscale → a human), the two root causes found 2026-08-17 (the
+installer's early `return` that skipped starting sshd; a watchdog that cannot recover a
+missing host key), and **copy-pasteable messages per colleague** for the boxes where no
+remote channel is left.
+
+⚠️ Read it before trusting `ss -ltn`. An **UNREACHABLE** box — port listening, sshd dead
+— passes every naive check and is the state that cost 4+ days on three boxes. And read
+the state **during office hours**: measured 2026-08-17, `JIVO` and `JIVO201` read
+UNREACHABLE at 19:10 and **DOWN at 21:14** with an unchanged `since`, because the PCs
+were switched off. Nothing was repaired — a broken box quietly files itself under
+"switched off for the day", which is the one bucket whose documented response is *wait*.
+
 ## Revoke a box
 
 ```sh

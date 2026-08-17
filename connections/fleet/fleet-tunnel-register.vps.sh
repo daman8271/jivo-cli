@@ -88,12 +88,31 @@ else
 fi
 
 # Rewrite this host's authorized_keys line (drop any previous one for this host).
+#
+# The comment field must be matched WHOLE. This was `grep -vF " revtun-${host}"`,
+# which is a SUBSTRING match, so a host name that is a prefix of another host's
+# name silently deleted its siblings' keys. On 2026-08-03T12:16:18Z the box named
+# JIVO registered and took revtun-JIVO-B1 (23002) and revtun-JIVO202 (23006) with
+# it; both boxes then dialled in for two weeks and were refused, and because they
+# were still listed in fleet-tunnels.txt they looked like ordinary offline PCs.
+# JIVO201 (23010) survived only because it registered afterwards -- verified
+# 2026-08-17: `grep -vF " revtun-JIVO"` drops 2 of 19 keys, `$NF` drops 1.
+# $NF is the trailing comment; compare it whole and this cannot recur.
 tmp=$(mktemp) || die "mktemp-failed"
-grep -vF " revtun-${host}" "$AK" > "$tmp" 2>/dev/null || true
+awk -v c="revtun-${host}" '$NF != c' "$AK" > "$tmp" 2>/dev/null || true
+# Removing anything beyond this host's own single line means the match went wide.
+# The old guard could not see that: it dropped 2 keys and appended 1, landing on
+# exactly the threshold, so `-lt` was false by one line and it installed happily.
+_before=$(grep -c . "$AK"); _kept=$(grep -c . "$tmp")
+if [ "$(( _before - _kept ))" -gt 1 ]; then
+  rm -f "$tmp"; die "refused-would-drop-$(( _before - _kept ))-keys"
+fi
 printf 'restrict,port-forwarding,permitlisten="127.0.0.1:%s",permitopen="127.0.0.1:1" %s revtun-%s\n' \
   "$port" "$keybody" "$host" >> "$tmp"
-# Never install a truncated authorized_keys: it must still contain the operator keys.
-if [ "$(wc -l < "$tmp")" -lt "$(( $(grep -c . "$AK") - 1 ))" ]; then rm -f "$tmp"; die "sanity-check-failed"; fi
+# Never install a truncated authorized_keys: it must still contain the operator
+# keys. We removed at most one line and added exactly one, so the result can
+# never be shorter than what we started with.
+if [ "$(grep -c . "$tmp")" -lt "$_before" ]; then rm -f "$tmp"; die "sanity-check-failed"; fi
 install -m 600 -o root -g root "$tmp" "$AK" && rm -f "$tmp"
 
 grep -vE "^${host}[[:space:]]" "$DB" > "$DB.tmp" 2>/dev/null || true

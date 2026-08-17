@@ -59,9 +59,35 @@ in_alert_window() { [ "$HOUR" -ge "$HOUR_FROM" ] && [ "$HOUR" -le "$HOUR_TO" ]; 
 live_ports=$(ss -tlnH 2>/dev/null | awk '{print $4}' | grep -oE ':(230[0-9][0-9])$' | tr -d ':' | sort -u)
 is_live() { printf '%s\n' "$live_ports" | grep -qx "$1"; }
 
+# ---- ...and whether anything actually ANSWERS on the far side ---------------
+# A listening port only proves the box dialled in. It does NOT prove the box is
+# reachable: the tunnel forwards to <box>:22, so if sshd there is stopped the
+# port listens, this check said UP, and `ssh <box>` died with
+# "kex_exchange_identification: Connection closed by remote host".
+# On 2026-08-13 three boxes were in exactly that state — DESKTOP-73N6JE8 (23011),
+# VICTUS (23001), JIVO (23008) — and all three were reported UP for hours.
+# So: ask for the SSH banner. Only a real banner counts as reachable.
+# Deliberately bash's own /dev/tcp and NOT nc: this runs inside a `while read`
+# loop over the registry, and nc inherits stdin and swallows the rest of the
+# file, so the loop silently checks the first host or two and stops. (Measured:
+# 12 hosts in, 2 hosts out.) A redirect-free probe cannot do that.
+sshd_answers() {   # $1 = port. Never let a probe failure invent an outage.
+  local line=''
+  exec 3<>/dev/tcp/127.0.0.1/"$1" 2>/dev/null || return 0
+  read -t 5 -r line <&3
+  exec 3<&- 2>/dev/null; exec 3>&- 2>/dev/null
+  case "$line" in SSH-*) return 0 ;; *) return 1 ;; esac
+}
+
+# UP = tunnel listening AND sshd answering. UNREACHABLE = listening, nobody home.
+classify() {
+  is_live "$1" || { echo DOWN; return; }
+  sshd_answers "$1" && echo UP || echo UNREACHABLE
+}
+
 [ -f "$STATE" ] || : > "$STATE"
 new_state=$(mktemp) || exit 1
-down_list=""; recovered_list=""; up_n=0; down_n=0
+down_list=""; recovered_list=""; unreach_list=""; up_n=0; down_n=0
 
 while read -r host port user reg; do
   [ -n "${host:-}" ] || continue
@@ -74,10 +100,12 @@ while read -r host port user reg; do
   [ -n "${prev_since:-}" ] || prev_since=0
   [ -n "${prev_alert:-}" ] || prev_alert=0
 
-  if is_live "$port"; then
+  state=$(classify "$port")
+
+  if [ "$state" = UP ]; then
     up_n=$((up_n+1))
     # Recovery is only worth announcing if we actually raised the alarm.
-    if [ "${prev_state:-}" = "DOWN" ] && [ "$prev_alert" -gt 0 ]; then
+    if [ "${prev_state:-}" != "UP" ] && [ -n "${prev_state:-}" ] && [ "$prev_alert" -gt 0 ]; then
       down_for=$(( (NOW - prev_since) / 60 ))
       recovered_list="$recovered_list\n  $host ($port) back after ${down_for}m"
     fi
@@ -86,19 +114,35 @@ while read -r host port user reg; do
   else
     down_n=$((down_n+1))
     since=$prev_since
-    [ "${prev_state:-}" = "DOWN" ] && [ "$since" -gt 0 ] || since=$NOW
+    # Any non-UP state continues the same outage clock; only UP resets it.
+    [ -n "${prev_state:-}" ] && [ "${prev_state:-}" != "UP" ] && [ "$since" -gt 0 ] || since=$NOW
     down_min=$(( (NOW - since) / 60 ))
     alert_at=$prev_alert
 
-    if [ "$down_min" -ge "$ALERT_AFTER_MIN" ] \
+    # An UNREACHABLE box is ON and dialling in — it is never the benign
+    # "office PC switched off for the night" case that ALERT_AFTER_MIN exists
+    # to silence, and the 15-min on-box watchdog has already had its chance to
+    # restart sshd. So it is real after an hour, not four.
+    if [ "$state" = UNREACHABLE ]; then threshold=${UNREACHABLE_AFTER_MIN:-60}; else threshold=$ALERT_AFTER_MIN; fi
+
+    if [ "$down_min" -ge "$threshold" ] \
        && in_alert_window \
        && [ $(( (NOW - prev_alert) / 60 )) -ge "$COOLDOWN_MIN" ]; then
-      down_list="$down_list\n  $host ($port, $user) — down ${down_min}m"
+      if [ "$state" = UNREACHABLE ]; then
+        unreach_list="$unreach_list\n  $host ($port, $user) — tunnel up but sshd DEAD ${down_min}m"
+      else
+        down_list="$down_list\n  $host ($port, $user) — down ${down_min}m"
+      fi
       alert_at=$NOW
     fi
-    printf '%s\tDOWN\t%s\t%s\n' "$host" "$since" "$alert_at" >> "$new_state"
-    printf '%-28s %-6s DOWN  since %s (%dm)\n' \
-      "$host" "$port" "$(date -d "@$since" '+%m-%d %H:%M' 2>/dev/null)" "$down_min" >> "$STATUS.tmp"
+    printf '%s\t%s\t%s\t%s\n' "$host" "$state" "$since" "$alert_at" >> "$new_state"
+    if [ "$state" = UNREACHABLE ]; then
+      printf '%-28s %-6s UNREACHABLE  tunnel up, sshd dead since %s (%dm)\n' \
+        "$host" "$port" "$(date -d "@$since" '+%m-%d %H:%M' 2>/dev/null)" "$down_min" >> "$STATUS.tmp"
+    else
+      printf '%-28s %-6s DOWN  since %s (%dm)\n' \
+        "$host" "$port" "$(date -d "@$since" '+%m-%d %H:%M' 2>/dev/null)" "$down_min" >> "$STATUS.tmp"
+    fi
   fi
 done < "$DB"
 
@@ -111,6 +155,8 @@ mv "$new_state" "$STATE"
 echo "$TS up=$up_n down=$down_n" >> "$LOG"
 
 [ -n "$down_list" ]      && notify "$(printf 'JIVO fleet — tunnel DOWN:%b\n\nFix: on that PC, double-click JIVO-VPS-TUNNEL.cmd (idempotent), or run: schtasks /Run /TN JivoRevTunnel' "$down_list")"
+# Different failure, different fix. The tunnel needs nothing here — sshd does.
+[ -n "$unreach_list" ]   && notify "$(printf 'JIVO fleet — UNREACHABLE (tunnel up, sshd dead):%b\n\nThe dialer is fine; nothing is listening on port 22 on that PC. Fix, as admin on that PC:\n  ssh-keygen -A; Set-Service sshd -StartupType Automatic; Start-Service sshd' "$unreach_list")"
 [ -n "$recovered_list" ] && notify "$(printf 'JIVO fleet — tunnel recovered:%b' "$recovered_list")"
 
 # ---- disk guard -------------------------------------------------------------
