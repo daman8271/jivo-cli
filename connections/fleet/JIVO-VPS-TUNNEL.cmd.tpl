@@ -79,6 +79,15 @@ function Set-BootProof($Name, $Unlimited) {
 $VPS        = 'root@187.127.129.132'
 $DIR        = 'C:\ProgramData\jivo-revtun'
 $REGKEY_B64 = '@@REGKEY_B64@@'
+# Stamped by build-tunnel-installer.sh from the commit the template was built at.
+# WHY THIS EXISTS: on 2026-08-17 three boxes were unreachable because an OLD copy
+# of this very file was already sitting on them -- and the old one RUNS, prints a
+# green OK, and repairs nothing (it skipped Set-Service Automatic and
+# ssh-keygen -A entirely). Old and new were indistinguishable on screen, so a
+# colleague's "it says OK" photo could not be trusted. Now the version is in the
+# summary block AND written to $DIR\version.txt, so which build ran is a fact you
+# can read over the tunnel instead of a thing you assume.
+$TUNNEL_VER = '@@VERSION@@'
 # Daman's Mac public key -- this is what lets him in through the tunnel.
 $MANAGER_KEYS = @(
   'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB8+FPQ9luiwWsPUSZDY5UTwEiOVmL1o1zgf4sw1UORA daman8271@github',
@@ -151,6 +160,12 @@ Step 'tunnel-key' {
   New-Item -ItemType Directory -Force -Path $DIR | Out-Null
   # (OI)(CI) or files created inside inherit NOTHING and admins cannot manage the logs.
   icacls.exe $DIR /inheritance:r /grant 'SYSTEM:(OI)(CI)F' /grant 'BUILTIN\Administrators:(OI)(CI)F' | Out-Null
+  # Which build last ran here, readable over the tunnel:
+  #   ssh <box> "type C:\ProgramData\jivo-revtun\version.txt"
+  # A photo of the summary block can be misread or cropped; this cannot. Written
+  # early so it lands even if a later step fails -- knowing WHICH build failed is
+  # exactly what you need when a step fails.
+  Set-Content -Path "$DIR\version.txt" -Value ("{0}  installed {1}  by {2}" -f $TUNNEL_VER, (Get-Date -Format s), $env:USERNAME) -Encoding ascii -ErrorAction SilentlyContinue
   if (-not (Test-Path $TUNKEY)) {
     & $KEYGEN -t ed25519 -N '""' -f $TUNKEY -C "revtun-$env:COMPUTERNAME" -q 2>&1 | Out-Null
   }
@@ -598,6 +613,9 @@ Step 'verify-tunnel' {
 
 Write-Host ""
 Write-Host "  =========== SEND THIS BLOCK BACK ===========" -ForegroundColor Green
+# VERSION FIRST, deliberately: it is the one line that tells the reader whether
+# to trust the rest of the block. An old build prints an identical-looking OK.
+Write-Host ("  VERSION      : " + $TUNNEL_VER) -ForegroundColor Green
 Write-Host ("  COMPUTERNAME : " + $env:COMPUTERNAME)
 Write-Host ("  USERNAME     : " + $env:USERNAME)
 Write-Host ("  VPS PORT     : " + $(if($PORT){$PORT}else{'NOT ASSIGNED'}))
