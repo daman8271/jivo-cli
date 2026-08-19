@@ -16,10 +16,17 @@ b64=$(base64 < "$key" | tr -d '\n')
 # vN = how many commits have touched the Windows template (its real iteration
 # count); the short SHA makes it exact. "+dirty" if built from uncommitted edits,
 # because a build you cannot trace back to a commit must SAY so.
-_n=$(git -C "$here" rev-list --count HEAD -- "$here/JIVO-VPS-TUNNEL.cmd.tpl" 2>/dev/null || echo 0)
-_sha=$(git -C "$here" rev-parse --short HEAD 2>/dev/null || echo nogit)
+# Both numbers come from the TEMPLATES, never from HEAD. With `rev-parse HEAD` an
+# unrelated commit (a README edit, say) produced a second, different "v6" — two
+# artifacts claiming one version with different shas, which is exactly the
+# ambiguity the stamp exists to kill. Reading the templates means the version
+# changes when, and only when, the installer changes.
+_tpls="$here/JIVO-VPS-TUNNEL.cmd.tpl $here/JIVO-VPS-TUNNEL-MAC.command.tpl"
+_n=$(git -C "$here" rev-list --count HEAD -- $_tpls 2>/dev/null || echo 0)
+_sha=$(git -C "$here" log -1 --format=%h -- $_tpls 2>/dev/null || echo nogit)
+[ -n "$_sha" ] || _sha=nogit
 _dirty=''
-git -C "$here" diff --quiet -- "$here/JIVO-VPS-TUNNEL.cmd.tpl" "$here/JIVO-VPS-TUNNEL-MAC.command.tpl" 2>/dev/null || _dirty='+dirty'
+git -C "$here" diff --quiet -- $_tpls 2>/dev/null || _dirty='+dirty'
 ver="v${_n} (${_sha}${_dirty})"
 echo "version: $ver"
 
