@@ -634,7 +634,8 @@ Step 'openssh-server' {
       # WSUS/policy block, and that single string is the difference between
       # "why did it fail" and "office policy blocks the component store".
       $jr = (@(Receive-Job $sshJob -ErrorAction SilentlyContinue) -join ' ').Trim()
-      $script:sshRoutes += ("windows-update: " + $(if ($jr) { $jr } else { 'no output' }))
+      if (Get-Service sshd -ErrorAction SilentlyContinue) { $script:sshRoutes += 'windows-update: ok' }
+      else { $script:sshRoutes += ("windows-update: no sshd service - " + $(if ($jr) { $jr } else { 'the job said nothing' })) }
     }
     Remove-Job $sshJob -Force -ErrorAction SilentlyContinue
   } else {
@@ -680,7 +681,13 @@ Step 'openssh-server' {
         throw ("msiexec exit {0}{1}" -f $mp.ExitCode, $(if ($tail) { " -- $tail" } else { '' }))
       }
       Remove-Item $msi -Force -ErrorAction SilentlyContinue
-      $script:sshRoutes += 'msi: ok'
+      # A zero exit is NOT the same as "the service exists". Measured on JIVO201
+      # 2026-08-19: msiexec reconfigured the package and returned 0, and there was
+      # still no sshd service -- the ZIP route is what actually repaired that box.
+      # Recording 'ok' off the exit code alone is the same lie this whole step
+      # exists to stop telling, one level down.
+      if (Get-Service sshd -ErrorAction SilentlyContinue) { $script:sshRoutes += 'msi: ok' }
+      else { $script:sshRoutes += ("msi: exit {0} but NO sshd service was created" -f $mp.ExitCode) }
     } catch { $script:sshRoutes += "msi: $($_.Exception.Message)" }
   }
 
@@ -821,12 +828,14 @@ if ($reach -eq 'yes') {
 }
 Write-Host ("  ALWAYS-ON    : sleep off, hibernate off, watchdog every 15 min, survives reboot")
 Write-Host ("  STEPS OK     : " + ($ok -join ', '))
-# The install routes, whenever anything but the happy path happened. This is the
-# line that was missing on 2026-08-19: two routes failed and neither said why.
-$noisy = @($sshRoutes | Where-Object { $_ -notmatch ': (ok|skipped|capability)' })
-if ($noisy.Count -gt 0) {
-  Write-Host "  SSHD ROUTES  :" -ForegroundColor Yellow
-  $sshRoutes | ForEach-Object { Write-Host ("     " + $_) -ForegroundColor Yellow }
+# ALWAYS printed. This was filtered to "only when something looks interesting",
+# and the filter's own regex read `capability-failed:` as the quiet word
+# `capability` -- so on JIVO201, the very first box v6 repaired, the lines saying
+# WHICH route saved it were suppressed. A classification rule that can hide the
+# answer is worse than three extra lines on a healthy box.
+if ($sshRoutes) {
+  Write-Host "  SSHD ROUTES  :" -ForegroundColor DarkGray
+  $sshRoutes | ForEach-Object { Write-Host ("     " + $_) -ForegroundColor DarkGray }
 }
 if ($bad) {
   Write-Host "  FAILED       :" -ForegroundColor Red
