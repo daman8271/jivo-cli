@@ -47,7 +47,7 @@ It shows you exactly what it will send and waits:
 About to WRITE to SAP:
   company : JIVO_OIL_HANADB
   user    : manager
-  request : POST https://103.89.45.192:50000/b1s/v1/Drafts
+  request : POST https://138.252.101.222:50000/b1s/v1/Drafts
   payload :
     {
       "DocObjectCode": "oOrders",

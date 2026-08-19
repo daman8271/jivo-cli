@@ -31,7 +31,7 @@ This is the thing to keep straight:
 | | **SAP HANA** (the books) | **Postgres** (the apps) |
 |---|---|---|
 | What it is | The **financial system of record** — GL, journals, A/R & A/P invoices, ledgers, stock valuation, statutory books | The **operational databases under the day-to-day apps** — how work actually flows |
-| Where | Linux box `jivo-dbsap` (103.89.45.192), HANA `:30015` | Postgres `103.89.45.76:5432` (via `postsql`) |
+| Where | Linux box `jivo-dbsap` (138.252.101.222), HANA `:30015` | Postgres `103.89.45.76:5432` (via `postsql`) |
 | Size | ~4.6 GB live books (Oil 3.11 / Mart 0.78 / Bev 0.68) | ~2.5 GB real data across 15 DBs |
 | Holds data the other doesn't | detailed GL/journals, tax, cost valuation, posted accounting docs | `factory_flow` (gate→QC→production→dispatch steps), `order_management`/OMS, `jivo_ecom`, `CRM` (leads), `task` (tickets), `po_db`, `jivo_site` (website), `test_supabase` (app/auth) |
 

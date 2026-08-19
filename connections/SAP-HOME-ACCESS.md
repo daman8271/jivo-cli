@@ -27,7 +27,7 @@ There are **two different machines**, and two different kinds of "SAP":
 | | The **data** | The **files** |
 |---|---|---|
 | What | Every number/record — invoices, ledgers, balances, orders, journals, stock. **This IS SAP.** | Scanned *images* of paper docs (a photo/PDF clipped to an entry). Not in the DB — just files SAP points at. |
-| Box | **Linux** `jivo-dbsap` — `103.89.45.192` (internal `20.20.45.192`) | **Windows** `JIVO-APP` — `20.20.45.25` (Tailscale `100.104.229.5`) |
+| Box | **Linux** `jivo-dbsap` — `138.252.101.222` (internal `20.20.45.192`) | **Windows** `JIVO-APP` — `20.20.45.25` (Tailscale `100.104.229.5`) |
 | Runs | HANA DB (`30015`) + SAP B1 Service Layer (`50000`) | SMB file shares (`445`) + RDP |
 | Login | **data** logins — `hana.env` (ZIA) / `sapb1` (manager) | **OS** login — `fleet-access.env` (`JIVOAPP_SMB_*`). **Different credential.** |
 
@@ -142,7 +142,7 @@ More files than the SAP registry (ATC1 ≈ 202k) because the folders also hold g
 
 ## 8 · What does NOT work from home (by design)
 
-Direct connections to the box's public IP — `103.89.45.192:22`, `:30015`, `:50000` —
+Direct connections to the box's public IP — `138.252.101.222:22`, `:30015`, `:50000` —
 **time out** from any non-office IP (the whitelist). That's expected; we go *around* it
 via the reverse tunnel (§2). Do not retry auth against `.192` directly — fail2ban bans
 your whole IP across all ports.
@@ -174,7 +174,7 @@ Three pieces, all self-healing, none needing the office IP whitelist:
    cannot reach the host's `127.0.0.1`.
 3. **`sapb1-sl-proxy`** sidecar — the non-obvious one. ⚠️ **SAP's Apache 403s any
    request whose `Host` header it doesn't recognise.** Measured 2026-07-30:
-   `Host: 127.0.0.1:*`, `localhost:*`, `103.89.45.192:*` → **200**;
+   `Host: 127.0.0.1:*`, `localhost:*`, `138.252.101.222:*` → **200**;
    `Host: 172.16.1.1:50000` → **403 Forbidden**. The sapb1 client derives `Host`
    from `SAPB1_HOST:SAPB1_PORT`, so it must *dial* a name SAP accepts — hence a
    sidecar in sapb1's own netns listening on `127.0.0.1:50000`. Never "simplify"

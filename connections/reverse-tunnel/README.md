@@ -1,6 +1,6 @@
 # reverse-tunnel — reach SAP's SSH from ANY IP
 
-The SAP/HANA box `jivo-dbsap` (`103.89.45.192`) only accepts SSH from whitelisted
+The SAP/HANA box `jivo-dbsap` (`138.252.101.222`) only accepts SSH from whitelisted
 public IPs, and it fail2bans anything that guesses wrong. That means the moment we
 leave the office network — VPN on, hotel wifi, phone tether, a fleet box — `ssh
 jivo-sap` dies and every Accounts tool that rides port 22 (the HANA tunnel included)
@@ -24,7 +24,7 @@ in through the VPS from wherever we are.
                                     |  minute from cron under flock:
                                     |  ssh -R 127.0.0.1:47192:localhost:22
                                     |
-                            jivo-dbsap  103.89.45.192
+                            jivo-dbsap  138.252.101.222
                             sshd on localhost:22
                             (public-IP whitelist bypassed — the box dialled OUT)
 ```

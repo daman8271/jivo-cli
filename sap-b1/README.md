@@ -5,7 +5,7 @@
 > The only non-GET calls ever made are `Login`/`Logout`. This is a standing rule — no exceptions.
 > (The `manager` login is a super-user; discipline in this repo is what keeps production safe.)
 
-Connected **LIVE 2026-07-23** to the SAP B1 (HANA) Service Layer at `103.89.45.192:50000`.
+Connected **LIVE 2026-07-23** to the SAP B1 (HANA) Service Layer at `138.252.101.222:50000`.
 
 ## The three branch databases
 

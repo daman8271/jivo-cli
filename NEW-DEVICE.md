@@ -14,7 +14,7 @@ want it to — create SAP drafts.
 - **Git**, and access to `github.com/daman8271/jivo-cli`.
 - **Go 1.25.5 or newer** — only if you want to rebuild the binaries. If the
   committed binaries run on your platform, you can skip Go entirely.
-- **Network reach to SAP.** SAP (`103.89.45.192:50000`) is only reachable from
+- **Network reach to SAP.** SAP (`138.252.101.222:50000`) is only reachable from
   the office network, over the VPN, or from a whitelisted IP. A machine that
   can't reach it will fail at `doctor` no matter how correct the setup is.
   From home, see `connections/SAP-HOME-ACCESS.md`.
@@ -40,7 +40,7 @@ Create `sap-b1/cli/.env`:
 
 ```bash
 cat > sap-b1/cli/.env <<'EOF'
-SAPB1_HOST=103.89.45.192
+SAPB1_HOST=138.252.101.222
 SAPB1_PORT=50000
 SAPB1_COMPANYDB=JIVO_OIL_HANADB
 SAPB1_USER=manager
