@@ -24,6 +24,13 @@ ver="v${_n} (${_sha}${_dirty})"
 echo "version: $ver"
 
 build() {   # <template> <output>
+  # Assert on the INPUT first. "The marker is gone from the output" passes just
+  # as happily when the marker was never in the template to begin with — which
+  # is exactly how the Mac installer shipped with no version at all from v1 to
+  # v5 while this script printed "built:" every single time. A check that cannot
+  # fail is not a check.
+  grep -q '@@REGKEY_B64@@' "$1" || { echo "template has no @@REGKEY_B64@@ placeholder: $1" >&2; exit 1; }
+  grep -q '@@VERSION@@'    "$1" || { echo "template has no @@VERSION@@ placeholder: $1" >&2; exit 1; }
   sed -e "s|@@REGKEY_B64@@|$b64|" -e "s|@@VERSION@@|$ver|" "$1" > "$2"
   # Assert the artifact actually contains the key. A stale/failed substitution
   # produces a perfectly valid-looking file that can never authenticate.
@@ -31,10 +38,20 @@ build() {   # <template> <output>
   # Same for the version: an installer that ships reporting "@@VERSION@@" is
   # worse than one with no version at all, because it looks deliberate.
   grep -q '@@VERSION@@' "$2" && { echo "version substitution failed: $2" >&2; exit 1; }
+  # ...and that the real values landed. Absence of the placeholder is not
+  # presence of the value.
+  grep -qF "$ver" "$2" || { echo "version string missing from artifact: $2" >&2; exit 1; }
+  grep -qF "$(printf %s "$b64" | cut -c1-40)" "$2" || { echo "registrar key missing from artifact: $2" >&2; exit 1; }
   echo "built: $2"
 }
 
-[ "$plat" = win ] || [ "$plat" = both ] && build "$here/JIVO-VPS-TUNNEL.cmd.tpl" "$outdir/JIVO-VPS-TUNNEL.cmd"
+# This was `[ x = win ] || [ x = both ] && build ...`, which is correct — it
+# groups as `(a || b) && c` — but reads like it might not, and the two platform
+# arms were written in two different shapes. Checked in bash-posix and dash
+# before changing it: same behaviour, so this is legibility, not a bug fix.
+if [ "$plat" = win ] || [ "$plat" = both ]; then
+  build "$here/JIVO-VPS-TUNNEL.cmd.tpl" "$outdir/JIVO-VPS-TUNNEL.cmd"
+fi
 if [ "$plat" = mac ] || [ "$plat" = both ]; then
   build "$here/JIVO-VPS-TUNNEL-MAC.command.tpl" "$outdir/JIVO-VPS-TUNNEL-MAC.command"
   chmod +x "$outdir/JIVO-VPS-TUNNEL-MAC.command"

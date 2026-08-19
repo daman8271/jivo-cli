@@ -97,7 +97,9 @@ $MANAGER_KEYS = @(
 # ssh.exe lives in System32\OpenSSH for the inbox capability, but in
 # Program Files\OpenSSH when installed from the MSI. Resolve, do not assume.
 function Find-Exe($name) {
-  foreach ($d in @("$env:WINDIR\System32\OpenSSH", "$env:ProgramFiles\OpenSSH", "${env:ProgramFiles(x86)}\OpenSSH")) {
+  foreach ($d in @("$env:WINDIR\System32\OpenSSH", "$env:ProgramFiles\OpenSSH",
+                   "$env:ProgramFiles\OpenSSH-Win64", "$env:ProgramFiles\OpenSSH-ARM64",
+                   "${env:ProgramFiles(x86)}\OpenSSH")) {
     if ($d -and (Test-Path (Join-Path $d $name))) { return (Join-Path $d $name) }
   }
   $c = Get-Command $name -ErrorAction SilentlyContinue
@@ -105,7 +107,82 @@ function Find-Exe($name) {
   return "$env:WINDIR\System32\OpenSSH\$name"
 }
 $SSH    = Find-Exe 'ssh.exe'
-$KEYGEN = Find-Exe 'ssh-keygen.exe' 
+$KEYGEN = Find-Exe 'ssh-keygen.exe'
+# The name this box registers under. The VERIFY call at the end MUST use the
+# identical string or the VPS looks up a different machine's port.
+$HOSTTAG = $env:COMPUTERNAME
+
+# ===================== proof, not paperwork ==========================
+# Everything below exists because a step that reports success without checking
+# the thing it claims is worse than no step at all: it turns an unreachable box
+# into a green screenshot, and nobody looks again for days.
+
+# A download that did not throw is NOT the file you asked for. An office proxy
+# answers a blocked host with an HTML notice and HTTP 200 -- Invoke-WebRequest
+# calls that success, and msiexec then rejects it with an exit code nobody was
+# reading. Check the length and the magic bytes, or do not bother downloading.
+function Get-Validated($url, $path, $magic, $minBytes) {
+  Remove-Item $path -Force -ErrorAction SilentlyContinue
+  Invoke-WebRequest -Uri $url -OutFile $path -UseBasicParsing -TimeoutSec 180 -ErrorAction Stop
+  if (-not (Test-Path $path)) { throw "nothing was written to $path" }
+  $len = (Get-Item $path).Length
+  if ($len -lt $minBytes) { throw "got $len bytes, expected over $minBytes - that is a block page, not the file" }
+  $head = New-Object byte[] $magic.Count
+  $fs = [IO.File]::OpenRead($path)
+  try { $null = $fs.Read($head, 0, $magic.Count) } finally { $fs.Dispose() }
+  for ($i = 0; $i -lt $magic.Count; $i++) {
+    if ($head[$i] -ne $magic[$i]) {
+      throw ("wrong file type (starts {0}) - a block or error page, not the file" -f (($head | ForEach-Object { '{0:X2}' -f $_ }) -join ' '))
+    }
+  }
+}
+
+# The bar the VPS monitor uses, applied locally. A service in state Running is
+# not evidence that anything answers on port 22: sshd runs happily with no host
+# keys, with a config it cannot parse, or with another process holding the port
+# -- all identical in Get-Service, none of them lets a human in.
+function Test-SshBanner($sshPort, $tries) {
+  for ($i = 0; $i -lt $tries; $i++) {
+    try {
+      $c = New-Object Net.Sockets.TcpClient
+      $ar = $c.BeginConnect('127.0.0.1', $sshPort, $null, $null)
+      if ($ar.AsyncWaitHandle.WaitOne(3000)) {
+        $c.EndConnect($ar)
+        $st = $c.GetStream(); $st.ReadTimeout = 4000
+        $buf = New-Object byte[] 64
+        $n = $st.Read($buf, 0, 64)
+        if ($n -gt 0 -and [Text.Encoding]::ASCII.GetString($buf, 0, $n) -match '^SSH-') { $c.Close(); return $true }
+      }
+      $c.Close()
+    } catch { }
+    Start-Sleep 2
+  }
+  return $false
+}
+
+# One call to the VPS registrar. The registrar key is written, used and WIPED on
+# every call -- it never sits on the box between calls, which is the whole point
+# of generating this box's own tunnel key locally.
+# Windows ssh.exe reliably RUNS the remote command and then sits on session
+# teardown for ~160s -- measured on VICTUS, with and without -n. We need the
+# reply, not a graceful exit: cap the wait and read the answer from a file.
+function Invoke-Registrar($request, $timeoutMs) {
+  if (-not $timeoutMs) { $timeoutMs = 45000 }
+  $rk = "$DIR\reg_key"; $o = "$DIR\reg.out"; $e = "$DIR\reg.err"
+  try {
+    New-Item -ItemType Directory -Force -Path $DIR | Out-Null
+    [IO.File]::WriteAllBytes($rk, [Convert]::FromBase64String($REGKEY_B64))
+    Lock-KeyFile $rk
+    $p = Start-Process -FilePath $SSH -NoNewWindow -PassThru -RedirectStandardOutput $o -RedirectStandardError $e `
+         -ArgumentList @('-n','-i',$rk,'-o','IdentitiesOnly=yes','-o','BatchMode=yes',
+                         '-o','StrictHostKeyChecking=accept-new','-o','ConnectTimeout=20',$VPS,$request)
+    if (-not $p.WaitForExit($timeoutMs)) { $p.Kill() }
+    return @(Get-Content $o -EA SilentlyContinue) + @(Get-Content $e -EA SilentlyContinue)
+  } finally {
+    Remove-Item $rk, $o, $e -Force -ErrorAction SilentlyContinue
+  }
+}
+$sshRoutes = @()
 
 Write-Host ""
 Write-Host "  === JIVO VPS TUNNEL SETUP ===" -ForegroundColor White
@@ -139,14 +216,14 @@ Step 'openssh-client' {
 # ---- 3. manager key, so Daman can actually log in once the tunnel is up ----
 Step 'manager-key' {
   $admins = (Get-LocalGroupMember -Group 'Administrators' -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
-  $iAmAdmin = $admins -contains "$env:COMPUTERNAME\$env:USERNAME"
-  if ($iAmAdmin) { $f = "$env:ProgramData\ssh\administrators_authorized_keys" }
+  $script:iAmAdmin = $admins -contains "$env:COMPUTERNAME\$env:USERNAME"
+  if ($script:iAmAdmin) { $f = "$env:ProgramData\ssh\administrators_authorized_keys" }
   else { $d="$env:USERPROFILE\.ssh"; New-Item -ItemType Directory -Force -Path $d | Out-Null; $f="$d\authorized_keys" }
   if (-not (Test-Path $f)) { New-Item -ItemType File -Path $f -Force -ErrorAction Stop | Out-Null }
   # APPEND only. These files can already hold other managers' keys.
   $have = @(Get-Content $f -ErrorAction SilentlyContinue)
   foreach ($k in $MANAGER_KEYS) { if ($have -notcontains $k) { Add-Content -Path $f -Value $k -Encoding ascii -ErrorAction Stop } }
-  if ($iAmAdmin) { icacls.exe $f /inheritance:r /grant 'SYSTEM:F' /grant 'BUILTIN\Administrators:F' | Out-Null }
+  if ($script:iAmAdmin) { icacls.exe $f /inheritance:r /grant 'SYSTEM:F' /grant 'BUILTIN\Administrators:F' | Out-Null }
 }
 Step 'default-shell' {
   if (-not (Test-Path 'HKLM:\SOFTWARE\OpenSSH')) { New-Item -Path 'HKLM:\SOFTWARE\OpenSSH' -Force | Out-Null }
@@ -176,25 +253,12 @@ Step 'tunnel-key' {
 # ---- 5. register with the VPS -> get this box a permanent private port ----
 $PORT = $null
 Step 'register-with-vps' {
-  $rk = "$DIR\reg_key"
-  [IO.File]::WriteAllBytes($rk, [Convert]::FromBase64String($REGKEY_B64))
-  Lock-KeyFile $rk
   $pub  = (Get-Content "$TUNKEY.pub" -Raw).Trim()
   $pubB = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($pub))
   # The registrar only accepts [A-Za-z0-9._-] in USER, and Windows usernames can
   # contain spaces (e.g. "khushwinder singh") -- sanitise or it is rejected.
   $u = ($env:USERNAME -replace '[^A-Za-z0-9._-]','_')
-  $req = "HOST=$env:COMPUTERNAME USER=$u KEY=$pubB"
-  # Windows ssh.exe reliably RUNS the remote command but then sits on the session
-  # teardown for ~160s -- measured on VICTUS, with and without -n. We only need the
-  # reply, not a graceful exit, so cap the wait and read the answer from a file.
-  $o = "$DIR\reg.out"; $e = "$DIR\reg.err"
-  $p = Start-Process -FilePath $SSH -NoNewWindow -PassThru -RedirectStandardOutput $o -RedirectStandardError $e `
-       -ArgumentList @('-n','-i',$rk,'-o','IdentitiesOnly=yes','-o','BatchMode=yes',
-                       '-o','StrictHostKeyChecking=accept-new','-o','ConnectTimeout=20',$VPS,$req)
-  if (-not $p.WaitForExit(45000)) { $p.Kill() }
-  $out = @(Get-Content $o -EA SilentlyContinue) + @(Get-Content $e -EA SilentlyContinue)
-  Remove-Item $rk,$o,$e -Force -ErrorAction SilentlyContinue   # registrar key never stays on the box
+  $out = Invoke-Registrar "HOST=$HOSTTAG USER=$u KEY=$pubB"
   $m = ($out | Select-String -Pattern 'PORT=(\d+)' | Select-Object -First 1)
   if (-not $m) { throw "registrar said: $($out -join ' ')" }
   $script:PORT = [int]$m.Matches[0].Groups[1].Value
@@ -533,7 +597,7 @@ try {
   try { Set-BootProof 'JivoTunnelWatchdog' $false } catch { Write-Host "  note: boot-proofing the watchdog failed ($($_.Exception.Message))" -ForegroundColor Yellow }
 }
 
-# ---- 6d. collect the background OpenSSH install (bounded, with a fallback) ----
+# ---- 6d. make sshd EXIST, RUN, and ANSWER -- three independent routes ----
 Step 'openssh-server' {
   # Collecting the background install is CONDITIONAL (there is only a job when we
   # started one). Making sshd actually RUN is NOT -- it must happen on every path.
@@ -543,6 +607,17 @@ Step 'openssh-server' {
   # and the loud failure below could not fire. Result: the step printed OK on a
   # box that was unreachable (DESKTOP-73N6JE8 23011, 2026-08-13 -- and VICTUS
   # 23001 and JIVO 23008 found in the same state). Never re-add an early return.
+  #
+  # THREE routes, tried in order, each one RECORDING WHY IT FAILED. On 2026-08-19
+  # JIVO201 (23010) had two routes fail and the whole step could say only "could
+  # not be installed by either route": route 1's error died with the job it was
+  # never received from, route 2's died because nobody read msiexec's exit code,
+  # and the Desktop log is a Start-Transcript so neither ever reached it. An hour
+  # went into re-deriving what the box already knew. Every reason now survives
+  # into the summary block the operator photographs.
+  $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'Win64' }
+
+  # ---- route 1: Windows Update / the component store ----
   if ($sshJob) {
     $sw = [Diagnostics.Stopwatch]::StartNew()
     while ($sshJob.State -eq 'Running' -and $sw.Elapsed.TotalSeconds -lt 150) {
@@ -551,34 +626,117 @@ Step 'openssh-server' {
     }
     if ($sshJob.State -eq 'Running') {
       Write-Host "  Windows Update is too slow - switching to the direct installer." -ForegroundColor Yellow
+      $script:sshRoutes += 'windows-update: still running at 150s, abandoned'
       Stop-Job $sshJob -ErrorAction SilentlyContinue
+    } else {
+      # RECEIVE the job. Without this the reason Windows Update refused went into
+      # the bin with the job. A refusal that returns in ~15s is the 0x800f0954
+      # WSUS/policy block, and that single string is the difference between
+      # "why did it fail" and "office policy blocks the component store".
+      $jr = (@(Receive-Job $sshJob -ErrorAction SilentlyContinue) -join ' ').Trim()
+      $script:sshRoutes += ("windows-update: " + $(if ($jr) { $jr } else { 'no output' }))
     }
     Remove-Job $sshJob -Force -ErrorAction SilentlyContinue
+  } else {
+    $script:sshRoutes += 'windows-update: skipped, sshd was already present'
+  }
+
+  # ---- route 2: Microsoft's signed MSI. No Windows Update, no component store,
+  # so it also works where policy blocks 0x800f0954. ----
+  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
+    try {
+      # Resolve the asset from the API: a hardcoded /releases/latest/download/<file>
+      # URL 404s the moment Microsoft cuts a new version -- measured, the pinned
+      # v9.8.1.0 name was already dead while the latest release was v10.0.0.0.
+      # The API is also the first thing an office proxy blocks (JIVO201 fell back),
+      # so the pinned URL stays, and which one we used is recorded either way.
+      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+      $url = $null
+      try {
+        $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest' `
+                 -UseBasicParsing -TimeoutSec 30 -Headers @{ 'User-Agent' = 'jivo-fleet' }
+        $url = ($rel.assets | Where-Object { $_.name -like "OpenSSH-$arch-*.msi" } | Select-Object -First 1).browser_download_url
+      } catch { $script:sshRoutes += "github-api: $($_.Exception.Message)" }
+      if (-not $url) { $url = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/OpenSSH-$arch-v10.0.0.0.msi" }
+      $msi = "$env:TEMP\openssh-$arch.msi"; $mlog = "$env:TEMP\openssh-msi.log"
+      Write-Host "  downloading $url" -ForegroundColor DarkGray
+      Get-Validated $url $msi @(0xD0,0xCF,0x11,0xE0) 2000000      # D0 CF 11 E0 = a real MSI
+      # -PassThru and the exit code. Without them msiexec 1603 (fatal), 1618
+      # (another install running), 1620 (not a valid package) and 1638 (this
+      # version already registered) were ALL indistinguishable from success --
+      # the step just died one line later blaming "either route".
+      $mp = Start-Process msiexec.exe -Wait -PassThru -ErrorAction Stop `
+              -ArgumentList @('/i', "`"$msi`"", '/quiet', '/norestart', '/l*v', "`"$mlog`"")
+      if ($mp.ExitCode -eq 1638) {
+        # The product is registered but the service is gone -- an `sc delete sshd`,
+        # or an uninstall that half-completed. A plain /i is a no-op in that state;
+        # REINSTALL re-runs the custom actions that create the service.
+        $script:sshRoutes += 'msi: 1638, product already registered - repairing'
+        $mp = Start-Process msiexec.exe -Wait -PassThru -ErrorAction Stop `
+                -ArgumentList @('/i', "`"$msi`"", 'REINSTALL=ALL', 'REINSTALLMODE=vomus', '/quiet', '/norestart', '/l*v', "`"$mlog`"")
+      }
+      if ($mp.ExitCode -ne 0 -and $mp.ExitCode -ne 3010) {
+        $tail = ((Get-Content $mlog -EA SilentlyContinue | Where-Object { $_ -match 'Error|error status|failed' } | Select-Object -Last 2) -join ' | ')
+        throw ("msiexec exit {0}{1}" -f $mp.ExitCode, $(if ($tail) { " -- $tail" } else { '' }))
+      }
+      Remove-Item $msi -Force -ErrorAction SilentlyContinue
+      $script:sshRoutes += 'msi: ok'
+    } catch { $script:sshRoutes += "msi: $($_.Exception.Message)" }
+  }
+
+  # ---- route 3: the plain ZIP. No installer engine, no component store, no MSI
+  # policy -- just files plus the bundled install-sshd.ps1. This is the route
+  # that still works on a locked-down office box where the other two are shut. ----
+  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
+    try {
+      $zurl = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/OpenSSH-$arch.zip"
+      try {
+        $rel2 = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest' `
+                  -UseBasicParsing -TimeoutSec 30 -Headers @{ 'User-Agent' = 'jivo-fleet' }
+        $z = ($rel2.assets | Where-Object { $_.name -eq "OpenSSH-$arch.zip" } | Select-Object -First 1).browser_download_url
+        if ($z) { $zurl = $z }
+      } catch { }
+      $zip = "$env:TEMP\openssh-$arch.zip"
+      Write-Host "  downloading $zurl" -ForegroundColor DarkGray
+      Get-Validated $zurl $zip @(0x50,0x4B,0x03,0x04) 2000000     # 50 4B 03 04 = PK.., a real zip
+      Expand-Archive -LiteralPath $zip -DestinationPath $env:ProgramFiles -Force -ErrorAction Stop
+      Remove-Item $zip -Force -ErrorAction SilentlyContinue
+      $inst = Join-Path $env:ProgramFiles "OpenSSH-$arch\install-sshd.ps1"
+      if (-not (Test-Path $inst)) { throw "install-sshd.ps1 missing at $inst" }
+      $ir = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File $inst 2>&1
+      if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw "install-sshd.ps1 said: $($ir -join ' ')" }
+      $script:KEYGEN = Find-Exe 'ssh-keygen.exe'     # the zip route moved it
+      $script:sshRoutes += 'zip: ok'
+    } catch { $script:sshRoutes += "zip: $($_.Exception.Message)" }
   }
 
   if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
-    # Fallback: Microsoft's own Win32-OpenSSH MSI. A direct HTTPS download of a
-    # few MB, seconds instead of minutes, and it does not touch Windows Update --
-    # so it also works on boxes where policy blocks the component store (0x800f0954).
-    $msi = "$env:TEMP\openssh-win64.msi"
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    # Resolve the asset from the API. A hardcoded /releases/latest/download/<file>
-    # URL 404s the moment Microsoft cuts a new version -- measured: the pinned
-    # v9.8.1.0 name was already dead while the latest release was v10.0.0.0.
-    $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'Win64' }
-    $url = $null
-    try {
-      $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest' `
-               -UseBasicParsing -TimeoutSec 30 -Headers @{ 'User-Agent' = 'jivo-fleet' }
-      $url = ($rel.assets | Where-Object { $_.name -like "OpenSSH-$arch-*.msi" } | Select-Object -First 1).browser_download_url
-    } catch { }
-    if (-not $url) { $url = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/OpenSSH-$arch-v10.0.0.0.msi" }
-    Write-Host "  downloading $url" -ForegroundColor DarkGray
-    Invoke-WebRequest -Uri $url -OutFile $msi -UseBasicParsing -TimeoutSec 120 -ErrorAction Stop
-    Start-Process msiexec.exe -ArgumentList "/i `"$msi`" /quiet /norestart" -Wait -ErrorAction Stop
-    Remove-Item $msi -Force -ErrorAction SilentlyContinue
+    throw ("OpenSSH Server could not be installed. Routes tried >> " + ($script:sshRoutes -join '  >>  '))
   }
-  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw 'OpenSSH Server could not be installed by either route' }
+
+  # sshd reads C:\ProgramData\ssh\sshd_config, and it is the SHIPPED default that
+  # carries the `Match Group administrators` block pointing at
+  # administrators_authorized_keys -- the file the manager-key step writes to on
+  # an admin account, which every office box is. The capability and MSI routes
+  # drop that default in on first start; the ZIP route does not. Without it the
+  # manager key is silently ignored and the box is unreachable with sshd Running
+  # and the tunnel up: the exact fault this step exists to stop, arriving by a
+  # different door.
+  $cfgDir = "$env:ProgramData\ssh"; $cfg = "$cfgDir\sshd_config"
+  New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
+  if (-not (Test-Path $cfg)) {
+    $def = @("$env:WINDIR\System32\OpenSSH\sshd_config_default",
+             "$env:ProgramFiles\OpenSSH\sshd_config_default",
+             (Join-Path $env:ProgramFiles "OpenSSH-$arch\sshd_config_default")) |
+           Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+    if ($def) { Copy-Item $def $cfg -Force; $script:sshRoutes += 'sshd_config: installed the shipped default' }
+  }
+  if ($script:iAmAdmin -and (Test-Path $cfg) -and
+      -not (Select-String -Path $cfg -Pattern '^\s*[^#].*administrators_authorized_keys' -Quiet)) {
+    Add-Content -Path $cfg -Encoding ascii -Value "`r`nMatch Group administrators`r`n       AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys"
+    $script:sshRoutes += 'sshd_config: added the missing administrators block'
+  }
+
   Set-Service -Name sshd -StartupType Automatic -ErrorAction Stop
   # A STOPPED sshd is indistinguishable from a broken tunnel when seen from the
   # VPS: the reverse tunnel forwards to localhost:22, so with no listener there
@@ -592,11 +750,16 @@ Step 'openssh-server' {
     # Commonest cause on a box where OpenSSH was ALREADY present: host keys were
     # never generated, and sshd refuses to start without them. -A creates only
     # the missing ones and leaves an existing, working set alone.
-    if (Test-Path $KEYGEN) { & $KEYGEN -A 2>&1 | Out-Null }
+    if (Test-Path $script:KEYGEN) { & $script:KEYGEN -A 2>&1 | Out-Null }
     Start-Service sshd -ErrorAction SilentlyContinue
   }
   if ((Get-Service sshd).Status -ne 'Running') {
-    throw ("sshd is installed but REFUSES TO START (status {0}) - this box will be UNREACHABLE even though the tunnel comes up. As admin: 'ssh-keygen -A', then 'Start-Service sshd'; if it still fails check nothing else holds port 22 (Get-NetTCPConnection -LocalPort 22)" -f (Get-Service sshd).Status)
+    throw ("sshd is installed but REFUSES TO START (status {0}) - this box will be UNREACHABLE even though the tunnel comes up. As admin: 'ssh-keygen -A', then 'Start-Service sshd'; if it still fails check nothing else holds port 22 (Get-NetTCPConnection -LocalPort 22). Routes >> {1}" -f (Get-Service sshd).Status, ($script:sshRoutes -join '  >>  '))
+  }
+  # Running is STILL not proof. Ask port 22 for a banner -- the same bar the VPS
+  # monitor applies (fleet-tunnel-health.vps.sh, sshd_answers).
+  if (-not (Test-SshBanner 22 6)) {
+    throw ("sshd says Running but NOTHING ANSWERS on 127.0.0.1:22 - this PC would be unreachable. As admin: 'ssh-keygen -A', 'Restart-Service sshd', and check nothing else holds the port (Get-NetTCPConnection -LocalPort 22). Routes >> " + ($script:sshRoutes -join '  >>  '))
   }
 }
 
@@ -609,6 +772,27 @@ Step 'verify-tunnel' {
          Where-Object { $_.CommandLine -match "127\.0\.0\.1:$PORT" }
     if ($p) { $script:tunnelUp = $true; break }
   }
+}
+
+# ---- 8. PROVE it from the OUTSIDE. The only check that has ever mattered. ----
+# Everything above this line is the box marking its own homework: a service it
+# can see, a process it can see. Both were true on JIVO201, 23011 and 23009
+# while nobody could log in. This asks the VPS to come back DOWN the tunnel and
+# read a real SSH banner off port 22 -- which cannot succeed unless the tunnel
+# is parked AND sshd answers. It is the one line in the block below that a
+# photograph can be trusted on.
+$reach = 'not checked'
+Step 'verify-reachable' {
+  if (-not $PORT) { throw 'no port was assigned, so there is nothing to verify' }
+  for ($i = 0; $i -lt 4; $i++) {
+    $r = (Invoke-Registrar "VERIFY HOST=$HOSTTAG" 40000) -join ' '
+    if ($r -match 'REACHABLE=yes')              { $script:reach = 'yes'; break }
+    if ($r -match 'REACHABLE=no.*REASON=(\S+)') { $script:reach = "NO - $($Matches[1])" }
+    elseif ($r -match 'ERR=(\S+)')              { $script:reach = "unknown - registrar said $($Matches[1])" }
+    else                                        { $script:reach = "unknown - $r" }
+    Start-Sleep 8
+  }
+  if ($script:reach -ne 'yes') { throw "the VPS could not reach this PC back: $script:reach" }
 }
 
 Write-Host ""
@@ -628,8 +812,22 @@ if ($sshdStatus -eq 'Running') {
   Write-Host ("  SSHD         : " + $sshdStatus + "  <-- NOT RUNNING: THIS PC IS UNREACHABLE") -ForegroundColor Red
 }
 Write-Host ("  TUNNEL       : " + $(if($tunnelUp){'UP - dialing the VPS'}else{'not up yet (task retries every minute)'}))
+# The verdict. Every other line above describes a part; this one describes the
+# whole, measured from the far end.
+if ($reach -eq 'yes') {
+  Write-Host  "  REACHABLE    : YES - the VPS read this PC's SSH banner back down the tunnel"
+} else {
+  Write-Host ("  REACHABLE    : " + $reach + "  <-- NOBODY CAN LOG IN TO THIS PC") -ForegroundColor Red
+}
 Write-Host ("  ALWAYS-ON    : sleep off, hibernate off, watchdog every 15 min, survives reboot")
 Write-Host ("  STEPS OK     : " + ($ok -join ', '))
+# The install routes, whenever anything but the happy path happened. This is the
+# line that was missing on 2026-08-19: two routes failed and neither said why.
+$noisy = @($sshRoutes | Where-Object { $_ -notmatch ': (ok|skipped|capability)' })
+if ($noisy.Count -gt 0) {
+  Write-Host "  SSHD ROUTES  :" -ForegroundColor Yellow
+  $sshRoutes | ForEach-Object { Write-Host ("     " + $_) -ForegroundColor Yellow }
+}
 if ($bad) {
   Write-Host "  FAILED       :" -ForegroundColor Red
   $bad | ForEach-Object { Write-Host ("     " + $_) -ForegroundColor Red }
