@@ -38,7 +38,8 @@ connections/fleet/build-tunnel-installer.sh both     # win | mac | both
 # 2. send them the file. They double-click it and approve the UAC prompt.
 #    ~1 min. It prints a report block.
 
-# 3. they send back the block. You need COMPUTERNAME, USERNAME, VPS PORT.
+# 3. they send back the block. Read REACHABLE first — v6 proves it from the VPS.
+#    You also need COMPUTERNAME, USERNAME, VPS PORT.
 
 # 4. add the alias
 cat >> ~/.ssh/config <<'EOF'
@@ -278,6 +279,63 @@ itself is upstream in hermes.
 | `grep -c` exits **1** on a zero count | so `count=$(... grep -c ... \|\| echo 0)` fires the fallback on the *healthy* path and yields `"0\n0"`, which blows up the arithmetic. Swallow the status inside the container (`\|\| true`) and default in the shell. Hit while writing the GC script. |
 | Docker stores layers under containerd's **`moby`** namespace | `ctr -n default c ls` shows **zero containers** on a box running 15 of them, which makes 44 GB of live images look like prunable junk. Check `docker ps` before concluding anything is orphaned. |
 
+## v6 — the installer now proves the box is reachable (2026-08-19)
+
+Up to v5 the installer finished by checking things it could see **from inside the
+box**: the `sshd` service says Running, an `ssh.exe` holds the `-R` flag. Both are
+true on a machine nobody can log in to, which is how `JIVO201` (23010),
+`DESKTOP-73N6JE8` (23011) and `DILPREETSINGH` (23009) each burned days behind a
+green screen.
+
+v6 asks the VPS instead. The registrar takes a second verb:
+
+```sh
+VERIFY HOST=<name>
+  -> REACHABLE=yes PORT=<n> BANNER=SSH-2.0-OpenSSH_for_Windows_9.5
+  -> REACHABLE=no  PORT=<n> REASON=tunnel-up-but-sshd-silent
+  -> REACHABLE=no  PORT=<n> REASON=no-tunnel-parked-on-this-vps
+```
+
+It reads a real SSH banner off that box's own loopback port **here**, which cannot
+answer unless the tunnel is parked *and* `sshd` is listening — and it names which
+half is broken, because from the box those two look identical. The installer calls
+it at the end and prints a `REACHABLE` line. **That is the only line in the report
+block worth trusting**; every other line describes a part.
+
+Check any box yourself, any time:
+
+```sh
+ssh vps 'SSH_CONNECTION="1 1 1 1" SSH_ORIGINAL_COMMAND="VERIFY HOST=JIVO201" /root/fleet-tunnel-register.sh'
+```
+
+Also in v6, all of it because a route failed **without saying why**:
+
+- **three** independent routes to `sshd` on Windows — Windows Update, the signed
+  MSI, and the plain ZIP + `install-sshd.ps1`. The ZIP route needs neither Windows
+  Update nor the MSI engine, so it survives a locked-down office box. Every route
+  records its reason and they all reach the report block.
+- downloads are validated by length **and magic bytes**. An office proxy answers a
+  blocked host with an HTML page and HTTP 200, which `Invoke-WebRequest` calls
+  success and `msiexec` then rejects with an exit code nobody was reading.
+- `msiexec` is finally checked (`-PassThru`), including a `REINSTALL` retry on 1638
+  — the product registered but the service deleted.
+- the shipped `sshd_config` is dropped in when missing. It carries the
+  `Match Group administrators` block, without which the manager key the installer
+  just wrote is silently ignored — unreachable by a different door.
+- **macOS caught up.** It had the same faults and some worse ones: `step()` threw
+  the failure *reason* away entirely, there was no log file, and there was no
+  version stamp at all (v1–v5 shipped unversioned, because the build script only
+  checked that the placeholder was *gone*, which passes when it was never there).
+  Remote Login now has three routes that each report what macOS actually said, and
+  is believed only when port 22 returns a banner — `-getremotelogin: On` is true on
+  a Mac where `sshd` is not listening. The `com.apple.access_ssh` membership trap is
+  handled too.
+
+Verified on real hardware, not in theory: full v6 run end to end on `VICTUS`
+(Windows 11, PowerShell 5.1) and `dannys-Mac-Pro` (macOS 12.7.6) — both returned
+`REACHABLE: YES`, both left the registrar key wiped, neither had its `sshd_config`
+or scheduled tasks disturbed.
+
 ## When one is broken → [`RECOVERY-RUNBOOK.md`](RECOVERY-RUNBOOK.md)
 
 This file is how a tunnel gets *built*. [`RECOVERY-RUNBOOK.md`](RECOVERY-RUNBOOK.md) is
@@ -305,9 +363,9 @@ Removing the VPS line alone is enough to cut it off — the box can then dial bu
 ## Give an operator SAP with **no VPN** (done for `JIVO201` 2026-08-05)
 
 The office PCs reach SAP only over the FortiClient VPN (profile `Mieux` →
-`103.178.248.2:20443`), because `103.89.45.192` is IP-whitelisted to the office. An
+`103.178.248.2:20443`), because `138.252.101.222` is IP-whitelisted to the office. An
 operator working from home who forgets the VPN gets `cannot reach
-103.89.45.192:50000 over TCP` and nothing runs.
+138.252.101.222:50000 over TCP` and nothing runs.
 
 They don't need the VPN. The SAP box already parks its own outbound tunnels on the
 VPS — `127.0.0.1:47500` → Service Layer `:50000` and `127.0.0.1:47301` → HANA
@@ -343,7 +401,7 @@ extend `watchdog.ps1` to kick the new task too.
 Then point their kit at the tunnel — **host only, the port number is unchanged**:
 
 ```
-SAPB1_HOST=localhost      # was 103.89.45.192
+SAPB1_HOST=localhost      # instead of the direct 138.252.101.222
 SAPB1_PORT=50000
 ```
 
@@ -366,10 +424,10 @@ with the port-22 tunnel untouched.
 
 | Box | Port | Alias | State |
 |---|---|---|---|
-| `VICTUS` | 23001 | `victus-vps` | ✅ live, hardened, clean-room verified end to end |
+| `VICTUS` | 23001 | `victus-vps` | ✅ live, hardened, clean-room verified end to end. **On v6** (2026-08-19), `REACHABLE=yes` |
 | `JIVO-B1` (Diljeet's) | 23002 | `diljeet` | ✅ live, hardened; **reaches SAP** (50000/30015/22 all open) |
-| `dannys-Mac-Pro` | 23003 | `macpro-vps` | ✅ live, hardened (macOS 12.7.6); launchd restart verified ~1 s |
-| `JIVO201` (avtar's) | 23010 | `avtar` | ✅ live 2026-08-05; Dell Inspiron 15 3511, i5-1135G7, 8 GB, Win 11; dialer + watchdog verified, battery traps clear. **+ `JivoSapTunnel` — SAP with no VPN** (see section above); `.env` → `localhost:50000`, `doctor` passes from home |
+| `dannys-Mac-Pro` | 23003 | `macpro-vps` | ✅ live, hardened (macOS 12.7.6); launchd restart verified ~1 s. **On v6** (2026-08-19), `REACHABLE=yes` |
+| `JIVO201` (avtar's) | 23010 | `avtar` | ⚠️ **UNREACHABLE since 2026-08-19** — `REACHABLE=no / tunnel-up-but-sshd-silent`. OpenSSH Server is not installed: the v5 run failed both routes and could not say why (that is what v6 fixes). **Send Avtar the v6 installer and have him re-run it.** Previously ✅ live 2026-08-05; Dell Inspiron 15 3511, i5-1135G7, 8 GB, Win 11; dialer + watchdog verified, battery traps clear. **+ `JivoSapTunnel` — SAP with no VPN** (see section above); `.env` → `localhost:50000`, `doctor` passes from home |
 | `DESKTOP-73N6JE8` (Ziyaul's) | 23011 | `ziyaul` | ⚠️ 2026-08-05: tunnel + always-on installed and live, but **sshd Stopped** on the box → unreachable. Needs a local `Start-Service sshd` (see troubleshooting) |
 | `DILPREETSINGH` | 23009 | `dilpreet` | ⚠️ same fault as above, unreachable since 2026-08-04 |
 | `Karanpreets-MacBook-Air` | 23012 | `karanpreet` | ✅ live 2026-08-08; macOS 26.5.1, installer AirDropped + double-clicked, verified end to end. Daemon KeepAlive+watchdog confirmed running. `disablesleep 1` set by hand 2026-08-08 (verified `SleepDisabled=1`) — lid-proof, but it's a battery laptop: **keep it plugged in** or it drains to empty with the lid shut |
@@ -382,7 +440,7 @@ SAP alongside [`../reverse-tunnel/`](../reverse-tunnel/README.md).
 
 ```sh
 # SAP Service Layer from home, through Diljeet's box
-ssh -f -N -L 15055:103.89.45.192:50000 diljeet
+ssh -f -N -L 15055:138.252.101.222:50000 diljeet
 (cd sap-b1/cli && set -a && source .env && set +a && SAPB1_HOST=localhost SAPB1_PORT=15055 ./sapb1 doctor)
 ```
 
