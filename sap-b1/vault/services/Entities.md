@@ -5,7 +5,7 @@ readable: true
 methods: [GET]
 rows_oil: null
 ---
-# Entities:
+# Entities
 Service-document root that lists all entity sets exposed by the Service Layer (metadata/discovery endpoint, not business data).
 ## Operations
 - GET Entities

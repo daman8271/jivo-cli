@@ -1,6 +1,6 @@
 # System & Other (part 1)
 
-Session control plus the catch-all entity set, part 1 of 2 (see [[system-other-2]]): [[Login]] / [[Logout]] manage the B1SESSION cookie (the CLI does this automatically; [[B1Sessions]] is the session registry), and [[Entities:]] is the catalog's section marker note. Notables with live JIVO data: [[Messages]] (149k internal alerts/messages — second-biggest table), [[IndiaHsn]] (517 GST HSN codes), [[Departments]] (7), [[BusinessPlaces]] (8 GST branch registrations), [[Manufacturers]], [[Holidays]], [[LengthMeasures]]/[[WeightMeasures]], and [[InternalReconciliations]]. Brazil indexer tables and other localization leftovers read but are empty here.
+Session control plus the catch-all entity set, part 1 of 2 (see [[system-other-2]]): [[Login]] / [[Logout]] manage the B1SESSION cookie (the CLI does this automatically; [[B1Sessions]] is the session registry), and [[Entities]] is the catalog's section marker note. Notables with live JIVO data: [[Messages]] (149k internal alerts/messages — second-biggest table), [[IndiaHsn]] (517 GST HSN codes), [[Departments]] (7), [[BusinessPlaces]] (8 GST branch registrations), [[Manufacturers]], [[Holidays]], [[LengthMeasures]]/[[WeightMeasures]], and [[InternalReconciliations]]. Brazil indexer tables and other localization leftovers read but are empty here.
 
 Part of the [[00-SAP-B1-Atlas]] — 40 services. Data model context: [[01-Data-Model]]; ready-made queries: [[02-Query-Cookbook]]; live row counts: [[03-Live-Data-Census]].
 
@@ -34,7 +34,7 @@ Part of the [[00-SAP-B1-Atlas]] — 40 services. Data model context: [[01-Data-M
 - [[Counties]] — Lookup of counties/districts within states used in addresses and tax jurisdiction determination (empty in JIVO).
 - [[CustomsDeclaration]] — Records import customs declarations linking foreign purchases to customs/broker data for landed-cost handling (empty — imports not tracked here).
 - [[EmploymentCategorys]] — HR lookup of employment categories (e.g. full-time, contract) assigned to employee master records. Live rows in JIVO_OIL_HANADB: 0 — the HR module's category list is unused here.
-- [[Entities:]] — Service-document root that lists all entity sets exposed by the Service Layer (metadata/discovery endpoint, not business data).
+- [[Entities]] — Service-document root that lists all entity sets exposed by the Service Layer (metadata/discovery endpoint, not business data).
 - [[ExceptionalEvents]] — Catalog of exceptional demand events (promotions, one-off spikes) used to flag anomalies in sales forecasting. Live rows in JIVO_OIL_HANADB: 0 — forecasting anomalies are not catalogued here.
 - [[FactoringIndicators]] — Localization lookup marking receivables sold to a factoring company on invoices/BPs. Live rows in JIVO_OIL_HANADB: 0 — no factoring arrangements are modelled.
 - [[InternalReconciliations]] — Internal reconciliation records matching open debits/credits on BP or G/L accounts. Live rows in JIVO_OIL_HANADB: unknown — the collection GET returned HTTP 502 during recon, so no count is available; only by-key GET is catalogued.
