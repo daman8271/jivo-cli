@@ -23,7 +23,9 @@ Aug-2026 (period indicator `AUG-26-27`), A/P invoice, `GA`:
 | 6 DELHI ISD | 3780 | DISD0826 | 72608xxxx |
 
 The name encodes it: `HR` = Haryana/FACTORY, `G` = GST tax invoice, `0826` =
-Aug-26. Every month has a fresh set. `precheck.py` derives the series from this
+Aug-26. **Branch 2 also has `3732 CNHR0826`, which is `GA` in NNM1 too** — it is
+not the vendor-invoice series (this month's 40+ A/P invoices all use 3684); when
+two `GA` series show up, take the `xx_G` one. Every month has a fresh set. `precheck.py` derives the series from this
 month's posted/drafted documents in the branch, and cross-checks `NNM1` through
 `hana-sql` when it can reach it. First document of a new month: the NNM1 lookup
 is the only source —
@@ -43,6 +45,7 @@ is the only source —
 | `-5002 Specify an active branch [ODRF.BPLId]` | missing `BPL_IDAssignedToInvoice` | branch = `BusinessPlaces.FederalTaxID` == buyer GSTIN |
 | `-8112` | bad `CardCode` | re-check the vendor match |
 | `-5002 Attachments folder not defined … [131-102]` on `POST /PurchaseInvoices` | server-side; the approval-intercept path needs the attachments folder the Linux Service Layer can't see | do not retry; Add is done in the client |
+| `cannot reach SAP Service Layer … deadline exceeded` | your IP is not the office IP; the box filters inbound | `bash connections/sap-home-bridge.sh` → `SAPB1_HOST=127.0.0.1 SAPB1_PORT=15000` |
 | `Fail to NONE-SSO login from SLD` | stale/wrong password for that SAP user (the account itself may be fine) | get the current password; user codes are case-sensitive (`USER06`, not `user06`) |
 | CLI exit 7 | write sent, reply lost | query `Drafts` by `NumAtCard`; never re-send blind |
 

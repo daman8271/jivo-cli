@@ -27,11 +27,12 @@ def find_repo():
 
 
 def load_env(path):
+    """--env decides the login; exported values (e.g. the bridge's SAPB1_HOST/PORT) still win."""
     for line in open(path):
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             k, v = line.split("=", 1)
-            os.environ[k.strip()] = v.strip()
+            os.environ.setdefault(k.strip(), v.strip())
 
 
 def q(entity, flt=None, select=None):
@@ -44,7 +45,10 @@ def q(entity, flt=None, select=None):
         cmd += ["--company", COMPANY]
     r = subprocess.run(cmd, cwd=CLI.parent, capture_output=True, text=True)
     if r.returncode != 0:
-        raise RuntimeError(f"{entity}: {(r.stderr.strip().splitlines() or ['query failed'])[-1]}")
+        msg = (r.stderr.strip().splitlines() or ["query failed"])[-1]
+        if "cannot reach" in msg or "deadline exceeded" in msg:
+            raise RuntimeError(f"CANNOT REACH SAP ({msg}) — connection problem, not a data answer; off-office: bash connections/sap-home-bridge.sh then SAPB1_HOST=127.0.0.1 SAPB1_PORT=15000")
+        raise RuntimeError(f"{entity}: {msg}")
     return json.loads(r.stdout or "[]")
 
 
@@ -72,6 +76,7 @@ def main():
     COMPANY = a.company
     if a.env:
         load_env(a.env if os.path.isabs(a.env) else CLI.parent / a.env)
+    os.environ.setdefault("SAPB1_TIMEOUT", "120")
 
     rows = q("Drafts", f"DocEntry eq {a.docentry}")
     if not rows:
