@@ -166,8 +166,8 @@ answer is genuinely a person.
 `powershell -File C:\ProgramData\jivo-revtun\sshd-repair.ps1` — the same ladder the installer and the
 15-minute watchdog run. It prints what it finds (service account/exe, who holds port 22, host keys,
 `sshd -t`, the last OpenSSH and Service Control Manager events) and then fixes, in order: stray or
-wedged `sshd.exe`, service registration, host keys + ACLs, `sshd_config`, the firewall rule, and
-finally reinstalls OpenSSH from the ZIP. Exit 0 means 127.0.0.1:22 answered with an `SSH-` banner;
+wedged `sshd.exe`, service registration, host keys + ACLs, `sshd_config`, and finally
+reinstalls OpenSSH from the ZIP. Exit 0 means 127.0.0.1:22 answered with an `SSH-` banner;
 `-DiagnoseOnly` looks without touching; the trail is in `sshd-repair.log` beside it. If the box
 never ran v8, just run `JIVO-VPS-TUNNEL.cmd` (v8+) — it writes the tool and runs it when sshd is dead.
 
