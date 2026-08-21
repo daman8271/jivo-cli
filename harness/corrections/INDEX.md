@@ -24,6 +24,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0018]** sapb1 draft purchase-invoice needs Series (branch+month+GA subtype, FACTORY Aug-26 = 3684) + DocumentSubType bod_GSTTaxInvoice, and comes out with TDS 0 (WTLiable tNO) — check WTAmount before Add.
 - **[C-0019]** SAP DocStatus='O' is unreliable at JIVO: documents settled by manual JE or unapplied on-account payment stay open. Age from OCRD.Balance, not open documents - naive ageing overstates 1.3-7.5x.
 - **[C-0020]** Intercompany vendors hide outside BRANCH groups: Mart VENDA000001 'JIVO WELLNESS' is in group PURCHASE (-20.93 Cr), Oil VENDA000483 in E-COMMERCE. Match OCRD.CardName too, never group alone.
+- **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
