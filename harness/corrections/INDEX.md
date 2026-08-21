@@ -21,6 +21,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.
 - **[C-0017]** A/P invoice DocDate (posting) = gate-in date = the GRPO's DocDate; TaxDate = vendor's invoice date. Never post on today's date or on the vendor's date.
 - **[C-0018]** sapb1 draft purchase-invoice needs Series (branch+month+GA subtype, FACTORY Aug-26 = 3684) + DocumentSubType bod_GSTTaxInvoice, and comes out with TDS 0 (WTLiable tNO) — check WTAmount before Add.
+- **[C-0019]** SAP DocStatus='O' is unreliable at JIVO: documents settled by manual JE or unapplied on-account payment stay open. Age from OCRD.Balance, not open documents - naive ageing overstates 1.3-7.5x.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
