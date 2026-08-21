@@ -504,6 +504,17 @@ function Start-Sshd(`$why) {
   Start-Service sshd -ErrorAction SilentlyContinue -ErrorVariable e
   if ((Get-Service sshd).Status -eq 'Running') { L 'started after ssh-keygen -A' }
   else { L "STILL not running after ssh-keygen -A: `$(if(`$e){`$e[0].Exception.Message}else{'no error text'})" }
+  if ((Get-Service sshd).Status -ne 'Running') {
+    # The repair tool: the same ladder the installer runs (stray/wedged sshd.exe,
+    # service account + privileges, empty host keys, key ACLs, sshd_config,
+    # firewall) minus the reinstall -- downloading OpenSSH from a SYSTEM task
+    # behind a colleague's back is not ours to do. Every rung it takes lands here.
+    `$rep = '$DIR\sshd-repair.ps1'
+    if (Test-Path `$rep) {
+      L 'running sshd-repair.ps1 -NoReinstall'
+      & "`$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File `$rep -NoReinstall 2>&1 | ForEach-Object { L "  repair: `$_" }
+    } else { L 'sshd-repair.ps1 is missing - re-run JIVO-VPS-TUNNEL.cmd on this PC to install it' }
+  }
 }
 # The whole sshd repair sits in ONE try/catch. It is best-effort plumbing behind
 # the tunnel work, which has already run; an exception in here must produce a log
@@ -595,6 +606,287 @@ try {
   $r = schtasks /Create /TN JivoTunnelWatchdog /TR "$psExe2 -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File $wd" /SC MINUTE /MO 15 /RU SYSTEM /RL HIGHEST /F 2>&1
   if ($LASTEXITCODE -ne 0) { throw "watchdog schtasks failed: $r" }
   try { Set-BootProof 'JivoTunnelWatchdog' $false } catch { Write-Host "  note: boot-proofing the watchdog failed ($($_.Exception.Message))" -ForegroundColor Yellow }
+}
+
+# ---- 6c2. the sshd REPAIR TOOL, shared by this installer and the watchdog ----
+# Written BEFORE 6d so the step that needs it can call it, and kept on the box so
+# the watchdog (every 15 min, as SYSTEM) and a human (as admin) can run the same
+# ladder. A single-quoted here-string: nothing in it is interpolated here, the
+# only substitution is the @@DIR@@ placeholder. Usage and rungs are documented
+# in the file's own header.
+Step 'sshd-repair-tool' {
+  New-Item -ItemType Directory -Force -Path $DIR | Out-Null
+  $tool = @'
+# JIVO sshd repair tool -- written to C:\ProgramData\jivo-revtun by JIVO-VPS-TUNNEL.cmd.
+# Run by the installer (full ladder) and by the watchdog (-NoReinstall, every 15 min).
+#   exit 0 = 127.0.0.1:22 answers with an SSH- banner (the bar the VPS monitor applies)
+#   exit 1 = still dead; the lines it printed say exactly what it saw and what it tried
+# Rungs, in order, each followed by a start attempt and a banner probe:
+#   0 already answering?   1 diagnose (service, exe, port 22, host keys, sshd -t, events)
+#   2 another process on 22 / stray or wedged sshd.exe   3 service registration
+#   4 host keys + permissions   5 sshd_config   6 firewall   7 reinstall from the ZIP
+# WHY: on 2026-08-21 DESKTOP-73N6JE8 ran v7, the tunnel parked, and sshd "refused to
+# start" -- the installer's only reply was 'ssh-keygen -A, then Start-Service', both of
+# which it had just done itself. Nothing named the fault and nothing tried the next thing.
+# Manual use, as admin:  powershell -File C:\ProgramData\jivo-revtun\sshd-repair.ps1 [-DiagnoseOnly]
+param([switch]$NoReinstall, [switch]$DiagnoseOnly)
+$ErrorActionPreference = 'Continue'
+$ProgressPreference = 'SilentlyContinue'
+$DIR = '@@DIR@@'
+$log = "$DIR\sshd-repair.log"
+if ((Test-Path $log) -and ((Get-Item $log).Length -gt 1MB)) { Move-Item $log "$log.1" -Force }
+function Trail($m) { "$(Get-Date -Format s) $m" | Add-Content -Path $log -EA SilentlyContinue; Write-Output $m }
+function Short($s) { $s = ("$s" -replace '\s+', ' ').Trim(); if ($s.Length -gt 240) { $s.Substring(0, 240) } else { $s } }
+
+function Test-Banner {
+  # Two probes 1.5s apart; connect AND read 'SSH-'. A wedged sshd accepts and never speaks.
+  for ($i = 0; $i -lt 2; $i++) {
+    if ($i) { Start-Sleep -Milliseconds 1500 }
+    $c = $null
+    try {
+      $c = New-Object Net.Sockets.TcpClient
+      $a = $c.BeginConnect('127.0.0.1', 22, $null, $null)
+      if ($a.AsyncWaitHandle.WaitOne(3000, $false)) {
+        $c.EndConnect($a)
+        $c.ReceiveTimeout = 5000
+        $buf = New-Object byte[] 4; $got = 0
+        while ($got -lt 4) { $r = $c.GetStream().Read($buf, $got, 4 - $got); if ($r -le 0) { break }; $got += $r }
+        if (($got -eq 4) -and ([Text.Encoding]::ASCII.GetString($buf) -eq 'SSH-')) { $c.Close(); return $true }
+      }
+    } catch { }
+    if ($c) { $c.Close() }
+  }
+  return $false
+}
+function Get-Port22 {
+  @(Get-NetTCPConnection -LocalPort 22 -State Listen -EA SilentlyContinue) | ForEach-Object {
+    $p = Get-Process -Id $_.OwningProcess -EA SilentlyContinue
+    New-Object psobject -Property @{ Addr = $_.LocalAddress; Pid = $_.OwningProcess; Name = $(if ($p) { $p.ProcessName } else { 'pid' }) }
+  }
+}
+function Get-ExePath($pathName) {
+  $p = "$pathName".Trim()
+  if (-not $p) { return '' }
+  if ($p.StartsWith('"')) { $q = $p.IndexOf('"', 1); if ($q -gt 1) { return $p.Substring(1, $q - 1) } }
+  if (Test-Path $p) { return $p }
+  return ($p -split ' ')[0]
+}
+function Find-Keygen {
+  @("$env:WINDIR\System32\OpenSSH\ssh-keygen.exe", "$env:ProgramFiles\OpenSSH\ssh-keygen.exe",
+    "$env:ProgramFiles\OpenSSH-Win64\ssh-keygen.exe", "$env:ProgramFiles\OpenSSH-ARM64\ssh-keygen.exe") |
+    Where-Object { Test-Path $_ } | Select-Object -First 1
+}
+function Lock-File($path) {
+  # Replace the whole DACL: sshd refuses a private key any extra SID can read.
+  $acl = New-Object System.Security.AccessControl.FileSecurity
+  $acl.SetAccessRuleProtection($true, $false)
+  $acl.SetOwner([System.Security.Principal.NTAccount]'BUILTIN\Administrators')
+  $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule('NT AUTHORITY\SYSTEM', 'FullControl', 'Allow')))
+  $acl.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule('BUILTIN\Administrators', 'FullControl', 'Allow')))
+  Set-Acl -Path $path -AclObject $acl -ErrorAction Stop
+}
+function Test-Config($exe) {
+  # 'sshd -t' loads the config AND the host keys and names the first thing it cannot live with.
+  $script:cfgExit = 0
+  try { $o = (& $exe -t 2>&1 | ForEach-Object { "$_" }) -join ' | '; $script:cfgExit = $LASTEXITCODE } catch { $o = $_.Exception.Message; $script:cfgExit = 1 }
+  return (Short $o)
+}
+function Get-LastErrors {
+  $since = (Get-Date).AddMinutes(-20)
+  $out = @()
+  try { $out += Get-WinEvent -FilterHashtable @{ LogName = 'OpenSSH/Operational'; StartTime = $since } -MaxEvents 4 -EA Stop |
+          ForEach-Object { "OpenSSH $($_.TimeCreated.ToString('HH:mm:ss')) $(Short $_.Message)" } } catch { }
+  try { $out += Get-WinEvent -FilterHashtable @{ LogName = 'System'; ProviderName = 'Service Control Manager'; StartTime = $since } -MaxEvents 60 -EA Stop |
+          Where-Object { $_.Message -match 'sshd|OpenSSH' } | Select-Object -First 3 |
+          ForEach-Object { "SCM $($_.TimeCreated.ToString('HH:mm:ss')) $(Short $_.Message)" } } catch { }
+  $out
+}
+function Try-Start($why) {
+  $sc = Get-Service sshd -EA SilentlyContinue
+  if (-not $sc) { Trail "$why - no sshd service to start"; return $false }
+  if ($sc.Status -ne 'Stopped') {
+    try { $sc.Stop() } catch { }
+    try { $sc.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped, (New-TimeSpan -Seconds 20)) }
+    catch { Stop-Process -Name sshd -Force -EA SilentlyContinue; Start-Sleep 2 }
+  }
+  $e = $null
+  Start-Service sshd -EA SilentlyContinue -ErrorVariable e
+  $sw = [Diagnostics.Stopwatch]::StartNew()
+  while (((Get-Service sshd).Status -ne 'Running') -and ($sw.Elapsed.TotalSeconds -lt 10)) { Start-Sleep 1 }
+  $st = (Get-Service sshd).Status
+  if (($st -eq 'Running') -and (Test-Banner)) { Trail "$why - sshd Running and 127.0.0.1:22 answers with an SSH- banner"; return $true }
+  $detail = if ($e) { ": $(Short $e[0].Exception.Message)" } elseif ($st -eq 'Running') { ', but no SSH- banner on 127.0.0.1:22' } else { '' }
+  Trail "$why - sshd $st$detail"
+  return $false
+}
+
+Trail "---- sshd repair start (NoReinstall=$NoReinstall DiagnoseOnly=$DiagnoseOnly, as $env:USERNAME) ----"
+if ((-not $DiagnoseOnly) -and (Test-Banner)) { Trail 'ok - 127.0.0.1:22 already answers with an SSH- banner, nothing to repair'; exit 0 }
+
+# ---- 1. diagnose: say what is there before touching anything ----
+$needInstall = $false; $exe = ''; $exeOk = $false; $ci = $null
+$svc = Get-Service sshd -EA SilentlyContinue
+if (-not $svc) { Trail 'service: NO sshd service is registered'; $needInstall = $true }
+else {
+  $ci = Get-CimInstance Win32_Service -Filter "Name='sshd'" -EA SilentlyContinue
+  $exe = Get-ExePath $ci.PathName
+  $exeOk = [bool]($exe -and (Test-Path $exe))
+  Trail ("service: status={0} startmode={1} account={2} exe={3} exists={4}" -f $svc.Status, $ci.StartMode, $ci.StartName, $exe, $exeOk)
+  if (-not $exeOk) { $needInstall = $true }
+}
+$lsn = @(Get-Port22)
+if ($lsn.Count) { Trail ("port 22: " + (($lsn | ForEach-Object { "$($_.Name)(pid $($_.Pid)) on $($_.Addr)" }) -join ', ')) } else { Trail 'port 22: nobody listening' }
+$kd = "$env:ProgramData\ssh"; $cfg = "$kd\sshd_config"
+$keys = @(Get-ChildItem "$kd\ssh_host_*_key" -EA SilentlyContinue)
+Trail ("host keys: " + $(if ($keys.Count) { ($keys | ForEach-Object { "$($_.Name)=$($_.Length)b" }) -join ' ' } else { 'NONE in ' + $kd }))
+Trail ("sshd_config: " + $(if (Test-Path $cfg) { "present, $((Get-Item $cfg).Length)b" } else { 'MISSING' }))
+if ($exeOk) { $t = Test-Config $exe; Trail ("sshd -t (exit $script:cfgExit): " + $(if ($t) { $t } else { 'clean' })) }
+Get-LastErrors | ForEach-Object { Trail "event: $_" }
+if ($DiagnoseOnly) { $up = Test-Banner; Trail "diagnose-only: 127.0.0.1:22 answers=$up"; if ($up) { exit 0 } else { exit 1 } }
+
+# ---- 2. port 22: somebody else, a stray sshd.exe, or a wedged service ----
+$other = @($lsn | Where-Object { $_.Name -ne 'sshd' })
+if ($other.Count) {
+  Trail "BLOCKED - '$($other[0].Name)' (pid $($other[0].Pid)) is holding port 22, so sshd can never bind it. Not killing a colleague's software - a human must stop or reconfigure it."
+  exit 1
+}
+if ($svc -and ($svc.Status -eq 'Stopped') -and (@($lsn | Where-Object { $_.Name -eq 'sshd' }).Count)) {
+  Trail 'a stray sshd.exe holds port 22 while the service is Stopped - killing it (it is ours)'
+  Stop-Process -Name sshd -Force -EA SilentlyContinue; Start-Sleep 2
+}
+if ($svc -and ("$($svc.Status)" -match 'Pending')) {
+  Trail "sshd is $($svc.Status) (wedged) - killing sshd.exe so the SCM lets go"
+  Stop-Process -Name sshd -Force -EA SilentlyContinue; Start-Sleep 2
+}
+
+# ---- 3. service registration: start mode, account, privileges, crash recovery ----
+if ($svc -and $exeOk) {
+  if ("$($ci.StartMode)" -ne 'Auto') { Set-Service -Name sshd -StartupType Automatic -EA SilentlyContinue; Trail "startmode $($ci.StartMode) -> Automatic" }
+  if ("$($ci.StartName)" -notmatch '^(LocalSystem|NT AUTHORITY\\SYSTEM)$') { sc.exe config sshd obj= LocalSystem | Out-Null; Trail "service account '$($ci.StartName)' -> LocalSystem" }
+  # the privilege set install-sshd.ps1 grants; a service stripped of SeTcb/SeAssignPrimaryToken cannot log anyone in
+  sc.exe privs sshd SeAssignPrimaryTokenPrivilege/SeTcbPrivilege/SeBackupPrivilege/SeRestorePrivilege/SeImpersonatePrivilege | Out-Null
+  # let the SCM restart it if it crashes, instead of leaving it Stopped until the watchdog notices
+  sc.exe failure sshd reset= 86400 actions= restart/5000/restart/30000/restart/60000 | Out-Null
+  if (Try-Start 'rung 3 (service registration)') { exit 0 }
+}
+
+# ---- 4. host keys: missing, empty, or readable by the wrong people ----
+if (-not (Test-Path $kd)) {
+  New-Item -ItemType Directory -Force -Path $kd | Out-Null
+  icacls.exe $kd /inheritance:r /grant 'SYSTEM:(OI)(CI)F' /grant 'BUILTIN\Administrators:(OI)(CI)F' | Out-Null
+  Trail 'created %ProgramData%\ssh (locked to SYSTEM + Administrators)'
+}
+$empty = @(Get-ChildItem "$kd\ssh_host_*" -EA SilentlyContinue | Where-Object { $_.Length -eq 0 })
+if ($empty.Count) {
+  # a 0-byte key from an interrupted keygen: sshd cannot load it, and -A will not recreate a file that exists
+  $empty | Remove-Item -Force -EA SilentlyContinue
+  Trail ("removed {0} empty host-key file(s): {1}" -f $empty.Count, (($empty | ForEach-Object { $_.Name }) -join ' '))
+}
+$kg = Find-Keygen
+if ($kg) { & $kg -A 2>&1 | Out-Null; Trail "ssh-keygen -A done ($kg)" } else { Trail 'ssh-keygen.exe not found in any OpenSSH directory - cannot generate host keys' }
+$locked = 0
+Get-ChildItem "$kd\ssh_host_*_key" -EA SilentlyContinue | ForEach-Object { try { Lock-File $_.FullName; $locked++ } catch { Trail "could not lock $($_.Name): $($_.Exception.Message)" } }
+Trail "host-key permissions reset on $locked file(s): SYSTEM + Administrators only"
+if ($exeOk -and (Try-Start 'rung 4 (host keys)')) { exit 0 }
+
+# ---- 5. sshd_config: missing, rejected by sshd -t, or pointing sshd away from 127.0.0.1:22 ----
+$arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'Win64' }
+$def = @("$env:WINDIR\System32\OpenSSH\sshd_config_default", "$env:ProgramFiles\OpenSSH\sshd_config_default",
+         "$env:ProgramFiles\OpenSSH-$arch\sshd_config_default") | Where-Object { Test-Path $_ } | Select-Object -First 1
+$changed = $false; $bad = $false
+if (-not (Test-Path $cfg)) { $bad = $true; Trail 'sshd_config is MISSING' }
+elseif ($exeOk) {
+  $t = Test-Config $exe
+  if (($script:cfgExit -ne 0) -or ($t -match 'sshd_config|Bad configuration|line \d+')) { $bad = $true; Trail "sshd_config rejected by 'sshd -t': $t" }
+}
+if ((-not $bad) -and (Test-Path $cfg)) {
+  $txt = @(Get-Content $cfg)
+  $off = @($txt | Where-Object { $_ -match '^\s*(ListenAddress\s+(?!0\.0\.0\.0|127\.0\.0\.1|::|\[::\])|Port\s+(?!22\b))' })
+  if ($off.Count) {
+    Copy-Item $cfg "$cfg.bak-$(Get-Date -Format yyyyMMddHHmmss)" -Force
+    ($txt | ForEach-Object { if ($off -contains $_) { "#jivo-disabled# $_" } else { $_ } }) | Set-Content $cfg -Encoding ascii
+    Trail ("disabled {0} sshd_config line(s) that hide sshd from the tunnel (it forwards to 127.0.0.1:22): {1}" -f $off.Count, ($off -join ' | '))
+    $changed = $true
+  }
+}
+if ($bad) {
+  if (Test-Path $cfg) { Copy-Item $cfg "$cfg.broken-$(Get-Date -Format yyyyMMddHHmmss)" -Force }
+  if ($def) { Copy-Item $def $cfg -Force; Trail "sshd_config replaced with the shipped default ($def); the old one is kept beside it as .broken-*" }
+  else {
+    @('Port 22', 'PubkeyAuthentication yes', 'PasswordAuthentication yes', 'AuthorizedKeysFile .ssh/authorized_keys',
+      'Subsystem sftp sftp-server.exe', 'Match Group administrators',
+      '       AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys') | Set-Content $cfg -Encoding ascii
+    Trail 'sshd_config rewritten from a minimal known-good template (no shipped default found on this PC)'
+  }
+  $changed = $true
+}
+if ((Test-Path $cfg) -and -not (Select-String -Path $cfg -Pattern '^\s*[^#].*administrators_authorized_keys' -Quiet)) {
+  Add-Content -Path $cfg -Encoding ascii -Value "`r`nMatch Group administrators`r`n       AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys"
+  Trail 'sshd_config: added the missing administrators block'; $changed = $true
+}
+if ($exeOk -and $changed -and (Try-Start 'rung 5 (sshd_config)')) { exit 0 }
+
+# ---- 6. firewall: not the tunnel's concern (loopback), but the second door (Tailscale / LAN) ----
+try {
+  $fw = Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -EA SilentlyContinue
+  if (-not $fw) {
+    New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -DisplayName 'OpenSSH SSH Server (sshd)' -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -EA Stop | Out-Null
+    Trail 'firewall: added the inbound TCP 22 rule'
+  } elseif ("$($fw.Enabled)" -ne 'True') { Enable-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -EA SilentlyContinue; Trail 'firewall: enabled the inbound TCP 22 rule' }
+} catch { Trail "firewall: could not add the rule: $($_.Exception.Message)" }
+
+# ---- 7. reinstall: the ZIP route. install-sshd.ps1 deletes and recreates the service, so it is a clean slate ----
+$dead = $needInstall -or ((Get-Service sshd -EA SilentlyContinue).Status -ne 'Running') -or (-not (Test-Banner))
+if ($dead) {
+  if ($NoReinstall) { Trail 'STILL DEAD after rungs 1-6; not reinstalling OpenSSH from the watchdog - re-run JIVO-VPS-TUNNEL.cmd on this PC'; exit 1 }
+  Trail $(if ($needInstall) { 'sshd service/binary missing - installing OpenSSH from the ZIP' } else { 'sshd still refuses after rungs 1-6 - reinstalling OpenSSH from the ZIP (the service is deleted and recreated)' })
+  try {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $zurl = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/OpenSSH-$arch.zip"
+    try {
+      $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest' -UseBasicParsing -TimeoutSec 30 -Headers @{ 'User-Agent' = 'jivo-fleet' }
+      $z = ($rel.assets | Where-Object { $_.name -eq "OpenSSH-$arch.zip" } | Select-Object -First 1).browser_download_url
+      if ($z) { $zurl = $z }
+    } catch { }
+    $zip = "$env:TEMP\openssh-$arch.zip"
+    Remove-Item $zip -Force -EA SilentlyContinue
+    Trail "downloading $zurl"
+    Invoke-WebRequest -Uri $zurl -OutFile $zip -UseBasicParsing -TimeoutSec 180 -EA Stop
+    $fs = [IO.File]::OpenRead($zip); $h = New-Object byte[] 4; $null = $fs.Read($h, 0, 4); $fs.Dispose()
+    if (((Get-Item $zip).Length -lt 2000000) -or ($h[0] -ne 0x50) -or ($h[1] -ne 0x4B)) { throw "what came back from $zurl is not a zip (a proxy block page?)" }
+    try { Stop-Service sshd -Force -EA SilentlyContinue } catch { }
+    Stop-Process -Name sshd -Force -EA SilentlyContinue
+    Expand-Archive -LiteralPath $zip -DestinationPath $env:ProgramFiles -Force -EA Stop
+    Remove-Item $zip -Force -EA SilentlyContinue
+    $inst = "$env:ProgramFiles\OpenSSH-$arch\install-sshd.ps1"
+    if (-not (Test-Path $inst)) { throw "install-sshd.ps1 missing at $inst" }
+    # -Confirm:$false -- the script is ConfirmImpact=High and would otherwise stop to ask before fixing %ProgramData%\ssh permissions
+    $ir = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& '$inst' -Confirm:`$false" 2>&1
+    if (-not (Get-Service sshd -EA SilentlyContinue)) { throw "install-sshd.ps1 said: $(Short ($ir -join ' '))" }
+    Trail "reinstalled - the service now points at $((Get-CimInstance Win32_Service -Filter "Name='sshd'").PathName)"
+    Set-Service -Name sshd -StartupType Automatic -EA SilentlyContinue
+    $kg = Find-Keygen
+    if ($kg) { & $kg -A 2>&1 | Out-Null }
+    Get-ChildItem "$kd\ssh_host_*_key" -EA SilentlyContinue | ForEach-Object { try { Lock-File $_.FullName } catch { } }
+    if (-not (Test-Path $cfg)) { $d2 = "$env:ProgramFiles\OpenSSH-$arch\sshd_config_default"; if (Test-Path $d2) { Copy-Item $d2 $cfg -Force; Trail 'sshd_config: installed the shipped default' } }
+    if ((Test-Path $cfg) -and -not (Select-String -Path $cfg -Pattern '^\s*[^#].*administrators_authorized_keys' -Quiet)) {
+      Add-Content -Path $cfg -Encoding ascii -Value "`r`nMatch Group administrators`r`n       AuthorizedKeysFile __PROGRAMDATA__/ssh/administrators_authorized_keys"
+    }
+    if (Try-Start 'rung 7 (reinstall)') { exit 0 }
+  } catch { Trail "reinstall failed: $(Short $_.Exception.Message)" }
+}
+
+# ---- verdict ----
+if (Test-Banner) { Trail 'FIXED - 127.0.0.1:22 answers with an SSH- banner'; exit 0 }
+$s = (Get-Service sshd -EA SilentlyContinue).Status
+$l2 = @(Get-Port22)
+Trail ("STILL DEAD - service {0}, port 22 {1}. Full trail: {2}" -f $(if ($s) { $s } else { 'absent' }),
+   $(if ($l2.Count) { 'held by ' + (($l2 | ForEach-Object { "$($_.Name) on $($_.Addr)" }) -join ', ') } else { 'nobody listening' }), $log)
+Get-LastErrors | ForEach-Object { Trail "event: $_" }
+exit 1
+'@
+  Set-Content -Path "$DIR\sshd-repair.ps1" -Value $tool.Replace('@@DIR@@', $DIR) -Encoding ascii -ErrorAction Stop
+  if (-not (Select-String -Path "$DIR\sshd-repair.ps1" -Pattern '^exit 1' -Quiet)) { throw "sshd-repair.ps1 was written truncated" }
 }
 
 # ---- 6d. make sshd EXIST, RUN, and ANSWER -- three independent routes ----
@@ -710,7 +1002,10 @@ Step 'openssh-server' {
       Remove-Item $zip -Force -ErrorAction SilentlyContinue
       $inst = Join-Path $env:ProgramFiles "OpenSSH-$arch\install-sshd.ps1"
       if (-not (Test-Path $inst)) { throw "install-sshd.ps1 missing at $inst" }
-      $ir = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File $inst 2>&1
+      # -Confirm:$false: install-sshd.ps1 is ConfirmImpact=High and, when it decides
+      # %ProgramData%\ssh permissions need fixing, stops to ASK. Unattended, that is
+      # a hang with no output -- exactly what this step must never do.
+      $ir = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& '$inst' -Confirm:`$false" 2>&1
       if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw "install-sshd.ps1 said: $($ir -join ' ')" }
       $script:KEYGEN = Find-Exe 'ssh-keygen.exe'     # the zip route moved it
       $script:sshRoutes += 'zip: ok'
@@ -760,13 +1055,29 @@ Step 'openssh-server' {
     if (Test-Path $script:KEYGEN) { & $script:KEYGEN -A 2>&1 | Out-Null }
     Start-Service sshd -ErrorAction SilentlyContinue
   }
-  if ((Get-Service sshd).Status -ne 'Running') {
-    throw ("sshd is installed but REFUSES TO START (status {0}) - this box will be UNREACHABLE even though the tunnel comes up. As admin: 'ssh-keygen -A', then 'Start-Service sshd'; if it still fails check nothing else holds port 22 (Get-NetTCPConnection -LocalPort 22). Routes >> {1}" -f (Get-Service sshd).Status, ($script:sshRoutes -join '  >>  '))
-  }
   # Running is STILL not proof. Ask port 22 for a banner -- the same bar the VPS
   # monitor applies (fleet-tunnel-health.vps.sh, sshd_answers).
-  if (-not (Test-SshBanner 22 6)) {
-    throw ("sshd says Running but NOTHING ANSWERS on 127.0.0.1:22 - this PC would be unreachable. As admin: 'ssh-keygen -A', 'Restart-Service sshd', and check nothing else holds the port (Get-NetTCPConnection -LocalPort 22). Routes >> " + ($script:sshRoutes -join '  >>  '))
+  $healthy = ((Get-Service sshd).Status -eq 'Running') -and (Test-SshBanner 22 6)
+  if (-not $healthy) {
+    # 2026-08-21, DESKTOP-73N6JE8: v7 got exactly here, printed "REFUSES TO START
+    # ... as admin: ssh-keygen -A, then Start-Service" -- the two things it had
+    # just done itself -- and stopped. A human then had nothing to act on except
+    # a photo. So: run the ladder (sshd-repair.ps1, written in 6c2). It names what
+    # it finds (service account, exe, port-22 holder, host keys, 'sshd -t', the
+    # event log) and fixes the known causes in order, down to reinstalling OpenSSH
+    # from the ZIP. Every line it prints lands in the summary block.
+    $rep = "$DIR\sshd-repair.ps1"
+    if (-not (Test-Path $rep)) { throw "sshd does not answer and the repair tool was not written ($rep) - see the sshd-repair-tool step" }
+    Write-Host "  sshd is not answering on 127.0.0.1:22 - running the repair ladder (a few minutes if it has to reinstall OpenSSH)..." -ForegroundColor Yellow
+    $rout = @(& "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File $rep 2>&1 |
+              ForEach-Object { Write-Host ("    " + $_) -ForegroundColor DarkGray; "$_" })
+    $rc = $LASTEXITCODE
+    $rout | ForEach-Object { $script:sshRoutes += ("repair: " + $_) }
+    $script:KEYGEN = Find-Exe 'ssh-keygen.exe'     # a reinstall may have moved it
+    if (($rc -ne 0) -or -not (Test-SshBanner 22 3)) {
+      throw ("sshd DOES NOT ANSWER on 127.0.0.1:22 even after the repair ladder (service {0}) - this PC is UNREACHABLE. The 'repair:' lines above name what it found; full trail in {1}\sshd-repair.log" -f (Get-Service sshd -EA SilentlyContinue).Status, $DIR)
+    }
+    $script:sshRoutes += 'sshd: repaired by the ladder'
   }
 }
 
@@ -834,7 +1145,7 @@ Write-Host ("  STEPS OK     : " + ($ok -join ', '))
 # WHICH route saved it were suppressed. A classification rule that can hide the
 # answer is worse than three extra lines on a healthy box.
 if ($sshRoutes) {
-  Write-Host "  SSHD ROUTES  :" -ForegroundColor DarkGray
+  Write-Host "  SSHD ROUTES  :  (install routes, then every rung the repair ladder took)" -ForegroundColor DarkGray
   $sshRoutes | ForEach-Object { Write-Host ("     " + $_) -ForegroundColor DarkGray }
 }
 if ($bad) {
