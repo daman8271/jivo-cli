@@ -82,9 +82,18 @@ if rc != 0:
         f"provisioned until it comes back. This grant is idempotent, so it will "
         f"succeed on the operator's next 'Let's go' once the box is up."
     )
-    print(json.dumps({"grant": "accounts-write", "box": BOX, "ok": False,
-                      "mode": MODE, "findings": findings, "blockers": blockers,
-                      "actions": actions}, indent=2))
+    # Same shape as every other exit from this script. The unreachable path used
+    # to omit operator_message and use "actions" instead of "actions_taken",
+    # which breaks any client that reads the result — including Sardar.
+    print(json.dumps({
+        "grant": "accounts-write", "box": BOX, "mode": MODE, "ok": False,
+        "findings": findings, "actions_taken": actions, "blockers": blockers,
+        "operator_message": (
+            f"{BOX} is offline right now, so nothing could be checked or changed "
+            f"on it. Nothing is wrong with its setup as far as anyone knows — it "
+            f"simply is not answering. This is safe to retry the moment it is back."
+        ),
+    }, indent=2))
     raise SystemExit(1)
 note("reach", True, f"reachable, hostname={out.strip().splitlines()[-1] if out.strip() else '?'}")
 
