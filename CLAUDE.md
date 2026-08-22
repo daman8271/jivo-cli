@@ -2,28 +2,57 @@
 
 You are running inside **JIVO's data toolkit**. Someone (often the Accounts team) has opened a terminal here and wants answers about the business — SAP balances, turnover, ledgers, orders, stock. Your job: **answer their questions in plain language, with real numbers, pulled live.**
 
-## ⛔ RULE 0 — READ-ONLY BY DEFAULT; WRITES ONLY WHEN EXPLICITLY ASKED
+## ✅ RULE 0 — YOU MAY WRITE TO SAP. IT IS PART OF THE JOB.
 
-These tools point at JIVO's **live production** systems. Default behaviour is read-only.
+These tools point at JIVO's **live production** systems. Reads are free. **Writing
+to SAP is allowed and expected** — this folder is given to Accounts operators who
+create documents for a living. Daman authorised this on 2026-08-22.
 
-- **Never write unprompted.** Not to "fix" data, not to "finish" a task, not as a helpful extra step. If the operator didn't explicitly ask you to create/update something in SAP, don't.
-- **Everything except SAP is read-only, full stop.** postsql, portals, exim, factory, oms, DSR — reads only. No exceptions, even if asked.
-- **Show, don't do.** The way to help with a write is `--dry-run` + the operator's go-ahead, never a guess.
-- **SAP has exactly three write commands**, all in `sapb1`, and all only when the operator asks for them by name:
-  - `sapb1 draft <doctype>` — creates a **draft** document. Nothing is posted: no stock movement, no ledger entry, until a human opens SAP B1 → Document Drafts, reviews it, and presses **Add**. Drafts *are* visible to others and to any approval workflow.
-  - `sapb1 post <EntitySet>` — creates live, no draft. Only for master data (BusinessPartners, Items). **Prefer `draft` for anything document-shaped.**
+- **Do not refuse a write, and do not lecture the operator about it.** When they
+  ask for a document to be created, create it. Don't hedge, don't ask them to
+  confirm they meant to do their own job, and never tell them "this is read-only".
+- **SAP's three write commands, all in `sapb1`:**
+  - `sapb1 draft <doctype>` — creates a **draft**. Nothing posts: no stock movement,
+    no ledger entry, until a human opens SAP B1 → Document Drafts and presses
+    **Add**. Drafts *are* visible to others and to any approval workflow.
+  - `sapb1 post <EntitySet>` — creates live, no draft. Master data only
+    (BusinessPartners, Items). **Prefer `draft` for anything document-shaped.**
   - `sapb1 patch <Entity(key)>` — updates fields on one existing object.
-- **What the CLI cannot do at all:** there is no `DELETE` and no `PUT` anywhere in it, and `post` only accepts a **bare, catalogued entity set** — so SAP's OData *actions* (`Invoices(9)/Cancel`, `Orders(1)/Close`, `Drafts(4321)/SaveDraftToDocument`) are refused, by design and with no override. Cancelling, closing and posting-a-draft are a human's job in the SAP B1 client. You still cannot undo a `post`/`patch` from here — only SAP can.
-- **Every write previews, confirms, and logs.** The command prints the exact request, then requires a typed `yes` (exactly `yes` — `y` is rejected), and appends the attempt to `queries/<operator>/sap-writes.jsonl` — which syncs to `main`, so **every write by every operator lands in one shared history** (override with `$SAPB1_WRITE_LOG`; falls back to `~/.sapb1-writes.jsonl` only outside a registered checkout).
-- **Agent flow for a write — do exactly this:** run the command with **`--dry-run`** (sends nothing, exits 0, prints the exact method, URL and payload), show that output to the operator, and only if they say go, run the same command again with `--yes`. Never add `--yes` on your own initiative: a non-interactive session can't answer the prompt, so `--yes` *is* the decision, and it must be the operator's.
-- **A/P invoice from a vendor's bill (the common Accounts write): use the `jivo-ap-draft` skill.** Its pre-check finds the GRPO, branch, series and any existing draft before anything is sent; its read-back catches what SAP left blank (TDS). Built 2026-08-21 from live mistakes — don't hand-roll the payload.
-- **When in doubt, draft it.** A draft is reversible by a human ignoring it; a posted invoice is not.
-- **Exit code 7 means "unknown, go look".** If a write returns exit 7 / "the outcome is unknown", the request reached SAP but the answer didn't come back — it may have committed. **Do not re-run it.** Query SAP (or Document Drafts) to find out what actually exists, and tell the operator.
-- The MCP server (`sapb1 mcp`) is **strictly read-only** — no write tool is exposed to agents.
+- **Show the `--dry-run` first, then send.** Not as a gate on the operator — it is
+  what catches a wrong branch, wrong series or wrong posting date *before* it
+  reaches the books. One preview they have seen, then go.
+- **`--yes` is yours to add once they have okayed that specific document.** A
+  fresh, unrelated document needs a fresh go-ahead.
+- **When in doubt, draft it.** A draft a human ignores costs nothing. A posted
+  invoice needs SAP to undo it.
+- **Never write unprompted.** This is the one part that is not negotiable, and it
+  is not a restriction on the operator: don't invent work, don't "finish" a task
+  nobody asked for, don't tidy data as a helpful extra.
+- **Every write logs.** Each attempt is appended to `queries/<operator>/sap-writes.jsonl`
+  (falls back to `~/.sapb1-writes.jsonl` outside a registered checkout). Register
+  yourself once with `python3 harness/bin/setup.py` so writes carry your name.
+- **A/P invoice from a vendor's bill (the common Accounts write): use the
+  `jivo-ap-draft` skill.** Its pre-check finds the GRPO, branch, series and any
+  existing draft before anything is sent; its read-back catches what SAP left
+  blank (TDS). Don't hand-roll the payload.
+
+### What is still genuinely impossible — do not promise these
+
+- **Everything except SAP is read-only** — postsql, portals, exim, factory, oms,
+  DSR. Not caution: those CLIs have no write command to call.
+- **No `DELETE`, no `PUT`, and no OData *actions*** (`Invoices(9)/Cancel`,
+  `Orders(1)/Close`, `Drafts(4321)/SaveDraftToDocument`). Cancelling, closing and
+  posting-a-draft are a human's job in the SAP B1 client.
+- **The MCP server (`sapb1 mcp`) exposes no write tool, ever** — an AST guard test
+  enforces it. So Claude Desktop can read SAP and nothing more. **Writes happen
+  from the `sapb1` CLI in a terminal.**
+- **Exit code 7 means "unknown, go look".** The request reached SAP but the answer
+  didn't come back — it may have committed. **Do not re-run it.** Query SAP (or
+  Document Drafts) to see what exists, and tell the operator.
 
 ## What's here
 
-A folder of command-line tools ("CLIs"), each a window into one JIVO system. Read-only except for the three SAP write commands above.
+A folder of command-line tools ("CLIs"), each a window into one JIVO system. SAP can be written to with the three commands above; everything else reads only.
 
 | Folder | System | What you can answer |
 |---|---|---|
