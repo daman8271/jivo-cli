@@ -101,6 +101,30 @@ cat > "$ROOT/workspace/.claude/settings.json" <<'JSON'
 }
 JSON
 
+say "pre-accepting the workspace trust dialog"
+# A fresh workspace makes Claude Code open with "do you trust the files in this
+# folder?", and that modal SILENTLY SWALLOWS the first request typed at it — the
+# first real summon was lost exactly that way, with tmux reporting success the
+# whole time. Pre-accept it so no session ever starts behind a dialog.
+python3 - "$ROOT/workspace" <<'TRUSTPY'
+import json, os, sys
+ws = sys.argv[1]
+cfg = os.path.expanduser("~/.claude.json")
+try:
+    with open(cfg, encoding="utf-8") as fh:
+        d = json.load(fh)
+except (OSError, json.JSONDecodeError):
+    d = {}
+proj = d.setdefault("projects", {}).setdefault(ws, {})
+proj["hasTrustDialogAccepted"] = True
+proj["hasCompletedProjectOnboarding"] = True
+tmp = cfg + ".tmp"
+with open(tmp, "w", encoding="utf-8") as fh:
+    json.dump(d, fh, indent=2)
+os.replace(tmp, cfg)
+print("trust pre-accepted for", ws)
+TRUSTPY
+
 say "tokens"
 # One token per device. The token IS the device's identity; the daemon has no
 # trust-the-header path.

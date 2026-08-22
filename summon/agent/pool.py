@@ -127,8 +127,72 @@ class SessionPool:
                 cmd,
             ]
         )
-        # Give the TUI a moment to draw before anything is typed at it.
+        # Give the TUI a moment to draw, then clear any first-run dialog, so the
+        # session is genuinely ready rather than merely existing.
         time.sleep(float(os.environ.get("SUMMON_BOOT_WAIT", "6")))
+        self._wait_ready(slot)
+
+    # ---------------------------------------------------------------- readiness
+
+    # Text a TUI shows while it is NOT ready to accept a request.
+    _MODAL_HINTS = (
+        "do you trust",
+        "trust the files",
+        "yes, proceed",
+        "press enter to continue",
+        "welcome to claude code",
+    )
+
+    def _pane(self, slot: Slot, lines: int = 40) -> str:
+        cp = _run(["tmux", "capture-pane", "-p", "-t", slot.tmux_target,
+                   "-S", f"-{lines}"])
+        return cp.stdout or ""
+
+    def _dismiss_modals(self, slot: Slot, tries: int = 3) -> None:
+        """Clear a first-run dialog so it cannot eat the real request."""
+        for _ in range(tries):
+            pane = self._pane(slot, 30).lower()
+            if not any(h in pane for h in self._MODAL_HINTS):
+                return
+            _run(["tmux", "send-keys", "-t", slot.tmux_target, "Enter"])
+            time.sleep(1.5)
+
+    def _wait_ready(self, slot: Slot, timeout_s: float = 45.0) -> bool:
+        """Wait until the session is drawing a prompt and holding no dialog."""
+        deadline = time.time() + timeout_s
+        while time.time() < deadline:
+            self._dismiss_modals(slot)
+            pane = self._pane(slot, 30)
+            # The chevron renders only once the TUI is up, and the status footer
+            # only once the session has fully initialised. Requiring both avoids
+            # treating a half-drawn screen as ready.
+            if "\u276f" in pane and "accept edits" in pane.lower():
+                return True
+            time.sleep(1.0)
+        return False
+
+    def _type_and_confirm(self, slot: Slot, text: str, needle: str,
+                          attempts: int = 3) -> bool:
+        """Type text, verify it is really on the prompt, then press Enter.
+
+        tmux send-keys exits 0 whether or not the application accepted the keys,
+        so its exit code proves nothing. The only evidence is seeing the text.
+        """
+        for _ in range(attempts):
+            if not self._wait_ready(slot):
+                continue
+            cp = _run(["tmux", "send-keys", "-t", slot.tmux_target, text])
+            if cp.returncode != 0:
+                time.sleep(1.0)
+                continue
+            time.sleep(1.2)
+            if needle in self._pane(slot, 20):
+                _run(["tmux", "send-keys", "-t", slot.tmux_target, "Enter"])
+                return True
+            # Something ate it. Clear the line and try again.
+            _run(["tmux", "send-keys", "-t", slot.tmux_target, "C-u"])
+            time.sleep(0.6)
+        return False
 
     def status(self) -> list[dict]:
         out = []
@@ -187,8 +251,20 @@ class SessionPool:
                 }
 
             # The ONLY thing that reaches the shell is the hex id.
-            _run(["tmux", "send-keys", "-t", slot.tmux_target, f"summon {sid}"])
-            _run(["tmux", "send-keys", "-t", slot.tmux_target, "Enter"])
+            #
+            # And it is TYPED THEN VERIFIED before Enter. A fresh workspace makes
+            # Claude Code open with a "do you trust this folder?" dialog, which
+            # silently swallows both the text and the Enter — the first real summon
+            # was lost exactly that way, with tmux reporting success throughout.
+            # So: confirm the id is actually on the prompt line, then submit.
+            if not self._type_and_confirm(slot, f"summon {sid}", sid):
+                return {
+                    "ok": False,
+                    "via": f"session:{slot.name}",
+                    "error": "could not get the request onto the session's prompt "
+                             "(a modal dialog may be holding it)",
+                    "retry": True,
+                }
 
             deadline = time.time() + timeout_s
             while time.time() < deadline:
