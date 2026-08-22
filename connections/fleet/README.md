@@ -109,6 +109,46 @@ Validation is deliberately strict — the submitted key is shape-checked *and* r
 
 ## Hard-won gotchas (all measured 2026-07-30, all cost real time)
 
+### ⚠️ `bash` is missing on the operator boxes — which silently kills the harness
+
+Measured 2026-08-22 across every reachable Windows operator box (`lovepreet`,
+`param`, `preshit`, and `sohail` at enrolment): **`bash` did not resolve at
+all.** Git was installed on all of them, but its installer only puts
+`C:\Program Files\Git\cmd` on the PATH — and `bash.exe` lives in
+`Git\bin`, which is not added. On Sohail's box the only `bash` on the PATH was
+the `WindowsApps` WSL stub, out of *Administrator's* profile, so it would not
+have resolved for the human user either.
+
+This matters far more than it looks. Every harness hook in
+`.claude/settings.json` is `bash "$CLAUDE_PROJECT_DIR/harness/hooks/…"`. With
+no `bash`, `session-start.sh` never runs, and because the hook's stderr is
+redirected **the operator is told nothing** — their Claude simply starts with
+zero corrections and behaves like a stock model on JIVO's data. That is the
+exact failure mode `harness.py`'s own UTF-8 comment warns about, arriving
+through a different door.
+
+Fix (idempotent, applied to all four boxes 2026-08-22) — prepend Git's `bin`
+to the **Machine** PATH so every profile gets it:
+
+```powershell
+$gitbin='C:\Program Files\Git\bin'
+$m=[Environment]::GetEnvironmentVariable('Path','Machine')
+if (($m -split ';') -notcontains $gitbin) {
+  [Environment]::SetEnvironmentVariable('Path',(@($gitbin)+($m -split ';'|?{$_})) -join ';','Machine')
+}
+```
+
+Verify with the hook itself, not with `Get-Command bash` alone — a healthy box
+returns ~4.9 KB of correction text:
+
+```powershell
+$env:CLAUDE_PROJECT_DIR=$repo; bash "$repo/harness/hooks/session-start.sh"
+```
+
+**Add this to every future enrolment.** A box can pass `doctor`, reach SAP, and
+still be running a Claude that knows none of the team's rules.
+
+
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Permission denied (publickey)` dialing the VPS; key "ignored" | Windows OpenSSH refuses a private key any extra SID can read. `icacls /inheritance:r /grant` strips **inherited** ACEs but leaves **explicit** ones — including the per-logon-session SID stamped at file creation | Rebuild the DACL from scratch with `Set-Acl` (see `Lock-KeyFile` in the template) |
