@@ -39,7 +39,7 @@ IFS= read -r -d '' -t "${JIVO_PATTERNS_READ_WAIT:-3}" payload 2>/dev/null || tru
 
 # Pure-bash pre-filter — no fork, no interpreter start. A false positive just
 # means python runs and correctly rejects the payload, so this can stay loose.
-if [[ ! "$payload" =~ (sapb1|postsql|hana-sql|hanasql|dsr|ecom|oms|factory|exim) ]]; then
+if [[ ! "$payload" =~ (sapb1|postsql|hana-sql|hanasql|dsr|ecom|oms|factory|exim|gst-portal) ]]; then
   exit 0
 fi
 

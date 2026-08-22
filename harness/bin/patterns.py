@@ -380,6 +380,8 @@ TOOL_ALIASES: dict[str, str] = {
     "factory-cli": "factory",
     "exim": "exim",
     "exim-cli": "exim",
+    "gst-portal": "gst",
+    "gst": "gst",
 }
 
 # Verbs that write. Never captured — a write is not a query pattern, and

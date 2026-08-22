@@ -266,7 +266,9 @@ diagnostically real one — that is the box with power on it.
 | `dannys-Mac-Pro` | 23003 | — | ✅ UP | UP | — | tunnel + Tailscale |
 | `Damanpreets-MacBook-Air` | 23004 | Daman | ✅ UP | UP | — | tunnel |
 | `HO-IT-PC10` | 23007 | Khushwinder | ✅ **UP** | DOWN *(tasks disabled)* | *was 08-13; cleared between 19:10 and 21:15* | ✅ repaired remotely — **do not message him** |
-| `DESKTOP-73N6JE8` | 23011 | Ziyaul | ⛔ **UNREACHABLE** | UNREACHABLE | 08-14 11:20 | **human only** |
+| `DESKTOP-73N6JE8` | 23011 | Ziyaul | ✅ **UP** *(repaired 08-21 18:05, v9 rung 4 — host-key ACLs)* | UP | — | **none needed** — verified `ssh ziyaul` 6/6 |
+| `83USER` | 23014 | Navdeep (accounts) | ✅ **UP** *(enrolled 08-21 18:18, v9, MSI route)* | UP | — | **none needed** — `ssh navdeep-acc` verified, full kit installed (see README status) |
+| `HO-IPEXP-PC2` | 23015 | Lovepreet (import/export) | ✅ **UP** *(enrolled 08-22 12:56, v9)* | UP | — | **none needed** — `ssh lovepreet` verified, kit installed (see README status) |
 | `JIVO` | 23008 | Administrator1 | ⚠️ DOWN *(PC off)* | ⛔ **UNREACHABLE** | 08-13 14:06 | **human only** — sshd dead, not "off" |
 | `JIVO201` | 23010 | Avtar | ⚠️ DOWN *(PC off)* | ⛔ **UNREACHABLE** | 08-13 14:06 | **human only** — sshd dead, not "off" |
 | `JIVO-B1` | 23002 | Ecom team | ⚠️ DOWN | DOWN | 08-11 18:02 | human — **longest outage, 6 days** |
@@ -303,12 +305,15 @@ Drafts, for the operator to send. Nothing here has been sent.
 Each message is two sentences, names the exact file, and says what success looks like.
 If a message would need a follow-up question to act on, it is the wrong message.
 
-### Ziyaul — DESKTOP-73N6JE8
+### Ziyaul — DESKTOP-73N6JE8 · ✅ RESOLVED 2026-08-21 18:05 — do not re-send
 
-> Hi Ziyaul, please double-click the **JIVO-VPS-TUNNEL.cmd** file I've just sent you and
+> ~~Hi Ziyaul, please double-click the **JIVO-VPS-TUNNEL.cmd** file I've just sent you and
 > click **Yes** on the prompt that pops up. It takes about a minute — when it's done a
 > green block appears saying **SSHD : Running** and **TUNNEL : UP**; please send me a
-> photo of that block.
+> photo of that block.~~
+
+Ziyaul ran the v9 installer on 2026-08-21 ~18:00; its rung 4 fixed the too-open host-key
+ACLs and sshd came up. Paired and verified `ssh ziyaul` 6/6 from the Mac. Nothing to send.
 
 ### Administrator1 — JIVO
 

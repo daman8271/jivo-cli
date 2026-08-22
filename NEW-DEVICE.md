@@ -168,6 +168,10 @@ Cloning does not give you these — set them up only if that machine needs them:
 - **Portal logins** that mint JWTs on a schedule (Blinkit, Zepto) —
   those run off LaunchAgents on the Mac that owns them; don't duplicate them on
   a second box or they'll fight over the same session.
+- **GST portal sessions** (`portals/gst/`) — every login needs a hand-typed
+  captcha and the portal allows one session per username, so a second box logging
+  in kicks the first one out. Copy the `.env` (see `portals/gst/SETUP.md`); the
+  session files stay per-machine and are never shared.
 - **Fleet SSH access** — `~/.ssh/config` aliases and keys are per-machine.
 
 ---
