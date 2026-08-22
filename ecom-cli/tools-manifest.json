@@ -1,7 +1,7 @@
 {
   "api_name": "jivo-ecom",
   "base_url": "https://ecom.jivo.in",
-  "description": "JIVO e-commerce \u0026 quick-commerce analytics CLI (ecom.jivo.in) - read-only dashboards, master data, notifications, SAP mirror, Amazon PO reporting and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato",
+  "description": "JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.in) - read-only dashboards, master data, notifications, SAP mirror, Amazon PO reporting and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato",
   "mcp_ready": "full",
   "http_transport": "standard",
   "mcp": {
@@ -781,7 +781,7 @@
           "name": "months",
           "type": "integer",
           "location": "query",
-          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+          "description": "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are..."
         },
         {
           "name": "from_month",
@@ -873,7 +873,7 @@
           "name": "months",
           "type": "integer",
           "location": "query",
-          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+          "description": "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are..."
         },
         {
           "name": "from_month",
@@ -979,7 +979,7 @@
           "name": "months",
           "type": "integer",
           "location": "query",
-          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+          "description": "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are..."
         },
         {
           "name": "from_month",
@@ -1086,7 +1086,7 @@
           "name": "months",
           "type": "integer",
           "location": "query",
-          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+          "description": "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are..."
         },
         {
           "name": "from_month",
@@ -1190,7 +1190,7 @@
           "name": "months",
           "type": "integer",
           "location": "query",
-          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+          "description": "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are..."
         },
         {
           "name": "from_month",
@@ -1282,7 +1282,7 @@
           "name": "months",
           "type": "integer",
           "location": "query",
-          "description": "array of month numbers, repeated as month=1\u0026month=2 by the URL builder; period keys are..."
+          "description": "array of month numbers, repeated as month=1&month=2 by the URL builder; period keys are..."
         },
         {
           "name": "from_month",
@@ -1815,6 +1815,72 @@
       ]
     },
     {
+      "name": "platform_blinkit-campaigns-optimization",
+      "description": "Blinkit Campaigns Optimization workbook: SKU master, brand fund, product booster, recommendation ads and an MTD-spend block that has been empty in every response observed. HEAVY - 2.7 MB for the default month, 9.9 MB for six. TRAP: the server IGNORES the {platform} path segment and always returns Blinkit; a call with platform=zepto returns the byte-identical Blinkit payload. Required: platform. Optional: from, to.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/blinkit-campaigns-optimization",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug. Syntactically required, semantically ignored - always pass blinkit.",
+          "required": true
+        },
+        {
+          "name": "from",
+          "type": "string",
+          "location": "query",
+          "description": "Window start, YYYY-MM-DD. Narrows server-side. Default = 1st of the current month. `from` and `to` default INDEPENDENTLY - passing only one does not widen the other."
+        },
+        {
+          "name": "to",
+          "type": "string",
+          "location": "query",
+          "description": "Window end, YYYY-MM-DD. Narrows server-side. Default = last day of the current month."
+        }
+      ]
+    },
+    {
+      "name": "platform_blinkit-sale-target",
+      "description": "Blinkit Daily & Targets: today vs a compare day, per item head, against the month target, with close-month growth. TRAP: growth_pct is relative to whichever close month the CALLER picks, and is a 0-1 fraction here while fill_rate_pct elsewhere is 0-100. Required: platform. Optional: date, compare_date, close_months, nocache.",
+      "method": "GET",
+      "path": "/api/platform/{platform}/blinkit-sale-target",
+      "params": [
+        {
+          "name": "platform",
+          "type": "string",
+          "location": "path",
+          "description": "Platform slug - blinkit only; other slugs are rejected with 400.",
+          "required": true
+        },
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "As-on date, YYYY-MM-DD. Default = latest day with data."
+        },
+        {
+          "name": "compare_date",
+          "type": "string",
+          "location": "query",
+          "description": "Comparison date, YYYY-MM-DD. Default = the day before `date`."
+        },
+        {
+          "name": "close_months",
+          "type": "string",
+          "location": "query",
+          "description": "Comma-separated YYYY-MM close months, or the literal `none`. Changes what growth_pct is measured against. Order-insensitive: the server sorts and takes the max key. `prev_month_label` carries no year (2025-08 renders as \"Aug\"), so print the close-month key beside growth_pct, not the label."
+        },
+        {
+          "name": "nocache",
+          "type": "string",
+          "location": "query",
+          "description": "Cache buster the UI sends. Observed value: 1."
+        }
+      ]
+    },
+    {
       "name": "platform_blinkit-summary-report",
       "description": "Blinkit summary report (get). Required: platform. Optional: year.",
       "method": "GET",
@@ -2172,7 +2238,7 @@
     },
     {
       "name": "platform_month-targets-dashboard",
-      "description": "Secondary month-targets dashboard across platforms Server requires: `month` (1–12) and `year` (YYYY) are required. Required: month, year. Optional: nocache.",
+      "description": "Secondary month-targets dashboard across platforms Server requires: `month` (1\u201312) and `year` (YYYY) are required. Required: month, year. Optional: nocache.",
       "method": "GET",
       "path": "/api/platform/month-targets/dashboard",
       "params": [
@@ -2230,6 +2296,32 @@
           "location": "path",
           "description": "Platform slug",
           "required": true
+        }
+      ]
+    },
+    {
+      "name": "platform_overall-pendency",
+      "description": "Group-level open-PO pendency across ALL EIGHT platforms at once, including amazon which the per-platform `pendency` route refuses. Volume figures match `platform pendency` exactly. TRAP 1: pending_value here is GST-INCLUSIVE while the order_value that `platform pendency` reports is pre-tax. The ratio is NOT a constant: 91 of 95 SKUs are 1.05x (5% GST), but aerated beverages are 1.40x (28% GST + 12% cess) - bigbasket LEMON 750ML, TONIC WATER 200ML, WATER PEACH 750ML and swiggy SODA LEMON 750 ML today. Dividing a beverage pending_value by 1.05 overstates it by 33%. Never convert between the two; call the endpoint you need. TRAP 2: `open_units` means ORDERED, not open; it equals pending_units on every q-commerce platform, which hides the error, and is 26% higher on amazon. TRAP 3: there is no `error` key on this response - it is absent, not null, so do not branch on it. min_po_date/max_po_date are DD-MM-YYYY (not ISO) and are nullable (citymall). `max_date` was null in every response observed. Optional: platforms, item_head, group_by.",
+      "method": "GET",
+      "path": "/api/platform/overall-pendency",
+      "params": [
+        {
+          "name": "platforms",
+          "type": "string",
+          "location": "query",
+          "description": "Comma-separated slugs from the response's own available_platforms[].slug. Omit for all eight. TRAP: this is NOT the 10-slug list on `account me` - flipkart and jiomart are rejected with HTTP 400 [\"Unknown platform(s): flipkart.\"]. Error bodies on this endpoint are bare JSON arrays of strings, not {detail:...}."
+        },
+        {
+          "name": "item_head",
+          "type": "string",
+          "location": "query",
+          "description": "Item head filter. Server-named enum: ALL | PREMIUM | COMMODITY | OTHER. ALL is the default and may be omitted."
+        },
+        {
+          "name": "group_by",
+          "type": "string",
+          "location": "query",
+          "description": "Row grain: item | category | sub_category. Default item."
         }
       ]
     },
@@ -3148,6 +3240,13 @@
       "params": []
     },
     {
+      "name": "reports_amazon-po-sku-pendency-summary",
+      "description": "Totals for the Amazon Shipment-Planner open book: lines, requested/accepted/received/remaining units and litres, fill rate. Takes NO parameters - fulfillment_center and channel are accepted and then silently ignored (byte-identical bodies). TRAP 1: this summary's `open_units` equals the row report's `remaining_qty`, NOT its `open_qty` - same word, different metric. TRAP 2: `totals` here is unfiltered; the row report's `totals` is filter-scoped, so only the bare call is comparable to it. `total` carries 40 keys (including order_ltrs, accepted_ltrs, delivered_ltrs); `delivery_shortfall_ltrs` exactly duplicates `remaining_ltrs`. 5 of 11 by_fc rows and the \"-\" channel row null out fill_rate_pct, cancel_rate_pct, invoiced_share_pct, uninvoiced_share_pct and short_invoice_rate_pct; only acceptance_rate_pct never nulls.",
+      "method": "GET",
+      "path": "/api/reports/amazon-po/sku-pendency/summary",
+      "params": []
+    },
+    {
       "name": "reports_amazon-po-summary",
       "description": "Amazon PO report summary.",
       "method": "GET",
@@ -3250,7 +3349,7 @@
           "name": "view",
           "type": "string",
           "location": "query",
-          "description": "view name; the sap: ones are colon-delimited triples; the service hard-wires the key: getColumns:e=\u003eX(`/api/reports/columns`,{view:e})",
+          "description": "view name; the sap: ones are colon-delimited triples; the service hard-wires the key: getColumns:e=>X(`/api/reports/columns`,{view:e})",
           "required": true
         }
       ]
@@ -3647,7 +3746,7 @@
     },
     {
       "name": "sap_sales-analysis",
-      "description": "Sales analysis over a date range. With source=oil this defaults to cardname 'JIVO MART PVT LTD', i.e. it measures Oil-\u003eMart INTERCOMPANY transfers, which JIVO excludes from sales (correction C-0005). Server requires: `from_date` must be YYYY-MM-DD. Required: from_date, to_date. Optional: page, page_size, source (plus 14 more).",
+      "description": "Sales analysis over a date range. With source=oil this defaults to cardname 'JIVO MART PVT LTD', i.e. it measures Oil->Mart INTERCOMPANY transfers, which JIVO excludes from sales (correction C-0005). Server requires: `from_date` must be YYYY-MM-DD. Required: from_date, to_date. Optional: page, page_size, source (plus 14 more).",
       "method": "GET",
       "path": "/api/sap/sales-analysis",
       "params": [
@@ -3747,7 +3846,7 @@
           "name": "cardname",
           "type": "string",
           "location": "query",
-          "description": "array of SAP CardName strings (repeated as cardname=A\u0026cardname=B); the only literal card name observed anywhere is `JIVO MART PVT LTD`"
+          "description": "array of SAP CardName strings (repeated as cardname=A&cardname=B); the only literal card name observed anywhere is `JIVO MART PVT LTD`"
         },
         {
           "name": "aggregate",
@@ -4012,7 +4111,7 @@
           "name": "commit_caps_json",
           "type": "string",
           "location": "query",
-          "description": "JSON object {'\u003casin\u003e':{'units':N,'cartons':N}}"
+          "description": "JSON object {'<asin>':{'units':N,'cartons':N}}"
         }
       ]
     },
@@ -4220,6 +4319,21 @@
       ]
     },
     {
+      "name": "shipment_shipment-switch-verify",
+      "description": "Pre-flight check for switching a shipment's fulfilment centre: what would break, what stock moves. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. CAUTION: a POST shares this exact path and performs the switch. This command sends GET only. Required: id.",
+      "method": "GET",
+      "path": "/api/shipment/shipments/{id}/switch/verify/",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Shipment id",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "shipment_shipments",
       "description": "List shipments Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run). Optional: status, switch_state.",
       "method": "GET",
@@ -4263,49 +4377,49 @@
           "name": "truck_size",
           "type": "string",
           "location": "query",
-          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
         },
         {
           "name": "truck_capacity_liters",
           "type": "string",
           "location": "query",
-          "description": "integer litres; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+          "description": "integer litres; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
         },
         {
           "name": "fc",
           "type": "string",
           "location": "query",
-          "description": "FC code string; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+          "description": "FC code string; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
         },
         {
           "name": "priority_strict",
           "type": "string",
           "location": "query",
-          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
         },
         {
           "name": "maximize_fill",
           "type": "string",
           "location": "query",
-          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+          "description": "dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
         },
         {
           "name": "priority_premium_pct",
           "type": "string",
           "location": "query",
-          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
         },
         {
           "name": "priority_commodity_pct",
           "type": "string",
           "location": "query",
-          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
         },
         {
           "name": "priority_other_pct",
           "type": "string",
           "location": "query",
-          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=\u003ee))"
+          "description": "number; dohAutoFill drops falsy values: t=new URLSearchParams(Object.entries(e).filter(([,e])=>e))"
         }
       ]
     },
@@ -4322,6 +4436,120 @@
       "method": "GET",
       "path": "/api/shipment/shipments/stats/",
       "params": []
+    },
+    {
+      "name": "shipment_switching",
+      "description": "The FC-switching ledger: every shipment whose fulfilment centre was switched, with its email/verification state. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. Optional: state, limit.",
+      "method": "GET",
+      "path": "/api/shipment/switching/",
+      "params": [
+        {
+          "name": "state",
+          "type": "string",
+          "location": "query",
+          "description": "Ledger state filter."
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "location": "query",
+          "description": "Row cap. The UI sends 200."
+        }
+      ]
+    },
+    {
+      "name": "shipment_v2-appointment-lines",
+      "description": "PO lines on one Shipment-Planner-v2 appointment. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. WEAKER THAN ITS SIBLINGS: this is the only v2 path never reached live at all - even its 403 is unobserved. Its parent collection is routing-proven and the source is explicit, but treat routing as unverified. Required: appointment_id.",
+      "method": "GET",
+      "path": "/api/shipment/v2/appointments/{appointment_id}/lines/",
+      "params": [
+        {
+          "name": "appointment_id",
+          "type": "string",
+          "location": "path",
+          "description": "Appointment id from `shipment v2-appointments`",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "shipment_v2-appointments",
+      "description": "Appointments in the NEW Shipment Planner v2. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. v2 is an ADDITION alongside the v1 shipment endpoints, not a replacement - both routes and both sidebar links are live, and v1 still owns draft create, submit and switch-email. Optional: channel, scope, limit.",
+      "method": "GET",
+      "path": "/api/shipment/v2/appointments/",
+      "params": [
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "Channel slug from `shipment v2-channels`."
+        },
+        {
+          "name": "scope",
+          "type": "string",
+          "location": "query",
+          "description": "Time window."
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "location": "query",
+          "description": "Row cap. The UI sends 300."
+        }
+      ]
+    },
+    {
+      "name": "shipment_v2-channels",
+      "description": "The channel list Shipment Planner v2 is scoped by - the first call any v2 session makes. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb.",
+      "method": "GET",
+      "path": "/api/shipment/v2/channels/",
+      "params": []
+    },
+    {
+      "name": "shipment_v2-fill-options",
+      "description": "What the v2 fill dialog may offer for one appointment: available stock rules and strategies. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. CAUTION: POST /api/shipment/v2/fill/ (no /options) is the write that actually fills - it is deliberately absent from this CLI. Optional: channel, appointment_id.",
+      "method": "GET",
+      "path": "/api/shipment/v2/fill/options/",
+      "params": [
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "Channel slug"
+        },
+        {
+          "name": "appointment_id",
+          "type": "string",
+          "location": "query",
+          "description": "Appointment id"
+        }
+      ]
+    },
+    {
+      "name": "shipment_v2-pos",
+      "description": "Purchase orders behind a v2 appointment, filtered by pendency bucket. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. TRAP: `bucket` is the PENDENCY bucket (open/full/short/dispatched). It is NOT the with_stock/without_stock stock-rule set, which never reaches the wire on this endpoint, and NOT the response-side item_head bucket (PREMIUM/COMMODITY/OTHER). Three different things share the word. Optional: channel, appointment_id, bucket.",
+      "method": "GET",
+      "path": "/api/shipment/v2/pos/",
+      "params": [
+        {
+          "name": "channel",
+          "type": "string",
+          "location": "query",
+          "description": "Channel slug"
+        },
+        {
+          "name": "appointment_id",
+          "type": "string",
+          "location": "query",
+          "description": "Appointment id"
+        },
+        {
+          "name": "bucket",
+          "type": "string",
+          "location": "query",
+          "description": "Pendency buckets, multi-select: sorted and comma-joined (the client sorts before joining), the literal `none` when the set is empty. UI default is `open`. Allowed members: open, full, short, dispatched."
+        }
+      ]
     },
     {
       "name": "tables_columns",
@@ -4449,7 +4677,7 @@
           "name": "column_filters",
           "type": "string",
           "location": "query",
-          "description": "JSON array string [{'column':'\u003ccol\u003e','values':[...]}]"
+          "description": "JSON array string [{'column':'<col>','values':[...]}]"
         }
       ]
     },
@@ -4483,7 +4711,7 @@
           "name": "column_filters",
           "type": "string",
           "location": "query",
-          "description": "JSON array string: [{'column':'\u003ccol\u003e','values':[...]}]"
+          "description": "JSON array string: [{'column':'<col>','values':[...]}]"
         }
       ]
     },

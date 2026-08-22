@@ -35,10 +35,17 @@ func newShipmentCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newShipmentShipmentInvoicesCmd(flags))
 	cmd.AddCommand(newShipmentShipmentPoDocumentCmd(flags))
 	cmd.AddCommand(newShipmentShipmentPoDocumentsCmd(flags))
+	cmd.AddCommand(newShipmentShipmentSwitchVerifyCmd(flags))
 	cmd.AddCommand(newShipmentShipmentsCmd(flags))
 	cmd.AddCommand(newShipmentShipmentsDeletionLogCmd(flags))
 	cmd.AddCommand(newShipmentShipmentsDohAutoFillCmd(flags))
 	cmd.AddCommand(newShipmentShipmentsPendingApprovalsCmd(flags))
 	cmd.AddCommand(newShipmentShipmentsStatsCmd(flags))
+	cmd.AddCommand(newShipmentSwitchingCmd(flags))
+	cmd.AddCommand(newShipmentV2AppointmentLinesCmd(flags))
+	cmd.AddCommand(newShipmentV2AppointmentsCmd(flags))
+	cmd.AddCommand(newShipmentV2ChannelsCmd(flags))
+	cmd.AddCommand(newShipmentV2FillOptionsCmd(flags))
+	cmd.AddCommand(newShipmentV2PosCmd(flags))
 	return cmd
 }

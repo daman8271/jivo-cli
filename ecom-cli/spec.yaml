@@ -1,6 +1,6 @@
 name: jivo-ecom
 description: JIVO e-commerce & quick-commerce analytics CLI (ecom.jivo.in) - read-only dashboards, master data, notifications, SAP mirror, Amazon PO reporting and per-platform metrics across Amazon, Blinkit, Zepto, Swiggy, BigBasket, Flipkart, Citymall, JioMart, Zomato
-version: 0.2.0
+version: 0.2.1
 base_url: https://ecom.jivo.in
 health_check_path: /api/auth/me
 auth:
@@ -1347,6 +1347,54 @@ resources:
           description: date string
         response:
           type: object
+      blinkit-campaigns-optimization:
+        method: GET
+        path: /api/platform/{platform}/blinkit-campaigns-optimization
+        description: "Blinkit Campaigns Optimization workbook: SKU master, brand fund, product booster, recommendation ads and an MTD-spend block that has been empty in every response observed. HEAVY - 2.7 MB for the default month, 9.9 MB for six. TRAP: the server IGNORES the {platform} path segment and always returns Blinkit; a call with platform=zepto returns the byte-identical Blinkit payload."
+        params:
+        - name: platform
+          type: string
+          description: "Platform slug. Syntactically required, semantically ignored - always pass blinkit."
+          required: true
+        - name: from
+          type: string
+          description: "Window start, YYYY-MM-DD. Narrows server-side. Default = 1st of the current month. `from` and `to` default INDEPENDENTLY - passing only one does not widen the other."
+          required: false
+        - name: to
+          type: string
+          description: "Window end, YYYY-MM-DD. Narrows server-side. Default = last day of the current month."
+          required: false
+        response:
+          type: object
+      blinkit-sale-target:
+        method: GET
+        path: /api/platform/{platform}/blinkit-sale-target
+        description: "Blinkit Daily & Targets: today vs a compare day, per item head, against the month target, with close-month growth. TRAP: growth_pct is relative to whichever close month the CALLER picks, and is a 0-1 fraction here while fill_rate_pct elsewhere is 0-100."
+        params:
+        - name: platform
+          type: string
+          description: Platform slug - blinkit only; other slugs are rejected with 400.
+          required: true
+        - name: date
+          type: string
+          description: "As-on date, YYYY-MM-DD. Default = latest day with data."
+          required: false
+        - name: compare_date
+          type: string
+          description: "Comparison date, YYYY-MM-DD. Default = the day before `date`."
+          required: false
+        - name: close_months
+          type: string
+          description: "Comma-separated YYYY-MM close months, or the literal `none`. Changes what growth_pct is measured against. Order-insensitive: the server sorts and takes the max key. `prev_month_label` carries no year (2025-08 renders as \"Aug\"), so print the close-month key beside growth_pct, not the label."
+          required: false
+        - name: nocache
+          type: string
+          description: "Cache buster the UI sends. Observed value: 1."
+          required: false
+          enum:
+          - "1"
+        response:
+          type: object
       blinkit-summary-report:
         method: GET
         path: /api/platform/{platform}/blinkit-summary-report
@@ -1728,6 +1776,34 @@ resources:
           - swiggy
           - zepto
           - zomato
+        response:
+          type: object
+      overall-pendency:
+        method: GET
+        path: /api/platform/overall-pendency
+        description: "Group-level open-PO pendency across ALL EIGHT platforms at once, including amazon which the per-platform `pendency` route refuses. Volume figures match `platform pendency` exactly. TRAP 1: pending_value here is GST-INCLUSIVE while the order_value that `platform pendency` reports is pre-tax. The ratio is NOT a constant: 91 of 95 SKUs are 1.05x (5% GST), but aerated beverages are 1.40x (28% GST + 12% cess) - bigbasket LEMON 750ML, TONIC WATER 200ML, WATER PEACH 750ML and swiggy SODA LEMON 750 ML today. Dividing a beverage pending_value by 1.05 overstates it by 33%. Never convert between the two; call the endpoint you need. TRAP 2: `open_units` means ORDERED, not open; it equals pending_units on every q-commerce platform, which hides the error, and is 26% higher on amazon. TRAP 3: there is no `error` key on this response - it is absent, not null, so do not branch on it. min_po_date/max_po_date are DD-MM-YYYY (not ISO) and are nullable (citymall). `max_date` was null in every response observed."
+        params:
+        - name: platforms
+          type: string
+          description: "Comma-separated slugs from the response's own available_platforms[].slug. Omit for all eight. TRAP: this is NOT the 10-slug list on `account me` - flipkart and jiomart are rejected with HTTP 400 [\"Unknown platform(s): flipkart.\"]. Error bodies on this endpoint are bare JSON arrays of strings, not {detail:...}."
+          required: false
+          enum:
+          - amazon
+          - bigbasket
+          - blinkit
+          - citymall
+          - flipkart_grocery
+          - swiggy
+          - zepto
+          - zomato
+        - name: item_head
+          type: string
+          description: "Item head filter. Server-named enum: ALL | PREMIUM | COMMODITY | OTHER. ALL is the default and may be omitted."
+          required: false
+        - name: group_by
+          type: string
+          description: "Row grain: item | category | sub_category. Default item."
+          required: false
         response:
           type: object
       pendency:
@@ -2456,6 +2532,12 @@ resources:
         method: GET
         path: /api/reports/amazon-po/sku-pendency/filter-options
         description: Amazon po sku pendency filter options (amazonSkuPendencyOptions)
+        response:
+          type: object
+      amazon-po-sku-pendency-summary:
+        method: GET
+        path: /api/reports/amazon-po/sku-pendency/summary
+        description: "Totals for the Amazon Shipment-Planner open book: lines, requested/accepted/received/remaining units and litres, fill rate. Takes NO parameters - fulfillment_center and channel are accepted and then silently ignored (byte-identical bodies). TRAP 1: this summary's `open_units` equals the row report's `remaining_qty`, NOT its `open_qty` - same word, different metric. TRAP 2: `totals` here is unfiltered; the row report's `totals` is filter-scoped, so only the bare call is comparable to it. `total` carries 40 keys (including order_ltrs, accepted_ltrs, delivered_ltrs); `delivery_shortfall_ltrs` exactly duplicates `remaining_ltrs`. 5 of 11 by_fc rows and the \"-\" channel row null out fill_rate_pct, cancel_rate_pct, invoiced_share_pct, uninvoiced_share_pct and short_invoice_rate_pct; only acceptance_rate_pct never nulls."
         response:
           type: object
       amazon-po-summary:
@@ -3284,6 +3366,17 @@ resources:
           - rejected
         response:
           type: object
+      shipment-switch-verify:
+        method: GET
+        path: /api/shipment/shipments/{id}/switch/verify/
+        description: "Pre-flight check for switching a shipment's fulfilment centre: what would break, what stock moves. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. CAUTION: a POST shares this exact path and performs the switch. This command sends GET only."
+        params:
+        - name: id
+          type: string
+          description: Shipment id
+          required: true
+        response:
+          type: object
       shipments-deletion-log:
         method: GET
         path: /api/shipment/shipments/deletion-log/
@@ -3292,6 +3385,27 @@ resources:
         - name: limit
           type: integer
           description: integer
+        response:
+          type: object
+      switching:
+        method: GET
+        path: /api/shipment/switching/
+        description: "The FC-switching ledger: every shipment whose fulfilment centre was switched, with its email/verification state. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb."
+        params:
+        - name: state
+          type: string
+          description: Ledger state filter.
+          required: false
+          enum:
+          - all
+          - waiting
+          - email_failed
+          - verified
+          - rejected
+        - name: limit
+          type: integer
+          description: "Row cap. The UI sends 200."
+          required: false
         response:
           type: object
       shipments-doh-auto-fill:
@@ -3346,6 +3460,81 @@ resources:
         description: Shipment stats Requires additional permission; returns 403 otherwise. Response shape UNVERIFIED (could not be read this run).
         response:
           type: object
+      v2-appointment-lines:
+        method: GET
+        path: /api/shipment/v2/appointments/{appointment_id}/lines/
+        description: "PO lines on one Shipment-Planner-v2 appointment. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. WEAKER THAN ITS SIBLINGS: this is the only v2 path never reached live at all - even its 403 is unobserved. Its parent collection is routing-proven and the source is explicit, but treat routing as unverified."
+        params:
+        - name: appointment_id
+          type: string
+          description: Appointment id from `shipment v2-appointments`
+          required: true
+        response:
+          type: object
+      v2-appointments:
+        method: GET
+        path: /api/shipment/v2/appointments/
+        description: "Appointments in the NEW Shipment Planner v2. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. v2 is an ADDITION alongside the v1 shipment endpoints, not a replacement - both routes and both sidebar links are live, and v1 still owns draft create, submit and switch-email."
+        params:
+        - name: channel
+          type: string
+          description: "Channel slug from `shipment v2-channels`."
+          required: false
+        - name: scope
+          type: string
+          description: Time window.
+          required: false
+          enum:
+          - upcoming
+          - past
+          - all
+        - name: limit
+          type: integer
+          description: "Row cap. The UI sends 300."
+          required: false
+        response:
+          type: object
+      v2-channels:
+        method: GET
+        path: /api/shipment/v2/channels/
+        description: "The channel list Shipment Planner v2 is scoped by - the first call any v2 session makes. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb."
+        response:
+          type: object
+      v2-fill-options:
+        method: GET
+        path: /api/shipment/v2/fill/options/
+        description: "What the v2 fill dialog may offer for one appointment: available stock rules and strategies. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. CAUTION: POST /api/shipment/v2/fill/ (no /options) is the write that actually fills - it is deliberately absent from this CLI."
+        params:
+        - name: channel
+          type: string
+          description: Channel slug
+          required: false
+        - name: appointment_id
+          type: string
+          description: Appointment id
+          required: false
+        response:
+          type: object
+      v2-pos:
+        method: GET
+        path: /api/shipment/v2/pos/
+        description: "Purchase orders behind a v2 appointment, filtered by pendency bucket. Requires the amazon.shipment_planning.view permission; this credential gets 403. Routing confirmed live 2026-08-22 (403, not 404). Verb and every response field are derived from the app's own JS source, NOT verified against a live 200 - the 403 is returned before handler selection, so it cannot corroborate the verb. TRAP: `bucket` is the PENDENCY bucket (open/full/short/dispatched). It is NOT the with_stock/without_stock stock-rule set, which never reaches the wire on this endpoint, and NOT the response-side item_head bucket (PREMIUM/COMMODITY/OTHER). Three different things share the word."
+        params:
+        - name: channel
+          type: string
+          description: Channel slug
+          required: false
+        - name: appointment_id
+          type: string
+          description: Appointment id
+          required: false
+        - name: bucket
+          type: string
+          description: "Pendency buckets, multi-select: sorted and comma-joined (the client sorts before joining), the literal `none` when the set is empty. UI default is `open`. Allowed members: open, full, short, dispatched."
+          required: false
+        response:
+          type: object
+
   tables:
     description: Dynamic data-table browser over the underlying warehouse tables
     endpoints:

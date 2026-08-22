@@ -22,6 +22,7 @@ func newReportsCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newReportsAmazonPoNewPoCmd(flags))
 	cmd.AddCommand(newReportsAmazonPoSkuPendencyCmd(flags))
 	cmd.AddCommand(newReportsAmazonPoSkuPendencyFilterOptionsCmd(flags))
+	cmd.AddCommand(newReportsAmazonPoSkuPendencySummaryCmd(flags))
 	cmd.AddCommand(newReportsAmazonPoSummaryCmd(flags))
 	cmd.AddCommand(newReportsAppointmentCmd(flags))
 	cmd.AddCommand(newReportsAppointmentFilterOptionsCmd(flags))
