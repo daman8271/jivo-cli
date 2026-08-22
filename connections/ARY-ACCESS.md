@@ -37,6 +37,29 @@ set -a; . connections/ary.env; set +a          # or export DSR_HOST/PORT/USER/PA
 echo "SELECT name FROM sys.databases WHERE database_id>4 ORDER BY name;" | ./dsr-cli/dsr query
 ```
 
+### On Windows use `connections\ary-connect.cmd`
+
+`ary.env` is written for bash, so **its values are single-quoted**. `cmd`'s
+`for /f` does not strip those quotes, so the obvious loop sets
+`DSR_HOST='138.252.101.118'` and `dsr doctor` fails with the misleading
+`lookup '138.252.101.118': no such host` — it looks like a network block and is
+really a quoting bug. The wrapper strips them:
+
+```bat
+connections\ary-connect.cmd doctor
+connections\ary-connect.cmd query --db FR8HODBNEW "SELECT TOP 5 * FROM SaleHeader"
+```
+
+Two more Windows notes, both found on `JIVO201` 2026-08-22:
+
+- Pass the SQL **as an argument**, from inside a `.cmd`. Piping into the wrapper
+  fails (`The system cannot find the file specified`), and sending SQL through
+  `ssh` lands in **PowerShell**, which eats the parentheses in `CONVERT(date, …)`.
+- `dsr doctor` reports `Config: %USERPROFILE%\.dsr\.env` even when the ARY
+  environment variables are the ones in force. That line names the file it
+  *searched*, not the credentials it *used* — the `Server:`/`Login:` rows are the
+  ones that tell you where you actually connected.
+
 ## FR8HODBNEW — the sales schema (verified)
 
 - **`SaleHeader`** — one row per bill. `VoucherDate` (smalldatetime), `BillAmount`
