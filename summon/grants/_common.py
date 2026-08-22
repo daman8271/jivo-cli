@@ -132,6 +132,19 @@ def j(*parts: str) -> str:
     return sep.join(p.rstrip("\\/") for p in parts if p)
 
 
+def run_in(directory: str, cmd: str, *, timeout: int = 120) -> tuple[int, str]:
+    """Run a command with the working directory set.
+
+    `sapb1` reads its .env from the CURRENT directory, not from wherever the
+    binary sits — so running it by absolute path silently sees no configuration
+    at all and reports "missing required config" on a box whose .env is correct.
+    That cost a debug cycle chasing a credential that was never wrong.
+    """
+    if WINDOWS:
+        return ssh(f"cd /d {directory} & {cmd}", timeout=timeout)
+    return ssh(f"cd {q(directory)} && {cmd}", timeout=timeout)
+
+
 def require_reachable(rep: Report) -> bool:
     """Confirm we have a shell. Returns False and records a blocker if not."""
     rc, out = ssh("hostname")

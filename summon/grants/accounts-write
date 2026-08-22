@@ -40,7 +40,7 @@ from _common import (  # noqa: E402
     ALIAS, APPLY, BOX, DEAD_SAP_HOST, DEPARTMENTS, DRAFT_SINCE, KIT, MODE,
     NOT_FOUND_RE, OPERATOR, OPERATOR_NAME, PERSONA, READONLY_SAP_USERS,
     RULE0_MARKER,
-    SAP_USER, WINDOWS, j, q, ssh, sync_kit,
+    SAP_USER, WINDOWS, j, q, run_in, ssh, sync_kit,
 )
 
 findings: list[dict] = []
@@ -335,9 +335,12 @@ else:
         # --dry-run sends nothing to SAP and exits 0. It is the only safe way to
         # show the write path is genuinely open end to end.
         if APPLY and not blockers:
-            probe = (f'{q(exe)} draft purchase-invoice --dry-run' if not WINDOWS
-                     else f'{exe} draft purchase-invoice --dry-run')
-            rc, out = ssh(probe, timeout=120)
+            # From the binary's own directory: sapb1 reads .env from the CWD.
+            rc, out = run_in(
+                envdir,
+                ("sapb1.exe" if WINDOWS else "./sapb1")
+                + " draft purchase-invoice --dry-run",
+                timeout=150)
             if rc == 0:
                 note("write_path_proof", True,
                      "sapb1 draft --dry-run exits 0 — write path is open")

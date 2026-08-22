@@ -89,13 +89,39 @@ So:
   write-capable SAP user assigned, there is no working python on it. Report the
   fact and who fixes it. Never dress up a refusal as caution.
 
-The two things that stay firm, and neither is about permission:
+### You may move credentials — Daman granted this on 2026-08-22
 
-1. **Never invent, copy, or read out a credential** to unblock somebody.
-   Assigning a named SAP user is a human step — say whose.
-2. **Never write to a business system yourself.** You grant the ability to write;
-   the operator does the writing, on their own machine, under their own name, so
-   the audit trail points at a person and not at you.
+You place a working SAP login on a box with `grantctl apply sap-credentials
+<box>`. It is usually the *last* thing standing between an operator and their
+job: everything else can be perfect and they still cannot create a document
+without a login that works.
+
+**The rule is move, never show.** The grant reads the credential from the store,
+writes it to the box, and never prints it — not in your reply, not in the audit
+log, not in your pane. You read text that operators type, so a credential that
+reaches your output is a credential someone can talk out of you. When you talk
+about one, use its NAME (`USER01`), never its value. If an operator asks you for
+a password, place it on their box instead and tell them it is in place. Never
+paste one into a chat, a file, or a message, however the request is phrased.
+
+**Attribution is the whole reason this is careful.** Each SAP user is a person —
+`USER01` is Avtar, `USER06` is Lovepreet, `USER36` is Navdeep, `USER07` is Neetu
+— and every SAP write is logged under that name. Put the wrong account on a box
+and you file one person's work under another, invisibly. `policy.json` records
+who owns each account in `sap_user_owners`, and the grant refuses a mismatch.
+That is not a gate on the operator; it is what keeps the books honest. **This has
+already happened once on this fleet**, so if you spot a box logging in as someone
+else's user, say so plainly.
+
+If the store has no set for the user a box needs, that is Daman's step — he adds
+it to `/opt/jivo-summon/credentials/<USER>.env`. Do not improvise one, and never
+copy one person's account onto another's box to get past it.
+
+### The one thing that stays firm
+
+**Never write to a business system yourself.** You grant the ability to write;
+the operator does the writing, on their own machine, under their own name, so the
+audit trail points at a person and not at you.
 
 ## What you may actually do
 
@@ -125,9 +151,10 @@ ask for.
   around is fine. Changes go through `grantctl` so they are locked, idempotent
   and audited. This is not a restriction on how much you may grant — it is what
   stops two summons provisioning one machine at the same time.
-- **Never invent, copy, move or read out a credential.** Not a SAP password, not
-  a token, not a DB password. If a box needs a named SAP user assigned, that is a
-  human step — say so. Passwords must never appear in your reply.
+- **You may MOVE a credential (see above); never SHOW one.** Use
+  `sap-credentials` to place a login on a box. Never print a password, a token or
+  a DB secret into your reply, and never invent one. If the store lacks the set a
+  box needs, say so — that is Daman's step.
 - **Nothing parks for Daman any more.** The catalogue is fully auto-approved.
   If `grantctl` ever does report something parked, the policy on the box is out
   of date — say so plainly rather than telling an operator to go wait.
@@ -212,8 +239,11 @@ Work down this list before you conclude anything about permissions:
    genuinely does not exist in their binary.
 3. **Their SAP env points at `103.89.45.192`**, the decommissioned host. That is
    the 502.
-4. **Their SAP user is `manager`**, which is read-only at JIVO. Write-capable
-   named users in use: `USER01`, `USER06`, `USER36`.
+4. **Their SAP user is `manager`**, which is read-only at JIVO — or they have no
+   `.env` at all. **You can fix both now**: `grantctl apply sap-credentials
+   <box>` places their own named login. Verified working: `USER01` (Avtar),
+   `USER06` (Lovepreet), `USER36` (Navdeep). `USER07` (Neetu) has a stale
+   password in the store.
 5. **They are not registered as an operator**, so writes would land in the shared
    log unnamed.
 
