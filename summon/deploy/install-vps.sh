@@ -34,13 +34,33 @@ mkdir -p "$ROOT"/agent "$ROOT"/bin "$ROOT"/grants "$ROOT"/queue "$ROOT"/replies 
          "$ROOT"/workspace/.claude "$ROOT"/state/locks "$ROOT"/state/pending
 chmod 700 "$ROOT"
 
-# Code comes from the repo, so the agent always runs what is committed.
-install -m 0755 "$REPO/summon/agent/pool.py"    "$ROOT/agent/pool.py"
-install -m 0755 "$REPO/summon/agent/summond.py" "$ROOT/agent/summond.py"
-install -m 0755 "$REPO/summon/bin/grantctl"     "$ROOT/bin/grantctl"
-for g in "$REPO"/summon/grants/*; do
-  [ -f "$g" ] && install -m 0755 "$g" "$ROOT/grants/$(basename "$g")"
+# Code comes from origin/main explicitly, NOT from the checkout's working tree.
+# This box runs other agents concurrently and they switch branches under us — a
+# rescrape task had it on its own branch, so installing from the working tree
+# silently deployed that branch's files and the fix under test never landed.
+# `git show <ref>:<path>` does not care which branch is checked out.
+REF="${SUMMON_DEPLOY_REF:-origin/main}"
+git -C "$REPO" fetch -q origin main || { echo "FATAL: cannot fetch origin" >&2; exit 1; }
+echo "deploying from $REF ($(git -C "$REPO" rev-parse --short "$REF"))"
+
+deploy_file() {  # <repo-relative path> <destination>
+  local src="$1" dst="$2"
+  if ! git -C "$REPO" show "$REF:$src" > "$dst.tmp" 2>/dev/null; then
+    echo "FATAL: $src is not in $REF" >&2; rm -f "$dst.tmp"; exit 1
+  fi
+  chmod 0755 "$dst.tmp"
+  mv "$dst.tmp" "$dst"
+}
+
+deploy_file summon/agent/pool.py    "$ROOT/agent/pool.py"
+deploy_file summon/agent/summond.py "$ROOT/agent/summond.py"
+deploy_file summon/bin/grantctl     "$ROOT/bin/grantctl"
+
+# Every grant in the ref, so a newly added one is picked up without editing this.
+for g in $(git -C "$REPO" ls-tree --name-only "$REF:summon/grants"); do
+  deploy_file "summon/grants/$g" "$ROOT/grants/$g"
 done
+echo "deployed $(ls -1 "$ROOT/grants" | wc -l) grant script(s)"
 
 # policy.json is operational state, and it is deliberately NOT in git (it carries
 # hostnames, kit paths and SAP usernames; the repo is public). So it arrives
@@ -54,8 +74,9 @@ if [ ! -f "$ROOT/policy.json" ]; then
     install -m 0600 "$SRC" "$ROOT/policy.json"
     echo "installed policy.json from $SRC"
     shred -u "$SRC" 2>/dev/null || rm -f "$SRC"
-  elif [ -f "$REPO/summon/agent/policy.example.json" ]; then
-    install -m 0600 "$REPO/summon/agent/policy.example.json" "$ROOT/policy.json"
+  elif git -C "$REPO" cat-file -e "$REF:summon/agent/policy.example.json" 2>/dev/null; then
+    git -C "$REPO" show "$REF:summon/agent/policy.example.json" > "$ROOT/policy.json"
+    chmod 0600 "$ROOT/policy.json"
     echo "WARNING: no real roster found — installed the EXAMPLE."
     echo "         It has no real boxes, so every summon will auto-enrol from scratch."
     echo "         scp the real policy.json to /tmp/policy.json and re-run."
@@ -66,7 +87,8 @@ else
   echo "policy.json already present — left alone (it may hold auto-enrolled boxes)"
 fi
 
-install -m 0644 "$REPO/summon/agent/workspace-CLAUDE.md" "$ROOT/workspace/CLAUDE.md"
+deploy_file summon/agent/workspace-CLAUDE.md "$ROOT/workspace/CLAUDE.md"
+chmod 0644 "$ROOT/workspace/CLAUDE.md"
 
 say "workspace allowlist"
 # This is what lets a session act without a human at the keyboard while still
