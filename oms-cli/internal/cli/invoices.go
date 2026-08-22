@@ -24,8 +24,10 @@ func newInvoicesCmd(flags *rootFlags) *cobra.Command {
 	// 404s. Unregistered until the backend team confirms the route.
 	// cmd.AddCommand(newInvoicesHistoryCmd(flags))
 	cmd.AddCommand(newInvoicesLogsCmd(flags))
+	cmd.AddCommand(newInvoicesReservedBatchesCmd(flags))
 	cmd.AddCommand(newInvoicesSkuCmd(flags))
 	cmd.AddCommand(newInvoicesSkusCmd(flags))
 	cmd.AddCommand(newInvoicesSkusPendingCmd(flags))
+	cmd.AddCommand(newInvoicesUsedSalesOrdersCmd(flags))
 	return cmd
 }

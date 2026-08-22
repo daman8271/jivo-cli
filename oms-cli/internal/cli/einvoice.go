@@ -16,8 +16,16 @@ func newEinvoiceCmd(flags *rootFlags) *cobra.Command {
 	}
 
 	cmd.AddCommand(newEinvoiceCompaniesCmd(flags))
+	cmd.AddCommand(newEinvoiceEwbByIrnCmd(flags))
+	cmd.AddCommand(newEinvoiceGstinCmd(flags))
 	cmd.AddCommand(newEinvoiceHealthCmd(flags))
+	cmd.AddCommand(newEinvoiceHeartbeatCmd(flags))
 	cmd.AddCommand(newEinvoiceInvoicesCmd(flags))
+	cmd.AddCommand(newEinvoiceIrnByDocCmd(flags))
+	cmd.AddCommand(newEinvoiceIrnCmd(flags))
+	cmd.AddCommand(newEinvoiceIrnFromInvoiceCmd(flags))
+	cmd.AddCommand(newEinvoiceIrnQrCmd(flags))
+	cmd.AddCommand(newEinvoiceIrnRejectedCmd(flags))
 	cmd.AddCommand(newEinvoiceLogsCmd(flags))
 	return cmd
 }

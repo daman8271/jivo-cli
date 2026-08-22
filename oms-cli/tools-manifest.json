@@ -1,7 +1,7 @@
 {
   "api_name": "oms",
   "base_url": "https://oms.jivo.in",
-  "description": "JIVO OMS (Order Management System) CLI — READ-ONLY. Orders, quotations, schemes, approvals, party \u0026 product assignments, the SAP Business One mirror, live SAP HANA stock and pricing, the invoice review queue, FSSAI label compliance, and the invoice tracker at oms.jivo.in. Every command is a GET; no mutating endpoint is wrapped. HANA commands require --branch (OIL or BEVERAGE) — it picks the SAP company database.",
+  "description": "JIVO OMS (Order Management System) CLI \u2014 READ-ONLY. Orders, quotations, schemes, approvals, party & product assignments, the SAP Business One mirror, live SAP HANA stock and pricing, the invoice review queue, FSSAI label compliance, and the invoice tracker at oms.jivo.in. Every command is a GET; no mutating endpoint is wrapped. HANA commands require --branch (OIL or BEVERAGE) \u2014 it picks the SAP company database.",
   "mcp_ready": "full",
   "http_transport": "standard",
   "mcp": {
@@ -43,7 +43,7 @@
     },
     {
       "name": "account_device",
-      "description": "Full record for one enrolled device — model, OS, app build, first and last login — for when you need to confirm exactly what a specific user was running. Required: id.",
+      "description": "Full record for one enrolled device \u2014 model, OS, app build, first and last login \u2014 for when you need to confirm exactly what a specific user was running. Required: id.",
       "method": "GET",
       "path": "/api/admin/devices/{id}/",
       "params": [
@@ -58,7 +58,7 @@
     },
     {
       "name": "account_device-analytics",
-      "description": "One-screen rollout health for the OMS apps — how many devices are on each Android/iOS/web build, and how many have been seen recently. Use it to answer 'has everyone updated?' before blaming the backend. Optional: days.",
+      "description": "One-screen rollout health for the OMS apps \u2014 how many devices are on each Android/iOS/web build, and how many have been seen recently. Use it to answer 'has everyone updated?' before blaming the backend. Optional: days.",
       "method": "GET",
       "path": "/api/admin/devices/analytics/",
       "params": [
@@ -72,7 +72,7 @@
     },
     {
       "name": "account_devices",
-      "description": "The device registry — every browser and phone that has logged into OMS, who was on it, and when it was last seen. This is how you find out which app build a salesperson is actually running before you believe a bug report from the field. Optional: search, status, build_number (plus 3 more).",
+      "description": "The device registry \u2014 every browser and phone that has logged into OMS, who was on it, and when it was last seen. This is how you find out which app build a salesperson is actually running before you believe a bug report from the field. Optional: search, status, build_number (plus 3 more).",
       "method": "GET",
       "path": "/api/admin/devices/",
       "params": [
@@ -92,7 +92,7 @@
           "name": "build_number",
           "type": "int",
           "location": "query",
-          "description": "int, optional, query. Verified live: `?build_number=3` →"
+          "description": "int, optional, query. Verified live: `?build_number=3` \u2192"
         },
         {
           "name": "ordering",
@@ -172,14 +172,14 @@
     },
     {
       "name": "account_ui-label-config",
-      "description": "The editable definitions behind OMS's renameable field labels — the admin view, with the description and the active flag.",
+      "description": "The editable definitions behind OMS's renameable field labels \u2014 the admin view, with the description and the active flag.",
       "method": "GET",
       "path": "/api/ui-config/admin/labels/",
       "params": []
     },
     {
       "name": "account_ui-labels",
-      "description": "The resolved label map the app renders with — what the UI currently calls each renameable field. Useful when a user's screenshot says something your data dictionary doesn't.",
+      "description": "The resolved label map the app renders with \u2014 what the UI currently calls each renameable field. Useful when a user's screenshot says something your data dictionary doesn't.",
       "method": "GET",
       "path": "/api/ui-config/labels/",
       "params": []
@@ -287,10 +287,47 @@
       "params": []
     },
     {
+      "name": "einvoice_ewb-by-irn",
+      "description": "Returns 200 carrying NIC's own '4005 Eway Bill details are not found' when the IRN has no e-way bill - a successful call with a negative answer, not an error. Required: irn.",
+      "method": "GET",
+      "path": "/api/einvoice/ewb/{irn}/",
+      "params": [
+        {
+          "name": "irn",
+          "type": "string",
+          "location": "path",
+          "description": "64-character IRN from `einvoice logs`",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "einvoice_gstin",
+      "description": "CAUTION: a sibling route /api/einvoice/gstin/{gstin}/sync/ is also a GET, but its name is a sync trigger. It is deliberately not published and was never called. Required: gstin.",
+      "method": "GET",
+      "path": "/api/einvoice/gstin/{gstin}/",
+      "params": [
+        {
+          "name": "gstin",
+          "type": "string",
+          "location": "path",
+          "description": "15-character GSTIN, e.g. 06AACCJ4223F1Z0",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "einvoice_health",
       "description": "Whether the GST e-invoicing integration is up and authenticated.",
       "method": "GET",
       "path": "/api/einvoice/health/",
+      "params": []
+    },
+    {
+      "name": "einvoice_heartbeat",
+      "description": "Returns NIC's own vitals line, e.g. {\"status_code\":200,\"text\":\"e-Invoice Vital:-22-08-2026 14:58:30\"}. Distinct from the shipped `einvoice health`, which reports OUR service; this one reaches through to the government portal.",
+      "method": "GET",
+      "path": "/api/einvoice/heartbeat/",
       "params": []
     },
     {
@@ -301,11 +338,154 @@
       "params": []
     },
     {
+      "name": "einvoice_irn",
+      "description": "TRAP: NIC only serves IRN detail for two days. An older IRN returns a 200 carrying NIC's own refusal, '2283 IRN details cannot be provided as it is generated more than 2 days prior' - a successful HTTP call with no data in it. IRNs come from the shipped `einvoice logs`. Required: irn.",
+      "method": "GET",
+      "path": "/api/einvoice/irn/{irn}/",
+      "params": [
+        {
+          "name": "irn",
+          "type": "string",
+          "location": "path",
+          "description": "64-character IRN from `einvoice logs`",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "einvoice_irn-by-doc",
+      "description": "The reverse lookup into `einvoice logs`. All three parameters are required together - omitting any returns {\"error\":\"Missing query params: doctype, docnum, docdate\"}. Required: doctype, docnum, docdate.",
+      "method": "GET",
+      "path": "/api/einvoice/irn/by-doc/",
+      "params": [
+        {
+          "name": "doctype",
+          "type": "string",
+          "location": "query",
+          "description": "Document type as NIC names it",
+          "required": true
+        },
+        {
+          "name": "docnum",
+          "type": "string",
+          "location": "query",
+          "description": "Document number, e.g. 626088091",
+          "required": true
+        },
+        {
+          "name": "docdate",
+          "type": "string",
+          "location": "query",
+          "description": "Document date, DD/MM/YYYY - note the slashes, not the ISO form the rest of this API uses",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "einvoice_irn-from-invoice",
+      "description": "Builds the full e-invoice JSON from a SAP invoice doc entry and returns it without sending it to NIC. The read half of a path that also has a POST; only the GET is published. Required: docentry. Optional: company_db, id_type.",
+      "method": "GET",
+      "path": "/api/einvoice/irn/from-invoice/{docentry}/",
+      "params": [
+        {
+          "name": "docentry",
+          "type": "string",
+          "location": "path",
+          "description": "SAP invoice DocEntry, e.g. 16920 - read it off `einvoice logs`",
+          "required": true
+        },
+        {
+          "name": "company_db",
+          "type": "string",
+          "location": "query",
+          "description": "HANA company database, e.g. JIVO_BEVERAGES_HANADB"
+        },
+        {
+          "name": "id_type",
+          "type": "string",
+          "location": "query",
+          "description": "Which identifier the docentry is"
+        }
+      ]
+    },
+    {
+      "name": "einvoice_irn-qr",
+      "description": "Returns image/png, about 5 KB. Note this path does NOT end in a slash, unlike every other route in this group. Redirect stdout: `oms-pp-cli einvoice irn-qr --irn <IRN> > qr.png`. Required: irn.",
+      "method": "GET",
+      "path": "/api/einvoice/irn/{irn}/qr.png",
+      "params": [
+        {
+          "name": "irn",
+          "type": "string",
+          "location": "path",
+          "description": "64-character IRN from `einvoice logs`",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "einvoice_irn-rejected",
+      "description": "Required parameter, and the server names the format itself: {\"error\":\"Query param 'date' (dd/mm/yyyy) is required.\"}. Required: date.",
+      "method": "GET",
+      "path": "/api/einvoice/irn/rejected/",
+      "params": [
+        {
+          "name": "date",
+          "type": "string",
+          "location": "query",
+          "description": "Day to report on, DD/MM/YYYY",
+          "required": true
+        }
+      ]
+    },
+    {
       "name": "einvoice_logs",
-      "description": "IRN generation attempts and their outcomes — the place to look when an e-invoice fails.",
+      "description": "IRN generation attempts and their outcomes \u2014 the place to look when an e-invoice fails.",
       "method": "GET",
       "path": "/api/einvoice/logs/",
       "params": []
+    },
+    {
+      "name": "ewaybill_from-invoice",
+      "description": "Returns the mode it would use (e.g. ewb_by_irn) and the IRN it would ride on. The read half of a path that also has a POST; only the GET is published. Required: docentry. Optional: company_db, mode.",
+      "method": "GET",
+      "path": "/api/ewaybill/from-invoice/{docentry}/",
+      "params": [
+        {
+          "name": "docentry",
+          "type": "string",
+          "location": "path",
+          "description": "SAP invoice DocEntry, e.g. 16920",
+          "required": true
+        },
+        {
+          "name": "company_db",
+          "type": "string",
+          "location": "query",
+          "description": "HANA company database"
+        },
+        {
+          "name": "mode",
+          "type": "string",
+          "location": "query",
+          "description": "Generation mode"
+        }
+      ]
+    },
+    {
+      "name": "ewaybill_gstin",
+      "description": "ROUTED AND SERVED, but returned HTTP 502 today: {\"error\":\"All e-Way Bill hosts unreachable: ['https://api.ewaybillgst.gov.in/v1.03']\"}. That is our view running and failing to reach NIC, not a bad path. Retry when the government portal is back. Required: gstin.",
+      "method": "GET",
+      "path": "/api/ewaybill/gstin/{gstin}/",
+      "params": [
+        {
+          "name": "gstin",
+          "type": "string",
+          "location": "path",
+          "description": "15-character GSTIN",
+          "required": true
+        }
+      ]
     },
     {
       "name": "hana_address",
@@ -448,6 +628,27 @@
       ]
     },
     {
+      "name": "hana_inventory-report",
+      "description": "Warehouse-level stock straight from HANA, with the warehouse code->name master carried in the same response so a caller can drill without a second call. TRAP: the branch enum here is BEVERAGE, SINGULAR. The sibling EXIM API spells the same idea BEVERAGES, and this app's own bundle emits the plural on one WRITE path. The server's own 400 is the authority: 'branch is required and must be one of: OIL, BEVERAGE'. Required: branch. Optional: warehouses.",
+      "method": "GET",
+      "path": "/api/hana/inventory-report/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "Company branch. Required; the server's own 400 names the allowed set",
+          "required": true
+        },
+        {
+          "name": "warehouses",
+          "type": "string",
+          "location": "query",
+          "description": "Comma-joined warehouse codes to narrow to, e.g. BH-FG,GP-FG. Codes come from the warehouses[] block of the unfiltered response"
+        }
+      ]
+    },
+    {
       "name": "hana_invoice-drafts",
       "description": "READ of the A/R invoice drafts sitting in SAP for a branch. This reads drafts; it never creates one. Required: branch. Returns array.",
       "method": "GET",
@@ -529,6 +730,33 @@
       ]
     },
     {
+      "name": "hana_pending-dispatch",
+      "description": "branch=OIL: 76 orders / 269 lines / 63 invoices, with SO doc entry, sales order number, order and delivery date, card code and party name per row. TRAP: branch=BEVERAGE is accepted by the validator and then dies upstream with HTTP 502 and a HANA error, 'invalid column name: T0.U_OMS_REF'. The column does not exist in the beverage company DB. Treat this endpoint as OIL-only until that is fixed server-side. Required: branch. Optional: from_date, to_date.",
+      "method": "GET",
+      "path": "/api/hana/pending-dispatch/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "Company branch. BEVERAGE currently 502s server-side - see the command description",
+          "required": true
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window start, YYYY-MM-DD"
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window end, YYYY-MM-DD"
+        }
+      ]
+    },
+    {
       "name": "hana_product-so",
       "description": "BROKEN UPSTREAM (2026-08-04): the OMS backend raises 'get_sales_orders_for_product() takes 1 positional argument but 2 were given' and returns HTTP 500 on every call. Reported to the OMS team. | Product sales-order data for an item. Requires --item-code. Required: branch, item_code.",
       "method": "GET",
@@ -589,7 +817,7 @@
     },
     {
       "name": "hana_series",
-      "description": "SAP document numbering series for a branch — the series a document will draw its number from. Required: branch. Returns array.",
+      "description": "SAP document numbering series for a branch \u2014 the series a document will draw its number from. Required: branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/series/",
       "params": [
@@ -641,7 +869,7 @@
     },
     {
       "name": "hana_vendor-states",
-      "description": "States JIVO's vendors operate in, per branch — used to work out interstate vs intrastate GST. Required: branch. Returns array.",
+      "description": "States JIVO's vendors operate in, per branch \u2014 used to work out interstate vs intrastate GST. Required: branch. Returns array.",
       "method": "GET",
       "path": "/api/hana/vendor-states/",
       "params": [
@@ -685,7 +913,7 @@
     },
     {
       "name": "invoices_credit-limit-cards",
-      "description": "The credit-limit master for every customer account in one SAP company — how much each party currently owes, the credit line they are allowed, and the debt line. This is what the reviewer looks at before releasing an invoice for a party who is close to their limit. Optional: company.",
+      "description": "The credit-limit master for every customer account in one SAP company \u2014 how much each party currently owes, the credit line they are allowed, and the debt line. This is what the reviewer looks at before releasing an invoice for a party who is close to their limit. Optional: company.",
       "method": "GET",
       "path": "/api/invoice/credit-limit/cards/",
       "params": [
@@ -699,7 +927,7 @@
     },
     {
       "name": "invoices_credit-limit-flow",
-      "description": "The approval chain for a credit-limit override request raised against one invoice — which named approver sits at which stage, in what order, and whether they approved, rejected or have not acted. Required: invoice_id. Optional: company.",
+      "description": "The approval chain for a credit-limit override request raised against one invoice \u2014 which named approver sits at which stage, in what order, and whether they approved, rejected or have not acted. Required: invoice_id. Optional: company.",
       "method": "GET",
       "path": "/api/invoice/credit-limit/flow/",
       "params": [
@@ -735,7 +963,7 @@
     },
     {
       "name": "invoices_history",
-      "description": "Status-history timeline for an invoice (BACKEND ROUTE MISSING — unregistered). Required: id. Returns array.",
+      "description": "Status-history timeline for an invoice (BACKEND ROUTE MISSING \u2014 unregistered). Required: id. Returns array.",
       "method": "GET",
       "path": "/api/invoice/history/{id}/",
       "params": [
@@ -759,6 +987,20 @@
           "type": "string",
           "location": "query",
           "description": "string, optional, not positional."
+        }
+      ]
+    },
+    {
+      "name": "invoices_reserved-batches",
+      "description": "item_code, warehouse_code, batch_number, quantity, log_id and status per held batch. Rows sitting at status ERROR are stock reserved by a posting run that failed - they are the ones worth chasing. Optional: branch.",
+      "method": "GET",
+      "path": "/api/invoice/reserved-batches/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "Company branch. This one really filters: OIL returns the rows, BEVERAGE returns an empty set"
         }
       ]
     },
@@ -792,8 +1034,28 @@
       "params": []
     },
     {
+      "name": "invoices_used-sales-orders",
+      "description": "so_number, log_id, status (POSTED_TO_SAP or ERROR), the sap_doc_num it became, and created_at. The audit trail for 'why can I not invoice this SO again'. TRAP: --card-code is DECORATIVE. The server echoes it back in the response and does not filter on it - the row set is byte-for-byte the same with and without it. --branch is the parameter that actually narrows. Optional: branch, card_code.",
+      "method": "GET",
+      "path": "/api/invoice/used-sales-orders/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "Company branch. The real filter"
+        },
+        {
+          "name": "card_code",
+          "type": "string",
+          "location": "query",
+          "description": "Echoed back in the response and otherwise IGNORED - it does not filter. Sent by the UI; kept for parity"
+        }
+      ]
+    },
+    {
       "name": "legal_item-nutrition",
-      "description": "The nutritional facts JIVO has declared for one product — the reference values an uploaded label is checked against. Optional: item_id.",
+      "description": "The nutritional facts JIVO has declared for one product \u2014 the reference values an uploaded label is checked against. Optional: item_id.",
       "method": "GET",
       "path": "/api/legal/item-nutrition/",
       "params": [
@@ -821,7 +1083,7 @@
     },
     {
       "name": "legal_uoms",
-      "description": "The units of measure used when declaring nutritional values on a label (g, kcal, mg …). Returns array.",
+      "description": "The units of measure used when declaring nutritional values on a label (g, kcal, mg \u2026). Returns array.",
       "method": "GET",
       "path": "/api/legal/uom/",
       "params": []
@@ -856,7 +1118,7 @@
     },
     {
       "name": "orders_by-item",
-      "description": "Every order line for one FG item — who ordered it, how much, and in what state. Required: item_code.",
+      "description": "Every order line for one FG item \u2014 who ordered it, how much, and in what state. Required: item_code.",
       "method": "GET",
       "path": "/api/orders/orders-by-item/",
       "params": [
@@ -893,7 +1155,7 @@
     },
     {
       "name": "orders_dashboard-charts",
-      "description": "Chart series behind the order dashboard. Large — 268 KB in one unpaginated response; use --compact or --csv.",
+      "description": "Chart series behind the order dashboard. Large \u2014 268 KB in one unpaginated response; use --compact or --csv.",
       "method": "GET",
       "path": "/api/orders/dashboard/charts/",
       "params": []
@@ -984,7 +1246,7 @@
     },
     {
       "name": "orders_notifications-history",
-      "description": "The full notification feed for the current user, paged — including alerts already read, which the live `orders notifications` call drops. Optional: limit, offset, filter.",
+      "description": "The full notification feed for the current user, paged \u2014 including alerts already read, which the live `orders notifications` call drops. Optional: limit, offset, filter.",
       "method": "GET",
       "path": "/api/orders/notifications/history/",
       "params": [
@@ -1010,7 +1272,7 @@
     },
     {
       "name": "orders_parties",
-      "description": "Assigned-party dropdown (card_code -\u003e card_name) for the current user. Returns array.",
+      "description": "Assigned-party dropdown (card_code -> card_name) for the current user. Returns array.",
       "method": "GET",
       "path": "/api/orders/parties/",
       "params": []
@@ -1067,7 +1329,7 @@
     },
     {
       "name": "orders_schemes-manage",
-      "description": "The full scheme table behind the scheme admin screen — each scheme joined to the SKU it applies to, its pack size, its state, and whether it is switched on. Optional: state_code, search, include_inactive.",
+      "description": "The full scheme table behind the scheme admin screen \u2014 each scheme joined to the SKU it applies to, its pack size, its state, and whether it is switched on. Optional: state_code, search, include_inactive.",
       "method": "GET",
       "path": "/api/orders/schemes/manage/",
       "params": [
@@ -1100,7 +1362,7 @@
     },
     {
       "name": "orders_status",
-      "description": "Order status master (id -\u003e name). Returns array.",
+      "description": "Order status master (id -> name). Returns array.",
       "method": "GET",
       "path": "/api/orders/status/",
       "params": []
@@ -1144,7 +1406,7 @@
     },
     {
       "name": "orders_template-parties",
-      "description": "Parties available as an order template — the 'repeat a previous order' picker. Empty for a user with no assigned parties. Returns array.",
+      "description": "Parties available as an order template \u2014 the 'repeat a previous order' picker. Empty for a user with no assigned parties. Returns array.",
       "method": "GET",
       "path": "/api/orders/templates/parties/",
       "params": []
@@ -1343,7 +1605,7 @@
     },
     {
       "name": "tracker_invoice-jsap",
-      "description": "Whether this tracker invoice has reached **JSAP** (JIVO's internal ops platform at `103.89.45.75:5001`, the system `jsap-cli` talks to) and what JSAP's approvers did with it — approved, rejected, or still sitting there. Answers 'the invoice is stuck at JSAP Approval, has JSAP actually seen it?'. Required: id.",
+      "description": "Whether this tracker invoice has reached **JSAP** (JIVO's internal ops platform at `103.89.45.75:5001`, the system `jsap-cli` talks to) and what JSAP's approvers did with it \u2014 approved, rejected, or still sitting there. Answers 'the invoice is stuck at JSAP Approval, has JSAP actually seen it?'. Required: id.",
       "method": "GET",
       "path": "/api/tracker/invoices/{id}/jsap/",
       "params": [
@@ -1396,6 +1658,58 @@
           "location": "query",
           "description": "string, required (the SPA never calls it without one). **Enum is",
           "required": true
+        }
+      ]
+    },
+    {
+      "name": "tracker_stage-decisions",
+      "description": "GATED: returns HTTP 403 {\"detail\":\"You do not have access to this tracker page.\"} on a credential without tracker-page rights. CAUTION on reading that 403 as proof of anything but routing: DRF runs permissions before method dispatch, so every verb on every tracker route returns this same body - a known POST-only tracker route GETs to the identical 403. The GET verb here rests on the app's own JS, not on the response. Optional: stage, decision, include_resolved.",
+      "method": "GET",
+      "path": "/api/tracker/stage-decisions/",
+      "params": [
+        {
+          "name": "stage",
+          "type": "string",
+          "location": "query",
+          "description": "Tracker stage to report on"
+        },
+        {
+          "name": "decision",
+          "type": "string",
+          "location": "query",
+          "description": "Narrow to one decision outcome"
+        },
+        {
+          "name": "include_resolved",
+          "type": "string",
+          "location": "query",
+          "description": "Include decisions already resolved"
+        }
+      ]
+    },
+    {
+      "name": "tracker_stage-export",
+      "description": "GATED: HTTP 403 without tracker-page rights, and the same caveat as `stage-decisions` - the 403 proves routing, not the verb. Returns a binary xlsx, so redirect stdout to a file. Optional: stage, tab, ids.",
+      "method": "GET",
+      "path": "/api/tracker/stage-export/",
+      "params": [
+        {
+          "name": "stage",
+          "type": "string",
+          "location": "query",
+          "description": "Tracker stage to export"
+        },
+        {
+          "name": "tab",
+          "type": "string",
+          "location": "query",
+          "description": "Which tab of the stage view"
+        },
+        {
+          "name": "ids",
+          "type": "string",
+          "location": "query",
+          "description": "Comma-joined row ids to limit the export to"
         }
       ]
     },

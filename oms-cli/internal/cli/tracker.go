@@ -29,6 +29,8 @@ func newTrackerCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newTrackerMyQueueCmd(flags))
 	cmd.AddCommand(newTrackerReportsCmd(flags))
 	cmd.AddCommand(newTrackerStageAdvancedCmd(flags))
+	cmd.AddCommand(newTrackerStageDecisionsCmd(flags))
+	cmd.AddCommand(newTrackerStageExportCmd(flags))
 	cmd.AddCommand(newTrackerVendorsCmd(flags))
 	return cmd
 }

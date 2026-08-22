@@ -184,7 +184,15 @@ fi
 
 # OMS is Django: EVERY route terminates in a trailing slash. This is the
 # opposite of ecom, where only /api/shipment/ paths take one.
-noslash=$(grep -oE '^\s+path: "/api/[^"]*"' oms-spec.yaml | grep -vc '/"$' || true)
+#
+# ONE measured exception: /api/einvoice/irn/{irn}/qr.png serves a file, not a
+# Django view, and is the mirror image of the rule -- the slashless form is the
+# working one. Measured 2026-08-22 with a real IRN:
+#   GET .../qr.png   -> 200 image/png 5223 b
+#   GET .../qr.png/  -> 404 text/html
+# So the check skips paths ending in a file extension rather than being widened
+# to "or missing", which would stop catching the bug it exists for.
+noslash=$(grep -oE '^\s+path: "/api/[^"]*"' oms-spec.yaml | grep -v '\.[a-z]\{2,4\}"$' | grep -vc '/"$' || true)
 [ "$noslash" -eq 0 ] && pass "every /api/ path carries its Django trailing slash" \
                      || bad "$noslash paths are missing the trailing slash"
 
