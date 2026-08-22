@@ -42,13 +42,28 @@ for g in "$REPO"/summon/grants/*; do
   [ -f "$g" ] && install -m 0755 "$g" "$ROOT/grants/$(basename "$g")"
 done
 
-# policy.json is operational state: install only if absent, so a hand-edit on the
-# box (a new machine, a revoked grant) is never clobbered by a redeploy.
+# policy.json is operational state, and it is deliberately NOT in git (it carries
+# hostnames, kit paths and SAP usernames; the repo is public). So it arrives
+# out-of-band: scp it to /tmp/policy.json, or point SUMMON_POLICY_SRC at it.
+#
+# Install only if absent, so a hand-edit on the box — a new machine, a revoked
+# grant, an auto-enrolled box — is never clobbered by a redeploy.
 if [ ! -f "$ROOT/policy.json" ]; then
-  install -m 0600 "$REPO/summon/agent/policy.json" "$ROOT/policy.json"
-  echo "installed fresh policy.json"
+  SRC="${SUMMON_POLICY_SRC:-/tmp/policy.json}"
+  if [ -f "$SRC" ]; then
+    install -m 0600 "$SRC" "$ROOT/policy.json"
+    echo "installed policy.json from $SRC"
+    shred -u "$SRC" 2>/dev/null || rm -f "$SRC"
+  elif [ -f "$REPO/summon/agent/policy.example.json" ]; then
+    install -m 0600 "$REPO/summon/agent/policy.example.json" "$ROOT/policy.json"
+    echo "WARNING: no real roster found — installed the EXAMPLE."
+    echo "         It has no real boxes, so every summon will auto-enrol from scratch."
+    echo "         scp the real policy.json to /tmp/policy.json and re-run."
+  else
+    echo "FATAL: no policy.json and no example to fall back on" >&2; exit 1
+  fi
 else
-  echo "policy.json already present — left alone (diff it against the repo by hand)"
+  echo "policy.json already present — left alone (it may hold auto-enrolled boxes)"
 fi
 
 install -m 0644 "$REPO/summon/agent/workspace-CLAUDE.md" "$ROOT/workspace/CLAUDE.md"
