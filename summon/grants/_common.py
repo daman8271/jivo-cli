@@ -32,6 +32,14 @@ REASON = os.environ.get("GRANT_REASON", "")
 
 WINDOWS = OS_KIND.startswith("win")
 
+# The VPS reaches each box directly on 127.0.0.1:<tunnel_port> — it IS the tunnel
+# endpoint, so unlike the Mac it needs no ProxyJump. install-vps.sh generates this
+# file from policy.json. Root's own ~/.ssh/config is deliberately untouched: the
+# fleet-health and auto-repair scripts depend on it.
+SSH_CONFIG = os.environ.get(
+    "SUMMON_SSH_CONFIG",
+    os.path.join(os.environ.get("SUMMON_ROOT", "/opt/jivo-summon"), "ssh_config"))
+
 # setup.py accepts only these; anything else fails argparse mid-grant.
 DEPARTMENTS = {"accounts", "sales", "factory", "ecom", "exim", "ops", "hr", "it"}
 
@@ -92,7 +100,8 @@ def ssh(inner: str, *, timeout: int = 90) -> tuple[int, str]:
     remote = f'cmd /c "{inner}"' if WINDOWS else inner
     try:
         cp = subprocess.run(
-            ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes",
+            ["ssh", "-F", SSH_CONFIG,
+             "-o", "ConnectTimeout=12", "-o", "BatchMode=yes",
              "-o", "StrictHostKeyChecking=accept-new", ALIAS, remote],
             capture_output=True, text=True, timeout=timeout, check=False,
         )

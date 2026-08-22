@@ -27,7 +27,8 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _common import (  # noqa: E402
-    ALIAS, APPLY, BOX, OS_KIND, PROFILE, Report, WINDOWS, require_reachable, ssh,
+    ALIAS, APPLY, BOX, OS_KIND, PROFILE, Report, SSH_CONFIG, WINDOWS,
+    require_reachable, ssh,
 )
 
 VPS_CREDS = "/root/.claude/.credentials.json"
@@ -144,7 +145,8 @@ if require_reachable(rep):
 
     # Ship the blob over stdin rather than writing a plaintext temp file that
     # could be left behind on either side.
-    scp_cmd = ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes", ALIAS]
+    scp_cmd = ["ssh", "-F", SSH_CONFIG, "-o", "ConnectTimeout=12",
+               "-o", "BatchMode=yes", ALIAS]
     if WINDOWS:
         # `more>` writes stdin to a file under cmd without needing a shell heredoc.
         scp_cmd.append(f'cmd /c "more > \\"{cfile}\\""')
@@ -183,7 +185,8 @@ if require_reachable(rep):
         # "Python was not found" and exit 0, so a 0 exit proves nothing here —
         # only the literal 'merged' does.
         cp = subprocess.run(
-            ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes", ALIAS,
+            ["ssh", "-F", SSH_CONFIG, "-o", "ConnectTimeout=12",
+             "-o", "BatchMode=yes", ALIAS,
              f'python3 -c "{merger}"' if not WINDOWS else f'python -c "{merger}"'],
             input=json.dumps(oa), capture_output=True, text=True,
             timeout=90, check=False,
