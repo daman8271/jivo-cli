@@ -146,7 +146,48 @@ class Handler(BaseHTTPRequestHandler):
 
     # -- plumbing
 
+    def _wants_text(self) -> bool:
+        """Does this client want a rendered answer instead of JSON?
+
+        Several Windows fleet boxes have no working python — their python.exe is a
+        Microsoft Store stub that prints "Python was not found" and exits 0 — so
+        their client cannot parse JSON. They send Accept: text/plain and get the
+        answer already rendered, with nothing to parse.
+        """
+        return "text/plain" in (self.headers.get("Accept") or "").lower()
+
+    def _render(self, payload: dict) -> str:
+        reply = payload.get("reply") or {}
+        answer = reply.get("answer")
+        if not answer:
+            return (payload.get("error") or "no answer") + "\n"
+        out = ["", answer, ""]
+        for key, label in (("grants_applied", "granted"),
+                           ("grants_refused", "refused"),
+                           ("blocked_on", "still needs a human")):
+            vals = [v for v in (reply.get(key) or []) if v]
+            if vals:
+                out.append(f"{label}:")
+                out += [f"  - {v}" for v in vals]
+                out.append("")
+        if reply.get("confidence") and reply["confidence"] != "high":
+            out.append(f"(confidence: {reply['confidence']})")
+        out.append(f"summon {payload.get('id', '?')} via {payload.get('via', '?')}")
+        return "\n".join(out) + "\n"
+
     def _send(self, code: int, payload: dict) -> None:
+        if self._wants_text():
+            body = self._render(payload).encode("utf-8")
+            self.send_response(code)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            try:
+                self.wfile.write(body)
+            except BrokenPipeError:
+                pass
+            return
         body = json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
