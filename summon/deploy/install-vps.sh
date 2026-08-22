@@ -272,7 +272,12 @@ WantedBy=multi-user.target
 UNIT
 
 systemctl daemon-reload
-systemctl enable --now jivo-summond.service
+systemctl enable jivo-summond.service
+# RESTART, not `enable --now`. On an already-running unit `--now` is a no-op, so
+# a redeploy installed the new code and left the OLD process serving it — a
+# text/plain fix sat on disk for a full test cycle while the running daemon still
+# rejected the body. Always restart after deploying code.
+systemctl restart jivo-summond.service
 
 say "traefik route"
 python3 - "$TRAEFIK_DYNAMIC/jivo-summon.yml" "$PUBHOST" "$SLUG" "$PORT" <<'PY'
