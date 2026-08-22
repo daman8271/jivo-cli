@@ -23,6 +23,8 @@ func newVehicleManagementCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newVehicleManagementVehicleEntriesCmd(flags))
 	cmd.AddCommand(newVehicleManagementVehicleEntriesCountCmd(flags))
 	cmd.AddCommand(newVehicleManagementVehicleEntriesListByStatusCmd(flags))
+	cmd.AddCommand(newVehicleManagementVehicleEntryCmd(flags))
+	cmd.AddCommand(newVehicleManagementVehicleHistoryByNumberCmd(flags))
 	cmd.AddCommand(newVehicleManagementVehicleTypesCmd(flags))
 	cmd.AddCommand(newVehicleManagementVehiclesCmd(flags))
 	cmd.AddCommand(newVehicleManagementVehiclesNamesCmd(flags))

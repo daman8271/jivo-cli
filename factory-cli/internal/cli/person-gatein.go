@@ -16,15 +16,20 @@ func newPersonGateinCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newPersonGateinContractorLaboursStatusCmd(flags))
 	cmd.AddCommand(newPersonGateinContractorsCmd(flags))
 	cmd.AddCommand(newPersonGateinEntriesCmd(flags))
+	cmd.AddCommand(newPersonGateinEntryCmd(flags))
 	cmd.AddCommand(newPersonGateinGateLabourCmd(flags))
 	cmd.AddCommand(newPersonGateinGatePersonDashboardCmd(flags))
 	cmd.AddCommand(newPersonGateinGatePersonInsideCmd(flags))
 	cmd.AddCommand(newPersonGateinGatePersonSearchCmd(flags))
 	cmd.AddCommand(newPersonGateinGatesCmd(flags))
+	cmd.AddCommand(newPersonGateinLabourHistoryCmd(flags))
 	cmd.AddCommand(newPersonGateinLaboursCmd(flags))
 	cmd.AddCommand(newPersonGateinPersonTypesCmd(flags))
+	cmd.AddCommand(newPersonGateinVisitorCmd(flags))
+	cmd.AddCommand(newPersonGateinVisitorHistoryCmd(flags))
 	cmd.AddCommand(newPersonGateinVisitorsCmd(flags))
 	return cmd
 }

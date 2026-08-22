@@ -1207,6 +1207,35 @@ resources:
         description: 'Transporter A/P invoices submitted or posted to SAP from bilty GRPOs.'
         response:
           type: array
+      bilty-grpo-summary:
+        method: GET
+        path: '/dispatch/bilty-grpo/summary/'
+        description: 'Counters over the bilty-to-GRPO matching pipeline. Live 200 on all three companies. Pairs with the shipped `dispatch bilty-grpo-pending` and `bilty-grpo-history`, which give the rows behind these counts.'
+        response:
+          type: object
+      bilty-grpo-detail:
+        method: GET
+        path: '/dispatch/bilty-grpo/{id}/'
+        description: 'The detail behind a row of the shipped `dispatch bilty-grpo-history`. TRAP: JIVO_MART''s history is empty; ids exist under JIVO_OIL. Pass --company.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'id from `dispatch bilty-grpo-history` (try --company JIVO_OIL)'
+          required: true
+      bilty-grpo-preview:
+        method: GET
+        path: '/dispatch/bilty-grpo/preview/{dispatch_plan_id}/'
+        description: 'TRAP: this is keyed on DISPATCH_PLAN_ID, not on the bilty id. Read dispatch_plan_id off a `dispatch bilty-grpo-pending` row; the app''s own route names the segment :dispatchPlanId.'
+        response:
+          type: object
+        params:
+        - name: dispatch_plan_id
+          type: string
+          description: 'dispatch_plan_id field on a `dispatch bilty-grpo-pending` row'
+          required: true
+
   dispatch-plans:
     description: 'The dispatch domain follows a SAP sales invoice from the moment it becomes a "dispatch bill" to the moment the truck clears the gate and the transporter gets paid. /dispatch-plans/ is the planning hal'
     endpoints:
@@ -1346,6 +1375,29 @@ resources:
         - name: status
           type: string
           description: 'PENDING | APPROVED | REJECTED. The UI''s ''All'' tab sends NO param — do not send status=ALL. Default view in the app is PENDING. Verified live: status=PENDING on JIVO_OIL returned []. enum'
+      partial-scan-requests-by-sales-dispatch:
+        method: GET
+        path: '/docking-admin/partial-scan-requests/by-sales-dispatch/{sales_dispatch_id}/'
+        description: 'The per-dispatch view of the shipped `docking-admin partial-scan-requests` queue. Live 200 with an empty body when the dispatch has none.'
+        response:
+          type: object
+        params:
+        - name: sales_dispatch_id
+          type: string
+          description: 'Sales-dispatch id from `gate-core sales-dispatch`'
+          required: true
+      scan-skip-requests-by-sales-dispatch:
+        method: GET
+        path: '/docking-admin/scan-skip-requests/by-sales-dispatch/{sales_dispatch_id}/'
+        description: 'The per-dispatch view of the shipped `docking-admin scan-skip-requests` queue. Live 200 with an empty body when the dispatch has none.'
+        response:
+          type: object
+        params:
+        - name: sales_dispatch_id
+          type: string
+          description: 'Sales-dispatch id from `gate-core sales-dispatch`'
+          required: true
+
   driver-management:
     description: 'This is the factory''s transport master file plus the gate''s vehicle-entry log. Three master lists sit under it — Vehicles (registration number, type, capacity, owning transporter), Transporters (conta'
     endpoints:
@@ -1381,6 +1433,18 @@ resources:
         description: 'List the capital-asset categories a fixed-asset gate entry can be filed under (machinery, IT, furniture, vehicles...).'
         response:
           type: array
+      fixed-asset-entry:
+        method: GET
+        path: '/fixed-asset-gatein/gate-entries/{id}/fixed-asset/'
+        description: 'Returns HTTP 404 {"detail":"Fixed asset entry does not exist"} when the gate entry is not a fixed-asset entry. Published as its own root command rather than under `fixed-asset-gatein`, because that name is already a single promoted command (the categories master) and turning it into a group would change its behaviour.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Vehicle/gate entry id from `vehicle-management vehicle-entries`'
+          required: true
+
   gate-core:
     description: 'gate-core is the shared gate engine underneath every category-specific gate app (raw-material, daily-needs, maintenance, construction, fixed-asset gatein). Its central object is an **arrival** — one p'
     endpoints:
@@ -1987,6 +2051,79 @@ resources:
         description: 'The units of measure the gate apps offer — use it to resolve or validate a unit id.'
         response:
           type: array
+      sales-dispatch-expected-vehicles:
+        method: GET
+        path: '/gate-core/sales-dispatch/expected-vehicles/'
+        description: 'The gate''s forward view for outbound dispatch: which vehicles are booked to arrive and have not been gated in yet. Live 200 on all three companies; empty today.'
+        response:
+          type: object
+      dispatch-tracking-bills:
+        method: GET
+        path: '/gate-core/dispatch-tracking/{arrival_id}/bills/'
+        description: 'Invoices/bills attached to a dispatch-tracking arrival. The id is the `arrival` field on a row of the shipped `gate-core dispatch-tracking` list - NOT `arrival_no`, which is the human-readable ARV-YYYYMMDD-NNNN string.'
+        response:
+          type: object
+        params:
+        - name: arrival_id
+          type: string
+          description: 'Arrival id - the `arrival` field on a `gate-core dispatch-tracking` row'
+          required: true
+      sales-dispatch-by-vehicle-entry:
+        method: GET
+        path: '/gate-core/sales-dispatch/by-vehicle-entry/{vehicle_entry_id}/'
+        description: 'Resolves a gate vehicle entry to its outbound docking record. Returns HTTP 404 {"detail":"Docking entry not found for this vehicle entry."} when the vehicle entry has no docking record - that is the handler''s own answer, not a routing error.'
+        response:
+          type: object
+        params:
+        - name: vehicle_entry_id
+          type: string
+          description: 'Vehicle entry id from `vehicle-management vehicle-entries`'
+          required: true
+      bst-out-by-vehicle-entry:
+        method: GET
+        path: '/gate-core/bst-outs/by-vehicle-entry/{vehicle_entry_id}/'
+        description: 'Resolves a gate vehicle entry to its active BST-out. Returns HTTP 404 {"detail":"Active BST out entry not found"} when there is none - the handler''s own answer, not a routing error.'
+        response:
+          type: object
+        params:
+        - name: vehicle_entry_id
+          type: string
+          description: 'Vehicle entry id from `vehicle-management vehicle-entries`'
+          required: true
+      job-work-by-vehicle-entry:
+        method: GET
+        path: '/gate-core/job-work/by-vehicle-entry/{vehicle_entry_id}/'
+        description: 'Resolves a gate vehicle entry to its active job-work entry. Returns HTTP 404 {"detail":"Active job work entry not found"} when there is none - the handler''s own answer, not a routing error.'
+        response:
+          type: object
+        params:
+        - name: vehicle_entry_id
+          type: string
+          description: 'Vehicle entry id from `vehicle-management vehicle-entries`'
+          required: true
+      bst-in-by-vehicle-entry:
+        method: GET
+        path: '/gate-core/bst-ins/by-vehicle-entry/{vehicle_entry_id}/'
+        description: 'Returns the handler''s own JSON 404 {"detail":"Active BST in entry not found"} when there is none - the view answering, not a routing error.'
+        response:
+          type: object
+        params:
+        - name: vehicle_entry_id
+          type: string
+          description: 'Vehicle entry id from `vehicle-management vehicle-entries`'
+          required: true
+      bst-return-by-vehicle-entry:
+        method: GET
+        path: '/gate-core/bst-returns/by-vehicle-entry/{vehicle_entry_id}/'
+        description: 'Returns the handler''s own JSON 404 {"detail":"Active BST return entry not found"} when there is none.'
+        response:
+          type: object
+        params:
+        - name: vehicle_entry_id
+          type: string
+          description: 'Vehicle entry id from `vehicle-management vehicle-entries`'
+          required: true
+
   goods-return:
     description: 'Goods Return handles stock coming BACK from customers into the plant. Someone raises a return entry against the paperwork the customer is returning on (an invoice, a debit note, or plain letter-pad), lists the items and their condition, records the vehicle and when it is expected, and submits it. The gate then marks the vehicle in when it actually shows up, and the warehouse confirms receipt into one of a handful of dedicated goods-return warehouses (BH-GR, DL-GR, PB-RG…) — which is the step that posts the return into SAP. Larger returns need an approval before that happens. The whole module is brand new and absent from the shipped CLI; at probe time it was live and routed in all three companies but had no entries in any of them yet, so only the warehouse picklist returned rows.'
     endpoints:
@@ -2262,6 +2399,18 @@ resources:
           type: integer
           required: true
           description: 'path segment; the `id` of a /grpo/history/ row int'
+      fg-preview:
+        method: GET
+        path: '/grpo/fg/preview/{vehicle_entry_id}/'
+        description: 'TRAP: keyed on VEHICLE_ENTRY_ID, not on a GRPO id - the app''s route names the segment :vehicleEntryId. Distinct from the shipped `grpo preview`, which covers raw material.'
+        response:
+          type: object
+        params:
+        - name: vehicle_entry_id
+          type: string
+          description: 'Vehicle entry id from `vehicle-management vehicle-entries`'
+          required: true
+
   labour-count:
     description: 'This domain covers how JIVO''s factory counts contract ("casual") labour on and off the site each day. Two separate Django apps live here and they solve the same problem twice. `labour_gate` (paths und'
     endpoints:
@@ -4046,6 +4195,62 @@ resources:
         - name: search
           type: string
           description: '*** SILENTLY IGNORED — DO NOT PUBLISH AS A FLAG. *** The SPA sends it. Verified: /visitors/ returns 197 rows and /visitors/?search=Yogesh returns the same 197 rows starting with the same row. Filter client-side.'
+      entry:
+        method: GET
+        path: '/person-gatein/entry/{id}/'
+        description: 'The detail behind a row of the shipped `person-gatein entries` list.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Entry id from `person-gatein entries`'
+          required: true
+      visitor:
+        method: GET
+        path: '/person-gatein/visitors/{id}/'
+        description: 'The detail behind a row of the shipped `person-gatein visitors` list.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Visitor id from `person-gatein visitors`'
+          required: true
+      visitor-history:
+        method: GET
+        path: '/person-gatein/visitor/{id}/history/'
+        description: 'The visit trail for a visitor - each entry and exit. Note the path is singular `/visitor/` here while the master list is plural `/visitors/`; both are real and they are different routes.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Visitor id from `person-gatein visitors`'
+          required: true
+      labour-history:
+        method: GET
+        path: '/person-gatein/labour/{id}/history/'
+        description: 'The attendance trail for a labourer at the gate.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Labour id from `person-gatein labours`'
+          required: true
+      contractor-labours-status:
+        method: GET
+        path: '/person-gatein/contractor/{id}/labours-status/'
+        description: 'Per-contractor in/out headcount. The id is the contractor id from the shipped `person-gatein contractors` master.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Contractor id from `person-gatein contractors`'
+          required: true
+
   po:
     description: 'This corner of the factory app answers one question: can we actually build what SAP says we are going to build, and what do we have to buy to close the gap. The "SAP Material Plan" screen (web route /'
     endpoints:
@@ -5095,6 +5300,62 @@ resources:
         - name: limit
           type: integer
           description: 'UI always sends 50'
+      material-type-parameter-sets:
+        method: GET
+        path: '/quality-control/material-types/{id}/parameter-sets/'
+        description: 'TRAP: JIVO_MART''s material-type master is empty; ids exist under JIVO_OIL. Pass --company. Distinct from the shipped `qc-material-type-parameters`, which lists flat parameters rather than sets.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Material-type id from `quality-control material-types` (try --company JIVO_OIL)'
+          required: true
+      parameter-set:
+        method: GET
+        path: '/quality-control/parameter-sets/{id}/'
+        description: 'There is no list mount at /quality-control/parameter-sets/ - that URL is an HTML 404. The only source of an id is `quality-control material-type-parameter-sets`.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Parameter-set id from `quality-control material-type-parameter-sets`'
+          required: true
+      parameter-set-parameters:
+        method: GET
+        path: '/quality-control/parameter-sets/{id}/parameters/'
+        description: 'Same id source as `parameter-set`; there is no collection mount to enumerate from.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Parameter-set id from `quality-control material-type-parameter-sets`'
+          required: true
+      material-type-by-sap-item:
+        method: GET
+        path: '/quality-control/material-types/by-sap-item/{item_code}/'
+        description: 'The bridge from a SAP item to its QC specification. The app UPPERCASES the code before sending it. Codes come from the sap_items[] block on a material-type detail.'
+        response:
+          type: object
+        params:
+        - name: item_code
+          type: string
+          description: 'SAP item code, e.g. PM0000855 - uppercase'
+          required: true
+      arrival-slip-inspection:
+        method: GET
+        path: '/quality-control/arrival-slips/{id}/inspection/'
+        description: 'Routed and served. Returns a bespoke JSON 404 from the handler when there is no inspection yet - {"detail":"Inspection not found"}, observed on arrival slip 589. That is the view answering; a routing 404 on this API is Django''s HTML page instead.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Arrival-slip id from `quality-control arrival-slips`'
+          required: true
+
   returnable-items:
     description: 'This is JIVO''s RGP/NRGP gate-pass book — the register of material that leaves the factory gate and is meant to come back. A department raises a pass for a pump, motor, mould shaft, cutter, cooler, or'
     endpoints:
@@ -5573,6 +5834,29 @@ resources:
         description: 'Slim id + registration-number list of all vehicles, for pickers and lookups.'
         response:
           type: array
+      vehicle-entry:
+        method: GET
+        path: '/vehicle-management/vehicle-entries/{id}/'
+        description: 'The detail behind a row of the shipped `vehicle-management vehicle-entries` list. TRAP: that list REQUIRES entry_type, from_date and to_date - a bare call returns HTTP 400 {"detail":"entry_type query parameter is required"}, then {"detail":"from_date query parameter is required"}. Observed entry_type values, from the app''s own enum: RAW_MATERIAL, DAILY_NEED, MAINTENANCE, CONSTRUCTION, FIXED_ASSET, EMPTY_VEHICLE, BST_IN, BST_RETURN, JOB_WORK.'
+        response:
+          type: object
+        params:
+        - name: id
+          type: string
+          description: 'Vehicle entry id from `vehicle-management vehicle-entries`'
+          required: true
+      vehicle-history-by-number:
+        method: GET
+        path: '/vehicle-management/vehicles/by-number/{vehicle_number}/history/'
+        description: 'Keyed on the registration plate rather than an internal id - the one place in this API where a business string is the key. The app URL-encodes the number before sending it.'
+        response:
+          type: object
+        params:
+        - name: vehicle_number
+          type: string
+          description: 'Registration number, e.g. DL01LAA3980 - read it off a `vehicle-management vehicle-entries` row'
+          required: true
+
   warehouse:
     description: 'The warehouse module is the factory floor''s stock-handling desk — its own landing page calls it "Material requests, finished goods, branch transfers, and goods receipts". Three live workflows sit unde'
     endpoints:

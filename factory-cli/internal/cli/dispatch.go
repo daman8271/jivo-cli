@@ -16,9 +16,12 @@ func newDispatchCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newDispatchBiltyGrpoDetailCmd(flags))
 	cmd.AddCommand(newDispatchBiltyGrpoHistoryCmd(flags))
 	cmd.AddCommand(newDispatchBiltyGrpoOptionsCmd(flags))
 	cmd.AddCommand(newDispatchBiltyGrpoPendingCmd(flags))
+	cmd.AddCommand(newDispatchBiltyGrpoPreviewCmd(flags))
+	cmd.AddCommand(newDispatchBiltyGrpoSummaryCmd(flags))
 	cmd.AddCommand(newDispatchOpenBiltiesCmd(flags))
 	cmd.AddCommand(newDispatchTransporterInvoicesHistoryCmd(flags))
 	return cmd

@@ -12,7 +12,7 @@
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-CLI=./jivo-factory-pp-cli
+CLI=${RESCRAPE_CLI:-./jivo-factory-pp-cli}
 SPEC=spec.yaml
 MANIFEST=tools-manifest.json
 fails=0

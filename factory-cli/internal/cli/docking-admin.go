@@ -16,7 +16,9 @@ func newDockingAdminCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newDockingAdminPartialScanRequestsBySalesDispatchCmd(flags))
 	cmd.AddCommand(newDockingAdminPartialScanRequestsCmd(flags))
+	cmd.AddCommand(newDockingAdminScanSkipRequestsBySalesDispatchCmd(flags))
 	cmd.AddCommand(newDockingAdminScanSkipRequestsCmd(flags))
 	return cmd
 }

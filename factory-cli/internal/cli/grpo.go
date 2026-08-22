@@ -21,6 +21,7 @@ func newGrpoCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newGrpoFgAllEntriesCmd(flags))
 	cmd.AddCommand(newGrpoFgHistoryCmd(flags))
 	cmd.AddCommand(newGrpoFgPendingCmd(flags))
+	cmd.AddCommand(newGrpoFgPreviewCmd(flags))
 	cmd.AddCommand(newGrpoFgSummaryCmd(flags))
 	cmd.AddCommand(newGrpoHistoryCmd(flags))
 	cmd.AddCommand(newGrpoHistoryDetailCmd(flags))

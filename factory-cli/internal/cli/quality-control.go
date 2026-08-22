@@ -16,6 +16,7 @@ func newQualityControlCmd(flags *rootFlags) *cobra.Command {
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
+	cmd.AddCommand(newQualityControlArrivalSlipInspectionCmd(flags))
 	cmd.AddCommand(newQualityControlArrivalSlipsCmd(flags))
 	cmd.AddCommand(newQualityControlInspectionsCmd(flags))
 	cmd.AddCommand(newQualityControlInspectionsActionableCmd(flags))
@@ -27,7 +28,11 @@ func newQualityControlCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newQualityControlInspectionsPendingCmd(flags))
 	cmd.AddCommand(newQualityControlInspectionsRejectedCmd(flags))
 	cmd.AddCommand(newQualityControlInspectionsReturnToVendorCmd(flags))
+	cmd.AddCommand(newQualityControlMaterialTypeBySapItemCmd(flags))
+	cmd.AddCommand(newQualityControlMaterialTypeParameterSetsCmd(flags))
 	cmd.AddCommand(newQualityControlMaterialTypesCmd(flags))
+	cmd.AddCommand(newQualityControlParameterSetCmd(flags))
+	cmd.AddCommand(newQualityControlParameterSetParametersCmd(flags))
 	cmd.AddCommand(newQualityControlPrintDocumentsCmd(flags))
 	cmd.AddCommand(newQualityControlProductionQcCmd(flags))
 	cmd.AddCommand(newQualityControlProductionQcCountsCmd(flags))

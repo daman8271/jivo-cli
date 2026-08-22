@@ -297,6 +297,7 @@ Run 'jivo-factory-pp-cli doctor' to verify auth and connectivity.`,
 	rootCmd.AddCommand(newAPICmd(flags))
 	rootCmd.AddCommand(newCompanyPromotedCmd(flags))
 	rootCmd.AddCommand(newFixedAssetGateinPromotedCmd(flags))
+	rootCmd.AddCommand(newFixedAssetEntryPromotedCmd(flags))
 	rootCmd.AddCommand(newVersionCmd())
 
 	return rootCmd
