@@ -31,6 +31,19 @@ import re
 import sys
 from pathlib import Path
 
+# Windows consoles default to cp1252, which cannot encode the characters that
+# actually occur in JIVO's data — the rupee sign, en dashes, the check marks in
+# this tool's own output. Measured on HO-IT-PC2 (Accounts, 2026-08-22):
+# `setup.py --show` died with UnicodeEncodeError on "\u2713" AFTER it had already
+# written the identity files, so the operator saw a traceback for a run that had
+# in fact succeeded. Same guard as harness.py — force UTF-8 before anything prints.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
+
 HARNESS = Path(__file__).resolve().parent.parent
 REPO = HARNESS.parent
 OPERATOR = HARNESS / ".operator"

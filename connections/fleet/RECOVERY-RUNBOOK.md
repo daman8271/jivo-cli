@@ -269,6 +269,7 @@ diagnostically real one — that is the box with power on it.
 | `DESKTOP-73N6JE8` | 23011 | Ziyaul | ✅ **UP** *(repaired 08-21 18:05, v9 rung 4 — host-key ACLs)* | UP | — | **none needed** — verified `ssh ziyaul` 6/6 |
 | `83USER` | 23014 | Navdeep (accounts) | ✅ **UP** *(enrolled 08-21 18:18, v9, MSI route)* | UP | — | **none needed** — `ssh navdeep-acc` verified, full kit installed (see README status) |
 | `HO-IPEXP-PC2` | 23015 | Lovepreet (import/export) | ✅ **UP** *(enrolled 08-22 12:56, v9)* | UP | — | **none needed** — `ssh lovepreet` verified, kit installed (see README status) |
+| `HO-IT-PC2` | 23016 | Sohail (accounts) | ✅ **UP** *(enrolled 08-22 18:02)* | UP | — | **none needed** — `ssh sohail` verified; kit NOT yet installed (see README status) |
 | `JIVO` | 23008 | Administrator1 | ⚠️ DOWN *(PC off)* | ⛔ **UNREACHABLE** | 08-13 14:06 | **human only** — sshd dead, not "off" |
 | `JIVO201` | 23010 | Avtar | ⚠️ DOWN *(PC off)* | ⛔ **UNREACHABLE** | 08-13 14:06 | **human only** — sshd dead, not "off" |
 | `JIVO-B1` | 23002 | Ecom team | ⚠️ DOWN | DOWN | 08-11 18:02 | human — **longest outage, 6 days** |
