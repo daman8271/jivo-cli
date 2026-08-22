@@ -299,17 +299,25 @@ def main() -> int:
         (ROOT / d).mkdir(parents=True, exist_ok=True)
     if not TOKENS_PATH.exists():
         log.error("no tokens file at %s — every request will 401", TOKENS_PATH)
-    # Warm the pool so the first summon of the day is not the one that pays for
-    # session startup.
-    for slot in POOL.slots:
-        try:
-            POOL.ensure(slot)
-        except Exception:  # noqa: BLE001
-            log.exception("could not warm %s", slot.name)
+    # Bind FIRST. Warming three tmux sessions takes ~6s each, and doing it before
+    # the bind left the port dead for 20s after systemd already reported the unit
+    # active — which reads as a failed deploy and races any health check.
     srv = ThreadingHTTPServer((BIND_HOST, BIND_PORT), Handler)
     srv.daemon_threads = True
     log.info("listening on %s:%s  pool=%d  audit=%s",
              BIND_HOST, BIND_PORT, POOL_SIZE, AUDIT_PATH)
+
+    # Warm the pool in the background so the first summon of the day does not pay
+    # for session startup, while /healthz answers immediately.
+    def warm() -> None:
+        for slot in POOL.slots:
+            try:
+                POOL.ensure(slot)
+                log.info("warmed %s", slot.name)
+            except Exception:  # noqa: BLE001
+                log.exception("could not warm %s", slot.name)
+
+    threading.Thread(target=warm, name="warm-pool", daemon=True).start()
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
