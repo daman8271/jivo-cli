@@ -255,7 +255,7 @@ $ /dispatch/bilty-grpo/history/      JIVO_OIL       n=25   row0 id=430
 $ /quality-control/material-types/   JIVO_MART      n=0
 $ /quality-control/material-types/   JIVO_OIL       n=149  row0 id=194
 
-[200] /dispatch/bilty-grpo/430/                       (JIVO_OIL)   810B  {"id":430,"dispatch_plan":1890,"dispatch_bill_no":"626070694",...
+[200] /dispatch/bilty-grpo/430/                       (JIVO_OIL)   810B  {"id":430,"dispatch_plan":1890,"dispatch_bill_no":"626000003",...
 [200] /quality-control/material-types/194/parameter-sets/ (JIVO_OIL) 258B [{"id":3,"material_type":194,"label":"Default (all vendors)","parameter_count":4,...
 ```
 
@@ -469,3 +469,5 @@ Also drop from the shipped spec, or mark dead: `/dashboards/inventory-age/filter
    instead.
 5. `harvest/verbs.py` resolves a verb for only ~18% of not-shipped paths; the rest are
    silently dropped from the candidate set rather than surfaced as unknown.
+
+> Document numbers, IRNs and doc entries in this file are **synthesized**. The endpoint shapes, HTTP status codes and response structures are real, captured 2026-08-22.

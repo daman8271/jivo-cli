@@ -61,8 +61,8 @@ python3 /root/.handoff-runs/rescrape-all/scratch/oms/refute/probe26.py < gone25.
 | 19 | `invoices crystal` | `/api/invoice/crystal/` | 400 (30 b) | ALIVE (400 needs param) | `{"error":"docNum is required"}` |
 | 20 | `einvoice health` | `/api/einvoice/health/` | 200 (174 b) | ALIVE (200) | `{"ok":true,"missing_credentials":[],"public_key_found":true,"public_key_path":"./secrets/Product` |
 | 21 | `einvoice companies` | `/api/einvoice/companies/` | 200 (195 b) | ALIVE (200) | `{"results":[{"label":"OIL","company_db":"JIVO_OIL_HANADB"},{"label":"BEVERAGE","company_db":"JIV` |
-| 22 | `einvoice invoices` | `/api/einvoice/invoices/` | 200 (4989 b) | ALIVE (200) | `{"company_db":"JIVO_OIL_HANADB","results":[{"docentry":78862,"docnum":626080465,"cardname":"HARP` |
-| 23 | `einvoice logs` | `/api/einvoice/logs/` | 200 (26175 b) | ALIVE (200) | `{"count":59,"totals":{"SUCCESS":47,"FAILED":12,"SKIPPED":0},"results":[{"id":59,"docentry":16920` |
+| 22 | `einvoice invoices` | `/api/einvoice/invoices/` | 200 (4989 b) | ALIVE (200) | `{"company_db":"JIVO_OIL_HANADB","results":[{"docentry":78862,"docnum":626000001,"cardname":"HARP` |
+| 23 | `einvoice logs` | `/api/einvoice/logs/` | 200 (26175 b) | ALIVE (200) | `{"count":59,"totals":{"SUCCESS":47,"FAILED":12,"SKIPPED":0},"results":[{"id":59,"docentry":10001` |
 | 24 | `legal uoms` | `/api/legal/uom/` | 200 (2 b) | ALIVE (200) | `[]` |
 | 25 | `legal nutrition` | `/api/legal/nutrition/` | 200 (2 b) | ALIVE (200) | `[]` |
 | 26 | `legal item-nutrition` | `/api/legal/item-nutrition/` | 200 (24 b) | ALIVE (200) | `{"nutritional_facts":[]}` |
@@ -169,7 +169,7 @@ table below lists 11 of them plus `qr.png` (which the harvest *did* see, inside 
 | `/api/einvoice/gstin/{gstin}/` | ``getGstin:async e=>Y.get(`einvoice/gstin/${e}/`)`` | **200** `{"Gstin":"06AACCJ4223F1Z0","TradeName":"JIVO WELLNESS PVT. LTD.",…}` |
 | `/api/einvoice/ewb/{irn}/` | ``getByIrn:async e=>Y.get(`einvoice/ewb/${e}/`)`` | **200** (NIC `4005 Eway Bill details are not found`) |
 | `/api/einvoice/irn/{irn}/qr.png` | ``qrImageUrl:e=>`/api/einvoice/irn/${e}/qr.png` `` | **200 image/png, 5223 b** — a real QR |
-| `/api/ewaybill/from-invoice/{docentry}/` | ``previewFromInvoice … Y.get(`ewaybill/from-invoice/${e}/`,{params:n})``, `n` = `{company_db, mode}` | **200**, 436 b `{"docentry":16920,…,"mode":"ewb_by_irn","irn":…}` |
+| `/api/ewaybill/from-invoice/{docentry}/` | ``previewFromInvoice … Y.get(`ewaybill/from-invoice/${e}/`,{params:n})``, `n` = `{company_db, mode}` | **200**, 436 b `{"docentry":10001,…,"mode":"ewb_by_irn","irn":…}` |
 | `/api/ewaybill/gstin/{gstin}/` | ``gstinDetails:async e=>Y.get(`ewaybill/gstin/${e}/`)`` | **502** — `{"error":"All e-Way Bill hosts unreachable: ['https://api.ewaybillgst.gov.in/v1.03']"}` → view ran, upstream NIC down |
 | `/api/ewaybill/{ewbNo}/` | ``getByNumber:async e=>Y.get(`ewaybill/${e}/`)`` | UNTESTED — no EWB number observed in any readable response |
 | `/api/ewaybill/transporter/{id}/` | ``transporterDetails:async e=>Y.get(`ewaybill/transporter/${e}/`)`` | UNTESTED — no transporter id observed |
@@ -179,10 +179,10 @@ Plus one **deliberately not called**: `/api/einvoice/gstin/{gstin}/sync/`
 name is a sync trigger — EXCLUDED under the owner's read-only rule, untested.
 
 Observed values used (all from real responses): IRN
-`9c78ad559d98…a32a77`, `docentry=16920`, `company_db=JIVO_BEVERAGES_HANADB`,
-`doc_no=626088091`, `docdate=13/08/2026`, GSTIN `06AACCJ4223F1Z0` — the first four
+`0000aaaa1111…7777bbbb`, `docentry=10001`, `company_db=JIVO_BEVERAGES_HANADB`,
+`doc_no=626000002`, `docdate=13/08/2026`, GSTIN `06AACCJ4223F1Z0` — the first four
 from `GET /api/einvoice/logs/`, the last two from
-`GET /api/einvoice/irn/from-invoice/16920/?company_db=JIVO_BEVERAGES_HANADB`.
+`GET /api/einvoice/irn/from-invoice/10001/?company_db=JIVO_BEVERAGES_HANADB`.
 
 New **write** paths the harvest also missed (never call): `/api/devices/register/`,
 `/api/einvoice/{token,irn,irn/validate,irn/cancel,logs/retry,qr}/`,
@@ -332,11 +332,11 @@ The verdicts file also records **no params** for either. They both require `stag
 
 ```
 $ GET /api/einvoice/logs/      # = shipped `einvoice logs`
-{"count":59,"totals":{"SUCCESS":47,...},"results":[{"id":59,"docentry":16920,
- "outcome":"SUCCESS","doc_no":"626088091",
- "irn":"9c78ad559d98fda55afb98ff0d6682b9b208f498bcd637eaca88090c45a32a77", ...}]}
+{"count":59,"totals":{"SUCCESS":47,...},"results":[{"id":59,"docentry":10001,
+ "outcome":"SUCCESS","doc_no":"626000002",
+ "irn":"0000aaaa1111bbbb2222cccc3333dddd4444eeee5555ffff6666aaaa7777bbbb", ...}]}
 
-$ GET /api/einvoice/irn/9c78ad559d98…a32a77/qr.png
+$ GET /api/einvoice/irn/0000aaaa1111…7777bbbb/qr.png
 200  image/png  5223 b   (\x89PNG\r\n\x1a\n … real image)
 ```
 
@@ -385,3 +385,5 @@ a command the CLI already ships, and it should be published, not excluded.
 **Fix the harvester before the next run:** accept relative (no-leading-slash) template
 paths, and drop the `API_PREFIXES` allow-list in favour of resolving the axios instance
 baseURL (`Ea`) and the `I6/N6/L6/R6` wrappers.
+
+> Document numbers, IRNs and doc entries in this file are **synthesized**. The endpoint shapes, HTTP status codes and response structures are real, captured 2026-08-22.
