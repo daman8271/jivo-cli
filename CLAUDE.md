@@ -16,7 +16,8 @@ create documents for a living. Daman authorised this on 2026-08-22.
     no ledger entry, until a human opens SAP B1 → Document Drafts and presses
     **Add**. Drafts *are* visible to others and to any approval workflow.
   - `sapb1 post <EntitySet>` — creates live, no draft. Master data only
-    (BusinessPartners, Items). **Prefer `draft` for anything document-shaped.**
+    (BusinessPartners, Items), and it accepts only a **bare, catalogued entity
+    set**. **Prefer `draft` for anything document-shaped.**
   - `sapb1 patch <Entity(key)>` — updates fields on one existing object.
 - **Show the `--dry-run` first, then send.** Not as a gate on the operator — it is
   what catches a wrong branch, wrong series or wrong posting date *before* it
@@ -28,21 +29,26 @@ create documents for a living. Daman authorised this on 2026-08-22.
 - **Never write unprompted.** This is the one part that is not negotiable, and it
   is not a restriction on the operator: don't invent work, don't "finish" a task
   nobody asked for, don't tidy data as a helpful extra.
-- **Every write logs.** Each attempt is appended to `queries/<operator>/sap-writes.jsonl`
-  (falls back to `~/.sapb1-writes.jsonl` outside a registered checkout). Register
-  yourself once with `python3 harness/bin/setup.py` so writes carry your name.
+- **Every write previews, confirms, and logs.** Without `--yes` the command prints
+  the exact request and requires a typed `yes` — **exactly `yes`; `y` is rejected**.
+  Every attempt is appended to `queries/<operator>/sap-writes.jsonl`, which syncs to
+  `main`, so **every write by every operator lands in one shared history** (override
+  with `$SAPB1_WRITE_LOG`; falls back to `~/.sapb1-writes.jsonl` only outside a
+  registered checkout). Register yourself once with `python3 harness/bin/setup.py`
+  so writes carry your name.
 - **A/P invoice from a vendor's bill (the common Accounts write): use the
   `jivo-ap-draft` skill.** Its pre-check finds the GRPO, branch, series and any
   existing draft before anything is sent; its read-back catches what SAP left
-  blank (TDS). Don't hand-roll the payload.
+  blank (TDS). Built 2026-08-21 from live mistakes — don't hand-roll the payload.
 
 ### What is still genuinely impossible — do not promise these
 
 - **Everything except SAP is read-only** — postsql, portals, exim, factory, oms,
   DSR. Not caution: those CLIs have no write command to call.
 - **No `DELETE`, no `PUT`, and no OData *actions*** (`Invoices(9)/Cancel`,
-  `Orders(1)/Close`, `Drafts(4321)/SaveDraftToDocument`). Cancelling, closing and
-  posting-a-draft are a human's job in the SAP B1 client.
+  `Orders(1)/Close`, `Drafts(4321)/SaveDraftToDocument`) — refused by design, with no
+  override. Cancelling, closing and posting-a-draft are a human's job in the SAP B1
+  client. **And you cannot undo a `post` or a `patch` from here — only SAP can.**
 - **The MCP server (`sapb1 mcp`) exposes no write tool, ever** — an AST guard test
   enforces it. So Claude Desktop can read SAP and nothing more. **Writes happen
   from the `sapb1` CLI in a terminal.**
