@@ -28,16 +28,23 @@ for /f "usebackq tokens=1,* delims==" %%A in ("%CONF%") do (
   if /i "%%A"=="SUMMON_TOKEN" set "SUMMON_TOKEN=%%B"
 )
 
-if "%SUMMON_URL%"=="" ( echo letsgo: SUMMON_URL missing from %CONF% & exit /b 1 )
-if "%SUMMON_TOKEN%"=="" ( echo letsgo: SUMMON_TOKEN missing from %CONF% & exit /b 1 )
+rem Strip trailing spaces. cmd's `(echo A & echo B) > file` idiom leaves one
+rem before the newline, which curl rejects outright as "Malformed input to a URL
+rem function" - and an operator hand-editing this file can easily leave one too.
+rem for /f already drops the CR of a CRLF; the space is what survives.
+for /l %%i in (1,1,16) do if "!SUMMON_URL:~-1!"==" "   set "SUMMON_URL=!SUMMON_URL:~0,-1!"
+for /l %%i in (1,1,16) do if "!SUMMON_TOKEN:~-1!"==" " set "SUMMON_TOKEN=!SUMMON_TOKEN:~0,-1!"
+
+if "!SUMMON_URL!"=="" ( echo letsgo: SUMMON_URL missing from %CONF% & exit /b 1 )
+if "!SUMMON_TOKEN!"=="" ( echo letsgo: SUMMON_TOKEN missing from %CONF% & exit /b 1 )
 
 where curl.exe >nul 2>&1
 if errorlevel 1 ( echo letsgo: curl not found - needs Windows 10 1803 or newer & exit /b 1 )
 
 rem --status: strip /v1/summon off the URL to get the base.
 if /i "%~1"=="--status" (
-  set "BASE=%SUMMON_URL:/v1/summon=%"
-  curl -sS --max-time 20 -H "Authorization: Bearer %SUMMON_TOKEN%" "!BASE!/v1/status"
+  set "BASE=!SUMMON_URL:/v1/summon=!"
+  curl -sS --max-time 20 -H "Authorization: Bearer !SUMMON_TOKEN!" "!BASE!/v1/status"
   exit /b %errorlevel%
 )
 
@@ -56,12 +63,12 @@ echo summoning the JIVO agent...
 rem Accept: text/plain makes the server render the answer, so there is nothing
 rem to parse here. --max-time is generous: a real session thinks for a while.
 curl -sS --max-time 480 ^
-  -H "Authorization: Bearer %SUMMON_TOKEN%" ^
+  -H "Authorization: Bearer !SUMMON_TOKEN!" ^
   -H "Content-Type: application/json" ^
   -H "Accept: text/plain" ^
   -X POST ^
   --data "{\"say\":\"lets go\",\"ask\":\"%ASK%\",\"os\":\"windows\",\"cwd\":\"%CD%\"}" ^
-  "%SUMMON_URL%"
+  "!SUMMON_URL!"
 
 if errorlevel 1 (
   echo.
