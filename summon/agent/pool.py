@@ -4,7 +4,7 @@
 The summon agent is a REAL interactive Claude Code session, not a headless
 one-shot. Each pool slot is a long-lived `claude` running inside its own tmux
 session on the VPS, so it keeps context between summons, can be attached to by
-a human (`tmux attach -t jivo-summon-1`), and keeps its prompt cache warm.
+a human (`tmux attach -t sardar-1`), and keeps its prompt cache warm.
 
 The request/reply channel is deliberately NOT screen-scraped. Scraping a TUI is
 fragile and, worse, injecting an operator's free text into `tmux send-keys` is a
@@ -37,7 +37,9 @@ REPLIES = ROOT / "replies"
 WORKSPACE = ROOT / "workspace"
 STATE = ROOT / "state"
 
-SESSION_PREFIX = "jivo-summon"
+# The agent is called Sardar, and these names are human-facing: an operator
+# runs `letsgo --watch` and lands in one of them.
+SESSION_PREFIX = "sardar"
 ID_RE = re.compile(r"^[0-9a-f]{32}$")
 
 # A summon that has not produced a reply file in this long is treated as wedged.

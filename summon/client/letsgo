@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# letsgo — say "Let's go" from any JIVO machine and reach the summon agent.
+# letsgo — say "Let's go" from any JIVO machine and reach Sardar.
 #
-# The summon agent is a real Claude Code session living on JIVO's VPS. It knows
-# the business, the fleet, and what every box is allowed to do, and it can grant
+# Sardar is a real Claude Code session living on JIVO's VPS. He knows the
+# business, the fleet, and what every box is allowed to do, and he can grant
 # access. You do not have to wait for Daman.
 #
 #   letsgo                          # just summon; it will ask what you need
 #   letsgo "I need to make A/P invoices"
-#   letsgo --status                 # is the agent up? which sessions are live?
-#   letsgo --watch                  # attach to the agent and watch it work
+#   letsgo --status                 # is Sardar up? which sessions are live?
+#   letsgo --watch                  # attach to Sardar and watch him work
 #
 # Config lives in ~/.jivo-summon.env (chmod 600), written by the installer:
 #   SUMMON_URL=https://…/v1/summon
@@ -31,12 +31,12 @@ BASE="${SUMMON_URL%/v1/summon}"
 case "${1:-}" in
   --status)
     curl -fsS --max-time 20 -H "Authorization: Bearer $SUMMON_TOKEN" \
-      "$BASE/v1/status" || die "agent not reachable"
+      "$BASE/v1/status" || die "Sardar is not reachable"
     exit 0
     ;;
   --watch)
     # The whole point of a real session over a headless one: you can watch it.
-    exec ssh -t vps 'tmux attach -t jivo-summon-1 || tmux ls'
+    exec ssh -t vps 'tmux attach -t sardar-1 || tmux ls'
     ;;
   --help|-h)
     sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
@@ -65,14 +65,14 @@ print(json.dumps({
 PY
 )" || die "could not build request (is python3 installed?)"
 
-printf 'summoning the JIVO agent…\n' >&2
+printf 'summoning Sardar…\n' >&2
 
 RESP="$(
   curl -sS --max-time 480 \
     -H "Authorization: Bearer $SUMMON_TOKEN" \
     -H 'Content-Type: application/json' \
     -X POST --data "$BODY" "$SUMMON_URL"
-)" || die "could not reach the summon agent — check the network, then --status"
+)" || die "could not reach Sardar — check the network, then --status"
 
 # Render the human-facing answer; fall back to raw JSON if the shape surprises us.
 RESP="$RESP" python3 - <<'PY'

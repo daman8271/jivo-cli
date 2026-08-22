@@ -1,9 +1,9 @@
 @echo off
-rem letsgo.cmd - say "Let's go" from a JIVO Windows box and reach the summon agent.
+rem letsgo.cmd - say "Let's go" from a JIVO Windows box and reach Sardar.
 rem
 rem   letsgo                      just summon; it will ask what you need
 rem   letsgo I need to make A/P invoices
-rem   letsgo --status             is the agent up
+rem   letsgo --status             is Sardar up
 rem
 rem Deliberately curl-only, NO python. Several boxes here have a Microsoft Store
 rem python stub that prints "Python was not found" and exits 0, so anything built
@@ -53,7 +53,7 @@ if "%ASK%"=="" (
   set /p "ASK=What do you need? (enter to just say hello): "
 )
 
-echo summoning the JIVO agent...
+echo summoning Sardar...
 
 rem Send the question as a RAW TEXT body from a temp file. Do not build JSON
 rem here: escaping quotes through cmd, curl (and PowerShell, when this is driven
@@ -79,7 +79,7 @@ del /q "%BODY%" 2>nul
 
 if not "%CURLRC%"=="0" (
   echo.
-  echo letsgo: could not reach the summon agent. Check the network, then: letsgo --status
+  echo letsgo: could not reach Sardar. Check the network, then: letsgo --status
   exit /b 1
 )
 exit /b 0
