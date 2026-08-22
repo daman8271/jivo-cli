@@ -295,3 +295,40 @@ def verify_rule0(rep: Report) -> bool:
         f"not a permission problem."
     )
     return False
+
+def prove_write_path(rep, exe_dir: str) -> bool:
+    """Prove the write path with a dry-run. Contacts SAP not at all.
+
+    `draft <doctype>` requires a payload, and an inline --data JSON does not
+    survive the ssh -> PowerShell -> cmd quoting chain (cobra sees two args). So
+    write a tiny payload to a temp file on the box and point --data-file at it.
+    """
+    probe = (r"%TEMP%\sardar-probe.json" if WINDOWS else "/tmp/sardar-probe.json")
+    payload = '{"CardCode":"PROBE"}'
+
+    remote = (f'cmd /c "more > {probe}"' if WINDOWS else f"cat > {q(probe)}")
+    try:
+        subprocess.run(
+            ["ssh", "-F", SSH_CONFIG, "-o", "ConnectTimeout=12",
+             "-o", "BatchMode=yes", ALIAS, remote],
+            input=payload, capture_output=True, text=True, timeout=60, check=False)
+    except subprocess.TimeoutExpired:
+        rep.note("write_path", None, "timed out writing the probe payload")
+        return False
+
+    binary = "sapb1.exe" if WINDOWS else "./sapb1"
+    rc, out = run_in(
+        exe_dir,
+        f"{binary} draft purchase-invoice --dry-run --data-file {probe}",
+        timeout=150)
+
+    ssh(f"del {probe}" if WINDOWS else f"rm -f {q(probe)}")
+
+    ok = "DRY RUN" in out and "nothing was sent" in out
+    if ok:
+        rep.note("write_path", True,
+                 "sapb1 draft --dry-run builds a valid request — the write path "
+                 "is open (nothing was sent to SAP)")
+    else:
+        rep.note("write_path", False, f"dry-run failed: {out.strip()[-220:]}")
+    return ok

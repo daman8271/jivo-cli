@@ -40,7 +40,7 @@ from _common import (  # noqa: E402
     ALIAS, APPLY, BOX, DEAD_SAP_HOST, DEPARTMENTS, DRAFT_SINCE, KIT, MODE,
     NOT_FOUND_RE, OPERATOR, OPERATOR_NAME, PERSONA, READONLY_SAP_USERS,
     RULE0_MARKER,
-    SAP_USER, WINDOWS, j, q, run_in, ssh, sync_kit,
+    SAP_USER, WINDOWS, j, prove_write_path, q, run_in, ssh, sync_kit,
 )
 
 findings: list[dict] = []
@@ -335,12 +335,14 @@ else:
         # --dry-run sends nothing to SAP and exits 0. It is the only safe way to
         # show the write path is genuinely open end to end.
         if APPLY and not blockers:
-            # From the binary's own directory: sapb1 reads .env from the CWD.
-            rc, out = run_in(
-                envdir,
-                ("sapb1.exe" if WINDOWS else "./sapb1")
-                + " draft purchase-invoice --dry-run",
-                timeout=150)
+            class _B:
+                findings = findings; actions = actions; blockers = blockers
+                def note(self, s_, o_, d_): findings.append(
+                    {"step": s_, "ok": o_, "detail": d_})
+                def did(self, w_): actions.append(w_)
+                def blocked(self, w_): blockers.append(w_)
+            rc = 0 if prove_write_path(_B(), envdir) else 1
+            out = ""
             if rc == 0:
                 note("write_path_proof", True,
                      "sapb1 draft --dry-run exits 0 — write path is open")
