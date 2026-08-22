@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+"""Grant: sync — bring one box's jivo-cli up to origin/main, keeping local work.
+
+The plainest grant, and the one that fixes the most complaints. An operator whose
+Claude "won't write to SAP", or who has never heard of the GST CLI, or whose
+`sapb1` has no `draft` command, is usually just behind.
+
+Never destructive: uncommitted tracked work is stashed (and reported so the
+operator can get it back), untracked work is left strictly alone, and a diverged
+checkout is refused rather than forced.
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _common import (  # noqa: E402
+    APPLY, BOX, KIT, Report, kit_is_git, require_reachable, ssh, sync_kit,
+    verify_rule0, q, WINDOWS,
+)
+
+rep = Report("sync", BOX)
+
+if require_reachable(rep):
+    is_git = kit_is_git(rep)
+
+    if is_git:
+        rc, before = ssh(f"cd /d {KIT} & git rev-parse --short HEAD" if WINDOWS
+                         else f"cd {q(KIT)} && git rev-parse --short HEAD")
+        rep.note("head_before", True, before.strip()[:12] or "?")
+
+        if not APPLY:
+            rc, behind = ssh(
+                f"cd /d {KIT} & git fetch -q origin main & "
+                f"git rev-list --count HEAD..origin/main" if WINDOWS else
+                f"cd {q(KIT)} && git fetch -q origin main && "
+                f"git rev-list --count HEAD..origin/main", timeout=180)
+            n = behind.strip().splitlines()[-1] if behind.strip() else "?"
+            rep.note("plan", None, f"would fast-forward {n} commit(s) onto this box")
+        else:
+            if sync_kit(rep):
+                verify_rule0(rep)
+
+sys.exit(rep.emit(
+    message_ok=f"{BOX} is up to date with the current toolkit.",
+    message_bad=f"{BOX} could not be brought up to date — see the blockers above.",
+))

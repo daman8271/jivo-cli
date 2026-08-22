@@ -1,0 +1,220 @@
+#!/usr/bin/env python3
+"""Grant: claude-auth — log a box's `claude` in without a browser.
+
+Gmail SSO is broken for this account, so `claude login` is a dead end everywhere
+on this fleet. The working path is relaying a live OAuth blob from an
+already-authenticated machine.
+
+WHERE THE BLOB COMES FROM MATTERS. The Mac's truth lives in the macOS Keychain
+(service "Claude Code-credentials") and its `~/.claude/.credentials.json` is
+stale — which is why the /transfer skill reads the Keychain, not the file. This
+grant runs on the VPS and has no Keychain, so it relays **the VPS's own** live
+blob instead. Same account, same mechanism, different source.
+
+Honest caveat, stated in the reply rather than buried: every box relayed this way
+shares ONE refresh token with the VPS and the Mac, so a rotation on any of them
+can log the others out. That is already true of this fleet; this grant does not
+make it worse, but it does mean a box may need this again later.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _common import (  # noqa: E402
+    ALIAS, APPLY, BOX, OS_KIND, PROFILE, Report, WINDOWS, require_reachable, ssh,
+)
+
+VPS_CREDS = "/root/.claude/.credentials.json"
+VPS_CONFIG = "/root/.claude.json"
+TS = time.strftime("%Y%m%d-%H%M%S")
+
+rep = Report("claude-auth", BOX)
+
+
+def remote_home() -> str:
+    """Where the box's claude expects its credentials.
+
+    On Windows the SSH login profile is often NOT the profile the operator works
+    in — one box logs in as Administrator (empty profile) while everything lives
+    under C:\\Users\\Jivo108. policy.json records the real one.
+    """
+    if WINDOWS:
+        return PROFILE or "%USERPROFILE%"
+    return PROFILE or "~"
+
+
+def round_trip() -> bool | None:
+    """Does a real prompt work on the box? None = could not tell."""
+    rc, out = ssh('claude -p "reply with exactly: AUTH-OK" --model opus', timeout=210)
+    if "AUTH-OK" in out:
+        return True
+    low = out.lower()
+    if any(s in low for s in ("not logged in", "invalid api key", "/login")):
+        return False
+    return None
+
+
+# ---------------------------------------------------------------- platform gate
+
+# macOS targets read the Keychain, not a file, so a file relay silently does
+# nothing there. Say so rather than reporting a success that isn't one.
+if OS_KIND.startswith(("mac", "darwin")):
+    rep.note("platform", False, "macOS target — credentials live in the Keychain")
+    rep.blocked(
+        f"{BOX} is a Mac, and Claude Code on macOS reads its login from the system "
+        f"Keychain rather than from a file — so relaying a credentials file there "
+        f"does nothing at all. This one needs the manual Keychain path from the "
+        f"/transfer skill (`security add-generic-password -U -s "
+        f"'Claude Code-credentials' …`), run by a human on that box."
+    )
+    sys.exit(rep.emit())
+
+# ------------------------------------------------------------------- the source
+
+if not os.path.isfile(VPS_CREDS):
+    rep.note("source", False, f"no blob at {VPS_CREDS}")
+    rep.blocked(
+        "The VPS has no Claude credentials file of its own, so there is nothing to "
+        "relay. Daman needs to run /transfer from the Mac to the VPS first — the "
+        "Mac's Keychain is the only original source of a fresh login here."
+    )
+    sys.exit(rep.emit())
+
+try:
+    blob_text = open(VPS_CREDS, encoding="utf-8").read()
+    blob = json.loads(blob_text)
+except (OSError, json.JSONDecodeError) as exc:
+    rep.blocked(f"the VPS credentials file is unreadable or not JSON: {exc}")
+    sys.exit(rep.emit())
+
+# An EXPIRED access token is fine — the box refreshes it. A MISSING refresh token
+# is fatal, and is the difference between "logged in" and "logged in for an hour".
+oauth = blob.get("claudeAiOauth") or blob
+has_refresh = bool(oauth.get("refreshToken"))
+rep.note("source_blob", has_refresh,
+         "VPS blob carries a refreshToken"
+         if has_refresh else "VPS blob has NO refreshToken")
+if not has_refresh:
+    rep.blocked(
+        "The VPS's own login has no refresh token, so relaying it would log the box "
+        "in only until the current access token expires. Re-run /transfer from the "
+        "Mac to the VPS first, then this grant."
+    )
+    sys.exit(rep.emit())
+
+# --------------------------------------------------------------------- the relay
+
+if require_reachable(rep):
+    state = round_trip()
+    if state is True:
+        rep.note("already", True, "claude on this box already answers a real prompt")
+        sys.exit(rep.emit(
+            message_ok=f"{BOX}'s Claude is already logged in — nothing to do. "
+                       f"(Verified with a real prompt, not just a version check.)"))
+
+    rep.note("before", False if state is False else None,
+             "not logged in" if state is False else "login state unclear")
+
+    if not APPLY:
+        rep.note("plan", None,
+                 f"would back up and replace {remote_home()}/.claude/"
+                 f".credentials.json with the VPS's live blob, then verify")
+        sys.exit(rep.emit(message_ok=f"{BOX}: ready to relay a login."))
+
+    home = remote_home()
+    cdir = f"{home}\\.claude" if WINDOWS else f"{home}/.claude"
+    cfile = f"{cdir}\\.credentials.json" if WINDOWS else f"{cdir}/.credentials.json"
+
+    # Back up whatever is there. A dead blob ("expiresAt":0) is normal and gets
+    # replaced, but never without a copy first.
+    if WINDOWS:
+        prep = (f'if not exist "{cdir}" mkdir "{cdir}" & '
+                f'if exist "{cfile}" copy /y "{cfile}" "{cfile}.bak-{TS}"')
+    else:
+        prep = (f'mkdir -p {cdir} && '
+                f'[ -f {cfile} ] && cp {cfile} {cfile}.bak-{TS} || true')
+    rc, out = ssh(prep)
+    rep.note("backup", rc == 0, out.strip()[-160:] or "prepared")
+
+    # Ship the blob over stdin rather than writing a plaintext temp file that
+    # could be left behind on either side.
+    scp_cmd = ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes", ALIAS]
+    if WINDOWS:
+        # `more>` writes stdin to a file under cmd without needing a shell heredoc.
+        scp_cmd.append(f'cmd /c "more > \\"{cfile}\\""')
+    else:
+        scp_cmd.append(f"cat > {cfile} && chmod 600 {cfile}")
+    try:
+        cp = subprocess.run(scp_cmd, input=blob_text, capture_output=True,
+                            text=True, timeout=90, check=False)
+        rep.note("relay", cp.returncode == 0,
+                 "credentials written" if cp.returncode == 0
+                 else (cp.stderr or "")[-200:])
+    except subprocess.TimeoutExpired:
+        rep.note("relay", False, "timed out writing credentials")
+        rep.blocked(f"writing the credentials to {BOX} timed out.")
+
+    # Merge ONLY oauthAccount into the box's ~/.claude.json. Never ship the whole
+    # file: it carries per-project state that would be clobbered.
+    try:
+        oa = json.loads(open(VPS_CONFIG, encoding="utf-8").read()).get("oauthAccount")
+    except (OSError, json.JSONDecodeError):
+        oa = None
+    if oa:
+        merger = (
+            "import json,os,sys\n"
+            "p=os.path.expanduser('~/.claude.json')\n"
+            "d={}\n"
+            "try:\n"
+            "    d=json.load(open(p))\n"
+            "except Exception:\n"
+            "    pass\n"
+            "d['oauthAccount']=json.load(sys.stdin)\n"
+            "json.dump(d,open(p,'w'),indent=2)\n"
+            "print('merged')\n"
+        )
+        # Several Windows boxes have Microsoft Store python STUBS that print
+        # "Python was not found" and exit 0, so a 0 exit proves nothing here —
+        # only the literal 'merged' does.
+        cp = subprocess.run(
+            ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes", ALIAS,
+             f'python3 -c "{merger}"' if not WINDOWS else f'python -c "{merger}"'],
+            input=json.dumps(oa), capture_output=True, text=True,
+            timeout=90, check=False,
+        )
+        merged = "merged" in (cp.stdout or "")
+        rep.note("oauth_account", merged,
+                 "merged oauthAccount" if merged
+                 else "could not merge oauthAccount (no working python on the box?)")
+        if not merged:
+            rep.did(f"note: oauthAccount was not merged on {BOX}. The login usually "
+                    f"still works; if it shows the wrong account, a human should "
+                    f"merge that one key by hand.")
+
+    # The only proof that counts.
+    after = round_trip()
+    if after is True:
+        rep.note("verify", True, "real prompt answered after relay")
+        rep.did(f"logged {BOX}'s Claude in by relaying the VPS's live OAuth blob")
+    else:
+        rep.note("verify", False, "still not answering a real prompt")
+        rep.blocked(
+            f"the credentials were written to {BOX} but its claude still will not "
+            f"answer a prompt. Most likely its claude binary is not on the PATH that "
+            f"sshd hands out (seen on at least one box, where claude.exe sits in "
+            f"%USERPROFILE%\\.local\\bin but `where claude` fails), or the file "
+            f"landed in a different profile than the one it runs under."
+        )
+
+sys.exit(rep.emit(
+    message_ok=(f"{BOX}'s Claude is logged in and answering. Note: every box on "
+                f"this fleet shares one refresh token, so if it drops out later "
+                f"this same grant fixes it again."),
+    message_bad=f"{BOX}'s Claude could not be logged in — see above.",
+))

@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# letsgo — say "Let's go" from any JIVO machine and reach the summon agent.
+#
+# The summon agent is a real Claude Code session living on JIVO's VPS. It knows
+# the business, the fleet, and what every box is allowed to do, and it can grant
+# access. You do not have to wait for Daman.
+#
+#   letsgo                          # just summon; it will ask what you need
+#   letsgo "I need to make A/P invoices"
+#   letsgo --status                 # is the agent up? which sessions are live?
+#   letsgo --watch                  # attach to the agent and watch it work
+#
+# Config lives in ~/.jivo-summon.env (chmod 600), written by the installer:
+#   SUMMON_URL=https://…/v1/summon
+#   SUMMON_TOKEN=…                  # this box's own token; identifies the box
+set -uo pipefail
+
+CONF="${JIVO_SUMMON_CONF:-$HOME/.jivo-summon.env}"
+
+die() { printf 'letsgo: %s\n' "$*" >&2; exit 1; }
+
+[ -r "$CONF" ] || die "no config at $CONF — run the installer from summon/deploy/"
+# shellcheck disable=SC1090
+. "$CONF"
+
+: "${SUMMON_URL:?SUMMON_URL missing from $CONF}"
+: "${SUMMON_TOKEN:?SUMMON_TOKEN missing from $CONF}"
+
+BASE="${SUMMON_URL%/v1/summon}"
+
+case "${1:-}" in
+  --status)
+    curl -fsS --max-time 20 -H "Authorization: Bearer $SUMMON_TOKEN" \
+      "$BASE/v1/status" || die "agent not reachable"
+    exit 0
+    ;;
+  --watch)
+    # The whole point of a real session over a headless one: you can watch it.
+    exec ssh -t vps 'tmux attach -t jivo-summon-1 || tmux ls'
+    ;;
+  --help|-h)
+    sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+    ;;
+esac
+
+ASK="${*:-}"
+if [ -z "$ASK" ] && [ -t 0 ]; then
+  printf "What do you need? (enter to just say hello)\n> "
+  read -r ASK || true
+fi
+
+# Build the body with python3 so the operator's text is JSON-escaped properly and
+# never has a chance to break the request.
+BODY="$(
+  ASK="$ASK" CWD="$PWD" OSK="$(uname -s 2>/dev/null || echo unknown)" \
+  python3 - <<'PY'
+import json, os
+print(json.dumps({
+    "say": "let's go",
+    "ask": os.environ.get("ASK", ""),
+    "cwd": os.environ.get("CWD", ""),
+    "os":  os.environ.get("OSK", ""),
+}))
+PY
+)" || die "could not build request (is python3 installed?)"
+
+printf 'summoning the JIVO agent…\n' >&2
+
+RESP="$(
+  curl -sS --max-time 480 \
+    -H "Authorization: Bearer $SUMMON_TOKEN" \
+    -H 'Content-Type: application/json' \
+    -X POST --data "$BODY" "$SUMMON_URL"
+)" || die "could not reach the summon agent — check the network, then --status"
+
+# Render the human-facing answer; fall back to raw JSON if the shape surprises us.
+RESP="$RESP" python3 - <<'PY'
+import json, os, sys, textwrap
+
+raw = os.environ.get("RESP", "")
+try:
+    d = json.loads(raw)
+except json.JSONDecodeError:
+    print(raw)
+    sys.exit(1)
+
+reply = (d.get("reply") or {})
+answer = reply.get("answer")
+
+if answer:
+    print()
+    print(textwrap.fill(answer, width=88, replace_whitespace=False))
+    for key, label in (("grants_applied", "granted"),
+                       ("grants_refused", "refused"),
+                       ("blocked_on", "still needs a human")):
+        vals = [v for v in (reply.get(key) or []) if v]
+        if vals:
+            print(f"\n{label}:")
+            for v in vals:
+                print(f"  - {v}")
+    if reply.get("needs_daman"):
+        print("\n>> This one needs Daman's go-ahead. It is parked for him.")
+    conf = reply.get("confidence")
+    if conf and conf != "high":
+        print(f"\n(confidence: {conf})")
+    print(f"\nsummon {d.get('id','?')} via {d.get('via','?')}")
+    sys.exit(0)
+
+print(json.dumps(d, indent=2))
+sys.exit(0 if d.get("ok") else 1)
+PY

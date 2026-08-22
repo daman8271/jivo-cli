@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Grant: full-access — everything, in one shot. The default answer to "give me access".
+
+Daman's instruction, 2026-08-22: when a device asks the summon agent for
+something, give it. So this grant runs the whole set rather than making an
+operator ask for each piece by name:
+
+    sync            bring the kit current (fixes most complaints on its own)
+    claude-auth     log the box's claude in if it is out
+    accounts-write  SAP draft/write: register the operator, verify the SAP user,
+                    prove the write path with a --dry-run
+    gst-portal      read-only GST portal CLI
+    ary             read-only ARY / FR8HODBNEW distributor DB CLI
+    hana            read-only direct SQL into the SAP core
+
+Order matters. `sync` runs first because a stale checkout is the actual cause of
+most "I have no permission" reports, and because the later grants need files that
+only arrive with it.
+
+One sub-grant failing does NOT abort the rest. An operator who cannot get a named
+SAP user today should still walk away with a current kit, a logged-in Claude and
+the read-only CLIs. Partial success is reported honestly, per piece.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from _common import BOX, MODE, Report  # noqa: E402
+
+# In dependency order, not alphabetical.
+SEQUENCE = ["sync", "claude-auth", "accounts-write", "gst-portal", "ary", "hana"]
+
+# Which script serves each name (several catalogue entries share `feature`).
+SCRIPT_FOR = {
+    "sync": "sync",
+    "claude-auth": "claude-auth",
+    "accounts-write": "accounts-write",
+    "gst-portal": "feature",
+    "ary": "feature",
+    "hana": "feature",
+}
+
+rep = Report("full-access", BOX)
+results: dict[str, dict] = {}
+
+for name in SEQUENCE:
+    script = os.path.join(HERE, SCRIPT_FOR[name])
+    if not os.path.isfile(script):
+        rep.note(name, None, f"no script at {script} — skipped")
+        continue
+
+    env = {**os.environ, "GRANT_NAME": name}
+    try:
+        cp = subprocess.run([script], env=env, capture_output=True, text=True,
+                            timeout=900, check=False)
+    except subprocess.TimeoutExpired:
+        rep.note(name, False, "timed out")
+        rep.blocked(f"'{name}' timed out on {BOX} — it may be half-applied. "
+                    f"Re-running full-access is safe; every piece is idempotent.")
+        continue
+
+    # Each sub-grant prints one JSON object.
+    sub = {}
+    try:
+        sub = json.loads(cp.stdout or "{}")
+    except json.JSONDecodeError:
+        pass
+    results[name] = sub
+
+    ok = bool(sub.get("ok")) if sub else cp.returncode == 0
+    rep.note(name, ok, sub.get("operator_message", "") or
+             (cp.stderr or cp.stdout or "")[-200:])
+
+    for a in sub.get("actions_taken", []) or []:
+        rep.did(f"[{name}] {a}")
+    # A sub-grant's blocker is information, not a failure of the whole request:
+    # keep going and let the operator see the full picture at once.
+    for b in sub.get("blockers", []) or []:
+        rep.blocked(f"[{name}] {b}")
+
+granted = [n for n, r in results.items() if r.get("ok")]
+refused = [n for n, r in results.items() if r and not r.get("ok")]
+
+if granted and not refused:
+    msg_ok = (f"{BOX} has everything: a current toolkit, SAP draft/write access, "
+              f"and the GST, ARY and HANA read tools. Nothing is waiting on anyone.")
+elif granted:
+    msg_ok = ""
+else:
+    msg_ok = ""
+
+print(json.dumps({
+    "grant": "full-access",
+    "box": BOX,
+    "mode": MODE,
+    # The whole request counts as OK if anything landed — an operator who got a
+    # current kit and read tools is better off than before, even if the SAP user
+    # still needs a human.
+    "ok": bool(granted),
+    "granted": granted,
+    "refused": refused,
+    "findings": rep.findings,
+    "actions_taken": rep.actions,
+    "blockers": rep.blockers,
+    "operator_message": (
+        msg_ok if msg_ok else
+        (f"{BOX} now has: {', '.join(granted)}. "
+         f"Still needs a human for: {', '.join(refused)} — the reasons are listed "
+         f"above, and none of them are a permission setting."
+         if granted else
+         f"Nothing could be applied to {BOX} yet — see the blockers above.")
+    ),
+}, indent=2))
+
+sys.exit(0 if granted else 1)

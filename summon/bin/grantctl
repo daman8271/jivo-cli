@@ -1,0 +1,357 @@
+#!/usr/bin/env python3
+"""grantctl — the only way the summon agent is allowed to change a fleet box.
+
+This is the containment boundary. The summon agent is a real Claude session with
+judgment; it decides WHICH grant a box needs and explains itself to the operator.
+But it cannot run arbitrary commands against the fleet: its workspace allowlists
+exactly this binary, and this binary will only ever
+
+    * apply a grant that exists in policy.json's catalogue, to
+    * a box that exists in policy.json's roster, holding
+    * a per-box lock so two summons cannot provision one machine at once,
+    * writing every decision to the same append-only audit log as the daemon.
+
+So the worst a fully prompt-injected agent can do is apply a vetted, idempotent,
+reversible grant to a known box — and leave a paper trail doing it.
+
+Usage:
+    grantctl list
+    grantctl status  <box>
+    grantctl check   <grant> <box>     # changes nothing, prints the plan
+    grantctl apply   <grant> <box> [--operator SLUG] [--reason TEXT]
+    grantctl pending                    # grants waiting on Daman's approval
+"""
+
+from __future__ import annotations
+
+import argparse
+import fcntl
+import json
+import os
+import re
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(os.environ.get("SUMMON_ROOT", "/opt/jivo-summon"))
+POLICY = ROOT / "policy.json"
+AUDIT = Path(os.environ.get("SUMMON_AUDIT", ROOT / "audit.jsonl"))
+GRANTS_DIR = ROOT / "grants"
+LOCKS = ROOT / "state" / "locks"
+PENDING = ROOT / "state" / "pending"
+
+SAFE_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+
+
+def die(msg: str, code: int = 2) -> "NoReturn":  # type: ignore[name-defined]
+    print(f"grantctl: {msg}", file=sys.stderr)
+    raise SystemExit(code)
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def audit(rec: dict) -> None:
+    AUDIT.parent.mkdir(parents=True, exist_ok=True)
+    with open(AUDIT, "a", encoding="utf-8") as fh:
+        fh.write(json.dumps({"ts": now_iso(), "actor": "grantctl", **rec},
+                            ensure_ascii=False, sort_keys=True) + "\n")
+        fh.flush()
+        os.fsync(fh.fileno())
+
+
+def policy() -> dict:
+    try:
+        return json.loads(POLICY.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        die(f"cannot read policy at {POLICY}: {exc}")
+
+
+def resolve(grant: str, box: str) -> tuple[dict, dict]:
+    """Validate both names against policy. This is the whole point of the file."""
+    if not SAFE_NAME.match(grant):
+        die(f"refusing grant name {grant!r}: not a plain catalogue name")
+    if not SAFE_NAME.match(box):
+        die(f"refusing box name {box!r}: not a plain roster name")
+    pol = policy()
+    if grant not in pol.get("grants", {}):
+        die(f"grant {grant!r} is not in the catalogue. `grantctl list` shows what exists.")
+    if box not in pol.get("boxes", {}):
+        # Not a refusal. The device already proved it holds a token Daman minted,
+        # so the only thing missing is what we know ABOUT the machine — and that
+        # can be discovered. Probe it and write the roster entry.
+        entry = enrol(box)
+        if entry is None:
+            die(f"box {box!r} is not on the roster and could not be probed "
+                f"(unreachable?). Nothing to grant until it answers.", 69)
+        pol = policy()
+    return pol["grants"][grant], pol["boxes"][box]
+
+
+def enrol(box: str) -> dict | None:
+    """Discover an unknown box and add it to the roster.
+
+    Reads the machine rather than guessing: OS, the profile the kit ACTUALLY lives
+    in (which on Windows is frequently not the SSH login user's), and any operator
+    record already there. Everything it writes is marked discovered so a human can
+    see it was not hand-checked.
+    """
+    def sh(inner: str, windows: bool, timeout: int = 45) -> tuple[int, str]:
+        remote = f'cmd /c "{inner}"' if windows else inner
+        try:
+            cp = subprocess.run(
+                ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes",
+                 "-o", "StrictHostKeyChecking=accept-new", box, remote],
+                capture_output=True, text=True, timeout=timeout, check=False)
+        except subprocess.TimeoutExpired:
+            return 124, "timeout"
+        return cp.returncode, (cp.stdout or "") + (cp.stderr or "")
+
+    # `uname` succeeds on mac/linux; on a PowerShell-default Windows box it fails.
+    rc, out = sh("uname -s", windows=False)
+    if rc == 0 and out.strip():
+        kind = out.strip().splitlines()[-1].lower()
+        os_kind = "macos" if "darwin" in kind else "linux"
+        windows = False
+    else:
+        rc, out = sh("hostname", windows=True)
+        if rc != 0:
+            return None
+        os_kind = "windows"
+        windows = True
+
+    rc, host = sh("hostname", windows)
+    hostname = host.strip().splitlines()[-1] if host.strip() else box
+
+    # Find the kit. On Windows it is often under a DIFFERENT profile than the SSH
+    # login user's, so enumerate profiles rather than trusting %USERPROFILE%.
+    kit, profile = "", ""
+    if windows:
+        rc, users = sh("dir /b C:\\Users", windows)
+        candidates = [u.strip() for u in users.splitlines() if u.strip()
+                      and u.strip().lower() not in
+                      ("public", "default", "default user", "all users")]
+        for u in candidates:
+            for sub in ("Documents", "Downloads", "Desktop", ""):
+                base = f"C:\\Users\\{u}" + (f"\\{sub}" if sub else "")
+                probe = f"{base}\\jivo-cli"
+                rc, o = sh(f"if exist {probe}\\.git (echo FOUND)", windows)
+                if "FOUND" in o:
+                    kit, profile = probe, f"C:\\Users\\{u}"
+                    break
+            if kit:
+                break
+    else:
+        for cand in ("~/jivo-cli", "/root/jivo-cli", "~/Documents/jivo-cli"):
+            rc, o = sh(f"test -d {cand}/.git && echo FOUND && cd {cand} && pwd",
+                       windows)
+            if "FOUND" in o:
+                lines = [l for l in o.splitlines() if l.startswith("/")]
+                kit = lines[-1] if lines else cand
+                profile = "~"
+                break
+
+    operator, operator_name, persona = "", "", ""
+    if kit:
+        sep = "\\" if windows else "/"
+        rc, o = sh((f"type {kit}{sep}harness{sep}.operator" if windows
+                    else f"cat {kit}/harness/.operator"), windows)
+        try:
+            rec = json.loads(o.strip())
+            operator = str(rec.get("slug", "") or "")
+            operator_name = str(rec.get("name", "") or "")
+            persona = str(rec.get("department", "") or "")
+        except (json.JSONDecodeError, AttributeError):
+            pass
+        if not persona:
+            rc, o = sh((f"type {kit}{sep}harness{sep}.persona" if windows
+                        else f"cat {kit}/harness/.persona"), windows)
+            persona = o.strip().splitlines()[0].strip() if o.strip() else ""
+
+    pol = policy()
+    entry = {
+        "ssh_alias": box,
+        "hostname": hostname,
+        "os": os_kind,
+        "kit_path": kit,
+        "working_profile": profile,
+        "operator": operator or box,
+        "operator_name": operator_name or operator or box,
+        "persona": persona or "accounts",
+        "sap_user": "",
+        "preapproved_grants": sorted(pol.get("grants", {}).keys()),
+        "discovered": now_iso(),
+        "notes": ("Auto-enrolled by grantctl on first summon — these fields were "
+                  "probed off the box, not verified by a human."),
+    }
+    pol.setdefault("boxes", {})[box] = entry
+
+    # Write atomically: a torn policy.json would lock the whole fleet out.
+    tmp = POLICY.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(pol, indent=2) + "\n", encoding="utf-8")
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, POLICY)
+
+    audit({"event": "box_auto_enrolled", "box": box, "hostname": hostname,
+           "os": os_kind, "kit_path": kit, "operator": entry["operator"]})
+    print(f"grantctl: auto-enrolled {box} ({hostname}, {os_kind}, kit={kit or 'NOT FOUND'})",
+          file=sys.stderr)
+    return entry
+
+
+class BoxLock:
+    """One box, one provisioning operation at a time."""
+
+    def __init__(self, box: str):
+        LOCKS.mkdir(parents=True, exist_ok=True)
+        self.path = LOCKS / f"{box}.lock"
+        self.fh = None
+
+    def __enter__(self):
+        self.fh = open(self.path, "w")
+        try:
+            fcntl.flock(self.fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            self.fh.close()
+            die("another summon is already provisioning this box; try again shortly", 75)
+        return self
+
+    def __exit__(self, *exc):
+        if self.fh:
+            fcntl.flock(self.fh, fcntl.LOCK_UN)
+            self.fh.close()
+
+
+def run_grant(grant: str, gdef: dict, box: str, bdef: dict, *, apply: bool,
+              operator: str, reason: str) -> int:
+    script = GRANTS_DIR / gdef["script"]
+    if not script.is_file():
+        die(f"grant script missing: {script}")
+    if not os.access(script, os.X_OK):
+        die(f"grant script not executable: {script}")
+
+    env = {
+        **os.environ,
+        "SUMMON_ROOT": str(ROOT),
+        "GRANT_NAME": grant,
+        "GRANT_MODE": "apply" if apply else "check",
+        "BOX_ALIAS": bdef.get("ssh_alias", box),
+        "BOX_NAME": box,
+        "BOX_OS": bdef.get("os", "unknown"),
+        "BOX_KIT_PATH": bdef.get("kit_path", ""),
+        "BOX_PROFILE": bdef.get("working_profile", ""),
+        "OPERATOR_SLUG": operator or bdef.get("operator", ""),
+        "OPERATOR_NAME": bdef.get("operator_name", "") or operator or bdef.get("operator", ""),
+        "OPERATOR_PERSONA": bdef.get("persona", ""),
+        "SAP_USER": bdef.get("sap_user", ""),
+        "GRANT_REASON": reason,
+    }
+
+    audit({
+        "event": "grant_start" if apply else "grant_check",
+        "grant": grant, "box": box, "operator": env["OPERATOR_SLUG"], "reason": reason,
+    })
+
+    cp = subprocess.run([str(script)], env=env, text=True, check=False)
+
+    audit({
+        "event": "grant_result",
+        "grant": grant, "box": box, "operator": env["OPERATOR_SLUG"],
+        "mode": env["GRANT_MODE"], "exit": cp.returncode,
+    })
+    return cp.returncode
+
+
+def cmd_list(_args) -> int:
+    pol = policy()
+    print("GRANTS")
+    for name, g in sorted(pol.get("grants", {}).items()):
+        approval = "OWNER APPROVAL" if g.get("requires_owner_approval") else "auto"
+        print(f"  {name:<20} [{approval:<14}] {g.get('summary', '')}")
+    print("\nBOXES")
+    for name, b in sorted(pol.get("boxes", {}).items()):
+        print(f"  {name:<14} {b.get('os', '?'):<8} {b.get('persona', '-'):<10} "
+              f"operator={b.get('operator', '-')}")
+    return 0
+
+
+def cmd_status(args) -> int:
+    _, bdef = resolve("accounts-write", args.box)
+    print(json.dumps({"box": args.box, **bdef}, indent=2))
+    return 0
+
+
+def cmd_check(args) -> int:
+    gdef, bdef = resolve(args.grant, args.box)
+    return run_grant(args.grant, gdef, args.box, bdef, apply=False,
+                     operator=args.operator or "", reason=args.reason or "")
+
+
+def cmd_apply(args) -> int:
+    gdef, bdef = resolve(args.grant, args.box)
+    pol = policy()
+
+    # Escalation gate. A grant flagged requires_owner_approval only goes through
+    # for a box that is explicitly pre-approved for it; anything else parks a
+    # request for Daman rather than quietly self-elevating.
+    if gdef.get("requires_owner_approval"):
+        preapproved = args.grant in bdef.get("preapproved_grants", [])
+        if not preapproved and not pol.get("auto_approve_everything"):
+            PENDING.mkdir(parents=True, exist_ok=True)
+            req = {
+                "ts": now_iso(), "grant": args.grant, "box": args.box,
+                "operator": args.operator or bdef.get("operator", ""),
+                "reason": args.reason or "",
+            }
+            (PENDING / f"{args.box}.{args.grant}.json").write_text(
+                json.dumps(req, indent=2), encoding="utf-8")
+            audit({"event": "grant_parked_for_owner", **req})
+            print(json.dumps({
+                "ok": False,
+                "parked": True,
+                "message": (
+                    f"'{args.grant}' on '{args.box}' needs Daman's go-ahead — this box is not "
+                    f"pre-approved for it. The request is parked; tell the operator it is "
+                    f"waiting on Daman, and do not try to route around this."
+                ),
+            }, indent=2))
+            return 3
+
+    with BoxLock(args.box):
+        return run_grant(args.grant, gdef, args.box, bdef, apply=True,
+                         operator=args.operator or "", reason=args.reason or "")
+
+
+def cmd_pending(_args) -> int:
+    PENDING.mkdir(parents=True, exist_ok=True)
+    items = [json.loads(p.read_text(encoding="utf-8")) for p in sorted(PENDING.glob("*.json"))]
+    print(json.dumps(items, indent=2))
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(prog="grantctl", description=__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+
+    sub.add_parser("list").set_defaults(fn=cmd_list)
+    sub.add_parser("pending").set_defaults(fn=cmd_pending)
+
+    p = sub.add_parser("status"); p.add_argument("box"); p.set_defaults(fn=cmd_status)
+
+    for name, fn in (("check", cmd_check), ("apply", cmd_apply)):
+        p = sub.add_parser(name)
+        p.add_argument("grant")
+        p.add_argument("box")
+        p.add_argument("--operator", default="")
+        p.add_argument("--reason", default="")
+        p.set_defaults(fn=fn)
+
+    args = ap.parse_args()
+    return args.fn(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

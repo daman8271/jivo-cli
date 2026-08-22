@@ -1,0 +1,385 @@
+#!/usr/bin/env python3
+"""Grant: accounts-write — make one box able to create documents in SAP.
+
+Invoked only by grantctl, which has already validated the grant name and the box
+against policy.json and taken a per-box lock. Reads its whole world from the
+environment grantctl sets. Idempotent: safe to run on an already-provisioned box,
+and safe to run again after a box comes back from being offline.
+
+GRANT_MODE=check  -> touch nothing, print the plan
+GRANT_MODE=apply  -> do it
+
+The order below is not arbitrary. It is sorted by how often each thing is the
+ACTUAL reason an operator "cannot write", learned the hard way:
+
+  1. They are working out of a month-old Google-Drive zip, not a git checkout.
+     Nothing else matters until that is fixed, and it cannot be fixed from here.
+  2. Their checkout predates the commit that added `sapb1 draft` at all.
+  3. Their SAP env points at the decommissioned host and 502s.
+  4. Their SAP user is `manager`, which is read-only at JIVO.
+  5. Only then: are they registered as an operator so writes carry their name.
+
+Policy is no longer step 1: since commit a3b9465 the repo's own RULE 0 allows
+writes fleet-wide, so a box that has merely pulled is already policy-correct.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+
+ALIAS = os.environ.get("BOX_ALIAS") or os.environ.get("BOX_NAME") or ""
+BOX = os.environ.get("BOX_NAME", ALIAS)
+OS_KIND = (os.environ.get("BOX_OS") or "unknown").lower()
+KIT = os.environ.get("BOX_KIT_PATH", "")
+OPERATOR = os.environ.get("OPERATOR_SLUG", "")
+OPERATOR_NAME = os.environ.get("OPERATOR_NAME", "") or OPERATOR
+PERSONA = os.environ.get("OPERATOR_PERSONA") or "accounts"
+SAP_USER = os.environ.get("SAP_USER", "")
+MODE = os.environ.get("GRANT_MODE", "check")
+APPLY = MODE == "apply"
+
+WINDOWS = OS_KIND.startswith("win")
+# setup.py accepts only these; anything else fails argparse mid-grant.
+DEPARTMENTS = {"accounts", "sales", "factory", "ecom", "exim", "ops", "hr", "it"}
+DEAD_SAP_HOST = "103.89.45.192"
+READONLY_SAP_USERS = {"manager"}
+# The commit that first shipped `sapb1 draft`. An exe built before this has no
+# write path at all, which presents to the operator as "the command doesn't exist".
+DRAFT_SINCE = "6888265"
+
+findings: list[dict] = []
+actions: list[str] = []
+blockers: list[str] = []
+
+
+def note(step: str, ok: bool | None, detail: str) -> None:
+    findings.append({"step": step, "ok": ok, "detail": detail})
+
+
+def ssh(inner: str, *, timeout: int = 90) -> tuple[int, str]:
+    """Run a command on the box, wrapping for the box's real shell.
+
+    Windows fleet boxes have PowerShell as the sshd default shell, which rejects
+    bash syntax outright. Everything Windows-bound goes through `cmd /c`.
+    """
+    if WINDOWS:
+        remote = f'cmd /c "{inner}"'
+    else:
+        remote = inner
+    cp = subprocess.run(
+        ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes",
+         "-o", "StrictHostKeyChecking=accept-new", ALIAS, remote],
+        capture_output=True, text=True, timeout=timeout, check=False,
+    )
+    return cp.returncode, (cp.stdout or "") + (cp.stderr or "")
+
+
+def q(path: str) -> str:
+    """Quote a path for the remote shell."""
+    return path if WINDOWS else shlex.quote(path)
+
+
+# --------------------------------------------------------------- 0. reachable
+
+rc, out = ssh("hostname")
+if rc != 0:
+    note("reach", False, f"cannot ssh to {ALIAS}: {out.strip()[:300]}")
+    blockers.append(
+        f"{BOX} is not reachable over the fleet tunnel right now. Nothing can be "
+        f"provisioned until it comes back. This grant is idempotent, so it will "
+        f"succeed on the operator's next 'Let's go' once the box is up."
+    )
+    print(json.dumps({"grant": "accounts-write", "box": BOX, "ok": False,
+                      "mode": MODE, "findings": findings, "blockers": blockers,
+                      "actions": actions}, indent=2))
+    raise SystemExit(1)
+note("reach", True, f"reachable, hostname={out.strip().splitlines()[-1] if out.strip() else '?'}")
+
+
+# ------------------------------------------------- 1. real checkout, or a zip?
+
+if not KIT:
+    blockers.append(
+        f"policy.json has no kit_path for {BOX}. A human has to record where this "
+        f"box's jivo-cli actually lives before anything can be granted to it — on "
+        f"several Windows boxes it is NOT under the SSH login user's profile."
+    )
+else:
+    git_dir = f"{KIT}\\.git" if WINDOWS else f"{KIT}/.git"
+    probe = f"if exist {git_dir} (echo GIT) else (echo NOGIT)" if WINDOWS \
+        else f"test -d {q(git_dir)} && echo GIT || echo NOGIT"
+    rc, out = ssh(probe)
+    is_git = "GIT" in out and "NOGIT" not in out
+
+    # The Drive-zip trap: a folder like jivo-cli-20260722T…Z-1-001 is an export,
+    # not a checkout. It has an old CLAUDE.md that still says READ-ONLY ALWAYS and
+    # an exe with no `draft`, so the operator is stuck no matter what we grant.
+    #
+    # But the folder NAME alone does not prove it. One operator unzipped the export
+    # and then git-cloned inside it, so the path looks like a zip while git works
+    # fine. Only the absence of .git is disqualifying; a zip-shaped path that IS a
+    # checkout just gets a note, because it can be pulled like any other.
+    zip_shaped = bool(re.search(r"Z-1-\d{3}", KIT))
+    if zip_shaped and is_git:
+        note("checkout_path", True,
+             f"path looks like a Drive export but is a real git checkout — pullable")
+        actions.append(
+            f"note: {BOX}'s kit sits inside an unzipped Drive export folder "
+            f"({KIT}). It is a real checkout so it syncs fine, but the path is "
+            f"confusing and worth tidying when convenient."
+        )
+
+    if not is_git:
+        note("checkout", False, f"{KIT} is not a git checkout (Drive-zip export?)")
+        blockers.append(
+            f"{BOX} is working out of a Google-Drive ZIP EXPORT at {KIT}, not a git "
+            f"checkout. This is the single most common reason an operator 'cannot "
+            f"write': the zip's CLAUDE.md still says read-only, and its sapb1.exe "
+            f"predates the `draft` command entirely, so no permission change can "
+            f"help. FIX: replace it with a real `git clone` of the repo. That is a "
+            f"human step — I will not silently delete somebody's folder."
+        )
+    else:
+        note("checkout", True, f"real git checkout at {KIT}")
+
+        # Sync, preserving local work. Never reset --hard: operators have unpushed
+        # work in these checkouts (one box had two dashboards nobody had pushed).
+        if APPLY:
+            steps = [
+                f"cd /d {KIT} & del /q .git\\index.lock 2>nul & git fetch -q origin main"
+                if WINDOWS else
+                f"cd {q(KIT)} && rm -f .git/index.lock; git fetch -q origin main",
+            ]
+            rc, out = ssh(steps[0], timeout=180)
+            note("fetch", rc == 0, out.strip()[-300:] or "fetched")
+
+            dirty_cmd = (f"cd /d {KIT} & git status --porcelain" if WINDOWS
+                         else f"cd {q(KIT)} && git status --porcelain")
+            rc, dirty = ssh(dirty_cmd)
+            if dirty.strip():
+                stash = (f'cd /d {KIT} & git stash push -u -m "pre-summon-{BOX}"'
+                         if WINDOWS else
+                         f'cd {q(KIT)} && git stash push -u -m "pre-summon-{BOX}"')
+                rc, out = ssh(stash, timeout=120)
+                actions.append(
+                    f"STASHED local uncommitted work on {BOX} before syncing — the "
+                    f"operator gets it back with `git stash pop`. Tell them this."
+                )
+                note("stash", rc == 0, out.strip()[-200:])
+
+            ff = (f"cd /d {KIT} & git merge --ff-only origin/main" if WINDOWS
+                  else f"cd {q(KIT)} && git merge --ff-only origin/main")
+            rc, out = ssh(ff, timeout=120)
+            if rc != 0:
+                blockers.append(
+                    f"{BOX}'s checkout has diverged from origin/main and will not "
+                    f"fast-forward: {out.strip()[-200:]}. Not forcing it — a diverged "
+                    f"checkout with local commits is a human's call."
+                )
+            else:
+                actions.append(f"synced {BOX} to origin/main")
+
+        # The proof: does the box's own CLAUDE.md now allow writes?
+        cm = f"{KIT}\\CLAUDE.md" if WINDOWS else f"{KIT}/CLAUDE.md"
+        grep = (f'findstr /c:"YOU MAY WRITE TO SAP" {cm}' if WINDOWS
+                else f'grep -F "YOU MAY WRITE TO SAP" {q(cm)}')
+        rc, out = ssh(grep)
+        if rc == 0 and "YOU MAY WRITE TO SAP" in out:
+            note("rule0", True, "repo RULE 0 allows writes on this box")
+        else:
+            note("rule0", False, "box's CLAUDE.md still predates commit a3b9465")
+            blockers.append(
+                f"{BOX} has not picked up the RULE 0 commit (a3b9465) yet, so the "
+                f"Claude running there will still refuse writes."
+            )
+
+        # ------------------------------------------- 2. can sapb1 even draft?
+        exe = (f"{KIT}\\sap-b1\\accounts-kit\\sapb1.exe" if WINDOWS
+               else f"{KIT}/sap-b1/cli/sapb1")
+        has = (f"if exist {exe} (echo YES) else (echo NO)" if WINDOWS
+               else f"test -x {q(exe)} && echo YES || echo NO")
+        rc, out = ssh(has)
+        if "YES" not in out:
+            note("sapb1", False, f"no sapb1 at {exe}")
+            blockers.append(f"{BOX} has no sapb1 binary at {exe}.")
+        else:
+            rc, out = ssh(f"{q(exe)} draft --help", timeout=60)
+            can_draft = rc == 0 or "draft" in out.lower()
+            note("sapb1_draft", can_draft,
+                 "draft command present" if can_draft
+                 else f"sapb1 has no `draft` (build older than {DRAFT_SINCE})")
+            if not can_draft:
+                blockers.append(
+                    f"{BOX}'s sapb1 predates commit {DRAFT_SINCE}, which is where "
+                    f"`draft` was added — there is no write path in that binary. "
+                    f"Syncing the checkout and rebuilding the exe fixes it."
+                )
+
+            # ------------------------------- 3/4. SAP host and user sanity
+            envdir = os.path.dirname(exe)
+            lister = (f"dir /b {envdir}\\*.env" if WINDOWS
+                      else f"ls -1 {q(envdir)}/*.env 2>/dev/null")
+            rc, envs = ssh(lister)
+            note("sap_env_files", bool(envs.strip()), envs.strip()[:300] or "none found")
+
+            # Look only at the host and user keys. Never read or echo a password.
+            hostgrep = (f'findstr /i "SAPB1_HOST" {envdir}\\*.env' if WINDOWS
+                        else f'grep -h -i "SAPB1_HOST" {q(envdir)}/*.env 2>/dev/null')
+            rc, hosts = ssh(hostgrep)
+            if DEAD_SAP_HOST in hosts:
+                note("sap_host", False, f"points at decommissioned {DEAD_SAP_HOST}")
+                blockers.append(
+                    f"{BOX}'s SAP env still points at {DEAD_SAP_HOST}, the old box that "
+                    f"was migrated away — that is the 502 the operator is seeing. It "
+                    f"needs the current host, or the office bridge."
+                )
+            else:
+                note("sap_host", True, "not the decommissioned host")
+
+            usergrep = (f'findstr /i "SAPB1_USER" {envdir}\\*.env' if WINDOWS
+                        else f'grep -h -i "SAPB1_USER" {q(envdir)}/*.env 2>/dev/null')
+            rc, users = ssh(usergrep)
+            found_user = ""
+            m = re.search(r"SAPB1_USER\s*=\s*[\"']?([A-Za-z0-9_.-]+)", users)
+            if m:
+                found_user = m.group(1)
+            if found_user.lower() in READONLY_SAP_USERS:
+                note("sap_user", False, f"configured as {found_user} (read-only at JIVO)")
+                blockers.append(
+                    f"{BOX} is logging into SAP as '{found_user}', which is read-only "
+                    f"here. It needs a write-capable named user (USER01 / USER06 / "
+                    f"USER36 are the ones in use). Assigning a named SAP user is a "
+                    f"human step — I will not invent or move SAP credentials."
+                )
+            elif found_user:
+                note("sap_user", True, f"named user {found_user}")
+            else:
+                note("sap_user", None, "could not read a SAPB1_USER key")
+
+        # ------------------------------------------- 5. operator registration
+        opf = f"{KIT}\\harness\\.operator" if WINDOWS else f"{KIT}/harness/.operator"
+        pef = f"{KIT}\\harness\\.persona" if WINDOWS else f"{KIT}/harness/.persona"
+        rc, cur_raw = ssh(f"type {opf}" if WINDOWS else f"cat {q(opf)} 2>/dev/null")
+        cur_raw = (cur_raw or "").strip()
+
+        # harness/.operator is a JSON record, not a bare slug. Real shape:
+        #   {"name":"Param","department":"accounts","slug":"param",
+        #    "registered_at":"2026-08-22T13:52:47"}
+        cur_op, cur_dept = "", ""
+        if cur_raw:
+            try:
+                rec = json.loads(cur_raw)
+                cur_op = str(rec.get("slug", "") or "")
+                cur_dept = str(rec.get("department", "") or "")
+            except json.JSONDecodeError:
+                # A legacy bare-slug file. Readable, but not the current shape.
+                cur_op = cur_raw.splitlines()[0].strip()
+                note("operator_format", False,
+                     f".operator holds a bare slug ({cur_op!r}), not the JSON record")
+
+        # A box whose .operator department disagrees with its .persona gets the
+        # wrong team's corrections injected, which is worse than being untagged.
+        rc, cur_persona = ssh(f"type {pef}" if WINDOWS else f"cat {q(pef)} 2>/dev/null")
+        cur_persona = (cur_persona or "").strip()
+        if cur_dept and cur_persona and cur_dept != cur_persona:
+            note("persona_mismatch", False,
+                 f".operator department={cur_dept!r} but .persona={cur_persona!r}")
+            blockers.append(
+                f"{BOX} is mistagged: its operator record says department "
+                f"'{cur_dept}' while its persona file says '{cur_persona}'. The "
+                f"harness filters corrections by persona, so this box is being fed "
+                f"the wrong team's rules. A human should decide which is right — "
+                f"I am not guessing at somebody's department."
+            )
+
+        if cur_op and not OPERATOR:
+            note("operator", True, f"already registered as {cur_op}")
+        elif not OPERATOR:
+            note("operator", None, "no operator slug known for this box")
+            blockers.append(
+                f"{BOX} has no operator registered and policy.json does not name one, "
+                f"so SAP writes from it would land in the shared log without a name. "
+                f"Add the operator to policy.json."
+            )
+        elif APPLY:
+            # Prefer the repo's own registrar so the record shape stays whatever
+            # the harness expects, rather than us hand-rolling JSON that drifts.
+            # Real interface (checked against harness/bin/setup.py, not assumed):
+            #   setup.py --name NAME --department {accounts,sales,factory,ecom,
+            #            exim,ops,hr,it} [--force]
+            # The slug is derived from the name by the registrar itself.
+            setup = f"{KIT}\\harness\\bin\\setup.py" if WINDOWS else f"{KIT}/harness/bin/setup.py"
+            reg = (f'cd /d {KIT} & python "{setup}" --name "{OPERATOR_NAME}" '
+                   f'--department {PERSONA} --force'
+                   if WINDOWS else
+                   f'cd {q(KIT)} && python3 {q(setup)} --name {shlex.quote(OPERATOR_NAME)} '
+                   f'--department {shlex.quote(PERSONA)} --force')
+            rc, out = ssh(reg, timeout=120)
+
+            if rc != 0:
+                # Registrar unavailable (no real python on some boxes — Microsoft
+                # Store stubs exit 0 while doing nothing). Write the JSON record
+                # directly, matching the shape observed on already-registered boxes.
+                record = json.dumps({
+                    "name": OPERATOR,
+                    "department": PERSONA,
+                    "slug": OPERATOR,
+                    "registered_at": __import__("datetime").datetime.now().isoformat(
+                        timespec="seconds"),
+                })
+                if WINDOWS:
+                    # cmd's echo cannot emit " or > unescaped; use ^ escapes.
+                    esc = record.replace("^", "^^").replace("&", "^&") \
+                               .replace("<", "^<").replace(">", "^>") \
+                               .replace("|", "^|").replace('"', '\\"')
+                    cmds = (f'cd /d {KIT} & '
+                            f'(echo {esc})>harness\\.operator & '
+                            f'(echo {PERSONA})>harness\\.persona & '
+                            f'if not exist queries\\{OPERATOR} mkdir queries\\{OPERATOR}')
+                else:
+                    cmds = (f'cd {q(KIT)} && cat > harness/.operator <<\'JSONEOF\'\n'
+                            f'{record}\nJSONEOF\n'
+                            f'printf "%s\\n" {shlex.quote(PERSONA)} > harness/.persona && '
+                            f'mkdir -p queries/{shlex.quote(OPERATOR)}')
+                rc, out = ssh(cmds)
+                note("operator_registrar", False,
+                     "harness/bin/setup.py unavailable (no working python?); "
+                     "wrote the .operator JSON record directly")
+            note("operator", rc == 0, f"registered {OPERATOR} / persona {PERSONA}")
+            if rc == 0:
+                actions.append(f"registered {BOX} as operator '{OPERATOR}' (persona {PERSONA})")
+        else:
+            note("operator", None, f"would register {OPERATOR} / {PERSONA}")
+
+        # ------------------------------------------- 6. prove it, harmlessly
+        # --dry-run sends nothing to SAP and exits 0. It is the only safe way to
+        # show the write path is genuinely open end to end.
+        if APPLY and not blockers:
+            probe = (f'{q(exe)} draft purchase-invoice --dry-run' if not WINDOWS
+                     else f'{exe} draft purchase-invoice --dry-run')
+            rc, out = ssh(probe, timeout=120)
+            note("write_path_proof", rc == 0,
+                 "sapb1 draft --dry-run exits 0 — write path is open"
+                 if rc == 0 else f"dry-run failed: {out.strip()[-300:]}")
+
+ok = not blockers
+print(json.dumps({
+    "grant": "accounts-write",
+    "box": BOX,
+    "mode": MODE,
+    "ok": ok,
+    "findings": findings,
+    "actions_taken": actions,
+    "blockers": blockers,
+    "operator_message": (
+        f"{BOX} can create documents in SAP." if ok else
+        f"{BOX} cannot write yet — {len(blockers)} thing(s) in the way, listed above. "
+        f"Every one of them needs a human, and none of them are a policy setting."
+    ),
+}, indent=2))
+raise SystemExit(0 if ok else 1)

@@ -1,0 +1,94 @@
+{
+  "_comment": [
+    "Roster of record for the JIVO summon agent. grantctl refuses any grant not in",
+    "'grants' and any box not in 'boxes' \u2014 so adding a machine to the fleet is a",
+    "deliberate human edit here, never something the agent can do for itself.",
+    "",
+    "Every kit_path / os / operator below was READ OFF THE BOX by the inventory run",
+    "on 2026-08-22, not assumed. Boxes that were unreachable that day are listed with",
+    "what we know from ~/.ssh/config and a needs_inventory flag; the agent must not",
+    "treat those fields as verified.",
+    "",
+    "auto_approve_everything: leave false. Setting it true removes the owner-approval",
+    "gate on EVERY grant for EVERY box, including boxes not tagged for that work.",
+    "That is the one switch here that can turn a mistake into a fleet-wide one.",
+    "",
+    "THIS IS THE EXAMPLE. The live roster (real hostnames, kit paths, operator",
+    "names, SAP usernames) is deliberately NOT in git \u2014 this repo is public.",
+    "The real file lives only at /opt/jivo-summon/policy.json on the VPS and is",
+    "deployed with scp, never committed. Copy this, fill it in, scp it."
+  ],
+  "auto_approve_everything": false,
+  "roster_verified": "YYYY-MM-DD",
+  "grants": {
+    "sync": {
+      "script": "sync",
+      "summary": "Pull the box's jivo-cli up to origin/main, preserving local work.",
+      "requires_owner_approval": false
+    },
+    "accounts-write": {
+      "script": "accounts-write",
+      "summary": "Make the box able to create documents in SAP: sync, register the operator, verify a write-capable SAP user, prove the path with a --dry-run.",
+      "requires_owner_approval": true,
+      "_why_gated": [
+        "Auto for any box already tagged persona=accounts (see preapproved_grants) \u2014",
+        "Daman set this up so Accounts never waits on him. Gated for everything else,",
+        "so a box that has never done Accounts work cannot mint itself write access",
+        "to the live books by asking nicely."
+      ]
+    },
+    "claude-auth": {
+      "script": "claude-auth",
+      "summary": "Relay Claude Code OAuth to a box whose claude says 'Not logged in'.",
+      "requires_owner_approval": false
+    },
+    "gst-portal": {
+      "script": "feature",
+      "summary": "Enable the read-only GST portal CLI on the box.",
+      "requires_owner_approval": false
+    },
+    "ary": {
+      "script": "feature",
+      "summary": "Enable the read-only ARY / FR8HODBNEW distributor-DB CLI on the box.",
+      "requires_owner_approval": false
+    },
+    "hana": {
+      "script": "feature",
+      "summary": "Direct read-only SQL into the SAP HANA core DB (port 30015).",
+      "requires_owner_approval": true,
+      "_why_gated": "Raw SQL across the whole SAP core, bypassing the CLI's shaping. Daman names who gets this."
+    }
+  },
+  "boxes": {
+    "example-accounts-box": {
+      "ssh_alias": "example",
+      "hostname": "HOSTNAME",
+      "os": "windows",
+      "tunnel_port": 230000,
+      "kit_path": "C:\\Users\\<the profile the kit ACTUALLY lives in>\\Documents\\jivo-cli",
+      "working_profile": "C:\\Users\\<may differ from the SSH login user>",
+      "operator": "slug",
+      "operator_name": "Full Name",
+      "persona": "accounts",
+      "sap_user": "USERnn",
+      "preapproved_grants": [
+        "accounts-write",
+        "sync",
+        "claude-auth"
+      ],
+      "notes": "Anything that breaks an automated script here: PowerShell default shell, a Store-stub python, a non-standard profile, a laptop that sleeps."
+    },
+    "example-dev-box": {
+      "ssh_alias": "example-dev",
+      "hostname": "HOSTNAME",
+      "os": "linux",
+      "kit_path": "/home/user/jivo-cli",
+      "operator": "",
+      "persona": "dev",
+      "preapproved_grants": [
+        "sync"
+      ],
+      "notes": "Not an Accounts machine, so accounts-write is gated to Daman for it."
+    }
+  }
+}

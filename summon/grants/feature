@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""Grant: feature — turn on one read-only JIVO CLI on a box (GST portal, ARY, …).
+
+grantctl passes the requested feature in GRANT_NAME, so one script serves several
+catalogue entries. Everything here is READ-ONLY by nature: these CLIs have no
+write command to call, which is why they are ungated.
+
+A feature is "on" when three things are true on the box: the kit is current
+enough to contain it, the connection file it needs exists, and the CLI actually
+runs. This checks all three and reports which one is missing, rather than
+declaring victory after a pull.
+"""
+
+from __future__ import annotations
+
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _common import (  # noqa: E402
+    APPLY, BOX, GRANT, KIT, Report, WINDOWS, j, kit_is_git, q,
+    require_reachable, ssh, sync_kit,
+)
+
+# Each feature: where its CLI lives in the kit, the connection/env file it needs,
+# and a harmless command that proves it runs.
+FEATURES = {
+    "gst-portal": {
+        "cli": ("portals", "gst", "cli", "gst-portal"),
+        "needs": [],
+        "probe": "--help",
+        "human": "the read-only GST portal CLI (8 GSTINs, all logins verified)",
+    },
+    "ary": {
+        "cli": ("connections", "ary-connect.cmd"),
+        "needs": [("connections", "ary.env")],
+        "probe": "",
+        "human": "the read-only ARY / FR8HODBNEW distributor-database CLI",
+    },
+    "hana": {
+        # Go binary, so the platform decides which file is the real one.
+        "cli": ("hana-sql", "hana-sql.exe" if WINDOWS else "hana-sql"),
+        "needs": [("connections", "hana.env")],
+        "probe": "--help",
+        "human": "read-only direct SQL into the SAP HANA core DB (port 30015)",
+    },
+}
+
+rep = Report(GRANT, BOX)
+spec = FEATURES.get(GRANT)
+
+if spec is None:
+    rep.blocked(
+        f"'{GRANT}' is in policy.json's catalogue but this script does not know how "
+        f"to install it. Either add it to FEATURES here or remove it from the "
+        f"catalogue — a grant that cannot be applied should not be offerable."
+    )
+    sys.exit(rep.emit())
+
+if require_reachable(rep):
+    if kit_is_git(rep):
+        if APPLY:
+            sync_kit(rep)
+
+        cli_path = j(KIT, *spec["cli"])
+        exists = (f"if exist {cli_path} (echo YES) else (echo NO)" if WINDOWS
+                  else f"test -e {q(cli_path)} && echo YES || echo NO")
+        rc, out = ssh(exists)
+        if "YES" in out and "NO" not in out:
+            rep.note("cli_present", True, cli_path)
+        else:
+            rep.note("cli_present", False, f"not found at {cli_path}")
+            rep.blocked(
+                f"{BOX} does not have {spec['human']} at {cli_path}, even after "
+                f"syncing. Either the kit is on a branch without it, or the CLI has "
+                f"not been committed for this box's platform yet."
+            )
+
+        for parts in spec["needs"]:
+            need = j(KIT, *parts)
+            chk = (f"if exist {need} (echo YES) else (echo NO)" if WINDOWS
+                   else f"test -e {q(need)} && echo YES || echo NO")
+            rc, out = ssh(chk)
+            if "YES" in out and "NO" not in out:
+                rep.note(f"needs:{parts[-1]}", True, need)
+            else:
+                rep.note(f"needs:{parts[-1]}", False, f"missing {need}")
+                rep.blocked(
+                    f"{BOX} is missing {need}, which {spec['human']} needs to "
+                    f"connect. Connection files carry credentials, so they are not "
+                    f"in the public repo — a human has to place this one."
+                )
+
+        # Prove it runs. --help touches no remote system.
+        if not rep.blockers and spec["probe"]:
+            rc, out = ssh(f"{cli_path} {spec['probe']}", timeout=90)
+            ok = rc == 0
+            rep.note("runs", ok, "responds to --help" if ok
+                     else f"exit {rc}: {out.strip()[-200:]}")
+            if not ok:
+                rep.blocked(
+                    f"{spec['human']} is present on {BOX} but will not run "
+                    f"(exit {rc}). Usually a missing runtime — several Windows boxes "
+                    f"have Microsoft Store python stubs that exit 0 while doing "
+                    f"nothing at all."
+                )
+
+sys.exit(rep.emit(
+    message_ok=f"{BOX} now has {spec['human']}. It reads only — there is no write "
+               f"command in it to call.",
+    message_bad=f"{spec['human']} is not usable on {BOX} yet.",
+))
