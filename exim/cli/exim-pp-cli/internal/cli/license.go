@@ -17,6 +17,7 @@ func newLicenseCmd(flags *rootFlags) *cobra.Command {
 	}
 
 	cmd.AddCommand(newLicenseGetAdvanceExportLinesCmd(flags))
+	cmd.AddCommand(newLicenseGetAdvanceHeaderCmd(flags))
 	cmd.AddCommand(newLicenseGetAdvanceHeadersCmd(flags))
 	cmd.AddCommand(newLicenseGetAdvanceImportLinesCmd(flags))
 	cmd.AddCommand(newLicenseGetAdvanceImportLinesDropdownCmd(flags))

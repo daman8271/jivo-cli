@@ -82,6 +82,11 @@ func TestRegisteredToolSetIsPinned(t *testing.T) {
 		"context",
 		"exim_execute",
 		"exim_search",
+		// hana - added 2026-08-22. Four GET commands over the SAP HANA account
+		// balances, ledger and monthly trend. Re-pinned deliberately after
+		// confirming all four are reads: each was called live and returned 200,
+		// and none has a write sibling on its path.
+		"hana",
 		"search",
 		"sql",
 		"sync",

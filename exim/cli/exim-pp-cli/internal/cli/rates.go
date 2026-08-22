@@ -20,6 +20,7 @@ func newRatesCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newRatesGetCommodityCmd(flags))
 	cmd.AddCommand(newRatesGetMarketGetCmd(flags))
 	cmd.AddCommand(newRatesGetMarketLatestCmd(flags))
+	cmd.AddCommand(newRatesGetPackSizeCmd(flags))
 	cmd.AddCommand(newRatesGetPackingCmd(flags))
 	cmd.AddCommand(newRatesGetTableLatestCmd(flags))
 	return cmd

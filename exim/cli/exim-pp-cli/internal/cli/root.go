@@ -224,6 +224,7 @@ Run 'exim-pp-cli doctor' to verify auth and connectivity.`,
 	}
 	rootCmd.AddCommand(newAccountCmd(flags))
 	rootCmd.AddCommand(newDailyPriceCmd(flags))
+	rootCmd.AddCommand(newHanaCmd(flags))
 	rootCmd.AddCommand(newDcCmd(flags))
 	rootCmd.AddCommand(newItemCmd(flags))
 	rootCmd.AddCommand(newItemsCmd(flags))

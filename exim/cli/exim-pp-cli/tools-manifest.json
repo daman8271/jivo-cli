@@ -64,7 +64,7 @@
     },
     {
       "name": "daily-price_get-highest-lowest",
-      "description": "Highest \u0026 lowest commodity prices over a date range. Optional: end_date, start_date. Returns the DailyPriceGetHighestLowestResponse.",
+      "description": "Highest & lowest commodity prices over a date range. Optional: end_date, start_date. Returns the DailyPriceGetHighestLowestResponse.",
       "method": "GET",
       "path": "/daily-price/highest-lowest/",
       "params": [
@@ -138,6 +138,28 @@
       ]
     },
     {
+      "name": "dc_get-contract",
+      "description": "product, vendor, status, PO number and date, contract quantity, rate and total. The id comes from `dc get --year YYYY`, not from `dc get-details`. Required: id.",
+      "method": "GET",
+      "path": "/dc/{id}/",
+      "params": [
+        {
+          "name": "id",
+          "type": "string",
+          "location": "path",
+          "description": "Contract id from `dc get --year YYYY`",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "dc_get-details",
+      "description": "144 rows today. Per-line economics of a domestic contract: invoice number and date, bilty number, freight and brokerage amounts and rates, shortage and deduction quantities, and cost per KL / LTR / MT. TRAP: the `id` on these rows is a DIFFERENT id space from the one `dc get-contract` takes - that one comes from `dc get --year`. Crossing them gives 404 'No DomesticReports matches the given query.'.",
+      "method": "GET",
+      "path": "/dc/details/",
+      "params": []
+    },
+    {
       "name": "dc_get-dropdown",
       "description": "Open-PO dropdown for domestic-contract creation. Returns array of DcGetDropdownItem.",
       "method": "GET",
@@ -157,6 +179,108 @@
       "method": "GET",
       "path": "/exim-rates/fetch/",
       "params": []
+    },
+    {
+      "name": "hana_accounts",
+      "description": "One row per GL account: AcctCode, AcctName, bank name, account number, IFSC, CurrTotal, GroupName and a Category of Bank / FD / Loan. TRAP: --branch MART returns 200 but its payload is BYTE-IDENTICAL to BEVERAGES - the server falls through rather than scoping. Treat MART as unimplemented, not as a third company. The literal ALL is rejected with a 400. Required: branch.",
+      "method": "GET",
+      "path": "/hana/accounts/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "Company branch. MART returns BEVERAGES data - see the command description",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_accounts-ledger",
+      "description": "Every posting against one account: TransId, RefDate, Debit, Credit, LineMemo, HeaderMemo, TransType, Ref1/Ref2. NOTE the trailing slash: the app's own source calls this path without one and leans on Django APPEND_SLASH. The 301 does preserve the query string, so a redirect-following client still works - but the canonical path is the slashed one and that is what this command sends. Required: branch, acct_code, from_date, to_date.",
+      "method": "GET",
+      "path": "/hana/accounts/ledger/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "Company branch",
+          "required": true
+        },
+        {
+          "name": "acct_code",
+          "type": "string",
+          "location": "query",
+          "description": "AcctCode from `hana accounts`, e.g. 2201105",
+          "required": true
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window start, YYYY-MM-DD (the server's own 400 names the format)",
+          "required": true
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window end, YYYY-MM-DD",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_accounts-monthly-trend",
+      "description": "Year, Month, TotalDebit, TotalCredit, NetMovement. Same four parameters as the ledger, aggregated. Required: branch, acct_code, from_date, to_date.",
+      "method": "GET",
+      "path": "/hana/accounts/monthly-trend/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "Company branch",
+          "required": true
+        },
+        {
+          "name": "acct_code",
+          "type": "string",
+          "location": "query",
+          "description": "AcctCode from `hana accounts`",
+          "required": true
+        },
+        {
+          "name": "from_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window start, YYYY-MM-DD",
+          "required": true
+        },
+        {
+          "name": "to_date",
+          "type": "string",
+          "location": "query",
+          "description": "Window end, YYYY-MM-DD",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "hana_accounts-summary",
+      "description": "Category (Bank / FD / Loan) x account group, with AccountCount and TotalBalance. The one-screen version of `hana accounts`. Same MART fall-through caveat. Required: branch.",
+      "method": "GET",
+      "path": "/hana/accounts/summary/",
+      "params": [
+        {
+          "name": "branch",
+          "type": "string",
+          "location": "query",
+          "description": "Company branch",
+          "required": true
+        }
+      ]
     },
     {
       "name": "item_get-fg-code",
@@ -242,6 +366,21 @@
       "method": "GET",
       "path": "/license/advance-license-export-lines/",
       "params": []
+    },
+    {
+      "name": "license_get-advance-header",
+      "description": "The detail behind a row of the shipped `license get-advance-headers`. The key is the LICENCE NUMBER, not a row id - the list rows carry no id at all. The DFIA twin, /license/dfia-license-header/{id}/, is NOT published: its list returns zero rows, so no id was ever observed and no call was made. Required: license_no.",
+      "method": "GET",
+      "path": "/license/advance-license-header/{license_no}/",
+      "params": [
+        {
+          "name": "license_no",
+          "type": "string",
+          "location": "path",
+          "description": "license_no from `license get-advance-headers`, e.g. 511015224",
+          "required": true
+        }
+      ]
     },
     {
       "name": "license_get-advance-headers",
@@ -368,6 +507,13 @@
       "description": "Latest market rate per commodity. Returns array of RatesGetMarketLatestItem.",
       "method": "GET",
       "path": "/rates/market-rate/latest/",
+      "params": []
+    },
+    {
+      "name": "rates_get-pack-size",
+      "description": "7 rows. The denominator behind every per-litre and per-kg rate in this app.",
+      "method": "GET",
+      "path": "/rates/pack-size/",
       "params": []
     },
     {

@@ -7,18 +7,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newDcCmd(flags *rootFlags) *cobra.Command {
+func newHanaCmd(flags *rootFlags) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:         "dc",
-		Short:       "Manage dc command groups",
-		Hidden:      true,
+		Use:         "hana",
+		Short:       "SAP HANA account balances, ledgers and monthly trend (bank, FD, loan)",
 		Annotations: map[string]string{"mcp:read-only": "true"},
 		RunE:        parentNoSubcommandRunE(flags),
 	}
 
-	cmd.AddCommand(newDcGetCmd(flags))
-	cmd.AddCommand(newDcGetContractCmd(flags))
-	cmd.AddCommand(newDcGetDetailsCmd(flags))
-	cmd.AddCommand(newDcGetDropdownCmd(flags))
+	cmd.AddCommand(newHanaAccountsCmd(flags))
+	cmd.AddCommand(newHanaAccountsLedgerCmd(flags))
+	cmd.AddCommand(newHanaAccountsMonthlyTrendCmd(flags))
+	cmd.AddCommand(newHanaAccountsSummaryCmd(flags))
 	return cmd
 }
