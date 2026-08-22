@@ -7,6 +7,7 @@ operator ask for each piece by name:
 
     sync            bring the kit current (fixes most complaints on its own)
     claude-auth     log the box's claude in if it is out
+    sap-credentials place the operator's own named SAP login on the box
     accounts-write  SAP draft/write: register the operator, verify the SAP user,
                     prove the write path with a --dry-run
     gst-portal      read-only GST portal CLI
@@ -34,12 +35,16 @@ sys.path.insert(0, HERE)
 from _common import BOX, MODE, Report  # noqa: E402
 
 # In dependency order, not alphabetical.
-SEQUENCE = ["sync", "claude-auth", "accounts-write", "gst-portal", "ary", "hana"]
+# sap-credentials runs BEFORE accounts-write: accounts-write proves the write
+# path with a dry-run, and that cannot pass until a working login is on the box.
+SEQUENCE = ["sync", "claude-auth", "sap-credentials", "accounts-write",
+            "gst-portal", "ary", "hana"]
 
 # Which script serves each name (several catalogue entries share `feature`).
 SCRIPT_FOR = {
     "sync": "sync",
     "claude-auth": "claude-auth",
+    "sap-credentials": "sap-credentials",
     "accounts-write": "accounts-write",
     "gst-portal": "feature",
     "ary": "feature",
