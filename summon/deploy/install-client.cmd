@@ -25,6 +25,9 @@ if errorlevel 1 (
 )
 
 set "CONF=%USERPROFILE%\.jivo-summon.env"
+rem NOTE the lack of a space before each redirect: `echo X > file` writes a
+rem TRAILING SPACE, and curl rejects a URL with one as "Malformed input to a URL
+rem function". This bit the first real rollout.
 > "%CONF%" echo # JIVO summon agent - this device's credentials. Keep private.
 >>"%CONF%" echo SUMMON_URL=%URL%
 >>"%CONF%" echo SUMMON_TOKEN=%TOKEN%

@@ -32,56 +32,44 @@ import shlex
 import subprocess
 import sys
 
-ALIAS = os.environ.get("BOX_ALIAS") or os.environ.get("BOX_NAME") or ""
-BOX = os.environ.get("BOX_NAME", ALIAS)
-OS_KIND = (os.environ.get("BOX_OS") or "unknown").lower()
-KIT = os.environ.get("BOX_KIT_PATH", "")
-OPERATOR = os.environ.get("OPERATOR_SLUG", "")
-OPERATOR_NAME = os.environ.get("OPERATOR_NAME", "") or OPERATOR
-PERSONA = os.environ.get("OPERATOR_PERSONA") or "accounts"
-SAP_USER = os.environ.get("SAP_USER", "")
-MODE = os.environ.get("GRANT_MODE", "check")
-APPLY = MODE == "apply"
-
-WINDOWS = OS_KIND.startswith("win")
-# setup.py accepts only these; anything else fails argparse mid-grant.
-DEPARTMENTS = {"accounts", "sales", "factory", "ecom", "exim", "ops", "hr", "it"}
-DEAD_SAP_HOST = "103.89.45.192"
-READONLY_SAP_USERS = {"manager"}
-# The commit that first shipped `sapb1 draft`. An exe built before this has no
-# write path at all, which presents to the operator as "the command doesn't exist".
-DRAFT_SINCE = "6888265"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Use the SHARED ssh()/paths rather than a private copy. This file originally had
+# its own, which is exactly why the `ssh -F <generated config>` fix did not reach
+# it and every alias failed to resolve.
+from _common import (  # noqa: E402
+    ALIAS, APPLY, BOX, DEAD_SAP_HOST, DEPARTMENTS, DRAFT_SINCE, KIT, MODE,
+    NOT_FOUND_RE, OPERATOR, OPERATOR_NAME, PERSONA, READONLY_SAP_USERS,
+    RULE0_MARKER,
+    SAP_USER, WINDOWS, j, q, ssh, sync_kit,
+)
 
 findings: list[dict] = []
 actions: list[str] = []
 blockers: list[str] = []
 
 
+class _Bridge:
+    """Adapts this file's module-level lists to the Report interface sync_kit
+    expects, so the shared helpers can be reused without rewriting the whole
+    grant. New grants should just use Report directly."""
+
+    def __init__(self, findings_, actions_, blockers_):
+        self.findings = findings_
+        self.actions = actions_
+        self.blockers = blockers_
+
+    def note(self, step, ok, detail):
+        self.findings.append({"step": step, "ok": ok, "detail": detail})
+
+    def did(self, what):
+        self.actions.append(what)
+
+    def blocked(self, why):
+        self.blockers.append(why)
+
+
 def note(step: str, ok: bool | None, detail: str) -> None:
     findings.append({"step": step, "ok": ok, "detail": detail})
-
-
-def ssh(inner: str, *, timeout: int = 90) -> tuple[int, str]:
-    """Run a command on the box, wrapping for the box's real shell.
-
-    Windows fleet boxes have PowerShell as the sshd default shell, which rejects
-    bash syntax outright. Everything Windows-bound goes through `cmd /c`.
-    """
-    if WINDOWS:
-        remote = f'cmd /c "{inner}"'
-    else:
-        remote = inner
-    cp = subprocess.run(
-        ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes",
-         "-o", "StrictHostKeyChecking=accept-new", ALIAS, remote],
-        capture_output=True, text=True, timeout=timeout, check=False,
-    )
-    return cp.returncode, (cp.stdout or "") + (cp.stderr or "")
-
-
-def q(path: str) -> str:
-    """Quote a path for the remote shell."""
-    return path if WINDOWS else shlex.quote(path)
 
 
 # --------------------------------------------------------------- 0. reachable
@@ -147,42 +135,13 @@ else:
     else:
         note("checkout", True, f"real git checkout at {KIT}")
 
-        # Sync, preserving local work. Never reset --hard: operators have unpushed
-        # work in these checkouts (one box had two dashboards nobody had pushed).
+        # Sync via the SHARED sync_kit(). This file used to carry its own copy of
+        # fetch/stash/ff-merge, which is how `git stash push -u` survived here
+        # after being fixed everywhere else and took an operator's untracked
+        # dashboards a second time. One sync, one place to fix it.
         if APPLY:
-            steps = [
-                f"cd /d {KIT} & del /q .git\\index.lock 2>nul & git fetch -q origin main"
-                if WINDOWS else
-                f"cd {q(KIT)} && rm -f .git/index.lock; git fetch -q origin main",
-            ]
-            rc, out = ssh(steps[0], timeout=180)
-            note("fetch", rc == 0, out.strip()[-300:] or "fetched")
-
-            dirty_cmd = (f"cd /d {KIT} & git status --porcelain" if WINDOWS
-                         else f"cd {q(KIT)} && git status --porcelain")
-            rc, dirty = ssh(dirty_cmd)
-            if dirty.strip():
-                stash = (f'cd /d {KIT} & git stash push -u -m "pre-summon-{BOX}"'
-                         if WINDOWS else
-                         f'cd {q(KIT)} && git stash push -u -m "pre-summon-{BOX}"')
-                rc, out = ssh(stash, timeout=120)
-                actions.append(
-                    f"STASHED local uncommitted work on {BOX} before syncing — the "
-                    f"operator gets it back with `git stash pop`. Tell them this."
-                )
-                note("stash", rc == 0, out.strip()[-200:])
-
-            ff = (f"cd /d {KIT} & git merge --ff-only origin/main" if WINDOWS
-                  else f"cd {q(KIT)} && git merge --ff-only origin/main")
-            rc, out = ssh(ff, timeout=120)
-            if rc != 0:
-                blockers.append(
-                    f"{BOX}'s checkout has diverged from origin/main and will not "
-                    f"fast-forward: {out.strip()[-200:]}. Not forcing it — a diverged "
-                    f"checkout with local commits is a human's call."
-                )
-            else:
-                actions.append(f"synced {BOX} to origin/main")
+            _rep = _Bridge(findings, actions, blockers)
+            sync_kit(_rep)
 
         # The proof: does the box's own CLAUDE.md now allow writes?
         cm = f"{KIT}\\CLAUDE.md" if WINDOWS else f"{KIT}/CLAUDE.md"
@@ -225,7 +184,19 @@ else:
             lister = (f"dir /b {envdir}\\*.env" if WINDOWS
                       else f"ls -1 {q(envdir)}/*.env 2>/dev/null")
             rc, envs = ssh(lister)
-            note("sap_env_files", bool(envs.strip()), envs.strip()[:300] or "none found")
+            # cmd writes its failure text to STDOUT, so a non-empty string is not
+            # evidence of content. Filter the known "nothing here" phrases.
+            envs_clean = "\n".join(
+                l for l in envs.splitlines()
+                if l.strip() and not NOT_FOUND_RE.search(l))
+            note("sap_env_files", bool(envs_clean.strip()),
+                 envs_clean.strip()[:300] or "no .env beside sapb1")
+            if not envs_clean.strip():
+                blockers.append(
+                    f"{BOX} has no .env file next to sapb1, so it has no SAP "
+                    f"connection at all — no host, no user, no password. That is "
+                    f"why the write path cannot be proven. A human has to place one."
+                )
 
             # Look only at the host and user keys. Never read or echo a password.
             hostgrep = (f'findstr /i "SAPB1_HOST" {envdir}\\*.env' if WINDOWS
@@ -271,6 +242,10 @@ else:
         #   {"name":"Param","department":"accounts","slug":"param",
         #    "registered_at":"2026-08-22T13:52:47"}
         cur_op, cur_dept = "", ""
+        if cur_raw and NOT_FOUND_RE.search(cur_raw):
+            # `type <missing file>` prints its error to stdout, which was being
+            # read as the operator's slug.
+            cur_raw = ""
         if cur_raw:
             try:
                 rec = json.loads(cur_raw)
@@ -363,9 +338,23 @@ else:
             probe = (f'{q(exe)} draft purchase-invoice --dry-run' if not WINDOWS
                      else f'{exe} draft purchase-invoice --dry-run')
             rc, out = ssh(probe, timeout=120)
-            note("write_path_proof", rc == 0,
-                 "sapb1 draft --dry-run exits 0 — write path is open"
-                 if rc == 0 else f"dry-run failed: {out.strip()[-300:]}")
+            if rc == 0:
+                note("write_path_proof", True,
+                     "sapb1 draft --dry-run exits 0 — write path is open")
+            else:
+                detail = out.strip()[-300:]
+                note("write_path_proof", False, f"dry-run failed: {detail}")
+                # This MUST be a blocker. Without it the grant reported
+                # "can create documents in SAP" on a box whose dry-run had just
+                # failed for missing SAP credentials.
+                blockers.append(
+                    f"{BOX} still cannot actually write: `sapb1 draft --dry-run` "
+                    f"failed — {detail}. Everything else is in place (kit current, "
+                    f"RULE 0 allows writes, operator registered), so what is missing "
+                    f"is the SAP connection itself. A human has to put a named "
+                    f"write-capable SAP user in the .env next to sapb1 — I do not "
+                    f"move credentials."
+                )
 
 ok = not blockers
 print(json.dumps({

@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shlex
 import subprocess
 import sys
@@ -32,11 +33,29 @@ REASON = os.environ.get("GRANT_REASON", "")
 
 WINDOWS = OS_KIND.startswith("win")
 
+# The VPS reaches each box directly on 127.0.0.1:<tunnel_port> — it IS the tunnel
+# endpoint, so unlike the Mac it needs no ProxyJump. install-vps.sh generates this
+# file from policy.json. Root's own ~/.ssh/config is deliberately untouched: the
+# fleet-health and auto-repair scripts depend on it.
+SSH_CONFIG = os.environ.get(
+    "SUMMON_SSH_CONFIG",
+    os.path.join(os.environ.get("SUMMON_ROOT", "/opt/jivo-summon"), "ssh_config"))
+
 # setup.py accepts only these; anything else fails argparse mid-grant.
 DEPARTMENTS = {"accounts", "sales", "factory", "ecom", "exim", "ops", "hr", "it"}
 
 # Facts about JIVO's fleet that were learned the hard way and that several grants
 # need to check for.
+# cmd.exe writes its "nothing here" messages to STDOUT, not stderr, so they
+# arrive looking exactly like data. `dir /b *.env` with no match prints "File Not
+# Found"; `type <missing>` prints "The system cannot find the file specified."
+# Both are non-empty strings, so a truthiness test reads them as real content —
+# which once reported env files present when there were none, and once reported
+# that error text as an operator's slug.
+NOT_FOUND_RE = re.compile(
+    r"File Not Found|cannot find the file|cannot find the path|No such file",
+    re.I)
+
 DEAD_SAP_HOST = "103.89.45.192"      # decommissioned; the 502 everyone reports
 READONLY_SAP_USERS = {"manager"}     # read-only at JIVO despite the name
 DRAFT_SINCE = "6888265"              # first commit with `sapb1 draft`
@@ -92,7 +111,8 @@ def ssh(inner: str, *, timeout: int = 90) -> tuple[int, str]:
     remote = f'cmd /c "{inner}"' if WINDOWS else inner
     try:
         cp = subprocess.run(
-            ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes",
+            ["ssh", "-F", SSH_CONFIG,
+             "-o", "ConnectTimeout=12", "-o", "BatchMode=yes",
              "-o", "StrictHostKeyChecking=accept-new", ALIAS, remote],
             capture_output=True, text=True, timeout=timeout, check=False,
         )
@@ -170,7 +190,6 @@ def kit_is_git(rep: Report) -> bool | None:
         return False
 
     rep.note("checkout", True, f"real git checkout at {KIT}")
-    import re
     if re.search(r"Z-1-\d{3}", KIT):
         rep.note("checkout_path", True,
                  "path looks like a Drive export but IS a real checkout — pullable")
@@ -212,12 +231,18 @@ def sync_kit(rep: Report) -> bool:
         lines = [l for l in dirty.splitlines() if l.strip()]
         tracked = [l for l in lines if not l.startswith("??")]
         if tracked:
-            rc, out = ssh(f'cd /d {KIT} & git stash push -u -m "pre-summon"' if WINDOWS
-                          else f'cd {q(KIT)} && git stash push -u -m "pre-summon"',
-                          timeout=120)
+            # NO -u. A fast-forward cannot touch untracked files, so they never
+            # needed stashing — and `-u` swept an operator's 161 untracked files
+            # (two finished dashboards, 31.5k lines) off their disk because one
+            # tracked file happened to be dirty. Stash tracked changes only.
+            rc, out = ssh(
+                f'cd /d {KIT} & git stash push -m "pre-summon" -- .' if WINDOWS
+                else f'cd {q(KIT)} && git stash push -m "pre-summon" -- .',
+                timeout=120)
             rep.note("stash", rc == 0, out.strip()[-200:])
-            rep.did(f"STASHED uncommitted work on {BOX} before syncing. The operator "
-                    f"gets it back with `git stash pop` — tell them, they do not know.")
+            rep.did(f"stashed {len(tracked)} MODIFIED TRACKED file(s) on {BOX} before "
+                    f"syncing (untracked work was left on disk, untouched). The "
+                    f"operator gets the tracked changes back with `git stash pop`.")
         else:
             rep.note("dirty", True,
                      f"{len(lines)} untracked path(s) left alone — a ff-merge cannot "
