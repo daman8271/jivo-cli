@@ -6,7 +6,7 @@
 # What it puts in place:
 #   /opt/jivo-summon/      the agent's home (workspace, queue, replies, audit)
 #   jivo-summond.service   the receiver on 127.0.0.1:8710
-#   3 tmux sessions        the REAL interactive claude sessions that answer
+#   3 tmux sessions        sardar-1..3, the REAL interactive claude sessions
 #   a Traefik file route   public HTTPS entry, obfuscated path + bearer token
 #
 # Traefik on this box runs with --network host, so it reaches 127.0.0.1 directly
@@ -244,10 +244,16 @@ if [ ! -f "$SLUG_FILE" ]; then
 fi
 SLUG="$(cat "$SLUG_FILE")"
 
+say "retiring any pre-rename sessions"
+# The sessions were called jivo-summon-N before the agent was named Sardar. Kill
+# the old ones or they linger forever: the pool creates by name, so it would
+# never touch them again.
+for i in 1 2 3 4 5; do tmux kill-session -t "jivo-summon-$i" 2>/dev/null && echo "  retired jivo-summon-$i"; done
+
 say "systemd unit"
 cat > /etc/systemd/system/jivo-summond.service <<UNIT
 [Unit]
-Description=JIVO summon agent - the "Let's go" receiver
+Description=Sardar - JIVO's summon agent, the "Let's go" receiver
 Documentation=https://github.com/daman8271/jivo-cli/tree/main/summon
 After=network-online.target docker.service
 Wants=network-online.target
@@ -335,7 +341,7 @@ cat <<INFO
  summon endpoint : https://${PUBHOST}/${SLUG}/v1/summon
  health          : https://${PUBHOST}/${SLUG}/healthz  (unauth, liveness only)
  audit log       : ${ROOT}/audit.jsonl
- watch it work   : ssh vps -t 'tmux attach -t jivo-summon-1'
+ watch Sardar    : ssh vps -t 'tmux attach -t sardar-1'
  device tokens   : ${ROOT}/tokens.json  (0600, one per box)
 ======================================================================
 INFO

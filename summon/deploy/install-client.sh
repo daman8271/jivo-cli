@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Put `letsgo` on this machine so it can reach JIVO's summon agent.
+# Put `letsgo` on this machine so it can reach Sardar, JIVO's summon agent.
 #
 #   bash summon/deploy/install-client.sh <TOKEN>
 #
@@ -67,9 +67,9 @@ done
 echo
 echo "verifying…"
 if "$(command -v letsgo || echo "$HOME/.local/bin/letsgo")" --status >/dev/null 2>&1; then
-  echo "OK — the agent answered. Say: letsgo \"what you need\""
+  echo "OK — Sardar answered. Say: letsgo \"what you need\""
 else
-  echo "The client is installed but the agent did not answer."
+  echo "The client is installed but Sardar did not answer."
   echo "Check the network, then run: letsgo --status"
   exit 1
 fi

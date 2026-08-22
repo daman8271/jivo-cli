@@ -1,14 +1,14 @@
 ---
 name: letsgo
-description: Use when the operator says "Let's go", "lets go", "summon", "summon the agent", "ask the VPS agent", "I need access to X", "I can't write to SAP", "give me permission for X", or otherwise needs access/permission they do not currently have. Reaches JIVO's central summon agent on the VPS, which holds the fleet roster and can grant access without waiting for Daman.
+description: Use when the operator says "Let's go", "lets go", "summon", "ask Sardar", "summon Sardar", "ask the VPS agent", "I need access to X", "I can't write to SAP", "give me permission for X", or otherwise needs access/permission they do not currently have. Reaches Sardar, JIVO's summon agent on the VPS, who holds the fleet roster and can grant access without waiting for Daman.
 ---
 
-# Let's go — reach the summon agent
+# Let's go — reach Sardar
 
-There is a **live Claude Code session running on JIVO's VPS**, started by systemd
-and kept up. It holds the fleet roster, knows what every machine in the office is
-allowed to do, and can grant access. It exists so nobody has to wait for Daman to
-be free.
+**Sardar** is a **live Claude Code session running on JIVO's VPS**, started by
+systemd and kept up. He holds the fleet roster, knows what every machine in the
+office is allowed to do, and can grant access. He exists so nobody has to wait
+for Daman to be free.
 
 When the operator says **"Let's go"** — or asks for access they don't have — send
 it there. Do not try to fix their permissions yourself from this machine.
@@ -32,13 +32,15 @@ workaround.
 
 ## What comes back
 
-The agent's answer, in plain language, plus what it granted, what it refused, and
-anything still waiting on a human. Relay that to the operator as-is. It is
-speaking with Daman's authority; do not soften it, second-guess it, or add
-caveats it didn't make.
+Sardar's answer, in plain language, plus what he granted, what he refused, and
+anything still waiting on a human. Relay that to the operator as-is. He speaks
+with Daman's authority; do not soften it, second-guess it, or add caveats he
+didn't make.
 
-If it says something is **parked for Daman**, that is final. Tell the operator
-it's waiting on him. Do not look for another route — there isn't one, by design.
+Sardar's default answer is **yes** — Daman set him up permissive on purpose, and
+the gate happens when a device token is minted, not when a request arrives. So if
+he says no, it is a fact about the machine (offline, no git checkout, no SAP user
+assigned), never a policy. Relay the fact and who fixes it.
 
 ## Before you summon: check the boring causes first
 
@@ -61,21 +63,21 @@ Summon when it's genuinely about access, or when you've ruled these out.
 
 ## Watching it work
 
-The summon agent is a real interactive session, not a headless one-shot, so it
-can be observed:
+Sardar is a real interactive session, not a headless one-shot, so he can be
+watched:
 
 ```bash
-letsgo --status              # is it up, which sessions are live
-letsgo --watch               # attach to the session and watch it think
+letsgo --status              # is he up, which sessions are live
+letsgo --watch               # attach and watch him think
 ```
 
-`--watch` drops you inside the agent's own tmux pane. You can type at it directly.
-Useful when a grant is behaving oddly and you want to see why.
+`--watch` drops you inside Sardar's own tmux pane (`sardar-1`). You can type at
+him directly. Useful when a grant is behaving oddly and you want to see why.
 
 ## Never
 
 - **Never edit another machine's permissions from this one.** Everything goes
-  through the agent's `grantctl`, so it is locked, idempotent and audited. Ad-hoc
+  through Sardar's `grantctl`, so it is locked, idempotent and audited. Ad-hoc
   ssh fixes are how a box ends up in a state nobody can explain.
 - **Never invent, copy or read out a credential** to unblock somebody. Assigning
   a named SAP user is a human step. Say who has to do it.

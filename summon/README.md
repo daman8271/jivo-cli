@@ -1,15 +1,18 @@
-# summon — say "Let's go" from any JIVO machine
+# Sardar — say "Let's go" from any JIVO machine
 
-There is a **live Claude Code session running on JIVO's VPS**, started by systemd
-and kept up. Any operator in the office says **"Let's go"** on their own machine
-and reaches it. It knows the business, holds the fleet roster, and grants access.
-Nobody waits for Daman.
+**Sardar** is a **live Claude Code session running on JIVO's VPS**, started by
+systemd and kept up. Any operator in the office says **"Let's go"** on their own
+machine and reaches him. He knows the business, holds the fleet roster, and
+grants access. Nobody waits for Daman.
+
+A sardar is the one people go to when they need something settled — which is the
+whole job. Daman named him on 2026-08-22.
 
 ```
 letsgo                                    # it will ask what you need
 letsgo "I need to make A/P invoices"
-letsgo --status                           # is it up, which sessions are live
-letsgo --watch                            # attach and watch it work
+letsgo --status                           # is he up, which sessions are live
+letsgo --watch                            # attach and watch him work
 ```
 
 On Windows: `letsgo.cmd` (same arguments).
@@ -24,10 +27,10 @@ Daman asked for this specifically, and it is the right call:
 |---|---|---|
 | Memory of the last grant | none | keeps context between summons |
 | Can ask a follow-up | no | yes |
-| Watchable | no | `letsgo --watch` puts you in its pane |
+| Watchable | no | `letsgo --watch` puts you in his pane |
 | Prompt cache | cold every time | warm |
 
-Three sessions live in tmux under systemd (`jivo-summon-1..3`) with a queue and a
+Three sessions live in tmux under systemd (`sardar-1..3`) with a queue and a
 per-box lock, so two operators can summon at once without colliding. `claude -p`
 survives only as the fallback for a wedged session.
 
@@ -48,7 +51,7 @@ letsgo  ──HTTPS──▶  traefik ──▶ summond (127.0.0.1:8710)
                                    │  appends to audit.jsonl (fsync'd)
                                    │  writes queue/<id>.json
                                    ▼
-                            tmux: jivo-summon-1..3   ← a real claude session
+                            tmux: sardar-1..3        ← a real claude session
                                    │  reads the queue file
                                    │  calls grantctl (its ONLY way to act)
                                    │  writes replies/<id>.json
@@ -60,13 +63,18 @@ letsgo  ──HTTPS──▶  traefik ──▶ summond (127.0.0.1:8710)
 |---|---|
 | `agent/summond.py` | the receiver: auth, rate limit, audit, dispatch |
 | `agent/pool.py` | the tmux session pool, and the verified-typing logic |
-| `agent/workspace-CLAUDE.md` | the agent's brief — who it is, what JIVO is, what it may do |
+| `agent/workspace-CLAUDE.md` | Sardar's brief — who he is, what JIVO is, what he may do |
 | `bin/grantctl` | the containment boundary and the auto-enroller |
 | `grants/*` | one script per grant; `_common.py` holds the shared plumbing |
 | `client/letsgo`, `client/letsgo.cmd` | what an operator runs |
 | `deploy/install-vps.sh` | idempotent installer for the VPS |
 | `deploy/install-client.sh`, `.cmd` | put `letsgo` on a box |
 | `agent/policy.example.json` | the roster's shape — **the live one is not in git** |
+
+The service and its paths are still called `jivo-summond` and
+`/opt/jivo-summon/` — deliberately. Sardar is the persona operators talk to;
+renaming the plumbing underneath would mean migrating tokens, the audit log and
+the Traefik route for no gain.
 
 ---
 
@@ -206,8 +214,8 @@ happened to be dirty. Stash tracked changes only, and say how many.
 ## Operating it
 
 ```bash
-letsgo --watch                                  # attach to a session
-ssh vps -t 'tmux attach -t jivo-summon-2'       # or pick one
+letsgo --watch                                  # attach to Sardar
+ssh vps -t 'tmux attach -t sardar-2'            # or pick one
 ssh vps 'systemctl status jivo-summond'
 ssh vps 'journalctl -u jivo-summond -n 50'
 ssh vps 'tail -20 /opt/jivo-summon/audit.jsonl'

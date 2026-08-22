@@ -1,5 +1,5 @@
 @echo off
-rem Put letsgo.cmd on this Windows box so it can reach JIVO's summon agent.
+rem Put letsgo.cmd on this Windows box so it can reach Sardar, JIVO's summon agent.
 rem
 rem   install-client.cmd <TOKEN> <SUMMON_URL>
 rem
@@ -60,7 +60,7 @@ echo verifying...
 call "%DEST%\letsgo.cmd" --status
 if errorlevel 1 (
   echo.
-  echo The client is installed but the agent did not answer.
+  echo The client is installed but Sardar did not answer.
   echo Check the network, then run: letsgo --status
   exit /b 1
 )
