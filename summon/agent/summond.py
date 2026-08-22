@@ -200,6 +200,13 @@ class Handler(BaseHTTPRequestHandler):
             pass
 
     def _read_body(self) -> dict | None:
+        """Parse the request body. Accepts JSON or plain text.
+
+        Plain text exists for the batch client. Building a JSON body in cmd.exe
+        means escaping quotes through PowerShell, cmd and curl, and one of those
+        layers always eats an escape — the first real Windows summon died as
+        "bad or oversized JSON body". A raw-text body has nothing to escape.
+        """
         try:
             length = int(self.headers.get("Content-Length") or 0)
         except ValueError:
@@ -207,9 +214,18 @@ class Handler(BaseHTTPRequestHandler):
         if length <= 0 or length > MAX_BODY:
             return None
         try:
-            return json.loads(self.rfile.read(length).decode("utf-8"))
-        except (json.JSONDecodeError, UnicodeDecodeError):
+            raw = self.rfile.read(length).decode("utf-8", errors="replace")
+        except OSError:
             return None
+
+        ctype = (self.headers.get("Content-Type") or "").lower()
+        if "text/plain" in ctype:
+            return {"say": "let's go", "ask": raw.strip()}
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+        return parsed if isinstance(parsed, dict) else None
 
     def _path(self) -> str:
         # Traefik strips the obfuscated prefix; be tolerant of a trailing slash.

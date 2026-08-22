@@ -53,24 +53,31 @@ if "%ASK%"=="" (
   set /p "ASK=What do you need? (enter to just say hello): "
 )
 
-rem Escape the two characters that would break the JSON body. Everything else
-rem the operator types is passed through as-is and treated as data by the agent.
-set "ASK=%ASK:\=\\%"
-set "ASK=%ASK:"=%"
-
 echo summoning the JIVO agent...
 
-rem Accept: text/plain makes the server render the answer, so there is nothing
-rem to parse here. --max-time is generous: a real session thinks for a while.
+rem Send the question as a RAW TEXT body from a temp file. Do not build JSON
+rem here: escaping quotes through cmd, curl (and PowerShell, when this is driven
+rem over ssh) means some layer always eats an escape, and the first real Windows
+rem summon failed with "bad or oversized JSON body" for exactly that reason.
+rem A text body has nothing to escape, so whatever the operator typed arrives
+rem intact - and the server treats it strictly as data either way.
+set "BODY=%TEMP%\letsgo-%RANDOM%.txt"
+> "%BODY%" echo !ASK!
+
+rem Accept: text/plain makes the server render the answer too, so there is
+rem nothing to parse on the way back. --max-time is generous: a real session
+rem thinks for a while.
 curl -sS --max-time 480 ^
   -H "Authorization: Bearer !SUMMON_TOKEN!" ^
-  -H "Content-Type: application/json" ^
+  -H "Content-Type: text/plain" ^
   -H "Accept: text/plain" ^
   -X POST ^
-  --data "{\"say\":\"lets go\",\"ask\":\"%ASK%\",\"os\":\"windows\",\"cwd\":\"%CD%\"}" ^
+  --data-binary "@%BODY%" ^
   "!SUMMON_URL!"
+set "CURLRC=%errorlevel%"
+del /q "%BODY%" 2>nul
 
-if errorlevel 1 (
+if not "%CURLRC%"=="0" (
   echo.
   echo letsgo: could not reach the summon agent. Check the network, then: letsgo --status
   exit /b 1
