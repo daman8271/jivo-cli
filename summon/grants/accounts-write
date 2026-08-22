@@ -32,25 +32,15 @@ import shlex
 import subprocess
 import sys
 
-ALIAS = os.environ.get("BOX_ALIAS") or os.environ.get("BOX_NAME") or ""
-BOX = os.environ.get("BOX_NAME", ALIAS)
-OS_KIND = (os.environ.get("BOX_OS") or "unknown").lower()
-KIT = os.environ.get("BOX_KIT_PATH", "")
-OPERATOR = os.environ.get("OPERATOR_SLUG", "")
-OPERATOR_NAME = os.environ.get("OPERATOR_NAME", "") or OPERATOR
-PERSONA = os.environ.get("OPERATOR_PERSONA") or "accounts"
-SAP_USER = os.environ.get("SAP_USER", "")
-MODE = os.environ.get("GRANT_MODE", "check")
-APPLY = MODE == "apply"
-
-WINDOWS = OS_KIND.startswith("win")
-# setup.py accepts only these; anything else fails argparse mid-grant.
-DEPARTMENTS = {"accounts", "sales", "factory", "ecom", "exim", "ops", "hr", "it"}
-DEAD_SAP_HOST = "103.89.45.192"
-READONLY_SAP_USERS = {"manager"}
-# The commit that first shipped `sapb1 draft`. An exe built before this has no
-# write path at all, which presents to the operator as "the command doesn't exist".
-DRAFT_SINCE = "6888265"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Use the SHARED ssh()/paths rather than a private copy. This file originally had
+# its own, which is exactly why the `ssh -F <generated config>` fix did not reach
+# it and every alias failed to resolve.
+from _common import (  # noqa: E402
+    ALIAS, APPLY, BOX, DEAD_SAP_HOST, DEPARTMENTS, DRAFT_SINCE, KIT, MODE,
+    OPERATOR, OPERATOR_NAME, PERSONA, READONLY_SAP_USERS, RULE0_MARKER,
+    SAP_USER, WINDOWS, j, q, ssh,
+)
 
 findings: list[dict] = []
 actions: list[str] = []
@@ -59,29 +49,6 @@ blockers: list[str] = []
 
 def note(step: str, ok: bool | None, detail: str) -> None:
     findings.append({"step": step, "ok": ok, "detail": detail})
-
-
-def ssh(inner: str, *, timeout: int = 90) -> tuple[int, str]:
-    """Run a command on the box, wrapping for the box's real shell.
-
-    Windows fleet boxes have PowerShell as the sshd default shell, which rejects
-    bash syntax outright. Everything Windows-bound goes through `cmd /c`.
-    """
-    if WINDOWS:
-        remote = f'cmd /c "{inner}"'
-    else:
-        remote = inner
-    cp = subprocess.run(
-        ["ssh", "-o", "ConnectTimeout=12", "-o", "BatchMode=yes",
-         "-o", "StrictHostKeyChecking=accept-new", ALIAS, remote],
-        capture_output=True, text=True, timeout=timeout, check=False,
-    )
-    return cp.returncode, (cp.stdout or "") + (cp.stderr or "")
-
-
-def q(path: str) -> str:
-    """Quote a path for the remote shell."""
-    return path if WINDOWS else shlex.quote(path)
 
 
 # --------------------------------------------------------------- 0. reachable
