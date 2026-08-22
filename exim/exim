@@ -9,9 +9,26 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Paths that MUTATE even via GET (blocked here as defense-in-depth):
 BLOCK='/sap_sync/ /daily-price/fetch/ /jivo-rate/fetch/ /account/logout/ /stock-status/opening-stock/'
 guard(){ for b in $BLOCK; do case "$1" in *"$b"*) echo "REFUSED: '$1' mutates data (read-only rule). See HARD-RULE.md" >&2; exit 2;; esac; done; }
+# Pick the interpreter that runs eximapi.py (token minting). python3 is the name
+# on macOS/Linux; on Windows it is usually `python` — but BOTH can be Microsoft
+# Store stubs that sit on PATH and exit 9009 without running, so presence proves
+# nothing and every candidate is executed to prove it works. `py -3`, the Windows
+# launcher, is often the only working name left on such a machine.
+PY=()
+for _c in python3 python; do
+  if command -v "$_c" >/dev/null 2>&1 && "$_c" -c pass >/dev/null 2>&1; then PY=("$_c"); break; fi
+done
+if [ ${#PY[@]} -eq 0 ] && command -v py >/dev/null 2>&1 && py -3 -c pass >/dev/null 2>&1; then PY=(py -3); fi
+if [ ${#PY[@]} -eq 0 ]; then
+  echo "exim: no working Python found (tried python3, python, py -3)." >&2
+  echo "      On Windows python/python3 are often Microsoft Store stubs;" >&2
+  echo "      install Python 3 or put the real one ahead of them on PATH." >&2
+  exit 127
+fi
+
 case "${1:-}" in
   grpos|open-grpos) guard /sap_sync/open-grpos/ ;;
-  raw) shift; guard "${1:-}"; exec "$(command -v python3 >/dev/null 2>&1 && python3 -c pass >/dev/null 2>&1 && echo python3 || echo python)" "$ROOT/scripts/eximapi.py" "$@" ;;
+  raw) shift; guard "${1:-}"; exec "${PY[@]}" "$ROOT/scripts/eximapi.py" "$@" ;;
 esac
 # Pick the binary for THIS machine. On Windows (git-bash / MSYS) the build is
 # exim-pp-cli.exe; execing the extensionless macOS build there fails with a
@@ -29,10 +46,13 @@ if [ ! -x "$BIN" ]; then
   exit 127
 fi
 
-# python3 is the name on macOS/Linux; on Windows it is usually `python`, and
-# `python3` there is often a Store stub that exits 9009 without running.
-PY=python3
-command -v "$PY" >/dev/null 2>&1 && "$PY" -c pass >/dev/null 2>&1 || PY=python
-
-export EXIM_TOKEN="$("$PY" "$ROOT/scripts/eximapi.py" --token)"
+# Assign first, THEN export. `export VAR="$(cmd)"` masks a non-zero exit from
+# cmd behind export's own status, so a failed token mint sailed straight past
+# `set -e` and resurfaced later as the binary reporting "Auth: not configured".
+EXIM_TOKEN="$("${PY[@]}" "$ROOT/scripts/eximapi.py" --token)"
+export EXIM_TOKEN
+if [ -z "$EXIM_TOKEN" ]; then
+  echo "exim: token mint returned empty — check EXIM_EMAIL / EXIM_PASSWORD in .env" >&2
+  exit 1
+fi
 exec "$BIN" "$@"

@@ -47,6 +47,16 @@ def _tokfile():
     return json.load(open(os.path.join(SEC, "token.json")))
 
 
+def _write_tok(d):
+    # .secrets/ is gitignored, so it is absent on every fresh clone. Without this
+    # makedirs, login() authenticates successfully against the API and then dies
+    # writing its own cache — which the CLI reports as "Auth: not configured",
+    # sending the operator off to hunt for credentials that were never missing.
+    os.makedirs(SEC, exist_ok=True)
+    with open(os.path.join(SEC, "token.json"), "w") as fh:
+        json.dump(d, fh)
+
+
 def login():
     body = json.dumps(
         {"email": C["EXIM_EMAIL"], "password": C["EXIM_PASSWORD"]}
@@ -58,7 +68,7 @@ def login():
         method="POST",
     )
     d = json.loads(urllib.request.urlopen(req, timeout=30).read())
-    json.dump(d, open(os.path.join(SEC, "token.json"), "w"))
+    _write_tok(d)
     return d
 
 
@@ -72,7 +82,7 @@ def _refresh():
         method="POST",
     )
     tk["access"] = json.loads(urllib.request.urlopen(req, timeout=30).read())["access"]
-    json.dump(tk, open(os.path.join(SEC, "token.json"), "w"))
+    _write_tok(tk)
 
 
 def get(path, params=None, _retry=True):
