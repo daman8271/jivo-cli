@@ -180,7 +180,13 @@ else:
                 )
 
             # ------------------------------- 3/4. SAP host and user sanity
-            envdir = os.path.dirname(exe)
+            # NOT os.path.dirname(): this code runs on Linux against a
+            # WINDOWS path, and posixpath only splits on forward slashes, so it
+            # returned "" — the .env lookup then ran against the wrong directory
+            # and reported "no SAP connection" on a box that was correctly
+            # configured and logging in fine.
+            envdir = (j(KIT, "sap-b1", "accounts-kit") if WINDOWS
+                      else j(KIT, "sap-b1", "cli"))
             lister = (f"dir /b {envdir}\\*.env" if WINDOWS
                       else f"ls -1 {q(envdir)}/*.env 2>/dev/null")
             rc, envs = ssh(lister)
