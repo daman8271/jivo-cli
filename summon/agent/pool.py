@@ -108,8 +108,13 @@ class SessionPool:
         # workspace, whose .claude/settings.json allowlists exactly the vetted
         # commands. Root cannot use --dangerously-skip-permissions, so the
         # allowlist is what makes it able to act without a human at the keyboard.
+        # --strict-mcp-config with no --mcp-config means NO MCP servers. The
+        # global config carries ~8 of them (sapb1, hana, ecom, oms, exim, factory,
+        # postsql, playwright); a provisioning agent needs none, and starting them
+        # made every session slow to become ready and every fallback slower still.
         cmd = (
-            f"cd {WORKSPACE} && exec claude --permission-mode acceptEdits"
+            f"cd {WORKSPACE} && exec claude "
+            f"--permission-mode acceptEdits --strict-mcp-config"
         )
         _run(
             [
@@ -315,7 +320,8 @@ class SessionPool:
             f"{REPLIES / (sid + '.json')}."
         )
         cp = subprocess.run(
-            ["claude", "-p", prompt, "--permission-mode", "acceptEdits"],
+            ["claude", "-p", prompt, "--permission-mode", "acceptEdits",
+             "--strict-mcp-config"],
             capture_output=True,
             text=True,
             timeout=timeout_s,
