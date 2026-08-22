@@ -40,12 +40,32 @@ from _common import (  # noqa: E402
     ALIAS, APPLY, BOX, DEAD_SAP_HOST, DEPARTMENTS, DRAFT_SINCE, KIT, MODE,
     NOT_FOUND_RE, OPERATOR, OPERATOR_NAME, PERSONA, READONLY_SAP_USERS,
     RULE0_MARKER,
-    SAP_USER, WINDOWS, j, q, ssh,
+    SAP_USER, WINDOWS, j, q, ssh, sync_kit,
 )
 
 findings: list[dict] = []
 actions: list[str] = []
 blockers: list[str] = []
+
+
+class _Bridge:
+    """Adapts this file's module-level lists to the Report interface sync_kit
+    expects, so the shared helpers can be reused without rewriting the whole
+    grant. New grants should just use Report directly."""
+
+    def __init__(self, findings_, actions_, blockers_):
+        self.findings = findings_
+        self.actions = actions_
+        self.blockers = blockers_
+
+    def note(self, step, ok, detail):
+        self.findings.append({"step": step, "ok": ok, "detail": detail})
+
+    def did(self, what):
+        self.actions.append(what)
+
+    def blocked(self, why):
+        self.blockers.append(why)
 
 
 def note(step: str, ok: bool | None, detail: str) -> None:
@@ -115,42 +135,13 @@ else:
     else:
         note("checkout", True, f"real git checkout at {KIT}")
 
-        # Sync, preserving local work. Never reset --hard: operators have unpushed
-        # work in these checkouts (one box had two dashboards nobody had pushed).
+        # Sync via the SHARED sync_kit(). This file used to carry its own copy of
+        # fetch/stash/ff-merge, which is how `git stash push -u` survived here
+        # after being fixed everywhere else and took an operator's untracked
+        # dashboards a second time. One sync, one place to fix it.
         if APPLY:
-            steps = [
-                f"cd /d {KIT} & del /q .git\\index.lock 2>nul & git fetch -q origin main"
-                if WINDOWS else
-                f"cd {q(KIT)} && rm -f .git/index.lock; git fetch -q origin main",
-            ]
-            rc, out = ssh(steps[0], timeout=180)
-            note("fetch", rc == 0, out.strip()[-300:] or "fetched")
-
-            dirty_cmd = (f"cd /d {KIT} & git status --porcelain" if WINDOWS
-                         else f"cd {q(KIT)} && git status --porcelain")
-            rc, dirty = ssh(dirty_cmd)
-            if dirty.strip():
-                stash = (f'cd /d {KIT} & git stash push -u -m "pre-summon-{BOX}"'
-                         if WINDOWS else
-                         f'cd {q(KIT)} && git stash push -u -m "pre-summon-{BOX}"')
-                rc, out = ssh(stash, timeout=120)
-                actions.append(
-                    f"STASHED local uncommitted work on {BOX} before syncing — the "
-                    f"operator gets it back with `git stash pop`. Tell them this."
-                )
-                note("stash", rc == 0, out.strip()[-200:])
-
-            ff = (f"cd /d {KIT} & git merge --ff-only origin/main" if WINDOWS
-                  else f"cd {q(KIT)} && git merge --ff-only origin/main")
-            rc, out = ssh(ff, timeout=120)
-            if rc != 0:
-                blockers.append(
-                    f"{BOX}'s checkout has diverged from origin/main and will not "
-                    f"fast-forward: {out.strip()[-200:]}. Not forcing it — a diverged "
-                    f"checkout with local commits is a human's call."
-                )
-            else:
-                actions.append(f"synced {BOX} to origin/main")
+            _rep = _Bridge(findings, actions, blockers)
+            sync_kit(_rep)
 
         # The proof: does the box's own CLAUDE.md now allow writes?
         cm = f"{KIT}\\CLAUDE.md" if WINDOWS else f"{KIT}/CLAUDE.md"
