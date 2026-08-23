@@ -20,7 +20,8 @@ This is the escape hatch, not the front door. For any marketing document
 (order, invoice, delivery, purchase order, credit note, …) use ` + "`sapb1 draft`" + `
 instead: a draft waits for a human to review and Add it, whereas a document
 posted here is live the moment SAP accepts it — it hits stock and the ledger,
-and this CLI cannot delete or cancel it.
+and this CLI cannot delete or cancel it. (sapb1 delete removes DRAFTS only;
+nothing here can undo a post.)
 
 Where post earns its keep is master data and other non-posting objects that
 have no draft equivalent, e.g.:
@@ -79,7 +80,7 @@ func runPost(cmd *cobra.Command, entitySetArg string, wf writeFlags) error {
 		return renderDryRun(cmd, cfg, "POST", entitySet, payload)
 	}
 
-	if err := confirmWrite(cmd, cfg, "POST", entitySet, payload, wf.yes, stdinIsTTYFunc()); err != nil {
+	if err := confirmWrite(cmd, cfg, "POST", entitySet, payload, wf.yes, stdinIsTTYFunc(), false); err != nil {
 		return err
 	}
 

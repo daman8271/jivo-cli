@@ -20,6 +20,8 @@ func TestExitCodeFor(t *testing.T) {
 		{"api", &errs.APIError{Msg: "x"}, ExitAPI},
 		{"usage", &errs.UsageError{Msg: "x"}, ExitUsage},
 		{"write outcome unknown", &errs.WriteOutcomeUnknownError{Msg: "x"}, ExitWriteUnknown},
+		{"verification failed", &errs.WriteVerifyError{Msg: "x"}, ExitVerifyFailed},
+		{"a guard refused", &errs.RefusedError{Msg: "x"}, ExitRefused},
 		{"unknown/cobra", errors.New("unknown flag: --bogus"), ExitUsage},
 	}
 	for _, tc := range cases {
@@ -42,5 +44,22 @@ func TestUnknownOutcomeOutranksNetwork(t *testing.T) {
 	}
 	if ExitWriteUnknown != 7 {
 		t.Errorf("ExitWriteUnknown = %d, want the documented 7", ExitWriteUnknown)
+	}
+}
+
+// TestVerifyFailureOutranksNetwork — the read-back after a DELETE can fail with
+// a transport error, but SAP already answered the DELETE. Exit 5 says "nothing
+// was sent, safe to retry" (acc/apbatch even labels it Retryable); exit 8 says
+// "it is probably gone, go look, and re-running is safe anyway".
+func TestVerifyFailureOutranksNetwork(t *testing.T) {
+	wrapped := &errs.WriteVerifyError{
+		Msg: "could not verify",
+		Err: &errs.NetworkError{Msg: "connection reset"},
+	}
+	if got := ExitCodeFor(wrapped); got != ExitVerifyFailed {
+		t.Errorf("ExitCodeFor(verify wrapping network) = %d, want %d", got, ExitVerifyFailed)
+	}
+	if ExitVerifyFailed != 8 || ExitRefused != 9 {
+		t.Errorf("exit codes drifted: verify=%d refused=%d, want 8 and 9", ExitVerifyFailed, ExitRefused)
 	}
 }

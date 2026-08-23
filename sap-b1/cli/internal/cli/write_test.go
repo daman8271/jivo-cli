@@ -61,16 +61,36 @@ func newFakeSAP(t *testing.T) *fakeSAP {
 	}))
 	t.Cleanup(f.srv.Close)
 
-	// Point the CLI's config at the fake server, and keep the session cache and
-	// the write log inside the test's temp dir — no real host, no real files.
-	home := t.TempDir()
 	u, err := url.Parse(f.srv.URL)
 	if err != nil {
 		t.Fatalf("parsing fake server URL: %v", err)
 	}
-	f.logPath = filepath.Join(home, "writes.jsonl")
+	f.logPath = pointCLIAtFake(t, u)
+
+	return f
+}
+
+// pointCLIAtFake aims the whole CLI at a fake Service Layer and pens every file
+// it touches inside the test's temp dir: session cache, write log, home.
+//
+// It also stubs repoRootFunc. That is not tidiness — the provenance guard scans
+// every queries/<operator>/sap-writes.jsonl under the repo root, and this test
+// binary runs inside the JIVO checkout. Without the stub, a delete test would
+// read the developer's real write log, which holds real creation lines for real
+// drafts, and would pass or fail depending on whose machine it ran on.
+func pointCLIAtFake(t *testing.T, u *url.URL) string {
+	t.Helper()
+
+	home := t.TempDir()
+	logPath := filepath.Join(home, "writes.jsonl")
 	t.Setenv("HOME", home)
-	t.Setenv("SAPB1_WRITE_LOG", f.logPath)
+	t.Setenv("SAPB1_WRITE_LOG", logPath)
+	t.Setenv("SAPB1_SNAPSHOT_LOG", filepath.Join(home, "snapshots.jsonl"))
+	// A DELETE also records into the checkout it is standing in
+	// (config.SharedWriteLogPath), which walks up from the working directory —
+	// and this package sits inside the developer's real jivo-cli. Stand somewhere
+	// empty so the suite can never append to the team's committed write log.
+	t.Chdir(t.TempDir())
 	t.Setenv("SAPB1_HOST", u.Hostname())
 	t.Setenv("SAPB1_PORT", u.Port())
 	t.Setenv("SAPB1_COMPANYDB", "TESTDB")
@@ -79,7 +99,16 @@ func newFakeSAP(t *testing.T) *fakeSAP {
 	t.Setenv("SAPB1_INSECURE", "true")
 	t.Setenv("SAPB1_TIMEOUT", "5")
 
-	return f
+	setProvenanceRoot(t, t.TempDir())
+	return logPath
+}
+
+// setProvenanceRoot points the write-log scan at dir for the duration of a test.
+func setProvenanceRoot(t *testing.T, dir string) {
+	t.Helper()
+	prev := repoRootFunc
+	repoRootFunc = func() (string, string) { return dir, "" }
+	t.Cleanup(func() { repoRootFunc = prev })
 }
 
 // loggedPaths returns the `path` field of every write-log line, in order.
@@ -120,14 +149,24 @@ func splitLines(s string) []string {
 // execWrite runs the real command tree with stdin/stdout/stderr captured.
 func execWrite(t *testing.T, stdin string, args ...string) (stdout, stderr string, err error) {
 	t.Helper()
+	var out bytes.Buffer
+	stderr, err = execWriteTo(t, stdin, &out, args...)
+	return out.String(), stderr, err
+}
+
+// execWriteTo is execWrite with the caller's own stdout, so a test can hand the
+// command a writer that FAILS — which is what a closed pipe looks like from
+// inside the process, and the one thing a bytes.Buffer can never do.
+func execWriteTo(t *testing.T, stdin string, out io.Writer, args ...string) (stderr string, err error) {
+	t.Helper()
 	root := NewRootCmd()
-	var out, errBuf bytes.Buffer
-	root.SetOut(&out)
+	var errBuf bytes.Buffer
+	root.SetOut(out)
 	root.SetErr(&errBuf)
 	root.SetIn(strings.NewReader(stdin))
 	root.SetArgs(args)
 	err = root.Execute()
-	return out.String(), errBuf.String(), err
+	return errBuf.String(), err
 }
 
 // withTTY makes the write commands believe stdin is (or isn't) a terminal, so
@@ -867,7 +906,7 @@ func TestConfirmWritePreviewGoesToStderr(t *testing.T) {
 	cmd.SetErr(&errBuf)
 
 	cfg := &config.Config{Host: "sap.example", Port: 50000, CompanyDB: "TESTDB", User: "tester"}
-	if err := confirmWrite(cmd, cfg, "POST", "Drafts", []byte(`{"CardCode":"C0001"}`), true, false); err != nil {
+	if err := confirmWrite(cmd, cfg, "POST", "Drafts", []byte(`{"CardCode":"C0001"}`), true, false, true); err != nil {
 		t.Fatalf("confirmWrite with --yes: %v", err)
 	}
 	if out.Len() != 0 {

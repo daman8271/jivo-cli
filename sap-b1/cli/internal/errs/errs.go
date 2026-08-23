@@ -8,6 +8,8 @@
 //	5 network / unreachable (nothing was sent)
 //	6 API error (server reached, request definitively rejected)
 //	7 write outcome unknown (request was sent, result never came back)
+//	8 write sent and answered, but verification failed or contradicted it
+//	9 a guard refused (policy, not a typo) — get a human, don't reflex-override
 package errs
 
 import "fmt"
@@ -82,3 +84,35 @@ type WriteOutcomeUnknownError struct {
 
 func (e *WriteOutcomeUnknownError) Error() string { return e.Msg }
 func (e *WriteOutcomeUnknownError) Unwrap() error { return e.Err }
+
+// WriteVerifyError means SAP definitively answered a write with a 2xx, and the
+// read-back afterwards then failed or contradicted it: the object still reads
+// back after a DELETE, or the verifying GET itself errored. Maps to exit code 8.
+//
+// It is its own category — not NetworkError, not WriteOutcomeUnknownError —
+// because the advice differs from both. NetworkError says "nothing was sent",
+// which would be a lie: SAP answered. WriteOutcomeUnknownError says "do NOT
+// re-run", which is the right rule for a POST but the wrong one here: a DELETE
+// cannot double-delete, so re-running is safe, and the operator's real job is to
+// go look in Document Drafts.
+type WriteVerifyError struct {
+	Msg string
+	Err error
+}
+
+func (e *WriteVerifyError) Error() string { return e.Msg }
+func (e *WriteVerifyError) Unwrap() error { return e.Err }
+
+// RefusedError means a guard, not a typo, stopped the command: the draft was
+// not created by this CLI, it is already Added, it is older than batch cleanup
+// should reach, it has a file attached, or it belongs to another operator. Maps
+// to exit code 9.
+//
+// Separate from UsageError on purpose. A script that gets exit 2 fixes its
+// arguments; a script that gets exit 9 must stop and involve a person — the
+// arguments were fine, the answer was no.
+type RefusedError struct {
+	Msg string
+}
+
+func (e *RefusedError) Error() string { return e.Msg }

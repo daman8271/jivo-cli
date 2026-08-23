@@ -25,7 +25,27 @@ import (
 var forbiddenCalls = map[string]string{
 	"Create":       "client.Create issues an HTTP POST to the Service Layer",
 	"Update":       "client.Update issues an HTTP PATCH to the Service Layer",
+	"Delete":       "client.Delete issues an HTTP DELETE to the Service Layer",
 	"attemptWrite": "internal write helper",
+}
+
+// knownReadOnlyMethods are the exported methods on *client.Client that are
+// safe from here: reads, and session bookkeeping that changes nothing in SAP's
+// books. Every exported method must appear either here or in forbiddenCalls —
+// see TestEveryClientWriteMethodIsClassified. Adding a name here is a decision,
+// which is the point: it cannot happen by accident.
+var knownReadOnlyMethods = map[string]bool{
+	"Query":              true,
+	"QueryAll":           true,
+	"GetEntity":          true, // a keyed GET; 404 is an answer, not a write
+	"Login":              true,
+	"Logout":             true,
+	"HasSession":         true,
+	"SessionAge":         true,
+	"LoadCachedSession":  true,
+	"ClearCachedSession": true,
+	"ClearSharedSession": true,
+	"SetErrWriter":       true,
 }
 
 // forbiddenIdents are HTTP verbs that must never appear in this package. Reads
@@ -163,4 +183,69 @@ func TestMCPPackageBuildsClientsOnlyThroughClientFor(t *testing.T) {
 		t.Errorf("client.NewWithSessions is called from %d place(s), want exactly 1 (inside clientFor) — "+
 			"one constructor is what makes the session-sharing property checkable at all", sharing)
 	}
+}
+
+// TestEveryClientWriteMethodIsClassified is the guard on the guard.
+//
+// forbiddenCalls is a hand-written list, and a hand-written list of dangerous
+// things silently stops protecting you the day somebody adds a dangerous thing
+// and forgets. This test walks EVERY exported method on *client.Client in the
+// whole client package and insists each one has been classified: either named
+// as forbidden, or explicitly listed as read-only.
+//
+// Note the guard matches bare SELECTOR names, so an unrelated `x.Delete(...)`
+// anywhere in package mcp would also trip TestMCPPackageCannotReachWriteAPI.
+// None exists today, and that false positive is the cheap direction to fail in.
+func TestEveryClientWriteMethodIsClassified(t *testing.T) {
+	files, err := filepath.Glob(filepath.Join("..", "client", "*.go"))
+	if err != nil {
+		t.Fatalf("glob: %v", err)
+	}
+	if len(files) == 0 {
+		t.Fatal("no client files found — the guard would pass vacuously")
+	}
+
+	found := 0
+	for _, f := range files {
+		if strings.HasSuffix(f, "_test.go") {
+			continue
+		}
+		src, err := os.ReadFile(f)
+		if err != nil {
+			t.Fatalf("read %s: %v", f, err)
+		}
+		fset := token.NewFileSet()
+		file, err := parser.ParseFile(fset, f, src, 0)
+		if err != nil {
+			t.Fatalf("parse %s: %v", f, err)
+		}
+
+		for _, decl := range file.Decls {
+			fn, ok := decl.(*ast.FuncDecl)
+			if !ok || fn.Recv == nil || len(fn.Recv.List) == 0 || !fn.Name.IsExported() {
+				continue
+			}
+			star, ok := fn.Recv.List[0].Type.(*ast.StarExpr)
+			if !ok {
+				continue
+			}
+			ident, ok := star.X.(*ast.Ident)
+			if !ok || ident.Name != "Client" {
+				continue
+			}
+			found++
+			name := fn.Name.Name
+			_, forbidden := forbiddenCalls[name]
+			if !forbidden && !knownReadOnlyMethods[name] {
+				t.Errorf("%s: (*client.Client).%s is neither named as forbidden nor listed as read-only — classify it. "+
+					"If it can change anything in SAP, add it to forbiddenCalls; if it cannot, add it to knownReadOnlyMethods.",
+					fset.Position(fn.Pos()), name)
+			}
+		}
+	}
+
+	if found < 10 {
+		t.Fatalf("only %d exported *Client methods were scanned — the walk is broken", found)
+	}
+	t.Logf("classified %d exported methods on *client.Client", found)
 }

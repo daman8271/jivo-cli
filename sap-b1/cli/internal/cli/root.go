@@ -39,14 +39,32 @@ Three commands can write, and only when you type them:
   draft <doctype>    create a DRAFT document — inert until a human opens SAP B1
                      → Document Drafts, reviews it, and presses Add. This is the
                      intended way to write.
+  draft payment <direction>
+                     create a PAYMENT draft (incoming receipt / outgoing
+                     payment). Same safety, different SAP table: payment drafts
+                     live in PaymentDrafts, not Drafts.
   post <EntitySet>   create an object live, no draft — for master data
                      (BusinessPartners, Items, …). Prefer draft for documents.
   patch <Entity(key)> update fields on one existing object.
+  delete draft <DocEntry>...
+  delete payment-draft <DocEntry>...
+                     remove DRAFTS, and only drafts. It refuses one this CLI did
+                     not create, one that is no longer Open, one with a file
+                     attached, one older than a day, one another operator made
+                     and one sitting in an approval workflow — each with a flag
+                     that switches that guard off for a single recorded run.
+                     Nothing posted, cancelled or live can be addressed from it.
 
 Each of those previews the exact request, asks you to confirm (or takes --yes),
 and appends every attempt to a local write log (~/.sapb1-writes.jsonl, or
-$SAPB1_WRITE_LOG). There is no delete command. The MCP server (sapb1 mcp) stays
-strictly read-only — no write tool is exposed to agents.
+$SAPB1_WRITE_LOG). A delete is recorded twice over: also in
+queries/<operator>/sap-writes.jsonl inside this checkout — committed, and read by
+the team — whatever $SAPB1_WRITE_LOG says, because a delete leaves no SAP row to
+ask afterwards. What the draft HELD goes to a separate local snapshot log
+(~/.sapb1-delete-snapshots.jsonl, or $SAPB1_SNAPSHOT_LOG) and never to the shared
+file, which carries only its sha256: this repo is public and a vendor's invoice
+does not belong in it. The MCP server (sapb1 mcp) stays strictly read-only — no
+write tool is exposed to agents.
 
 Configuration is read from .env in the current directory (copy .env.example),
 from SAPB1_* environment variables, and can be overridden per-invocation with
@@ -85,11 +103,14 @@ using anything beyond --help.`,
 	// each one previews the request, requires a confirmation (or --yes), and is
 	// appended to the local write log. `draft` is the intended path — it creates
 	// a Drafts row that stays inert until a human reviews and adds it in the SAP
-	// client; `post`/`patch` are the direct escape hatches. There is deliberately
-	// no delete, and the MCP surface exposes none of these.
+	// client; `post`/`patch` are the direct escape hatches. `delete` is the
+	// symmetric undo for `draft` and NOTHING else: its subcommands fix the entity
+	// set, so no posted document is addressable from it. The MCP surface exposes
+	// none of these.
 	root.AddCommand(newDraftCmd())
 	root.AddCommand(newPostCmd())
 	root.AddCommand(newPatchCmd())
+	root.AddCommand(newDeleteCmd())
 
 	// Read-only MCP server over stdio (for AI agents).
 	root.AddCommand(newMCPCmd())

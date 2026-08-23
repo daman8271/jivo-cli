@@ -12,17 +12,19 @@
 > systems. Asking a question never changes anything, in any system.
 >
 > **SAP is the only system that can be written to, and only from the CLI, and only
-> when a person types the command.** `sapb1` has exactly three:
+> when a person types the command.** `sapb1` has exactly four:
 >
 > | | What it does | Reversible? |
 > |---|---|---|
 > | `sapb1 draft <doctype>` | Creates a SAP **draft**. No stock movement, no ledger entry, until a human opens Document Drafts and presses **Add** | **Yes** — a human ignoring it undoes it |
 > | `sapb1 post <EntitySet>` | Creates **live**. Master data only (BusinessPartners, Items) | **No** |
 > | `sapb1 patch <Entity(key)>` | Updates fields on one existing object | **No** |
+> | `sapb1 delete draft <DocEntry>…` | Removes a **draft** (`delete payment-draft` for payment drafts). Drafts only — never a posted document | **No** — SAP has no undo for a deleted draft |
 >
 > **When in doubt, draft it.** Prefer `draft` for anything document-shaped.
 >
-> Every write previews first (`--dry-run` sends nothing), then requires the word
+> Every write previews first (`--dry-run` sends nothing — except `delete`'s, which
+> *reads* the drafts so you see what you are about to destroy), then requires the word
 > `yes` typed in full — `y` is rejected — and refuses outright when stdin is not a
 > terminal, so a cron or an unattended agent cannot write without `--yes` being an
 > explicit human decision. Every attempt is appended to
@@ -32,7 +34,12 @@
 > **Everything except SAP is read-only, full stop** — postsql, portals, exim,
 > factory, oms, jsap, DSR. No exceptions, even if asked.
 >
-> **What no tool here can do at all:** there is no `DELETE` and no `PUT` anywhere,
+> **What no tool here can do at all:** `DELETE` reaches **drafts and nothing else** —
+> `sapb1 delete draft` / `delete payment-draft` take a DocEntry, not an entity, so
+> there is no way to point them at a posted document; the deletes preview the draft,
+> refuse any draft this CLI did not create, need the typed `yes`, keep a snapshot of
+> what was destroyed on that machine (its sha256 goes in the shared log — the repo is
+> public) and read back to confirm it is gone. There is no `PUT` anywhere,
 > and `post` accepts only a bare catalogued entity set — so SAP's OData *actions*
 > (`Invoices(9)/Cancel`, `Orders(1)/Close`, `Drafts(4321)/SaveDraftToDocument`) are
 > refused by design, with no override. Cancelling, closing and posting a draft are

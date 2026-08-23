@@ -14,6 +14,11 @@ logins — which is exactly the duplicate this skill now prevents.
 GRPO that the factory already made, and it may already exist. Find before you
 make; read back after you make.** RULE 0 in `CLAUDE.md` governs the write itself.
 
+**Many bills at once?** This skill is one bill at a time. For a pile of open
+GRPOs — 50 at a time, reviewed in Excel before anything is sent — use
+`acc batch` (see `acc/BATCH.md`). It shares these rules; the scripts here and
+the batch both call `acc/apbatch`.
+
 ## The procedure
 
 1. **Read the paper into facts.** Vendor name + GSTIN · invoice no. (exactly as
@@ -61,8 +66,43 @@ make; read back after you make.** RULE 0 in `CLAUDE.md` governs the write itself
 | `BPL_IDAssignedToInvoice` | branch whose `FederalTaxID` = buyer GSTIN; one GSTIN sits on several Oil branches (2 FACTORY, 5 HARYANA SALES, 8 …) — **the GRPO's branch decides** | -5002 without it |
 | `Series` + `DocumentSubType` | the month's GST-tax-invoice series for that branch, e.g. Oil FACTORY Aug-26 = **3684 + `bod_GSTTaxInvoice`** | without both: `-10`/`-4002 define the numbering series` (C-0018) |
 | `DocumentLines` | one per **open GRPO line**: `BaseType 20, BaseEntry, BaseLine`, qty = line's open qty | stock is not received twice; a 5,870-pc invoice can be two lines because the GRPO merged two POs — say so to the operator |
-| `WTLiable` | `tYES` on every line when the BP is TDS-liable; **always check `WTAmount` on read-back** | API drafts came out with TDS 0 (C-0018) |
+| `WTLiable` | **Ask the operator — precedent beats the master flag.** precheck defaults to `tYES` when the BP is TDS-liable, but show them the vendor's last 3 posted invoices first: if those are `tNO`/TDS 0, that is how JIVO books this vendor. TPAC 2026-08-22: master said 194Q 0.1% (₹214), last 3 all `tNO` → operator chose no TDS. Always check `WTAmount` on read-back | API drafts come out TDS 0 (C-0018); and once overruled, readback's "TDS is 0 but vendor is TDS-liable" flag is a false positive |
 | `Comments` | `Based On Goods Receipt PO <n> \| PO <n> \| GATE ENTRY NO <n> \| <paper notes>` ≤ 254 chars | how Accounts searches |
+
+## Attachments — the draft comes out with none, and that is fixable
+
+An API-created A/P draft always has `AttachmentEntry: null`. A human-keyed one never does.
+The B1 client copies the GRPO's attachment forward on copy-to-target; the Service Layer does not.
+
+**You do not need to upload anything — the bill is already in SAP.** The factory attaches the
+scanned vendor invoice to the GRPO at gate-in (623/623 GRPO-based Oil A/P drafts since 1 Jul 2026
+had one). So the file exists and is registered; only the pointer is missing.
+
+```bash
+# find the bill the GRPO already carries
+acc/_playbook/sap query PurchaseDeliveryNotes --filter "DocEntry eq <grpoEntry>" --select "AttachmentEntry"
+acc/_playbook/sap query Attachments2 --filter "AbsoluteEntry eq <n>"      # name, size, path
+# point the draft at it (dry-run first, then the operator's go)
+acc/_playbook/sap patch "Drafts(<docEntry>)" --data '{"AttachmentEntry": <n>}' --dry-run
+```
+
+✅ **Proven 2026-08-24 on draft 54983 / GRPO 25714 (Oil, USER36):** `PATCH Drafts(N) {"AttachmentEntry": <n>}`
+→ HTTP 204, draft reads back with the pointer, GRPO unchanged. Setting it back to `null` also
+returns 204 (rollback works), and re-setting restores it. Still read back both the draft *and* the
+GRPO afterwards — cheap, and it is the only proof the pointer landed. Not yet observed: whether the
+borrowed pointer survives a human pressing Add on the draft (check the first converted one).
+
+⚠ **Sharp edge:** draft and GRPO then share one `Attachments2` row. A file added later on the
+draft's Attachments tab lands on that shared record and also shows on the GRPO.
+
+**Do not try to upload the PDF through the Service Layer. It cannot, by design of this install.**
+`POST /Attachments2` → `-5002 Attachments folder not defined`; `GET Attachments2(N)/$value` → 404
+`Fail to get the LINUX mount point for AttachmentsFolderPath`. The SL runs on Linux; the attachment
+folder is a Windows UNC. A CIFS mount of the share fixes the **download** path only — verified by
+disassembly: `_FILE_GetMountPoint` has two call sites, both on download, and `SLFile::isFullPath`
+accepts only a leading `/` or `smb:`. Mounting will not make uploads work. See SAP Note 3003664 and
+KBA 3631883. For a bill with **no GRPO** (imprest, expenses, services) a person must attach it in
+the client — there is no bill to borrow.
 
 ## Hard stops
 
@@ -90,6 +130,41 @@ make; read back after you make.** RULE 0 in `CLAUDE.md` governs the write itself
   Exported values beat `--env` files, so the operator's env still picks the login.
   `sap-office-bridge.sh` needs an office PC parked on the VPS and is often down;
   the home bridge is the durable one.
+
+## If the draft is wrong: delete it
+
+A draft this skill made is a draft this CLI made, so `sapb1 delete draft` will take
+it without an override. Same env file as the draft (the login that owns it), and
+show the operator the dry-run first — it reads the draft back, so they see the
+vendor, the total and `NumAtCard` before they agree.
+
+```bash
+./sapb1 delete draft <DocEntry> --dry-run     # reads SAP, sends no DELETE
+./sapb1 delete draft <DocEntry>               # then type yes at the prompt
+```
+
+- **Same day, no overrides needed.** Past 24 hours it asks for `--older-than <dur>`,
+  and by then the answer is usually "leave it, Accounts will handle it in the
+  client" — a day-old A/P draft may already be in someone's Document Drafts list.
+- **If you patched `AttachmentEntry` onto it** (the GRPO's bill, above), the delete
+  refuses until `--with-attachment` — the guard cannot tell a borrowed pointer from
+  paper somebody attached. Setting the field back to `null` first is the cleaner
+  route, and it keeps the question of the shared `Attachments2` row out of it; read
+  the GRPO back either way and confirm it still carries its bill.
+- **Once it has been sent for approval, it is not yours either.** A fresh draft reads
+  `AuthorizationStatus dasWithout`; the moment Accounts presses **Add** it routes via
+  "USER03 AP" and the row goes `dasPending` while still reading `bost_Open`, so the
+  delete refuses it (`--in-approval`) and no other guard would have. Bhawani/USER03
+  is looking at it — ask, don't override.
+- **A duplicate keyed by a person is not yours to remove.** Precheck exit 2 means
+  Neetu (or another operator) made that draft in the client; the delete will refuse
+  it, and that refusal is correct. Tell the operator which two drafts exist and let
+  them remove the extra in the client — unless they explicitly say to remove that
+  DocEntry, which is the only thing `--not-created-here` means.
+- **Never loop it.** `--not-created-here` takes one DocEntry, needs a person at the
+  prompt, and refuses `--yes`. Every delete is logged under the operator's name; the
+  snapshot of what was there stays on that machine and only its sha256 goes into the
+  shared log, because this repo is public.
 
 ## Reference
 

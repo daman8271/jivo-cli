@@ -78,7 +78,7 @@ func runPatch(cmd *cobra.Command, target, key string, wf writeFlags) error {
 		return renderDryRun(cmd, cfg, "PATCH", path, payload)
 	}
 
-	if err := confirmWrite(cmd, cfg, "PATCH", path, payload, wf.yes, stdinIsTTYFunc()); err != nil {
+	if err := confirmWrite(cmd, cfg, "PATCH", path, payload, wf.yes, stdinIsTTYFunc(), false); err != nil {
 		return err
 	}
 

@@ -10,27 +10,31 @@ Layer as tools. Both transports expose the identical read-only tool set.
 
 Every tool resolves to only these HTTP operations against the Service Layer:
 `GET` (entity reads), `POST /Login`, and `POST /Logout` (session
-establishment/teardown). There is **no tool** that issues `POST`/`PATCH` against
-business data. Read-only is asserted in the tool metadata (`readOnlyHint: true`,
-`destructiveHint: false`). The password is never returned in a tool result,
-logged, or embedded in any error message.
+establishment/teardown). There is **no tool** that issues `POST`, `PATCH` or
+`DELETE` against business data. Read-only is asserted in the tool metadata
+(`readOnlyHint: true`, `destructiveHint: false`). The password is never returned in
+a tool result, logged, or embedded in any error message.
 
 **The CLI can write; the MCP surface deliberately cannot.** `sapb1` itself has
-three operator-invoked write commands (`draft`, `post`, `patch`) — see the
-"Writing to SAP" section of [README.md](README.md) — and `internal/client`
-therefore carries `Create`/`Update`. None of that is wired to a tool, on
-purpose: a write needs a human reading a preview and typing `yes`, which is
-exactly what an agent transport can't provide. So the whole write path stays out
-of the MCP server, and an agent that wants a document created has to ask the
-operator to run `sapb1 draft …` themselves.
+four operator-invoked write commands (`draft`, `post`, `patch`, and `delete`, which
+removes drafts only — `delete draft` / `delete payment-draft`, no other entity set)
+— see the "Writing to SAP" section of [README.md](README.md) —
+and `internal/client` therefore carries `Create`/`Update`/`Delete`. None of that is
+wired to a tool, on purpose: a write needs a human reading a preview and typing
+`yes`, which is exactly what an agent transport can't provide. **That goes double
+for `delete`**, whose whole design is a person looking at a summary of the draft
+they are about to destroy. So the entire write path stays out of the MCP server, and
+an agent that wants a document created — or a bad draft removed — has to ask the
+operator to run `sapb1 draft …` / `sapb1 delete draft …` themselves.
 
-That boundary is a test, not a promise — three independent ones, because a
+That boundary is a test, not a promise — four independent ones, because a
 read-only guarantee asserted only in metadata is a claim rather than a property:
 
 | Test | Layer | What it would catch |
 |---|---|---|
 | `TestRegisteredToolsAreReadOnly` | metadata | a tool without `readOnlyHint: true`, marked destructive, or any change to the exact 9-tool set |
-| `TestMCPPackageCannotReachWriteAPI` | source | the package so much as *naming* `client.Create`/`Update` or `http.MethodPost/Put/Patch/Delete` (AST walk, so comments and description text can't trip or satisfy it) |
+| `TestMCPPackageCannotReachWriteAPI` | source | the package so much as *naming* `client.Create`/`Update`/`Delete` or `http.MethodPost/Put/Patch/Delete` (AST walk, so comments and description text can't trip or satisfy it) |
+| `TestEveryClientWriteMethodIsClassified` | source | a **new** exported method on `*client.Client` that is neither named in the forbidden list nor listed as read-only — so the guard above can't silently go out of date when the client grows a verb |
 | `TestWholeSurfaceIssuesOnlyReadsAndLogins` | wire | every tool driven for real against a fake Service Layer that fails the test if it receives anything but `GET` plus `POST /Login`/`/Logout` |
 
 Adding a write tool breaks the build.

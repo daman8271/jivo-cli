@@ -54,6 +54,15 @@ $SAPB1_WRITE_LOG).`,
 	}
 
 	addWriteFlags(cmd, &wf)
+
+	// Payments live in a different SAP table (OPDF, entity set PaymentDrafts)
+	// from marketing-document drafts (ODRF, entity set Drafts), so they cannot be
+	// a doctype here — they get a subcommand that addresses their own entity set.
+	// `sapb1 draft order` still routes to this command's RunE: cobra only diverts
+	// to a child when the first argument matches the child's name, and no doctype
+	// is called "payment".
+	cmd.AddCommand(newDraftPaymentCmd())
+
 	return cmd
 }
 
@@ -101,7 +110,7 @@ func runDraft(cmd *cobra.Command, docTypeArg string, wf writeFlags) error {
 		return renderDryRun(cmd, cfg, "POST", "Drafts", payload)
 	}
 
-	if err := confirmWrite(cmd, cfg, "POST", "Drafts", payload, wf.yes, stdinIsTTYFunc()); err != nil {
+	if err := confirmWrite(cmd, cfg, "POST", "Drafts", payload, wf.yes, stdinIsTTYFunc(), true); err != nil {
 		return err
 	}
 

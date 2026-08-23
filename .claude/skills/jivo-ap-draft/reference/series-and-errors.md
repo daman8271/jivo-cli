@@ -70,7 +70,11 @@ double-click the row (vendor · vendor ref · total · posting date).
 (Oil A/P invoices route via template "USER03 AP" to Bhawani / USER03).
 
 **Remove a duplicate draft:** in the Document Drafts Report, right-click the row
-→ Remove. Only the owner or a superuser can; the CLI cannot delete anything.
+→ Remove. Only the owner or a superuser can. From the CLI it is
+`sapb1 delete draft <DocEntry>` — but only for a draft this CLI created: one keyed
+by hand in the client is refused (exit 9) until the operator says
+`--not-created-here` about that one DocEntry, at the prompt. A posted A/P invoice
+cannot be deleted from here at all.
 
 ## Who keys what (Oil, as of 2026-08-21)
 

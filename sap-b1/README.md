@@ -1,8 +1,15 @@
 # SAP B1 — JIVO's SAP Business One toolkit
 
-> ## ⚠️ READ-ONLY. ALWAYS.
-> This toolkit only **reads** from SAP. It never creates, updates, or deletes anything.
-> The only non-GET calls ever made are `Login`/`Logout`. This is a standing rule — no exceptions.
+> ## ⚠️ READ-ONLY BY DEFAULT — four write commands, typed on purpose
+> Every question you ask is a `GET`. Nothing changes unless an operator types one of
+> `sapb1 draft` (a **draft**, inert until a human presses Add in SAP B1), `sapb1 post`
+> (live, master data only), `sapb1 patch`, or `sapb1 delete draft` / `delete payment-draft`
+> — which removes a **draft** and nothing else: a posted document cannot be addressed
+> from here, and there is no `PUT` and no OData action (`Cancel`, `Close`,
+> `SaveDraftToDocument`) anywhere in the CLI. Each write previews, needs the word `yes`
+> typed in full, and is logged. **The MCP server exposes no write tool at all**, so
+> asking a question in Claude can never change SAP. See
+> [cli/README.md](cli/README.md) → "Writing to SAP", and RULE 0 in the repo's `CLAUDE.md`.
 > (The `manager` login is a super-user; discipline in this repo is what keeps production safe.)
 
 Connected **LIVE 2026-07-23** to the SAP B1 (HANA) Service Layer at `138.252.101.222:50000`.
@@ -30,7 +37,7 @@ sap-b1/
 │   ├── 03-Live-Data-Census.md # which entities hold real JIVO data (3-branch counts)
 │   ├── domains/            # 19 domain hubs
 │   └── services/           # 498 per-service notes, wikilinked
-├── cli/                    # `sapb1` Go CLI + MCP server (read-only by design)
+├── cli/                    # `sapb1` Go CLI (reads + the four write commands) + MCP server (read-only by design)
 │   ├── sapb1               # compiled binary (gitignored — rebuild: cd cli && go build -o sapb1 .)
 │   ├── .env                # credentials + DB names (gitignored, chmod 600 — NEVER commit)
 │   ├── .env.example        # safe template

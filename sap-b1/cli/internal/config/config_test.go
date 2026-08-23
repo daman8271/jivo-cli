@@ -371,8 +371,14 @@ func TestTimeoutSetTracksProvenance(t *testing.T) {
 // accountable.
 func TestWriteLogPathPrefersOperatorFolder(t *testing.T) {
 	repo := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(repo, "harness"), 0o755); err != nil {
-		t.Fatal(err)
+	// Both repo markers: the operator's folder is found through RepoRoot now, so
+	// the write log lands in the same checkout the delete guard reads its evidence
+	// from. A folder with harness/ but no .git/ (a Drive zip) is deliberately not
+	// one — nothing in it reaches the team, and the home fallback says so.
+	for _, d := range []string{"harness", ".git"} {
+		if err := os.MkdirAll(filepath.Join(repo, d), 0o755); err != nil {
+			t.Fatal(err)
+		}
 	}
 	operator := filepath.Join(repo, "harness", ".operator")
 	if err := os.WriteFile(operator, []byte(`{"name":"Param Singh","slug":"param-singh"}`), 0o600); err != nil {

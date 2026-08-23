@@ -26,13 +26,22 @@ import (
 const testPassword = "n0t-in-the-log"
 
 // newFakeClient points a Client at srv (an httptest TLS server standing in for
-// the Service Layer) and redirects both the session cache and the write log
-// into t.TempDir(), so no real file and no real SAP host is ever touched.
+// the Service Layer) and redirects the session cache, the write log and the
+// snapshot log into t.TempDir(), so no real file and no real SAP host is ever
+// touched.
+//
+// The chdir matters as much as the env vars: a DELETE also writes to the
+// operator's log INSIDE the checkout it is standing in (config.SharedWriteLogPath),
+// and the package directory sits inside the developer's real jivo-cli. Without
+// this, running the suite on a registered box would append delete records to the
+// team's committed sap-writes.jsonl.
 func newFakeClient(t *testing.T, srv *httptest.Server) *Client {
 	t.Helper()
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("SAPB1_WRITE_LOG", filepath.Join(home, "writes.jsonl"))
+	t.Setenv("SAPB1_SNAPSHOT_LOG", filepath.Join(home, "snapshots.jsonl"))
+	t.Chdir(t.TempDir())
 
 	u, err := url.Parse(srv.URL)
 	if err != nil {
@@ -67,6 +76,28 @@ func loginHandler(w http.ResponseWriter) {
 func readWriteLog(t *testing.T) []writeLogEntry {
 	t.Helper()
 	return parseWriteLog(t, os.Getenv("SAPB1_WRITE_LOG"))
+}
+
+// readSnapshotLog reads the LOCAL log a delete's contents go to — the one the
+// shared write log only points at, by hash.
+func readSnapshotLog(t *testing.T) []snapshotLogEntry {
+	t.Helper()
+	data, err := os.ReadFile(os.Getenv("SAPB1_SNAPSHOT_LOG"))
+	if err != nil {
+		t.Fatalf("reading snapshot log: %v", err)
+	}
+	var out []snapshotLogEntry
+	for _, line := range strings.Split(strings.TrimSpace(string(data)), "\n") {
+		if line == "" {
+			continue
+		}
+		var e snapshotLogEntry
+		if err := json.Unmarshal([]byte(line), &e); err != nil {
+			t.Fatalf("snapshot log line is not valid JSON: %v\n%s", err, line)
+		}
+		out = append(out, e)
+	}
+	return out
 }
 
 func parseWriteLog(t *testing.T, path string) []writeLogEntry {

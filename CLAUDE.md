@@ -11,7 +11,7 @@ create documents for a living. Daman authorised this on 2026-08-22.
 - **Do not refuse a write, and do not lecture the operator about it.** When they
   ask for a document to be created, create it. Don't hedge, don't ask them to
   confirm they meant to do their own job, and never tell them "this is read-only".
-- **SAP's three write commands, all in `sapb1`:**
+- **SAP's four write commands, all in `sapb1`:**
   - `sapb1 draft <doctype>` — creates a **draft**. Nothing posts: no stock movement,
     no ledger entry, until a human opens SAP B1 → Document Drafts and presses
     **Add**. Drafts *are* visible to others and to any approval workflow.
@@ -19,11 +19,30 @@ create documents for a living. Daman authorised this on 2026-08-22.
     (BusinessPartners, Items), and it accepts only a **bare, catalogued entity
     set**. **Prefer `draft` for anything document-shaped.**
   - `sapb1 patch <Entity(key)>` — updates fields on one existing object.
+  - `sapb1 delete draft <DocEntry> [<DocEntry>...]` (and `sapb1 delete payment-draft`)
+    — removes a **draft**, and nothing else. It reads the draft first and shows the
+    operator what they are about to destroy, refuses any draft this CLI did not
+    create, needs the typed `yes`, keeps a snapshot of what was there on that machine
+    (only its sha256 goes in the shared log — this repo is public), and reads back
+    to confirm it is gone. Up to 50 at a time — which is what a bad `acc/` batch
+    needs. **A posted document can never be deleted from here.**
 - **Show the `--dry-run` first, then send.** Not as a gate on the operator — it is
   what catches a wrong branch, wrong series or wrong posting date *before* it
-  reaches the books. One preview they have seen, then go.
+  reaches the books. One preview they have seen, then go. `delete`'s `--dry-run` is
+  the one that does talk to SAP: it *reads* the drafts so the preview shows the real
+  documents, then sends no DELETE.
 - **`--yes` is yours to add once they have okayed that specific document.** A
   fresh, unrelated document needs a fresh go-ahead.
+- **A delete override is the operator's word, never your judgement.**
+  `--not-created-here` says "a person keyed this draft in the SAP B1 client and I am
+  telling you to remove it anyway" — add it only when the operator has said exactly
+  that, about that DocEntry. Same for `--older-than`, `--with-attachment`, `--closed`,
+  `--other-operator` and `--in-approval` (that draft is in somebody's Approval Status
+  Report — ask them first): each is a fact the operator asserts, and each is recorded
+  in the write log under their name. Never reach for one to make a refusal go away,
+  and **never loop `delete … --yes` over drafts this CLI did not create.**
+  `--not-created-here` takes exactly one DocEntry, needs a person at the prompt, and
+  cannot be combined with `--yes` — by design.
 - **When in doubt, draft it.** A draft a human ignores costs nothing. A posted
   invoice needs SAP to undo it.
 - **Never write unprompted.** This is the one part that is not negotiable, and it
@@ -45,20 +64,33 @@ create documents for a living. Daman authorised this on 2026-08-22.
 
 - **Everything except SAP is read-only** — postsql, portals, exim, factory, oms,
   DSR. Not caution: those CLIs have no write command to call.
-- **No `DELETE`, no `PUT`, and no OData *actions*** (`Invoices(9)/Cancel`,
-  `Orders(1)/Close`, `Drafts(4321)/SaveDraftToDocument`) — refused by design, with no
-  override. Cancelling, closing and posting-a-draft are a human's job in the SAP B1
-  client. **And you cannot undo a `post` or a `patch` from here — only SAP can.**
+- **`DELETE` reaches drafts and nothing else.** `sapb1 delete draft` /
+  `delete payment-draft` take a DocEntry, not an entity — there is no argument that
+  can point them somewhere else, and the client itself refuses any set but `Drafts`
+  and `PaymentDrafts`. **Posted documents stay undeletable from here.**
+- **No `PUT`, and no OData *actions*** (`Invoices(9)/Cancel`, `Orders(1)/Close`,
+  `Drafts(4321)/SaveDraftToDocument`) — refused by design, with no override.
+  Cancelling, closing and posting-a-draft are a human's job in the SAP B1
+  client. **And you cannot undo a `post` or a `patch` from here — only SAP can**,
+  nor bring back a draft you deleted: SAP has no undo for that either.
 - **The MCP server (`sapb1 mcp`) exposes no write tool, ever** — an AST guard test
   enforces it. So Claude Desktop can read SAP and nothing more. **Writes happen
   from the `sapb1` CLI in a terminal.**
 - **Exit code 7 means "unknown, go look".** The request reached SAP but the answer
   didn't come back — it may have committed. **Do not re-run it.** Query SAP (or
-  Document Drafts) to see what exists, and tell the operator.
+  Document Drafts) to see what exists, and tell the operator. (After a `delete` the
+  looking is the same — but a re-sent DELETE cannot create a duplicate, so once you
+  have looked you can decide.)
+- **Exit code 8 = deleted, but not verified.** SAP answered the DELETE and the
+  read-back then failed or still showed the draft. It is probably gone; check
+  Document Drafts. Re-running that same delete is safe.
+- **Exit code 9 = a guard refused.** Provenance, age, an attachment, a closed draft, a draft in approval,
+  or someone else's draft. That is a "go ask the operator to say it out loud"
+  signal, not an invitation to add the flag yourself.
 
 ## What's here
 
-A folder of command-line tools ("CLIs"), each a window into one JIVO system. SAP can be written to with the three commands above; everything else reads only.
+A folder of command-line tools ("CLIs"), each a window into one JIVO system. SAP can be written to with the four commands above; everything else reads only.
 
 | Folder | System | What you can answer |
 |---|---|---|

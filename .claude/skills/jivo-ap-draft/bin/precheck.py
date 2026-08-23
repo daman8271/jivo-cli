@@ -15,6 +15,11 @@ Precedence for connection settings: exported environment (e.g. the bridge's
 SAPB1_HOST/PORT) > --env file > sap-b1/cli/.env. So `--env navdeep-user36.env`
 changes the login, not the route.
 
+The decisions live in `acc/apbatch` (rules.py, context.py) and are shared with
+`acc batch`, which does the same job 50 rows at a time. This file is the paper's
+side of it: the argparse, the paper-vs-GRPO comparisons, the narrative and the
+exit contract above. Change a rule in apbatch and both paths change together.
+
 Example:
   precheck.py --ref "26-27/1450" --vendor SSY --gstin 06AACCJ4223F1Z0 \
       --inv-date 2026-08-17 --gate-date 2026-08-18 --qty 5870 --total 208388 --po 220626014 \
@@ -26,6 +31,7 @@ import argparse, collections, datetime as dt, json, os, pathlib, re, subprocess,
 CLI = None
 COMPANY = None
 HANA = None
+SAP = None
 COMPANIES = ["JIVO_OIL_HANADB", "JIVO_MART_HANADB", "JIVO_BEVERAGES_HANADB"]
 
 
@@ -41,78 +47,49 @@ def find_repo():
     sys.exit("precheck: cannot find jivo-cli/sap-b1/cli/sapb1 above " + str(here))
 
 
-def read_env_file(path):
-    out = {}
-    try:
-        for line in open(path):
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                out[k.strip()] = v.strip()
-    except FileNotFoundError:
-        pass
-    return out
+REPO = find_repo()
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
+try:
+    from acc.apbatch import rules                                    # noqa: E402
+    from acc.apbatch.context import HanaSql                          # noqa: E402
+    from acc.apbatch.sap import (SapCli, SapError, SapUnreachable,   # noqa: E402
+                                 odata_str, read_env_file)
+except ImportError as e:                                             # noqa: E402
+    # The decisions moved into acc/apbatch on 2026-08-24. A checkout without it
+    # is a stale copy (a Drive zip, or a pull that has not happened), and the
+    # skill would otherwise die with a bare ModuleNotFoundError that reads like
+    # a Python problem instead of a sync problem.
+    print("precheck: your checkout is missing acc/apbatch — git pull (or you are on a stale "
+          f"copy of jivo-cli). Python said: {e}", file=sys.stderr)
+    sys.exit(3)
+
+# Kept as module-level names because this script's own output format depends on
+# them and the characterization test monkeypatches q().
+inr = rules.inr
+fy_indicator = rules.fy_indicator
+tokens = rules.tokens
 
 
 def q(entity, flt=None, select=None, orderby=None, top=None, company=None):
-    cmd = [str(CLI), "query", entity, "--json"]
-    if flt:
-        cmd += ["--filter", flt]
-    if select:
-        cmd += ["--select", select]
-    if orderby:
-        cmd += ["--orderby", orderby]
-    if top:
-        cmd += ["--top", str(top)]
-    c = company or COMPANY
-    if c:
-        cmd += ["--company", c]
-    r = subprocess.run(cmd, cwd=CLI.parent, capture_output=True, text=True)
-    if r.returncode != 0:
-        msg = (r.stderr.strip().splitlines() or ["query failed"])[-1]
-        if "cannot reach" in msg or "deadline exceeded" in msg or "connection refused" in msg.lower():
-            raise Unreachable(msg)
-        raise RuntimeError(f"{entity}: {msg}")
-    return json.loads(r.stdout or "[]")
+    """The one door to SAP. Everything below goes through here."""
+    try:
+        return SAP.query(entity, filter=flt, select=select, orderby=orderby, top=top,
+                         company=company or COMPANY)
+    except SapUnreachable as e:
+        raise Unreachable(str(e).splitlines()[0])
+    except SapError as e:
+        raise RuntimeError(f"{entity}: {e}")
 
 
 def hana(sql):
     """Optional cross-check via hana-sql (read-only). Returns rows (tab-split) or None."""
-    if not HANA or not HANA.exists():
-        return None
-    env = os.environ.get("HANA_ENV") or (HANA.parent.parent / "connections" / "hana.env")
-    try:
-        r = subprocess.run([str(HANA), "-env", str(env), sql], capture_output=True, text=True, timeout=25)
-    except subprocess.TimeoutExpired:
-        return None
-    if r.returncode != 0 or "QUERY ERROR" in r.stdout:
-        return None
-    lines = [l for l in r.stdout.splitlines() if l.strip()]
-    return [l.split("\t") for l in lines[1:]] if len(lines) > 1 else []
-
-
-def inr(n):
-    neg = n < 0
-    n = abs(float(n))
-    i, f = f"{n:.2f}".split(".")
-    last3, rest = i[-3:], i[:-3]
-    if rest:
-        rest = re.sub(r"\B(?=(\d{2})+(?!\d))", ",", rest) + ","
-    return ("-" if neg else "") + "₹" + rest + last3 + "." + f
-
-
-def fy_indicator(d):
-    """SAP period indicator like AUG-26-27 (JIVO financial year April–March)."""
-    fy_start = d.year if d.month >= 4 else d.year - 1
-    return f"{d.strftime('%b').upper()}-{fy_start % 100:02d}-{(fy_start + 1) % 100:02d}"
-
-
-def tokens(s):
-    return {t for t in re.findall(r"[a-z0-9.]+", (s or "").lower()) if len(t) > 1}
+    return HANA.rows(sql) if HANA else None
 
 
 def main():
-    global CLI, COMPANY, HANA
+    global CLI, COMPANY, HANA, SAP
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ref", required=True, help="vendor's invoice number exactly as printed (goes to NumAtCard)")
     ap.add_argument("--vendor", required=True, help="part of the vendor name as in SAP (case-insensitive), or a CardCode")
@@ -131,14 +108,22 @@ def main():
     ap.add_argument("--out", help="write the proposed draft payload JSON here (use a plain filename — vendor refs contain '/')")
     a = ap.parse_args()
 
-    repo = find_repo()
+    repo = REPO
     CLI = repo / "sap-b1" / "cli" / "sapb1"
-    HANA = repo / "hana-sql" / "hana-sql"
+    HANA = HanaSql(repo)
     COMPANY = a.company
     if a.env:
-        for k, v in read_env_file(a.env if os.path.isabs(a.env) else CLI.parent / a.env).items():
+        env_path = pathlib.Path(a.env) if os.path.isabs(a.env) else CLI.parent / a.env
+        if not env_path.exists():
+            # Carrying on with the default login would put the draft under
+            # somebody else's name — the one thing --env decides.
+            print(f"precheck: --env {a.env}: no such file — looked in {env_path}. Operator env "
+                  f"files live next to sapb1 ({CLI.parent}).", file=sys.stderr)
+            sys.exit(3)
+        for k, v in read_env_file(env_path).items():
             os.environ.setdefault(k, v)          # exported values (bridge host/port) win
     os.environ.setdefault("SAPB1_TIMEOUT", "120")  # bridged calls are slower than the 30 s default
+    SAP = SapCli(repo=repo, company=COMPANY, allow_writes=False)
     dotenv = read_env_file(CLI.parent / ".env")
     company_eff = COMPANY or os.environ.get("SAPB1_COMPANYDB") or dotenv.get("SAPB1_COMPANYDB") or "JIVO_OIL_HANADB"
     user_eff = os.environ.get("SAPB1_USER") or dotenv.get("SAPB1_USER") or "?"
@@ -149,8 +134,9 @@ def main():
         print("   (JIVO_OIL_HANADB = JIVO WELLNESS PVT LTD. Mart and the Beverage Unit are separate books with the same vendors and GSTINs — pass --company if the paper is theirs.)")
 
     # 1. already in SAP? (by vendor ref; the GRPO-keyed check follows in [3])
-    posted = q("PurchaseInvoices", f"NumAtCard eq '{a.ref}'", "DocEntry,DocNum,CardCode,DocDate,DocTotal,Cancelled")
-    drafts = q("Drafts", f"NumAtCard eq '{a.ref}' and DocObjectCode eq 'oPurchaseInvoices'",
+    ref_lit = odata_str(a.ref)
+    posted = q("PurchaseInvoices", f"NumAtCard eq {ref_lit}", "DocEntry,DocNum,CardCode,DocDate,DocTotal,Cancelled")
+    drafts = q("Drafts", f"NumAtCard eq {ref_lit} and DocObjectCode eq 'oPurchaseInvoices'",
                "DocEntry,DocNum,CardCode,DocDate,DocTotal,UserSign,AuthorizationStatus,DocumentStatus")
     open_drafts = [d for d in drafts if d.get("DocumentStatus") == "bost_Open"]
     live = [p for p in posted if p.get("Cancelled") != "tYES"]
@@ -212,7 +198,7 @@ def main():
         if not grpo:
             problems.append(f"GRPO DocNum {a.grpo} not found")
     if not grpo:
-        g = [x for x in q("PurchaseDeliveryNotes", f"NumAtCard eq '{a.ref}'") if x.get("Cancelled") != "tYES"]
+        g = [x for x in q("PurchaseDeliveryNotes", f"NumAtCard eq {ref_lit}") if x.get("Cancelled") == "tNO"]
         if len(g) == 1:
             grpo = g[0]
         elif len(g) > 1:
@@ -237,7 +223,7 @@ def main():
             if c == company_eff:
                 continue
             try:
-                hits = [x for x in q("PurchaseDeliveryNotes", f"NumAtCard eq '{a.ref}'", "DocEntry,DocNum,CardCode,DocDate,DocTotal,DocumentStatus", company=c) if x.get("DocumentStatus") == "bost_Open"]
+                hits = [x for x in q("PurchaseDeliveryNotes", f"NumAtCard eq {ref_lit}", "DocEntry,DocNum,CardCode,DocDate,DocTotal,DocumentStatus", company=c) if x.get("DocumentStatus") == "bost_Open"]
             except RuntimeError:
                 hits = []
             for h in hits:
@@ -249,7 +235,9 @@ def main():
 
     lines, po_nums = [], []
     if grpo:
-        lines = [l for l in grpo["DocumentLines"] if l.get("LineStatus") == "bost_Open" and l.get("RemainingOpenQuantity", 0) > 0]
+        # allow_service=False: a service GRPO reports "no open lines" here, as it
+        # always has. That draft shape is `acc batch`'s to prove, not this one's.
+        lines = rules.open_lines(grpo, allow_service=False)
         print(f"    using GRPO {grpo['DocNum']} DocEntry {grpo['DocEntry']} · {grpo['DocDate'][:10]} · status {grpo['DocumentStatus']} · branch {grpo['BPL_IDAssignedToInvoice']} · comments {grpo.get('Comments')!r}")
         for l in lines:
             print(f"      line {l['LineNum']}: {l['ItemCode']} {l['ItemDescription']} · open {l['RemainingOpenQuantity']:g} {l.get('MeasureUnit') or ''} @ {l['UnitPrice']} = {inr(l['LineTotal'])} · {l['TaxCode']} · whs {l['WarehouseCode']} · cc {l.get('CostingCode')} · from PO entry {l.get('BaseEntry')}")
@@ -290,9 +278,8 @@ def main():
             else:
                 bpl = g_bpl
                 print(f"    branch {bpl['BPLID']} {bpl['BPLName']} (from the GRPO, GSTIN {bpl.get('FederalTaxID')})")
-        qsum = sum(l["RemainingOpenQuantity"] for l in lines)
-        tsum = sum(l["LineTotal"] for l in lines)
-        vsum = sum(l["TaxTotal"] for l in lines)
+        totals = rules.gross_of(lines)
+        qsum, tsum, vsum = totals.open_qty, totals.taxable, totals.tax
         print(f"    open qty {qsum:g} · taxable {inr(tsum)} · tax {inr(vsum)} · gross {inr(tsum + vsum)}")
         if a.qty is not None and abs(qsum - a.qty) > 0.001:
             problems.append(f"invoice qty {a.qty:g} ≠ GRPO open qty {qsum:g}")
@@ -306,7 +293,7 @@ def main():
             for c in cand:
                 if c["DocEntry"] in seen:
                     continue
-                if any(l.get("BaseType") == 20 and l.get("BaseEntry") == grpo["DocEntry"] for l in c.get("DocumentLines", [])):
+                if rules.draft_targets_grpo(c, grpo["DocEntry"]):
                     print(f"    OPEN DRAFT on this GRPO under a different vendor ref: DocEntry {c['DocEntry']} ref {c.get('NumAtCard')!r} {inr(c['DocTotal'])} owner user {c['UserSign']}")
                     open_drafts.append(c)
         except RuntimeError as e:
@@ -328,6 +315,9 @@ def main():
             print(f"        remarks: {t.get('Comments')!r}")
         if tmpl:
             subtype = collections.Counter(t["DocumentSubType"] for t in tmpl).most_common(1)[0][0]
+    # The batch decides TDS from precedent (rules.tds_proposal); here the operator
+    # is looking at the vendor's last three invoices printed above and decides for
+    # themselves, which is what SKILL.md tells them to do.
     wt_liable = bool(bp and bp["SubjectToWithholdingTax"] == "boYES")
     wt_rate = None
     if wt_liable:
@@ -349,65 +339,44 @@ def main():
     series = None
     if gate and bpl:
         gd = dt.date.fromisoformat(gate)
-        month_start = gd.replace(day=1).isoformat()
-        same_month = q("PurchaseInvoices", f"DocDate ge '{month_start}' and BPL_IDAssignedToInvoice eq {bpl['BPLID']} and DocumentSubType eq '{subtype}'", "DocEntry,Series", orderby="DocEntry desc", top=20)
-        same_month += q("Drafts", f"DocObjectCode eq 'oPurchaseInvoices' and DocDate ge '{month_start}' and BPL_IDAssignedToInvoice eq {bpl['BPLID']} and DocumentSubType eq '{subtype}'", "DocEntry,Series", orderby="DocEntry desc", top=20)
-        cnt = collections.Counter(r["Series"] for r in same_month if r.get("Series"))
-        if cnt:
-            series = cnt.most_common(1)[0][0]
-            print(f"    from {sum(cnt.values())} {subtype} docs posted/drafted this month in branch {bpl['BPLID']}: series {dict(cnt)} → using {series}")
+        # Month-BOUNDED, both ends: without the upper bound a July posting checked
+        # in August votes on August's documents and takes August's series.
+        m0, m1 = rules.month_bounds(gd)
+        window = f"DocDate ge '{m0}' and DocDate lt '{m1}'"
+        same_month = q("PurchaseInvoices", f"{window} and BPL_IDAssignedToInvoice eq {bpl['BPLID']} and DocumentSubType eq '{subtype}'", "DocEntry,Series", orderby="DocEntry desc", top=20)
+        same_month += q("Drafts", f"DocObjectCode eq 'oPurchaseInvoices' and {window} and BPL_IDAssignedToInvoice eq {bpl['BPLID']} and DocumentSubType eq '{subtype}'", "DocEntry,Series", orderby="DocEntry desc", top=20)
         rows = hana(f"SELECT \"Series\",\"SeriesName\",\"DocSubType\" FROM {company_eff}.NNM1 WHERE \"ObjectCode\"='18' AND \"Indicator\"='{fy_indicator(gd)}' AND \"BPLId\"={bpl['BPLID']} AND \"Locked\"='N'")
+        choice = rules.pick_series(same_month, rows, subtype, bpl=bpl["BPLID"], docdate=gd)
+        cnt = choice.counts
+        if cnt:
+            series = choice.series
+            print(f"    from {sum(cnt.values())} {subtype} docs posted/drafted this month in branch {bpl['BPLID']}: series {cnt} → using {series}")
         if rows is not None:
             print(f"    NNM1 {fy_indicator(gd)} branch {bpl['BPLID']}: " + ", ".join(f"{r[0]}={r[1]}({r[2]})" for r in rows))
-            want = {"bod_GSTTaxInvoice": "GA", "bod_None": "--"}.get(subtype)
-            ga = [r for r in rows if len(r) > 2 and r[2] == want]
-            ga_ids = {int(r[0]) for r in ga}
-            if not series:
-                if len(ga) == 1:
-                    series = int(ga[0][0])
-                    print(f"    → series {series} from NNM1 (first document of the month)")
-                elif len(ga) > 1:
-                    problems.append(f"first {subtype} document of the month and NNM1 has several candidates {sorted(ga_ids)} — pick by hand (the xx_G series is the normal vendor-invoice one; CNxx is not)")
-            elif series not in ga_ids:
-                warnings.append(f"this month's documents use series {series}, which NNM1 does not list as {want} for branch {bpl['BPLID']} — double-check")
+            if not cnt and choice.series:
+                series = choice.series
+                print(f"    → series {series} from NNM1 ({choice.source})")
+            if choice.problem:
+                problems.append(choice.problem)
+            if choice.warning:
+                warnings.append(choice.warning)
         if not series:
             problems.append("numbering series unknown for this month/branch — look it up (reference/series-and-errors.md) and add \"Series\" by hand")
 
     # payload
     payload = None
     if grpo and bp and bpl and not problems:
-        m = re.search(r"GATE ENTRY NO\.?\s*(\d+)", grpo.get("Comments") or "", re.I)
-        parts = [f"Based On Goods Receipt PO {grpo['DocNum']}"]
-        if po_nums:
-            parts.append("PO " + ", ".join(str(p) for p in po_nums))
-        if m:
-            parts.append(f"GATE ENTRY NO {m.group(1)}")
-        if a.note:
-            parts.append(a.note.strip())
-        payload = {
-            "CardCode": bp["CardCode"],
-            "DocDate": gate,
-            "TaxDate": a.inv_date,
-            "NumAtCard": a.ref,
-            "BPL_IDAssignedToInvoice": bpl["BPLID"],
-            "Series": series,
-            "DocumentSubType": subtype,
-            "Comments": " | ".join(parts)[:254],
-            "DocumentLines": [],
-        }
-        for l in lines:
-            row = {
-                "BaseType": 20, "BaseEntry": grpo["DocEntry"], "BaseLine": l["LineNum"],
-                "ItemCode": l["ItemCode"], "Quantity": l["RemainingOpenQuantity"], "UnitPrice": l["UnitPrice"],
-                "TaxCode": l["TaxCode"], "WarehouseCode": l["WarehouseCode"],
-            }
-            if l.get("CostingCode"):
-                row["CostingCode"] = l["CostingCode"]
-            if wt_liable:
-                row["WTLiable"] = "tYES"
-            payload["DocumentLines"].append(row)
-        tsum = sum(l["LineTotal"] for l in lines)
-        vsum = sum(l["TaxTotal"] for l in lines)
+        base = rules.comments_base(grpo, po_nums)
+        draft = rules.build_payload(grpo, lines, bpl["BPLID"], series, subtype)
+        # --gate-date, when the operator passes one, overrides the GRPO's date:
+        # the stamp on the paper is the posting date (C-0017), and occasionally
+        # the GRPO was keyed a day off it.
+        draft["DocDate"] = gate
+        payload = rules.finalize_payload(draft, num_at_card=a.ref, tax_date=a.inv_date,
+                                         wtliable="tYES" if wt_liable else None,
+                                         comments=rules.build_comments(base, note=a.note))
+        totals = rules.gross_of(lines)
+        tsum, vsum = totals.taxable, totals.tax
         tds = round(tsum * (wt_rate or 0) / 100) if wt_liable and wt_rate else 0
         print("\n[6] expected after SAP accepts it")
         print(f"    gross {inr(tsum + vsum)} · TDS {inr(tds)} · payable ≈ {inr(round(tsum + vsum) - tds)} · due date = SAP's terms from doc date")

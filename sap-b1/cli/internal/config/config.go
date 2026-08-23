@@ -282,49 +282,193 @@ func WriteLogPath() (string, error) {
 	return filepath.Join(home, ".sapb1-writes.jsonl"), nil
 }
 
+// SharedWriteLogPath returns this operator's log INSIDE the checkout — the file
+// the fleet commits and everybody else reads — or "" when this binary is not
+// running in a registered checkout.
+//
+// Unlike WriteLogPath it ignores $SAPB1_WRITE_LOG on purpose. That variable is
+// how a wrapper script or a test redirects its own writes, and for a POST that
+// is harmless: the object still exists in SAP and can be queried for. A DELETE
+// has no such fallback — divert its record and the only trace that fifty drafts
+// were destroyed sits in /tmp on one machine. So the delete path writes here as
+// well, and "one shared history" stops depending on an environment variable
+// being unset.
+func SharedWriteLogPath() string {
+	return operatorWriteLog()
+}
+
+// SnapshotLogPath returns the file a delete's SNAPSHOT — the contents of the
+// draft it is about to destroy — is written to.
+//
+// Deliberately NOT the write log, and deliberately NOT inside the checkout. The
+// write log is designed to be committed (see WriteLogPath) and this repo is
+// public; a snapshot carries the vendor's name, their bill number, the totals
+// and every line item with its price. The committed line keeps the sha256 of
+// the snapshot, so the trail is still verifiable and still points at a record
+// that exists — it just doesn't publish the contents of somebody's invoice.
+//
+// $SAPB1_SNAPSHOT_LOG redirects it (tests, or an operator who keeps this
+// somewhere backed up).
+func SnapshotLogPath() (string, error) {
+	if p := strings.TrimSpace(os.Getenv("SAPB1_SNAPSHOT_LOG")); p != "" {
+		return p, nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("cannot determine home directory: %w", err)
+	}
+	return filepath.Join(home, ".sapb1-delete-snapshots.jsonl"), nil
+}
+
+// RepoRoot returns the root of the JIVO checkout this binary belongs to, or ""
+// when there isn't one. It also returns a note the caller should show the
+// operator: non-empty only when something about the answer deserves saying out
+// loud.
+//
+// A root must contain BOTH `harness/` and `.git/`. That pair is the difference
+// between a real checkout and a scratch directory somebody unzipped — and a
+// month-old Drive zip (which has no `.git/`) correctly fails the test, so its
+// operator is told "no write log found" and has to use the recorded override
+// rather than silently deleting on a stale, incomplete history.
+//
+// The EXE's directory is tried before the working directory, and $SAPB1_WRITE_LOG
+// is deliberately not a seed. This function chooses which evidence corpus a
+// delete may be authorised against; letting one environment variable point it at
+// a directory of the caller's choosing would let a planted tree skip the
+// override marker entirely. (The env var names one more candidate LOG file, but
+// it is read as evidence only when the file RESOLVES inside this root's
+// queries/ tree — it never gets to pick the root itself.)
+//
+// When exe-root and cwd-root both resolve and disagree, the exe's wins and the
+// note names both: that divergence is the stale-kit smell this fleet keeps
+// hitting, and it is worth one line on stderr.
+//
+// "Disagree" means a different DIRECTORY, not a different string — see
+// sameDirectory. The exe path is symlink-resolved and os.Getwd is not (it
+// honours $PWD, the logical path the shell was given), so one checkout reached
+// through a symlink used to look like two: on macOS, standing in /tmp/kit while
+// the binary resolves to /private/tmp/kit fired the stale-copy warning every
+// single run. An alarm that cries wolf is an alarm nobody reads, and this one
+// exists to catch an operator running a month-old Drive zip.
+func RepoRoot() (root string, note string) {
+	exeRoot := ""
+	if exe, err := executablePath(); err == nil {
+		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
+			exe = resolved
+		}
+		exeRoot = walkUpToRepoRoot(filepath.Dir(exe))
+	}
+	cwdRoot := ""
+	if cwd, err := os.Getwd(); err == nil {
+		cwdRoot = walkUpToRepoRoot(cwd)
+	}
+
+	switch {
+	case exeRoot != "" && cwdRoot != "" && !sameDirectory(exeRoot, cwdRoot):
+		return exeRoot, fmt.Sprintf(
+			"note: this sapb1 lives in the checkout at %s but you are standing in %s — using the binary's checkout for write-log evidence. One of the two is probably a stale copy",
+			exeRoot, cwdRoot)
+	case exeRoot != "":
+		return exeRoot, ""
+	default:
+		return cwdRoot, ""
+	}
+}
+
+// executablePath is os.Executable, indirected so the divergence case (the
+// binary in one checkout, the operator standing in another) is testable — it is
+// exactly the stale-kit failure this fleet keeps hitting, so it needs a test.
+var executablePath = os.Executable
+
+// walkUpToRepoRoot climbs from start looking for a directory holding both
+// `harness/` and `.git/`, bounded the same way operatorWriteLog is.
+func walkUpToRepoRoot(start string) string {
+	dir := start
+	for i := 0; i < 12; i++ { // bounded: never walk to / on a deep tree
+		if isDir(filepath.Join(dir, "harness")) && isDir(filepath.Join(dir, ".git")) {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return ""
+		}
+		dir = parent
+	}
+	return ""
+}
+
+func isDir(path string) bool {
+	fi, err := os.Stat(path)
+	return err == nil && fi.IsDir()
+}
+
+// sameDirectory reports whether two paths name the same directory, however they
+// were spelled. Three tries, cheapest first: the strings, the symlink-resolved
+// strings, and finally the inode — os.SameFile is the only one of the three that
+// also sees through a Windows junction or a bind mount, which is the shape the
+// operator boxes hit (a synced Documents folder).
+//
+// One of three path-identity helpers that must agree: this one, client.sameLogFile
+// (are these two write logs one file) and cli.resolvePath/withinAny (is this file
+// admissible as evidence). Same rule in all three — compare what the paths
+// RESOLVE to, never the strings — so a change here belongs in the others.
+func sameDirectory(a, b string) bool {
+	if a == b {
+		return true
+	}
+	ra, errA := filepath.EvalSymlinks(a)
+	rb, errB := filepath.EvalSymlinks(b)
+	if errA == nil && errB == nil && ra == rb {
+		return true
+	}
+	fa, errA := os.Stat(a)
+	fb, errB := os.Stat(b)
+	return errA == nil && errB == nil && os.SameFile(fa, fb)
+}
+
 // operatorWriteLog finds `queries/<slug>/sap-writes.jsonl` for the operator
 // registered in this checkout, or "" if there isn't one.
+//
+// The checkout is RepoRoot's answer, never a second walk of its own. It used to
+// do the walk again with the opposite preference — cwd before exe, where RepoRoot
+// prefers the exe — so the two could name different checkouts on the box this
+// fleet keeps hitting: an operator standing in one copy running a binary from
+// another. The delete guard then read its evidence out of one checkout while the
+// write log it vouches for was written into the other, and every message about
+// "this checkout" meant whichever function had printed it. One question, one
+// answer.
+//
+// A consequence worth stating: RepoRoot needs BOTH harness/ and .git/, so a
+// month-old Drive zip (no .git) no longer gets an in-repo log. Its writes go to
+// ~/.sapb1-writes.jsonl, which is the truth — nothing in an un-versioned folder
+// reaches the team — and evidenceGapAdvice says so with the command that fixes it.
 //
 // Best-effort by design: it is called on a path where failing to resolve must
 // never block a write that the operator has already confirmed. Any problem —
 // no repo, no registration, unreadable JSON — simply falls through to the home
 // default rather than returning an error.
 func operatorWriteLog() string {
-	roots := make([]string, 0, 2)
-	if cwd, err := os.Getwd(); err == nil {
-		roots = append(roots, cwd)
+	root, _ := RepoRoot() // the note is for the operator; callers here just need the path
+	if root == "" {
+		return ""
 	}
-	if exe, err := os.Executable(); err == nil {
-		if resolved, err := filepath.EvalSymlinks(exe); err == nil {
-			exe = resolved
-		}
-		roots = append(roots, filepath.Dir(exe))
+	raw, err := os.ReadFile(filepath.Join(root, "harness", ".operator")) // #nosec G304 — inside the resolved checkout
+	if err != nil {
+		return "" // a checkout, but nobody registered in it
 	}
-
-	for _, start := range roots {
-		dir := start
-		for i := 0; i < 12; i++ { // bounded: never walk to / on a deep tree
-			operator := filepath.Join(dir, "harness", ".operator")
-			if raw, err := os.ReadFile(operator); err == nil {
-				var reg struct {
-					Slug string `json:"slug"`
-				}
-				if err := json.Unmarshal(raw, &reg); err == nil {
-					if slug := strings.TrimSpace(reg.Slug); slug != "" {
-						logDir := filepath.Join(dir, "queries", slug)
-						if err := os.MkdirAll(logDir, 0o755); err == nil {
-							return filepath.Join(logDir, "sap-writes.jsonl")
-						}
-					}
-				}
-				break // found the checkout; it just isn't usable
-			}
-			parent := filepath.Dir(dir)
-			if parent == dir {
-				break
-			}
-			dir = parent
-		}
+	var reg struct {
+		Slug string `json:"slug"`
 	}
-	return ""
+	if err := json.Unmarshal(raw, &reg); err != nil {
+		return ""
+	}
+	slug := strings.TrimSpace(reg.Slug)
+	if slug == "" {
+		return ""
+	}
+	logDir := filepath.Join(root, "queries", slug)
+	if err := os.MkdirAll(logDir, 0o755); err != nil {
+		return ""
+	}
+	return filepath.Join(logDir, "sap-writes.jsonl")
 }

@@ -11,11 +11,15 @@ Prints the draft as SAP holds it, then flags:
   · base GRPO lines no longer open (someone else invoiced them)
   · owner + the exact place to open it in the SAP client
 Exit 0 clean · 1 flags raised · 3 not found
+
+The flags themselves live in `acc/apbatch/readback.py`, shared with `acc batch`,
+so a gap found once is reported the same way whichever path made the draft.
 """
 import argparse, json, os, pathlib, re, subprocess, sys
 
 CLI = None
 COMPANY = None
+SAP = None
 
 
 def find_repo():
@@ -24,6 +28,22 @@ def find_repo():
         if (p / "sap-b1" / "cli" / "sapb1").exists():
             return p
     sys.exit("readback: cannot find jivo-cli/sap-b1/cli/sapb1")
+
+
+REPO = find_repo()
+if str(REPO) not in sys.path:
+    sys.path.insert(0, str(REPO))
+
+try:
+    from acc.apbatch import rules                                       # noqa: E402
+    from acc.apbatch import readback as apreadback                      # noqa: E402
+    from acc.apbatch.sap import SapCli, SapError                        # noqa: E402
+except ImportError as e:                                                # noqa: E402
+    print("readback: your checkout is missing acc/apbatch — git pull (or you are on a stale "
+          f"copy of jivo-cli). Python said: {e}", file=sys.stderr)
+    sys.exit(3)
+
+inr = rules.inr
 
 
 def load_env(path):
@@ -36,34 +56,25 @@ def load_env(path):
 
 
 def q(entity, flt=None, select=None):
-    cmd = [str(CLI), "query", entity, "--json"]
-    if flt:
-        cmd += ["--filter", flt]
-    if select:
-        cmd += ["--select", select]
-    if COMPANY:
-        cmd += ["--company", COMPANY]
-    r = subprocess.run(cmd, cwd=CLI.parent, capture_output=True, text=True)
-    if r.returncode != 0:
-        msg = (r.stderr.strip().splitlines() or ["query failed"])[-1]
+    """The one door to SAP. Everything below goes through here."""
+    try:
+        return SAP.query(entity, filter=flt, select=select, company=COMPANY)
+    except SapError as e:
+        msg = str(e).splitlines()[0]
         if "cannot reach" in msg or "deadline exceeded" in msg:
             raise RuntimeError(f"CANNOT REACH SAP ({msg}) — connection problem, not a data answer; off-office: bash connections/sap-home-bridge.sh then SAPB1_HOST=127.0.0.1 SAPB1_PORT=15000")
         raise RuntimeError(f"{entity}: {msg}")
-    return json.loads(r.stdout or "[]")
 
 
-def inr(n):
-    neg = n < 0
-    n = abs(float(n))
-    i, f = f"{n:.2f}".split(".")
-    last3, rest = i[-3:], i[:-3]
-    if rest:
-        rest = re.sub(r"\B(?=(\d{2})+(?!\d))", ",", rest) + ","
-    return ("-" if neg else "") + "₹" + rest + last3 + "." + f
+class _ShimSap:
+    """Lets acc.apbatch call back through q(), so one monkeypatch covers everything."""
+
+    def query(self, entity, filter=None, select=None, **kw):
+        return q(entity, filter, select)
 
 
 def main():
-    global CLI, COMPANY
+    global CLI, COMPANY, SAP
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("docentry", type=int, help="Drafts DocEntry returned by sapb1 draft")
     ap.add_argument("--expect-total", type=float, help="grand total printed on the paper")
@@ -71,20 +82,24 @@ def main():
     ap.add_argument("--company")
     ap.add_argument("--env", help="per-operator env file next to sapb1")
     a = ap.parse_args()
-    repo = find_repo()
+    repo = REPO
     CLI = repo / "sap-b1" / "cli" / "sapb1"
     COMPANY = a.company
     if a.env:
-        load_env(a.env if os.path.isabs(a.env) else CLI.parent / a.env)
+        env_path = pathlib.Path(a.env) if os.path.isabs(a.env) else CLI.parent / a.env
+        if not env_path.exists():
+            print(f"readback: --env {a.env}: no such file — looked in {env_path}. Operator env "
+                  f"files live next to sapb1 ({CLI.parent}).", file=sys.stderr)
+            sys.exit(3)
+        load_env(env_path)
     os.environ.setdefault("SAPB1_TIMEOUT", "120")
+    SAP = SapCli(repo=repo, company=COMPANY, allow_writes=False)
+    shim = _ShimSap()
 
-    rows = q("Drafts", f"DocEntry eq {a.docentry}")
-    if not rows:
+    d = apreadback.read_draft(shim, a.docentry)
+    if not d:
         sys.exit(f"readback: Drafts {a.docentry} not found (exit 3)")
-    d = rows[0]
-    flags = []
-    owner = q("Users", f"InternalKey eq {d['UserSign']}", "UserCode,UserName")
-    owner = f"{owner[0]['UserCode']} ({owner[0]['UserName']})" if owner else f"user {d['UserSign']}"
+    owner = apreadback.draft_owner(shim, d)
     lines = d["DocumentLines"]
     qty = sum(l["Quantity"] for l in lines)
     taxable = sum(l["LineTotal"] for l in lines)
@@ -96,29 +111,23 @@ def main():
     for l in lines:
         base = f"{ {20: 'GRPO', 22: 'PO'}.get(l.get('BaseType'), l.get('BaseType')) } {l.get('BaseEntry')}/{l.get('BaseLine')}" if l.get("BaseEntry") else "NOT based on any document"
         print(f"   line {l['LineNum']}: {l['ItemCode']} {l['ItemDescription']} · {l['Quantity']:g} {l.get('MeasureUnit') or ''} @ {l['UnitPrice']} = {inr(l['LineTotal'])} · {l['TaxCode']} {inr(l['TaxTotal'])} · whs {l['WarehouseCode']} · WTLiable {l.get('WTLiable')} · {base}")
-        if not l.get("BaseEntry"):
-            flags.append(f"line {l['LineNum']} is not drawn from a GRPO — adding it would receive stock a second time")
     print(f"   taxable {inr(taxable)} · tax {inr(d['VatSum'])} · rounding {d.get('RoundingDiffAmount')} · TDS {inr(d['WTAmount'])} · TOTAL {inr(d['DocTotal'])}")
 
     bp = q("BusinessPartners", f"CardCode eq '{d['CardCode']}'", "CardCode,SubjectToWithholdingTax,BPWithholdingTaxCollection")
-    if bp and bp[0]["SubjectToWithholdingTax"] == "boYES" and not d["WTAmount"]:
-        codes = [w.get("WTCode") for w in bp[0].get("BPWithholdingTaxCollection") or []]
-        flags.append(f"TDS is 0 but the vendor is TDS-liable (codes {codes}) — tick WTax Liable on every row in the SAP client before Add")
-    if a.expect_qty is not None and abs(qty - a.expect_qty) > 0.001:
-        flags.append(f"quantity {qty:g} ≠ paper {a.expect_qty:g}")
+    expect = {}
+    if a.expect_qty is not None:
+        expect["open_qty"] = a.expect_qty
     if a.expect_total is not None:
-        gross = d["DocTotal"] + d["WTAmount"]
-        if abs(round(gross) - round(a.expect_total)) > 1:
-            flags.append(f"gross {inr(gross)} (total + TDS) ≠ paper {inr(a.expect_total)}")
-    for be in sorted({l["BaseEntry"] for l in lines if l.get("BaseType") == 20 and l.get("BaseEntry")}):
+        expect["gross"] = a.expect_total
+    flags = apreadback.readback_flags(d, expect=expect, bp=bp[0] if bp else None, origin="paper")
+
+    for be in apreadback.base_entries(d):
         g = q("PurchaseDeliveryNotes", f"DocEntry eq {be}", "DocEntry,DocNum,DocumentStatus,DocumentLines")
         if g:
             g = g[0]
-            used = {l["BaseLine"] for l in lines if l.get("BaseEntry") == be}
-            closed = [gl["LineNum"] for gl in g["DocumentLines"] if gl["LineNum"] in used and gl.get("LineStatus") != "bost_Open"]
-            print(f"   base GRPO {g['DocNum']} (DocEntry {be}) {g['DocumentStatus']}" + (f" — lines {closed} already CLOSED" if closed else " — base lines still open ✓"))
-            if closed:
-                flags.append(f"GRPO {g['DocNum']} lines {closed} were invoiced by someone else — this draft will fail on Add")
+            closed = apreadback.base_line_flags(d, g)
+            print(f"   base GRPO {g['DocNum']} (DocEntry {be}) {g['DocumentStatus']}" + (f" — lines {sorted({l['BaseLine'] for l in lines if l.get('BaseEntry') == be} & {gl['LineNum'] for gl in g['DocumentLines'] if gl.get('LineStatus') != 'bost_Open'})} already CLOSED" if closed else " — base lines still open ✓"))
+            flags.extend(closed)
 
     print("\n   see it in SAP B1: Purchasing – A/P → Purchasing Reports → Document Drafts Report → tick A/P Invoice + Open Only, User = "
           f"{owner.split(' ')[0]} (or All) → row {d['CardName']} · {d['NumAtCard']} · {inr(d['DocTotal'])}")

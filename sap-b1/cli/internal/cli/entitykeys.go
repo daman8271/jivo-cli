@@ -128,6 +128,7 @@ var entityKeyKinds = map[string]keyKind{
 	"PurchaseReturns":           keyNumeric,
 	"PurchaseDownPayments":      keyNumeric,
 	"Drafts":                    keyNumeric,
+	"PaymentDrafts":             keyNumeric,
 	"IncomingPayments":          keyNumeric,
 	"VendorPayments":            keyNumeric,
 	"JournalEntries":            keyNumeric,

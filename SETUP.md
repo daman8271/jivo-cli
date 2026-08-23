@@ -174,9 +174,15 @@ it was wrong, ignoring it is enough.
 
 So nothing can be written by accident, and nothing can be written quietly.
 
-**Two things it cannot do at all, by design:** it cannot delete anything, and it
-cannot cancel, close, or post a document. Those are a human's job in the SAP B1
-client.
+**Deleting: drafts only.** `sapb1 delete draft <number>` removes a **draft** — it
+shows you the draft first, asks for the same full `yes`, and reads it back to prove
+it's gone. It refuses a draft it did not create itself (someone keyed that one by
+hand), and there is no way to point it at a **posted** document: a posted or
+cancelled document can only be dealt with by a human in the SAP B1 client. A deleted
+draft does not come back — SAP has no undo for one.
+
+**What it cannot do at all, by design:** it cannot cancel, close, or post a
+document. Those are a human's job in the SAP B1 client.
 
 **If you ever see "the outcome is unknown" (exit code 7)** — stop. Don't run it
 again. The request reached SAP but the answer didn't come back, so it may have

@@ -47,5 +47,21 @@ posted until you do — no stock, no ledger. Same shape for `draft invoice`,
 `draft purchase-order`, `draft delivery`, `draft credit-note`. Full steps and the
 Windows quoting are in `SETUP.md`.
 
+## Wrong draft? Remove it (also something you run)
+
+Claude still can't do this for you — same reason. In Command Prompt:
+
+```
+sapb1.exe delete draft 4321
+```
+
+It shows you the draft first, asks you to type `yes`, deletes it, then reads it back
+to prove it's gone. Several at once is fine — `sapb1.exe delete draft 4321 4322 4323`,
+up to 50 — one confirmation for the lot, and `--dry-run` shows you what it would
+remove without removing it (it reads SAP to do that, but sends no delete). **Drafts only**: anything already Added in SAP is untouchable
+from here, and a draft *a person* keyed in SAP B1 is refused unless you explicitly
+say it's yours to remove — so is one that has gone for approval, until you say so.
+Payment drafts: `sapb1.exe delete payment-draft 77`.
+
 Handy reads while you're at it: "what fields can I set on an order?" → ask Claude
 for the Orders fields, or run `sapb1.exe fields Orders`.

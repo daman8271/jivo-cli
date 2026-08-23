@@ -119,8 +119,10 @@ func newOpsCmd() *cobra.Command {
 records for a service or entity. The match is case-insensitive; if there is no
 exact match, the closest names are suggested. Fully offline.
 
-Note: sapb1 is read-only. Write operations (POST/PUT/PATCH/DELETE) are shown
-for reference only — the CLI never executes them.`,
+Note: this listing is the Service Layer's, not this CLI's. sapb1 executes only
+POST (draft/post), PATCH (patch) and DELETE on Drafts/PaymentDrafts
+(delete draft / delete payment-draft) — every other write operation, and every
+OData action, is shown for reference only and cannot be run from here.`,
 		Example: exampleBlock(
 			`sapb1 ops Orders`,
 			`sapb1 ops OrdersService`,

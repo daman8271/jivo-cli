@@ -3,12 +3,17 @@
 // on-disk caching + transparent one-shot re-login on 401), and generic OData
 // reads.
 //
-// Beyond reads it exposes exactly two write operations — Create (POST) and
-// Update (PATCH) — and nothing else: there is no DELETE and no PUT. Those two
-// are reached only from the operator-invoked write commands (`sapb1 draft`,
-// `sapb1 post`, `sapb1 patch`), each of which previews the request and asks for
-// confirmation first. Every attempted write is appended to a local audit log
-// (see writelog.go). Everything else in this package is a GET.
+// Beyond reads it exposes exactly three write operations — Create (POST),
+// Update (PATCH) and Delete (DELETE) — and nothing else: there is no PUT and no
+// OData action. Delete is narrower still: it refuses every entity set outside
+// deletableSets (Drafts, PaymentDrafts), so "DELETE Invoices(9)" cannot be
+// expressed from anywhere in this binary, not just from the command tree.
+//
+// All three are reached only from the operator-invoked write commands
+// (`sapb1 draft`, `sapb1 post`, `sapb1 patch`, `sapb1 delete draft`), each of
+// which previews the request and asks for confirmation first. Every attempted
+// write is appended to a local audit log (see writelog.go). Everything else in
+// this package is a GET.
 package client
 
 import (
@@ -21,6 +26,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -284,24 +290,9 @@ func (c *Client) Logout(ctx context.Context) error {
 // as dead code (`golang.org/x/tools/cmd/deadcode` named it as the only
 // unreachable function in the module).
 func (c *Client) getWithHeaders(ctx context.Context, path string, headers map[string]string) ([]byte, http.Header, error) {
-	if err := c.ensureSession(ctx); err != nil {
-		return nil, nil, err
-	}
-
-	used := c.b1Session
-	body, status, respHeaders, err := c.rawGet(ctx, path, headers)
+	body, status, respHeaders, err := c.getWithStatus(ctx, path, headers)
 	if err != nil {
 		return nil, nil, err
-	}
-
-	if status == http.StatusUnauthorized {
-		if err := c.refreshSession(ctx, used); err != nil {
-			return nil, nil, err
-		}
-		body, status, respHeaders, err = c.rawGet(ctx, path, headers)
-		if err != nil {
-			return nil, nil, err
-		}
 	}
 
 	if status < 200 || status >= 300 {
@@ -316,6 +307,91 @@ func (c *Client) getWithHeaders(ctx context.Context, path string, headers map[st
 	}
 
 	return body, respHeaders, nil
+}
+
+// getWithStatus is getWithHeaders without the "any non-2xx is an error" verdict:
+// it establishes a session, sends the GET, re-logs-in once on a 401 and retries,
+// and hands the raw status back to the caller.
+//
+// It exists because one caller does NOT want a missing entity turned into an
+// error: GetEntity has to be able to say "404 — it isn't there" as a normal,
+// expected answer (that is how a delete verifies itself, and how it notices a
+// draft somebody else already removed).
+func (c *Client) getWithStatus(ctx context.Context, path string, headers map[string]string) ([]byte, int, http.Header, error) {
+	if err := c.ensureSession(ctx); err != nil {
+		return nil, 0, nil, err
+	}
+
+	used := c.b1Session
+	body, status, respHeaders, err := c.rawGet(ctx, path, headers)
+	if err != nil {
+		return nil, 0, nil, err
+	}
+
+	if status == http.StatusUnauthorized {
+		if err := c.refreshSession(ctx, used); err != nil {
+			return nil, 0, nil, err
+		}
+		body, status, respHeaders, err = c.rawGet(ctx, path, headers)
+		if err != nil {
+			return nil, 0, nil, err
+		}
+	}
+
+	return body, status, respHeaders, nil
+}
+
+// EntityResult is the outcome of a single-entity read. Found is false — with a
+// nil error — when the Service Layer answered 404, i.e. the object genuinely
+// isn't there.
+type EntityResult struct {
+	Found  bool
+	Status int
+	Body   []byte
+}
+
+// GetEntity reads exactly one numerically-keyed entity, e.g. Drafts(54990).
+//
+// It builds the path itself from entitySet + docEntry, so no caller-supplied
+// string ever becomes a path segment: `Drafts(1)/Cancel`, `Drafts?$filter=…` and
+// `../Login` are not spellable through this method, they are compile-time
+// impossible. entitySet must be a bare OData identifier and docEntry must be
+// positive.
+//
+// A 404 is not an error here — it is the answer (Found=false). Anything else
+// non-2xx is, as everywhere else, an AuthError or an APIError.
+func (c *Client) GetEntity(ctx context.Context, entitySet string, docEntry int64) (*EntityResult, error) {
+	if !entitySetRe.MatchString(entitySet) {
+		return nil, &errs.UsageError{Msg: fmt.Sprintf("%q is not a bare entity-set name — GetEntity addresses one entity set by a numeric key and nothing else", entitySet)}
+	}
+	if docEntry <= 0 {
+		return nil, &errs.UsageError{Msg: fmt.Sprintf("%s key must be a positive number, got %d", entitySet, docEntry)}
+	}
+
+	path := entitySet + "(" + strconv.FormatInt(docEntry, 10) + ")"
+	body, status, _, err := c.getWithStatus(ctx, path, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	switch {
+	case status == http.StatusNotFound:
+		return &EntityResult{Found: false, Status: status}, nil
+	case status == http.StatusUnauthorized:
+		_, msg := extractSAPErrorDetail(body)
+		if msg == "" {
+			msg = fmt.Sprintf("HTTP %d", status)
+		}
+		return nil, &errs.AuthError{Msg: fmt.Sprintf("authentication failed: %s", msg)}
+	case status < 200 || status >= 300:
+		code, msg := extractSAPErrorDetail(body)
+		if msg == "" {
+			msg = fmt.Sprintf("HTTP %d", status)
+		}
+		return nil, &errs.APIError{Code: code, Msg: msg}
+	}
+
+	return &EntityResult{Found: true, Status: status, Body: body}, nil
 }
 
 func (c *Client) rawGet(ctx context.Context, path string, headers map[string]string) ([]byte, int, http.Header, error) {

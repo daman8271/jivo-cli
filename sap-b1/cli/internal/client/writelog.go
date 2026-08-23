@@ -2,8 +2,12 @@ package client
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -45,17 +49,200 @@ type writeLogEntry struct {
 	Status         *int            `json:"status,omitempty"`
 	ResultKey      string          `json:"result_key,omitempty"`
 	Error          string          `json:"error,omitempty"`
+	// SnapshotSHA256 identifies the object as it read immediately before a
+	// DELETE. The snapshot ITSELF is not here: this file is designed to be
+	// committed, into a repo that is public, and a snapshot carries the vendor's
+	// name, their bill number and every line item with its price. The contents
+	// go to the local snapshot log (config.SnapshotLogPath) and this hash points
+	// at them — so the shared history still says a specific, verifiable thing was
+	// destroyed, and an auditor with access to the machine can prove which.
+	//
+	// It rides the INTENT line only: the same hash on both lines would double the
+	// trail for nothing.
+	SnapshotSHA256 string `json:"snapshot_sha256,omitempty"`
+	// Overrides names the guards the operator had to switch off by hand, e.g.
+	// ["not-created-here"]. Absent means every guard passed on its own.
+	Overrides []string `json:"overrides,omitempty"`
+	// Origin is the write-log line that vouched this CLI created the object —
+	// the exact record that authorised its deletion, kept so a planted line is
+	// greppable and attributable afterwards.
+	Origin *WriteOrigin `json:"origin,omitempty"`
 }
 
-// appendWriteLog appends one record to the write log. It never fails the write
-// itself: if the log can't be written the operator gets a single stderr warning
-// and the write keeps its own outcome. event is logIntent or logOutcome; status
-// is recorded only on outcome lines, since an intent has no outcome yet.
-func (c *Client) appendWriteLog(event, method, path string, payload []byte, status int, resultKey string, writeErr error) {
-	logPath, err := config.WriteLogPath()
+// WriteOrigin points at one line of one write log: the creation record a delete
+// was allowed on.
+type WriteOrigin struct {
+	File string    `json:"file"`
+	Line int       `json:"line"`
+	User string    `json:"user"`
+	Time time.Time `json:"time"`
+	Host string    `json:"host,omitempty"`
+	Port int       `json:"port,omitempty"`
+}
+
+// logExtra is the delete-shaped additions to a log line, plus the one policy
+// switch that separates a delete from every other write: RequireIntent makes the
+// intent line a precondition instead of a courtesy.
+type logExtra struct {
+	SnapshotSHA256 string
+	Overrides      []string
+	Origin         *WriteOrigin
+	RequireIntent  bool
+}
+
+// writeLogTargets lists every file one record must land in.
+//
+// For POST/PATCH there is exactly one, and $SAPB1_WRITE_LOG picks it: the object
+// survives the write, so a diverted log costs an audit line, not the evidence.
+//
+// A DELETE also goes to the operator's log inside the checkout, whatever the
+// environment says. Divert a delete and the record of what was destroyed leaves
+// with it — there is no SAP row left to query afterwards — so the shared history
+// stops being a matter of one variable being unset. The configured log is still
+// written too, so a wrapper or a script that tails it keeps working.
+func writeLogTargets(method string) ([]string, error) {
+	configured, err := config.WriteLogPath()
+	if err != nil {
+		return nil, err
+	}
+	if method != http.MethodDelete {
+		return []string{configured}, nil
+	}
+	shared := config.SharedWriteLogPath()
+	if shared == "" || sameLogFile(shared, configured) {
+		return []string{configured}, nil
+	}
+	// The checkout's log first: it is the one that has to succeed.
+	return []string{shared, configured}, nil
+}
+
+// checkWriteLogTargets proves every file this record must land in can be
+// appended to, BEFORE the first line is written. It returns the path that could
+// not be opened, or "" when they all could.
+//
+// It exists because the intent line FANS OUT for a delete: [shared, configured].
+// Written one file at a time, a failure on the second left the first — the
+// committed, shared log — holding an intent line with no outcome, and an intent
+// with no outcome is exactly how this tool spells "sent, outcome unknown". So a
+// delete that never left the machine published a phantom into the team's history
+// and then refused. Opening both first turns that into a plain refusal with
+// nothing written.
+//
+// O_APPEND|O_CREATE|O_WRONLY 0600 is what appendLine itself uses: the point is
+// to fail here in exactly the cases it would fail there. The file is created if
+// it does not exist, which is what the first real write would have done anyway.
+func checkWriteLogTargets(method string) (string, error) {
+	targets, err := writeLogTargets(method)
+	if err != nil {
+		return "(path unresolved)", err
+	}
+	for _, p := range targets {
+		f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600) // #nosec G304 — resolved by config, never from an argument
+		if err != nil {
+			return p, err
+		}
+		if err := f.Close(); err != nil {
+			return p, err
+		}
+	}
+	return "", nil
+}
+
+// isConfiguredLog reports whether path is the log $SAPB1_WRITE_LOG (or the
+// operator default) chose — as opposed to the checkout's shared log, which a
+// delete also writes to and which that variable cannot move.
+func isConfiguredLog(path string) bool {
+	configured, err := config.WriteLogPath()
+	if err != nil || configured == "" {
+		return false
+	}
+	return sameLogFile(configured, path)
+}
+
+// sameLogFile reports whether two log paths are the same file — by name once
+// cleaned, or by inode when both already exist.
+//
+// One of three path-identity helpers in this CLI that must agree: this one,
+// config.sameDirectory (which checkout am I in) and cli.resolvePath/withinAny
+// (is this file admissible as evidence). All three answer "the same file, however
+// it was spelled" — cleaned strings, then symlinks, then the inode — and a change
+// to one belongs in the others.
+func sameLogFile(a, b string) bool {
+	if a == b {
+		return true
+	}
+	absA, errA := filepath.Abs(a)
+	absB, errB := filepath.Abs(b)
+	if errA == nil && errB == nil && filepath.Clean(absA) == filepath.Clean(absB) {
+		return true
+	}
+	fa, errA := os.Stat(a)
+	fb, errB := os.Stat(b)
+	return errA == nil && errB == nil && os.SameFile(fa, fb)
+}
+
+// snapshotLogEntry is one line of the LOCAL snapshot log: what a draft held at
+// the moment it was destroyed, addressed by the hash the shared write log
+// records. It never leaves the machine.
+type snapshotLogEntry struct {
+	Time      time.Time       `json:"time"`
+	SHA256    string          `json:"sha256"`
+	Host      string          `json:"host"`
+	Port      int             `json:"port"`
+	CompanyDB string          `json:"company_db"`
+	User      string          `json:"user"`
+	Method    string          `json:"method"`
+	Path      string          `json:"path"`
+	Snapshot  json.RawMessage `json:"snapshot"`
+}
+
+// recordSnapshot writes the contents of the object about to be destroyed to the
+// local snapshot log and returns the hash that identifies it, plus where it
+// went so the operator can be told.
+func (c *Client) recordSnapshot(method, path string, snapshot json.RawMessage) (sha, logPath string, err error) {
+	logPath, err = config.SnapshotLogPath()
+	if err != nil {
+		return "", "(path unresolved)", err
+	}
+	sum := sha256.Sum256(snapshot)
+	sha = hex.EncodeToString(sum[:])
+
+	line, err := json.Marshal(snapshotLogEntry{
+		Time:      time.Now(),
+		SHA256:    sha,
+		Host:      c.cfg.Host,
+		Port:      c.cfg.Port,
+		CompanyDB: c.cfg.CompanyDB,
+		User:      c.cfg.User,
+		Method:    method,
+		Path:      path,
+		Snapshot:  snapshot,
+	})
+	if err != nil {
+		return "", logPath, err
+	}
+	if err := appendLine(logPath, line); err != nil {
+		return "", logPath, err
+	}
+	return sha, logPath, nil
+}
+
+// appendWriteLog appends one record to the write log and returns the path it
+// wrote to plus whatever went wrong.
+//
+// For POST/PATCH it still never fails the write itself: the caller ignores the
+// error, the operator gets a single stderr warning, and the write keeps its own
+// outcome. The return value exists for the one caller that cannot be so
+// forgiving — Delete, whose intent line is the only surviving copy of what it is
+// about to destroy (see logExtra.RequireIntent).
+//
+// event is logIntent or logOutcome; status is recorded only on outcome lines,
+// since an intent has no outcome yet.
+func (c *Client) appendWriteLog(event, method, path string, payload []byte, status int, resultKey string, writeErr error, extra *logExtra) (string, error) {
+	targets, err := writeLogTargets(method)
 	if err != nil {
 		c.warnWriteLog("(path unresolved)", err)
-		return
+		return "(path unresolved)", err
 	}
 
 	e := writeLogEntry{
@@ -73,11 +260,22 @@ func (c *Client) appendWriteLog(event, method, path string, payload []byte, stat
 		st := status
 		e.Status = &st
 	}
-	if json.Valid(payload) {
+	switch {
+	case len(payload) == 0:
+		// No body at all (a DELETE): there is nothing to record and nothing was
+		// omitted, so say neither.
+	case json.Valid(payload):
 		e.Payload = json.RawMessage(payload)
-	} else {
+	default:
 		// Never silently drop it: say a payload existed but wasn't valid JSON.
 		e.PayloadOmitted = true
+	}
+	if extra != nil {
+		e.Overrides = extra.Overrides
+		e.Origin = extra.Origin
+		if event == logIntent {
+			e.SnapshotSHA256 = extra.SnapshotSHA256
+		}
 	}
 	if writeErr != nil {
 		e.Error = writeErr.Error()
@@ -85,13 +283,20 @@ func (c *Client) appendWriteLog(event, method, path string, payload []byte, stat
 
 	line, err := json.Marshal(e)
 	if err != nil {
-		c.warnWriteLog(logPath, err)
-		return
+		c.warnWriteLog(targets[0], err)
+		return targets[0], err
 	}
 
-	if err := appendLine(logPath, line); err != nil {
-		c.warnWriteLog(logPath, err)
+	// Every target gets the line. A failure on any of them is reported — for a
+	// DELETE the caller turns that into a refusal, since a delete nobody can read
+	// about afterwards is worse than a delete that didn't happen.
+	for _, p := range targets {
+		if err := appendLine(p, line); err != nil {
+			c.warnWriteLog(p, err)
+			return p, err
+		}
 	}
+	return targets[0], nil
 }
 
 // appendLine appends one line to path, creating it 0600 and tightening a

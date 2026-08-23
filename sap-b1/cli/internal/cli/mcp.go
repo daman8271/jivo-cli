@@ -29,7 +29,9 @@ Claude Desktop) can call the SAP Business One Service Layer as tools.
 
 Every tool is strictly READ-ONLY — the server only ever issues GET requests
 (plus Login/Logout for the session). It exposes no tool that can create,
-update, or delete business data.
+update, or delete business data, and an AST guard test fails the build if this
+package so much as names one. The CLI's write commands (draft/post/patch and
+delete draft) are reachable from a terminal only.
 
 Transports (--transport):
   stdio (default)  JSON-RPC over stdin/stdout, for an MCP client that launches

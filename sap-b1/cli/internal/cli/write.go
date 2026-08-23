@@ -48,12 +48,20 @@ var stdinIsTTYFunc = stdinIsTTY
 // same connection/company checks the read path uses, plus the output-format rules
 // that make sense for a write (no --csv: there's no table to emit).
 func writeConfig(cmd *cobra.Command) (*config.Config, error) {
+	return writeConfigMsg(cmd, "--csv is not supported for write commands; use --json to get the created object back as JSON")
+}
+
+// writeConfigMsg is writeConfig with the --csv refusal spelled by the caller.
+// `delete` needs its own wording: it creates no object, so "get the created
+// object back as JSON" would be nonsense advice at exactly the moment an
+// operator is reading carefully.
+func writeConfigMsg(cmd *cobra.Command, csvMsg string) (*config.Config, error) {
 	cfg, err := loadConfig(cmd)
 	if err != nil {
 		return nil, err
 	}
 	if cfg.CSV {
-		return nil, &errs.UsageError{Msg: "--csv is not supported for write commands; use --json to get the created object back as JSON"}
+		return nil, &errs.UsageError{Msg: csvMsg}
 	}
 	if err := cfg.ValidateConnection(); err != nil {
 		return nil, err
@@ -222,15 +230,47 @@ func spliceJSONField(payload []byte, name, value string) ([]byte, error) {
 // keystroke should not be able to commit a production write.
 //
 // stdinIsTTY is a parameter rather than a call so tests can drive both paths.
-func confirmWrite(cmd *cobra.Command, cfg *config.Config, method, path string, payload []byte, yes, stdinIsTTY bool) error {
-	errOut := cmd.ErrOrStderr()
+//
+// creatingDraft says whether this write makes a draft — the only thing `delete`
+// can ever remove, and so the only write whose evidence gap is worth a line here.
+func confirmWrite(cmd *cobra.Command, cfg *config.Config, method, path string, payload []byte, yes, stdinIsTTY, creatingDraft bool) error {
+	previewWrite(cmd.ErrOrStderr(), cfg, method, path, payload, creatingDraft)
+	return confirmPrompt(cmd, fmt.Sprintf("Type 'yes' to send this write to %s: ", cfg.CompanyDB), yes, stdinIsTTY)
+}
 
+// previewWrite prints exactly what is about to be sent. Callers pass stderr, so
+// stdout stays clean for the result.
+func previewWrite(errOut io.Writer, cfg *config.Config, method, path string, payload []byte, creatingDraft bool) {
 	fmt.Fprintln(errOut, "About to WRITE to SAP:")
 	fmt.Fprintf(errOut, "  company : %s\n", cfg.CompanyDB)
 	fmt.Fprintf(errOut, "  user    : %s\n", cfg.User)
 	fmt.Fprintf(errOut, "  request : %s %s%s\n", method, cfg.BaseURL(), path)
 	fmt.Fprintf(errOut, "  payload :\n%s\n", indentJSON(payload, "    "))
+	// Said HERE, at creation, because this is the moment it can still be fixed
+	// for free: a draft created while the write log lands outside queries/ can
+	// never be deleted by this CLI without a human at a prompt, one DocEntry at
+	// a time. Finding that out during the cleanup of a fifty-draft batch is too
+	// late. Silent in the normal case (registered checkout, log in queries/).
+	//
+	// Drafts only. The advice ends "…cannot later be shown to be this CLI's",
+	// which is about being able to DELETE the thing afterwards — and `delete`
+	// removes drafts and nothing else. On a post or a patch it was an accurate
+	// sentence about an irrelevant consequence, printed above a prompt where the
+	// operator has one thing to check.
+	if !creatingDraft {
+		return
+	}
+	if advice := evidenceGapAdvice(); advice != "" {
+		fmt.Fprintf(errOut, "  note    : %s\n", advice)
+	}
+}
 
+// confirmPrompt is the confirmation contract itself, with the prompt SENTENCE
+// left to the caller so a delete can say DELETE and name the count while the
+// RULES stay in one place: only an exact "yes", never "y", never without a
+// terminal. Every write command in this tool goes through this function, so when
+// the rule changes it changes once.
+func confirmPrompt(cmd *cobra.Command, prompt string, yes, stdinIsTTY bool) error {
 	if yes {
 		return nil
 	}
@@ -239,7 +279,7 @@ func confirmWrite(cmd *cobra.Command, cfg *config.Config, method, path string, p
 		return &errs.UsageError{Msg: "refusing to write without confirmation: stdin is not a terminal, so nobody can answer the prompt — re-run with --yes if you really mean this write, or with --dry-run to see exactly what it would send"}
 	}
 
-	fmt.Fprintf(errOut, "Type 'yes' to send this write to %s: ", cfg.CompanyDB)
+	fmt.Fprint(cmd.ErrOrStderr(), prompt)
 	line, err := bufio.NewReader(cmd.InOrStdin()).ReadString('\n')
 	if err != nil && strings.TrimSpace(line) == "" {
 		return &errs.UsageError{Msg: "aborted — no confirmation read, nothing was sent to SAP"}
