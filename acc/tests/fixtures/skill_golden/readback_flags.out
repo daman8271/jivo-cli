@@ -1,0 +1,14 @@
+== Draft 60011 · oPurchaseInvoices · doc no 626080099 · bost_Open · approval dasWithout · owner USER36 (Navdeep)
+   VENDA000777 SUNRISE PACK INDUSTRIES · vendor ref SPI/26-27/0042
+   posting 2026-08-18 · doc 2026-08-17 · due 2026-09-17 · branch FACTORY (2) · series 4001 bod_GSTTaxInvoice
+   remarks: 'Based On Goods Receipt PO 2026080001 | PO 220826099 | GATE ENTRY NO 999'
+   line 0: PM0000999 PET BOTTLE 500 ML 18 GM · 10000 PCS @ 4.5 = ₹45,000.00 · IGST@18 ₹8,100.00 · whs BH-PM · WTLiable tNO · GRPO 20001/0
+   taxable ₹45,000.00 · tax ₹8,100.00 · rounding 0.0 · TDS ₹0.00 · TOTAL ₹53,100.00
+   base GRPO 2026080001 (DocEntry 20001) bost_Close — lines [0] already CLOSED
+
+   see it in SAP B1: Purchasing – A/P → Purchasing Reports → Document Drafts Report → tick A/P Invoice + Open Only, User = USER36 (or All) → row SUNRISE PACK INDUSTRIES · SPI/26-27/0042 · ₹53,100.00
+   nothing posts until a person opens it and presses Add (it will then go to the approval queue).
+
+== flags
+   ⚠ TDS is 0 but the vendor is TDS-liable (codes ['1031']) — tick WTax Liable on every row in the SAP client before Add
+   ⚠ GRPO 2026080001 lines [0] were invoiced by someone else — this draft will fail on Add

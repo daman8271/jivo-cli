@@ -89,6 +89,17 @@ distribution/server/*.linux-amd64
 
 # acc: real paperwork / payloads never leave the machine (repo is public)
 acc/_samples/
+# acc batch: review workbooks, sidecars and payloads carry vendor names,
+# bill refs and amounts for every row in the batch. Output, never source.
+acc/_batches/
+# acc: scratch ops (raw 90-day dumps, connect scripts, session logs) and the
+# aggregate inventory — real vendor bills/figures, kept off a public repo.
+acc/_playbook/
+acc/INVENTORY.md
+
+# sap attachments kit: MOUNT-RUNBOOK.md and VENDOR-REQUEST.md carry the .52
+# admin password, and this dir also holds downloaded real bill PDFs. Never source.
+sap-b1/attachments/
 
 # summon agent: the live fleet roster (hostnames, kit paths, operator names, SAP
 # usernames). Deployed to /opt/jivo-summon/policy.json by scp, never committed —
