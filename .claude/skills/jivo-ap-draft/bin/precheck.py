@@ -103,6 +103,7 @@ def main():
     ap.add_argument("--total", type=float, help="invoice grand total as printed — verified against the GRPO")
     ap.add_argument("--item", help="item description as printed on the paper — compared with the GRPO line's SAP item name")
     ap.add_argument("--note", default="", help="extra text for Remarks (gate entry GE-…, vehicle, e-way bill, approvals)")
+    ap.add_argument("--budget", help="Budget dimension (CostingCode3) for every line, e.g. FACT_COM. Default: read from --note ('Common' → FACT_COM, C-0027); otherwise the GRPO's own")
     ap.add_argument("--company", default=None, help="SAP company DB: JIVO_OIL_HANADB = Jivo Wellness Pvt Ltd (default), JIVO_MART_HANADB, JIVO_BEVERAGES_HANADB = '(Beverage Unit) Jivo Wellness'")
     ap.add_argument("--env", help="per-operator env file next to sapb1 (e.g. navdeep-user36.env) — decides the draft's owner; does not override exported SAPB1_HOST/PORT")
     ap.add_argument("--out", help="write the proposed draft payload JSON here (use a plain filename — vendor refs contain '/')")
@@ -375,11 +376,20 @@ def main():
         payload = rules.finalize_payload(draft, num_at_card=a.ref, tax_date=a.inv_date,
                                          wtliable="tYES" if wt_liable else None,
                                          comments=rules.build_comments(base, note=a.note))
+        from_note = rules.budget_from_note(a.note)
+        budget = a.budget or (from_note[0] if from_note else None)
+        if budget:
+            rules.apply_budget(payload, budget)
         totals = rules.gross_of(lines)
         tsum, vsum = totals.taxable, totals.tax
         tds = round(tsum * (wt_rate or 0) / 100) if wt_liable and wt_rate else 0
         print("\n[6] expected after SAP accepts it")
         print(f"    gross {inr(tsum + vsum)} · TDS {inr(tds)} · payable ≈ {inr(round(tsum + vsum) - tds)} · due date = SAP's terms from doc date")
+        if budget:
+            why = "--budget" if a.budget else f"the paper says {from_note[1]!r}"
+            print(f"    Budget (CostingCode3) = {budget} on every line — {why}; the GRPO's own value is overridden (C-0027)")
+        else:
+            print("    Budget (CostingCode3) = inherited from the GRPO — no allocation word on the paper; if it says 'Common' pass --note or --budget FACT_COM")
 
     print("\n== verdict")
     for w in warnings:

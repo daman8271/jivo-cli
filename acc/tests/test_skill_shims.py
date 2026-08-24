@@ -168,6 +168,31 @@ class SkillCharacterizationTest(unittest.TestCase):
         _text, _code, _sap, payload = self.precheck("ready")
         self.check("precheck_ready_payload", json.dumps(payload, indent=2) + "\n")
 
+    def test_precheck_common_on_the_paper_sets_factory_common(self):
+        """C-0027: a handwritten 'Common' decides the Budget dim, not the GRPO's value."""
+        text, code, _sap, payload = self.precheck(
+            "ready", extra_argv=("--note", "GE-2026-9999 | For oil plant | Common"))
+        self.assertEqual(0, code)
+        self.assertIn("FACT_COM", text)
+        self.assertIn("the paper says 'Common'", text)
+        self.assertTrue(payload["DocumentLines"])
+        for row in payload["DocumentLines"]:
+            self.assertEqual("FACT_COM", row["CostingCode3"])
+
+    def test_precheck_budget_flag_beats_the_note(self):
+        text, code, _sap, payload = self.precheck(
+            "ready", extra_argv=("--note", "For oil plant | Common", "--budget", "Factory"))
+        self.assertEqual(0, code)
+        self.assertIn("--budget", text)
+        for row in payload["DocumentLines"]:
+            self.assertEqual("Factory", row["CostingCode3"])
+
+    def test_precheck_no_allocation_word_leaves_budget_to_the_grpo(self):
+        _text, code, _sap, payload = self.precheck("ready")
+        self.assertEqual(0, code)
+        for row in payload["DocumentLines"]:
+            self.assertNotIn("CostingCode3", row)
+
     def test_precheck_already_in_sap_exits_2(self):
         text, code, _sap, payload = self.precheck("already")
         self.check("precheck_already", text)

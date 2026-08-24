@@ -922,3 +922,27 @@ class CellTextTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoteBudget(unittest.TestCase):
+    """C-0027: a handwritten allocation word is a field value, not a remark."""
+
+    def test_common_maps_to_factory_common(self):
+        self.assertEqual(rules.budget_from_note("GATE ENTRY NO 136 | For oil plant | Common | Approved by Chopra sir"),
+                         ("FACT_COM", "Common"))
+
+    def test_handwriting_spellings(self):
+        for word in ("common", "COMMON", "Comman", "Comon"):
+            self.assertEqual(rules.budget_from_note(f"For oil plant {word}")[0], "FACT_COM", word)
+
+    def test_no_allocation_word_means_inherit(self):
+        self.assertIsNone(rules.budget_from_note("GE-2026-9529 | Veh HR69G3463 | e-Way 352314494869"))
+        self.assertIsNone(rules.budget_from_note(""))
+        self.assertIsNone(rules.budget_from_note(None))
+        self.assertIsNone(rules.budget_from_note("uncommonly late"))   # word boundary
+
+    def test_apply_budget_hits_every_line(self):
+        payload = {"DocumentLines": [{"BaseLine": 0, "CostingCode3": "Factory"}, {"BaseLine": 1}]}
+        out = rules.apply_budget(payload, "FACT_COM")
+        self.assertIs(out, payload)
+        self.assertEqual([r["CostingCode3"] for r in payload["DocumentLines"]], ["FACT_COM", "FACT_COM"])

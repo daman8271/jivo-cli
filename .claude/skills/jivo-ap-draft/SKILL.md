@@ -42,8 +42,19 @@ stamp; the draft carries the base document's file too).
    `JIVO_BEVERAGES_HANADB`) · buyer GSTIN (→ branch) · "Buyer's order no." (= JIVO
    PO DocNum) · item lines (qty, rate, taxable) · GST split (IGST vs CGST+SGST) ·
    round-off · grand total · **JIVO's gate stamp: G.No and date (= gate-in date)** ·
-   every handwritten number (GE-2026-xxxx = gate entry; 5-digit = a Drafts
-   DocEntry; 10-digit 2026xxxxxx = a GRPO DocNum).
+   **every handwritten mark, read as data (next point)**.
+
+   **Handwriting is data (C-0027).** List every handwritten note on the paper and
+   map each to a field *before* running anything — `reference/handwriting.md` is
+   the glossary: `Common` → Budget `CostingCode3 = FACT_COM` (pass it in `--note`
+   or `--budget FACT_COM`; precheck applies it); `For oil plant` → Oil, branch 2;
+   G.No + date → `DocDate`; `GE-2026-xxxx` → Comments; a bare 5-digit number = a
+   Drafts DocEntry (stop, it exists); 10-digit `2026xxxxxx` = GRPO DocNum;
+   `Approved by … on mail …` → Comments verbatim. A note you cannot map is a
+   question for the operator, never a silent remark. **Add every new note you
+   meet to the glossary the same day** — that is how this skill gets better at
+   handwriting with each paper. A doubtful digit is settled by arithmetic and by
+   the GRPO, not by squinting.
 2. **Run the pre-check** (read-only; it refuses to build if anything is off):
    ```bash
    python3 .claude/skills/jivo-ap-draft/bin/precheck.py \
@@ -84,6 +95,7 @@ stamp; the draft carries the base document's file too).
 | `WTLiable` | **Ask the operator — precedent beats the master flag.** precheck defaults to `tYES` when the BP is TDS-liable, but show them the vendor's last 3 posted invoices first: if those are `tNO`/TDS 0, that is how JIVO books this vendor. TPAC 2026-08-22: master said 194Q 0.1% (₹214), last 3 all `tNO` → operator chose no TDS. Always check `WTAmount` on read-back | API drafts come out TDS 0 (C-0018); and once overruled, readback's "TDS is 0 but vendor is TDS-liable" flag is a false positive |
 | `Comments` | `Based On Goods Receipt PO <n> \| PO <n> \| GATE ENTRY NO <n> \| <paper notes>` ≤ 254 chars | how Accounts searches |
 | `LocationCode` (lines) | inherited from the GRPO line — verify it is set (Oil factory = **2**, Bhakharpur/Haryana). An empty Location shows as an empty place-of-supply in the client | C-0025 |
+| `CostingCode3` (Budget) | **the bill's handwritten allocation note decides**: "Common" / "For oil plant Common" → `FACT_COM` (FACTORY COMMON); the GRPO's inherited `Factory` is the store's default, not Accounts' allocation. Ashok Diwan 1256 → 55165 was patched for this (2026-08-24) | C-0027 |
 | item name ≠ paper | JIVO's item code can be named nothing like the vendor's description (paper "WASH SOLUTION 1000ML" = `CG0000018 INK CARTRIDGE WASHING`). Qty/rate/tax matching the GRPO line is the proof; **say the mismatch out loud** | operator trust |
 
 ## Pre-flight — before `--yes`, and again after read-back
@@ -97,6 +109,8 @@ Rules in a table get skipped under load; this list does not. Tick every line.
 - [ ] `Series` is **this month's**, `DocumentSubType` set, branch = the GRPO's
 - [ ] `WTLiable` = the vendor's posted precedent (not the master flag)
 - [ ] `LocationCode` on every line; `Comments` has GRPO, PO, gate no., approval note
+- [ ] every handwritten note mapped to a field (`reference/handwriting.md`) or raised with
+      the operator — none filed silently as a remark; Budget = what the paper says
 - [ ] **field diff against one posted precedent for this vendor**: every non-null
       field on its header and lines is either present in the payload or consciously
       omitted — this is what caught C-0024/25/26
@@ -195,6 +209,9 @@ vendor, the total and `NumAtCard` before they agree.
 `reference/series-and-errors.md` — how Oil numbers A/P invoices (branch × month ×
 sub-type), the Aug-26 series table, SAP error codes seen and their fixes, and the
 SAP-client click-paths for drafts and approvals.
+
+`reference/handwriting.md` — the growing glossary of what people write on JIVO's bills
+and which field each mark sets (C-0027), plus the digit traps met so far.
 
 `reference/attachments-upload.md` — the proven upload → stamp → point → verify recipe,
 shared with `jivo-ap-service-draft` and `jivo-ap-credit-memo`.

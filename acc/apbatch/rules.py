@@ -843,6 +843,34 @@ def build_comments(base: str, note: str | None = None, tag: str | None = None,
     return (trimmed + suffix) if trimmed else tag[:limit]
 
 
+# --- handwriting → dimensions (C-0027) -------------------------------------
+# Accounts writes the allocation on the paper itself ("Common" next to "For oil
+# plant" on Ashok Diwan 1256). Those words are field values, not remarks: the
+# Budget dimension (CostingCode3) they name overrides whatever the GRPO carried.
+# Patterns are deliberately loose about spelling — it is handwriting.
+NOTE_BUDGET: tuple[tuple[str, str], ...] = (
+    (r"\bcomm?[ao]n\b", "FACT_COM"),        # Common / Comman / Comon → FACTORY COMMON
+)
+
+
+def budget_from_note(note: str | None) -> tuple[str, str] | None:
+    """(CostingCode3, the word as written) if the note names a Budget; else None."""
+    if not note:
+        return None
+    for pattern, code in NOTE_BUDGET:
+        m = re.search(pattern, note, re.IGNORECASE)
+        if m:
+            return code, m.group(0)
+    return None
+
+
+def apply_budget(payload: dict, code: str) -> dict:
+    """Set CostingCode3 on every line, in place. Returns the payload for chaining."""
+    for row in payload.get("DocumentLines", []):
+        row["CostingCode3"] = code
+    return payload
+
+
 def build_payload(grpo: Mapping[str, Any], lines: Sequence[Mapping[str, Any]],
                   bpl_id: int, series: int | None, subtype: str) -> dict:
     """The draft, minus everything that is decided at send time.
