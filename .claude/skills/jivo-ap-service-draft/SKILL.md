@@ -20,18 +20,23 @@ below are through it.
 
 ## The procedure
 
-1. **Read the paper into facts.** Vendor + GSTIN (verify against the BP master — scans
+1. **Read the scan in tiles first** — `jivo-ap-draft/bin/zoom.py "<scan>" --dpi 300`
+   (`--box L,T,R,B --dpi 900` for a doubtful digit), then map **every handwritten
+   mark to a field** using `jivo-ap-draft/reference/handwriting.md` — "Common" →
+   Budget `CostingCode3 = FACT_COM` (C-0027), and never compare a digit against a
+   sample from a different hand on the same paper.
+2. **Read the paper into facts.** Vendor + GSTIN (verify against the BP master — scans
    misread digits: Om Sai's "600?31" was `6065G1`) · bill no. exactly as printed →
    `NumAtCard` · bill date · billing period · **JIVO gate stamp G.No + date** · **every
    row: date, vehicle / bilty / meter, item, qty, rate, value** · discount and its
    basis · round-off · NET TOTAL · GST or none · every handwritten approval.
-2. **Duplicate gate — hard stop.** `Drafts` where `NumAtCard eq '<ref>'` (any doctype);
+3. **Duplicate gate — hard stop.** `Drafts` where `NumAtCard eq '<ref>'` (any doctype);
    sweep the vendor's drafts with `--all` (Om Sai had 94) and its posted
    `PurchaseInvoices` by `NumAtCard` **and** by `DocDate` in the bill's month. Any hit →
    stop, report paper-vs-record, create nothing. Run `jivo-ap-draft`'s precheck anyway:
    its ref scan is a second opinion and exit 3 confirms "no GRPO" — a GRPO comment
    mentioning the same number can be a *bilty* number on another vendor (it was).
-3. **Pull the precedent** — the vendor's last 3 posted `PurchaseInvoices` in full
+4. **Pull the precedent** — the vendor's last 3 posted `PurchaseInvoices` in full
    (`--all --json`, then the one with `DocumentLines`). Write down every non-null
    field; that list is the payload's spec. What it decides:
 
@@ -48,24 +53,24 @@ below are through it.
    | line `U_Recvd_Qty` | **the paper's per-row qty lives here** — service rows have no Quantity column in the client, so litres/kg/km would otherwise vanish (C-0025) | litres per vehicle |
    | line split | one line per vehicle / bilty / meter, as precedent does | 6 lines |
 
-4. **Build the lines so nothing on the paper is lost.** Every paper column lands in some
+5. **Build the lines so nothing on the paper is lost.** Every paper column lands in some
    field: qty → `U_Recvd_Qty`; vehicle/bilty → the dimension precedent uses; period,
    gate no., approvals → `Comments`. Decode discounts from the arithmetic, never from the
    label: Om Sai's "Discount @ 0.50" is **₹0.50 per litre on diesel only** (549.689 L ×
    0.50 = the printed 274.84) — net it onto the diesel lines, nothing on petrol. Absorb
    the paper's round-off into the largest line so **Σ lines = NET TOTAL exactly**.
-5. **Dates:** `DocDate` = gate-stamp date (C-0017), `TaxDate` = bill date, omit
+6. **Dates:** `DocDate` = gate-stamp date (C-0017), `TaxDate` = bill date, omit
    `DocDueDate`. Precedent normally agrees (Om Sai July: 07-18 / 07-15); if it doesn't,
    follow C-0017 and say so.
-6. **Comments** (≤254): `Bill <ref> dt <date> period <a-b> | GATE ENTRY NO <n> dt <date> |
+7. **Comments** (≤254): `Bill <ref> dt <date> period <a-b> | GATE ENTRY NO <n> dt <date> |
    <qty summary: Petrol 110.150 Ltr Diesel 549.689 Ltr> | <approval as written>`.
-7. **Dry-run → operator's go → `--yes`:**
+8. **Dry-run → operator's go → `--yes`:**
    `acc/_playbook/sap draft purchase-invoice --dry-run --data-file <payload.json>` then
    `--yes`. Exit 7 = look, don't resend. A 400 with `1120009` = add `CostingCode3`; with
    `-10`/`-4002` = wrong series/subtype flavour.
-8. **Attach the scan** — `jivo-ap-draft/reference/attachments-upload.md` (steps 1, 4, 5,
+9. **Attach the scan** — `jivo-ap-draft/reference/attachments-upload.md` (steps 1, 4, 5,
    6; there is no base document to copy). Stamp `U_CHK2 OK` or the pointer is refused.
-9. **Read back:** `readback.py <DocEntry> --expect-total <net>` — its "not drawn from a
+10. **Read back:** `readback.py <DocEntry> --expect-total <net>` — its "not drawn from a
    GRPO" flags are a **false positive for this document class**; say so. Then verify by
    query: `DocTotal` exact, every line has `LocationCode`, `CostingCode3`, `U_Recvd_Qty`,
    Σ `U_Recvd_Qty` = the paper's qty total, `GSTTransactionType`, `AttachmentEntry`.
@@ -101,5 +106,5 @@ companion-line pattern in every precedent doc (~85%; a two-field edit if Account
 
 Not yet exercised. Expect: one line per bilty/LR with the bilty no. in the dimension or
 `Comments`, freight accounts under 5650xxx, weight/km in `U_Recvd_Qty`, and **TDS 194C is
-likely** — the precedent check in step 3 decides, never the assumption. Add the worked
+likely** — the precedent check in step 4 decides, never the assumption. Add the worked
 example here after the first live draft.

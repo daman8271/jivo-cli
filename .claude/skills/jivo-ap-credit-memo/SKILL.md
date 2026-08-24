@@ -16,28 +16,33 @@ hard stops, delete); read it first. Plumbing: `acc/_playbook/sap <args>`.
 
 ## The procedure
 
-1. **Read the paper into facts.** Vendor + GSTIN · **Credit Note No.** → `NumAtCard` ·
+1. **Read the scan in tiles first** — `jivo-ap-draft/bin/zoom.py "<scan>" --dpi 300`
+   (`--box L,T,R,B --dpi 900` for a doubtful digit), then map **every handwritten
+   mark to a field** using `jivo-ap-draft/reference/handwriting.md` — "Common" →
+   Budget `CostingCode3 = FACT_COM` (C-0027), and never compare a digit against a
+   sample from a different hand on the same paper.
+2. **Read the paper into facts.** Vendor + GSTIN · **Credit Note No.** → `NumAtCard` ·
    CN date → `TaxDate` · **"Original Invoice No. & Date"** → `OriginalRefNo` (exactly as
    printed, e.g. `RPL/1164/2026-27`) + `OriginalRefDate` (**mandatory**, C-0024) · buyer
    GSTIN → branch · lines (item, qty, rate) · CGST/SGST or IGST · round-off · total ·
    e-invoice IRN/Ack if printed · approvals.
-2. **Find the original A/P invoice.** Posted `PurchaseInvoices` by `NumAtCard` (try the
+3. **Find the original A/P invoice.** Posted `PurchaseInvoices` by `NumAtCard` (try the
    printed form and `RPL/1164/26-27`-style variants; else fetch the vendor's month and
    match "1164" in code) **and** `Drafts` — it may still be an un-added draft, even
    `dasPending` in someone's approval queue. Record DocEntry/DocNum, DocDate, lines,
    status.
-3. **Find a Goods Return.** `PurchaseReturns` for the vendor with `NumAtCard` = the
+4. **Find a Goods Return.** `PurchaseReturns` for the vendor with `NumAtCard` = the
    original invoice ref, or matching item + qty near the CN date; note
    `RemainingOpenQuantity` on its lines.
-4. **Duplicate gate — hard stop.** `Drafts` (`DocObjectCode eq 'oPurchaseCreditNotes'`)
+5. **Duplicate gate — hard stop.** `Drafts` (`DocObjectCode eq 'oPurchaseCreditNotes'`)
    and posted `PurchaseCreditNotes` for the `CardCode` with `NumAtCard '<cn no>'`; plus
    any CN for the vendor around the date with the same total. Any hit → stop, report,
    create nothing.
-5. **Classify the CN** by comparing its line to the invoice line: same qty + lower rate
+6. **Classify the CN** by comparing its line to the invoice line: same qty + lower rate
    = rate difference; part qty = short/return; whole invoice = reversal. Then pull the
    vendor's last 3 posted `PurchaseCreditNotes` in full — they show how Accounts books
    that kind (based-on vs standalone, series, subtype, `Rounding`, dates, TDS).
-6. **Choose the base** (precedent decides; these are JIVO's observed patterns):
+7. **Choose the base** (precedent decides; these are JIVO's observed patterns):
    - qty return **with an open Goods Return** → base on it: lines `BaseType 21`,
      `BaseEntry` = return DocEntry, `BaseLine` (precedent: RPL CN 65, Feb-26 —
      "Based On Goods Return"). Closes the return; no second stock movement.
@@ -47,7 +52,7 @@ hard stops, delete); read it first. Plumbing: `acc/_playbook/sap <args>`.
      books briefly show a credit against nothing.
    - rate difference only → whatever precedent shows (often a price-difference line, not
      an item line — check before moving stock).
-7. **Fields** (beyond the shared rules):
+8. **Fields** (beyond the shared rules):
 
    | Field | Rule | Why |
    |---|---|---|
@@ -60,13 +65,13 @@ hard stops, delete); read it first. Plumbing: `acc/_playbook/sap <args>`.
    | `WTLiable` | precedent (RPL: never TDS on CNs) | |
    | `Comments` ≤254 | `A/P Credit Memo agst <orig inv> dt <date> \| Vendor CN <n> dt <date> \| <item qty> \| Based On Goods Return <DocNum> \| <approval>` | how Accounts searches |
 
-8. **Dry-run → operator's go → `--yes`:**
+9. **Dry-run → operator's go → `--yes`:**
    `acc/_playbook/sap draft purchase-credit-note --dry-run --data-file <payload.json>`,
    then `--yes`. Exit 7 = look (Drafts by `NumAtCard` + `CardCode`), don't resend.
-9. **Attach** — `jivo-ap-draft/reference/attachments-upload.md`: the operator's scan, plus
+10. **Attach** — `jivo-ap-draft/reference/attachments-upload.md`: the operator's scan, plus
    the Goods Return's / invoice's file if the base document has one (55128's return had
    none). Stamp `U_CHK2 OK` first or the pointer is refused.
-10. **Read back by query** (readback.py is invoice-shaped): `DocObjectCode
+11. **Read back by query** (readback.py is invoice-shaped): `DocObjectCode
     oPurchaseCreditNotes`, `CardCode`, `NumAtCard`, `DocTotal` = paper, `VatSum` =
     CGST+SGST to the paisa, `RoundingDiffAmount`, **`OriginalRefNo`/`OriginalRefDate`
     set**, base refs on every line, `WTAmount`, `AttachmentEntry`.

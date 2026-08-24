@@ -44,6 +44,11 @@ stamp; the draft carries the base document's file too).
    round-off · grand total · **JIVO's gate stamp: G.No and date (= gate-in date)** ·
    **every handwritten mark, read as data (next point)**.
 
+   **Read the scan in tiles, not as one page** — `bin/zoom.py "<scan>" --dpi 300`
+   renders it big and cuts it into 9 overlapping tiles; Read every tile (and
+   `--box L,T,R,B --dpi 900` for a doubtful digit). A shrunk full page is how the
+   "Common" on Ashok Diwan 1256 was missed.
+
    **Handwriting is data (C-0027).** List every handwritten note on the paper and
    map each to a field *before* running anything — `reference/handwriting.md` is
    the glossary: `Common` → Budget `CostingCode3 = FACT_COM` (pass it in `--note`
@@ -209,6 +214,9 @@ vendor, the total and `NumAtCard` before they agree.
 `reference/series-and-errors.md` — how Oil numbers A/P invoices (branch × month ×
 sub-type), the Aug-26 series table, SAP error codes seen and their fixes, and the
 SAP-client click-paths for drafts and approvals.
+
+`bin/zoom.py` — render a scan big and tile it, so handwriting is read at real
+resolution instead of page scale (`--box` for one region, `--dpi 900` for one digit).
 
 `reference/handwriting.md` — the growing glossary of what people write on JIVO's bills
 and which field each mark sets (C-0027), plus the digit traps met so far.

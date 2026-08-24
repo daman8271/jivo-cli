@@ -28,8 +28,38 @@ the same people write the same things on every bill.
 | `Disc @ 0.50` on a fuel bill | ₹0.50 **per litre on diesel only** — decode from the arithmetic | net onto the diesel lines | Om Sai 2495 |
 | `Original invoice no. & date` box on a CN | statutory reference | `OriginalRefNo` + `OriginalRefDate` (C-0024) | Royal Prime CN 56 |
 
+## How to actually read it — tiles, not a full page
+
+A whole scanned page shrunk to fit is where handwriting goes to die: the mark that
+changed the Budget on Ashok Diwan 1256 was a small word sitting on top of a rubber
+stamp, and it read as scribble at page scale. **Render big, then read in pieces:**
+
+```bash
+# every part of the page, 3x3 overlapping tiles at 300 dpi — Read all nine
+python3 .claude/skills/jivo-ap-draft/bin/zoom.py "<scan.pdf>" --dpi 300
+
+# one region you already care about (fractions of the page: L,T,R,B)
+python3 .claude/skills/jivo-ap-draft/bin/zoom.py "<scan.pdf>" --box 0,0.45,0.55,0.72 --dpi 600
+```
+
+Where things live on a JIVO-stamped bill (starting points, verify per paper):
+invoice no. + date `0.45,0.13,1.0,0.20` · gate stamp `0.28,0.44,0.52,0.53` ·
+allocation / signatures under the stamp `0.35,0.50,1.0,0.60` ·
+tax + total column `0.70,0.70,1.0,0.85` · approval line at the foot `0,0.94,0.85,0.99`.
+
+Read **every** tile in grid mode. The mark that changes a field is usually the one in
+a corner nobody thought to look at. 900 dpi on a single doubtful digit is cheap.
+
 ## Reading digits — settle by evidence, not by squinting
 
+- **Compare glyphs only within the same hand.** A bill carries three or four
+  different hands — the vendor's (invoice no., date, amounts), the gatekeeper's
+  (the G.No/Date/V.No stamp), the storekeeper's, the approver's. The gatekeeper's
+  "3" in `G.No 136` says nothing about the vendor's "3": on Ashok Diwan 1256 the
+  vendor writes 3 as a top-loop ∂ (see the two ₹300 GST figures) while the
+  gatekeeper writes it flat-topped with a bowl. **Find the same digit elsewhere in
+  the SAME hand and compare against that** — a cross-hand comparison is how a 3
+  becomes a 7.
 - A doubtful digit is settled by **arithmetic** (qty × rate must equal the amount; taxable
   + GST must equal the gross) and by **SAP** (the GRPO's `NumAtCard`, qty and total) — never
   by picking the likelier-looking shape.
@@ -39,7 +69,12 @@ the same people write the same things on every bill.
   not fit, it is wrong); `0`/`O`, `5`/`S` in vehicle numbers (HR67**F**9911 on the stamp vs
   HR67**E**9911 on the printed line — the stamp was the registration).
 - Dates are DD-MM-YY. `13-8-26` is 2026-08-13; never "normalise" to a different day.
-- When two readings survive, say both to the operator with the field they would change.
+- **Cross-check dates for internal consistency**: a vendor bill cannot be dated
+  *after* the gate stamp that let it through the gate (the bill travels with the
+  truck). If your two readings imply that, at least one is wrong — and SAP's GRPO,
+  keyed by a person holding the physical paper, is better evidence than any scan.
+- When two readings survive, say both to the operator with the field they would
+  change, and give each a confidence. Never pick one silently.
 
 ## Words we expect to meet next (unverified — confirm on the first paper, then move up)
 
