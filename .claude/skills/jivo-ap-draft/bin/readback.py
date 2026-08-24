@@ -25,9 +25,10 @@ SAP = None
 def find_repo():
     here = pathlib.Path(__file__).resolve()
     for p in [here] + list(here.parents):
-        if (p / "sap-b1" / "cli" / "sapb1").exists():
+        # Either kit counts - see the same note in precheck.py.
+        if (p / "sap-b1" / "cli" / "sapb1").exists() or (p / "sap-b1" / "accounts-kit" / "sapb1.exe").exists():
             return p
-    sys.exit("readback: cannot find jivo-cli/sap-b1/cli/sapb1")
+    sys.exit("readback: cannot find jivo-cli/sap-b1 (sapb1 or accounts-kit/sapb1.exe)")
 
 
 REPO = find_repo()
@@ -37,7 +38,7 @@ if str(REPO) not in sys.path:
 try:
     from acc.apbatch import rules                                       # noqa: E402
     from acc.apbatch import readback as apreadback                      # noqa: E402
-    from acc.apbatch.sap import SapCli, SapError                        # noqa: E402
+    from acc.apbatch.sap import SapCli, SapError, resolve_cli            # noqa: E402
 except ImportError as e:                                                # noqa: E402
     print("readback: your checkout is missing acc/apbatch — git pull (or you are on a stale "
           f"copy of jivo-cli). Python said: {e}", file=sys.stderr)
@@ -83,7 +84,7 @@ def main():
     ap.add_argument("--env", help="per-operator env file next to sapb1")
     a = ap.parse_args()
     repo = REPO
-    CLI = repo / "sap-b1" / "cli" / "sapb1"
+    CLI = resolve_cli(repo)   # accounts-kit\sapb1.exe on Windows, sap-b1/cli/sapb1 elsewhere
     COMPANY = a.company
     if a.env:
         env_path = pathlib.Path(a.env) if os.path.isabs(a.env) else CLI.parent / a.env

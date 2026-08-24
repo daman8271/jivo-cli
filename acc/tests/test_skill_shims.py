@@ -278,6 +278,33 @@ class ShimWiringTest(unittest.TestCase):
         mod = load_script("readback")
         self.assertIs(mod.inr, __import__("acc.apbatch.rules", fromlist=["inr"]).inr)
 
+    def test_neither_shim_hardcodes_the_posix_binary(self):
+        """Measured on HO-IPEXP-PC2 (Lovepreet, 2026-08-24): both shims set
+        CLI = repo/"sap-b1"/"cli"/"sapb1" and then resolved --env against
+        CLI.parent. On a Windows box the kit is accounts-kit, so
+        `--env lovepreet-user06.env` exited 3 "no such file" and the printed
+        login came back "?" - the operator's own login silently unreachable
+        through the skill. Both must go through resolve_cli().
+        """
+        for name in ("precheck", "readback"):
+            src = (SKILL_BIN / (name + ".py")).read_text(encoding="utf-8")
+            self.assertNotIn('CLI = repo / "sap-b1" / "cli" / "sapb1"', src,
+                             f"{name}.py pins the POSIX binary; Windows kits use accounts-kit")
+            self.assertIn("CLI = resolve_cli(repo)", src,
+                          f"{name}.py must resolve the binary per platform")
+
+    def test_resolve_cli_picks_the_windows_kit_on_windows(self):
+        from acc.apbatch.sap import resolve_cli
+        self.assertEqual(resolve_cli(REPO, windows=True),
+                         REPO / "sap-b1" / "accounts-kit" / "sapb1.exe")
+
+    def test_both_shims_find_the_repo_from_a_windows_only_kit(self):
+        """A checkout carrying only accounts-kit/sapb1.exe is still a checkout."""
+        for name in ("precheck", "readback"):
+            src = (SKILL_BIN / (name + ".py")).read_text(encoding="utf-8")
+            self.assertIn('"accounts-kit" / "sapb1.exe").exists()', src,
+                          f"{name}.py's find_repo() rejects a Windows-only kit")
+
 
 class StaleCheckoutTest(unittest.TestCase):
     """A checkout without acc/apbatch must say so in words an operator can act on.

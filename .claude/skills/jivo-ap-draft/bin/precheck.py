@@ -42,9 +42,12 @@ class Unreachable(RuntimeError):
 def find_repo():
     here = pathlib.Path(__file__).resolve()
     for p in [here] + list(here.parents):
-        if (p / "sap-b1" / "cli" / "sapb1").exists():
+        # Either kit counts: Windows operator boxes carry only accounts-kit's exe,
+        # Mac/Linux only the Go binary. Insisting on the POSIX one sent every
+        # Windows box looking for its --env file in the wrong directory.
+        if (p / "sap-b1" / "cli" / "sapb1").exists() or (p / "sap-b1" / "accounts-kit" / "sapb1.exe").exists():
             return p
-    sys.exit("precheck: cannot find jivo-cli/sap-b1/cli/sapb1 above " + str(here))
+    sys.exit("precheck: cannot find jivo-cli/sap-b1 (sapb1 or accounts-kit/sapb1.exe) above " + str(here))
 
 
 REPO = find_repo()
@@ -55,7 +58,7 @@ try:
     from acc.apbatch import rules                                    # noqa: E402
     from acc.apbatch.context import HanaSql                          # noqa: E402
     from acc.apbatch.sap import (SapCli, SapError, SapUnreachable,   # noqa: E402
-                                 odata_str, read_env_file)
+                                 odata_str, read_env_file, resolve_cli)
 except ImportError as e:                                             # noqa: E402
     # The decisions moved into acc/apbatch on 2026-08-24. A checkout without it
     # is a stale copy (a Drive zip, or a pull that has not happened), and the
@@ -110,7 +113,7 @@ def main():
     a = ap.parse_args()
 
     repo = REPO
-    CLI = repo / "sap-b1" / "cli" / "sapb1"
+    CLI = resolve_cli(repo)   # accounts-kit\sapb1.exe on Windows, sap-b1/cli/sapb1 elsewhere
     HANA = HanaSql(repo)
     COMPANY = a.company
     if a.env:
