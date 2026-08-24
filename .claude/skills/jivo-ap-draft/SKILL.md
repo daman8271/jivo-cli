@@ -19,6 +19,21 @@ GRPOs — 50 at a time, reviewed in Excel before anything is sent — use
 `acc batch` (see `acc/BATCH.md`). It shares these rules; the scripts here and
 the batch both call `acc/apbatch`.
 
+**Which skill?** This one is for a vendor **tax invoice for goods that came through
+the gate** — a GRPO exists and the draft is drawn from it. Two siblings share its
+rules, its scripts and its attachment recipe:
+
+- **No GRPO** — fuel / petrol-pump bills, transporter / freight / bilty bills, courier,
+  electricity, rent, AMC, any service or expense bill → **`jivo-ap-service-draft`**.
+  precheck exit 3 ("no GRPO") is the usual hand-off signal.
+- **A credit note the vendor issued to JIVO** (rate difference, short quantity,
+  return, reversal) → **`jivo-ap-credit-memo`** (`draft purchase-credit-note`).
+
+Live corrections that shaped all three (harness `harness/corrections/`): C-0017,
+C-0018, **C-0024** (credit memos carry OriginalRefNo/Date), **C-0025** (service lines
+carry LocationCode, U_Recvd_Qty, Budget dim), **C-0026** (attachments: approve-column
+stamp; the draft carries the base document's file too).
+
 ## The procedure
 
 1. **Read the paper into facts.** Vendor name + GSTIN · invoice no. (exactly as
@@ -68,41 +83,50 @@ the batch both call `acc/apbatch`.
 | `DocumentLines` | one per **open GRPO line**: `BaseType 20, BaseEntry, BaseLine`, qty = line's open qty | stock is not received twice; a 5,870-pc invoice can be two lines because the GRPO merged two POs — say so to the operator |
 | `WTLiable` | **Ask the operator — precedent beats the master flag.** precheck defaults to `tYES` when the BP is TDS-liable, but show them the vendor's last 3 posted invoices first: if those are `tNO`/TDS 0, that is how JIVO books this vendor. TPAC 2026-08-22: master said 194Q 0.1% (₹214), last 3 all `tNO` → operator chose no TDS. Always check `WTAmount` on read-back | API drafts come out TDS 0 (C-0018); and once overruled, readback's "TDS is 0 but vendor is TDS-liable" flag is a false positive |
 | `Comments` | `Based On Goods Receipt PO <n> \| PO <n> \| GATE ENTRY NO <n> \| <paper notes>` ≤ 254 chars | how Accounts searches |
+| `LocationCode` (lines) | inherited from the GRPO line — verify it is set (Oil factory = **2**, Bhakharpur/Haryana). An empty Location shows as an empty place-of-supply in the client | C-0025 |
+| item name ≠ paper | JIVO's item code can be named nothing like the vendor's description (paper "WASH SOLUTION 1000ML" = `CG0000018 INK CARTRIDGE WASHING`). Qty/rate/tax matching the GRPO line is the proof; **say the mismatch out loud** | operator trust |
 
-## Attachments — the draft comes out with none, and that is fixable
+## Pre-flight — before `--yes`, and again after read-back
 
-An API-created A/P draft always has `AttachmentEntry: null`. A human-keyed one never does.
-The B1 client copies the GRPO's attachment forward on copy-to-target; the Service Layer does not.
+Rules in a table get skipped under load; this list does not. Tick every line.
 
-**You do not need to upload anything — the bill is already in SAP.** The factory attaches the
-scanned vendor invoice to the GRPO at gate-in (623/623 GRPO-based Oil A/P drafts since 1 Jul 2026
-had one). So the file exists and is registered; only the pointer is missing.
+- [ ] duplicate gate passed (precheck exit 0; the ref **and** the GRPO both clean)
+- [ ] every line `BaseType 20 / BaseEntry / BaseLine` set — nothing free-keyed
+- [ ] `DocTotal` = the paper's grand total to the paisa; qty = paper qty
+- [ ] `DocDate` = GRPO/gate date, `TaxDate` = vendor's invoice date
+- [ ] `Series` is **this month's**, `DocumentSubType` set, branch = the GRPO's
+- [ ] `WTLiable` = the vendor's posted precedent (not the master flag)
+- [ ] `LocationCode` on every line; `Comments` has GRPO, PO, gate no., approval note
+- [ ] **field diff against one posted precedent for this vendor**: every non-null
+      field on its header and lines is either present in the payload or consciously
+      omitted — this is what caught C-0024/25/26
 
-```bash
-# find the bill the GRPO already carries
-acc/_playbook/sap query PurchaseDeliveryNotes --filter "DocEntry eq <grpoEntry>" --select "AttachmentEntry"
-acc/_playbook/sap query Attachments2 --filter "AbsoluteEntry eq <n>"      # name, size, path
-# point the draft at it (dry-run first, then the operator's go)
-acc/_playbook/sap patch "Drafts(<docEntry>)" --data '{"AttachmentEntry": <n>}' --dry-run
-```
+After sending: read-back clean, `AttachmentEntry` set, both files listed, GRPO unchanged.
 
-✅ **Proven 2026-08-24 on draft 54983 / GRPO 25714 (Oil, USER36):** `PATCH Drafts(N) {"AttachmentEntry": <n>}`
-→ HTTP 204, draft reads back with the pointer, GRPO unchanged. Setting it back to `null` also
-returns 204 (rollback works), and re-setting restores it. Still read back both the draft *and* the
-GRPO afterwards — cheap, and it is the only proof the pointer landed. Not yet observed: whether the
-borrowed pointer survives a human pressing Add on the draft (check the first converted one).
+## Attachments — the draft must carry the paper (both papers)
 
-⚠ **Sharp edge:** draft and GRPO then share one `Attachments2` row. A file added later on the
-draft's Attachments tab lands on that shared record and also shows on the GRPO.
+An API-created draft comes out with `AttachmentEntry: null`. The B1 client copies the
+GRPO's attachment forward on copy-to-target; the Service Layer does not — so we do it.
 
-**Do not try to upload the PDF through the Service Layer. It cannot, by design of this install.**
-`POST /Attachments2` → `-5002 Attachments folder not defined`; `GET Attachments2(N)/$value` → 404
-`Fail to get the LINUX mount point for AttachmentsFolderPath`. The SL runs on Linux; the attachment
-folder is a Windows UNC. A CIFS mount of the share fixes the **download** path only — verified by
-disassembly: `_FILE_GetMountPoint` has two call sites, both on download, and `SLFile::isFullPath`
-accepts only a leading `/` or `smb:`. Mounting will not make uploads work. See SAP Note 3003664 and
-KBA 3631883. For a bill with **no GRPO** (imprest, expenses, services) a person must attach it in
-the client — there is no bill to borrow.
+**Rule (Daman, 2026-08-24): the draft carries the operator's scan AND the GRPO's file**,
+as two independent lines on the draft's own `Attachments2` row. Full recipe, every
+command proven live: **`reference/attachments-upload.md`**. In short:
+
+1. `POST /Attachments2` with the operator's scan (renamed `VENDOR-REF-DATE.pdf`) → row N.
+2. Download the GRPO's file (`GET Attachments2(<grpoAE>)/$value`) and `PATCH Attachments2(N)`
+   multipart to append it as line 2.
+3. Stamp every line `U_CHK = <size KB>`, `U_CHK2 = "OK"` — JIVO guard **1120025** refuses
+   the draft pointer otherwise (`[-1116] Select "OK" in Approve Column`).
+4. `PATCH Drafts(<DocEntry>) {"AttachmentEntry": N}` (dry-run, then `--yes`).
+5. Read back draft **and** GRPO; `TargetPath` must be the Windows UNC
+   (`\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments`) so the client can open it.
+
+**Upload works since 2026-08-24** (hanadb CIFS mounts, `sap-b1/attachments/MOUNT-RUNBOOK.md`).
+Before that, `POST /Attachments2` → `-5002 Attachments folder not defined` and `$value` →
+`404 LINUX mount point`. If either error returns, a mount is down — fix per the runbook, never
+retry blindly. Do **not** point the draft at the GRPO's own row (`AttachmentEntry = <grpoAE>`):
+it works (proven on 54983) but the two documents then share one record — a file added later
+on either shows on both.
 
 ## Hard stops
 
@@ -146,11 +170,11 @@ vendor, the total and `NumAtCard` before they agree.
 - **Same day, no overrides needed.** Past 24 hours it asks for `--older-than <dur>`,
   and by then the answer is usually "leave it, Accounts will handle it in the
   client" — a day-old A/P draft may already be in someone's Document Drafts list.
-- **If you patched `AttachmentEntry` onto it** (the GRPO's bill, above), the delete
-  refuses until `--with-attachment` — the guard cannot tell a borrowed pointer from
-  paper somebody attached. Setting the field back to `null` first is the cleaner
-  route, and it keeps the question of the shared `Attachments2` row out of it; read
-  the GRPO back either way and confirm it still carries its bill.
+- **If the draft carries attachments** (it should — see above), the delete refuses
+  until `--with-attachment` — the guard cannot tell our uploads from paper somebody
+  attached. Setting `AttachmentEntry` back to `null` first (PATCH, 204) is the cleaner
+  route; the uploaded files stay on the share as harmless orphans (the SL has no DELETE
+  for `Attachments2`). Read the GRPO back either way and confirm it still carries its bill.
 - **Once it has been sent for approval, it is not yours either.** A fresh draft reads
   `AuthorizationStatus dasWithout`; the moment Accounts presses **Add** it routes via
   "USER03 AP" and the row goes `dasPending` while still reading `bost_Open`, so the
@@ -171,3 +195,10 @@ vendor, the total and `NumAtCard` before they agree.
 `reference/series-and-errors.md` — how Oil numbers A/P invoices (branch × month ×
 sub-type), the Aug-26 series table, SAP error codes seen and their fixes, and the
 SAP-client click-paths for drafts and approvals.
+
+`reference/attachments-upload.md` — the proven upload → stamp → point → verify recipe,
+shared with `jivo-ap-service-draft` and `jivo-ap-credit-memo`.
+
+Worked examples from 2026-08-24 (all three drafts live, read back, corrected by Daman):
+Digicod DFM/26-27/00382 → draft 55126 (this skill) · Om Sai fuel 2495 → 55130
+(`jivo-ap-service-draft`) · Royal Prime CN 56 → 55128 (`jivo-ap-credit-memo`).
