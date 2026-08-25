@@ -27,6 +27,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0023]** Build a party ledger from JDT1 (OCRD.CardCode = JDT1.ShortName), never from document extracts - they miss every journal entry (7,478 in Oil, Rs 3,043 cr), cancellations and pre-cutover postings.
 - **[C-0024]** A/P credit-memo drafts: always set OriginalRefNo (original invoice no. exactly as printed on the CN) and OriginalRefDate — SAP silently accepts null but Accounts/GST require them.
 - **[C-0028]** Outgoing payment attachment = the FULL approval mail thread as PDF (a PO may ride as a second line). Never the vendor's bill, never a cropped screenshot.
+- **[C-0029]** Outgoing payment that settles bills: Contents page -> Display = 'Transactions for Business Partner' -> select all. Never apply to one hand-picked invoice; reconcile the total to OCRD.Balance.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
 - **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
@@ -35,4 +36,5 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
-- **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.
+
+<!-- 1 correction(s) omitted: digest hit the 6000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0006 -->
