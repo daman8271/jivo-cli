@@ -28,6 +28,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0024]** A/P credit-memo drafts: always set OriginalRefNo (original invoice no. exactly as printed on the CN) and OriginalRefDate — SAP silently accepts null but Accounts/GST require them.
 - **[C-0028]** Outgoing payment attachment = the FULL approval mail thread as PDF (a PO may ride as a second line). Never the vendor's bill, never a cropped screenshot.
 - **[C-0029]** Outgoing payment that settles bills: Contents page -> Display = 'Transactions for Business Partner' -> select all. Never apply to one hand-picked invoice; reconcile the total to OCRD.Balance.
+- **[C-0030]** Read the company off the PO/bill itself (e.g. 'ONLY FOR BEVERAGES' in the header, and the printed CardCode) and use that company; if the paper names none, it is Oil.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
 - **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
