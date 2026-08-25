@@ -17,6 +17,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0015]** U_Main_Group differs across company books for 129 customers - Oil 'CALL CENTER' vs Mart 'CALL CENTRE' (111), plus 4 HORECA mismatches. Never segment across companies on this tag alone.
 - **[C-0016]** A blank in SAP usually means the value lives elsewhere. Before calling it a defect check the paired column, the other company books, and the document vs master level - and confirm COUNT(*) counts documents, not add-on rows.
 - **[C-0021]** HANA "CANCELED" is three-valued: 'N' live, 'Y' cancelled original, 'C' its system mirror. Always filter CANCELED='N' - a <>'Y' test keeps the mirrors and double-counts (Oil OPDN +94.63 Cr).
+- **[C-0033]** Effective Month = SAP Dimension 2, JDT1.OcrCode2, MM-YYYY codes. It is the month a cost belongs to. Never substitute TaxDate or RefDate. Dim1=Variety Dim2=EffMonth Dim3=Budget Dim4=SubBudget Dim5=State.
 ## accounts
 - **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
 - **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.
@@ -34,6 +35,5 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
 - **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
-- **[C-0027]** A/P draft line CostingCode3 (Budget): if the bill says 'Common' set FACT_COM (FACTORY COMMON), never inherit the GRPO's 'Factory'. Read the handwritten allocation note on every factory bill.
 
-<!-- 3 correction(s) omitted: digest hit the 6000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0007, C-0003, C-0006 -->
+<!-- 4 correction(s) omitted: digest hit the 6000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0027, C-0007, C-0003, C-0006 -->
