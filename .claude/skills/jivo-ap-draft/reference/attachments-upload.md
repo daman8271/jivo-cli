@@ -19,6 +19,23 @@ R=/Users/damanpreetsingh/jivo-cli; S=<scratch dir>; H=https://127.0.0.1:15000   
 cd "$R"; set -a; source sap-b1/cli/<operator>.env; set +a                     # the login that owns the draft
 ```
 
+**On a Windows operator box (Git bash), two things below bite before anything
+reaches SAP — both measured on DESKTOP-EQ55Q8H, 2026-08-25:**
+
+- **`$S` must be a Windows-visible directory**, e.g. `S=/c/Windows/Temp/attach`
+  with `W='C:\Windows\Temp\attach'` for the Python calls. `mktemp -d` returns an
+  MSYS path (`/tmp/tmp.XXXX`) that native Python cannot open, so every
+  `python3 -c ... open("$S/...")` silently yields an empty value and the next
+  curl is built with a blank AbsoluteEntry — which shows up as a puzzling 404
+  on `$value`, not as a Python error. Pass the `C:\...` form to Python and the
+  `/c/...` form to curl and `wc`.
+- **`python3` may be the Microsoft Store stub.** Real CPython on Windows ships
+  `python.exe` only, so bare `python3` falls through to
+  `…\WindowsApps\python3.exe`, which prints "Python was not found" and exits.
+  Fix once per box: `Copy-Item "C:\Program Files\Python312\python.exe" "C:\Program Files\Python312\python3.exe"`
+  (Python312 sits ahead of WindowsApps on the Machine PATH, so `python3` then
+  resolves to the real interpreter everywhere).
+
 ## 1. Session (never echo the password)
 
 ```bash

@@ -60,7 +60,20 @@ stamp; the draft carries the base document's file too).
    meet to the glossary the same day** — that is how this skill gets better at
    handwriting with each paper. A doubtful digit is settled by arithmetic and by
    the GRPO, not by squinting.
-2. **Run the pre-check** (read-only; it refuses to build if anything is off):
+2. **Find the GRPO by the vendor's own bill number FIRST — it is an exact key.**
+   `PurchaseDeliveryNotes.NumAtCard` holds the vendor's invoice number, so this is
+   a lookup, not a search. Gate number, amount and date are corroboration only.
+   ```bash
+   sapb1 query PurchaseDeliveryNotes --filter "contains(NumAtCard,'<bill no>')" \
+     --select "DocEntry,DocNum,CardCode,CardName,NumAtCard,DocDate,DocTotal,DocumentStatus"
+   ```
+   Take `CardCode` from that GRPO and pass it to precheck as `--vendor <CardCode>`.
+   **Never let a vendor be resolved by name similarity** — `FederalTaxID` is empty
+   for the whole vendor master, and name matching booked TPAC to GTECH and Pioneer
+   Pet to Hose Expert (₹13.9 L, 2026-08-26). Two hits on one NumAtCard = a duplicate
+   GRPO in SAP: report it, do not just pick one. Full rules:
+   **`reference/matching-and-batches.md`**.
+3. **Run the pre-check** (read-only; it refuses to build if anything is off):
    ```bash
    python3 .claude/skills/jivo-ap-draft/bin/precheck.py \
      --ref "<invoice no>" --vendor "<name fragment or CardCode>" \
@@ -77,12 +90,12 @@ stamp; the draft carries the base document's file too).
    - **Exit 3** = it could not identify vendor / GRPO / branch / series — fix the
      inputs; never hand-edit facts it couldn't find.
    - **Exit 4** = SAP unreachable. Not a data answer. It prints the bridge fix.
-3. **Show the operator** the dry-run, from `sap-b1/cli` with the operator's env
+4. **Show the operator** the dry-run, from `sap-b1/cli` with the operator's env
    sourced (`set -a; source <operator>.env; set +a`):
    `./sapb1 draft purchase-invoice --dry-run --data-file /tmp/ap-draft.json`.
    Wait for their go.
-4. **Send** the same command with `--yes`. Note the DocEntry SAP returns.
-5. **Read it back and compare**:
+5. **Send** the same command with `--yes`. Note the DocEntry SAP returns.
+6. **Read it back and compare**:
    `python3 .claude/skills/jivo-ap-draft/bin/readback.py <DocEntry> --expect-total … --expect-qty …`
    Report its flags as gaps, not as success. Give the operator the draft number
    and the click-path it prints.
@@ -100,6 +113,8 @@ stamp; the draft carries the base document's file too).
 | `WTLiable` | **Ask the operator — precedent beats the master flag.** precheck defaults to `tYES` when the BP is TDS-liable, but show them the vendor's last 3 posted invoices first: if those are `tNO`/TDS 0, that is how JIVO books this vendor. TPAC 2026-08-22: master said 194Q 0.1% (₹214), last 3 all `tNO` → operator chose no TDS. Always check `WTAmount` on read-back | API drafts come out TDS 0 (C-0018); and once overruled, readback's "TDS is 0 but vendor is TDS-liable" flag is a false positive |
 | `Comments` | `Based On Goods Receipt PO <n> \| PO <n> \| GATE ENTRY NO <n> \| <paper notes>` ≤ 254 chars | how Accounts searches |
 | `LocationCode` (lines) | inherited from the GRPO line — verify it is set (Oil factory = **2**, Bhakharpur/Haryana). An empty Location shows as an empty place-of-supply in the client | C-0025 |
+| `CostingCode2` (Effective Month) | **= the DocDate's month, `MM-YYYY` (e.g. `08-2026`).** A GRPO-drawn line inherits **Dim1 only** — Dim2/3/5 come through null and must be set. Patchable after the fact without disturbing totals, base links or attachments | C-0035 |
+| `WTLiable` / TDS | 194Q deducts 0.1% only once that **seller** passes **₹50 lakh FY purchases**, and the seller is a **PAN**, not a CardCode — aggregate every card sharing `CRD7.TaxId0` first (TPAC = VENDA000937 + VENDA000939). **SAP does not enforce the threshold**; it deducts whenever `WTCode 1031` is set | C-0036, C-0037 |
 | `CostingCode3` (Budget) | **the bill's handwritten allocation note decides**: "Common" / "For oil plant Common" → `FACT_COM` (FACTORY COMMON); the GRPO's inherited `Factory` is the store's default, not Accounts' allocation. Ashok Diwan 1256 → 55165 was patched for this (2026-08-24) | C-0027 |
 | item name ≠ paper | JIVO's item code can be named nothing like the vendor's description (paper "WASH SOLUTION 1000ML" = `CG0000018 INK CARTRIDGE WASHING`). Qty/rate/tax matching the GRPO line is the proof; **say the mismatch out loud** | operator trust |
 
@@ -114,6 +129,10 @@ Rules in a table get skipped under load; this list does not. Tick every line.
 - [ ] `Series` is **this month's**, `DocumentSubType` set, branch = the GRPO's
 - [ ] `WTLiable` = the vendor's posted precedent (not the master flag)
 - [ ] `LocationCode` on every line; `Comments` has GRPO, PO, gate no., approval note
+- [ ] **`CostingCode2` (Effective Month) set on EVERY line** = the DocDate month
+- [ ] GRPO found by its `NumAtCard`, and `CardCode` taken from that GRPO — not name-matched
+- [ ] zero-value companion lines (caps with bottles) included, and excluded from the qty check
+- [ ] TDS decided on the **PAN's** FY total against ₹50 lakh, not the CardCode's
 - [ ] every handwritten note mapped to a field (`reference/handwriting.md`) or raised with
       the operator — none filed silently as a remark; Budget = what the paper says
 - [ ] **field diff against one posted precedent for this vendor**: every non-null
@@ -217,6 +236,10 @@ SAP-client click-paths for drafts and approvals.
 
 `bin/zoom.py` — render a scan big and tile it, so handwriting is read at real
 resolution instead of page scale (`--box` for one region, `--dpi 900` for one digit).
+
+`reference/matching-and-batches.md` — the exact-key GRPO lookup, vendor resolution,
+the dimension block, ₹0 companion lines, running a pile (two-pass duplicate gate,
+files-vs-invoices), and the 194Q threshold per PAN. Read this before any batch.
 
 `reference/handwriting.md` — the growing glossary of what people write on JIVO's bills
 and which field each mark sets (C-0027), plus the digit traps met so far.
