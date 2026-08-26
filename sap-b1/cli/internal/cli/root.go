@@ -34,7 +34,7 @@ Everything is a read unless you explicitly run a write command. The reads
 (orders, invoices, items, partners, query, fields, doctor) are plain OData GETs
 and can't change anything.
 
-Three commands can write, and only when you type them:
+Five commands can write, and only when you type them:
 
   draft <doctype>    create a DRAFT document — inert until a human opens SAP B1
                      → Document Drafts, reviews it, and presses Add. This is the
@@ -46,6 +46,18 @@ Three commands can write, and only when you type them:
   post <EntitySet>   create an object live, no draft — for master data
                      (BusinessPartners, Items, …). Prefer draft for documents.
   patch <Entity(key)> update fields on one existing object.
+  add-draft <DocEntry>...
+                     press Add on a draft — the thing a person otherwise walks to
+                     the SAP B1 client to do. What that MEANS depends on the draft:
+                     one not yet submitted becomes an approval request (nothing
+                     enters the ledger); one already approved becomes a LIVE
+                     document. The preview says which, per draft, before you
+                     confirm. It refuses a draft that is already Added, one sitting
+                     in somebody's approval queue, one that was rejected, and one
+                     whose contents changed after you looked at it — and unlike
+                     delete, none of those refusals has an override flag, because
+                     each reads a fact from SAP rather than from a file here.
+                     It never approves anything on another person's behalf.
   delete draft <DocEntry>...
   delete payment-draft <DocEntry>...
                      remove DRAFTS, and only drafts. It refuses one this CLI did
@@ -111,9 +123,18 @@ using anything beyond --help.`,
 	root.AddCommand(newPostCmd())
 	root.AddCommand(newPatchCmd())
 	root.AddCommand(newDeleteCmd())
+	// add-draft is the one OData action this CLI can reach, and only for Drafts:
+	// it presses Add. Everything else — Cancel, Close, Reopen,
+	// CreateCancellationDocument, and PaymentDrafts' own SaveDraftToDocument —
+	// stays refused by validateWriteEntitySet, which this command does not touch.
+	root.AddCommand(newAddDraftCmd())
 
 	// Read-only MCP server over stdio (for AI agents).
 	root.AddCommand(newMCPCmd())
+
+	// Interactive session: holds --company and the output format across many
+	// lines. Reads only; see internal/cli/repl.go for why writes are refused.
+	root.AddCommand(newREPLCmd())
 
 	return root
 }

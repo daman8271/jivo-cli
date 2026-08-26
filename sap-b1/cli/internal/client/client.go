@@ -3,17 +3,26 @@
 // on-disk caching + transparent one-shot re-login on 401), and generic OData
 // reads.
 //
-// Beyond reads it exposes exactly three write operations — Create (POST),
-// Update (PATCH) and Delete (DELETE) — and nothing else: there is no PUT and no
-// OData action. Delete is narrower still: it refuses every entity set outside
-// deletableSets (Drafts, PaymentDrafts), so "DELETE Invoices(9)" cannot be
-// expressed from anywhere in this binary, not just from the command tree.
+// Beyond reads it exposes exactly four write operations — Create (POST), Update
+// (PATCH), Delete (DELETE) and SaveDraftToDocument (POST) — and nothing else:
+// there is no PUT, and SaveDraftToDocument is the only OData function this
+// client will call. Two of the four are narrower than their verb suggests:
+// Delete refuses every entity set outside deletableSets (Drafts,
+// PaymentDrafts), so "DELETE Invoices(9)" cannot be expressed from anywhere in
+// this binary, not just from the command tree; and SaveDraftToDocument builds a
+// constant path, so it reaches Drafts and no other document.
 //
-// All three are reached only from the operator-invoked write commands
-// (`sapb1 draft`, `sapb1 post`, `sapb1 patch`, `sapb1 delete draft`), each of
-// which previews the request and asks for confirmation first. Every attempted
-// write is appended to a local audit log (see writelog.go). Everything else in
-// this package is a GET.
+// SaveDraftToDocument is the one write here with no way back. It presses Add on
+// a draft — the document enters the books, stock moves, a ledger moves — and
+// nothing in this binary reverses it. It is treated accordingly: its record is a
+// precondition and it always reaches the team's shared write log (see
+// logExtra.Shared).
+//
+// All four are reached only from the operator-invoked write commands
+// (`sapb1 draft`, `sapb1 post`, `sapb1 patch`, `sapb1 delete draft`,
+// `sapb1 add-draft`), each of which previews the request and asks for
+// confirmation first. Every attempted write is appended to a local audit log
+// (see writelog.go). Everything else in this package is a GET.
 package client
 
 import (

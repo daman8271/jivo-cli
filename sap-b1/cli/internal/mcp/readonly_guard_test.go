@@ -27,6 +27,13 @@ var forbiddenCalls = map[string]string{
 	"Update":       "client.Update issues an HTTP PATCH to the Service Layer",
 	"Delete":       "client.Delete issues an HTTP DELETE to the Service Layer",
 	"attemptWrite": "internal write helper",
+	// The most dangerous of the four, and the reason this list is worth keeping.
+	// client.SaveDraftToDocument presses Add on a draft: stock moves, a vendor's
+	// ledger moves, and it lands in a GST return. Every other write on this list
+	// has a way back from inside this binary; this one has none — only SAP can
+	// reverse it, and only a human in the SAP B1 client. It is reachable from
+	// `sapb1 add-draft` in a terminal and from nowhere else.
+	"SaveDraftToDocument": "client.SaveDraftToDocument POSTs a draft into the books — irreversible from this CLI",
 }
 
 // knownReadOnlyMethods are the exported methods on *client.Client that are

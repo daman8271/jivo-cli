@@ -2197,7 +2197,11 @@ func TestSummaryShowsTheApprovalStatus(t *testing.T) {
 func TestDeleteRefusesADraftInAnApprovalWorkflow(t *testing.T) {
 	// Every status SAP puts on a draft a template has matched. None of them is a
 	// draft nobody is acting on.
-	for _, status := range []string{"dasPending", "dasApproved", "dasGenerated", "dasRejected"} {
+	// Both prefixes: ODRF drafts return das*, OPDF payment drafts return pas*.
+	for _, status := range []string{
+		"dasPending", "dasApproved", "dasGenerated", "dasRejected",
+		"pasPending", "pasApproved", "pasGenerated", "pasRejected",
+	} {
 		t.Run(status, func(t *testing.T) {
 			f := newFakeDraftSAP(t)
 			root := provenanceRepo(t)
@@ -2242,6 +2246,9 @@ func TestDeleteRefusesADraftInAnApprovalWorkflow(t *testing.T) {
 		extra map[string]interface{}
 	}{
 		{"dasWithout", map[string]interface{}{"AuthorizationStatus": "dasWithout"}},
+		// A payment draft nobody is approving. Live: Beverages OPDF 292 read this,
+		// and a das*-only comparison refused every payment draft ever made.
+		{"pasWithout", map[string]interface{}{"AuthorizationStatus": "pasWithout"}},
 		{"no such field", nil},
 	} {
 		t.Run(tc.name+" deletes normally", func(t *testing.T) {

@@ -807,11 +807,28 @@ func checkAttachment(kind draftKind, df deleteFlags, pf *draftPreflight) {
 	})
 }
 
-// approvalFree is AuthorizationStatus on a draft no approval workflow has
-// touched. Anything else — dasPending, dasApproved, dasGenerated, dasRejected —
-// means a template matched and the document entered somebody's Approval Status
-// Report.
+// approvalFree lists every AuthorizationStatus meaning "no approval workflow has
+// touched this draft". Anything else — dasPending, dasApproved, dasGenerated,
+// dasRejected, and their pas* twins — means a template matched and the document
+// entered somebody's Approval Status Report.
+//
+// SAP spells the enum per object family: marketing-document drafts (ODRF) return
+// the das* prefix, payments (OPDF) return pas*. They are the same state under two
+// names, so both belong here. Live proof this matters: Beverages PaymentDrafts
+// DocEntry 292 came back "pasWithout" — untouched by any workflow — and a
+// das*-only test refused it, which made EVERY payment draft undeletable and
+// pushed the operator toward asserting --in-approval about a draft nobody was
+// approving. A guard that cries wolf on all of its inputs teaches people to
+// override it.
 const approvalFree = "dasWithout"
+
+// approvalUntouched is the same state across both object families. add-draft
+// works on ODRF alone and keeps using approvalFree above; delete reaches
+// PaymentDrafts too, so it must know both spellings.
+var approvalUntouched = map[string]bool{
+	approvalFree: true, // ODRF — marketing-document drafts
+	"pasWithout": true, // OPDF — incoming/outgoing payment drafts
+}
 
 // checkApprovalStatus refuses a draft that is in an approval workflow.
 //
@@ -823,15 +840,16 @@ const approvalFree = "dasWithout"
 // rejected and expects to discuss — is in use by a second person, and the whole
 // batch-cleanup case for this command is junk nobody has touched.
 //
-// Absent field means the check does not apply: PaymentDrafts rows come back
-// without one, and a check that cannot run must not become a refusal.
+// Absent field means the check does not apply, and a check that cannot run must
+// not become a refusal. (PaymentDrafts were once assumed to carry no such field.
+// They do — see approvalFree.)
 func checkApprovalStatus(kind draftKind, df deleteFlags, pf *draftPreflight) {
 	raw, ok := pf.Obj["AuthorizationStatus"]
 	if !ok || raw == nil {
 		return
 	}
 	status := formatCell(raw)
-	if status == "" || status == approvalFree {
+	if status == "" || approvalUntouched[status] {
 		return
 	}
 	if df.inApproval {

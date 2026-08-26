@@ -108,13 +108,21 @@ func (c *Client) Delete(ctx context.Context, entitySet string, docEntry int64, o
 		Overrides:     opts.Overrides,
 		Origin:        opts.Origin,
 		RequireIntent: true,
+		// Shared and Unrecordable are stated here rather than inferred from the
+		// verb. They used to be: writeLogTargets asked "is this a DELETE?" and
+		// attemptWrite reached for unrecordableDelete whenever an intent line was
+		// required. Both were true of every caller right up until
+		// SaveDraftToDocument, which is a POST and needs the identical treatment —
+		// see logExtra.Shared.
+		Shared:       true,
+		Unrecordable: unrecordableDelete,
 	}
 
 	// Every destination for the record is proved writable before ANY of them is
 	// written to. A delete's intent line goes to two files, and failing on the
 	// second one after writing the first left a line in the shared, committed log
 	// that says "a DELETE was sent" for a DELETE that never left this machine.
-	if bad, err := checkWriteLogTargets(http.MethodDelete); err != nil {
+	if bad, err := checkWriteLogTargets(extra.shared()); err != nil {
 		return nil, unrecordableDelete(path, bad, err)
 	}
 
@@ -200,6 +208,18 @@ func (c *Client) write(ctx context.Context, method, path string, payload []byte,
 	}
 
 	if status == http.StatusUnauthorized {
+		// Exactly one re-login, and only for a 401 SAP itself answered with. A
+		// 401 is the Service Layer rejecting the session cookie BEFORE it
+		// dispatches, so nothing has been committed and the retry cannot double
+		// anything.
+		//
+		// This is load-bearing for add-draft, not merely convenient. An Add is
+		// irreversible from this CLI, and a batch of them runs for minutes over
+		// the bridge; without the retry a session expiring mid-batch would kill
+		// the run at the one write in this tool where the operator then has to
+		// reason about which documents went and which did not. Removing it makes
+		// add-draft strictly MORE dangerous, not less.
+		//
 		// Close out this attempt in the log before trying again, so the pair
 		// count always matches the number of requests actually sent.
 		c.appendWriteLog(logOutcome, method, path, payload, status, "", errSessionExpiredRetry, extra)
@@ -258,8 +278,12 @@ func (c *Client) attemptWrite(ctx context.Context, method, path string, payload 
 		//
 		// Delete pre-flights every target (checkWriteLogTargets), so reaching here
 		// means something took the file away between that check and this line. Same
-		// refusal either way.
-		return nil, 0, unrecordableDelete(path, logPath, logErr)
+		// refusal either way. add-draft pre-flights them too, from the command.
+		//
+		// The refusal SENTENCE comes from the caller (logExtra.Unrecordable): a
+		// delete and an Add lose different things when the record cannot be
+		// written, and this is the one place an operator finds out which.
+		return nil, 0, extra.unrecordable(path, logPath, logErr)
 	}
 
 	body, status, sent, err := c.rawWrite(ctx, method, path, payload)

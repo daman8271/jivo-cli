@@ -5,13 +5,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"net/http"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"time"
 
 	"sapb1/internal/config"
+	"sapb1/internal/errs"
 )
 
 // Write-log event kinds. Every write produces a pair: the intent line goes out
@@ -80,59 +81,101 @@ type WriteOrigin struct {
 	Port int       `json:"port,omitempty"`
 }
 
-// logExtra is the delete-shaped additions to a log line, plus the one policy
-// switch that separates a delete from every other write: RequireIntent makes the
-// intent line a precondition instead of a courtesy.
+// logExtra is the delete-shaped additions to a log line, plus the policy
+// switches that separate an irreversible write from every other one:
+// RequireIntent makes the intent line a precondition instead of a courtesy, and
+// Shared fans the record out to the checkout's committed log as well.
 type logExtra struct {
 	SnapshotSHA256 string
 	Overrides      []string
 	Origin         *WriteOrigin
 	RequireIntent  bool
+	// Shared says this record must reach the team's committed write log, not
+	// only whichever file $SAPB1_WRITE_LOG names.
+	//
+	// It is a POLICY field and not a verb test on purpose. writeLogTargets used
+	// to decide by asking "is this a DELETE?", which was true of every write
+	// that needed the guarantee right up until SaveDraftToDocument — a POST that
+	// posts a draft to the books and cannot be undone from this CLI. Under the
+	// verb test that write would have silently dropped to one local log file,
+	// losing the single property that makes an irreversible write auditable, and
+	// nothing would have failed to say so.
+	Shared bool
+	// Unrecordable builds the refusal when RequireIntent is set and the intent
+	// line could not be written. It belongs to the caller because the sentence
+	// has to name what was refused ("refusing to DELETE Drafts(54990)" /
+	// "refusing to ADD Drafts(55126)") and, more importantly, what the operator
+	// has lost by it — for a delete that is the only copy of the row, for an Add
+	// it is the only local record that we sent it.
+	Unrecordable func(path, logPath string, cause error) error
+}
+
+// shared reports whether this record fans out to the checkout's committed log.
+// A nil extra is a plain Create/Update: one file, the configured one.
+func (e *logExtra) shared() bool { return e != nil && e.Shared }
+
+// unrecordable renders the refusal for a write whose intent line could not be
+// written. Every caller that sets RequireIntent sets Unrecordable too; the
+// fallback exists so a future one that forgets still refuses with something
+// truthful rather than borrowing a delete's words for a POST.
+func (e *logExtra) unrecordable(path, logPath string, cause error) error {
+	if e != nil && e.Unrecordable != nil {
+		return e.Unrecordable(path, logPath, cause)
+	}
+	return &errs.ConfigError{Msg: fmt.Sprintf(
+		"refusing to send %s: the write log at %s could not be written (%v).\n"+
+			"  This write is only allowed with a record of it. Make that file writable, then re-run",
+		path, logPath, cause)}
 }
 
 // writeLogTargets lists every file one record must land in.
 //
-// For POST/PATCH there is exactly one, and $SAPB1_WRITE_LOG picks it: the object
-// survives the write, so a diverted log costs an audit line, not the evidence.
+// For an ordinary write (POST/PATCH from draft/post/patch) there is exactly one,
+// and $SAPB1_WRITE_LOG picks it: the object survives the write, so a diverted
+// log costs an audit line, not the evidence.
 //
-// A DELETE also goes to the operator's log inside the checkout, whatever the
-// environment says. Divert a delete and the record of what was destroyed leaves
-// with it — there is no SAP row left to query afterwards — so the shared history
-// stops being a matter of one variable being unset. The configured log is still
+// A SHARED record also goes to the operator's log inside the checkout, whatever
+// the environment says. That is every write this CLI cannot undo — a delete,
+// whose record of what was destroyed would otherwise leave with the diverted log
+// because there is no SAP row left to query afterwards, and an Add, which puts a
+// document in the books that only SAP can reverse. The shared history stops
+// being a matter of one variable being unset. The configured log is still
 // written too, so a wrapper or a script that tails it keeps working.
-func writeLogTargets(method string) ([]string, error) {
+//
+// shared is a POLICY FLAG the caller sets, never the HTTP verb. See logExtra.Shared.
+func writeLogTargets(shared bool) ([]string, error) {
 	configured, err := config.WriteLogPath()
 	if err != nil {
 		return nil, err
 	}
-	if method != http.MethodDelete {
+	if !shared {
 		return []string{configured}, nil
 	}
-	shared := config.SharedWriteLogPath()
-	if shared == "" || sameLogFile(shared, configured) {
+	checkoutLog := config.SharedWriteLogPath()
+	if checkoutLog == "" || sameLogFile(checkoutLog, configured) {
 		return []string{configured}, nil
 	}
 	// The checkout's log first: it is the one that has to succeed.
-	return []string{shared, configured}, nil
+	return []string{checkoutLog, configured}, nil
 }
 
 // checkWriteLogTargets proves every file this record must land in can be
 // appended to, BEFORE the first line is written. It returns the path that could
 // not be opened, or "" when they all could.
 //
-// It exists because the intent line FANS OUT for a delete: [shared, configured].
-// Written one file at a time, a failure on the second left the first — the
-// committed, shared log — holding an intent line with no outcome, and an intent
-// with no outcome is exactly how this tool spells "sent, outcome unknown". So a
-// delete that never left the machine published a phantom into the team's history
-// and then refused. Opening both first turns that into a plain refusal with
-// nothing written.
+// It exists because the intent line FANS OUT for a shared record:
+// [shared, configured]. Written one file at a time, a failure on the second left
+// the first — the committed, shared log — holding an intent line with no
+// outcome, and an intent with no outcome is exactly how this tool spells "sent,
+// outcome unknown". So a delete that never left the machine published a phantom
+// into the team's history and then refused. Opening both first turns that into a
+// plain refusal with nothing written.
 //
 // O_APPEND|O_CREATE|O_WRONLY 0600 is what appendLine itself uses: the point is
 // to fail here in exactly the cases it would fail there. The file is created if
 // it does not exist, which is what the first real write would have done anyway.
-func checkWriteLogTargets(method string) (string, error) {
-	targets, err := writeLogTargets(method)
+func checkWriteLogTargets(shared bool) (string, error) {
+	targets, err := writeLogTargets(shared)
 	if err != nil {
 		return "(path unresolved)", err
 	}
@@ -239,7 +282,7 @@ func (c *Client) recordSnapshot(method, path string, snapshot json.RawMessage) (
 // event is logIntent or logOutcome; status is recorded only on outcome lines,
 // since an intent has no outcome yet.
 func (c *Client) appendWriteLog(event, method, path string, payload []byte, status int, resultKey string, writeErr error, extra *logExtra) (string, error) {
-	targets, err := writeLogTargets(method)
+	targets, err := writeLogTargets(extra.shared())
 	if err != nil {
 		c.warnWriteLog("(path unresolved)", err)
 		return "(path unresolved)", err
