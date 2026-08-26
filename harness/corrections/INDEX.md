@@ -36,4 +36,4 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0035]** A/P draft lines inherit only Dim1 from the GRPO: always set CostingCode2 (Effective Month) = the DocDate month as MM-YYYY, e.g. 08-2026, on EVERY line, and check Dim3/Dim5 too.
 - **[C-0036]** 194Q TDS 0.1% (WTCode 1031) only once that vendor's FY purchases pass Rs 50 lakh — check SUM(DocTotal-VatSum) FYTD before setting it. SAP does NOT enforce the threshold; it deducts whenever the code is set.
 
-<!-- 7 correction(s) omitted: digest hit the 6000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0022, C-0025, C-0026, C-0027, C-0007, C-0003, C-0006 -->
+<!-- 8 correction(s) omitted: digest hit the 6000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0037, C-0022, C-0025, C-0026, C-0027, C-0007, C-0003, C-0006 -->
