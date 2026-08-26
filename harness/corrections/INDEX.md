@@ -35,5 +35,13 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0034]** A/P: 'draft' never reaches the approver, 'post' goes live unapproved. Only 'sapb1 add-draft' submits, and only if an Always-terms template matches. Verify ODRF.WddStatus='W'.
 - **[C-0035]** A/P draft lines inherit only Dim1 from the GRPO: always set CostingCode2 (Effective Month) = the DocDate month as MM-YYYY, e.g. 08-2026, on EVERY line, and check Dim3/Dim5 too.
 - **[C-0036]** 194Q TDS 0.1% (WTCode 1031) only once that vendor's FY purchases pass Rs 50 lakh — check SUM(DocTotal-VatSum) FYTD before setting it. SAP does NOT enforce the threshold; it deducts whenever the code is set.
-
-<!-- 8 correction(s) omitted: digest hit the 6000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0037, C-0022, C-0025, C-0026, C-0027, C-0007, C-0003, C-0006 -->
+- **[C-0037]** 194Q Rs 50 lakh threshold is per PAN, not per CardCode: aggregate every card sharing CRD7.TaxId0 before deciding TDS. TPAC = VENDA000937 + VENDA000939 (PAN AAGCT4816J), together over the limit since 2026-07-13.
+- **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
+- **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
+- **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
+- **[C-0027]** A/P draft line CostingCode3 (Budget): if the bill says 'Common' set FACT_COM (FACTORY COMMON), never inherit the GRPO's 'Factory'. Read the handwritten allocation note on every factory bill.
+## factory
+- **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
+## sales
+- **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
+- **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.
