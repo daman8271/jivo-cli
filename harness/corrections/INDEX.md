@@ -32,8 +32,8 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0030]** Read the company off the PO/bill itself (e.g. 'ONLY FOR BEVERAGES' in the header, and the printed CardCode) and use that company; if the paper names none, it is Oil.
 - **[C-0031]** 'Fail to NONE-SSO login from SLD' means the password is wrong FOR THAT COMPANY DB, not that the user lacks a licence — SAP passwords differ per company; ask for that company's password before declaring a user blocked.
 - **[C-0032]** Before calling any variance unexplained, prove which company DBs the file covers: OOCR Dim4 DIG MKT/PPR MED exist ONLY in Beverages, DIGTAL M/POP only in Oil+Mart. Normalise blank dims before diffing.
+- **[C-0034]** A/P: 'draft' never reaches the approver, 'post' goes live unapproved. Only 'sapb1 add-draft' submits, and only if an Always-terms template matches. Verify ODRF.WddStatus='W'.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
-- **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
 
-<!-- 4 correction(s) omitted: digest hit the 6000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0027, C-0007, C-0003, C-0006 -->
+<!-- 5 correction(s) omitted: digest hit the 6000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0026, C-0027, C-0007, C-0003, C-0006 -->
