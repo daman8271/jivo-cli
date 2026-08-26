@@ -1,6 +1,6 @@
 ---
 name: jivo-add-and-new
-description: Use when an operator wants a bill ENTERED AND SENT TO THE APPROVER in one go, not left as a draft they have to look at — "add and new", "add & new", "send it to Bhawani", "send it for approval", "submit it", "don't show me the draft", "just add it". Also use when asked why a draft is not showing in the Approval Status Report, why an invoice posted without approval, or what AuthorizationStatus / ODRF.WddStatus means.
+description: USE AUTOMATICALLY whenever an Accounts operator hands over one or more vendor bills — a PDF, photo, scan or folder of them — even with no instruction at all, or only "enter this", "make this", "do these", "yeh karo". Entering a bill is not finished until the approver has it, so this runs after every A/P draft by default. Explicit triggers: "add and new", "add & new", "send it to Bhawani", "send for approval", "submit it", "don't show me the draft", "just add it". Also use when asked why a draft is not in the Approval Status Report, why an invoice posted without approval, or what AuthorizationStatus / ODRF.WddStatus means.
 ---
 
 # Add & New — enter the bill AND send it to the approver

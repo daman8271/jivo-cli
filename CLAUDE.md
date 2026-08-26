@@ -60,6 +60,20 @@ create documents for a living. Daman authorised this on 2026-08-22.
   existing draft before anything is sent; its read-back catches what SAP left
   blank (TDS). Built 2026-08-21 from live mistakes — don't hand-roll the payload.
 
+- **🔴 A BILL IS NOT DONE AT THE DRAFT. Finish the job: send it to the approver.**
+  **The moment an operator hands you a vendor bill — a PDF, a photo, a scan, one
+  or twenty of them, with or without any instruction — the work ends when BHAWANI
+  has it, not when a draft exists.** A draft nobody submits is invisible to her
+  (`ODRF.WddStatus='-'`; 14,341 such drafts sit unseen in Oil). **Load the
+  `jivo-add-and-new` skill and follow it to the end** — build the draft with the
+  right skill, attach the bill, then `sapb1 add-draft <DocEntry>` and verify
+  `WddStatus='W'`. Do not stop and ask whether to submit; do not hand back a draft
+  number and wait. Operators here are not AI users — they will not know a magic
+  word, and most will say nothing at all beyond handing you the paper.
+  **Never `sapb1 post` a document to "just get it in"** — that bypasses her and
+  lands unapproved in the ledger (C-0034). Say plainly when it is with her, and
+  that her approval does not post it — a human presses Add a second time.
+
 ### What is still genuinely impossible — do not promise these
 
 - **Everything except SAP is read-only** — postsql, portals, exim, factory, oms,
