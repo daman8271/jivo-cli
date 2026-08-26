@@ -29,14 +29,27 @@ SAP **deliberately skips** approval templates whose terms are **user queries** w
 document comes from the Service Layer or the DI API. All of JIVO's original A/P templates
 (40, 41, 83, 96) are query-only, so none of them ever fires for a document this CLI makes.
 
-**Oil template 103 `API AP AUTO (USER39)`** was created 2026-08-26 to close this:
+**`API AP AUTO (USER39)` was created 2026-08-26 in all three companies** to close this —
 `UseTerms='tNO'` (Terms = Always, no query), originator **USER39 only**, document type
-**A/P Invoice only**, stage 13 → BHAWANI. That is what makes `add-draft` submit instead
-of post.
+**A/P Invoice only**, approver **USER03 BHAWANI**:
 
-**So: this flow works for A/P invoices in Oil, created by USER39.** Anything else —
-another company, another login, a credit memo, a payment — has **no matching template
-yet**, which means `add-draft` would **post it live**. Stop and say so.
+| Company | Template | Stage | USER39 is USERID |
+|---|---|---|---|
+| `JIVO_OIL_HANADB` | **103** | 13 | 53 |
+| `JIVO_MART_HANADB` | **48** | 4 | 53 |
+| `JIVO_BEVERAGES_HANADB` | **68** | 12 | **50** |
+
+**So this flow works for A/P invoices in all three companies, created by USER39.**
+
+**It does NOT cover anything else** — a credit memo, an outgoing payment, any other
+document type, or any other login. Those have **no matching template**, so `add-draft`
+would **post them live**. Stop and say so rather than trying. Check first:
+
+```sql
+SELECT t."WtmCode", t."Name" FROM "<COMPANY>".OWTM t
+  JOIN "<COMPANY>".WTM3 d ON d."WtmCode"=t."WtmCode"
+ WHERE t."Conds"='N' AND t."Active"='Y' AND d."TransType"=<ObjType>;
+```
 
 ## The procedure
 
@@ -51,13 +64,19 @@ yet**, which means `add-draft` would **post it live**. Stop and say so.
    guard **180021** `Please Attach its Receiving`.
 3. **Preview the Add** (reads SAP, sends nothing):
    ```bash
-   ACC_ENV=user39-oil.env acc/_playbook/sap add-draft <DocEntry> --dry-run
+   # Mac:      ACC_ENV=user39-oil.env acc/_playbook/sap add-draft <DocEntry> --dry-run
+   # Windows:  cd sap-b1\accounts-kit  &  use.cmd oil  &  sapb1.exe add-draft <DocEntry> --dry-run
    ```
    Read the `WILL` lines. Show the operator the money and what it says.
 4. **Send it:**
    ```bash
-   ACC_ENV=user39-oil.env acc/_playbook/sap add-draft <DocEntry> --yes
+   # Mac:      ACC_ENV=user39-oil.env acc/_playbook/sap add-draft <DocEntry> --yes
+   # Windows:  sapb1.exe add-draft <DocEntry> --yes
    ```
+   **Many bills at once?** `add-draft` takes several DocEntries in one command — they are
+   previewed together, confirmed once, then sent one at a time, stopping at the first
+   problem. 21 bills worth ₹51.12 lakh went through this way on 2026-08-26 with zero
+   posting live.
 5. **Verify independently — the tool's word is not proof:**
    ```sql
    SELECT d."DocEntry", d."WddStatus", w."WddCode", w."WtmCode", u."USER_CODE"
@@ -89,11 +108,11 @@ sitting unposted, ₹87.55 lakh**, `dasGenerated` zero. Never tell an operator t
 
 - **Never `sapb1 post` a document** to "just get it in". That is the 49987 mistake:
   ₹5,664 in the Oil ledger, unapproved, and no CLI can undo it — only SAP can Cancel it.
-- **Never run `add-draft` outside Oil / outside USER39 / on a non-A/P-invoice** until a
-  matching Always template exists there. It would post live. Check first:
-  ```sql
-  SELECT "WtmCode","Name","Active","Conds" FROM "<COMPANY>".OWTM WHERE "Conds"='N' AND "Active"='Y';
-  ```
+- **Never run `add-draft` on a document type with no Always template** — credit memos,
+  outgoing payments, anything but an A/P invoice. It would post live. Use the query above.
+- **Never re-run `add-draft` on a `dasPending` draft.** It is already in somebody's queue;
+  adding it again raises a SECOND request and takes the first out from under them. The
+  command refuses this, and there is no override.
 - **Never test on HTTP 204.** `Prefer: return-no-content` makes *every* create return 204,
   including a live post. Judge on the `Location` header and the SQL above.
 - **`add-draft` cannot be undone from this CLI**, and it never approves on anyone's behalf.
