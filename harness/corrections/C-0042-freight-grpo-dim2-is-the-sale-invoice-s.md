@@ -4,7 +4,7 @@ date: 2026-08-27
 author: measured 2026-08-27 (Daman GRPO session)
 area: accounts
 severity: high
-status: active
+status: superseded
 supersedes: 
 tags: [grpo]
 ---
