@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# jmail against a Gmail / Google Workspace mailbox instead of the JIVO accounts
+# mailbox. Reads GMAIL_MAIL_* from the repo-root .env (gitignored) and maps them
+# to the ZOHO_MAIL_* names jmail's config expects.
+# Usage: ./jmail-gmail doctor   |   ./jmail-gmail search --limit 20
+#
+# Gmail needs an APP PASSWORD (16 characters), not the account password, and the
+# account must have 2-Step Verification on. Google prints it as four groups of
+# four — the spaces are cosmetic and are stripped here.
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root="$(cd "$here/.." && pwd)"
+env_file="$root/.env"
+[[ -f "$env_file" ]] || { echo "no .env at $root" >&2; exit 1; }
+get() { grep -E "^$1=" "$env_file" | head -1 | cut -d= -f2- | sed 's/^["'\'']//; s/["'\'']$//'; }
+export ZOHO_MAIL_USER="$(get GMAIL_MAIL_USER)"
+export ZOHO_MAIL_APP_PASSWORD="$(get GMAIL_MAIL_APP_PASSWORD | tr -d ' ')"
+export ZOHO_MAIL_IMAP_HOST="$(get GMAIL_MAIL_IMAP_HOST)"
+export ZOHO_MAIL_IMAP_PORT="$(get GMAIL_MAIL_IMAP_PORT)"
+: "${ZOHO_MAIL_IMAP_HOST:=imap.gmail.com}"
+: "${ZOHO_MAIL_IMAP_PORT:=993}"
+[[ -n "$ZOHO_MAIL_USER" ]] || { echo "GMAIL_MAIL_USER not set in $env_file" >&2; exit 1; }
+[[ -n "$ZOHO_MAIL_APP_PASSWORD" ]] || { echo "GMAIL_MAIL_APP_PASSWORD not set in $env_file" >&2; exit 1; }
+exec "$here/jmail" "$@"

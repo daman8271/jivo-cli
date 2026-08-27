@@ -1,7 +1,7 @@
 ---
 title: Karanpreet Singh — Session Log (Map of Content)
 created: 2026-08-08
-updated: 2026-08-08
+updated: 2026-08-27
 operator: Karanpreet Singh
 department: it
 type: moc
@@ -16,4 +16,4 @@ Queries run during a session are captured under [[../../queries/karanpreet-singh
 Part of the shared journal — see [[Chats-MOC]] for the whole team.
 
 ## Sessions
-_(none yet — the first session will add itself here)_
+- [[2026-08-27]] — Gmail connected to `jmail`; inbox baseline taken (122,450 messages, 53 unread).
