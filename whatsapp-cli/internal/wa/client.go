@@ -1,0 +1,280 @@
+// Package wa wraps whatsmeow for jwa.
+//
+// READ ONLY, enforced here in one place. This package builds a whatsmeow client
+// that receives, and there is deliberately no function anywhere in jwa that
+// calls SendMessage, MarkRead, SetPresence, or any other verb that would put
+// something back on the wire. The guard test in client_guard_test.go walks this
+// package's syntax tree and fails the build if one appears.
+//
+// The contact never sees "typing…", never sees a blue tick, and never sees the
+// number come online in a way it would not have anyway by being linked.
+package wa
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"go.mau.fi/whatsmeow"
+	waProto "go.mau.fi/whatsmeow/binary/proto"
+	"go.mau.fi/whatsmeow/store/sqlstore"
+	"go.mau.fi/whatsmeow/types"
+	"go.mau.fi/whatsmeow/types/events"
+	waLog "go.mau.fi/whatsmeow/util/log"
+
+	"jwa/internal/store"
+)
+
+// Forbidden is the tripwire list. Kept next to the code it protects so a future
+// edit that reaches for one of these fails loudly rather than quietly messaging
+// somebody from Karanpreet's number.
+var Forbidden = []string{
+	"SendMessage", "SendChatPresence", "SendPresence", "MarkRead", "SendReceipt",
+	"BuildRevoke", "SetStatusMessage", "SetGroupName", "JoinGroupWithLink",
+	"LeaveGroup", "CreateGroup", "UpdateBlocklist", "SetDisappearingTimer",
+}
+
+type Client struct {
+	WA      *whatsmeow.Client
+	DB      *store.DB
+	MediaTo string
+	Log     func(string, ...any)
+}
+
+// Open builds the client but does not connect.
+//
+// sessionPath is whatsmeow's own device store — the linked-device keys. Losing
+// it means scanning the QR again; copying it elsewhere means two things
+// pretending to be the same device, which WhatsApp will notice.
+func Open(sessionPath, archivePath, mediaDir string, verbose bool) (*Client, error) {
+	for _, d := range []string{filepath.Dir(sessionPath), filepath.Dir(archivePath), mediaDir} {
+		if err := os.MkdirAll(d, 0o700); err != nil {
+			return nil, err
+		}
+	}
+
+	level := "ERROR"
+	if verbose {
+		level = "INFO"
+	}
+	dbLog := waLog.Stdout("session", level, true)
+
+	container, err := sqlstore.New(context.Background(), "sqlite",
+		"file:"+sessionPath+"?_pragma=foreign_keys(1)", dbLog)
+	if err != nil {
+		return nil, fmt.Errorf("open session store: %w", err)
+	}
+	device, err := container.GetFirstDevice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("read device: %w", err)
+	}
+
+	archive, err := store.Open(archivePath)
+	if err != nil {
+		return nil, fmt.Errorf("open archive: %w", err)
+	}
+
+	c := &Client{
+		WA:      whatsmeow.NewClient(device, waLog.Stdout("client", level, true)),
+		DB:      archive,
+		MediaTo: mediaDir,
+		Log:     func(f string, a ...any) { fmt.Printf(f+"\n", a...) },
+	}
+	c.WA.AddEventHandler(c.handle)
+	return c, nil
+}
+
+func (c *Client) Close() {
+	c.WA.Disconnect()
+	c.DB.Close()
+}
+
+// LoggedIn reports whether the device store already holds a linked session.
+func (c *Client) LoggedIn() bool { return c.WA.Store.ID != nil }
+
+// Pair connects and, if this device is not linked yet, prints the QR codes for
+// the operator to scan from WhatsApp on the phone:
+// Settings -> Linked devices -> Link a device.
+func (c *Client) Pair(ctx context.Context, showQR func(string)) error {
+	if c.LoggedIn() {
+		return c.WA.Connect()
+	}
+	ch, err := c.WA.GetQRChannel(ctx)
+	if err != nil {
+		return err
+	}
+	if err := c.WA.Connect(); err != nil {
+		return err
+	}
+	for evt := range ch {
+		switch evt.Event {
+		case "code":
+			showQR(evt.Code)
+		case "success":
+			return nil
+		case "timeout":
+			return fmt.Errorf("QR expired before it was scanned — run `jwa login` again")
+		}
+	}
+	return nil
+}
+
+// handle is the only place an inbound event turns into a stored row.
+func (c *Client) handle(raw any) {
+	switch evt := raw.(type) {
+	case *events.Message:
+		c.record(evt)
+	case *events.HistorySync:
+		// WhatsApp pushes a slice of recent history right after linking. It is
+		// whatever the phone chose to send — never the full archive.
+		for _, conv := range evt.Data.GetConversations() {
+			for _, h := range conv.GetMessages() {
+				if m := h.GetMessage(); m != nil {
+					c.recordHistory(conv.GetId(), m)
+				}
+			}
+		}
+	}
+}
+
+func (c *Client) record(evt *events.Message) {
+	m := store.Message{
+		ID:         evt.Info.ID,
+		ChatJID:    evt.Info.Chat.String(),
+		ChatName:   c.chatName(evt.Info.Chat),
+		SenderJID:  evt.Info.Sender.String(),
+		SenderName: evt.Info.PushName,
+		FromMe:     evt.Info.IsFromMe,
+		IsGroup:    evt.Info.IsGroup,
+		Timestamp:  evt.Info.Timestamp,
+		Body:       bodyOf(evt.Message),
+	}
+	c.attachMedia(&m, evt.Message)
+	if err := c.DB.Put(m); err != nil {
+		c.Log("! could not store %s: %v", m.ID, err)
+	}
+}
+
+func (c *Client) recordHistory(chatJID string, msg *waProto.WebMessageInfo) {
+	ts := time.Unix(int64(msg.GetMessageTimestamp()), 0)
+	m := store.Message{
+		ID:        msg.GetKey().GetId(),
+		ChatJID:   chatJID,
+		FromMe:    msg.GetKey().GetFromMe(),
+		IsGroup:   strings.Contains(chatJID, "@g.us"),
+		Timestamp: ts,
+		Body:      bodyOf(msg.GetMessage()),
+	}
+	if m.ID == "" {
+		return
+	}
+	_ = c.DB.Put(m)
+}
+
+// attachMedia downloads images, documents and audio to disk. A vendor's bill
+// arrives as an image or a PDF document, which is the whole reason this exists.
+func (c *Client) attachMedia(m *store.Message, msg *waProto.Message) {
+	var (
+		dl   whatsmeow.DownloadableMessage
+		kind string
+		name string
+	)
+	switch {
+	case msg.GetImageMessage() != nil:
+		im := msg.GetImageMessage()
+		dl, kind, name = im, "image", m.ID+".jpg"
+	case msg.GetDocumentMessage() != nil:
+		doc := msg.GetDocumentMessage()
+		dl, kind = doc, "document"
+		name = doc.GetFileName()
+		if name == "" {
+			name = m.ID + ".bin"
+		}
+	case msg.GetAudioMessage() != nil:
+		dl, kind, name = msg.GetAudioMessage(), "audio", m.ID+".ogg"
+	case msg.GetVideoMessage() != nil:
+		dl, kind, name = msg.GetVideoMessage(), "video", m.ID+".mp4"
+	default:
+		return
+	}
+
+	m.MediaType, m.MediaName = kind, name
+	data, err := c.WA.Download(context.Background(), dl)
+	if err != nil {
+		c.Log("! %s from %s did not download: %v", kind, m.ChatName, err)
+		return
+	}
+	day := m.Timestamp.Format("2006-01-02")
+	dir := filepath.Join(c.MediaTo, day)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return
+	}
+	path := filepath.Join(dir, safeName(m.ID+"_"+name))
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		c.Log("! could not save %s: %v", path, err)
+		return
+	}
+	m.MediaPath, m.MediaSize = path, int64(len(data))
+}
+
+func (c *Client) chatName(jid types.JID) string {
+	if contact, err := c.WA.Store.Contacts.GetContact(context.Background(), jid); err == nil {
+		if contact.FullName != "" {
+			return contact.FullName
+		}
+		if contact.PushName != "" {
+			return contact.PushName
+		}
+	}
+	if info, err := c.WA.GetGroupInfo(jid); err == nil && info.Name != "" {
+		return info.Name
+	}
+	return jid.User
+}
+
+// bodyOf pulls the readable text out of whichever envelope WhatsApp used.
+func bodyOf(msg *waProto.Message) string {
+	if msg == nil {
+		return ""
+	}
+	if t := msg.GetConversation(); t != "" {
+		return t
+	}
+	if e := msg.GetExtendedTextMessage(); e != nil {
+		return e.GetText()
+	}
+	if im := msg.GetImageMessage(); im != nil {
+		return im.GetCaption()
+	}
+	if doc := msg.GetDocumentMessage(); doc != nil {
+		if cap := doc.GetCaption(); cap != "" {
+			return cap
+		}
+		return doc.GetFileName()
+	}
+	if v := msg.GetVideoMessage(); v != nil {
+		return v.GetCaption()
+	}
+	return ""
+}
+
+func safeName(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9',
+			r == '.', r == '-', r == '_':
+			b.WriteRune(r)
+		default:
+			b.WriteRune('_')
+		}
+	}
+	out := b.String()
+	if len(out) > 120 {
+		out = out[:120]
+	}
+	return out
+}

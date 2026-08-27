@@ -1,0 +1,31 @@
+[Unit]
+Description=jwa — JIVO WhatsApp reader (read-only archiver)
+Documentation=https://github.com/daman8271/jivo-cli/tree/main/whatsapp-cli
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=__HOME__/go/bin/jwa run
+WorkingDirectory=__HOME__
+
+# WhatsApp drops companion devices for all sorts of reasons — a phone offline
+# for days, a server reboot, a protocol change. Always come back.
+Restart=always
+RestartSec=15
+
+# The session file is as good as the account. Keep the blast radius small.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=__HOME__/.jwa
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+StandardOutput=append:__HOME__/.jwa/jwa.log
+StandardError=append:__HOME__/.jwa/jwa.log
+
+[Install]
+WantedBy=default.target
