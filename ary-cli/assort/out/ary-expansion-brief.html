@@ -205,6 +205,47 @@ footer p+p{margin-top:11px}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
 :focus-visible{outline:2px solid var(--pine); outline-offset:2px}
+
+/* ── method flow ─────────────────────────────── */
+.flow{counter-reset:step; display:flex; flex-direction:column; gap:1px;
+  background:var(--rule); border:1px solid var(--rule); border-radius:5px; overflow:hidden; margin-top:26px}
+.step{background:var(--surface); padding:22px 26px; display:grid;
+  grid-template-columns:auto 1fr; gap:2px 20px; align-items:start}
+.step::before{counter-increment:step; content:counter(step);
+  font-family:"Zilla Slab",serif; font-size:1.15rem; font-weight:700; color:var(--surface);
+  background:var(--ink); width:1.9em; height:1.9em; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; line-height:1; grid-row:span 3}
+.step h4{grid-column:2}
+.step p{grid-column:2; color:var(--ink-2); font-size:.945rem; margin-top:7px; max-width:68ch}
+.step .out{grid-column:2; margin-top:10px; font-family:"IBM Plex Mono",monospace;
+  font-size:.775rem; color:var(--muted); background:var(--sunk);
+  padding:8px 12px; border-radius:4px; display:inline-block}
+
+/* ── taxonomy ────────────────────────────────── */
+.cats{display:grid; gap:18px; grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); margin-top:24px}
+.catgrp{background:var(--surface); border:1px solid var(--rule); border-radius:5px; padding:17px 19px}
+.catgrp h4{display:flex; justify-content:space-between; align-items:baseline; gap:10px;
+  margin-bottom:12px; padding-bottom:9px; border-bottom:1px solid var(--rule)}
+.catgrp h4 span{font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+  font-weight:400; color:var(--faint); letter-spacing:.05em}
+.catlist{display:flex; flex-direction:column; gap:5px}
+.cat{display:flex; align-items:baseline; gap:8px; font-size:.9rem; line-height:1.4}
+.cat .m{flex:none; width:1.15em; text-align:center; font-size:.82rem}
+.cat.done .m{color:var(--pine)}
+.cat.half .m{color:var(--kesari)}
+.cat.none{color:var(--muted)}
+.cat.none .m{color:var(--crit)}
+.cat.zero{color:var(--crit); font-weight:500}
+.cat b{font-weight:600; color:var(--ink)}
+.cat i{font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--faint); margin-left:auto; padding-left:8px; white-space:nowrap}
+.legend{display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:20px; font-size:.83rem; color:var(--muted)}
+.legend span{display:flex; align-items:center; gap:7px}
+.cat s{text-decoration:line-through; text-decoration-thickness:1px; opacity:.7}
+tr.out td{opacity:.72}
+tr.out s{text-decoration:line-through; text-decoration-thickness:1px}
+.excl{background:var(--surface); border:1px solid var(--rule); border-radius:5px;
+  padding:24px 26px; margin-top:26px}
+.excl h4{margin-bottom:14px}
 </style>
 
 <div class="wrap">
@@ -220,9 +261,10 @@ footer p+p{margin-top:11px}
 
   <p class="lede">
     ARY is the only shop for about 5,000 people who live on a closed 450-acre campus.
-    The brief was to find every product those people need and ARY does not sell. Answered
-    against live data, the question turns: ARY already stocks a whole city's worth of SKUs and
-    <em>cannot keep two-thirds of them on the shelf</em> — while ₹3.06 lakh a year goes out
+    The brief was to find every product those people need and ARY does not sell — so we
+    started from <em>what a life consumes</em>, not from the shelf. Fifty-seven categories
+    later the question had turned: ARY already stocks a whole city's worth of SKUs and
+    <em>cannot keep two-thirds of them on the shelf</em>, while ₹3.06 lakh a year goes out
     the door on 27 lines sold below what ARY paid for them.
   </p>
 
@@ -234,6 +276,7 @@ footer p+p{margin-top:11px}
 
   <div class="dash">
     <div class="cell"><span class="n">₹8.96 Cr</span><span class="l">FY26-27 annualised revenue, +29% on FY25-26</span></div>
+    <div class="cell"><span class="n">50</span><span class="l">categories in scope, of 57 a life needs — 9 ruled out, 21 fully checked</span></div>
     <div class="cell warn"><span class="n">26</span><span class="l">strips of paracetamol sold in twelve months, to 5,000 people</span></div>
     <div class="cell hi"><span class="n">₹2.51 Cr</span><span class="l">Eternal University's audited annual food spend</span></div>
     <div class="cell bad"><span class="n">₹2.78 L</span><span class="l">what it buys from ARY — <b>1.1%</b> — though the campus feeds itself</span></div>
@@ -243,10 +286,348 @@ footer p+p{margin-top:11px}
   </div>
 </header>
 
+
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">01 · What the data says about the brief</span>
+    <span class="eyebrow">01 · How we are thinking about this</span>
+    <h2>Start from the life, not from the shelf</h2>
+    <p>
+      Every method choice below exists to defeat one failure: if you start from what ARY
+      already stocks, you only ever rediscover what ARY already stocks.
+    </p>
+  </div>
+
+  <div class="body">
+    <p>
+      A shop that serves a town competes. A shop that serves a <strong>closed campus</strong>
+      does not — so the question is not "what are we losing to a rival" but
+      <strong>"what does a human life at Baru Sahib consume, and can that person get it
+      here?"</strong>
+    </p>
+    <p>
+      That reframes the unit of analysis. Not departments, not the supplier's catalogue, not
+      what sold last year — but the <strong>aspects of a life</strong>: eating, staying
+      healthy, keeping a body clean, running a home, dressing for a Himachal winter,
+      studying, praying, ageing, getting to town. Each of those consumes things. Enumerate
+      them and you have the demand side, independent of anything ARY happens to sell.
+    </p>
+    <p>
+      Then, and only then, look at the shelf.
+    </p>
+  </div>
+
+  <div class="flow">
+    <div class="step">
+      <h4>Enumerate what a life needs — blind</h4>
+      <p>
+        Break a resident's life into categories and research each one against Indian modern
+        trade and q-commerce, <strong>without ever looking at ARY's catalogue</strong>. Each
+        category yields SKU <em>lines</em> — buying decisions like "toothpaste, herbal,
+        100–150 g", not barcodes — tagged must-have / should-have / nice-to-have, with the
+        cohort that buys them.
+      </p>
+      <div class="out">36 categories researched · 1,984 SKU lines · 860 must-have</div>
+    </div>
+
+    <div class="step">
+      <h4>Ask the database what ARY actually has — by name, not by tag</h4>
+      <p>
+        ARY's own category tree cannot answer this. Loose Milk is filed under
+        <em>Mini&nbsp;Meals</em>, curd under <em>Others</em>, khoya under
+        <em>Confectionery</em>. The "Mobile" tag understated mobile accessories by
+        <strong>37×</strong>. So every check searches <strong>product names across all
+        21,466 SKUs</strong>, ignoring the tree entirely.
+      </p>
+      <div class="out">ary assort probe paracetamol crocin dolo → 3 SKUs, 1 sold, ₹502/yr</div>
+    </div>
+
+    <div class="step">
+      <h4>Give every line one of three honest verdicts</h4>
+      <p>
+        <b>Solid</b> — the line's own qualifiers appear together in a real product name, and
+        it sells. <b>Weak</b> — only the commodity word matched, so ARY is <em>in</em> the
+        line but this pack, grade or brand is unproven. <b>Missing</b> — nothing matches,
+        either way. Only <b>solid</b> counts toward coverage; otherwise every food category
+        reads as 100% covered and the exercise is worthless.
+      </p>
+      <div class="out">medical-devices: 6 solid · 43 weak · 7 dormant · 2 missing → 11.5%</div>
+    </div>
+
+    <div class="step">
+      <h4>Judge the range against an outside yardstick</h4>
+      <p>
+        Coverage alone says nothing about depth. BigBasket's live metro SKU counts per
+        category, pro-rated to 5,000 people, give a benchmark line count — then compare it
+        against what ARY <em>lists</em> and what ARY actually <em>sells</em>. Those two
+        numbers diverge violently, and the divergence is the whole finding.
+      </p>
+      <div class="out">8,000 benchmark · 14,344 listed · 4,707 selling → lists 1.79×, sells 0.59×</div>
+    </div>
+
+    <div class="step">
+      <h4>Cost it off the purchase ledger, never the price master</h4>
+      <p>
+        ARY's price master carries a cost <strong>higher than reality on every leaking
+        row</strong>, so a margin report built from it can never show a loss-making line.
+        Real cost comes from what ARY actually paid on the purchase documents. That single
+        choice is what surfaced ₹3.06 lakh a year going out the door.
+      </p>
+      <div class="out">Loose Milk — master says ₹65.00 · really paid ₹51.98 · sold ₹47.00</div>
+    </div>
+
+    <div class="step">
+      <h4>Label every number, and keep what we got wrong</h4>
+      <p>
+        <b>VERIFIED</b> means a query was run and it is recorded. <b>ESTIMATED</b> carries
+        its assumption. <b>NOT-CHECKED</b> says so. Five findings in this review were
+        confidently wrong before the data refuted them, and all five are kept below —
+        because the pattern is the lesson: <strong>in this database the burden of proof
+        sits on "missing", never on "covered".</strong>
+      </p>
+      <div class="out">46 recorded sections · every figure carries its query or its assumption</div>
+    </div>
+  </div>
+
+  <div class="body" style="margin-top:26px">
+    <p>
+      <strong>And the method has already failed once, in a way worth stating up front.</strong>
+      The first taxonomy had 46 categories, and it was built by looking at what Indian
+      q-commerce carries. That is exactly the trap it was meant to avoid — just one level
+      up. Aiming at BigBasket produced BigBasket's idea of a life, and missed
+      <strong>eleven categories</strong> that a Sikh residential campus in the hills
+      obviously needs. Two of them turn real money today; one of them, at a Sikh academy,
+      is a hard zero. They are marked in the next section.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ -->
+<section>
+  <div class="shead">
+    <span class="eyebrow">02 · What a life needs</span>
+    <h2>Fifty-seven categories, nine ruled out, fifty in scope</h2>
+    <p>
+      Everything a resident of Baru Sahib consumes, grouped by the part of life it belongs
+      to. The marks are honest about how far the work got — 21 fully done — and about what
+      ARY has ruled out on ethics or on practicality.
+    </p>
+  </div>
+
+  <div class="legend">
+    <span><b style="color:var(--pine)">●</b> researched and diffed against ARY — 21</span>
+    <span><b style="color:var(--kesari)">◐</b> researched, not yet diffed — 15</span>
+    <span><b style="color:var(--crit)">○</b> not researched — 21</span>
+    <span><b style="color:var(--faint)">✕</b> ruled out of scope — 9</span>
+  </div>
+
+  <div class="cats">
+    <div class="catgrp">
+      <h4>Eating <span>15 · all done</span></h4>
+      <div class="catlist">
+        <div class="cat done"><span class="m">●</span>Staples &amp; flours<i>34%</i></div>
+        <div class="cat done"><span class="m">●</span>Pulses &amp; dals<i>41%</i></div>
+        <div class="cat done"><span class="m">●</span>Edible oils &amp; ghee<i>52%</i></div>
+        <div class="cat done"><span class="m">●</span>Spices, salt &amp; sugar<i>49%</i></div>
+        <div class="cat done"><span class="m">●</span>Dairy<i>35%</i></div>
+        <div class="cat done"><span class="m">●</span>Bakery<i>44%</i></div>
+        <div class="cat done"><span class="m">●</span>Packaged &amp; instant food<i>44%</i></div>
+        <div class="cat done"><span class="m">●</span>Snacks &amp; namkeen<i>45%</i></div>
+        <div class="cat done"><span class="m">●</span>Confectionery<i>66%</i></div>
+        <div class="cat done"><span class="m">●</span>Tea, coffee &amp; health drinks<i>37%</i></div>
+        <div class="cat done"><span class="m">●</span>Cold beverages<i>54%</i></div>
+        <div class="cat done"><span class="m">●</span>Frozen &amp; chilled<i>27%</i></div>
+        <div class="cat done"><span class="m">●</span>Dry fruits &amp; nuts<i>33%</i></div>
+        <div class="cat done"><span class="m">●</span>Fresh fruit<i>61%</i></div>
+        <div class="cat done"><span class="m">●</span>Fresh vegetables<i>44%</i></div>
+      </div>
+    </div>
+
+    <div class="catgrp">
+      <h4>Staying well <span>5</span></h4>
+      <div class="catlist">
+        <div class="cat done"><span class="m">●</span><b>OTC pharmacy</b><i>29%</i></div>
+        <div class="cat done"><span class="m">●</span><b>Prescription &amp; chronic</b><i>25%</i></div>
+        <div class="cat done"><span class="m">●</span><b>Medical devices</b><i>11%</i></div>
+        <div class="cat done"><span class="m">●</span>Women's health<i>47%</i></div>
+        <div class="cat half"><span class="m">◐</span>Nutraceuticals</div>
+      </div>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:11px">
+        The three worst-covered categories in the entire taxonomy sit here.
+      </p>
+    </div>
+
+    <div class="catgrp">
+      <h4>The body <span>5</span></h4>
+      <div class="catlist">
+        <div class="cat done"><span class="m">●</span>Skin care<i>58%</i></div>
+        <div class="cat done"><span class="m">●</span>Oral care<i>21%</i></div>
+        <div class="cat half"><span class="m">◐</span>Hair care</div>
+        <div class="cat half"><span class="m">◐</span>Male grooming</div>
+        <div class="cat half"><span class="m">◐</span>Cosmetics &amp; fragrance</div>
+      </div>
+    </div>
+
+    <div class="catgrp">
+      <h4>Running a home <span>7 · 2 out of scope</span></h4>
+      <div class="catlist">
+        <div class="cat half"><span class="m">◐</span>Baby &amp; mother care</div>
+        <div class="cat half"><span class="m">◐</span>Home care &amp; cleaning</div>
+        <div class="cat none"><span class="m">✕</span><s>Laundry</s><i>out of scope</i></div>
+        <div class="cat half"><span class="m">◐</span>Kitchenware &amp; cookware</div>
+        <div class="cat half"><span class="m">◐</span>Crockery &amp; cutlery</div>
+        <div class="cat none"><span class="m">✕</span><s>Home furnishing</s><i>out of scope</i></div>
+        <div class="cat half"><span class="m">◐</span>Hardware &amp; DIY</div>
+      </div>
+    </div>
+
+    <div class="catgrp">
+      <h4>Dressing <span>6</span></h4>
+      <div class="catlist">
+        <div class="cat half"><span class="m">◐</span>Men's wear</div>
+        <div class="cat half"><span class="m">◐</span>Women's wear</div>
+        <div class="cat half"><span class="m">◐</span>Footwear</div>
+        <div class="cat half"><span class="m">◐</span>Bags &amp; luggage</div>
+        <div class="cat none"><span class="m">○</span>Kids' wear</div>
+        <div class="cat none"><span class="m">○</span><b>Winter wear &amp; thermals</b></div>
+      </div>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:11px">
+        Winter wear unresearched, on a campus at 1,551 m with a 2.8 °C January.
+      </p>
+    </div>
+
+    <div class="catgrp">
+      <h4>Learning &amp; leisure <span>5</span></h4>
+      <div class="catlist">
+        <div class="cat none"><span class="m">○</span><b>Stationery &amp; school supplies</b></div>
+        <div class="cat none"><span class="m">○</span>Books</div>
+        <div class="cat none"><span class="m">○</span>Sports &amp; fitness</div>
+        <div class="cat none"><span class="m">○</span>Toys &amp; games</div>
+        <div class="cat none"><span class="m">○</span><b>Mobile &amp; tech accessories</b></div>
+      </div>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:11px">
+        Every one unresearched — on a campus of 2,600 students.
+      </p>
+    </div>
+
+    <div class="catgrp">
+      <h4>Faith &amp; occasion <span>2</span></h4>
+      <div class="catlist">
+        <div class="cat none"><span class="m">○</span><b>Gurmat &amp; Sikh articles</b><i>₹198.70/res/yr</i></div>
+        <div class="cat none"><span class="m">○</span>Festival &amp; gifting</div>
+      </div>
+      <p style="font-size:.85rem;color:var(--muted);margin-top:11px">
+        <strong>The sharpest miss in the taxonomy.</strong> Dastar and patka are already
+        ARY's fourth-largest per-resident category — bigger than dairy — and the research
+        never reached them, because no q-commerce benchmark has a dastar line.
+      </p>
+    </div>
+
+    <div class="catgrp">
+      <h4>Durables <span>1</span></h4>
+      <div class="catlist">
+        <div class="cat none"><span class="m">○</span>Small appliances</div>
+      </div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:44px">The eleven the first taxonomy never contained</h3>
+  <p class="body" style="margin-top:12px">
+    Found by probing the live catalogue for things a campus obviously needs but no
+    q-commerce category list would suggest. Two of them turn real money today and were
+    never once examined.
+  </p>
+
+  <div class="tw">
+    <table>
+      <caption>Probed live, 12 months to 21 Aug 2026 — five have since been ruled out of scope</caption>
+      <thead><tr><th>Category</th><th class="num">SKUs</th><th class="num">Sold</th><th class="num">12m sales</th><th class="wrap-ok">Read</th></tr></thead>
+      <tbody>
+        <tr class="out"><td><s>LPG / gas / fuel</s></td><td class="num">1</td><td class="num">—</td><td class="num r">₹27,003 <span class="dim">all-time</span></td><td class="wrap-ok"><strong>RULED OUT — and the original ₹4.80 L was wrong.</strong> A false name match: "Lmk" is an ARY <em>bakery</em> brand and "gas" caught Gas Stove and Gas Lighter. The real <code>Lmk&nbsp;Gas</code> is canteen cooking fuel, 10 units ever</td></tr>
+        <tr class="out"><td><s>Automotive / two-wheeler</s></td><td class="num">13</td><td class="num">6</td><td class="num">₹1,35,771</td><td class="wrap-ok"><strong>RULED OUT</strong> — ARY cannot handle live vehicles</td></tr>
+        <tr><td>Elderly &amp; mobility aids</td><td class="num">93</td><td class="num">40</td><td class="num a">₹75,346</td><td class="wrap-ok">⚠️ probe inflated — "stick" also catches lipstick. Needs re-checking</td></tr>
+        <tr><td>Agriculture &amp; garden</td><td class="num">47</td><td class="num">24</td><td class="num">₹61,594</td><td class="wrap-ok">Eternal University runs agriculture degrees</td></tr>
+        <tr><td>Sewing &amp; haberdashery</td><td class="num">18</td><td class="num">12</td><td class="num">₹48,298</td><td class="wrap-ok">Button alone is 21,287 units. Feeds the ₹17 L tailoring operation</td></tr>
+        <tr><td>Water purification</td><td class="num">31</td><td class="num">10</td><td class="num">₹24,127</td><td class="wrap-ok">⚠️ probe inflated — "candle" catches decorative candles</td></tr>
+        <tr><td>Watches &amp; clocks</td><td class="num">114</td><td class="num a">9</td><td class="num">₹19,170</td><td class="wrap-ok">114 listed, 9 moving — the dead-range pattern again</td></tr>
+        <tr><td><strong>Eyewear / optical</strong> <span class="chip v">in scope</span></td><td class="num">4</td><td class="num r">0</td><td class="num r">₹0</td><td class="wrap-ok"><strong>Stays in scope.</strong> Four SKUs listed and never sold once, on a campus 30–50 km from an optician with an ageing staff and 2,600 students reading all day</td></tr>
+        <tr class="out"><td><s>Kirtan instruments</s></td><td class="num r">0</td><td class="num r">0</td><td class="num r">₹0</td><td class="wrap-ok"><strong>RULED OUT</strong> — not a line ARY will take on</td></tr>
+        <tr class="out"><td><s>Newspapers &amp; print media</s></td><td class="num r">0</td><td class="num r">0</td><td class="num r">₹0</td><td class="wrap-ok"><strong>RULED OUT</strong> — a daily paper already reaches the campus</td></tr>
+        <tr class="out"><td><s>Pet care</s></td><td class="num r">0</td><td class="num r">0</td><td class="num r">₹0</td><td class="wrap-ok"><strong>RULED OUT</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="pull">
+    Aim the research at BigBasket and you get BigBasket's idea of a life. The categories
+    that make ARY <em>ARY</em> are the ones no benchmark contains.
+  </p>
+
+  <h3 style="margin-top:44px">What ARY will not do — and why</h3>
+  <p class="body" style="margin-top:12px">
+    Nine categories are ruled out. <strong>These are not gaps and must never be reported as
+    gaps.</strong> A benchmark that counts them makes ARY look worse than it is, which is
+    exactly the error the eggs-meat-fish row already corrects for.
+  </p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Ruled out</th><th class="wrap-ok">Reason</th><th class="wrap-ok">Standing</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Eggs, meat &amp; fish</strong></td><td class="wrap-ok"><strong>Ethics.</strong> A vegetarian Sikh institution. Not a commercial decision and not open to revisiting</td><td class="wrap-ok">Permanent</td></tr>
+        <tr><td>Tobacco &amp; alcohol</td><td class="wrap-ok">Same — never stocked, never will be</td><td class="wrap-ok">Permanent</td></tr>
+        <tr><td><strong>LPG / gas</strong></td><td class="wrap-ok">The campus already has a station. And a gas agency is not a shelf decision — it is an oil-company distributorship: an IOC/HP/BP licence, PESO storage approval, a separate godown at safe distance, lakhs in cylinder inventory, trained delivery staff and statutory safety inspection. A different business, not a category</td><td class="wrap-ok">Permanent</td></tr>
+        <tr><td>Automotive / vehicles</td><td class="wrap-ok">ARY cannot handle live vehicles</td><td class="wrap-ok">Permanent</td></tr>
+        <tr><td>Newspapers &amp; print</td><td class="wrap-ok">A daily paper already reaches the campus. No opening</td><td class="wrap-ok">Permanent</td></tr>
+        <tr><td>Kirtan instruments</td><td class="wrap-ok">Not a line ARY will take on</td><td class="wrap-ok">Owner's call</td></tr>
+        <tr><td>Pet care</td><td class="wrap-ok">Not a line ARY will take on</td><td class="wrap-ok">Owner's call</td></tr>
+        <tr><td><strong>Laundry</strong></td><td class="wrap-ok">Out of <em>expansion</em> scope by the owner's call — see the note below</td><td class="wrap-ok">Scope only</td></tr>
+        <tr><td><strong>Home furnishing</strong></td><td class="wrap-ok">Out of <em>expansion</em> scope by the owner's call — see the note below</td><td class="wrap-ok">Scope only</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="excl">
+    <h4>⚠️ Two of those nine are already substantial businesses</h4>
+    <p style="color:var(--ink-2)">
+      Ruling a category out of <strong>expansion scope</strong> is not the same as taking it
+      off the shelf, and these two need the distinction stated because both are live and
+      earning today.
+    </p>
+    <div class="tw" style="margin-top:16px">
+      <table>
+        <thead><tr><th>Category</th><th class="num">SKUs</th><th class="num">Selling</th><th class="num">12m sales</th><th class="wrap-ok">What is actually in it</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Laundry</strong></td><td class="num">553</td><td class="num">129</td><td class="num g">₹17,37,712</td><td class="wrap-ok">Detergent powder, liquid, bars, softener. <strong>₹347 per resident per year</strong> — one of ARY's better-performing lines</td></tr>
+          <tr><td><strong>Home furnishing</strong></td><td class="num">231</td><td class="num">62</td><td class="num g">₹11,95,871</td><td class="wrap-ok">Bed sheets ₹4.68 L · towels ₹3.15 L · blankets ₹1.73 L · curtains ₹1.31 L · pillows ₹0.81 L · hand towels · cushions</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--ink-2); margin-top:16px">
+      Together <strong>₹29.34 lakh a year — 3.9% of ARY's revenue.</strong> Bedding and
+      blankets in particular are climate-driven on a campus whose January low is 2.8 °C, and
+      towels and sheets are boarding-school consumables that turn every intake.
+    </p>
+    <p style="color:var(--ink-2); margin-top:12px">
+      <strong>Taken as instructed:</strong> no further research, no benchmark, no gap
+      analysis on either. They are excluded from every coverage figure from here on. The
+      shelf itself is untouched — that was never in question.
+    </p>
+  </div>
+
+  <div class="body" style="margin-top:26px">
+    <p>
+      <strong>Scope after exclusions: 50 categories.</strong> Every coverage percentage,
+      benchmark total and gap count elsewhere in this report is computed on those 50.
+      Reporting a ruled-out category as a shortfall would understate ARY exactly the way the
+      eggs-meat-fish row would if it were counted.
+    </p>
+  </div>
+</section>
+<!-- ══════════════════════════════════════════ -->
+<section>
+  <div class="shead">
+    <span class="eyebrow">03 · What the data says about the brief</span>
     <h2>The question changed once the numbers came back</h2>
     <p>
       The working assumption was a missing-category problem: no pharmacy, no baby aisle, no
@@ -404,7 +785,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">02 · Where the shelf genuinely fails</span>
+    <span class="eyebrow">04 · Where the shelf genuinely fails</span>
     <h2>The gaps that are real, measured honestly</h2>
     <p>
       ARY's own category tree cannot answer "do we carry this" — so this table ignores it and
@@ -613,7 +994,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">03 · Constraints the plan has to respect</span>
+    <span class="eyebrow">05 · Constraints the plan has to respect</span>
     <h2>Three facts that bound everything above</h2>
   </div>
 
@@ -693,7 +1074,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">04 · Recommendation</span>
+    <span class="eyebrow">06 · Recommendation</span>
     <h2>Ten moves, ranked by return on effort</h2>
     <p>
       Ordered so that each step is cheap relative to what it unlocks, and so nothing
@@ -850,7 +1231,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">05 · What a retail benchmark cannot see</span>
+    <span class="eyebrow">07 · What a retail benchmark cannot see</span>
     <h2>ARY's fourth-largest category is turban fabric</h2>
     <p>
       The strongest argument in this review for reading the institution rather than the retail
@@ -949,7 +1330,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">06 · The asset nobody has named</span>
+    <span class="eyebrow">08 · The asset nobody has named</span>
     <h2>ARY is already JIVO's captive consumer test market</h2>
     <p>
       This was not in the brief and did not come from looking for it. Pulling everything
@@ -1052,7 +1433,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">07 · How the campus actually shops</span>
+    <span class="eyebrow">09 · How the campus actually shops</span>
     <h2>Two customers, two peaks, one basket</h2>
     <p>
       Footfall and same-bill pairs, from the till. This is the layer that decides how a range
@@ -1116,7 +1497,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">08 · Execution</span>
+    <span class="eyebrow">10 · Execution</span>
     <h2>The supply base is already in place — and the calendar is unforgiving</h2>
     <p>
       Two checks on whether the recommendation above can actually be run: can ARY source at
@@ -1198,7 +1579,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">09 · The fairness question</span>
+    <span class="eyebrow">11 · The fairness question</span>
     <h2>ARY does not exploit its captive market — and here is the proof</h2>
     <p>
       The most serious reputational risk in this review is that a charitable trust's shop, the
@@ -1272,8 +1653,8 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">10 · Corrections</span>
-    <h2>Five things this review got wrong before the data corrected them</h2>
+    <span class="eyebrow">12 · Corrections</span>
+    <h2>Six things this review got wrong before the data corrected them</h2>
     <p>
       Recorded because each one was plausible enough to act on, and each would have cost
       money.
@@ -1314,6 +1695,28 @@ footer p+p{margin-top:11px}
       Mobile accessories are really 14 SKUs doing ₹99,713 across 3 groups — <strong>the group
       tag was wrong by 37×.</strong> This is why <code>ary assort probe</code> was built, and
       why every "missing category" claim must be re-tested with it before stock is bought.
+    </p>
+  </div>
+
+  <div class="corr">
+    <h4>"LPG is a ₹4.80 lakh business at ARY, never researched"</h4>
+    <p>
+      Wrong, and wrong twice over. <strong>There is no LPG business.</strong> The figure was
+      a name-match false positive: <strong>"Lmk" is an ARY <em>bakery</em> brand</strong>
+      (Lmk Pts = pastries at ₹9, Lmk Bc Vn = birthday cake at ₹350), and the term "gas"
+      caught <strong>Gas Stove</strong> and <strong>Gas Lighter</strong> — cookware.
+    </p>
+    <p>
+      The one real LPG item, <code>Lmk Gas</code>, is filed under <em>Cooking Consumable</em>
+      at ₹2,200 a cylinder and has sold <strong>10 units in the life of the database,
+      ₹27,003 all-time.</strong> It is the canteens' own cooking fuel held as stock.
+    </p>
+    <p>
+      <strong>This was the fifth false positive from name-matching in this review</strong> —
+      after arhar dal, almonds, washing bars and the mobile group tag. The pattern is now
+      unambiguous: <strong>every probe result must be read for contamination before it is
+      quoted</strong>, and a term that could be a brand prefix or a compound word is not
+      evidence of anything.
     </p>
   </div>
 
@@ -1367,7 +1770,7 @@ footer p+p{margin-top:11px}
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">11 · The instrument</span>
+    <span class="eyebrow">13 · The instrument</span>
     <h2>This is now a command, not a one-off study</h2>
     <p>
       ARY already had a read-only CLI. It gained an <code>assort</code> module — twelve
@@ -1422,7 +1825,7 @@ ary assort <span class="k">sweep</span> --lane population           <span class=
 <!-- ══════════════════════════════════════════ -->
 <section>
   <div class="shead">
-    <span class="eyebrow">12 · Still open</span>
+    <span class="eyebrow">14 · Still open</span>
     <h2>What is not yet known</h2>
   </div>
   <div class="body">

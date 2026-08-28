@@ -35,12 +35,16 @@ Adding thousands more SKUs to a catalogue where 68% never sell would make it wor
 
 ## Read these first
 
+- **[[Owner-Brief]]** — what ARY is actually trying to do, in the owner's own terms. This
+  outranks any inference elsewhere in the vault.
+
 - **[[Ten-Moves]]** — the ranked build order. Start at move 0; it is losing money today.
 - **[[Open-Questions]]** — six things no agent can answer. They gate most of the ten moves.
 - **[[Data-Quality-Traps]]** — read before quoting any number from this database.
 
 ## Foundations — what ARY is
 
+- **[[Owner-Brief]]** — the ask, the six-step method, the shelf-replacement arithmetic
 - **[[Business-Shape]]** — revenue by year, the books, and the resolved question of whether
   ARY is profitable (it is: ~₹76 lakh/yr, ~11.6% net)
 - **[[Population]]** — who the 5,000 are, and why the cohort is flat to shrinking
