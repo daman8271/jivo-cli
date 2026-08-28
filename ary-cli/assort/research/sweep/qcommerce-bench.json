@@ -1,0 +1,665 @@
+{
+  "lane": "qcommerce-bench",
+  "headline": "ARY already carries the SKU breadth of an entire Blinkit city network outside India's top eight metros — 19,481 active lines vs Blinkit's 20,000 for a whole tier-3 city — on 6.7% of one DMart store's revenue, so the expansion problem is not adding SKUs but that only ~6,100 lines sell and ARY's economically supportable ceiling is only ~8,000.",
+  "confidence": "medium",
+  "confidenceGap": "The external benchmarks are high-confidence (primary BSE-filed shareholder letters plus my own live API counts), but the translation into \"N SKU lines for a 5,000-person store\" rests on two figures I could not measure: ARY's average inventory value per SKU line and its realistic annual inventory turns. I assumed ₹1,200-1,800/line and 5-8 turns; at ₹800/line and 6 turns the budget is 14,162 lines instead of 8,092, which would flip the conclusion from \"cut the tail\" to \"the tail is affordable\". Both are answerable from ARY's own Stock.Quantity × purchase_cost in one query. Separately, no operator discloses SKUs-per-single-store — Blinkit said on the Q4 FY26 call \"we don't disclose the breakup intentionally\" — so every per-store SKU figure in this market, including mine, is inferred rather than published.",
+  "findings": [
+    {
+      "claim": "Blinkit's CEO publishes an explicit city-tier assortment ladder: close to 80k SKUs in Delhi NCR, about 50k+ in the next seven cities, and 20k beyond the top eight cities.",
+      "status": "VERIFIED",
+      "evidence": "Eternal Ltd Q4 FY26 Shareholders Letter, BSE-filed 2026-04-28. Retrieved via BSE API (api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w?strScrip=543320) then https://www.bseindia.com/xml-data/corpfiling/AttachHis/278b671b-c633-4d7b-b2cf-101a359db662.pdf, pdftotext line 294. Exact words: 'In Delhi NCR, we now offer close to 80k SKUs, versus about 50k+ in the next seven cities and 20k beyond the top eight.'",
+      "number": "80,000 / 50,000+ / 20,000 SKUs",
+      "soWhat": "This is the single most decision-relevant number in the lane. ARY's 19,481 active SKUs is statistically identical to Blinkit's ENTIRE city catalogue outside India's top eight cities. ARY is not under-assorted in breadth — it is already at small-city network breadth from one site. Any plan premised on 'ARY needs more SKUs' is arguing against the best available benchmark."
+    },
+    {
+      "claim": "A single store cannot hold a city catalogue — Blinkit states outright that widening assortment forces them to open MORE stores, not stock more per store.",
+      "status": "VERIFIED",
+      "evidence": "Same Eternal Q4 FY26 letter, line 290: 'In the top eight cities, the primary growth lever is assortment (more SKUs require more stores, even in areas we already serve).' Confirmed at line 294: 'Even within Delhi NCR, this depth is limited to select neighbourhoods.'",
+      "number": "2,243 Blinkit stores, +216 in the quarter",
+      "soWhat": "Kills the naive comparison 'Blinkit offers 80k, ARY offers 19k, so ARY is 4x short'. The 80k is a network figure spread over hundreds of dark stores. ARY holding 19,481 in one location is already an outlier on the high side, not the low side."
+    },
+    {
+      "claim": "A quick-commerce dark store averages just 4,045-4,208 sq ft, and Swiggy states the competitive 'right to play' assortment width is ~50k SKUs.",
+      "status": "VERIFIED",
+      "evidence": "Swiggy Q1 FY2026 Shareholder letter (https://www.swiggy.com/corporate/wp-content/uploads/2025/07/Q1-FY2026-Shareholder-letter.pdf) line 395: 'our average darkstore size increased by another 4% QoQ to 4045 sq ft'. Swiggy Q4 FY2026 letter (.../2026/05/Q4-FY2026-Shareholder-letter.pdf) line 440: 'width of assortment ( ~ 50k SKUs )'; metrics table: 1,143 active dark stores, 4.81 Mn sq ft — I derived 4,208 sq ft/store, which corroborates their stated 4,045 a year earlier.",
+      "number": "4,045-4,208 sq ft; ~50,000 SKUs",
+      "soWhat": "Establishes that the 30k-80k assortment figures quoted in this market are catalogue-visible-to-customer numbers served by a network, not shelf counts. ARY should benchmark its shelf against a ~4,000 sq ft dark store, not against a city catalogue."
+    },
+    {
+      "claim": "I measured BigBasket's live quick-delivery assortment for one Delhi neighbourhood at 86,593 SKUs across 11 categories — and the counts are safely additive (sub-category sums reconcile to parents within 0.8%).",
+      "status": "VERIFIED",
+      "evidence": "My own live crawl 2026-08-28 of https://www.bigbasket.com/listing-svc/v2/products?type=pc&slug=<slug>&page=1 with cookie jar from bigbasket.com homepage (xentrycontext=bbnow, _bb_nhid=7427), reading product_info.total_count. 11 L0 + all 99 L1 sub-categories captured. Data at /tmp/bb_L0.json and /tmp/bb_L1.json. Additivity check: sum(L1)=87,278 vs sum(L0)=86,593, +0.8%.",
+      "number": "86,593 SKUs; 11 categories; 99 sub-categories",
+      "soWhat": "This is the per-category denominator the whole benchmark table is built on, and it is measured rather than quoted. It independently corroborates Blinkit's 80k Delhi figure, which is strong mutual validation from two unrelated sources."
+    },
+    {
+      "claim": "The BigBasket count is its BB Now (10-minute) context, not the full warehouse catalogue — the API only returned data for xentrycontext=bbnow.",
+      "status": "VERIFIED",
+      "evidence": "I re-queried slug=beverages substituting xentrycontext=bb2.0, bbdaily and bbstar into the cookie header; all three returned no parseable total_count, only bbnow returned 2,975. So the 86,593 is the quick-delivery assortment visible to that neighbourhood.",
+      "number": "",
+      "soWhat": "Makes the comparison apples-to-apples with Blinkit's 'Delhi NCR' and Instamart's 'visible to metro users' figures — all three are customer-visible assortment in a well-served metro. Without this check I would have mislabelled 86,593 as a warehouse catalogue and overstated the ceiling."
+    },
+    {
+      "claim": "DMart — the physical value retailer ARY most resembles — discloses NO SKU count at all, in a 1.4-million-character annual report.",
+      "status": "VERIFIED",
+      "evidence": "Avenue Supermarts FY2025-26 Annual Report, BSE-filed 2026-07-23 (https://www.bseindia.com/xml-data/corpfiling/AttachHis/b496eda6-102e-4914-9a09-ce1e7f66c8b9.pdf). pdftotext -layout produced 1,408,317 chars; grep -inE 'sku|stock keeping' returned zero matches.",
+      "number": "0 mentions of SKU",
+      "soWhat": "India's most disciplined physical grocer does not manage or report itself by SKU count. It reports revenue per sq ft and inventory turns. That is the metric set ARY should adopt — SKU count is a vanity number, and widely-circulated 'DMart carries ~6,000 SKUs' claims are not sourceable to the company."
+    },
+    {
+      "claim": "DMart runs 500 stores at 41,160 sq ft average, turning inventory 12.8x a year at ₹33,422 revenue per sq ft.",
+      "status": "VERIFIED",
+      "evidence": "Avenue Supermarts FY2025-26 AR: line 1769 '500 stores with a retail business area of 20.58 million sq. ft.'; 'annualised revenue from sales per retail business area sq. ft. was INR 33,422 in FY 2025-26'; inventory-turnover chart 12.8 (FY25-26); '39.8 crore' bill cuts; 84 distribution centres, 12 packing centres. 41,160 sq ft/store is my division of 20.58Mn/500.",
+      "number": "500 stores; 41,160 sq ft; 12.8x turns; ₹33,422/sq ft/yr",
+      "soWhat": "12.8x turns is the discipline benchmark. It is the input that converts ARY's sales run-rate into a hard, defensible ceiling on how many SKU lines ARY can actually afford to stock."
+    },
+    {
+      "claim": "DMart's audited turnover splits Foods 57.90% / Non-Foods FMCG 19.82% / General Merchandise & Apparel 22.28% — and its stated strategy is deliberately LOCAL assortment per area.",
+      "status": "VERIFIED",
+      "evidence": "Avenue Supermarts FY2025-26 AR, BRSR section II item 16 (line ~4689): Foods 57.90%, Non-Foods (FMCG) 19.82%, General Merchandise and Apparel 22.28%. Strategy text line ~4689: 'We also consciously focus on local assortment in each area... our focus on local assortment enables development of local vendors in each area.'",
+      "number": "57.90% / 19.82% / 22.28%",
+      "soWhat": "Gives ARY a revenue-weight target for shelf and capital allocation, and legitimises building the range around Baru Sahib's specific captive population rather than copying a metro catalogue."
+    },
+    {
+      "claim": "ARY does ~1,180 bills a day — 1.08x the daily order count of one Instamart dark store — but on an average bill of ₹208 versus DMart's ₹1,683.",
+      "status": "ESTIMATED",
+      "evidence": "Derived: ARY ₹8.96 Cr annualised ÷ ₹208 avg bill ÷ 365 = 1,180 bills/day (inputs given as live-pulled by the sibling lane). Instamart 1,093 orders/dark store/day is VERIFIED from Swiggy Q4 FY2026 letter metrics table. DMart ₹1,683 = ₹66,968 Cr ÷ 39.8 cr bill cuts (both VERIFIED from AR).",
+      "number": "~1,180 bills/day; ₹208 vs ₹1,683",
+      "soWhat": "ARY has dark-store-scale transaction volume with one-eighth of a DMart basket. High footfall and a tiny basket is the signature of a store people visit constantly for a few items — which argues for depth in fast-moving daily lines, not breadth across a long tail."
+    },
+    {
+      "claim": "ARY's revenue is 6.7% of a single DMart store's, yet it carries a SKU count no single-store format in India carries.",
+      "status": "ESTIMATED",
+      "evidence": "Derived: DMart revenue/store = ₹66,968 Cr ÷ 500 = ₹133.94 Cr/yr (VERIFIED inputs). ARY annualised ₹8.96 Cr (given) = 6.7%. ARY 19,481 active SKUs (given).",
+      "number": "6.7% of one DMart store",
+      "soWhat": "This is the mismatch in one line: metro-scale assortment breadth on a 6.7%-of-a-DMart-store revenue base. It is arithmetically impossible to hold a sellable facing of 19,481 lines on that turnover."
+    },
+    {
+      "claim": "ARY's economically supportable assortment is roughly 6,000-9,500 SKU lines, and it already sells ~6,100 — so the ~6,100 selling lines is not underperformance, it is close to the ceiling.",
+      "status": "ESTIMATED",
+      "evidence": "My arithmetic: COGS ratio 75.87% from ARY's given trial balance (net purchases 16.54-0.44=16.10 Cr ÷ Sales 21.22 Cr) × ₹8.96 Cr annualised = ₹6.80 Cr annual COGS. At 5-8 turns → ₹0.85-1.36 Cr supportable inventory. At ₹1,200-1,800 average stock per line → 4,720-11,330 lines; central case (6 turns, ₹1,400/line) = 8,092 lines. Cross-check: ~6,100 SKUs actually sold in 12 months (given).",
+      "number": "~8,000 lines central; 4,700-11,300 range",
+      "soWhat": "Reframes the entire project. The ~13,400 active-but-unsold SKUs are not an opportunity being missed, they are capital and shelf being consumed by lines the store cannot afford to stock properly. The move is rotation — kill dead, add right — not net addition."
+    },
+    {
+      "claim": "Baru Sahib's vegetarian Sikh institutional context makes one entire benchmark category a structural zero: all 7 sub-categories of eggs/meat/fish (1,464 metro SKUs) do not apply.",
+      "status": "VERIFIED",
+      "evidence": "BigBasket eggs-meat-fish L0 = 1,464 SKUs across Eggs, Fish & Seafood, Marinades, Mutton & Lamb, Pork & Other Meats, Poultry, Sausages/Bacon/Salami (my live crawl). Context (Sikh institution, no tobacco/alcohol, Kalgidhar Trust campus) given in the brief.",
+      "number": "1,464 metro SKUs → 0",
+      "soWhat": "1.7% of the metro benchmark must be zeroed before any gap analysis, or ARY will be scored against SKUs it must never carry. The same override logic must be applied by every other lane."
+    },
+    {
+      "claim": "Instamart's non-grocery share of GOV rose from 7% to 18.5% in one year — assortment growth in Indian q-commerce is coming from NON-grocery, not deeper grocery.",
+      "status": "VERIFIED",
+      "evidence": "Swiggy Q1 FY2026 Shareholder letter line 408: 'the Contribution of non grocery categories in our GOV mix has increased to 18.5%, vs 7% a year back.' Q4 FY2026 letter line 122: 'AOV grew 33% YoY to INR 700, led by sustained non-grocery selection mix and larger-basket'.",
+      "number": "7% → 18.5% of GOV",
+      "soWhat": "The industry's own growth engine is non-grocery adjacency (the categories ARY has near-zero in: baby, mobile, general merchandise). It also shows non-grocery is what lifts basket size — directly relevant to ARY's ₹208 bill."
+    },
+    {
+      "claim": "Blinkit's actual listed assortment in a served city measured ~20,010 products with 2,470 brands — matching Blinkit's own 20k figure for smaller cities.",
+      "status": "VERIFIED",
+      "evidence": "MetricsCart Blinkit analysis (https://metricscart.com/insights/blinkit-analysis/), tracking window 14 May - 5 Jun 2025: 'average of 20,010 products listed daily', '2,470 unique brands', average listed price ₹439.18, 'over 1,600 locations', in-stock 77.71%. Top categories by product count: Personal Care 2,405, Home & Office 2,307, Beauty & Cosmetics 1,800+.",
+      "number": "20,010 products; 2,470 brands; ₹439 avg price",
+      "soWhat": "A third-party scrape independently lands on ~20k, the same order as Blinkit's own beyond-top-eight figure and as ARY's 19,481. Also note ₹439 average listed price versus ARY's ₹208 average BILL — ARY's customers buy far cheaper items, so ARY's per-line stock value is lower than a metro store's, which is the main risk to my 8,000-line estimate."
+    },
+    {
+      "claim": "DMart Ready's online catalogue is 37,465 products organised in 1,493 category nodes (22 top / 192 mid / 1,279 leaf).",
+      "status": "VERIFIED",
+      "evidence": "https://www.dmart.in/sitemap/products/products_1.xml (20,000 <loc>) + products_2.xml (17,465 <loc>), lastmod 2026-05-11. Taxonomy from https://www.dmart.in/sitemap/categories.xml: 1,493 URLs, depth split 22/192/1,279 by path segment count.",
+      "number": "37,465 products; 22/192/1,279 nodes",
+      "soWhat": "A benchmark for taxonomy DEPTH, not just count: DMart Ready uses ~1,279 leaf nodes for 37,465 products (~29 products per leaf). ARY uses 846 subgroups for 21,466 SKUs (~25 per subgroup) — so ARY's taxonomy granularity is already industry-normal and is not the problem."
+    },
+    {
+      "claim": "Zepto could not be measured or sourced — it is bot-walled and unlisted, so it contributes nothing verifiable to this benchmark.",
+      "status": "NOT-CHECKED",
+      "evidence": "https://www.zeptonow.com/ and /sitemap.xml return HTTP 202 with a zero-byte body (challenge); api.zeptonow.com fails to connect (HTTP 000). Zepto is unlisted so has no BSE filing; its DRHP was not retrievable (chittorgarh.com/ipo/zepto-ipo/ 404s, SEBI filing not located). Blinkit's own site is also fully walled (403 on sitemap.xml and /v1/layout/listing_widgets).",
+      "number": "",
+      "soWhat": "One of the five requested retailers is a genuine hole. It does not change the conclusion — Blinkit, Instamart and BigBasket already triangulate tightly at 50k-87k metro and 20k small-city — but the brief asked for Zepto and I did not get it."
+    }
+  ],
+  "tables": [
+    {
+      "title": "THE BENCHMARK — for category X, a store serving 5,000 people should carry roughly N SKU lines",
+      "columns": [
+        "Category",
+        "BigBasket BB Now metro SKUs (VERIFIED live)",
+        "Benchmark lines for a 5,000-person store (ESTIMATED)",
+        "ARY today (given, where known)",
+        "Read"
+      ],
+      "rows": [
+        [
+          "Snacks & branded foods",
+          "12,500",
+          "1,992",
+          "not checked",
+          "1,250 school children + 1,100 university students; highest-frequency impulse basket"
+        ],
+        [
+          "Foodgrains, oil & masala (staples)",
+          "10,401",
+          "1,913",
+          "not checked",
+          "The core township basket; up-weighted 1.5x over pro-rata"
+        ],
+        [
+          "Beauty & hygiene",
+          "16,052",
+          "886",
+          "not checked",
+          "Metro long tail stripped (makeup 2,359 + skin care 3,678 are not township lines); hygiene basics kept"
+        ],
+        [
+          "Bakery, cakes & dairy",
+          "4,697",
+          "864",
+          "Dairy 41 SKUs, loose milk only",
+          "Largest verified depth gap: benchmark 294 dairy lines vs 41 held"
+        ],
+        [
+          "Cleaning & household",
+          "16,220",
+          "795",
+          "not checked",
+          "Keep detergents, pooja (2,201 metro), stationery (2,471 metro — a school campus); drop books/sports/toys tail"
+        ],
+        [
+          "Beverages",
+          "2,975",
+          "438",
+          "not checked",
+          "Tea 762 and coffee 385 metro lines; hill climate favours hot beverages"
+        ],
+        [
+          "Baby care",
+          "1,465",
+          "323",
+          "3 SKUs (an 'accessories' subgroup)",
+          "Worst relative gap in the whole catalogue: 3 lines against a 323-line benchmark"
+        ],
+        [
+          "Kitchen, garden & pets",
+          "12,572",
+          "308",
+          "not checked",
+          "Utensils/storage basics only; pet category is a structural zero on this campus"
+        ],
+        [
+          "Fruits & vegetables",
+          "1,380",
+          "271",
+          "not checked",
+          "ARY is the ONLY fresh source for 5,000 people; up-weighted 1.6x"
+        ],
+        [
+          "Gourmet & world food",
+          "6,867",
+          "210",
+          "not checked",
+          "Down-weighted to 0.25x; some real demand from university and international students"
+        ],
+        [
+          "Eggs, meat & fish",
+          "1,464",
+          "0",
+          "0",
+          "STRUCTURAL ZERO — vegetarian Sikh institution. Must be excluded from every gap calc"
+        ],
+        [
+          "TOTAL",
+          "86,593",
+          "8,000",
+          "19,481 active / ~6,100 selling",
+          "ARY's selling assortment (~6,100) is already near its supportable ceiling (~8,000)"
+        ]
+      ]
+    },
+    {
+      "title": "Sub-category benchmark — the actionable level (top 24 of 99 measured)",
+      "columns": [
+        "Sub-category",
+        "Parent",
+        "BB Now metro SKUs (VERIFIED)",
+        "Benchmark lines for 5,000-person store (ESTIMATED)"
+      ],
+      "rows": [
+        [
+          "Masalas & Spices",
+          "foodgrains-oil-masala",
+          "3,566",
+          "649"
+        ],
+        [
+          "Snacks & Namkeen",
+          "snacks-branded-foods",
+          "3,120",
+          "496"
+        ],
+        [
+          "Ready To Cook & Eat",
+          "snacks-branded-foods",
+          "2,196",
+          "349"
+        ],
+        [
+          "Dairy",
+          "bakery-cakes-dairy",
+          "1,605",
+          "294"
+        ],
+        [
+          "Dry Fruits",
+          "foodgrains-oil-masala",
+          "1,560",
+          "284"
+        ],
+        [
+          "Organic Staples",
+          "foodgrains-oil-masala",
+          "1,295",
+          "236"
+        ],
+        [
+          "Skin Care",
+          "beauty-hygiene",
+          "3,678",
+          "198"
+        ],
+        [
+          "Edible Oils & Ghee",
+          "foodgrains-oil-masala",
+          "1,077",
+          "196"
+        ],
+        [
+          "Party & Festive Needs",
+          "cleaning-household",
+          "3,910",
+          "191"
+        ],
+        [
+          "Frozen Veggies & Snacks",
+          "snacks-branded-foods",
+          "1,162",
+          "185"
+        ],
+        [
+          "Ice Creams & Desserts",
+          "bakery-cakes-dairy",
+          "987",
+          "181"
+        ],
+        [
+          "Biscuits & Cookies",
+          "snacks-branded-foods",
+          "1,066",
+          "170"
+        ],
+        [
+          "Atta, Flours & Sooji",
+          "foodgrains-oil-masala",
+          "888",
+          "162"
+        ],
+        [
+          "Rice & Rice Products",
+          "foodgrains-oil-masala",
+          "869",
+          "158"
+        ],
+        [
+          "Spreads, Sauces, Ketchup",
+          "snacks-branded-foods",
+          "965",
+          "153"
+        ],
+        [
+          "Chocolates & Candies",
+          "snacks-branded-foods",
+          "939",
+          "149"
+        ],
+        [
+          "Indian Mithai",
+          "snacks-branded-foods",
+          "906",
+          "144"
+        ],
+        [
+          "Dals & Pulses",
+          "foodgrains-oil-masala",
+          "789",
+          "144"
+        ],
+        [
+          "Health & Medicine (OTC only)",
+          "beauty-hygiene",
+          "2,572",
+          "139"
+        ],
+        [
+          "Cookies, Rusk & Khari",
+          "bakery-cakes-dairy",
+          "748",
+          "137"
+        ],
+        [
+          "Stationery",
+          "cleaning-household",
+          "2,471",
+          "121"
+        ],
+        [
+          "Tea",
+          "beverages",
+          "762",
+          "112"
+        ],
+        [
+          "Pooja Needs",
+          "cleaning-household",
+          "2,201",
+          "108"
+        ],
+        [
+          "Breads & Buns",
+          "bakery-cakes-dairy",
+          "570",
+          "105"
+        ],
+        [
+          "Baby Bath & Hygiene",
+          "baby-care",
+          "416",
+          "92"
+        ],
+        [
+          "Diapers & Wipes",
+          "baby-care",
+          "375",
+          "83"
+        ]
+      ]
+    },
+    {
+      "title": "Customer-visible assortment across Indian retail (all figures dated)",
+      "columns": [
+        "Retailer / format",
+        "What the count covers",
+        "SKUs",
+        "Source and date",
+        "Status"
+      ],
+      "rows": [
+        [
+          "BigBasket (BB Now, 10-min)",
+          "One Delhi neighbourhood (nhid 7427)",
+          "86,593",
+          "My live listing-svc crawl, 2026-08-28",
+          "VERIFIED"
+        ],
+        [
+          "Blinkit",
+          "Delhi NCR city catalogue",
+          "~80,000",
+          "Eternal Q4 FY26 Shareholders Letter, BSE 2026-04-28",
+          "VERIFIED"
+        ],
+        [
+          "Blinkit",
+          "Next seven cities",
+          "~50,000+",
+          "Same letter",
+          "VERIFIED"
+        ],
+        [
+          "Blinkit",
+          "Beyond the top eight cities",
+          "20,000",
+          "Same letter",
+          "VERIFIED"
+        ],
+        [
+          "Swiggy Instamart",
+          "Stated 'right to play' width",
+          "~50,000",
+          "Swiggy Q4 FY2026 Shareholder letter, May 2026",
+          "VERIFIED"
+        ],
+        [
+          "Swiggy Instamart",
+          "Visible to most metro users",
+          "over 30,000",
+          "Swiggy Q1 FY2026 Shareholder letter, Jul 2025",
+          "VERIFIED"
+        ],
+        [
+          "Blinkit (3rd-party scrape)",
+          "Products listed daily in served cities",
+          "20,010",
+          "MetricsCart, 14 May - 5 Jun 2025",
+          "VERIFIED (third party)"
+        ],
+        [
+          "DMart Ready (online)",
+          "Full India catalogue",
+          "37,465",
+          "dmart.in product sitemap, lastmod 2026-05-11",
+          "VERIFIED"
+        ],
+        [
+          "DMart (physical store)",
+          "Per store",
+          "NOT DISCLOSED",
+          "Avenue Supermarts AR FY2025-26 — zero 'SKU' mentions",
+          "VERIFIED absence"
+        ],
+        [
+          "Zepto",
+          "Any scope",
+          "UNAVAILABLE",
+          "Bot-walled (HTTP 202 empty); unlisted, no filing",
+          "NOT-CHECKED"
+        ],
+        [
+          "ARY (Baru Sahib)",
+          "One store, 11 counters",
+          "19,481 active / ~6,100 selling",
+          "Given, live-pulled 2026-08-28",
+          "VERIFIED (sibling lane)"
+        ]
+      ]
+    },
+    {
+      "title": "Store-format physics — what ONE store actually is",
+      "columns": [
+        "Metric",
+        "DMart store",
+        "Instamart dark store",
+        "ARY (Baru Sahib)"
+      ],
+      "rows": [
+        [
+          "Stores in network",
+          "500",
+          "1,143",
+          "1 site, 11 counters"
+        ],
+        [
+          "Average area",
+          "41,160 sq ft (derived from 20.58Mn/500)",
+          "4,045 sq ft stated (4,208 derived)",
+          "not checked"
+        ],
+        [
+          "Bills / orders per day",
+          "2,181 (derived)",
+          "1,093 (stated)",
+          "~1,180 (derived)"
+        ],
+        [
+          "Average bill / AOV",
+          "₹1,683 (derived)",
+          "₹700 (stated)",
+          "₹208 (given)"
+        ],
+        [
+          "Revenue per store per year",
+          "₹133.94 Cr (derived)",
+          "not disclosed",
+          "₹8.96 Cr annualised (given)"
+        ],
+        [
+          "Revenue per sq ft per year",
+          "₹33,422 (stated)",
+          "₹65,564 if the ₹16,391/sq ft metric is quarterly (derived, ambiguous)",
+          "not checked"
+        ],
+        [
+          "Inventory turns per year",
+          "12.8x (stated)",
+          "not disclosed",
+          "not checked"
+        ],
+        [
+          "SKUs held per store",
+          "not disclosed",
+          "not disclosed",
+          "19,481 active"
+        ],
+        [
+          "Category mix of turnover",
+          "Foods 57.90% / Non-Food FMCG 19.82% / GM&A 22.28%",
+          "Non-grocery 18.5% of GOV",
+          "not checked"
+        ]
+      ]
+    },
+    {
+      "title": "ARY's supportable SKU-line budget — sensitivity (the number the conclusion hinges on)",
+      "columns": [
+        "Inventory turns/yr",
+        "Supportable inventory (₹ Cr)",
+        "Lines at ₹800/line",
+        "Lines at ₹1,200/line",
+        "Lines at ₹1,400/line",
+        "Lines at ₹1,800/line",
+        "Lines at ₹2,500/line"
+      ],
+      "rows": [
+        [
+          "12.8 (DMart benchmark)",
+          "0.53",
+          "6,638",
+          "4,425",
+          "3,793",
+          "2,950",
+          "2,124"
+        ],
+        [
+          "8.0",
+          "0.85",
+          "10,622",
+          "7,081",
+          "6,069",
+          "4,720",
+          "3,399"
+        ],
+        [
+          "6.0 (central case)",
+          "1.13",
+          "14,162",
+          "9,441",
+          "8,092",
+          "6,294",
+          "4,532"
+        ],
+        [
+          "5.0",
+          "1.36",
+          "16,995",
+          "11,330",
+          "9,711",
+          "7,553",
+          "5,438"
+        ],
+        [
+          "4.0",
+          "1.70",
+          "21,244",
+          "14,162",
+          "12,139",
+          "9,441",
+          "6,798"
+        ]
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Before any category decision, fill in cost and price on the item master. StandardCostPrice is set on 41 of 19,481 active SKUs and MaxRetailPrice on ZERO, so margin per line cannot be computed and no assortment discipline is possible. Every recommendation below is unenforceable until this is done. Backfill from the per-location product-children table (purchase_cost, mrp, selling_price, margin_pct) which already holds the real figures.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "Deciding whether the item master or the per-location children table is the system of record — they currently disagree and only one can win."
+    },
+    {
+      "action": "Stop measuring ARY by SKU count and adopt DMart's two metrics instead: revenue per sq ft per year (DMart 33,422) and inventory turns (DMart 12.8x). Measure ARY's selling area first — it is not recorded anywhere I could reach, and without it no capacity or productivity benchmark can be applied.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "Nobody has measured ARY's selling area per counter; needs a tape measure and one afternoon."
+    },
+    {
+      "action": "Cut the dead tail rather than extend it. ~13,400 active SKUs had no sale in 12 months against a supportable ceiling of ~8,000 lines. Delist and liquidate the non-selling lines to release shelf, working capital and — critically — the hiding place for the ₹2.59 Cr lifetime counting shortage. Impact shown is carrying cost only, at 12%/yr on an ESTIMATED ₹1.07 Cr of dead stock (13,400 lines x ₹800); the one-time capital release is the larger prize.",
+      "priority": "P0",
+      "monthlyImpactInr": 107000,
+      "effort": "months",
+      "blocker": "The ₹/line stock value is unmeasured — run Stock.Quantity x purchase_cost over the non-selling lines to size this properly before committing. If it comes back under ~₹500/line the whole cut is not worth the labour."
+    },
+    {
+      "action": "Build the baby-care shelf from 3 SKUs to a ~320-line benchmark (diapers & wipes ~83, baby bath & hygiene ~92, baby food & formula, feeding & nursing ~59). This is the worst relative gap in the catalogue on a campus with married staff families, and the wallet leaks 30-50 km of hill road away. Impact figure is ESTIMATED on an unverified headcount of babies.",
+      "priority": "P1",
+      "monthlyImpactInr": 250000,
+      "effort": "weeks",
+      "blocker": "Nobody has counted the babies and toddlers on campus — the entire sizing rests on it. One call to the Trust's staff-quarters register settles it."
+    },
+    {
+      "action": "Add dairy depth: benchmark is ~294 lines against 41 held, and ARY currently sells loose milk with no curd/paneer/cheese range. Dairy is the highest-frequency category in an Indian household basket and directly lifts ARY's ₹208 average bill.",
+      "priority": "P1",
+      "monthlyImpactInr": 300000,
+      "effort": "weeks",
+      "blocker": "Cold chain. A ~294-line dairy range needs reliable refrigeration and daily replenishment 30-50 km from the nearest market town — solve the cold chain before ordering the range."
+    },
+    {
+      "action": "Chase basket size, not breadth. Instamart lifted AOV 33% YoY to ₹700 by pushing non-grocery mix from 7% to 18.5% of GOV. ARY's ₹208 bill is 12.4% of DMart's ₹1,683 while its footfall already equals a dark store's. Target the non-grocery adjacencies ARY has near-zero in (baby, mobile, general merchandise) rather than more grocery lines.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "months",
+      "blocker": "97% of bills are booked to one walk-in 'Cash' account and SalesPersonID is [NONE] on 99.7% of them — basket composition is invisible, so no basket strategy can be measured. Fix the till capture first."
+    },
+    {
+      "action": "Apply the two structural overrides to every other lane's gap analysis before it is acted on: zero out all 7 eggs/meat/fish sub-categories (1,464 metro SKUs) for a vegetarian Sikh institution, and zero out pet care. Any lane scoring ARY against an unadjusted metro catalogue is inflating the gap.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Do not size a pharmacy from this benchmark. BigBasket's 'Health & Medicine' (2,572 SKUs) and DMart are OTC/wellness only — neither carries prescription pharmacy, so my 139-line figure understates a real dispensary and must not be used to cap it. Route the pharmacy question to the dedicated pharmacy lane.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    }
+  ],
+  "openQuestions": [
+    "ARY's average inventory value per SKU line, and its realistic annual inventory turns. These two numbers drive the whole 8,000-line ceiling; at ₹800/line and 6 turns the answer is 14,162 lines and the 'cut the tail' conclusion weakens materially. Answerable in one query by ARY's own team: Stock.Quantity x purchase_cost from the product-children table, grouped by whether the line sold in 12 months.",
+    "ARY's selling area in sq ft, per counter. Without it none of the verified sq-ft benchmarks (DMart 41,160 sq ft at ₹33,422/sq ft; dark store 4,045 sq ft) can be applied, and shelf capacity cannot be checked against the 8,000-line budget. Who: ARY store manager / Kalgidhar Trust estate office.",
+    "How many babies and toddlers live on campus. The baby-care recommendation is the single biggest relative gap (3 SKUs vs a 323-line benchmark) but its rupee sizing rests on an unverified headcount. Who: the Trust's married-staff quarters register.",
+    "SKUs held per individual dark store — the one figure no operator publishes. Blinkit said on the Q4 FY26 call 'we don't disclose the breakup intentionally' and DMart's annual report never uses the word SKU. Who could resolve it: a Blinkit or Instamart category manager, or a store visit; otherwise it stays inferred.",
+    "Zepto's assortment and dark-store metrics. Bot-walled and unlisted; its updated DRHP (reported on in June 2026) would settle it. Who: the DRHP on SEBI's site, or a banker on the issue.",
+    "Whether Instamart's ₹16,391 GOV per sq ft is a quarterly or annual figure. It sits in a table of quarterly metrics, so I read it as quarterly (₹65,564/yr), but that is an inference and it changes the dark-store productivity comparison by 4x. Who: Swiggy investor relations.",
+    "ARY's own category revenue mix, to compare against DMart's audited 57.90% Foods / 19.82% Non-Food FMCG / 22.28% GM&A. I did not compute it — that is a database lane, not mine — but the benchmark is meaningless until someone lays ARY's actual mix beside it."
+  ]
+}

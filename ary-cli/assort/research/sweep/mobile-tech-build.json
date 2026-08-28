@@ -1,0 +1,945 @@
+{
+  "lane": "mobile-tech-build",
+  "headline": "The Rs 2,690 \"Mobile\" figure is a mis-classification, not a market: ARY already sells Rs 2.16 lakh a year of cables, chargers, earphones and TWS at a verified 41-43% gross margin through just four generic catch-all product codes — a real, growing, unmanaged business, and turning it into a proper 130-SKU tech bay buys roughly Rs 1.55 lakh a month of extra sales and Rs 59,000 a month of gross profit for a Rs 3.1 lakh one-off.",
+  "confidence": "medium",
+  "confidenceGap": "Whether Akal Academy's residential students are permitted mobile phones. That single policy decides whether the addressable base is ~5,000 people or ~2,750 (Eternal University students + resident staff + staff families). The revenue build survives the restrictive case — Rs 21.8 lakh/yr over 2,750 phone owners is Rs 727 per owner per year, still half my Rs 1,400 estimate of a hostel resident's annual tech spend — but the SKU mix would shift hard away from student-priced TWS toward household items (extension boards, LED, torches, emergency lights). Nobody at ARY was asked; the store manager and the Akal Academy hostel warden can settle it in one conversation.",
+  "findings": [
+    {
+      "claim": "The Rs 2,690 / 8-SKU 'Mobile' figure is a dead 2017 catalogue stub, not a measure of demand. All 8 SKUs in ProductGroupID 139 are chargers created on the same timestamp — 2017-09-09T13:32:00Z — with MaxRetailPrice = 0, StandardCostPrice = 0 and QuantityOnHand = 0. Only 2 of the 8 have sold anything in 12 months (5 units).",
+      "status": "VERIFIED",
+      "evidence": "ary query \"SELECT ProductID, ProductName, MaxRetailPrice, StandardSalePrice, StandardCostPrice, QuantityOnHand, IsActive, SubGroupID, RecordDateTime FROM ProductMaster WHERE ProductGroupID=139\" — returns Gold Charger 02, Gold Charger 5 In 1, Kish Charger Gold, Atek Charger 5 In 1, Charger 38, Charger 41, Charger 5 In 1, Charger Pin 01",
+      "number": "8 SKUs, all zero-priced, all created 2017-09-09",
+      "soWhat": "Any plan built on 'ARY sells no mobile tech' targets the wrong problem. Deactivating these 8 codes is step zero; they are pure catalogue noise that makes the category look dead in every report."
+    },
+    {
+      "claim": "ARY's real mobile-tech business is Rs 2.16 lakh a year on 1,151 units, booked under ProductGroupID 107 'Accessories' — not under 'Mobile'. Adding the Bluetooth speaker line in the Electricals group takes it to Rs 2.32 lakh.",
+      "status": "VERIFIED",
+      "evidence": "ary query summing Quantity*SaleRate over ProductIDs 07P0,07P1,0AWS,0AWR,0A2X,09IS,0AWQ,09Q5,02SD,09IJ,0G1M plus the 8 group-139 codes, SaleHeader.VoucherDate 2025-08-01 to 2026-08-22 → 216,389 on 1,151 units. Subgroup query returns Mobile Accessories Rs 109,579 / Mobile Set Rs 55,183 / Earphone Rs 48,937.",
+      "number": "Rs 2,16,389 / 1,151 units / 12 months (Rs 2,32,395 incl. Bluetooth speakers)",
+      "soWhat": "The category is 80x bigger than the headline says. This is not a launch, it is a rescue — which is a far cheaper and lower-risk proposition to fund."
+    },
+    {
+      "claim": "Four generic ProductIDs are each hiding an entire price range. 'Mobile Datacable' (07P0) rang up 600 units across 22 distinct price points from Rs 10 to Rs 450. 'Bluetooth Buds' (0AWR) rang up 77 units across 19 price points from Rs 399 to Rs 1,199. 'Mobile Adapter' (07P1) 126 units across 18 points from Rs 150 to Rs 799. 'Mobile Ear Phone' (0AWS) 305 units from Rs 70 to Rs 180.",
+      "status": "VERIFIED",
+      "evidence": "ary query grouping SaleDetail by ProductName and CAST(SaleRate AS decimal(18,0)) for ProductIDs 07P0,07P1,0AWS,0AWR over the 12-month window — 22/19/18/9+ distinct rate rows respectively",
+      "number": "4 codes, 68+ distinct price points",
+      "soWhat": "This is the root cause of every downstream problem: no reorder point, no per-item margin, no stock accuracy, and — critically — no warranty claim is possible when the customer's bill says 'Mobile Datacable Rs 150'. Splitting these four codes into real SKUs is the whole intervention; the range expansion is the easy part that follows."
+    },
+    {
+      "claim": "ARY already earns 41-43% gross margin on these mobile lines, verified from its own purchase book, and 51% on Bluetooth speakers. That is at the very top of ARY's entire book — better than Accessories (45.2%) and Stationery (40.2%), and 5-7x the grocery staples (Atta 7.8%, Pulses 5.8%, Rice 7.3%).",
+      "status": "VERIFIED",
+      "evidence": "ary query over PurchaseDetail joined to PurchaseHeader, 12m: (SUM(Qty*SellingRate)-SUM(Qty*PurchaseCost))/SUM(Qty*SellingRate) by subgroup → Mobile Accessories 43.25%, Buds 42.78%, Earphone 42.35%, Mobile Set 41.44%, Speaker 51.16%, Cell 41.16%, Charger 41.41%; same query by ProductGroupID for the store-wide comparison",
+      "number": "41-51% GM vs 5.8-7.8% on staples",
+      "soWhat": "The margin thesis needs no assumption — ARY has already proven it on its own bills. Every rupee moved from a staple to a tech accessory earns 5-7x the gross profit, which is the real argument for shelf space."
+    },
+    {
+      "claim": "The category is growing on its own, with no range added. TWS units went from 2 in Aug-2024 to 20 in Aug-2026. August 2026 was the highest month in 24 at Rs 23,097 despite being only 21 days long.",
+      "status": "VERIFIED",
+      "evidence": "ary query, monthly CONVERT(char(7),VoucherDate,126) trend over 2024-08 to 2026-08 on the 10 live tech ProductIDs → 2024-08 Rs 15,956 / 2 TWS; 2026-08 Rs 23,097 / 20 TWS",
+      "number": "TWS units 2 → 20 (10x in 24 months); best month = the partial current one",
+      "soWhat": "Demand is pulling, not being pushed. The store is losing sales it does not know it is losing, which means the Year-1 targets are catch-up rather than market creation."
+    },
+    {
+      "claim": "Only 1,051 bills out of 392,091 carried a mobile-tech line — an attach rate of 0.27%, or one bill in 373. Average value of a tech-carrying bill was Rs 206, essentially the same as ARY's overall Rs 207 average bill.",
+      "status": "VERIFIED",
+      "evidence": "ary query COUNT(DISTINCT sh.SerialNumber) where the bill contains any of the 11 live tech ProductIDs = 1,051; COUNT(*) FROM SaleHeader over the same window = 392,091",
+      "number": "0.27% attach rate; 1 bill in 373",
+      "soWhat": "Sets the lever precisely. Moving the attach rate from 0.27% to 1.0% — still only one bill in 100 — triples the category on the existing footfall, with no new customers and no marketing."
+    },
+    {
+      "claim": "Almost no working capital is at risk. Total stock on hand across all mobile-tech codes is 195 cables, 63 earphones, 19 adapters, 13 Bluetooth speakers, 10 TWS, 5 headsets, 2 Airpods and 5 misc — roughly Rs 25-30k at cost.",
+      "status": "VERIFIED",
+      "evidence": "ary query SUM(Stock.Quantity) joined to ProductMaster for ProductIDs 07P0,07P1,0AWS,0AWR,0A2X,09IS,0AWQ,09Q5",
+      "number": "~312 units total on hand",
+      "soWhat": "There is no legacy inventory problem to unwind and nothing to write off. The Rs 3.1 lakh ask is genuinely incremental, and the downside if the bay fails is one season's markdown on fast-moving small-ticket goods."
+    },
+    {
+      "claim": "There is no smartwatch, power-bank or strap range at all. The entire 'China' group (ProductGroupID 114) is abandoned 2017 stock: 71 SKUs named 'China Wrist Watch NN' (quartz watches, not smartwatches), 5 'China Power Bank NN', all with zero stock and zero 12-month sales. Extension boards are 3 SKUs ('Extention Box', 'Extention Box Big', 'Bajaj Extention Box').",
+      "status": "VERIFIED",
+      "evidence": "ary query SELECT ProductName, IsActive, QuantityOnHand FROM ProductMaster WHERE SubGroupID IN (839,675,445)",
+      "number": "71 dead watch SKUs, 5 dead power-bank SKUs, 3 extension-board SKUs",
+      "soWhat": "Confirms these are true greenfield lines, and that the 'ARY tried tech and it failed' story is really 'ARY listed tech in 2017 and never bought it'. Also means the 13,284 dead-SKU catalogue-hygiene problem and this one are the same project."
+    },
+    {
+      "claim": "MRP on branded mobile accessories is fictional — boAt sells off its own website at 52-84% below MRP. Airdopes 131 MRP Rs 2,990 → Rs 999. Airdopes 311 Pro MRP Rs 4,990 → Rs 799. Type-C A325 cable MRP Rs 499 → Rs 129. C300 cable MRP Rs 2,999 → Rs 199. Nirvana Zenith Pro MRP Rs 14,990 → Rs 3,199.",
+      "status": "VERIFIED",
+      "evidence": "https://www.boat-lifestyle.com/collections/true-wireless and https://www.boat-lifestyle.com/collections/cables — 18 products each, MRP and live selling price",
+      "number": "52-84% off MRP on the brand's own storefront",
+      "soWhat": "Decides the range strategy. A shop buying branded goods at trade price and pricing at MRP will not sell a unit, and a customer who knows the online price will read MRP pricing as the Trust's shop overcharging them. The range must be mostly good unbranded/regional goods — exactly what ARY already sells at 43% — with a thin branded top shelf for credibility, NOT a branded-led range."
+    },
+    {
+      "claim": "Delhi wholesale prices support 45-58% margins on the generic tier at ARY's existing realised shelf prices. Cables Rs 20-45 (Bright Industries, Goyal Products, Ramdev Mobile Accessories, Alankara Vasana — all New Delhi) against ARY's realised Rs 85. Chargers Rs 25-175 (JPY Mobile Phone Accessories Delhi Rs 25; Mak Cellphones Delhi 20W Rs 143; Cenoda Technology Noida 18W Rs 175) against ARY's realised Rs 418. Tempered glass Rs 12-18 (Ayesha Enterprises Jamshedpur Rs 12; Everytime 53 Neemuch Rs 12.50; Super X Amravati Rs 14; A Z Infolink Delhi Rs 15).",
+      "status": "VERIFIED",
+      "evidence": "https://dir.indiamart.com/impcat/mobile-charger.html, /usb-data-cable.html, /mobile-tempered-glass.html — named suppliers with per-piece prices",
+      "number": "Cable Rs 32 buy → Rs 90 sell = 64% GM; glass Rs 15 buy → Rs 150 sell = 90% GM",
+      "soWhat": "Tempered glass is the single best line available: 90% gross margin, Rs 15 of capital per unit, and fitting it takes ten minutes to teach. It should be the first SKU on the shelf, not an afterthought."
+    },
+    {
+      "claim": "The Delhi wholesale channel is openly selling counterfeit branded audio, and ARY must be walled off from it. 'boAt M10 TWS' at Rs 135 (SFZ Electronics Trading Co., New Delhi), 'boAt Rockerz 335 Neckband' Rs 140 (Ayush Trade India, New Delhi), 'boAt 335 BT' Rs 99 (Shri Sankeshwar Mobile Accessories, Ahmedabad), 'New Boat 20K MAH' power bank Rs 285, 'Marshall Motif Buds' Rs 245, 'Sony Bluetooth Earphone' Rs 130, 'Airpods Wow Pods' Rs 230.",
+      "status": "VERIFIED",
+      "evidence": "https://dir.indiamart.com/impcat/bluetooth-earphone.html and /power-bank.html — brand names at roughly one-eighth of the brand's own online price (boAt's cheapest genuine TWS on its own site is Rs 799)",
+      "number": "'boAt' TWS at Rs 135 vs boAt's own floor of Rs 799",
+      "soWhat": "This is the one way the project can genuinely damage the Trust. A Sikh institution's only shop selling fake boAt to its own students is a reputational event, and under the BIS Act the seller is exposed too. The buying rule must be absolute: either unbranded goods bought as unbranded, or genuine brand goods on an invoice naming the brand owner or its authorised distributor. Never a brand name at a generic price."
+    },
+    {
+      "claim": "Three brands offer a legitimate, contactable route and between them cover almost the entire required list. Ambrane (Indian manufacturer since 2012) makes power banks, chargers, cables, TWS, speakers, smartwatches, keyboards/mice and extension boards — 6-month warranty, 400+ service centres, care@ambraneindia.com, +91-11-69951111, corporate-enquiry route. boAt offers corporate/bulk orders at MOQ 50 units via a quote form, with a 12-month + 3-month extended (15-month) warranty on products bought on or after 15 April 2025. Syska covers LED lighting, chargers and cables, smartwatches, audio, wires, extension boards, with a dealer store-locator, support@syska.co.in and 1800-102-8787.",
+      "status": "VERIFIED",
+      "evidence": "https://www.ambraneindia.com/ ; https://www.boat-lifestyle.com/pages/bulk-orders and /pages/contact-us ; https://www.syska.co.in/",
+      "number": "boAt bulk MOQ 50 units; Ambrane 6-month warranty / 400+ centres; boAt 15-month warranty",
+      "soWhat": "Ambrane is the best single-vendor anchor for the branded shelf — one Indian vendor, one invoice, one service network covering 8 of the 15 lines. But its 6-month warranty is a quarter of boAt's 15 months, so warranty length, not price, should decide which brand takes the top shelf."
+    },
+    {
+      "claim": "WARNING: syskaledlights.com is no longer Syska's site. It now serves a gambling site ('Viral788') behind Apple/iStudio branding. The live Syska site is syska.co.in.",
+      "status": "VERIFIED",
+      "evidence": "WebFetch of https://www.syskaledlights.com/ returned Indonesian-language online-gambling content and no Syska products; https://www.syska.co.in/ returned the genuine product catalogue",
+      "number": "",
+      "soWhat": "An ARY buyer googling 'Syska LED' can land on a hijacked domain. Put the verified URL and the 1800-102-8787 number in the buying SOP rather than leaving staff to search."
+    },
+    {
+      "claim": "ARY charges 18% GST on these lines, tax-inclusive in the shelf price. All four catch-all mobile codes carry TaxRate 18.0 with IncludeInRate = true (the 7.627119 companion rate is the inclusive-basis CGST/SGST split).",
+      "status": "VERIFIED",
+      "evidence": "ary query grouping SaleDetail by TaxRate, TaxRate1, IncludeInRate for ProductIDs 07P0,07P1,0AWS,0AWR — 18.000 / 7.627119 / true on all 1,092 lines",
+      "number": "18% GST, price-inclusive",
+      "soWhat": "The margin figures above are already net of GST treatment, so no re-work is needed on the pricing. It also means the shelf price is the price the customer pays — no surprise at the till, which matters for a captive-customer shop's trust."
+    },
+    {
+      "claim": "Lighting, torches and emergency lights are a second, larger and even more neglected opportunity in the same bay. ARY sold 153 LED bulbs and 31 torches in 12 months to 5,000 residents — one bulb per 33 residents per year and one torch per 161 — in a hill township at 173101. Batteries by contrast work well: 3,674 cells at Rs 13.66 realised on Eveready AA, 41.16% GM.",
+      "status": "VERIFIED",
+      "evidence": "ary query: units and units/5000 by subgroup for Bulb, Torch, Cell over 12m → Bulb 153 units / 0.031 per resident / Rs 16,809; Torch 31 / 0.006 / Rs 7,365; Cell 3,674 / 0.735 / Rs 57,520",
+      "number": "0.031 bulbs and 0.006 torches per resident per year",
+      "soWhat": "Batteries prove the shop can move a consumable electrical line hard when it is stocked. Bulbs and torches are the same customer, the same shelf and the same supplier trip — and in a hill township with power cuts they are arguably a duty of care, not just a margin line. They belong in the same project, which is why the build below covers them."
+    },
+    {
+      "claim": "ARY buys its electricals from five local/regional wholesalers with no brand distributor anywhere in the chain: Harminder Singh & Bros (Rs 1,43,034 over 24 months, 13 bills — the largest), Bansal Brothers, Himachal Wholesale Syndicate, Cm Trading Co., Vardhman Wholesale General Store.",
+      "status": "VERIFIED",
+      "evidence": "ary query over PurchaseDetail/PurchaseHeader joined to AccountMaster, ProductGroupID IN (109,123,114,139), VoucherDate >= 2024-08-01, grouped by AccountName",
+      "number": "5 wholesalers, Rs 3.36 lakh over 24 months, 0 brand distributors",
+      "soWhat": "There is no incumbent distributor relationship to protect or renegotiate, and no exclusivity in the way. Adding one Delhi accessory consolidator plus one brand (Ambrane) is a clean addition, and the existing HP wholesalers can keep the lighting and battery lines they already service."
+    },
+    {
+      "claim": "A resident's plausible annual tech spend is about Rs 1,400; ARY currently captures Rs 43. Two independent methods agree on the target. Bottom-up per-head: 2 cables Rs 180 + earphone/TWS amortised Rs 350 + glass Rs 150 + cover Rs 75 + charger Rs 120 + power bank Rs 225 + storage Rs 90 + speaker Rs 180 + battery/torch Rs 100 = Rs 1,470. Top-down: Rs 400 per resident per year captured (27% of that wallet) over 5,000 residents = Rs 20 lakh a year = Rs 1.67 lakh a month, against the Rs 1.82 lakh a month the SKU-level build produces.",
+      "status": "ESTIMATED",
+      "evidence": "Derived. Unit prices are ARY's own 12-month realised averages (cable Rs 85, earphone Rs 142, adapter Rs 418, TWS Rs 660 — from the SaleDetail queries above); replacement frequencies are my assumption, not measured. Current capture = Rs 216,389 / 5,000 residents.",
+      "number": "Rs 1,400/resident/yr wallet vs Rs 43 captured = 3%",
+      "soWhat": "Both routes land at Rs 1.7-1.8 lakh a month, so the target is not an artefact of the SKU spreadsheet. It also frames the ask honestly: this plan asks ARY to capture about a quarter of a wallet it currently gets 3% of — not to invent demand."
+    },
+    {
+      "claim": "Mobile recharge is not worth building as a revenue line, and I could not verify a commission figure for it. Four separate attempts across Bing, and the aggregators' own sites, produced no published retailer commission; GetCharge states only 'Want to know commission plan? Ask Support'. Spice Money's site advertises services (recharge, AePS, DMT, bill pay, account opening, loans) with no commission figures at all.",
+      "status": "NOT-CHECKED",
+      "evidence": "4 failed searches; https://www.spicemoney.com/ returned services with no rates; no operator or aggregator publishes a retailer slab",
+      "number": "",
+      "soWhat": "Do not put a recharge counter in the business case. In a township where every resident has a phone and UPI, recharge is self-service; the commission is undisclosed precisely because it is thin. If ARY wants it, take it as a footfall service a counter staffer already performs — never as a line item with a revenue number attached."
+    },
+    {
+      "claim": "Screen-guard and cover FITTING at the counter is the highest-return attached service, and repair is the second. Fitting needs no technician: Rs 15 of glass sold fitted at Rs 150. Repair (screen, battery, charging port) has no provider within the 30-50 km of hill road to the nearest market town, and a charging-port repair is the moment a customer also buys a cable.",
+      "status": "ESTIMATED",
+      "evidence": "Glass cost Rs 12-18 verified from IndiaMART (Ayesha Enterprises, Everytime 53, Super X, A Z Infolink); the 30-50 km isolation and absence of a local repair option is from the brief, not independently checked; repair pricing could not be verified — 1 failed search",
+      "number": "Fitting: Rs 15 cost → Rs 150 fitted, 90% GM",
+      "soWhat": "Split the two services. Fitting starts on day one at zero risk and carries the best margin in the whole plan. Repair should be a visiting technician from Rajgarh or Nahan two days a week on revenue share — never an ARY hire — because the skill, not the demand, is the constraint."
+    },
+    {
+      "claim": "ARY's structural advantage is under Rs 500 and its structural disadvantage is above Rs 1,500. A Rs 90 cable is below every free-delivery threshold and not worth an order to a hill pincode; a Rs 999 TWS discounted 67% off MRP online is worth waiting for.",
+      "status": "ESTIMATED",
+      "evidence": "Reasoned from the verified boAt price ladder (52-84% off MRP online) plus the verified address 'Via Rajgarh, Teh. Pachhad, Distt. Sirmaur, HP - 173101'. I could NOT verify Amazon/Flipkart serviceability or delivery days to 173101 — 4 attempts failed (Bing returned results for Rajgarh, Madhya Pradesh instead).",
+      "number": "",
+      "soWhat": "This is the range-design rule and it is the opposite of the instinct to lead with hero products. Go deep and confident under Rs 500 where ARY simply cannot be beaten on urgency; go thin and curated above Rs 1,500 and price at the online price, accepting 25-28% margin there instead of 45%."
+    },
+    {
+      "claim": "BIS compulsory registration applies to this category, but I could not verify the exact product list or IS numbers. The Compulsory Registration Scheme exists as Scheme II under the BIS Act 2016, administered through crsbis.in and standards.bis.gov.in, and the governing instrument is the Electronics and IT Goods (Requirements for Compulsory Registration) Order. Six attempts across bis.gov.in, crsbis.in, standards.bis.gov.in, meity.gov.in (403), and two consultancies failed to return the enumerated product list.",
+      "status": "NOT-CHECKED",
+      "evidence": "https://www.bis.gov.in/product-certification/products-under-compulsory-certification/ confirms Scheme II exists and points to a 'Guidance document on QCOs' PDF but does not enumerate; crsbis.in and standards.bis.gov.in returned empty/blank; meity.gov.in returned 403",
+      "number": "",
+      "soWhat": "Do not let this become a reason to delay, and do not let anyone claim the list is known. The operational rule that works regardless of the exact list: require every supplier invoice to state the BIS/CRS registration number for chargers, adaptors, power banks, LED lamps and batteries, and refuse the consignment without it. That shifts the evidentiary burden to the supplier, which is where it belongs, and is worth doing even where registration is not strictly required."
+    }
+  ],
+  "tables": [
+    {
+      "title": "What ARY actually sells in mobile-tech today — 12 months to 21-Aug-2026 (VERIFIED, ary SaleDetail/SaleHeader)",
+      "columns": [
+        "Code",
+        "Product name as booked",
+        "Subgroup",
+        "Units",
+        "Sales Rs",
+        "Avg realised Rs",
+        "Distinct price points hidden in the code"
+      ],
+      "rows": [
+        [
+          "07P1",
+          "Mobile Adapter",
+          "Mobile Accessories",
+          "126",
+          "52,568",
+          "418",
+          "18 (Rs 150-799)"
+        ],
+        [
+          "07P0",
+          "Mobile Datacable",
+          "Mobile Accessories",
+          "600",
+          "50,927",
+          "85",
+          "22 (Rs 10-450)"
+        ],
+        [
+          "0AWR",
+          "Bluetooth Buds",
+          "Mobile Set",
+          "77",
+          "50,790",
+          "660",
+          "19 (Rs 399-1,199)"
+        ],
+        [
+          "0AWS",
+          "Mobile Ear Phone",
+          "Earphone",
+          "305",
+          "43,493",
+          "142",
+          "9+ (Rs 70-180)"
+        ],
+        [
+          "(114/753)",
+          "China Speaker 2",
+          "Speaker",
+          "10",
+          "16,006",
+          "1,601",
+          "1"
+        ],
+        [
+          "0A2X",
+          "Airpod",
+          "Mobile Accessories",
+          "6",
+          "5,594",
+          "932",
+          "-"
+        ],
+        [
+          "0AWQ",
+          "Bluetooth Headset",
+          "Mobile Set",
+          "7",
+          "4,393",
+          "628",
+          "-"
+        ],
+        [
+          "09Q5",
+          "Bluetooth Speaker",
+          "Earphone",
+          "7",
+          "3,195",
+          "456",
+          "-"
+        ],
+        [
+          "139 (x8)",
+          "Gold/Kish/Atek Charger etc.",
+          "Charger",
+          "5",
+          "2,690",
+          "538",
+          "dead 2017 stub"
+        ],
+        [
+          "02SD",
+          "Mobile Earphone 02",
+          "Earphone",
+          "8",
+          "1,320",
+          "165",
+          "-"
+        ],
+        [
+          "09IJ",
+          "Jj Headphones",
+          "Earphone",
+          "1",
+          "799",
+          "799",
+          "-"
+        ],
+        [
+          "09IS",
+          "Mobile Accessories",
+          "Mobile Accessories",
+          "8",
+          "490",
+          "61",
+          "-"
+        ],
+        [
+          "0G1M",
+          "Alloy Phone Stand",
+          "Earphone",
+          "1",
+          "130",
+          "130",
+          "-"
+        ],
+        [
+          "TOTAL",
+          "19 product codes",
+          "-",
+          "1,151",
+          "2,32,395",
+          "202",
+          "68+"
+        ]
+      ]
+    },
+    {
+      "title": "Achieved gross margin — ARY's own purchase book, 12 months (VERIFIED, ary PurchaseDetail)",
+      "columns": [
+        "Line",
+        "Gross margin %",
+        "Rank in ARY's book"
+      ],
+      "rows": [
+        [
+          "Speaker",
+          "51.2",
+          "highest tech line"
+        ],
+        [
+          "Academy Dress",
+          "47.0",
+          "highest line in the store"
+        ],
+        [
+          "Accessories (group)",
+          "45.2",
+          "2nd"
+        ],
+        [
+          "Immersion Rod",
+          "44.6",
+          ""
+        ],
+        [
+          "Mobile Accessories",
+          "43.3",
+          "the hidden mobile range"
+        ],
+        [
+          "Buds",
+          "42.8",
+          ""
+        ],
+        [
+          "Earphone",
+          "42.4",
+          ""
+        ],
+        [
+          "Mobile Set (TWS)",
+          "41.4",
+          ""
+        ],
+        [
+          "Charger",
+          "41.4",
+          ""
+        ],
+        [
+          "Cell (batteries)",
+          "41.2",
+          ""
+        ],
+        [
+          "Electrical",
+          "40.7",
+          ""
+        ],
+        [
+          "Stationary (group)",
+          "40.2",
+          ""
+        ],
+        [
+          "Bulb",
+          "34.8",
+          ""
+        ],
+        [
+          "Torch",
+          "29.9",
+          ""
+        ],
+        [
+          "Fruits (group)",
+          "13.3",
+          "for contrast"
+        ],
+        [
+          "Oil & Ghee (group)",
+          "10.9",
+          "for contrast"
+        ],
+        [
+          "Atta & Flours (group)",
+          "7.8",
+          "for contrast"
+        ],
+        [
+          "Pulses (group)",
+          "5.8",
+          "lowest"
+        ]
+      ]
+    },
+    {
+      "title": "Opening range: 15 lines, ~130 SKUs, buy price → shelf price (buy prices VERIFIED from named suppliers; shelf prices set to ARY's own realised levels or the online reference)",
+      "columns": [
+        "Line",
+        "SKUs",
+        "Buy Rs (named source)",
+        "Shelf Rs",
+        "GM %",
+        "Yr-1 units",
+        "Yr-1 Rs"
+      ],
+      "rows": [
+        [
+          "Cables — Type-C, micro-USB, Lightning, C-to-C 60W, 3-in-1, OTG",
+          "18",
+          "20-120 (Bright Industries Rs 20; Goyal Products Rs 25; Ramdev Mobile Acc. Rs 32; S P International Rs 40; Alankara Vasana Rs 45; Girish Radio Rs 120 — all Delhi/Vasai)",
+          "70-299",
+          "55-64",
+          "1,800",
+          "1,62,000"
+        ],
+        [
+          "Tempered glass, incl. privacy + matte",
+          "16",
+          "12-50 (Ayesha Enterprises Jamshedpur Rs 12; Everytime 53 Neemuch Rs 12.50; Super X Amravati Rs 14; A Z Infolink Delhi Rs 15; Incell/Lensprotech Delhi Rs 40-50 privacy)",
+          "99-249 fitted",
+          "85-90",
+          "1,500",
+          "2,25,000"
+        ],
+        [
+          "Back covers — silicone, TPU, clear, kickstand",
+          "14",
+          "8.50-60 (Mybestow Thane Rs 8.50; GK Gadgets Delhi Rs 19; TP-9 Ahmedabad Rs 25; Trinity Traders Delhi Rs 60)",
+          "99-249",
+          "75-80",
+          "800",
+          "1,20,000"
+        ],
+        [
+          "Chargers/adaptors — 10W, 20W PD, 33W, 65W",
+          "10",
+          "25-360 (JPY Mobile Phone Acc. Delhi Rs 25; Mak Cellphones Delhi 20W Rs 143; Cenoda Noida 18W Rs 175; S P International Vasai 45W Rs 360)",
+          "149-799",
+          "45-55",
+          "400",
+          "1,60,000"
+        ],
+        [
+          "Wired earphones + neckbands",
+          "10",
+          "60-250 (Hiya International Mumbai Rs 60; Kaya International Delhi Rs 90; Advit Enterprise Delhi Rs 125; Viksha Trading JB-N6 Rs 180)",
+          "149-499",
+          "45-55",
+          "800",
+          "1,20,000"
+        ],
+        [
+          "TWS earbuds — 3 generic tiers + 2 genuine branded",
+          "8",
+          "Generic Rs 128-579 (Revox24/Kartik Delhi M10 Rs 128-130; J.B Industries Surat G07 Rs 579); genuine boAt Airdopes 131 at trade",
+          "499-1,299 (branded at boAt's own Rs 999)",
+          "28-45",
+          "300",
+          "2,10,000"
+        ],
+        [
+          "Power banks — 10,000 / 20,000 mAh",
+          "7",
+          "275-1,088 (R K Electronics Delhi Rs 275; C.M. Production Valsad Rs 450; Reliable Acc. Delhi 20W Rs 500; Abhipriya Faridabad 20k Rs 510; Egate Noida 20k Rs 1,088)",
+          "599-1,799",
+          "30-40",
+          "150",
+          "1,35,000"
+        ],
+        [
+          "Smartwatches + straps (all-new line)",
+          "9",
+          "Ambrane/Syska branded; straps generic",
+          "999-2,499",
+          "25-35",
+          "150",
+          "2,10,000"
+        ],
+        [
+          "Bluetooth speakers",
+          "6",
+          "Generic + Syska Verve 10W",
+          "499-1,999",
+          "30-45",
+          "120",
+          "1,44,000"
+        ],
+        [
+          "Storage — pen drives 32/64/128GB, microSD 32/64/128GB",
+          "10",
+          "150-500 (Sphere Enterprises Mumbai 64GB Rs 150; Premium Office Rs 250; SFZ Delhi Samsung 32GB microSD Rs 320; Apple Technology Mumbai 64GB Rs 375; Viraj Trading SanDisk 8GB Rs 500)",
+          "299-899",
+          "30-45",
+          "250",
+          "1,12,500"
+        ],
+        [
+          "Extension boards + spike guards, incl. USB/Type-C",
+          "8",
+          "61-429 (Aman Electric Delhi 6-socket Rs 61; Shri Radhe Krishna Delhi Rs 66; Mihir Trading Mumbai Rs 185; Nem Retails Ahmedabad USB+C Rs 320; Call Mate Delhi 3xUSB Rs 400)",
+          "149-699",
+          "50-60",
+          "400",
+          "1,00,000"
+        ],
+        [
+          "LED bulbs 9W/12W + tube + inverter bulb",
+          "9",
+          "21.80-45 (Bhagwati Lighting Delhi 9W Rs 21.80; C&S via DR Tronic Ghaziabad Rs 30; Sba Supplier Delhi 12W Rs 39; A P Source Ghaziabad Rs 45) + Havells/Eveready via existing HP wholesalers",
+          "70-699",
+          "35-55",
+          "1,200",
+          "1,32,000"
+        ],
+        [
+          "Torches + emergency lights (hill essential)",
+          "10",
+          "25-540 (Burhani Indore Rs 25; Xpedition Delhi Rs 50; Dabster Rajkot Rs 98; Ridaanz Mumbai 10W Rs 100; Surya Lighting Delhi Wipro Coral Rs 100; Rising Jugnoo Rs 145; Nafees Eveready Rs 200; Wonder World Philips Rs 350; Vinsun Ghaziabad Rs 540)",
+          "149-999",
+          "45-55",
+          "500",
+          "1,50,000"
+        ],
+        [
+          "Mouse + keyboard (Eternal University demand)",
+          "6",
+          "49-255 (Shree Balaji Delhi Rs 49; T Link Delhi Rs 50; Ivoomi via A.G.O Delhi Rs 60; Comfy via Bestor Delhi Rs 109; HP X1000 via A+ Products Jaipur Rs 160; Portronics TOAD 34 via Dot Com IT Rs 255)",
+          "199-699",
+          "45-55",
+          "250",
+          "1,00,000"
+        ],
+        [
+          "Dry cells — grow the one line that already works",
+          "6",
+          "Existing Eveready/Duracell/Panasonic via current HP wholesalers",
+          "10-50",
+          "41",
+          "5,500",
+          "99,000"
+        ],
+        [
+          "TOTAL",
+          "~147",
+          "-",
+          "-",
+          "~45 blended",
+          "14,120",
+          "21,79,500"
+        ]
+      ]
+    },
+    {
+      "title": "Year-1 P&L of the tech bay (ESTIMATED, on ARY's own realised prices and verified buy prices)",
+      "columns": [
+        "Item",
+        "Per month Rs",
+        "Per year Rs",
+        "Basis"
+      ],
+      "rows": [
+        [
+          "Sales — new range",
+          "1,81,625",
+          "21,79,500",
+          "SKU build above"
+        ],
+        [
+          "Sales — comparable base today (mobile-tech + cells + bulbs + torch)",
+          "26,174",
+          "3,14,089",
+          "VERIFIED from ARY"
+        ],
+        [
+          "INCREMENTAL SALES",
+          "1,55,451",
+          "18,65,411",
+          ""
+        ],
+        [
+          "Gross profit — generic tier (Rs 13.68 L @ 45%)",
+          "51,300",
+          "6,15,600",
+          "ARY's own achieved 41-51%"
+        ],
+        [
+          "Gross profit — branded tier (Rs 8.12 L @ 28%)",
+          "18,935",
+          "2,27,220",
+          "priced at online reference, not MRP"
+        ],
+        [
+          "Total gross profit, new range",
+          "70,235",
+          "8,42,820",
+          ""
+        ],
+        [
+          "Gross profit on today's base (43%)",
+          "11,255",
+          "1,35,058",
+          ""
+        ],
+        [
+          "INCREMENTAL GROSS PROFIT",
+          "58,980",
+          "7,07,762",
+          ""
+        ],
+        [
+          "Cost of goods to carry",
+          "1,05,343",
+          "12,64,110",
+          "58% of sales"
+        ],
+        [
+          "Stock held (2.0 months, 300 km lead time)",
+          "2,10,686",
+          "-",
+          "= 6.0 stock turns"
+        ]
+      ]
+    },
+    {
+      "title": "Online reference prices ARY must price against — NOT MRP (VERIFIED, boat-lifestyle.com)",
+      "columns": [
+        "Product",
+        "MRP Rs",
+        "boAt's own selling price Rs",
+        "Discount",
+        "What it means for ARY's shelf"
+      ],
+      "rows": [
+        [
+          "Airdopes 311 PRO",
+          "4,990",
+          "799",
+          "84%",
+          "never price TWS off MRP"
+        ],
+        [
+          "Nirvana Zenith Pro",
+          "14,990",
+          "3,199",
+          "79%",
+          "do not stock this tier at all"
+        ],
+        [
+          "Airdopes 280 ANC",
+          "6,999",
+          "1,499",
+          "79%",
+          "above ARY's ceiling"
+        ],
+        [
+          "Airdopes 131",
+          "2,990",
+          "999",
+          "67%",
+          "the one branded TWS to carry, at Rs 999"
+        ],
+        [
+          "C300 cable 1.5m braided",
+          "2,999",
+          "199",
+          "93%",
+          "generic at Rs 90 wins outright"
+        ],
+        [
+          "Type C A325 cable",
+          "499",
+          "129",
+          "74%",
+          "ARY's Rs 90 generic still wins"
+        ],
+        [
+          "Type C to C 65W cable",
+          "799",
+          "179",
+          "78%",
+          "carry generic braided at Rs 199"
+        ],
+        [
+          "LTG 550v3 Apple MFi 1m",
+          "1,999",
+          "599",
+          "70%",
+          "the only cable worth stocking branded"
+        ],
+        [
+          "Micro USB Cable 150",
+          "499",
+          "229",
+          "54%",
+          "generic at Rs 70-99 wins"
+        ]
+      ]
+    },
+    {
+      "title": "Warranty handling — three tiers, because a 300 km hill road makes a single policy impossible",
+      "columns": [
+        "Tier",
+        "Cover",
+        "Who handles it",
+        "What ARY must do",
+        "Provision"
+      ],
+      "rows": [
+        [
+          "Generic under Rs 300 (cables, glass, covers, torches, bulbs, cells)",
+          "7-day counter replacement, no manufacturer claim",
+          "ARY counter, from a buffer of ~5 units per fast SKU",
+          "Real SKU on the bill; keep the buffer; scrap rate reviewed monthly",
+          "3% of generic sales"
+        ],
+        [
+          "Generic Rs 300-1,500 (power banks, generic TWS, speakers, extension boards)",
+          "Supplier replacement on the next Delhi consignment",
+          "ARY buyer batches claims with the next order",
+          "Hold the supplier invoice + batch; never accept a consignment without a return term in writing",
+          "2% of that tier"
+        ],
+        [
+          "Genuine branded (boAt 15 months from 15-Apr-2025; Ambrane 6 months, 400+ centres, +91-11-69951111; Syska up to 2 yr, 1800-102-8787)",
+          "Customer claims direct with the brand",
+          "The brand's own service network",
+          "Print the model AND serial number on the bill for anything over Rs 500 — the brand will not honour a claim against 'Mobile Datacable Rs 150'",
+          "nil to ARY"
+        ]
+      ]
+    },
+    {
+      "title": "Named wholesale sources — the actual buying list",
+      "columns": [
+        "Route",
+        "Who",
+        "Covers",
+        "Terms found",
+        "Use it for"
+      ],
+      "rows": [
+        [
+          "Brand, single-vendor anchor",
+          "Ambrane India (Indian mfr since 2012) — care@ambraneindia.com, +91-11-69951111, corporate-enquiry route",
+          "power banks, chargers, cables, TWS, speakers, smartwatches, keyboards/mice, extension boards",
+          "6-month warranty, 400+ service centres",
+          "8 of the 15 lines on one invoice with a real service network"
+        ],
+        [
+          "Brand, credibility shelf",
+          "boAt — corporate/bulk order form, WhatsApp 919667700177",
+          "TWS, neckbands, speakers, smartwatches, cables",
+          "MOQ 50 units; 15-month warranty (12+3) from 15-Apr-2025",
+          "exactly 2 hero SKUs (Airdopes 131 at Rs 999, LTG 550v3 MFi at Rs 599)"
+        ],
+        [
+          "Brand, lighting + electricals",
+          "Syska — syska.co.in (NOT syskaledlights.com, which is hijacked), support@syska.co.in, 1800-102-8787, dealer store-locator",
+          "LED lighting, chargers/cables, extension boards, audio, smartwatches",
+          "up to 2-yr warranty on some items",
+          "LED bulbs, extension boards, emergency lights"
+        ],
+        [
+          "Delhi accessory consolidator",
+          "Gaffar Market / Karol Bagh; online storefronts gaffarindia.in, gaffar.in, gaffarindia.com",
+          "the whole generic tier",
+          "cash market; no warranty; counterfeit risk high",
+          "one buying trip to set the range, then move to invoiced suppliers"
+        ],
+        [
+          "Invoiced generic suppliers (IndiaMART, named above)",
+          "Reliable Accessories Pvt Ltd, Call Mate India Pvt Ltd, Mak Cellphones Pvt Ltd, Cenoda Technology Pvt Ltd, LA Cable Pvt Ltd, ERD Technologies (all Delhi/Noida)",
+          "chargers, cables, power banks, extension boards",
+          "GST invoice, per-piece pricing, MOQ 1",
+          "the repeat generic buy — these are companies, not stalls, so BIS numbers can be demanded on the invoice"
+        ],
+        [
+          "Existing HP wholesalers (keep)",
+          "Harminder Singh & Bros (Rs 1.43 L / 24m, the largest), Bansal Brothers, Himachal Wholesale Syndicate, Cm Trading Co., Vardhman Wholesale General Store",
+          "batteries, bulbs, small electricals",
+          "already trading with ARY",
+          "dry cells and lighting — short lead time, no new relationship needed"
+        ]
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "step": "Split the four catch-all codes into real SKUs. 07P0 'Mobile Datacable' → ~18 cable SKUs; 07P1 'Mobile Adapter' → ~10 charger SKUs; 0AWS 'Mobile Ear Phone' → ~10 earphone SKUs; 0AWR 'Bluetooth Buds' → ~8 TWS SKUs. Set StandardCostPrice, StandardSalePrice and per-location price on ProductChildMaster for every one. Deactivate the 8 dead 2017 charger codes in ProductGroupID 139 and the 76 dead 'China Wrist Watch'/'China Power Bank' codes. Do NOT start buying until this is done — every later step depends on SKU-level data existing.",
+      "sequence": 1,
+      "owner": "ARY store manager (Baru Sahib) with the FusionERP8 data owner at Delhi HO",
+      "cost": "none",
+      "duration": "1 week",
+      "dependsOn": "nothing — this is the true step zero"
+    },
+    {
+      "step": "Settle the two facts that size the project: (a) does Akal Academy permit residential students to keep mobile phones, and if so from which class; (b) what do residents order from Amazon/Flipkart today and does 173101 actually get delivered, and in how many days. Ask the hostel wardens and the Akal Academy mailroom — the mailroom's inbound parcel log is the single best evidence of what the shop is losing, and it costs nothing to read.",
+      "sequence": 2,
+      "owner": "ARY store manager with the Akal Academy hostel warden and mailroom in-charge",
+      "cost": "none",
+      "duration": "3 days",
+      "dependsOn": "nothing — run in parallel with step 1"
+    },
+    {
+      "step": "Write the two-page buying SOP and get it signed before any money moves. Three absolute rules: (i) no brand name at a generic price, ever — either unbranded bought as unbranded, or genuine brand on an invoice naming the brand owner or its authorised distributor; (ii) every invoice for chargers, adaptors, power banks, LED lamps and batteries must state the BIS/CRS registration number, and a consignment without it is refused; (iii) model and serial number printed on the customer's bill for anything over Rs 500. Rule (i) is what protects the Trust's name; rule (iii) is what makes a warranty claim possible at all.",
+      "sequence": 3,
+      "owner": "ARY store manager, countersigned by the Trust's purchase authority",
+      "cost": "none",
+      "duration": "3 days",
+      "dependsOn": "step 1 (the SOP references real SKUs)"
+    },
+    {
+      "step": "Open the invoiced generic supply line. Get quotes from the named Delhi/Noida companies — Reliable Accessories, Call Mate India, Mak Cellphones, Cenoda Technology, LA Cable, ERD Technologies — for the cable, charger, glass, cover and power-bank lines, on GST invoice with a written return term and BIS numbers. Deliberately do NOT open with a Gaffar Market cash buy: use one Delhi trip to see and set the range, then place the actual order on invoice.",
+      "sequence": 4,
+      "owner": "ARY purchase buyer, Delhi HO",
+      "cost": "Rs 15,000 (one Delhi buying trip)",
+      "duration": "2 weeks",
+      "dependsOn": "step 3 — the SOP must exist before the first order, not after"
+    },
+    {
+      "step": "Open the Ambrane account as the branded anchor (care@ambraneindia.com, +91-11-69951111, corporate-enquiry route) and take exactly two boAt hero SKUs through its bulk-order form at MOQ 50 — Airdopes 131 priced at boAt's own Rs 999, and the LTG 550v3 MFi cable at Rs 599. Add Syska (syska.co.in, 1800-102-8787) for LED, extension boards and emergency lights. Resist a wide branded range: above Rs 1,500 the online discount wins and the stock ages.",
+      "sequence": 5,
+      "owner": "ARY purchase buyer, Delhi HO",
+      "cost": "Rs 50,000 (boAt MOQ 50 x 2 SKUs at trade)",
+      "duration": "3 weeks",
+      "dependsOn": "step 4 — negotiate the branded shelf knowing the generic buy price"
+    },
+    {
+      "step": "Build the bay: a 2.4 m glass-front, lockable accessory unit with pegboard and LED strip at the Ary Pos counter, in the queue's line of sight. Add a phone-model compatibility chart, a live tester board (one working socket, one cable of each type) and printed price cards showing the shelf price against the online price on the lines where ARY wins. Small, high-value, easily-pocketed stock needs the lockable case, not open shelving.",
+      "sequence": 6,
+      "owner": "ARY store manager with the Baru Sahib maintenance team",
+      "cost": "Rs 69,000 (fixture Rs 55,000 + signage Rs 8,000 + tester board Rs 6,000)",
+      "duration": "2 weeks",
+      "dependsOn": "step 1 (price cards need real SKUs); runs in parallel with steps 4-5"
+    },
+    {
+      "step": "Train the counter on fitting, and start it on day one. Tempered glass and covers fitted at the counter: Rs 15 of glass sold at Rs 150 fitted, ~90% gross margin, and ten minutes to teach. Give two staff a scrap allowance for their first 20 fittings so nobody hides a botched one. This is the single highest-return element of the whole plan and it needs no technician, no brand and no capital.",
+      "sequence": 7,
+      "owner": "Ary Pos counter in-charge",
+      "cost": "Rs 3,000 (practice stock)",
+      "duration": "2 days",
+      "dependsOn": "step 4 (glass in stock)"
+    },
+    {
+      "step": "Set the reorder discipline that the old catch-all codes made impossible: ReorderLevel and ReorderQuantity on every one of the ~147 SKUs, sized to the 300 km Delhi lead time — 2.0 months of cover on generic, 1.0 month on branded. Review weekly for the first quarter against actual offtake, then monthly. Target 6.0 stock turns; Ary Pos already runs 7.9, so anything below 4 is a range mistake to correct, not a demand failure.",
+      "sequence": 8,
+      "owner": "ARY store manager with the Delhi HO buyer",
+      "cost": "none",
+      "duration": "ongoing, set up in 1 week",
+      "dependsOn": "step 1 and the first four weeks of SKU-level sales"
+    },
+    {
+      "step": "Add repair as a visiting service, not a hire. Contract a mobile technician from Rajgarh or Nahan for two days a week on revenue share — screen, battery and charging-port work — with ARY providing the counter space and taking the accessory attach that comes with it. Do not hire or train an ARY staffer for this: the skill is the constraint, and a revenue share carries no fixed cost if the demand is thinner than expected.",
+      "sequence": 9,
+      "owner": "ARY store manager",
+      "cost": "none (revenue share)",
+      "duration": "4 weeks to find and contract",
+      "dependsOn": "step 6 — the bay must be running first so the technician has accessories to sell against"
+    },
+    {
+      "step": "Review at 90 days on SKU-level data, and kill fast. Three tests: attach rate moved from 0.27% toward 1.0%; gross margin holding at or above 42% blended; no SKU below 3 turns annualised. Cut anything failing all three and redeploy the shelf space. Only after this review consider the second wave — baby care, optical/eyewear and hardware/tools, which the brief flags as having no product group at all and which share this bay's supplier trips and its lockable-case logic.",
+      "sequence": 10,
+      "owner": "ARY store manager with the JIVO analyst who owns the ary CLI",
+      "cost": "none",
+      "duration": "1 week at day 90",
+      "dependsOn": "steps 4-8 — 90 days of clean SKU-level sales"
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Split the four catch-all codes (07P0 Mobile Datacable, 07P1 Mobile Adapter, 0AWS Mobile Ear Phone, 0AWR Bluetooth Buds) into ~46 real SKUs with cost and price set, and deactivate the 8 dead 2017 charger codes plus the 76 dead 'China' watch/power-bank codes. Nothing else in this plan can be measured, reordered or warranted until this exists. It costs nothing and needs no approval.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Start fitted tempered glass and covers at the Ary Pos counter — Rs 12-18 of glass from named invoiced suppliers (Ayesha Enterprises Jamshedpur Rs 12, Everytime 53 Neemuch Rs 12.50, A Z Infolink Delhi Rs 15) sold fitted at Rs 99-249. ~90% gross margin, Rs 15 of capital per unit, ten minutes to teach, and a line ARY currently sells zero of to 5,000 phone owners.",
+      "priority": "P0",
+      "monthlyImpactInr": 28750,
+      "oneOffCostInr": 25000,
+      "effort": "weeks",
+      "blocker": "none"
+    },
+    {
+      "action": "Sign the three-rule buying SOP before the first order: no brand name at a generic price; BIS/CRS number on every invoice for chargers, adaptors, power banks, LED lamps and batteries or the consignment is refused; model and serial on the bill above Rs 500. The wholesale channel is openly offering 'boAt M10' TWS at Rs 135 against boAt's own Rs 799 floor — the Trust's only shop selling that to its own students is the one outcome here that cannot be undone with money.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Build the 130-SKU tech bay across the 15 lines costed above — deep and confident under Rs 500 (cables, glass, covers, chargers, wired earphones, torches, bulbs, extension boards, mouse/keyboard, cells), thin and curated above Rs 1,500 priced at the online reference, not MRP. Mostly good unbranded goods, which is exactly what ARY already sells at 43% margin, with Ambrane as the single branded anchor and two boAt hero SKUs.",
+      "priority": "P1",
+      "monthlyImpactInr": 58980,
+      "oneOffCostInr": 310000,
+      "effort": "weeks",
+      "blocker": "Confirm the Akal Academy student phone policy first — it does not change the go/no-go but it shifts the mix materially between student-priced TWS and household electricals."
+    },
+    {
+      "action": "Fix the reorder discipline: ReorderLevel and ReorderQuantity on all ~147 SKUs at 2.0 months' cover for the 300 km Delhi lead time, targeting 6.0 turns against Ary Pos's existing 7.9. Without this the bay repeats the 13,284-dead-SKU pattern at higher unit values.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "needs step 1 done and four weeks of SKU-level sales"
+    },
+    {
+      "action": "Pull the LED bulb, torch and emergency-light lines up to the population's actual need. ARY sold 153 bulbs and 31 torches in 12 months to 5,000 people in a hill township — one bulb per 33 residents a year. Buy 9W at Rs 21.80-40 (Bhagwati Lighting Delhi, DR Tronic Ghaziabad) and emergency lights at Rs 100-540 (Wipro Coral via Surya Lighting Delhi Rs 100, Philips via Wonder World Rs 350) alongside the existing HP wholesalers. Same shelf, same trip, and in a place with power cuts it is closer to a duty of care than a margin line.",
+      "priority": "P1",
+      "monthlyImpactInr": 11000,
+      "oneOffCostInr": 45000,
+      "effort": "weeks",
+      "blocker": "none"
+    },
+    {
+      "action": "Contract a visiting mobile technician from Rajgarh or Nahan, two days a week on revenue share, for screen, battery and charging-port repair. No provider exists within 30-50 km of hill road, and a charging-port repair is the moment the customer also buys a cable. Revenue share, not a hire — the skill is the constraint and the demand is unmeasured.",
+      "priority": "P2",
+      "monthlyImpactInr": 15000,
+      "oneOffCostInr": 0,
+      "effort": "months",
+      "blocker": "Finding a technician willing to travel; repair pricing could not be verified externally, so size this from his own quote, not from my estimate."
+    },
+    {
+      "action": "Do NOT build mobile recharge as a revenue line. Four attempts found no operator or aggregator publishing a retailer commission — GetCharge will only say 'ask support' — and in a township where everyone has a phone and UPI, recharge is self-service. Offer it only as a footfall service a counter staffer already performs, with no number attached to it in the business case.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    }
+  ],
+  "openQuestions": [
+    "Does Akal Academy permit residential students to keep mobile phones, and from which class? This is the largest single unknown in the plan — it decides whether the addressable base is ~5,000 or ~2,750 and shifts the mix between student TWS and household electricals. The hostel wardens can answer it in one conversation. (The revenue build survives the restrictive case, so it is a mix question, not a go/no-go.)",
+    "Is pincode 173101 actually served by Amazon, Flipkart, Delhivery and Blue Dart, and in how many days? Four attempts failed — Bing kept returning Rajgarh, Madhya Pradesh. The cheapest real answer is the Akal Academy mailroom's inbound parcel log, which would also show exactly which categories are leaking online today. Ask the mailroom in-charge.",
+    "What retailer commission does a prepaid recharge actually pay in 2026? No operator or aggregator publishes it; GetCharge says 'ask support'. Someone at JIVO with a Spice Money / PayNearby / Paysprint contact can get the slab in a phone call. I have recommended against building the line either way.",
+    "The exact BIS CRS product list and IS standard numbers for chargers, power banks, LED lamps and batteries. Six attempts across bis.gov.in, crsbis.in, standards.bis.gov.in, meity.gov.in (403) and two consultancies failed. The 'Guidance document on QCOs' PDF linked from bis.gov.in is the source; a compliance consultant or BIS itself can confirm. My workaround — demand the registration number on the supplier invoice — is worth doing regardless of what the list says.",
+    "Actual trade prices from Ambrane, boAt and Syska. Everything I have for branded goods is the consumer selling price, not the distributor price, so the 28% branded-tier margin is an assumption. boAt's bulk form asks for a target procurement price, which means the buyer sets the anchor — worth deciding that number before filling the form.",
+    "Names and roles of the ARY staff who would own each step. I have written the plan against roles (store manager, Delhi HO buyer, Ary Pos counter in-charge) because the ARY people are not in the data I can read; the ledger only gave me supplier names. Whoever briefs this should substitute real names before it is circulated.",
+    "Whether the Basement counter's institutional buying (14-15 bills averaging ~Rs 5 lakh) includes any tech the Trust currently buys elsewhere — extension boards, LED, mouse/keyboard for Eternal University labs. If it does, there is a second, larger and much lower-effort revenue line sitting inside an existing relationship, and my Rs 1.55 lakh/month estimate is understated."
+  ]
+}

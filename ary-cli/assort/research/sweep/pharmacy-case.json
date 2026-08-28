@@ -1,0 +1,651 @@
+{
+  "lane": "pharmacy-case",
+  "headline": "ARY is already selling allopathic medicine at Baru Sahib — ₹41,023 across 613 bills in the last 12 months — without the Form 20/21 retail drug licence Indian law requires for any allopathic drug, and the fix and the opportunity are the same act: the licence turns a live compliance exposure into a service business that breaks even at ₹1.08 lakh/month, which the counter's existing 20,530-bills-a-month footfall clears on a 3.5% attach rate.",
+  "confidence": "medium",
+  "confidenceGap": "Two things. (1) The revenue side is a model, not a measurement: I have no data on how much medicine Baru Sahib's 5,000 residents actually buy, because the free Akal Charitable Hospital on campus absorbs an unknown — possibly dominant — share of prescription demand. Nobody has asked the hospital. Until someone does, every revenue figure here is an assumption with a verified footfall number attached to it. (2) The Jan Aushadhi terms (20% margin, 15–20% incentive capped ₹15–20k/month) come from secondary blog sources — my attempts to verify them against the official janaushadhi.gov.in API returned server errors, so the one route whose subsidy would single-handedly cover the pharmacist's salary is the route I could not confirm.",
+  "findings": [
+    {
+      "claim": "ARY sold ₹41,023 of unambiguously allopathic drugs in the last 12 months across 613 bills, essentially all at the Ary Pos counter, Baru Sahib. Retail sale of any allopathic drug in India requires a Form 20/21 licensed premises with a registered pharmacist; there is no evidence in the system that ARY holds one.",
+      "status": "VERIFIED",
+      "evidence": "ary query on SaleDetail+SaleHeader+ProductMaster, name-match over 16 allopathic brand strings, VoucherDate 2025-08-01 to 2026-08-22: total ₹41,023 / 613 bills; warehouse split = Ary Pos 612 bills ₹40,967, Ary Clothing 1 bill ₹56. Lifetime ₹122,587 / 1,953 bills. `ary locations` carries no drug-licence field.",
+      "number": "₹41,023 / 613 bills (12m); ₹1,22,587 / 1,953 bills lifetime",
+      "soWhat": "This is the finding that forces a decision. It is only 0.05% of ARY's basket, so it is invisible in the P&L, but each of those 613 bills is a separate retail sale of a drug from unlicensed premises. It is cheap to stop and cheap to legalise — and it is the reason 'do nothing' is not actually an option."
+    },
+    {
+      "claim": "Roughly three-quarters of that allopathic slice is Schedule H prescription molecules, not harmless OTC: Benadryl (diphenhydramine) ₹11,815, Volini + Omnigel (diclofenac diethylamine) ₹12,908, Selsun (selenium sulphide) ₹3,234, Itch Guard + Ring Guard (clotrimazole) ₹3,217.",
+      "status": "ESTIMATED",
+      "evidence": "Per-SKU 12m figures VERIFIED by ary query (corrected for a join bug — my first pass put the date filter in a LEFT JOIN ON clause and silently returned lifetime totals). The Schedule H molecule classification is my own mapping from brand to active ingredient, NOT read off a regulatory list or the packs.",
+      "number": "≈₹31,200 of the ₹41,023 (76%)",
+      "soWhat": "Schedule H means prescription-only. Selling it without a licence or a prescription is a materially more serious category of exposure than selling paracetamol, and it raises the Schedule H1 register question. The molecule mapping should be confirmed against the actual packs before anyone acts on the severity claim."
+    },
+    {
+      "claim": "India has no statutory 'OTC' category. There is no schedule of drugs that a shop may sell without a licence, so the idea of a compliant 'OTC-only corner, no licence' is largely a myth — what ARY can legally sell without Form 20/21 is Ayurvedic/Siddha/Unani proprietary medicines, cosmetics and FSSAI foods, which is essentially what its Medicare group already is.",
+      "status": "ESTIMATED",
+      "evidence": "Reasoned from the Drugs & Cosmetics Rules structure and corroborated by the HP retail checklist, which offers only one retail route (Form 19 → Form 20 AND Form 21) with a mandatory registered pharmacist, and no licence-free or pharmacist-free variant. I could NOT retrieve the Schedule K exemption text (CDSCO rules pages returned 404 / JS-only; WebSearch budget exhausted), so the village-population household-remedies exemption is unverified.",
+      "number": "",
+      "soWhat": "This kills the cheapest-looking option. 'Keep selling OTC, skip the licence' does not exist as a legal position: the choice is really between dropping 15 SKUs and taking the licence. It also means ARY's ₹3.0 L/yr of churans, Chyawanprash, Vicks VapoRub, Boroline, Hajmola and Safi is fine as it stands — the ASU stuff was never the problem."
+    },
+    {
+      "claim": "The Himachal Pradesh retail drug licence is applied for on Form 19 under Rule 59(2) with a ₹3,000 challan, and the HP Pharmacy Council (Shimla) registration certificate of the pharmacist is a mandatory document. The licensing authority is the Directorate Health Safety & Regulation, Red Cross Bhawan, Chhota Shimla 171002 (0177-2621383).",
+      "status": "VERIFIED",
+      "evidence": "https://dhsr.hp.gov.in/Files/Checklist%20Grant%20of%20Retail_0.pdf extracted with pdftotext (WebFetch could not read it). Items 1, 2, 10. Challan codes: Treasury SOL05, Major 0210, Sub-major 02, DDO 019, Minor 800, Sub-Head 09. Authority details from https://dhsr.hp.gov.in/",
+      "number": "₹3,000 government fee",
+      "soWhat": "The statutory cost of legalising the ₹41,023 exposure is ₹3,000 plus notary and drawing costs. The fee is not the obstacle; the pharmacist is."
+    },
+    {
+      "claim": "HP requires the pharmacist/competent person to swear an affidavit that they are 'not engaged anywhere else in any kind of service or business'. The pharmacist cannot be an existing ARY counter clerk wearing a second hat — they are a dedicated, exclusive hire.",
+      "status": "VERIFIED",
+      "evidence": "Same HP checklist PDF, applicant affidavit para 6 and appointed-competent-person affidavit paras 1 and 3: 'is full time appointed competent/qualified person', 'is not engaged anywhere else in any kind of service or business'.",
+      "number": "1 dedicated FTE",
+      "soWhat": "This single clause is the entire business case. A dedicated pharmacist at ~₹18,000/month is 84% of the pharmacy's fixed cost base and sets breakeven at ₹1.08 lakh/month. Every optimistic scenario that assumes an existing staffer can supervise is void."
+    },
+    {
+      "claim": "Because Baru Sahib is rural, HP requires the premises map to be stamped and signed by the Panchayat Pradhan (not a Municipal Corporation approval), plus a to-scale site and layout plan in 2 original copies showing shop size, adjoining areas, furniture and fixtures.",
+      "status": "VERIFIED",
+      "evidence": "HP checklist PDF items 4 and 5: 'copy of the map duly stamped and signed by the Pradhan in rural area'.",
+      "number": "2 original copies",
+      "soWhat": "A concrete, unglamorous, weeks-long dependency on a third party ARY does not control. It belongs on the critical path from day one, not discovered in month two."
+    },
+    {
+      "claim": "As a private limited company, Jivo Wellness must additionally file a Board resolution authorising the applicant, the MOA and Articles of Association, and photo IDs of all directors. The licence can be held by the company — an individual pharmacist-owner is not required.",
+      "status": "VERIFIED",
+      "evidence": "HP checklist PDF items 15, 16, 17 ('Additional documents to be submitted in case of Partnership firm/ Private or public limited company/ Societies').",
+      "number": "",
+      "soWhat": "Good news structurally: the licence sits with Jivo Wellness Pvt Ltd at the Baru Sahib premises (GSTIN 02AACCJ4223F1Z8, Rajgarh, PIN 173101), so ARY keeps ownership and the pharmacist is an employee, not a partner."
+    },
+    {
+      "claim": "Two standing obligations survive the grant: three months' written notice to the Licensing Authority before closing the business, and a fresh licence within three months of any change in premises, firm name or constitution.",
+      "status": "VERIFIED",
+      "evidence": "HP checklist PDF, applicant affidavit paras 10 and 12.",
+      "number": "3 months each",
+      "soWhat": "A pilot cannot be quietly shut. If ARY opens a pharmacy and it loses money, exiting is a three-month notified process — so treat this as a commitment, not an experiment."
+    },
+    {
+      "claim": "Schedule H1 drugs must be recorded in a separate register at the time of supply capturing prescriber name and address, patient name, drug, quantity, batch number, expiry date and bill number; the register and the retained original prescription must be kept 3 years and be open to inspection. Introduced by GSR 588(E) dated 30-08-2013.",
+      "status": "VERIFIED",
+      "evidence": "https://ntep.in/node/938/CP-schedule-h-1-regulation (National TB Elimination Programme knowledge base), including the Annexure IV register format and the red-bordered warning box / red Rx labelling requirement.",
+      "number": "3 years retention",
+      "soWhat": "Sets a hard system requirement — batch number and expiry per supply — that ARY's ERP cannot meet today (next finding). It also means the pharmacy must physically retain prescriptions, which is a filing and privacy obligation nobody at ARY currently has."
+    },
+    {
+      "claim": "ARY's ERP cannot track pharmaceutical batches or expiry dates at all. ExpDate and MfgDate are populated on 0 of 111,021 product-child rows; SaleDetail and PurchaseDetail have no batch or expiry column; and BatchMaster is a cashier till-session table (StartDateTime/EndDateTime/DayID/UserID), not manufacturing batches.",
+      "status": "VERIFIED",
+      "evidence": "ary schema columns on SaleDetail, PurchaseDetail, ProductMaster, ProductChildMaster; INFORMATION_SCHEMA.COLUMNS scan for %Batch%/%Expiry%; ary query counting ExpDate>'1901-01-01' on ProductChildMaster = 0 of 111,021; ary peek BatchMaster showing till-session rows.",
+      "number": "0 of 111,021 rows carry an expiry date",
+      "soWhat": "This is the hidden blocker. Without batch/expiry on the sale line you cannot produce the Schedule H1 register, cannot run first-expiry-first-out, and cannot trace a recall to buyers. It also guarantees expiry write-offs — the classic pharmacy profit leak, which I model at 2% of revenue (₹3,200/month in the base case). Either FusionERP8 gets a pharmacy module or the register is kept on paper."
+    },
+    {
+      "claim": "The DPCO 2013 retailer margin on scheduled (price-controlled) formulations is 16% of the price to retailer, and this was NOT changed by the Drugs (Prices Control) Amendment Order 2026.",
+      "status": "VERIFIED",
+      "evidence": "Consolidated DPCO PDF from nppa.gov.in: para 4 Step 2, 'P(c) = P(s).(1+M/100) ... M = % Margin to retailer and its value =16'; para 2(1)(p) defines 'margin to retailer' as a percentage of price to retailer; para 5(2)(ii) 'adding sixteen percent margin to retailer'. DPCO Amendment Order 2026, SO 3516(E) dated 30-06-2026, amends only paras 11, 14, 15, 24 and 29 — para 4 is untouched.",
+      "number": "16%, confirmed current as at 30-Jun-2026",
+      "soWhat": "Caps the upside and explains why I model the mature blended margin at 22%, not the 27% ARY earns today. As the mix deepens from churans into real prescription medicine, margin falls toward the statutory 16% on the scheduled portion."
+    },
+    {
+      "claim": "ARY's realised gross margin on its existing Medicare group is 26.83%, and on the allopathic subset specifically 32.37% — well above the 15–20% chemist benchmark, because ARY buys OTC brands at deep trade discounts and the mix is ayurvedic/FMCG-shaped rather than price-controlled.",
+      "status": "VERIFIED",
+      "evidence": "ary query joining SaleDetail to ProductChildMaster on ProductChildID+LocationCode, 12m to 2026-08-22, PurchaseCost>0: Medicare revenue ₹339,640, cost ₹248,506, GP ₹91,135 = 26.83%. Allopathic subset revenue ₹41,023, GP ₹13,280 = 32.37%. (Personal Care 26.92%, Toiletories 28.62%, Food Supplement 19.14%.)",
+      "number": "26.83% Medicare / 32.37% allopathic",
+      "soWhat": "ARY's buying is efficient, which de-risks the margin assumption — but do not extrapolate 32% to a real pharmacy. The high figure exists precisely because ARY sells no scheduled drugs. Expect 20–22% blended once it does."
+    },
+    {
+      "claim": "The Medicare group has been dead flat for 29 months at ₹22–30k/month with no growth, while total ARY sales grew 62% year-on-year over the same period.",
+      "status": "VERIFIED",
+      "evidence": "ary query, Medicare revenue by month Apr-2024 to Aug-2026: 23,662 / 19,708 / 25,700 ... 30,853 / 30,378 / 25,759 / 30,108 / 26,639. Total ARY: May-2025 ₹58.89 L vs May-2026 ₹95.37 L.",
+      "number": "₹28,303/month average, 0% growth over 29 months",
+      "soWhat": "Demand for health products is not growing on its own, which argues the ceiling is supply-side — ARY cannot stock anything worth more than ₹67 a basket. That is exactly what a licence removes. It also means no one should expect organic growth to build the case; it needs the intervention."
+    },
+    {
+      "claim": "The catchment empties in winter. January 2026 did ₹32.45 lakh across 15,078 bills against ₹78.80 lakh / 31,040 bills in March — 41% of a normal month — and Medicare fell to ₹14,416 (Jan-2026) and ₹12,774 (Jan-2025) from a ₹28,303 average.",
+      "status": "VERIFIED",
+      "evidence": "ary query, SaleHeader monthly totals Apr-2025 to Aug-2026, and the Medicare monthly series above.",
+      "number": "January = 41% of a normal month",
+      "soWhat": "A quantified operational risk that the affidavit makes worse: the pharmacist must be exclusively employed, so ₹18,000/month of fixed cost runs straight through a two-month trough where revenue halves. Budget roughly ₹25–30k of seasonal losses per year and do not launch in December."
+    },
+    {
+      "claim": "A licensed pharmacy breaks even at about ₹1.08 lakh/month of medicine revenue — which is ₹21.50 per resident per month, or ₹5.24 of medicine per bill the Ary Pos counter already rings up: a 3.5% attach rate at a ₹150 basket, versus today's 2.05% attach at a ₹67 basket.",
+      "status": "ESTIMATED",
+      "evidence": "My model. Fixed base ₹21,500/month = pharmacist ₹18,000 (cash; housing in kind, ARY township) + AC/refrigerator running ₹2,500 + register/expiry software ₹1,000. Breakeven = 21,500 / (0.22 GM − 0.02 expiry) = ₹107,500. Footfall (246,356 Ary Pos bills/12m) and the 2.05% / ₹67 baseline are VERIFIED from ary; the cost lines and 22% GM are assumptions.",
+      "number": "₹1,07,500/month breakeven; 3.5% attach at ₹150",
+      "soWhat": "This is the number to argue about. The transaction count is already almost there — 420 Medicare bills/month today versus 717 needed. The gap is basket size, not customers, and basket size is precisely what the licence unlocks. It reframes the ask from 'build a pharmacy business' to 'let the existing 5,045 health shoppers a year buy something real'."
+    },
+    {
+      "claim": "At maturity the pharmacy is a small, real, but unspectacular profit centre: −₹18,000/yr at ₹1.0 L/month, +₹1.26 lakh/yr at ₹1.6 L/month, +₹3.18 lakh/yr at ₹2.4 L/month. It does not justify itself as an investment; it justifies itself as compliance plus service.",
+      "status": "ESTIMATED",
+      "evidence": "My model, 22% blended GM less 2% expiry less ₹21,500 fixed. Revenue scenarios are assumptions; the ₹1.5–4 lakh/month revenue range for a small-town single-counter Indian pharmacy at 4–10% net margin comes from secondary web sources of Quora/blog quality and should be treated as a sanity check only, not evidence.",
+      "number": "−₹0.18 L to +₹3.18 L per year",
+      "soWhat": "Management should not be sold a profit story. On a ₹4.9–5.9 lakh opening cash requirement, the base case returns ₹1.26 lakh/yr — a 4-year payback at best. The honest case is: it removes a legal exposure, it serves 5,000 people who are 30–50 km from the nearest chemist, and it roughly pays for itself."
+    },
+    {
+      "claim": "Opening cash requirement is ₹4.9–5.9 lakh, of which only ₹1.9 lakh is sunk capex — the rest is recoverable opening stock.",
+      "status": "ESTIMATED",
+      "evidence": "My build-up: refrigerator ₹25,000 (vaccines/insulin storage), air-conditioner ₹40,000, racks/counter/signage ₹60,000, PC + pharmacy module ₹50,000, licence ₹3,000 plus notary/affidavits/site plan/Pradhan-stamped map ~₹12,000 = ₹1.90 lakh sunk; opening stock ₹3–4 lakh working capital. Premises assumed rent-free (Trust township) — not confirmed.",
+      "number": "₹1.90 L sunk + ₹3–4 L stock",
+      "soWhat": "The downside is genuinely small and mostly reversible, which is the strongest argument for just doing it. If it fails, ARY loses ~₹1.9 lakh of fittings and liquidates stock — against a compliance exposure that is open every day it is not fixed."
+    },
+    {
+      "claim": "The Jan Aushadhi route does not avoid the drug licence — the PMBJP application flow itself contains a mandatory drug-licence step.",
+      "status": "VERIFIED",
+      "evidence": "Reverse-read the janaushadhi.gov.in React bundle (/static/js/main.97fd8526.js): the applyKendra route map includes drugLicence: 'api/kendra/createDrugLicenseDetails' alongside basicDetails, state, district and block.",
+      "number": "",
+      "soWhat": "Settles the sequencing question definitively. Jan Aushadhi is not a shortcut around HP licensing — it is a decision to take about what to stock AFTER the Form 20/21 is in hand. Anyone proposing JAK as the 'easier route' is wrong."
+    },
+    {
+      "claim": "If the reported PMBJP terms are current — 20% margin on MRP plus a 15–20% incentive on monthly purchases capped at ₹15,000–20,000/month — the incentive alone would roughly cover the pharmacist's entire salary and flip the economics. I could not verify these terms.",
+      "status": "NOT-CHECKED",
+      "evidence": "Figures from secondary sources surfaced in search (bajajfinserv, launchlify, PMBJP press coverage): 20% incentive on monthly PMBI purchases capped ₹20,000/month, special assistance up to ₹2 lakh, D.Pharm/B.Pharm required, 16,912 kendras as at 30-Jun-2025 against a 25,000-by-March-2027 target. My attempts to confirm against the official API failed: getAllProductForWeb and getAllKendraByStateDistrict both returned 500 server errors, PIB and pmbi.gov.in were unreachable, and the WebSearch budget was exhausted.",
+      "number": "₹15,000–20,000/month incentive (unverified)",
+      "soWhat": "This is the highest-value unknown in the whole analysis. At ₹90k/month of JAK revenue the modelled contribution is ₹28,800–32,400 against a ₹21,500 cost base — comfortably profitable, versus marginal for a private chemist at the same volume. But JAK sells only generics at a fraction of branded MRP, so it needs 3–4x the patient volume for the same revenue, and PMBI stock-outs are a well-known weakness. Worth one phone call to settle."
+    },
+    {
+      "claim": "There is a free charitable hospital on the same campus — Akal Charitable Hospital, run by The Kalgidhar Trust, providing free-of-cost healthcare — and it is both the single biggest threat to the pharmacy's revenue and the cheapest possible route to compliance.",
+      "status": "VERIFIED",
+      "evidence": "https://barusahib.org/ — 'state-of-the-art healthcare facilities' providing 'free-of-cost healthcare facilities to underprivileged rural and hilly people'. Bed count, whether it holds a drug licence, and whether it runs a dispensary are NOT stated on the site and were not checked.",
+      "number": "",
+      "soWhat": "Everything hinges on this. If the hospital dispenses free medicine to residents, the retail wallet is a fraction of any per-capita benchmark and the base case is optimistic. But if the hospital already holds a Form 20/21, ARY's ₹41,023 exposure may be fixable by routing 15 SKUs through the hospital's licensed pharmacy at near-zero cost — no new licence, no new pharmacist, no ₹5 lakh. One conversation could make this whole analysis moot, which is why it is step one."
+    },
+    {
+      "claim": "The pharmacist cannot be sourced in-house. Eternal University at Baru Sahib has no pharmacy programme — no D.Pharm, B.Pharm or Pharm.D — and its Akal College of Health & Allied Sciences teaches nursing, which does not qualify anyone as a registered pharmacist.",
+      "status": "VERIFIED",
+      "evidence": "https://www.eternaluniversity.edu.in/ — seven colleges listed (Agriculture, Economics/Commerce/Management, Education, Basic Sciences, Engineering & Technology, Health & Allied Sciences, Arts & Social Sciences); Health & Allied Sciences offers B.Sc/M.Sc/PhD Nursing, MPH and a Geriatric Care Assistant certificate. No pharmacy programme.",
+      "number": "0 pharmacy programmes on campus",
+      "soWhat": "Kills the appealing assumption that a Trust institution with a nursing college can staff this internally. The pharmacist must be recruited externally and persuaded to live in a remote hill township — and must hold or transfer HP Pharmacy Council registration specifically. HP's pharma cluster (Baddi/Nalagarh/Solan) means supply exists; willingness to relocate is the real constraint. Sponsoring a local candidate through a 2-year D.Pharm is the durable fix but does not help this year."
+    },
+    {
+      "claim": "HP accepts drug licence applications online through the XLN portal (xlnindia.gov.in), linked directly from the DHSR website as 'Apply Online for Drug license'.",
+      "status": "VERIFIED",
+      "evidence": "href extracted from https://dhsr.hp.gov.in/page/?id=state-drugs-control-administration → https://xlnindia.gov.in/login.aspx. The portal itself did not resolve by DNS from this network, so its content and current HP workflow are NOT-CHECKED.",
+      "number": "",
+      "soWhat": "Tells the team where to file rather than guessing, but the paper set in the HP checklist (originals, notarised affidavits, Pradhan-stamped map, 2 site plans) is clearly still physical. Expect a hybrid online-plus-hardcopy process and confirm with the Sirmaur Drug Inspector."
+    },
+    {
+      "claim": "ARY's non-drug health adjacencies may carry their own separate licensing exposure that nobody has looked at: clinical thermometers and Band-Aid style dressings are notified medical devices, and mosquito repellents (19 SKUs) are registered insecticides.",
+      "status": "NOT-CHECKED",
+      "evidence": "Product groups from ary masters product-groups: Medicare subgroups include Thermometer (2 SKUs), Thrermometer (1), Bandaid (1, ₹4,322 12m), Cotton (4), Mosquito Killer (19, All Out combo alone ₹4,720 12m). Whether a Form MD-42 medical-device retail sale licence or an Insecticides Rules Form VI sale licence is required was NOT verified — I ran out of search budget.",
+      "number": "~₹9,000/yr identified, incomplete",
+      "soWhat": "Small money, but it means the compliance review should not stop at allopathic drugs. Worth putting all three questions — drugs, devices, insecticides — to the same adviser in one go rather than discovering the second and third later."
+    },
+    {
+      "claim": "Secondary sources put the retail premises minimum at 10 square metres (15 sq m if combined with wholesale) with a refrigerator and air-conditioner mandatory, and processing at about 30 working days. None of this appears in HP's own published checklist.",
+      "status": "NOT-CHECKED",
+      "evidence": "Multiple secondary sources (vibcare.co.in, indiafilings, registerkaro, bizfoc) state 10 sq m / 15 sq m and mandatory refrigerator+AC, and generic '30 working days'. The authoritative HP checklist PDF I extracted specifies no area figure, no equipment requirement and no timeline. Also unverified: the 2024 Rule 63 amendment reportedly making licences perpetual subject to a five-yearly retention fee.",
+      "number": "10 sq m (unverified for HP)",
+      "soWhat": "Do not design the shop or promise a go-live date on these numbers. They are consistent across sources and probably right, but the one document HP actually publishes is silent — so confirm area, equipment and timeline with the Sirmaur Drug Inspector before committing to a fit-out."
+    }
+  ],
+  "tables": [
+    {
+      "title": "The four routes, compared",
+      "columns": [
+        "Route",
+        "Licence needed",
+        "Pharmacist",
+        "Cash to open",
+        "Modelled net at maturity",
+        "Verdict"
+      ],
+      "rows": [
+        [
+          "A. Status quo — keep selling as today",
+          "None held",
+          "No",
+          "₹0",
+          "+₹1,107/mo gross profit on the allopathic slice",
+          "NOT AN OPTION. 613 unlicensed allopathic sales a year, ~76% Schedule H molecules."
+        ],
+        [
+          "B. Genuine OTC-only corner (drop allopathic)",
+          "None",
+          "No",
+          "₹0",
+          "−₹1,107/mo",
+          "Compliant and instant, but a dead end: no OTC schedule exists in India, so it means ASU + cosmetics + foods only — what ARY already sells."
+        ],
+        [
+          "C. Private retail chemist (Form 20 + 21)",
+          "Form 20 + 21, HP",
+          "Yes — dedicated FTE",
+          "₹4.9–5.9 L (₹1.9 L sunk)",
+          "−₹0.18 L to +₹3.18 L / yr",
+          "RECOMMENDED. Flexible (branded + generic), no PMBI dependency, fixes the exposure permanently."
+        ],
+        [
+          "D. Jan Aushadhi Kendra",
+          "Form 20 + 21 STILL required (verified)",
+          "Yes — D.Pharm/B.Pharm",
+          "₹4.9–5.9 L + PMBI terms",
+          "₹−0.3 L to +₹1.3 L / yr, plus a ₹15–20k/mo incentive if terms current",
+          "PARALLEL, NOT INSTEAD. Best social outcome and the subsidy covers the pharmacist — but terms unverified and it requires the licence first."
+        ],
+        [
+          "E. Route through Akal Charitable Hospital's licence",
+          "Possibly already held",
+          "Possibly already employed",
+          "Possibly ₹0",
+          "n/a",
+          "CHECK THIS FIRST. Could fix the whole exposure for free and make C and D unnecessary."
+        ]
+      ]
+    },
+    {
+      "title": "HP Form 20/21 compliance checklist — what is confirmed and what is still open",
+      "columns": [
+        "Requirement",
+        "Source status",
+        "Detail"
+      ],
+      "rows": [
+        [
+          "Form 19 application, Rule 59(2)",
+          "VERIFIED",
+          "HP DHSR published checklist, item 1 — original, duly filled"
+        ],
+        [
+          "Government fee ₹3,000",
+          "VERIFIED",
+          "Challan: Treasury SOL05, Major 0210, Sub-major 02, DDO 019, Minor 800, Sub-Head 09"
+        ],
+        [
+          "Registered pharmacist, HP Pharmacy Council (Shimla)",
+          "VERIFIED",
+          "Item 10 — attested copy of HP-issued registration certificate. A Punjab/Delhi registration will not do."
+        ],
+        [
+          "Pharmacist exclusively employed",
+          "VERIFIED",
+          "Affidavit: 'not engaged anywhere else in any kind of service or business' — cannot double as counter staff"
+        ],
+        [
+          "Notarised affidavits (applicant + pharmacist)",
+          "VERIFIED",
+          "Items 3, 8, 9 — prescribed language, typed not handwritten, Public Notary"
+        ],
+        [
+          "Site and layout plan, to scale",
+          "VERIFIED",
+          "Item 4 — 2 copies in original, showing shop size, adjoining areas, furniture and fixtures"
+        ],
+        [
+          "Map stamped and signed by Panchayat Pradhan",
+          "VERIFIED",
+          "Item 5 — the rural-area route; Baru Sahib is rural, so no Municipal Corporation map"
+        ],
+        [
+          "Proof of possession",
+          "VERIFIED",
+          "Item 6 — jamabandi / allotment letter / rent deed, attested"
+        ],
+        [
+          "Board resolution + MOA/AOA + all directors' IDs",
+          "VERIFIED",
+          "Items 15–17 — the private-limited-company route for Jivo Wellness"
+        ],
+        [
+          "3 months' notice before closing; fresh licence within 3 months of any change",
+          "VERIFIED",
+          "Affidavit paras 10 and 12"
+        ],
+        [
+          "Schedule H1 separate register: prescriber, patient, drug, qty, batch, expiry, bill no.; 3-year retention",
+          "VERIFIED",
+          "GSR 588(E), 30-08-2013 — and ARY's ERP cannot produce it today"
+        ],
+        [
+          "Premises ≥10 sq m; refrigerator + AC mandatory",
+          "NOT-CHECKED",
+          "Consistent across secondary sources; absent from HP's own checklist. Confirm before fit-out."
+        ],
+        [
+          "Processing ~30 working days",
+          "NOT-CHECKED",
+          "Generic secondary figure, no HP service-level found"
+        ],
+        [
+          "Licence perpetual, 5-yearly retention fee (Rule 63, 2024)",
+          "NOT-CHECKED",
+          "Secondary only"
+        ],
+        [
+          "Experience certificate",
+          "VERIFIED as wholesale-only",
+          "Checklist item 12 and affidavit para 6 tie the experience requirement to WHOLESALE; retail needs the registered pharmacist instead"
+        ]
+      ]
+    },
+    {
+      "title": "Unit economics — the number that decides it",
+      "columns": [
+        "Line",
+        "Conservative",
+        "Base",
+        "Upside"
+      ],
+      "rows": [
+        [
+          "Medicine revenue / month",
+          "₹1,00,000",
+          "₹1,60,000",
+          "₹2,40,000"
+        ],
+        [
+          "Blended gross margin @22%",
+          "₹22,000",
+          "₹35,200",
+          "₹52,800"
+        ],
+        [
+          "less expiry/breakage @2% of revenue",
+          "−₹2,000",
+          "−₹3,200",
+          "−₹4,800"
+        ],
+        [
+          "less pharmacist (dedicated FTE, cash)",
+          "−₹18,000",
+          "−₹18,000",
+          "−₹18,000"
+        ],
+        [
+          "less AC + refrigerator running 24×7",
+          "−₹2,500",
+          "−₹2,500",
+          "−₹2,500"
+        ],
+        [
+          "less register / expiry / PoS software",
+          "−₹1,000",
+          "−₹1,000",
+          "−₹1,000"
+        ],
+        [
+          "NET per month",
+          "−₹1,500",
+          "+₹10,500",
+          "+₹26,500"
+        ],
+        [
+          "NET per year",
+          "−₹18,000",
+          "+₹1,26,000",
+          "+₹3,18,000"
+        ],
+        [
+          "Breakeven revenue = ₹1,07,500/month",
+          "= ₹21.50 per resident/month",
+          "= ₹5.24 per existing Ary Pos bill",
+          "= 3.5% attach at a ₹150 basket"
+        ],
+        [
+          "Today, for comparison (VERIFIED)",
+          "₹28,303/mo Medicare",
+          "2.05% attach",
+          "₹67 basket"
+        ]
+      ]
+    },
+    {
+      "title": "The 15 allopathic SKUs actually selling without a licence (12m to 21-Aug-2026, VERIFIED)",
+      "columns": [
+        "SKU",
+        "Molecule (my mapping, ESTIMATED)",
+        "Qty",
+        "Revenue",
+        "Bills"
+      ],
+      "rows": [
+        [
+          "Johnsons Benadryl 150 Ml Cough Formula",
+          "Diphenhydramine — Schedule H",
+          "49",
+          "₹8,055",
+          "47"
+        ],
+        [
+          "Strepsils 8 Tab",
+          "Amylmetacresol / DCBA — allopathic",
+          "246",
+          "₹7,101",
+          "208"
+        ],
+        [
+          "Omnigel Cipla 30 Gm",
+          "Diclofenac diethylamine — Schedule H",
+          "37",
+          "₹5,486",
+          "37"
+        ],
+        [
+          "Johnsons Benadryl 60 Ml Cough Formula",
+          "Diphenhydramine — Schedule H",
+          "47",
+          "₹3,760",
+          "43"
+        ],
+        [
+          "Volini Pain Relief Gel 30 Gm",
+          "Diclofenac diethylamine — Schedule H",
+          "20",
+          "₹3,270",
+          "20"
+        ],
+        [
+          "Abbott Selsun 120Ml",
+          "Selenium sulphide — Schedule H",
+          "7",
+          "₹3,234",
+          "7"
+        ],
+        [
+          "Volini Pain Relief Spray 42 Gm",
+          "Diclofenac diethylamine — Schedule H",
+          "13",
+          "₹2,359",
+          "13"
+        ],
+        [
+          "Volini Pain Relief Gel 20 Gm",
+          "Diclofenac diethylamine — Schedule H",
+          "17",
+          "₹1,793",
+          "17"
+        ],
+        [
+          "Ring Guard 12 Gm",
+          "Clotrimazole — Schedule H",
+          "18",
+          "₹1,602",
+          "18"
+        ],
+        [
+          "Cream Itch Guard 20 Gm",
+          "Clotrimazole — Schedule H",
+          "12",
+          "₹1,344",
+          "12"
+        ],
+        [
+          "Disprin Tablet",
+          "Aspirin — allopathic",
+          "122",
+          "₹925",
+          "107"
+        ],
+        [
+          "Paracitamol 500 Mg",
+          "Paracetamol — allopathic",
+          "62",
+          "₹764",
+          "59"
+        ],
+        [
+          "D Cold Total",
+          "Paracetamol + CPM + phenylephrine",
+          "6",
+          "₹558",
+          "6"
+        ],
+        [
+          "Crocin 500 Mg",
+          "Paracetamol — allopathic",
+          "26",
+          "₹502",
+          "26"
+        ],
+        [
+          "Itch Guard 12Gm",
+          "Clotrimazole — Schedule H",
+          "4",
+          "₹271",
+          "4"
+        ],
+        [
+          "TOTAL",
+          "—",
+          "680",
+          "₹41,023",
+          "613 bills"
+        ]
+      ]
+    },
+    {
+      "title": "Opening cash requirement (ESTIMATED)",
+      "columns": [
+        "Item",
+        "Amount",
+        "Sunk or recoverable"
+      ],
+      "rows": [
+        [
+          "Refrigerator (vaccine/insulin storage)",
+          "₹25,000",
+          "Sunk"
+        ],
+        [
+          "Air-conditioner",
+          "₹40,000",
+          "Sunk"
+        ],
+        [
+          "Racks, counter, storage, signage",
+          "₹60,000",
+          "Sunk"
+        ],
+        [
+          "PC + pharmacy/batch module for FusionERP8",
+          "₹50,000",
+          "Sunk"
+        ],
+        [
+          "Licence ₹3,000 + notary, affidavits, site plans, Pradhan-stamped map",
+          "₹15,000",
+          "Sunk"
+        ],
+        [
+          "Sub-total sunk capex",
+          "₹1,90,000",
+          ""
+        ],
+        [
+          "Opening stock",
+          "₹3,00,000–4,00,000",
+          "Recoverable working capital"
+        ],
+        [
+          "TOTAL cash to open",
+          "₹4,90,000–5,90,000",
+          ""
+        ],
+        [
+          "Premises rent",
+          "₹0 assumed (Trust township) — NOT CONFIRMED",
+          ""
+        ]
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Ask Akal Charitable Hospital what drug licence it already holds, and whether it runs a dispensary or pharmacy. If it holds a Form 20/21, the fastest and cheapest compliant fix is to route ARY's 15 allopathic SKUs through the hospital's licensed pharmacy — no new licence, no dedicated pharmacist, no ₹5 lakh. This single conversation could make the rest of this analysis unnecessary, and it also sizes the biggest unknown on the revenue side: how much free medicine the hospital already dispenses to residents.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "none — it is one internal conversation inside the same Trust ecosystem"
+    },
+    {
+      "action": "Quarantine the 15 allopathic SKUs at the Ary Pos counter pending a licence decision — block them at the till rather than delisting, so the decision is reversible. Costs ₹3,419/month of revenue and ₹1,107/month of gross profit, which is trivial insurance against 613 unlicensed drug sales a year, ~76% of them Schedule H molecules. Confirm the molecule classification against the actual packs first; the ayurvedic lines (Vicks VapoRub, Boroline, Honitus, Chyawanprash, the churans, Hajmola, Safi) are fine and must NOT be touched.",
+      "priority": "P0",
+      "monthlyImpactInr": -1107,
+      "effort": "days",
+      "blocker": "none — a till-level block, but somebody must own the decision to forgo the revenue"
+    },
+    {
+      "action": "Put three questions to the Sirmaur Drug Inspector / DHSR Shimla (0177-2621383) in one visit: (a) the premises area, refrigerator and air-conditioner requirements HP actually enforces, since its published checklist is silent; (b) whether HP still issues any restricted retail licence that does not require a full-time registered pharmacist; (c) the realistic processing timeline. Answer (b) is the highest-value question in the whole file — a restricted licence would remove the ₹18,000/month pharmacist that sets breakeven at ₹1.08 lakh.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Start the Panchayat Pradhan-stamped premises map and the to-scale site and layout plan now, in parallel with everything else. HP requires the Pradhan's stamp because Baru Sahib is rural, plus 2 original copies of a to-scale plan showing shop size, adjoining areas, furniture and fixtures. It is the one dependency on a third party ARY does not control, and it will set the critical path.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "Panchayat availability and turnaround"
+    },
+    {
+      "action": "Recruit a registered pharmacist who holds — or will transfer in — Himachal Pradesh Pharmacy Council registration, on the explicit understanding they can hold no other job (HP's affidavit requires it). Offer ARY township accommodation in kind to make a remote hill posting viable on ~₹18,000/month cash. In parallel, sponsor a local Baru Sahib candidate through a 2-year D.Pharm as the durable succession fix, because a single external hire in a remote township is a single point of failure for the entire licence.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "months",
+      "blocker": "willingness to relocate — HP's pharma cluster means supply exists, but Baru Sahib is 30–50 km of hill road from anywhere"
+    },
+    {
+      "action": "File Form 19 for Form 20 + 21 in the name of Jivo Wellness Pvt Ltd at the Baru Sahib premises (GSTIN 02AACCJ4223F1Z8, PIN 173101), via XLN plus hard copies: ₹3,000 challan on the DHSR treasury codes, notarised applicant and pharmacist affidavits in the prescribed language, HP Pharmacy Council certificate, jamabandi/allotment proof, Board resolution, MOA/AOA and all directors' photo IDs. Note the standing obligations before signing: three months' notice to close, and a fresh licence within three months of any change of premises, name or constitution.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "the pharmacist's HP registration certificate — nothing can be filed without it"
+    },
+    {
+      "action": "Add pharmaceutical batch and expiry tracking to FusionERP8 before the pharmacy opens — batch number and expiry on the purchase line and the sale line, and a Schedule H1 register report. Today ExpDate is populated on 0 of 111,021 product-child rows, SaleDetail and PurchaseDetail have no batch column at all, and BatchMaster is a cashier till-session table. Without this the Schedule H1 register cannot be produced from the system, first-expiry-first-out is impossible, and a recall cannot be traced to buyers. If the ERP change cannot be made in time, run the register on paper from day one — but do not open without one of the two.",
+      "priority": "P1",
+      "monthlyImpactInr": 3200,
+      "effort": "weeks",
+      "blocker": "whether the FusionERP8 vendor has a pharmacy module, or will build one"
+    },
+    {
+      "action": "Launch the licensed pharmacy as an ARY counter, not a separate shop, and target the attach rate rather than a revenue number: 3.5% of Ary Pos bills at a ₹150 basket clears breakeven, against 2.05% at ₹67 today. Do not launch in December — January runs at 41% of a normal month while the pharmacist's salary is fixed, so open after the winter vacation and budget ₹25–30k/year of seasonal loss.",
+      "priority": "P2",
+      "monthlyImpactInr": 10500,
+      "effort": "months",
+      "blocker": "licence in hand, and how much prescription demand the free hospital already absorbs"
+    },
+    {
+      "action": "Once the Form 20/21 is granted, verify the current PMBJP terms directly with the Department of Pharmaceuticals and then decide on a Jan Aushadhi Kendra as a second, parallel counter — never as a substitute, because the JAK application itself requires the drug licence. If the reported 15–20% incentive capped at ₹15,000–20,000/month is current, it would cover the pharmacist's entire salary and materially change the economics; weigh that against generic-only stock at a fraction of branded MRP and PMBI stock-out risk.",
+      "priority": "P2",
+      "monthlyImpactInr": 15000,
+      "effort": "months",
+      "blocker": "unverified scheme terms — my API attempts returned 500s and PIB/pmbi.gov.in were unreachable"
+    },
+    {
+      "action": "Widen the compliance review beyond drugs while an adviser is engaged: clinical thermometers (3 SKUs) and Band-Aid dressings (₹4,322/yr) are notified medical devices potentially needing a Form MD-42 retail sale licence, and 19 mosquito-repellent SKUs are registered insecticides potentially needing an Insecticides Rules sale licence. Small money, but cheaper to ask all three questions in one sitting than to discover the second and third later.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    }
+  ],
+  "openQuestions": [
+    "Does Akal Charitable Hospital already hold a Form 20/21 drug licence, and does it run a dispensary? This is the highest-leverage unknown in the file — it could fix ARY's exposure at zero cost. Ask the hospital administrator / Kalgidhar Trust directly.",
+    "How much medicine does the hospital already dispense free to Baru Sahib residents? Every revenue scenario here is an assumption sitting on top of this number. Nobody has asked. The hospital's own pharmacy issue register would answer it in an afternoon.",
+    "Are the reported Jan Aushadhi terms current — 20% margin on MRP, 15–20% incentive on monthly purchases capped at ₹15,000–20,000/month, ₹2 lakh special assistance? My official-API attempts returned 500 errors and PIB was unreachable, so this rests on secondary blogs. Ask the Department of Pharmaceuticals / PMBI helpline, or the nearest existing kendra owner.",
+    "Does HP still issue any restricted retail drug licence that does not require a full-time registered pharmacist? If yes, breakeven drops from ₹1.08 lakh/month to roughly ₹18,000/month and the entire business case changes. Only the Sirmaur Drug Inspector or DHSR Shimla can answer.",
+    "What premises area, refrigerator and air-conditioner conditions does HP actually enforce? Secondary sources say 10 sq m plus mandatory fridge and AC; HP's own published checklist says nothing. Confirm before any fit-out spend.",
+    "Where is the nearest existing Jan Aushadhi Kendra and the nearest licensed chemist to Baru Sahib? The kendra locator API returned 500s. This sets the real competitive baseline and how much of the wallet currently leaks to Rajgarh or Nahan. The Sirmaur Drug Inspector holds the licensed-premises register.",
+    "Does the Schedule K village-population exemption for household remedies apply to a township of ~5,000, and would it cover any of the 15 allopathic SKUs? I could not retrieve the Schedule K text. A drugs-law practitioner or the Drug Inspector should settle it.",
+    "Do notified medical devices (thermometers, dressings) and registered insecticides (mosquito repellents) need their own retail sale licences at ARY? Not verified — put to the same adviser as the drug question.",
+    "Can FusionERP8 carry batch number and expiry on purchase and sale lines, and produce a Schedule H1 register? Ask the ERP vendor. If not, the register goes on paper and someone must own it daily.",
+    "Is the Baru Sahib premises rent-free to ARY, and is there 10+ sq m of separable space with a lockable Schedule H cupboard? I assumed ₹0 rent, which flatters the model. ARY operations can confirm.",
+    "What is the current GST rate on medicines after the 2025 rate rationalisation, and does ARY's Baru Sahib registration need any amendment to add pharmaceutical HSN codes? Not checked this session — a question for the company's CA."
+  ]
+}

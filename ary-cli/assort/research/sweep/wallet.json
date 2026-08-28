@@ -1,0 +1,876 @@
+{
+  "lane": "wallet",
+  "headline": "Baru Sahib's total campus wallet is about Rs 15-16 Cr/year and ARY already captures ~58% of it — but the split matters: the retail store is ~77% saturated with only ~Rs 2.3 Cr of headroom left, while the institutional mess-supply channel ARY opened only 18 months ago is ~24% captured with ~Rs 4.2 Cr still on the table, so the largest growth left inside the fence is wholesale to the Trust's own kitchens, not more shelves.",
+  "confidence": "medium",
+  "confidenceGap": "The wallet's absolute level rests on two inputs I could not verify: the cohort split of the ~5,000 residents (only 4,433 people are externally corroborated, and the allocation across boarders/students/single staff/families is my assumption) and the per-category addressability percentages, which I chose. What lifts this from low to medium is that three independent checks agreed: the top-down HCES build (Rs 84 L/month addressable) lands within 10-25% of ARY's actual retail run rate (Rs 58-64 L/month); the modelled staples spend per staff family (Rs 4,640/month) lands within 20% of actual retail staples per assumed family (Rs 3,783/month); and the category-gap sum (Rs 3.0 Cr/yr) matches the top-down retail headroom (Rs 2.3-3.1 Cr/yr) computed a different way. A resident census and the Trust's actual mess-procurement figure would take this to high.",
+  "findings": [
+    {
+      "claim": "Himachal Pradesh rural MPCE is Rs 5,825 per person per month — the 4th highest rural MPCE among major Indian states and 41% above the all-India rural average of Rs 4,122. Baru Sahib (Rajgarh, Sirmaur, PIN 173101) is rural HP, so this is the correct base, not the all-India figure.",
+      "status": "VERIFIED",
+      "evidence": "MoSPI HCES 2023-24 Fact Sheet, Statement 7 (average MPCE for each State/UT, without imputation) — https://www.mospi.gov.in/sites/default/files/publication_reports/HCES%20FactSheet%202023-24.pdf ; downloaded and extracted with pdftotext -layout. HP urban Rs 9,223. With imputation (Statement 15) HP rural Rs 5,833 / urban Rs 9,230.",
+      "number": "Rs 5,825/person/month (HP rural, 2023-24)",
+      "soWhat": "ARY sits in a high-MPCE state. Using the all-India rural figure would have understated the township's wallet by 41% and made ARY look far less saturated than it is."
+    },
+    {
+      "claim": "Escalated to Aug 2026, the HP rural MPCE is about Rs 6,850/person/month. HCES 2023-24 was fielded Aug-2023 to Jul-2024 (midpoint ~Jan-2024), which is 31 months before today.",
+      "status": "ESTIMATED",
+      "evidence": "Derived: Rs 5,825 x 1.065^(31/12) = Rs 6,854. Escalation bracketed by two VERIFIED y/y nominal MPCE growth rates from the same source pair — HP rural 2022-23 Rs 5,561 (HCES 2022-23 Fact Sheet, Statement 8) to 2023-24 Rs 5,825 = +4.75%; all-India rural Rs 3,773 to Rs 4,122 = +9.25% (HCES 2023-24 Statement 2). Range at those bounds: Rs 6,561 to Rs 7,313.",
+      "number": "Rs 6,850/person/month (range Rs 6,550-7,300)",
+      "soWhat": "This is the denominator for every per-resident figure. A 2.5-year-stale MPCE would have understated the wallet by ~15%."
+    },
+    {
+      "claim": "About 9.5% of a normal HP rural wallet does not exist at Baru Sahib at all, before any question of what a store can sell. Egg/fish/meat (4.92% of MPCE) and pan/tobacco/intoxicants (3.84%) are structurally zero on a Sikh Trust campus; rent (0.56%) is zero because the Trust houses residents; taxes and cesses (0.21%) are nil.",
+      "status": "ESTIMATED",
+      "evidence": "Category shares VERIFIED from MoSPI HCES 2023-24 Fact Sheet, Statement 4 (absolute and percentage break-up of MPCE by item groups, rural column). Application to Baru Sahib is my inference from the institution's stated character (Sikh institution, no tobacco, no alcohol; Trust-provided housing). ARY's own catalogue corroborates it: no meat, egg, tobacco or liquor product group exists in ProductGroupMaster (query: SELECT ProductGroupName FROM ProductGroupMaster, 93 rows, none of those categories present).",
+      "number": "Rs 652/person/month = Rs 3.92 Cr/year of wallet that is absent, not lost",
+      "soWhat": "Prevents a false gap. A consultant benchmarking ARY against normal Indian rural retail would flag meat, tobacco and liquor as ~9.5% of untapped category headroom. It is unreachable by anyone here, and chasing it would breach the Trust's character."
+    },
+    {
+      "claim": "The store-addressable retail wallet of the township is about Rs 84 lakh/month (Rs 10.1 Cr/year) — only 24.5% of the residents' Rs 41.1 Cr/year gross consumption wallet. The other 75% is either structurally absent (9.5%) or institution-provided / spent off-campus (66%): mess food for boarders, Trust housing, the 280-bed charitable hospital, subsidised fees, campus electricity, and bus fare to Solan/Nahan.",
+      "status": "ESTIMATED",
+      "evidence": "Built cohort-by-cohort from the VERIFIED HCES 2023-24 rural category shares (Statement 4) applied to the escalated HP rural MPCE, with an addressability factor per category that I chose and state in the funnel table. Gross wallet = 5,000 x Rs 6,850 = Rs 342.5 L/month.",
+      "number": "Rs 84 L/month = Rs 10.1 Cr/year (range Rs 9.0-13.0 Cr)",
+      "soWhat": "This is the ceiling on the retail format. It says ARY's store cannot triple inside Baru Sahib no matter how well it is run — the roof is roughly Rs 10-13 Cr."
+    },
+    {
+      "claim": "ARY's retail sales are Rs 7.73 Cr/year annualised, so the store already captures about 77% of its addressable retail wallet. Retail headroom inside the fence is roughly Rs 2.3 Cr/year, not a multiple.",
+      "status": "VERIFIED",
+      "evidence": "ary query: SELECT fy, SUM(CASE WHEN sd.WarehouseID=16 THEN ... ) instl, SUM(CASE WHEN sd.WarehouseID<>16 THEN ...) retail FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sh.VoucherDate>='2023-04-01' GROUP BY fy. FY26-27 to 21-Aug-2026: retail Rs 302.7 L over 4.70 months = Rs 64.4 L/month = Rs 7.73 Cr annualised. Trailing-12-month retail (2025-08-22 to 2026-08-21) = Rs 699.29 L over 371,707 bills. Capture % is against my ESTIMATED wallet.",
+      "number": "Rs 7.73 Cr/year retail annualised = 77% of the Rs 10.1 Cr retail wallet",
+      "soWhat": "The +29% headline growth is running into a ceiling. Anyone planning ARY's next three years off that growth rate will miss, because the retail wallet runs out at roughly Rs 10-13 Cr."
+    },
+    {
+      "claim": "Rs 71.6 lakh of ARY's trailing-12-month sales is not retail at all — it is 14 monthly bulk bills to one account, 'Hunger Heroes' (CustomerID 002CM), through the Basement counter, buying exactly a mess basket: rice, atta, vegetables, pulses, oil, spices, dairy, salt/sugar, tea. Averaging Rs 5.1 lakh and ~10,000 kg per bill.",
+      "status": "VERIFIED",
+      "evidence": "ary query on SaleHeader/SaleDetail WHERE WarehouseID=16 AND VoucherDate in T12M: 14 bills, Rs 71.61 L, all CustomerID 002CM = 'Hunger Heroes' (CustomerMaster). Group mix query returns Rice & Other Grains Rs 12.77 L / 20,195 units, Atta Rs 9.51 L / 21,740, Vegetable Rs 9.12 L / 23,505, Pulses Rs 6.70 L / 6,726, Edible Oil Rs 4.39 L / 3,170. Implied unit prices (rice Rs 63/kg, atta Rs 43.7/kg, vegetables Rs 38.8/kg, pulses Rs 99.7/kg) confirm units are kg.",
+      "number": "Rs 71.6 L/year, 14 bills, one customer",
+      "soWhat": "Mixing this into 'retail' overstates per-resident retail spend by 10% and hides the fastest-growing channel ARY has. It must be reported separately."
+    },
+    {
+      "claim": "That institutional channel feeds only about 370-450 people, against roughly 3,900 boarders on campus. ARY supplies less than a fifth of the Trust's own kitchens.",
+      "status": "ESTIMATED",
+      "evidence": "Derived from two VERIFIED inputs. (a) ARY institutional cereal volume T12M = 20,195 kg rice + 21,740 kg atta = 41,935 kg (query above). (b) HCES 2023-24 average rural cereal consumption = 9.35 kg/person/month (MoSPI Fact Sheet, Figure 2). 41,935 / 9.35 = 4,485 person-months/year = ~374 persons year-round, or ~450 over a 10-month session. On the current FY26-27 run rate (Rs 131 L/year annualised) this scales to ~685 persons.",
+      "number": "~374 persons fed on T12M volume; ~685 on the current run rate, vs ~3,900 boarders",
+      "soWhat": "Names the single biggest uncaptured pool on campus and sizes it from ARY's own tonnage rather than a guess. ~3,200 boarders' staples are being bought from someone else."
+    },
+    {
+      "claim": "The institutional mess-procurement wallet behind the same 5,000 residents is about Rs 5.5 Cr/year — and ARY only entered it in FY25-26. Revenue went Rs 0 (FY23-24), Rs 0 (FY24-25), Rs 55.6 L (FY25-26), Rs 51.4 L in the first 4.7 months of FY26-27 (Rs 131 L annualised, +136%).",
+      "status": "ESTIMATED",
+      "evidence": "Channel revenue series VERIFIED by the FY split query above. Wallet size derived two ways that agree: (a) 3,900 boarders x 10 months presence x Rs 1,266/person-month raw-material cost (= HCES rural staples basket of Rs 1,948/person/month at ~65% institutional bulk pricing) = Rs 4.94 Cr; (b) ARY's own institutional realisation, Rs 61.4 L excluding prepared Mini Meals / (374 persons x 12) = Rs 1,368/person-month, x 3,900 x 10/12 = Rs 5.34 Cr. Central Rs 5.5 Cr, range Rs 4.9-6.2 Cr.",
+      "number": "Rs 5.5 Cr/year wallet; ARY at Rs 1.31 Cr annualised = 24% captured; headroom ~Rs 4.2 Cr/year",
+      "soWhat": "This is the largest single growth item available and it is an internal negotiation with ARY's own parent Trust, not a customer to be won — no acquisition cost, no new site, no new format."
+    },
+    {
+      "claim": "Growth is already shifting to that channel and the headline rate disguises it. Retail is growing +16.5% (Rs 663 L to Rs 773 L annualised); institutional is growing +136%. Institutional is 15% of revenue but contributed 41% of the incremental Rs 185 L.",
+      "status": "VERIFIED",
+      "evidence": "Same FY split query. Retail: FY23-24 Rs 622.3 L, FY24-25 Rs 588.7 L (-5.4%), FY25-26 Rs 663.4 L (+12.7%), FY26-27 Rs 302.7 L / 4.70 months = Rs 773 L annualised (+16.5%). Institutional: Rs 0, Rs 0, Rs 55.6 L, Rs 131 L annualised. Incremental FY25-26 to FY26-27 = Rs 109.6 L retail + Rs 75.6 L institutional = Rs 185.2 L, institutional share 41%.",
+      "number": "Retail +16.5%, institutional +136%; 41% of incremental growth from 15% of revenue",
+      "soWhat": "Confirms the strategic read is not theoretical — the business is already discovering this by itself. Backing it deliberately is the cheapest growth available."
+    },
+    {
+      "claim": "The campus empties in winter. January runs at 486 bills/day against 1,335 in May — 36% of peak — and the swing is occupancy, not price: bills/day and value/day both bottom at the same 71% of peak on an annual average.",
+      "status": "VERIFIED",
+      "evidence": "ary query: SELECT FORMAT(VoucherDate,'yyyy-MM'), COUNT(DISTINCT CAST(VoucherDate AS date)) open_days, COUNT(*) bills, COUNT(*)/open_days, SUM(BillAmount)/open_days FROM SaleHeader WHERE VoucherDate >= '2025-09-01' AND < '2026-08-22' GROUP BY month. Jan-2026: 31 open days, 15,078 bills, 486/day, Rs 1.05 L/day. May-2026: 41,388 bills, 1,335/day, Rs 3.08 L/day. Mean/peak = 71.2% on bills and 71.2% on value independently.",
+      "number": "Jan 486 bills/day vs May 1,335; mean = 71% of peak",
+      "soWhat": "The addressable wallet is not 5,000 residents x 12 months. Student cohorts are present ~10 of 12 months, which is why I applied a 0.80 presence factor — without it the wallet is overstated ~15%. It also means two months of fixed cost with a third of the traffic, and 1,100 year-round staff and families nobody is currently merchandising to in Jan-Feb."
+    },
+    {
+      "claim": "87.3% of ARY's revenue — Rs 672 lakh a year — is booked to a customer type of [None], i.e. the anonymous walk-in Cash account. Only 3,273 student and 107 staff accounts exist, and SalesPersonID is [NONE] on 99.7% of bills.",
+      "status": "VERIFIED",
+      "evidence": "ary query joining SaleHeader to CustomerMaster to CustomerTypeMaster, T12M: [None] 360,109 bills / Rs 672.28 L; Trust Rs 45.88 L; Student Rs 35.39 L; Staff Rs 9.69 L; Regular Rs 3.39 L; Sponsored Rs 3.08 L; B-Block Rs 0.35 L. Customer master counts: Student 3,273, Staff 107, Trust 20. The 99.7% SalesPersonID figure was given in the brief, not re-run by me.",
+      "number": "87.3% of revenue = Rs 672 L/year with no identified customer; 107 staff accounts for a workforce of several hundred",
+      "soWhat": "This is why the whole wallet has to be modelled from national survey data instead of read off ARY's own books. ARY cannot currently tell which of its ~5,000 residents shop, which cohort is under-penetrated, or whether a staff family buys its staples here or in Rajgarh. Fixing it converts this estimate into measurement."
+    },
+    {
+      "claim": "The clearest category gaps, ranked: snacks and processed food (Rs 78 L/year), personal care and household goods (Rs 50 L), small durables (Rs 34 L), consumer services — recharge, print, tailoring, courier — at Rs 32.5 L with essentially zero capture today, fruit (Rs 32 L), education goods (Rs 27 L), OTC medical (Rs 23 L), packaged dairy (Rs 21 L). Apparel is the one saturated category: ARY sells Rs 230 L against a modelled Rs 209 L.",
+      "status": "ESTIMATED",
+      "evidence": "ARY side VERIFIED by ary query aggregating SaleDetail x ProductMaster x ProductGroupMaster over T12M (Confectionery Rs 101.1 L, Personal Care Rs 51.8 L, Academy Dress Rs 47.5 L, Winter Wear Rs 43.9 L, Fruits Rs 36.3 L, Footwear Rs 22.6 L, Stationary Rs 13.2 L, Medicare Rs 3.26 L, and 60+ more groups). Wallet side is my cohort allocation of the VERIFIED HCES category shares. Gaps sum to Rs 3.0 Cr/year, which independently matches the Rs 2.3-3.1 Cr top-down retail headroom.",
+      "number": "Rs 3.0 Cr/year of retail category gap; consumer services 0% captured; Medicare 21% captured",
+      "soWhat": "Turns the abstract headroom into a shelf plan. The two best risk-adjusted items need no inventory at all: a services counter and a durables order-book."
+    },
+    {
+      "claim": "ARY already tried a second site and closed it. The Talwandi Sabo counter (warehouse 14, Bathinda GSTIN territory) is flagged inactive, as are Apple A Day (13) and Girls Canteen Ts (17). Talwandi Sabo did Rs 0.51 Cr lifetime and shows no T12M sales.",
+      "status": "VERIFIED",
+      "evidence": "ary warehouses: id 14 Talwandi Sabo active=false, 621 SKUs, book_qty -127,849, shortage Rs 1.64 L; id 13 Ary Apple A Day active=false; id 17 Girls Canteen Ts active=false. ary sales by-warehouse for T12M returns only 6 live counters (Ary Pos, Ary Clothing, Basement, Ary G Canteen, Fruits & Vegetables, Ary Lite) — none of the three inactive ones appear.",
+      "number": "3 counters closed, incl. the only off-campus site (Rs 0.51 Cr lifetime)",
+      "soWhat": "Any 'replicate across the Akal Academy network' plan must start with the Talwandi Sabo post-mortem, not a new site survey. There is already one failed replication and nobody has written down why."
+    },
+    {
+      "claim": "The externally corroborated campus population is 4,433 people before Akal Academy's own teachers, the 280-bed charitable hospital's staff, Trust admin, kitchen/maintenance/security workers and their families are counted — so '~5,000' is more likely a floor than a centre, and 5,300-5,900 is plausible.",
+      "status": "VERIFIED",
+      "evidence": "Eternal University: 2,500 students, 170 faculty, 25 administrative staff, 450-acre campus, established 2008 — https://en.wikipedia.org/wiki/Eternal_University . Akal Academy Baru Sahib: '1538 boys and girls on its rolls', 200 overseas students, 350 on free education; plus a 280-bed charitable hospital and 200 girls in the women's spiritual academy — https://en.wikipedia.org/wiki/Baru_Sahib . Both are secondary sources (Wikipedia) with no date stamp on the enrolment figures; barusahib.org and eternaluniversity.edu.in publish no numbers (their 'Our Impact' counters render as zeros).",
+      "number": "2,500 + 195 + 1,538 + 200 = 4,433 corroborated",
+      "soWhat": "Every per-resident figure in this analysis moves inversely with this number. If the true population is 5,700, ARY's captured spend per resident falls from Rs 1,507 to Rs 1,322/month and the wallet rises ~14% — which would mean more headroom, not less."
+    },
+    {
+      "claim": "The Kalgidhar Trust runs ~129-130 English-medium Akal Academy schools with roughly 60,000 students across rural northern India. At Baru Sahib's own boarding-schoolchild wallet of ~Rs 1,050/month at 0.80 presence, that network carries roughly Rs 5.0 Cr/month — Rs 60 Cr/year — of addressable schoolchild retail wallet.",
+      "status": "ESTIMATED",
+      "evidence": "Network size VERIFIED from two agreeing sources: '129 English medium schools ... approximately 60,000 students' (https://en.wikipedia.org/wiki/Baru_Sahib) and 'Akal Academy has so far 130 schools' with a stated mission of 500 by 2025 (https://barusahib.org/). The wallet extrapolation is mine: 60,000 x Rs 1,050 x 0.80 = Rs 5.04 Cr/month. It assumes other campuses resemble Baru Sahib, which is unsafe — Baru Sahib is the flagship with a co-located university and 450 acres.",
+      "number": "~129 schools, ~60,000 students, ~Rs 60 Cr/year notional schoolchild wallet",
+      "soWhat": "The only path to multiplying ARY rather than adding 10-20% a year. It is ~6x the current business — but Talwandi Sabo is direct evidence that replication is not automatic, so this is a TAM to be tested with one campus, not a plan."
+    },
+    {
+      "claim": "JIVO's own brands earn Rs 16.8 lakh/year through ARY across 73 SKUs, and hold roughly 55% of ARY's Rs 30.6 lakh oil and ghee shelf.",
+      "status": "VERIFIED",
+      "evidence": "ary query: SELECT COUNT(DISTINCT pm.ProductID), COUNT(*), SUM(sd.Quantity*sd.FinalSaleRate) FROM SaleDetail sd JOIN SaleHeader sh ... JOIN ProductMaster pm ... WHERE VoucherDate T12M AND pm.ProductName LIKE '%JIVO%' returns 73 SKUs, 13,104 lines, Rs 16,82,928. Oil groups query returns Edible Oil & Ghee Rs 11.14 L + Oil & Ghee Rs 19.49 L = Rs 30.62 L.",
+      "number": "Rs 16.8 L/year, 73 of 126 JIVO SKUs selling, ~55% oil share",
+      "soWhat": "The captive channel is real but small, and 53 JIVO SKUs listed at ARY sold nothing in 12 months. The mess contract is also the biggest single JIVO-oil opportunity on this campus — institutional oil is Rs 5.66 L/year today and a full mess would multiply it."
+    },
+    {
+      "claim": "The payment-mix data is corrupt and cannot be used to measure how residents pay. The Cash tender total reports Rs 8,942 crore against Rs 7.7 crore of actual sales — a factor of ~1,160.",
+      "status": "VERIFIED",
+      "evidence": "ary sales payment-mix --from 2025-08-22 --to 2026-08-21 returns Cash 155,174 tenders / Rs 8,942,313,375; Paytm 212,417 / Rs 3,63,71,365; Credit Sale 10,574 / Rs 1,95,08,439. Total sales over the same window are Rs 7.70 Cr, so the Cash figure is impossible. Note Paytm has more tenders (212,417) than Cash (155,174).",
+      "number": "Cash reported Rs 8,942 Cr vs Rs 7.7 Cr of real sales",
+      "soWhat": "Blocks a genuine wallet question — whether residents are cash- or UPI-constrained, and how much credit the staff book absorbs. The tender-count split hints UPI is already dominant, which would matter for a credit-book design, but the amounts cannot be trusted."
+    }
+  ],
+  "tables": [
+    {
+      "title": "Published anchors used (all VERIFIED from MoSPI HCES)",
+      "columns": [
+        "Metric",
+        "2022-23",
+        "2023-24",
+        "Source"
+      ],
+      "rows": [
+        [
+          "HP rural MPCE",
+          "Rs 5,561",
+          "Rs 5,825",
+          "Fact Sheet Statement 8 / Statement 7, without imputation"
+        ],
+        [
+          "HP urban MPCE",
+          "Rs 8,075",
+          "Rs 9,223",
+          "same"
+        ],
+        [
+          "HP rural MPCE, with imputation",
+          "Rs 5,573",
+          "Rs 5,833",
+          "Statement 18 / Statement 15"
+        ],
+        [
+          "All-India rural MPCE",
+          "Rs 3,773",
+          "Rs 4,122",
+          "Statement 2"
+        ],
+        [
+          "All-India urban MPCE",
+          "Rs 6,459",
+          "Rs 6,996",
+          "Statement 2"
+        ],
+        [
+          "Rural food share of MPCE",
+          "46.38%",
+          "47.04%",
+          "Statement 3"
+        ],
+        [
+          "Rural cereal consumption",
+          "9.61 kg/person/mo",
+          "9.35 kg/person/mo",
+          "Figure 2"
+        ],
+        [
+          "HP sample households (rural/urban)",
+          "1,406 / 1,036",
+          "1,355 / 1,051",
+          "Appendix"
+        ],
+        [
+          "HP estimated households (rural, '00)",
+          "17,260",
+          "15,570",
+          "Appendix"
+        ]
+      ]
+    },
+    {
+      "title": "All-India rural category shares applied to the escalated HP base (Rs 6,850/person/month)",
+      "columns": [
+        "HCES item group",
+        "Rural % (VERIFIED)",
+        "Rs/person/mo",
+        "Addressable by a campus store",
+        "Why"
+      ],
+      "rows": [
+        [
+          "cereals & cereal substitutes",
+          "4.99",
+          "342",
+          "families only",
+          "mess feeds the 3,900 boarders"
+        ],
+        [
+          "pulses & products",
+          "2.04",
+          "140",
+          "families only",
+          "same"
+        ],
+        [
+          "sugar & salt",
+          "0.89",
+          "61",
+          "families only",
+          "same"
+        ],
+        [
+          "milk & milk products",
+          "8.44",
+          "578",
+          "~55%",
+          "fresh milk institutional; packaged dairy sellable"
+        ],
+        [
+          "vegetables",
+          "6.03",
+          "413",
+          "~70%",
+          "some local growers / kitchen gardens"
+        ],
+        [
+          "fruits",
+          "3.85",
+          "264",
+          "~90%",
+          "classic campus impulse buy, mess fruit minimal"
+        ],
+        [
+          "egg, fish & meat",
+          "4.92",
+          "337",
+          "0%",
+          "vegetarian Sikh campus — STRUCTURAL"
+        ],
+        [
+          "edible oil",
+          "2.77",
+          "190",
+          "~95%",
+          "JIVO's own category"
+        ],
+        [
+          "spices",
+          "3.27",
+          "224",
+          "~90%",
+          "families cook"
+        ],
+        [
+          "beverages, refreshments, processed food",
+          "9.84",
+          "674",
+          "~90%",
+          "ARY's core; the entire boarder snack wallet"
+        ],
+        [
+          "pan, tobacco & intoxicants",
+          "3.84",
+          "263",
+          "0%",
+          "prohibited — STRUCTURAL"
+        ],
+        [
+          "fuel and light",
+          "6.11",
+          "419",
+          "~10%",
+          "Trust electricity + LPG distributor network"
+        ],
+        [
+          "education",
+          "3.24",
+          "222",
+          "~32%",
+          "fees are Trust; books/stationery sellable"
+        ],
+        [
+          "medical",
+          "6.83",
+          "468",
+          "~22%",
+          "280-bed Trust charitable hospital"
+        ],
+        [
+          "conveyance",
+          "7.59",
+          "520",
+          "~5%",
+          "bus/taxi to Rajgarh, Solan, Nahan"
+        ],
+        [
+          "consumer services excl conveyance",
+          "5.25",
+          "360",
+          "~28%",
+          "recharge, tailoring, print, courier"
+        ],
+        [
+          "misc. goods, entertainment",
+          "6.22",
+          "426",
+          "~80%",
+          "toiletries, cosmetics, household, toys"
+        ],
+        [
+          "rent",
+          "0.56",
+          "38",
+          "0%",
+          "Trust housing — STRUCTURAL"
+        ],
+        [
+          "taxes and cesses",
+          "0.21",
+          "14",
+          "0%",
+          "STRUCTURAL"
+        ],
+        [
+          "clothing, bedding & footwear",
+          "6.63",
+          "454",
+          "~90%",
+          "uniform is captive; hill-station winter wear"
+        ],
+        [
+          "durable goods",
+          "6.48",
+          "444",
+          "~28%",
+          "big-ticket goes to Solan/Chandigarh/online"
+        ],
+        [
+          "TOTAL",
+          "100.00",
+          "6,850",
+          "24.5%",
+          "= Rs 1,679/person/month addressable"
+        ]
+      ]
+    },
+    {
+      "title": "Per-cohort monthly retail wallet (cohort sizes are ASSUMED; per-person wallets ESTIMATED)",
+      "columns": [
+        "Cohort",
+        "Persons",
+        "What the institution already provides",
+        "Own addressable wallet Rs/person/mo",
+        "Presence factor",
+        "Annual-avg Rs L/mo"
+      ],
+      "rows": [
+        [
+          "Boarding schoolchild, Akal Academy",
+          "1,500",
+          "room, 3 meals, milk, books, healthcare, electricity",
+          "1,050",
+          "0.80",
+          "12.6"
+        ],
+        [
+          "Hostel student, Eternal University + women's academy",
+          "2,400",
+          "room, mess, healthcare, electricity",
+          "2,050",
+          "0.80",
+          "39.4"
+        ],
+        [
+          "Single resident staff (teaching, non-teaching, hospital)",
+          "500",
+          "quarters, staff mess, healthcare",
+          "2,150",
+          "1.00",
+          "10.8"
+        ],
+        [
+          "Resident staff family of four (150 households)",
+          "600",
+          "quarters, healthcare, subsidised schooling",
+          "3,538 (Rs 14,152/household)",
+          "1.00",
+          "21.2"
+        ],
+        [
+          "TOTAL",
+          "5,000",
+          "",
+          "1,679 avg",
+          "",
+          "84.0"
+        ]
+      ]
+    },
+    {
+      "title": "The wallet funnel — gross consumption down to what a store can sell",
+      "columns": [
+        "Stage",
+        "Rs L/month",
+        "Rs Cr/year",
+        "% of gross",
+        "Basis"
+      ],
+      "rows": [
+        [
+          "Gross resident consumption wallet (5,000 x Rs 6,850)",
+          "342.5",
+          "41.1",
+          "100%",
+          "ESTIMATED from VERIFIED HP rural MPCE"
+        ],
+        [
+          "less structurally absent (meat, tobacco, rent, taxes)",
+          "-32.7",
+          "-3.9",
+          "9.5%",
+          "VERIFIED shares, inferred application"
+        ],
+        [
+          "less institution-provided or spent off-campus",
+          "-225.8",
+          "-27.1",
+          "66.0%",
+          "mess, housing, hospital, fees, transport, Solan/online"
+        ],
+        [
+          "= RETAIL-ADDRESSABLE by a campus store",
+          "84.0",
+          "10.1",
+          "24.5%",
+          "ESTIMATED (range Rs 9.0-13.0 Cr)"
+        ],
+        [
+          "ARY actual retail, FY26-27 annualised",
+          "64.4",
+          "7.73",
+          "",
+          "VERIFIED"
+        ],
+        [
+          "Retail capture rate",
+          "",
+          "77%",
+          "",
+          ""
+        ],
+        [
+          "RETAIL HEADROOM",
+          "19.6",
+          "2.3",
+          "",
+          ""
+        ],
+        [
+          "plus institutional mess wallet (same 5,000 people)",
+          "45.8",
+          "5.5",
+          "",
+          "ESTIMATED, two methods agree"
+        ],
+        [
+          "ARY actual institutional, FY26-27 annualised",
+          "10.9",
+          "1.31",
+          "",
+          "VERIFIED"
+        ],
+        [
+          "Institutional capture rate",
+          "",
+          "24%",
+          "",
+          ""
+        ],
+        [
+          "INSTITUTIONAL HEADROOM",
+          "34.9",
+          "4.2",
+          "",
+          ""
+        ],
+        [
+          "TOTAL CAMPUS WALLET",
+          "129.8",
+          "15.6",
+          "",
+          ""
+        ],
+        [
+          "ARY total, FY26-27 annualised",
+          "75.3",
+          "9.04",
+          "58%",
+          "VERIFIED"
+        ],
+        [
+          "TOTAL HEADROOM INSIDE THE FENCE",
+          "54.5",
+          "6.5",
+          "",
+          ""
+        ]
+      ]
+    },
+    {
+      "title": "Category gap — modelled wallet vs ARY actual (T12M, Rs lakh/year)",
+      "columns": [
+        "Category",
+        "Wallet addressable",
+        "ARY actual",
+        "Capture %",
+        "Gap",
+        "Note"
+      ],
+      "rows": [
+        [
+          "Snacks, beverages, processed, cooked meals",
+          "302.6",
+          "224.6",
+          "74%",
+          "78.0",
+          "Confectionery alone is Rs 101.1 L"
+        ],
+        [
+          "Clothing, bedding, footwear",
+          "209.4",
+          "230.3",
+          "110%",
+          "0",
+          "SATURATED — over-indexed vs a normal wallet, as expected for a uniform-mandated hill campus"
+        ],
+        [
+          "Personal care, household, toys, misc",
+          "159.5",
+          "109.6",
+          "69%",
+          "49.9",
+          "Personal Care Rs 51.8 L is the 2nd biggest group"
+        ],
+        [
+          "Staples (cereal, pulse, sugar, veg, oil, spice) — retail only",
+          "83.5",
+          "68.1",
+          "82%",
+          "15.4",
+          "Rs 3,783/family/mo actual vs Rs 4,640 modelled — validates the 150-family assumption"
+        ],
+        [
+          "Fruits",
+          "67.9",
+          "36.3",
+          "53%",
+          "31.6",
+          "dedicated Fruits & Veg counter exists"
+        ],
+        [
+          "Small durables (crockery, cookware, appliances, electricals)",
+          "49.0",
+          "15.3",
+          "31%",
+          "33.7",
+          "order-book, no shelf stock needed"
+        ],
+        [
+          "Education goods (stationery, books)",
+          "42.6",
+          "16.0",
+          "38%",
+          "26.6",
+          "288 Academy Books SKUs already listed"
+        ],
+        [
+          "Consumer services (recharge, print, tailoring, courier)",
+          "32.5",
+          "0.0",
+          "0%",
+          "32.5",
+          "zero capture; near-zero inventory"
+        ],
+        [
+          "Packaged dairy",
+          "30.0",
+          "8.5",
+          "28%",
+          "21.5",
+          "cold chain is the blocker"
+        ],
+        [
+          "OTC medical, supplements",
+          "29.6",
+          "6.3",
+          "21%",
+          "23.3",
+          "needs an HP Form-19 retail drug licence"
+        ],
+        [
+          "Fuel & light (bulbs, batteries, candles)",
+          "3.0",
+          "1.5",
+          "50%",
+          "1.5",
+          "minor"
+        ],
+        [
+          "TOTAL",
+          "1,009.2",
+          "716.5",
+          "71%",
+          "313.5",
+          "gap sum Rs 3.1 Cr independently matches the Rs 2.3-3.1 Cr top-down headroom"
+        ]
+      ]
+    },
+    {
+      "title": "Seasonality — the campus empties in winter (VERIFIED, per open day)",
+      "columns": [
+        "Month",
+        "Open days",
+        "Bills",
+        "Bills/day",
+        "% of peak",
+        "Rs value/day"
+      ],
+      "rows": [
+        [
+          "Sep-2025",
+          "21",
+          "31,248",
+          "1,488",
+          "100%",
+          "300,178"
+        ],
+        [
+          "Oct-2025",
+          "31",
+          "32,932",
+          "1,062",
+          "71%",
+          "246,416"
+        ],
+        [
+          "Nov-2025",
+          "30",
+          "29,809",
+          "994",
+          "67%",
+          "170,655"
+        ],
+        [
+          "Dec-2025",
+          "31",
+          "29,255",
+          "944",
+          "63%",
+          "176,385"
+        ],
+        [
+          "Jan-2026",
+          "31",
+          "15,078",
+          "486",
+          "33%",
+          "104,692"
+        ],
+        [
+          "Feb-2026",
+          "28",
+          "22,776",
+          "813",
+          "55%",
+          "135,866"
+        ],
+        [
+          "Mar-2026",
+          "31",
+          "31,040",
+          "1,001",
+          "67%",
+          "254,188"
+        ],
+        [
+          "Apr-2026",
+          "30",
+          "37,085",
+          "1,236",
+          "83%",
+          "234,998"
+        ],
+        [
+          "May-2026",
+          "31",
+          "41,388",
+          "1,335",
+          "90%",
+          "307,639"
+        ],
+        [
+          "Jun-2026",
+          "30",
+          "38,563",
+          "1,285",
+          "86%",
+          "263,785"
+        ],
+        [
+          "Jul-2026",
+          "31",
+          "29,576",
+          "954",
+          "64%",
+          "197,220"
+        ],
+        [
+          "Aug-2026 (to 21st)",
+          "20",
+          "22,269",
+          "1,113",
+          "75%",
+          "237,610"
+        ],
+        [
+          "MEAN",
+          "",
+          "",
+          "1,059",
+          "71%",
+          "219,136"
+        ]
+      ]
+    },
+    {
+      "title": "Channel growth — the institutional channel is 15% of revenue but 41% of growth (VERIFIED)",
+      "columns": [
+        "Financial year",
+        "Retail Rs L",
+        "Institutional Rs L",
+        "Total Rs L",
+        "Retail growth",
+        "Institutional growth"
+      ],
+      "rows": [
+        [
+          "FY23-24",
+          "622.3",
+          "0.0",
+          "622.3",
+          "",
+          "—"
+        ],
+        [
+          "FY24-25",
+          "588.7",
+          "0.0",
+          "588.7",
+          "-5.4%",
+          "—"
+        ],
+        [
+          "FY25-26",
+          "663.4",
+          "55.6",
+          "718.9",
+          "+12.7%",
+          "new"
+        ],
+        [
+          "FY26-27 (to 21-Aug, 4.7 mo)",
+          "302.7",
+          "51.4",
+          "354.1",
+          "",
+          ""
+        ],
+        [
+          "FY26-27 annualised",
+          "772.6",
+          "131.2",
+          "903.8",
+          "+16.5%",
+          "+136%"
+        ]
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Win the Akal Academy and Eternal University mess-procurement contract. ARY already supplies one mess account (Hunger Heroes, Rs 1.31 Cr annualised) feeding ~685 of ~3,900 boarders on exactly the right basket. The remaining ~3,200 boarders' staples — ~Rs 4.2 Cr/year — are being bought from someone outside a Trust-owned business. This is an internal negotiation with the parent Trust, not a customer to be won: no acquisition cost, no new site, no new format, and it lands JIVO oil into the kitchens as a by-product. Start by getting the Trust's actual annual mess spend and current supplier.",
+      "priority": "P0",
+      "monthlyImpactInr": 3500000,
+      "effort": "weeks",
+      "blocker": "Nobody has the Trust's central mess-procurement figure or supplier list — get that number before designing anything."
+    },
+    {
+      "action": "Make the POS capture who is buying. 87.3% of revenue (Rs 672 L/year) is booked to the anonymous walk-in Cash account and only 107 staff accounts exist for a workforce of several hundred. Issue a resident card to all ~5,000 (students already have 3,273 accounts) and make counter staff scan it. This is the enabler for every other recommendation — without it ARY cannot tell which cohort is under-penetrated, which residents never shop, or whether staff families buy staples here or in Rajgarh, and the wallet stays a national-survey estimate instead of a measurement.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "Counter-level process discipline across 6 live counters; the card scheme exists in the schema (CardID, CustomerTypeID) but is unused for 87% of revenue."
+    },
+    {
+      "action": "Open a services counter: mobile recharge, photocopy and printing, tailoring against the Rs 22.2 L of fabric and Rs 20.6 L of unstitched suits ARY already sells, a courier and parcel desk, and laundry. Modelled wallet Rs 32.5 L/year with literally zero capture today. Near-zero inventory and near-zero working capital, so it is the best risk-adjusted item on this list — a print and recharge desk in a 5,000-person closed township with the nearest market 30-50 km away should not be missing.",
+      "priority": "P1",
+      "monthlyImpactInr": 270000,
+      "effort": "weeks",
+      "blocker": "none"
+    },
+    {
+      "action": "Add a durables order-book instead of durables stock. Catalogue plus 20% deposit plus a weekly consolidated run from Solan; customer collects at the counter. Small durables are 31% captured (Rs 15.3 L against Rs 49.0 L) and big-ticket leaks entirely to Solan, Nahan, Chandigarh and e-commerce. An indent model captures the margin with no shelf inventory and no obsolescence — which matters when 13,400 of 19,481 active SKUs already sold nothing in 12 months.",
+      "priority": "P1",
+      "monthlyImpactInr": 280000,
+      "effort": "weeks",
+      "blocker": "Designing it to hold zero inventory — if it becomes a stocking category it will add to the dead-SKU problem, not the revenue."
+    },
+    {
+      "action": "Close the snacks and personal-care gaps — the two largest and most conventional. Snacks and processed food is 74% captured (Rs 78 L gap), personal care and household 69% (Rs 50 L gap). These need assortment and availability work at the existing Ary Pos and Ary Lite counters, not new capability: identify the fast-movers among the ~6,100 SKUs that actually sell and fix their stock-outs, especially in the Mar-Jun peak when the campus is at full occupancy.",
+      "priority": "P1",
+      "monthlyImpactInr": 1070000,
+      "effort": "weeks",
+      "blocker": "No stock-out measurement exists today — needs the customer-identification work above to distinguish 'nobody wanted it' from 'it was not there'."
+    },
+    {
+      "action": "Apply for the HP retail drug licence and open an OTC corner. Medical is 21% captured (Rs 6.3 L against Rs 29.6 L) in a township with a 280-bed charitable hospital and no market within 30-50 km. HP requires Form-19, a Rs 3,000 treasury challan, a site and layout plan, proof of premises, and a registered pharmacist on the payroll with HP Pharmacy Council registration. Beyond the Rs 23 L gap it serves the hospital's outpatient and attendant flow, which is a population this wallet model does not even count.",
+      "priority": "P1",
+      "monthlyImpactInr": 190000,
+      "effort": "months",
+      "blocker": "Hiring a pharmacist registered with the HP Pharmacy Council — the licence cannot be granted without one."
+    },
+    {
+      "action": "Counter-programme the winter trough. January runs at 486 bills/day against May's 1,335, but the ~1,100 staff and family residents never leave. Run a Dec-Feb staples and winter-goods push aimed only at staff households, with a Trust-employee credit book settled against payroll. Recovering even a third of the Jan-Feb shortfall against the annual mean is worth Rs 8-12 L across the two months, on fixed cost that is already being paid.",
+      "priority": "P2",
+      "monthlyImpactInr": 83000,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Expand packaged dairy and fruit. Fruit is 53% captured and packaged dairy 28% — a combined Rs 53 L/year gap — despite a dedicated Fruits & Vegetables counter already doing Rs 36.3 L. Both are repeat-purchase, high-frequency categories that pull footfall, and fruit is the one food category a boarder's mess genuinely does not cover.",
+      "priority": "P2",
+      "monthlyImpactInr": 440000,
+      "effort": "weeks",
+      "blocker": "Cold chain for dairy; a hill campus 110 km from Shimla makes daily replenishment the real constraint."
+    },
+    {
+      "action": "Before any talk of replicating the format across the ~129 Akal Academy campuses (~60,000 students, a notional ~Rs 60 Cr/year schoolchild wallet), write the Talwandi Sabo post-mortem. ARY already opened an off-campus counter, did Rs 0.51 Cr lifetime, and shut it — warehouse 14 is flagged inactive with a negative book stock of -127,849 units and Rs 1.64 L of shortage, alongside two other closed counters. One documented failure is worth more than a new site survey, and Baru Sahib is the flagship with a co-located university, so its economics should not be assumed to travel.",
+      "priority": "P2",
+      "monthlyImpactInr": 1260000,
+      "effort": "months",
+      "blocker": "The Talwandi Sabo post-mortem does not exist — nobody has written down why it closed."
+    }
+  ],
+  "openQuestions": [
+    "What is the true resident population of Baru Sahib? Externally corroborated figures sum to 4,433 (Eternal University 2,500 students + 170 faculty + 25 admin; Akal Academy 1,538 on rolls; women's spiritual academy 200) BEFORE Akal Academy's own teachers, the 280-bed hospital's staff, Trust admin, kitchen, maintenance and security workers, and the married staff families the brief calls out. So ~5,000 is probably a floor and 5,300-5,900 is more likely. Every per-resident figure here moves inversely with it. Who can answer: Kalgidhar Trust HR and the Akal Academy admin office.",
+    "Who supplies the Akal Academy and Eternal University messes today, and at what annual value? ARY's own cereal tonnage says its one institutional account feeds only ~370-685 people against ~3,900 boarders, so roughly Rs 4.2 Cr/year of staples is flowing to an outside supplier from a Trust-owned campus. This single number decides whether the P0 recommendation is worth Rs 4.2 Cr or Rs 1 Cr. Who can answer: Trust central purchase.",
+    "Why was Talwandi Sabo closed, and why are Apple A Day and Girls Canteen Ts inactive? Talwandi Sabo carries a negative book stock of -127,849 units and Rs 1.64 L of shortage at closure, which suggests the shutdown was not clean. Until this is answered, network replication is a guess. Who can answer: ARY management and the counter's last in-charge.",
+    "What is the actual pocket-money or parental-remittance ceiling for Akal Academy boarders, and how does it differ for the 350 students on free education? For the two student cohorts — 3,900 of 5,000 residents and 62% of the modelled wallet — the binding constraint is money in the child's hand, not the notional HCES per-capita share. My Rs 1,050 and Rs 2,050 figures are the softest numbers in this analysis. Who can answer: Akal Academy hostel wardens and the Eternal University dean of students.",
+    "What do residents actually pay with? The payment-mix table is corrupt — Cash tenders report Rs 8,942 Cr against Rs 7.7 Cr of real sales. Paytm shows more tenders (212,417) than cash (155,174), which hints UPI is already dominant, but the amounts cannot be trusted, so the size of any staff credit book cannot be designed. Who can answer: the FusionERP8 vendor.",
+    "What are Himachal Pradesh's own category shares, as opposed to the all-India rural shares I applied? HP rural MPCE (Rs 5,825) sits near the all-India rural 80-90% fractile (Rs 5,763), so by Engel's law HP's true food share is probably 42-44% rather than 47.04%, which would shift a few tens of lakhs between food and non-food in the category-gap table. This exists in the HCES 2022-23 unit-level data released June 2024, but I could not find a working URL for the detailed report — every candidate path on mospi.gov.in returned 404, the site renders as a JS shell to a fetcher, and the session's web-search budget was exhausted. Who can answer: MoSPI, or anyone with the HCES 2022-23 unit-level dataset.",
+    "Does the 280-bed charitable hospital's non-resident flow — outpatients and attendants from surrounding villages — shop at ARY? This population is entirely outside the ~5,000 resident wallet modelled here and would be pure upside, particularly for the OTC and ready-food categories. Who can answer: the hospital administrator and ARY counter staff."
+  ]
+}

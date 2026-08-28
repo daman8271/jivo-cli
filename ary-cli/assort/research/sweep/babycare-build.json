@@ -1,0 +1,1420 @@
+{
+  "lane": "babycare-build",
+  "headline": "The brief's premise is wrong: ARY already lists 228 baby SKUs and 169 of them are dead — every Huggies code and every Pampers monthly-pack code has NEVER been purchased even once, so this is a procurement failure, not a market gap; fixing reorder discipline and adding a 5-size monthly-pack ladder is worth ~Rs 15,200/month net gross profit against Rs 21,000 one-off and Rs 55,000 of stock, break-even at 4 babies against an estimated 35 — but the whole prize is 0.32% of ARY's gross profit, so run it as a two-week service fix, not a growth project.",
+  "confidence": "medium",
+  "confidenceGap": "The baby headcount is ESTIMATED, never counted. Every revenue figure scales linearly off \"~18 births/year among resident staff families / ~36 children aged 0-2\". I could not get resident-staff household numbers (Kalgidhar Trust HR) or annual deliveries at the 280-bed Akal Charitable Hospital, and ARY's own data cannot help because 97% of bills are the anonymous \"Cash\" customer 00001. Two phone calls would replace the estimate with a fact and could move the revenue model +/- 40%.",
+  "findings": [
+    {
+      "claim": "The brief is wrong that ARY has no baby range. ARY lists 228 active baby SKUs across 13 subgroups inside 'Personal Care', 'Food Supplement' and 'House Hold' — including 73 diaper SKUs, 35 Cerelac SKUs, 17 baby soaps, 18 milk feeders. The 'three Baby Accessories SKUs' is just one mis-named subgroup (1031), not the range.",
+      "status": "VERIFIED",
+      "evidence": "ary masters groups -n 400; then: SELECT g.ProductGroupName, s.SubGroupName, COUNT(p.ProductID) FROM ProductGroupMaster g JOIN SubGroupMaster s ... WHERE g.ProductGroupID=141 GROUP BY ... HAVING COUNT(p.ProductID)>0",
+      "number": "228 active baby SKUs (73 diaper, 35 Cerelac, 23 wipes, 18 feeder, 17 soap, 15 cream, 15 oil, 11 lotion, 7 shampoo, 7 Lactogen, 3 powder, 3 accessories, 1 typo)",
+      "soWhat": "Do not build a new category. Fix an existing broken one. The whole plan changes from 'launch' (slow, needs approvals, needs codes, needs suppliers) to 'reorder what is already coded from suppliers already on the ledger' — which is a two-week job, not a quarter."
+    },
+    {
+      "claim": "Every single Huggies SKU (11 listed) and every single Pampers monthly/jumbo-pack SKU (76s, 64s, 50s, 42s, 40s, 38s) has NEVER been purchased in ARY's lifetime — zero purchase rows since books opened 2023-04-01. The codes exist, prices and costs are set up in ProductChildMaster, and stock was never ordered.",
+      "status": "VERIFIED",
+      "evidence": "SELECT p.ProductName, SUM(pd.Quantity) FROM ProductMaster p LEFT JOIN PurchaseDetail pd ON pd.ProductID=p.ProductID LEFT JOIN PurchaseHeader ph ... WHERE p.SubGroupID=260 AND (ProductName LIKE '%Huggies%' OR LIKE '%onthly%' ...) — 22 of 27 rows returned NULL qty_purch. Cross-check: Huggies Active Baby 19 Pads Small has PurchaseCost 42.70 / SellingPrice 55.00 set in ProductChildMaster, so pricing was done.",
+      "number": "0 units purchased, 0 units sold, lifetime, across 11 Huggies + 8 large-pack Pampers SKUs",
+      "soWhat": "This is the whole answer. Nobody has to be persuaded that residents want monthly packs — nobody has ever been given the chance to buy one. The one time a large pack WAS stocked (Pampers M 56N, 4 units bought 2024-05-24 at Rs 647 cost) all 4 sold at Rs 850 and were never reordered."
+    },
+    {
+      "claim": "Baby-category sales track PURCHASE events, not demand. Rs 28,918 of stock bought in Feb-2026 produced the Mar-Jun sales peak (Rs 16,952 / 18,024 / 15,659 / 12,059); Rs 1,397 bought in Jan-2026 produced the Jan trough (Rs 3,891). Sales decay with a 1-2 month lag as stock runs out.",
+      "status": "VERIFIED",
+      "evidence": "Side-by-side CTE: monthly SUM(pd.Quantity*pd.PurchaseCost) from PurchaseDetail/Header vs monthly SUM(d.Quantity*d.SaleRate) from SaleDetail/Header, subgroups 260,257,258,259,262,263,1030,349,550,593, Aug-2025 onward",
+      "number": "13 months; purchases Rs 1,397 (Jan) to Rs 28,918 (Feb); sales Rs 3,891 (Jan) to Rs 18,024 (Apr)",
+      "soWhat": "The category is 100% supply-constrained. Any demand estimate built off ARY's current sales is measuring the purchase clerk, not the residents. It also means the fix costs nothing but attention: no new SKUs, no new supplier, just a reorder point."
+    },
+    {
+      "claim": "Diapers are bought roughly once every six weeks and the range goes out of stock for months. In the last 12 months there were only 8 diaper purchase bills; Baby Oil and Baby Shampoo were last purchased 2026-03-07 (nearly 6 months ago) and Cerelac 2025-12-24 (8 months ago).",
+      "status": "VERIFIED",
+      "evidence": "SELECT s.SubGroupName, SUM(pd.Quantity), SUM(pd.Quantity*pd.PurchaseCost), COUNT(DISTINCT ph.SerialNumber), MAX(ph.VoucherDate) FROM PurchaseDetail pd JOIN PurchaseHeader ph ... WHERE p.SubGroupID IN (baby set) AND ph.VoucherDate>='2025-08-01' GROUP BY s.SubGroupName",
+      "number": "Baby Diaper: Rs 31,243 cost / 8 bills / 12 months. Cerelac: 2 bills, last 2025-12-24. Baby Shampoo: 5 bills, last 2026-03-07.",
+      "soWhat": "A parent who finds the shelf empty twice stops checking. This is why the store gets top-up sachet purchases only — residents have learned ARY is not reliable for baby goods, so they buy the month's supply on their trip out and use ARY for emergencies."
+    },
+    {
+      "claim": "84% of diaper purchases at ARY are a single small sachet — the signature of emergency top-up buying, not household replenishment. 274 of 327 diaper bills in 12 months carried exactly one pack.",
+      "status": "VERIFIED",
+      "evidence": "SELECT packs_on_bill, COUNT(*) FROM (SELECT h.SerialNumber, SUM(d.Quantity) packs_on_bill FROM SaleDetail d JOIN SaleHeader h ... WHERE p.SubGroupID=260 AND VoucherDate 2025-08-01..2026-08-01 GROUP BY h.SerialNumber) GROUP BY packs_on_bill",
+      "number": "1 pack: 274 bills; 2 packs: 38; 3: 9; 4: 4; 5: 1; 6: 1. Total 327 bills, 404 packs, Rs 32,043.",
+      "soWhat": "Confirms the leakage is real and locates it precisely: the monthly buy happens somewhere else. ARY is capturing the Rs 100 emergency, not the Rs 1,400 monthly decision."
+    },
+    {
+      "claim": "Total diaper throughput is ~200 diapers a month for the entire 5,000-person township — roughly ONE baby's full consumption. 404 packs of ~6 pants each over 12 months.",
+      "status": "VERIFIED",
+      "evidence": "SELECT p.ProductName, SUM(d.Quantity), SUM(d.Quantity*d.SaleRate), AVG(d.SaleRate), MAX(d.MRP) FROM ProductMaster p JOIN SaleDetail d JOIN SaleHeader h WHERE p.SubGroupID=260 AND VoucherDate 2025-08..2026-08 GROUP BY p.ProductName — 11 rows, all Pampers, pack counts 2 to 8",
+      "number": "404 packs / ~2,400 pants / 12 months = ~200 pants/month across ~5,000 residents",
+      "soWhat": "Against an estimated 36 children aged 0-2 needing 30-70 diapers each per month (1,080-2,520/month), ARY captures roughly 8-18% of the diaper volume its own resident base consumes."
+    },
+    {
+      "claim": "Only Pampers has ever sold. MamyPoko sold Rs 6,664 + Rs 4,876 in 2023-24 then was abandoned (last sale 2024-07-25, last purchase 2023-12-21). Huggies, Babyhug and P&G codes: lifetime zero.",
+      "status": "VERIFIED",
+      "evidence": "Brand join: SELECT b.BrandName, COUNT(DISTINCT p.ProductID) listed, COUNT(DISTINCT sold.ProductID) sold_12m FROM ProductMaster p LEFT JOIN BrandMaster b ... WHERE p.SubGroupID=260 AND IsActive=1 GROUP BY b.BrandName",
+      "number": "Pampers 50 listed / 11 sold; Huggies 11 listed / 0 sold; MamyPoko 8 / 0; Babyhug 3 / 0; P&G 1 / 0",
+      "soWhat": "A single-brand, single-format diaper shelf cannot serve 4 weight bands. There is no XL or XXL in stock at all, so a 2-year-old at Baru Sahib has nothing to buy — which is exactly the age band that stays in nappies longest."
+    },
+    {
+      "claim": "The entire current baby shelf is 163 diapers (6 Pampers sachet SKUs), 1 baby lotion unit, 5 talc, 12 soap, 13 shampoo, 40 oil, 4 Cerelac boxes, 7 feeder items and 93 Tulips wipes. Zero infant formula. Zero rash cream. Zero XL/XXL diapers. Zero monthly packs.",
+      "status": "VERIFIED",
+      "evidence": "SELECT p.ProductName, s.SubGroupName, SUM(st.Quantity) FROM Stock st JOIN ProductMaster p JOIN SubGroupMaster s WHERE p.SubGroupID IN (baby set) AND st.Quantity<>0 GROUP BY ... (20 rows). Stock.Quantity used per schema-notes.md — QuantityOnHand is dead.",
+      "number": "163 diapers total on hand = 1.09 months of current sell-through, and under one month for a single full-time-diapered baby",
+      "soWhat": "163 diapers is not a category, it is a courtesy. Whatever the demand is, the shelf physically cannot serve more than one or two babies at a time."
+    },
+    {
+      "claim": "ARY has ZERO diaper rash cream in its entire 21,466-SKU catalogue — not out of stock, not listed, no subgroup. Every 'RASH' hit is Dr. Rashel face masks or 'Crash Masala Candy'. Also absent entirely: gripe water/colic drops, pacifiers, bibs, cloth diapers/langot/nappy pads, maternity or nursing breast pads, nipple cream, stretch-mark cream, breast pumps, and branded feeding bottles (every 'Pigeon' hit is Pigeon kitchen appliances; every 'Nursing' hit is a B.Sc Nursing student uniform).",
+      "status": "VERIFIED",
+      "evidence": "36 LIKE probes over ProductMaster.ProductName, then SELECT ProductName, SubGroupID, IsActive FROM ProductMaster WHERE ProductName LIKE '%RASH%' OR '%PIGEON%' OR '%NURSING%' OR '%CETAPHIL%' OR '%COLIC%' to inspect every hit",
+      "number": "RASH 27 hits, all false positives. NAPPY 0, GRIPE 0, PACIFIER 0, BIB 0, MATERNITY 0, BREAST PAD 0, STRETCH MARK 0, MUSTELA 0, AVENT 0, CHICCO 0, MEE MEE 0, MOTHER SPARSH 0, SEBAMED 0, APTAMIL 0, NESTOGEN 0, SIMILAC 0, ENFAMIL 0, DEXOLAC 0, NAN PRO 0",
+      "soWhat": "Diaper rash is the single most certain purchase a nappy parent makes, it is unregulated, it carries ~30% margin and it costs Rs 2,300 to stock. It is the cheapest genuine win on this list and nobody has to be convinced of the demand."
+    },
+    {
+      "claim": "78% of ARY's baby catalogue is dead: 169 of 228 active baby SKUs sold nothing in 12 months.",
+      "status": "VERIFIED",
+      "evidence": "SELECT COUNT(*) FROM ProductMaster p WHERE p.IsActive=1 AND p.SubGroupID IN (13 baby subgroups) AND NOT EXISTS (SELECT 1 FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber WHERE d.ProductID=p.ProductID AND h.VoucherDate>='2025-08-01')",
+      "number": "169 dead / 228 active = 78%; 48 baby SKUs + 10 wipe SKUs actually sold",
+      "soWhat": "Matches the store-wide pattern (13,284 of 19,481 never sold) and confirms it is catalogue hygiene, not trapped capital — the dead baby SKUs carry no stock. But a 73-line diaper screen with 6 real options is why the counter clerk cannot reorder correctly."
+    },
+    {
+      "claim": "The whole baby range earns ARY Rs 141,720 a year — Rs 11,810 a month, 0.19% of turnover, on 793 bills out of 365,087.",
+      "status": "VERIFIED",
+      "evidence": "SELECT COUNT(DISTINCT p.ProductID), SUM(d.Quantity), SUM(d.Quantity*d.SaleRate), COUNT(DISTINCT h.SerialNumber) FROM SaleDetail d JOIN SaleHeader h JOIN ProductMaster p WHERE p.SubGroupID IN (baby set) AND VoucherDate 2025-08-01..2026-08-01 → Rs 116,337 baby-specific; wipes subgroup 846 separately Rs 25,383",
+      "number": "Rs 1.42 lakh/yr total; 1,032 units + 293 wipe packs; 793 bills = 0.22% of all bills",
+      "soWhat": "The baseline is so low that even a modest fix is a large multiple. But it also caps the ambition honestly — see the break-even finding."
+    },
+    {
+      "claim": "ARY's real gross margins on baby lines, pulled per-location from ProductChildMaster (Margin is on selling price — verified: cost 42.70 / SP 55.00 gives Margin 22.36% and MarkUp 28.81%), beat the store average of 27.2%. The IMS-Act-restricted lines are the WORST margin in the range.",
+      "status": "VERIFIED",
+      "evidence": "SELECT s.SubGroupName, AVG(c.Margin), AVG(c.MarkUp), AVG(c.PurchaseCost), AVG(c.SellingPrice) FROM ProductChildMaster c JOIN ProductMaster p JOIN SubGroupMaster s WHERE p.SubGroupID IN (baby set) AND c.SellingPrice>0 GROUP BY s.SubGroupName; benchmark: AVG(Margin) WHERE Margin BETWEEN 0 AND 90 = 27.23% over 109,917 rows",
+      "number": "Milk Feeder 37.91% | Wipes 37.69% | Baby Soap 34.75% | Baby Shampoo 32.42% | Baby Cream 29.83% | Baby Powder 29.78% | Baby Lotion 29.76% | Baby Diaper 28.26% | Baby Oil 27.56% | Cerelac 23.99% | Lactogen 23.73% | store avg 27.23%",
+      "soWhat": "Load the unregulated, long-shelf-life, high-margin half (wipes, soap, shampoo, cream, powder, rash cream) and keep formula/Cerelac deliberately shallow: they are the lowest margin, the highest unit cost, the shortest shelf life AND the only lines you are legally barred from discounting to clear."
+    },
+    {
+      "claim": "The IMS Act 1992 binds 'no person' — retailers included — and its prohibitions are criminal. Section 3: no person shall 'advertise, or take part in the publication of any advertisement, for the distribution, sale or supply of infant milk substitutes, feeding bottles or infant foods', create an impression they are 'equivalent to, or better than, mother's milk', or 'take part in the promotion' of them. Section 4 verbatim: 'No person shall- (a) supply or distribute samples of infant milk substitutes or feeding bottles or infant foods or gifts of utensils or other articles; or (b) contact any pregnant woman or the mother of an infant; or (c) offer inducement of any other kind, for the purpose of promoting the use or sale...'",
+      "status": "VERIFIED",
+      "evidence": "https://indiankanoon.org/doc/396445/ (entire Act) and https://indiankanoon.org/doc/510948/ (Section 4, quoted verbatim)",
+      "number": "Section 20 penalties: general breach up to 3 years imprisonment or fine up to Rs 5,000 or both; label/standards breach minimum 6 months to 3 years PLUS minimum Rs 2,000 fine",
+      "soWhat": "Two operating rules fall straight out. (1) The obvious plan step — 'get the list of new mothers from Akal Charitable Hospital and offer them a baby bundle' — is a Section 4(b) offence the moment that bundle contains formula, Cerelac-type cereal or a bottle. Diapers and toiletries are not covered, so the safe rule is never mix the two in one message. (2) No 'Baby Week' offer, no combo, no sample, no free bottle with formula, ever."
+    },
+    {
+      "claim": "The Act's scope is narrower than instinct suggests, and the exclusions are where the money is. 'Infant milk substitute' = any food marketed as a partial or total replacement for mother's milk up to age two. 'Infant food' = any food marketed as a complement to mother's milk from six months to two years (this catches Cerelac). 'Feeding bottle' = any bottle or receptacle for feeding IMS, 'and includes a teat and a valve'. Diapers, wipes, baby soap, oil, lotion, powder, shampoo and rash cream are NOT covered at all.",
+      "status": "VERIFIED",
+      "evidence": "Definitions quoted from https://indiankanoon.org/doc/396445/",
+      "number": "Restricted: ~8 of the 37 recommended SKUs (6 nutrition + 2 bottles). Unrestricted: ~29 of 37, and they carry 28-38% margin vs 24% on the restricted ones.",
+      "soWhat": "78% of the recommended range can be promoted, discounted, bundled and displayed however ARY likes. The compliance burden applies to a small, deliberately shallow corner. This kills the fear that 'baby care is legally risky' — it is not, except in one clearly fenced aisle."
+    },
+    {
+      "claim": "Section 6 labelling: containers must carry 'IMPORTANT NOTICE' in capitals plus 'MOTHER'S MILK IS BEST FOR YOUR BABY', a statement to use only on a health worker's advice, a warning it is not the sole source of nourishment, preparation instructions and improper-preparation hazards, ingredients, composition, storage, batch number, manufacture date and use-by date — and must NOT carry pictures of an infant or woman, graphics designed to increase saleability, or the words 'humanised' or 'maternalised'.",
+      "status": "VERIFIED",
+      "evidence": "https://indiankanoon.org/doc/1687463/ (Section 6, Information on containers and labels)",
+      "number": "9 mandatory elements, 3 prohibited element classes; Section 20 makes a label breach the harsher offence (minimum 6 months imprisonment)",
+      "soWhat": "This is a goods-inwards check, not a shelf rule: refuse any formula or infant cereal carton whose label lacks the notice or shows a baby's picture. It also rules out ARY printing its own shelf-talker with a baby photo above the formula bay — that is promotion plus a prohibited image."
+    },
+    {
+      "claim": "The market prices the IMS Act visibly. On PharmEasy today, every major-brand infant formula and every Nestle/Avent/Pigeon line sits at exactly 0% discount while directly comparable non-IMS baby lines are cut 15-37%.",
+      "status": "VERIFIED",
+      "evidence": "Extracted the embedded product JSON (mrpDecimal / salePriceDecimal / discountPercent / pricePerUnitNew) from pharmeasy.in/search/all?name=... across 9 queries, 2026-08-28. 0%: NAN Pro 1/2/3, NAN Excella 2/3, Lactogen Pro 2, Nestogen 1/2, Aptamil Gold 1/2/3 + 1.2kg + C Proteq, Similac Plus 2, Dexolac 1/3/4, Lactodex 1, Cerelac Multigrain/5-Grains/Wheat-Apple-Cherry, Avent bottles + nipples + breast pads, Pigeon bottles. Discounted: Himalaya baby -22%, Johnson's -15%, Sebamed -16%, Mother Sparsh -30%, diapers -15% to -37%.",
+      "number": "~25 IMS-covered observations at exactly 0.00% off; non-IMS baby items 15-37% off",
+      "soWhat": "The Act's text never says 'discount' — the industry reads Section 3(c) 'promotion' plus Section 4(c) 'inducement of any other kind' as covering price reductions, and holds formula at MRP. ARY should follow that conservative reading, which has a hard operational consequence: a slow-moving Rs 775 tin of NAN Pro cannot be marked down to clear. That is the single strongest argument for keeping nutrition indent-only rather than shelf-stocked."
+    },
+    {
+      "claim": "Live 2026 India prices for the diaper ladder, with per-diaper economics: Pampers Premium Care New Baby 70 MRP Rs 1,299 (Rs 18.56/diaper at MRP, Rs 15.59 online); Pampers All Round Protection L-64 MRP Rs 1,399 (Rs 21.86 / Rs 18.58); Pampers Complete Skin Comfort L-64 MRP Rs 1,499 (Rs 23.42 / Rs 19.67); Pampers New Baby Taped 72 MRP Rs 1,199 (Rs 16.65 / Rs 13.99); MamyPoko Extra Absorb M-76 MRP Rs 1,399 (Rs 18.41 / Rs 14.17); MamyPoko L-64 Rs 1,399 (Rs 16.83 online); MamyPoko XL-52 Rs 1,399 (Rs 20.72); MamyPoko XXL-44 Rs 1,399 (Rs 25.12).",
+      "status": "VERIFIED",
+      "evidence": "pharmeasy.in embedded JSON, 2026-08-28, fields mrpDecimal / salePriceDecimal / measurementUnit / pricePerUnitNew",
+      "number": "Monthly packs: MRP Rs 1,199-1,499 for 44-76 diapers; online net Rs 14-21/diaper",
+      "soWhat": "MamyPoko runs one MRP (Rs 1,399) across M/L/XL/XXL, which makes a four-size ladder trivial to price and shelf-talk. It is also the only brand offering XXL — the size ARY has literally never stocked."
+    },
+    {
+      "claim": "ARY's small packs are NOT overpriced — they are cheaper per diaper than a premium monthly pack at MRP. ARY sells Pampers M-8 at Rs 99.32 avg (Rs 12.42/pant) and L-7 at Rs 99.80 (Rs 14.26/pant) against Rs 18.58-21.86/diaper for a 64-pack.",
+      "status": "VERIFIED",
+      "evidence": "ARY: SELECT ProductName, AVG(d.SaleRate), MAX(d.MRP), SUM(d.Quantity) ... WHERE SubGroupID=260, 12m. Market: PharmEasy pricePerUnitNew field, same date.",
+      "number": "ARY sachets Rs 12.42-15.00/pant vs monthly packs Rs 18.58/diaper online, Rs 21.86 at MRP",
+      "soWhat": "Kills the 'residents are being gouged' story before anyone tells it, and it is a real objection to the plan: a resident switching from ARY sachets to a monthly pack pays MORE per diaper. The monthly pack's true competitor is not ARY's sachet, it is the resident's trip to Solan/Nahan or an online order — so ARY must sell it at Rs 1,250-1,299 (not Rs 1,399) to beat the online net, which is legal because diapers are outside the IMS Act."
+    },
+    {
+      "claim": "Live 2026 prices for the unregulated toiletries core, all discountable: Himalaya Gentle Baby Soap 75g 3+1 MRP Rs 195; Johnson's Baby Soap 100g Rs 81; Himalaya Baby Shampoo 100ml Rs 115 / 200ml Rs 225; Himalaya Baby Massage Oil 100ml Rs 150; Himalaya Baby Hair Oil 200ml Rs 280; Johnson's Baby Oil 100ml Rs 150 / 500ml Rs 550; Himalaya Gentle Baby Cream 50ml Rs 105 / 100ml Rs 200; Himalaya Baby Powder 400g Rs 350; Johnson's Baby Powder 100g Rs 135; Himalaya Baby Wash 400ml Rs 380; Cetaphil Baby Daily Lotion 50ml Rs 275; Sebamed Baby Cleansing Bar 100g Rs 350.",
+      "status": "VERIFIED",
+      "evidence": "pharmeasy.in embedded JSON, queries 'himalaya baby', 'johnsons baby', 'sebamed baby', 2026-08-28",
+      "number": "Core toiletries Rs 81-380 MRP; premium tier (Sebamed, Cetaphil) Rs 275-1,699",
+      "soWhat": "ARY already stocks most of the Himalaya and Johnson's codes, so this is a reorder list, not a listing exercise. Skip Sebamed and most of Cetaphil Baby: a Rs 1,620 lotion in a township where the average bill is Rs 207 is dead stock. One Cetaphil facing at Rs 275 is enough to cover the paediatrician-referral case."
+    },
+    {
+      "claim": "Live 2026 wipe and rash-cream prices: Himalaya Gentle Baby Wipes 72 MRP Rs 200; Johnson's Baby Skincare Wipes 72 Rs 280; Mother Sparsh 99% Pure Water Wipes 72 Rs 299; Johnson's Wipes 20 Rs 85; Liveasy 72 Rs 199. Rash cream: Dermadew Diaper Cream 50g Rs 175; Tedibar B4 Nappi 75g Rs 328.60; Sebamed Rash Cream 100ml Rs 630; Desitin 113g Rs 1,999.",
+      "status": "VERIFIED",
+      "evidence": "pharmeasy.in embedded JSON, queries 'baby wipes', 'mother sparsh water wipes', 'diaper rash cream', 2026-08-28",
+      "number": "Wipes Rs 1.93-3.61 per wipe; rash cream Rs 175-1,999",
+      "soWhat": "ARY's entire wipe shelf right now is Tulips 25s and 20s (93 units) — a regional brand in the smallest format. Adding Himalaya 72 and Johnson's 72 at 37.7% margin is the second-cheapest win after rash cream. Skip Desitin at Rs 1,999."
+    },
+    {
+      "claim": "Live 2026 infant nutrition prices, all at 0% discount: Nestogen 1 and 2, 400g Rs 285; Lactogen Pro 2 400g Rs 460; NAN Pro 1/2/3 400g Rs 775 (tin Rs 790); NAN Excella Pro 2/3 Rs 915; Dexolac 1 400g tin Rs 495, Dexolac 3/4 Rs 490; Lactodex 1 450g Rs 550, 1kg Rs 995; Similac Plus 2 400g Rs 900; Aptamil Gold 1/2/3 400g Rs 1,010, 1.2kg Rs 2,870; Aptamil C Proteq 1 Rs 1,150. Cerelac 300g Rs 295-299, Wheat Apple Cherry 350g Rs 290. No Enfamil or Enfagrow found on the Indian channel.",
+      "status": "VERIFIED",
+      "evidence": "pharmeasy.in embedded JSON, queries 'nestle cerelac', 'nestle lactogen', 'nan pro infant formula', 2026-08-28",
+      "number": "Formula Rs 285-2,870 per pack; a formula-fed infant needs 4-6 x 400g/month = Rs 1,140-6,060/month",
+      "soWhat": "Formula is the highest-value and highest-risk line in the range: Rs 285-1,010 per unit, 18-24 month shelf life, 23.7% margin, and legally un-markdownable. Stock Nestogen (Rs 285) and Lactogen Pro 2 (Rs 460) shallow, and make NAN Pro / Similac / Aptamil order-to-demand only. ARY currently has 7 Lactogen codes, zero purchases in 12 months and zero stock — so it is already effectively doing the safe thing by accident."
+    },
+    {
+      "claim": "Live 2026 feeding-bottle and mother-care prices: Philips Avent Anti-Colic 125ml Rs 319 (0% off), Avent Natural 125ml Rs 495, Avent Natural Rs 585-630, Avent Natural 2.0 twin Rs 865, Avent Natural teats 4-pack Rs 850; Pigeon Peristaltic twin packs Rs 395-440 (all 0% off); Little's Classic Mini 120ml Rs 182; Little's Poly Mini 3-in-1 BPA-free 120ml Rs 99. Mother care: Sirona nursing/maternity breast pads 12 Rs 199, 30+6 Rs 449; Avent day breast pads 60 Rs 885; Nipcare nipple cream 20g Rs 211; Momcozy breast pumps Rs 7,599-22,699.",
+      "status": "VERIFIED",
+      "evidence": "pharmeasy.in embedded JSON, queries 'baby feeding bottle', 'maternity pads nursing', 'nipple cream breastfeeding', 2026-08-28",
+      "number": "Bottles Rs 99-865; breast pads Rs 199-885; nipple cream Rs 211; pumps Rs 7,599+",
+      "soWhat": "Bottles and teats are IMS-restricted; breast pads, nipple cream and pumps are NOT — they are lactation-support, the opposite of a milk substitute. So the mother-care shelf is fully promotable and belongs beside the sanitary-pad bay, not beside the formula."
+    },
+    {
+      "claim": "Baru Sahib's ~5,000 residents are overwhelmingly boarding students and institutional residents, not families. Akal Academy Baru Sahib has 1,538 students in an 11-storey building; Eternal University has 2,500 students, 170 faculty and 25 administrative staff and is an ALL-WOMEN institution; a spiritual academy trains 200 girls free; there is also an orphanage, an old-age home and a home for widows and destitute women, plus a 280-bed multi-specialty charitable hospital, on a 450-acre campus with its own post office, bank and fuel station.",
+      "status": "VERIFIED",
+      "evidence": "https://en.wikipedia.org/wiki/Baru_Sahib and https://en.wikipedia.org/wiki/Eternal_University",
+      "number": "1,538 + 2,500 + 200 = 4,238 students/trainees of a ~5,000 population; 195 named EU staff; 280 hospital beds",
+      "soWhat": "This is the number that sizes the whole opportunity and it is the one the brief glossed over. Babies can only come from the resident STAFF cohort, which is a minority of the 5,000 — so no per-capita or per-resident benchmark applies to baby care. It also explains the store's shape: Girls Dress sells Rs 31,438 a year while Boys Dress, Nicker Suits and Frock sell exactly zero."
+    },
+    {
+      "claim": "The resident baby population is approximately 36 children aged 0-2 and ~108 aged 0-6, from ~18 births a year among resident staff families. Two independent methods converge.",
+      "status": "ESTIMATED",
+      "evidence": "Method A (ARY's own footprint, VERIFIED inputs): 27 diaper bills/month, 84% single-sachet, implying 20-27 families buying any diaper in a month; grossing up for families that never buy at ARY gives 25-45 nappy babies. Method B (fertility, ESTIMATED inputs): 250-400 resident staff households x HP TFR ~1.7 spread over ~25 reproductive years = 17-27 births/year, giving a 0-2 cohort of 34-54. I could NOT verify HP TFR this session — rchiips.org/nfhs NFHS-5 HP factsheet failed on a TLS certificate error, and census2011.co.in served the wrong district on three attempts.",
+      "number": "Central: 36 aged 0-2, 108 aged 0-6, 18 births/year. Honest range: 25-55 aged 0-2.",
+      "soWhat": "This is the load-bearing estimate and the one thing worth an hour of somebody's time to replace with a count. Everything downstream scales linearly off it."
+    },
+    {
+      "claim": "A baby at Baru Sahib is worth roughly Rs 1,300-2,500 a month of baby-care wallet excluding formula, and Rs 3,000-6,000 if formula-fed. ARY's spend per resident per month is Rs 1,259 — so one baby is worth one to two residents of turnover.",
+      "status": "ESTIMATED",
+      "evidence": "Built bottom-up from VERIFIED PharmEasy MRPs: soap Rs 60 + oil Rs 100 + lotion Rs 100 + powder Rs 115 + shampoo Rs 112 + rash cream Rs 87 = Rs 574 toiletries; wipes 1-2 x 72-pack = Rs 250; diapers at night-only ~30/month = Rs 500 or full-time ~68/month = Rs 1,100; Cerelac 2-3 x 300g = Rs 600 for the 6-24m band; formula 4-6 x 400g = Rs 1,140-6,060. Usage rates are ESTIMATED — I could not verify a diapers-per-day source (pampers.in, whattoexpect, thebump, firstcry all 403/404) and fell back on the industry's own framing that a 64-76 count pack is a month's supply, i.e. ~2.2 diapers/day, which is the Indian part-cloth reality rather than the Western 6-8/day.",
+      "number": "Rs 1,320/month (night-only diapers) to Rs 2,524/month (full-time + Cerelac); formula-fed Rs 3,000-6,000",
+      "soWhat": "Frames the prize per child and shows why toiletries, not diapers, are the reliable base: Rs 574/month of soap-oil-lotion-powder-shampoo-rash-cream is unregulated, long shelf life, 30-35% margin, and nobody drives 30 km for it."
+    },
+    {
+      "claim": "A properly stocked range should capture ~Rs 68,000/month (Rs 8.13 lakh/year), against Rs 11,810/month today — incremental Rs 56,000/month of revenue and ~Rs 15,200/month of net gross profit after ARY's own 4.1% shrink.",
+      "status": "ESTIMATED",
+      "evidence": "Segment model: 9 babies 0-6m x Rs 1,008 captured + 27 babies 6-24m x Rs 1,387 + 72 children 2-6y x Rs 295. Capture rates ESTIMATED at toiletries 70%, diapers 45%, wipes 70%, nutrition 55%. Margin 30% blended from the VERIFIED ProductChildMaster figures. Shrink 4.1% is ARY's own VERIFIED lifetime physical-count net variance (-Rs 91.5 lakh on lifetime net sales).",
+      "number": "Rs 67,756/month revenue; incremental Rs 55,946/month; GP Rs 16,784 less shrink Rs 1,606 = Rs 15,178/month = Rs 1.82 lakh/year",
+      "soWhat": "Sanity check passes: Rs 8.13 lakh/year is 1.08% of ARY's Rs 7.55 Cr turnover for a category serving ~108 of 5,000 residents (2.2%). Under-indexing slightly against population share is the right shape for a category most of whose spend is optional."
+    },
+    {
+      "claim": "The category breaks even at FOUR babies. ARY already has 20-27 diaper-buying households a month, so the base clears break-even about nine times over. The base is NOT too small.",
+      "status": "ESTIMATED",
+      "evidence": "Fixed monthly burden = carrying cost on Rs 55,000 of stock at 12%/yr (Rs 550) + Rs 21,000 one-off amortised over 24 months (Rs 875) = Rs 1,425. Net GP per 0-2 baby = Rs 1,387 captured x 30% margin, less 4.1% shrink at cost = Rs 376/month. 1,425 / 376 = 3.8 babies.",
+      "number": "Break-even 3.8 babies vs an estimated 36 aged 0-2",
+      "soWhat": "The break-even is this low precisely BECAUSE there is no new overhead — ARY already owns the store, the counter, the staff and the supplier accounts. So the honest framing is not 'is the base big enough' (it is) but 'is the prize big enough to deserve management attention' — and the answer to that is no: Rs 1.82 lakh/year of net gross profit is 0.32% of ARY's gross profit. Do it as a two-week service fix for staff families, not as a growth initiative."
+    },
+    {
+      "claim": "The 'is the base too small' worry is answered directly by ARY's own sanitary-pad shelf, which sells Rs 4.47 lakh a year across 4,696 bills to this same population.",
+      "status": "VERIFIED",
+      "evidence": "SELECT s.SubGroupName, COUNT(DISTINCT p.ProductID) listed, COUNT(DISTINCT d.ProductID) sold, SUM(d.Quantity), SUM(d.Quantity*d.SaleRate), COUNT(DISTINCT h.SerialNumber) FROM ProductMaster p JOIN SubGroupMaster s ... WHERE p.SubGroupID IN (703,711), 12m window",
+      "number": "Sanitary Pad Rs 135,963 / 1,232 bills + Sanitary Pads Rs 310,836 / 3,464 bills = Rs 446,799 / 4,696 bills; 22 of 59 listed SKUs sold",
+      "soWhat": "The same store, the same counter and the same 5,000 people generate Rs 4.47 lakh of an intimate personal-care category when it is stocked, and Rs 32,043 of diapers when it is not. That is the internal proof that the constraint is stock depth, not demand — and it also tells you exactly where the mother-care SKUs belong."
+    },
+    {
+      "claim": "The suppliers are already on the ledger and named. Diapers come from Nirman Associates Pvt Ltd (Rs 47,739, 12 bills, last 2026-08-11). Toiletries come from Himachal Wholesale Syndicate (Rs 99,067, 23 bills, last 2026-06-27). Wipes come from Sita Ram Chaman Lal (Rs 13,020, last 2026-08-03), Himachal Wholesale Syndicate, Baghat Enterprises and R.K. Sales Corporation. Cerelac comes from Rachna Enterprises (Rs 9,394, last 2025-12-24) and Parhlad Chand Batra & Sons.",
+      "status": "VERIFIED",
+      "evidence": "SELECT a.AccountName, s.SubGroupName, SUM(pd.Quantity*pd.PurchaseCost), MAX(ph.VoucherDate) FROM PurchaseDetail pd JOIN PurchaseHeader ph JOIN ProductMaster p JOIN SubGroupMaster s LEFT JOIN AccountMaster a ON a.AccountID=ph.AccountID WHERE p.SubGroupID IN (260,349,550,846) AND ph.VoucherDate>='2024-08-01' GROUP BY a.AccountName, s.SubGroupName",
+      "number": "11 suppliers touched the baby range in 24 months; top 2 = Himachal Wholesale Syndicate Rs 99,067 and Nirman Associates Rs 47,739",
+      "soWhat": "No vendor onboarding, no new credit line, no GST registration work. The next diaper order can go to Nirman Associates on the existing account and the only open question is whether they carry MamyPoko or are Pampers-only."
+    }
+  ],
+  "tables": [
+    {
+      "title": "What ARY's baby range actually did — 12 months to Jul-2026 (all VERIFIED from FR8HODBNEW)",
+      "columns": [
+        "Subgroup",
+        "SKUs listed",
+        "SKUs sold",
+        "Units",
+        "Sales Rs",
+        "Bills",
+        "Margin %",
+        "Stock on hand now",
+        "Last purchased"
+      ],
+      "rows": [
+        [
+          "Baby Diaper (260)",
+          "73",
+          "11",
+          "404 packs",
+          "32,043",
+          "327",
+          "28.26",
+          "163 packs, 6 SKUs, all Pampers sachets",
+          "2026-08-11"
+        ],
+        [
+          "Wipes (846)",
+          "23",
+          "10",
+          "293",
+          "25,383",
+          "267",
+          "37.69",
+          "93 (Tulips only)",
+          "2026-08-03"
+        ],
+        [
+          "Baby Soap (263)",
+          "17",
+          "9",
+          "257",
+          "21,945",
+          "170",
+          "34.75",
+          "12 (Himalaya 4x75g)",
+          "2026-06-27"
+        ],
+        [
+          "Baby Shampoo (1030)",
+          "7",
+          "3",
+          "91",
+          "16,709",
+          "87",
+          "32.42",
+          "13 (2 SKUs)",
+          "2026-03-07"
+        ],
+        [
+          "Baby Powder (262)",
+          "3",
+          "2",
+          "70",
+          "11,936",
+          "67",
+          "29.78",
+          "5 (Himalaya talc 200g)",
+          "2026-05-13"
+        ],
+        [
+          "Baby Oil (259)",
+          "15",
+          "7",
+          "76",
+          "10,534",
+          "70",
+          "27.56",
+          "40 (Himalaya 100ml + Dabur Lal Tail)",
+          "2026-03-07"
+        ],
+        [
+          "Baby Cream (257)",
+          "15",
+          "2",
+          "47",
+          "9,510",
+          "45",
+          "29.83",
+          "0",
+          "2026-07-06"
+        ],
+        [
+          "Baby Lotion (258)",
+          "11",
+          "2",
+          "55",
+          "6,440",
+          "53",
+          "29.76",
+          "1 unit",
+          "2026-07-06"
+        ],
+        [
+          "Cerelac (349)",
+          "35",
+          "6",
+          "13 boxes",
+          "3,878",
+          "13",
+          "23.99",
+          "4 boxes",
+          "2025-12-24"
+        ],
+        [
+          "Milk Feeder (593)",
+          "18",
+          "6",
+          "19",
+          "3,342",
+          "17",
+          "37.91",
+          "7",
+          "2026-06-12"
+        ],
+        [
+          "Lactogen (550)",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0",
+          "23.73",
+          "0",
+          "never in 12m"
+        ],
+        [
+          "Baby Accessories (1031)",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0",
+          "n/a",
+          "0",
+          "never"
+        ],
+        [
+          "Baby Poeder (261) [typo]",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0",
+          "n/a",
+          "0",
+          "never"
+        ],
+        [
+          "TOTAL",
+          "228",
+          "58",
+          "1,325",
+          "141,720",
+          "793 (0.22% of all bills)",
+          "30 blended",
+          "~340 units",
+          "—"
+        ]
+      ]
+    },
+    {
+      "title": "The smoking gun — codes that exist, priced, and NEVER once purchased in ARY's lifetime (VERIFIED)",
+      "columns": [
+        "SKU",
+        "Brand",
+        "Listed",
+        "Ever purchased",
+        "Ever sold",
+        "Note"
+      ],
+      "rows": [
+        [
+          "Pampers Monthly Pack 76 Pants",
+          "Pampers",
+          "yes",
+          "NO",
+          "NO",
+          "the single most-wanted SKU in the range"
+        ],
+        [
+          "Pampers Monthly Pack Large 64 Pants",
+          "Pampers",
+          "yes",
+          "NO",
+          "NO",
+          ""
+        ],
+        [
+          "Pampers Monthly Pack Medium 38 Pants",
+          "Pampers",
+          "yes",
+          "NO",
+          "NO",
+          ""
+        ],
+        [
+          "Pampers Mothly Pack Small 40 Pants",
+          "Pampers",
+          "yes",
+          "NO",
+          "NO",
+          "note the typo in the master"
+        ],
+        [
+          "Pampers Pants 50 Pants M / M Size 50 / 42 Pants L / L Size 42",
+          "Pampers",
+          "4 codes",
+          "NO",
+          "NO",
+          ""
+        ],
+        [
+          "Huggies Active Baby 19 Pads Small",
+          "Huggies",
+          "yes",
+          "NO",
+          "NO",
+          "cost Rs 42.70 and SP Rs 55.00 ARE set in ProductChildMaster"
+        ],
+        [
+          "Huggies Pants S-2 / M-5 / Large-2 / Med-5 / Small-2 / 45-(5) / Huggies Pants / Pants Large / Active Baby 2 Med / Huggis M-2",
+          "Huggies",
+          "10 more codes",
+          "NO",
+          "NO",
+          "all 11 Huggies codes: lifetime zero"
+        ],
+        [
+          "MamyPoko Pants L-2 / L-8 / M-2 / M-9",
+          "MamyPoko",
+          "4 codes",
+          "NO",
+          "NO",
+          "the only XXL-capable brand, never ordered"
+        ],
+        [
+          "Pampers Pants M Size 56 N",
+          "Pampers",
+          "yes",
+          "YES — 4 units, 2024-05-24, Rs 647 cost",
+          "YES — all 4 sold Jan-2025 at Rs 850",
+          "stocked once, sold out, never reordered"
+        ],
+        [
+          "MamyPoko L4 / M4 / 6-XL / 44-M",
+          "MamyPoko",
+          "4 codes",
+          "YES — 2023-04-01 to 2024-03-31",
+          "YES — Rs 13,000 lifetime, last sale 2024-07-25",
+          "brand tried, then dropped"
+        ]
+      ]
+    },
+    {
+      "title": "Sales follow the purchase clerk, not the residents (VERIFIED, Rs)",
+      "columns": [
+        "Month",
+        "Stock purchased (cost)",
+        "Baby sales",
+        "Reading"
+      ],
+      "rows": [
+        [
+          "2025-08",
+          "2,918",
+          "7,244",
+          ""
+        ],
+        [
+          "2025-09",
+          "4,267",
+          "7,295",
+          ""
+        ],
+        [
+          "2025-10",
+          "4,659",
+          "7,820",
+          ""
+        ],
+        [
+          "2025-11",
+          "7,632",
+          "5,911",
+          ""
+        ],
+        [
+          "2025-12",
+          "15,437",
+          "4,796",
+          "restock begins"
+        ],
+        [
+          "2026-01",
+          "1,397",
+          "3,891",
+          "TROUGH — almost nothing bought"
+        ],
+        [
+          "2026-02",
+          "28,918",
+          "8,402",
+          "the big restock"
+        ],
+        [
+          "2026-03",
+          "12,505",
+          "16,952",
+          "sales respond with a 1-month lag"
+        ],
+        [
+          "2026-04",
+          "5,470",
+          "18,024",
+          "PEAK — shelf is full"
+        ],
+        [
+          "2026-05",
+          "7,811",
+          "15,659",
+          "decay begins"
+        ],
+        [
+          "2026-06",
+          "6,432",
+          "12,059",
+          ""
+        ],
+        [
+          "2026-07",
+          "3,888",
+          "8,284",
+          "stock running out"
+        ],
+        [
+          "2026-08",
+          "7,948",
+          "5,769",
+          "Baby Oil + Shampoo dry since 2026-03-07"
+        ]
+      ]
+    },
+    {
+      "title": "Minimum viable range — 37 SKUs, real brands, live 2026 MRPs, IMS status",
+      "columns": [
+        "#",
+        "SKU",
+        "MRP Rs",
+        "Per-unit",
+        "ARY margin %",
+        "IMS Act",
+        "Depth",
+        "Stock cost Rs"
+      ],
+      "rows": [
+        [
+          "1",
+          "MamyPoko Pants Extra Absorb M-76",
+          "1,399",
+          "18.41/diaper",
+          "28.3",
+          "FREE",
+          "4",
+          "4,010"
+        ],
+        [
+          "2",
+          "MamyPoko Pants Extra Absorb L-64",
+          "1,399",
+          "21.86",
+          "28.3",
+          "FREE",
+          "4",
+          "4,010"
+        ],
+        [
+          "3",
+          "MamyPoko Pants Extra Absorb XL-52",
+          "1,399",
+          "26.90",
+          "28.3",
+          "FREE",
+          "3",
+          "3,010"
+        ],
+        [
+          "4",
+          "MamyPoko Pants Extra Absorb XXL-44",
+          "1,399",
+          "31.80",
+          "28.3",
+          "FREE",
+          "2",
+          "2,006",
+          ""
+        ],
+        [
+          "5",
+          "Pampers Premium Care New Baby 70 (newborn)",
+          "1,299",
+          "18.56",
+          "28.3",
+          "FREE",
+          "3",
+          "2,795"
+        ],
+        [
+          "6",
+          "Pampers All Round Protection Pants L-64",
+          "1,399",
+          "21.86",
+          "28.3",
+          "FREE",
+          "3",
+          "3,010"
+        ],
+        [
+          "7",
+          "Pampers New Baby Premium Taped 24",
+          "399",
+          "16.63",
+          "28.3",
+          "FREE",
+          "4",
+          "1,144"
+        ],
+        [
+          "8-10",
+          "Keep 3 existing Pampers sachets: M-8, L-7, Happy Skin S (Rs 93-105) as top-up",
+          "105",
+          "13.13",
+          "28.3",
+          "FREE",
+          "30 pks",
+          "2,258"
+        ],
+        [
+          "11",
+          "Himalaya Gentle Baby Wipes 72",
+          "200",
+          "2.78/wipe",
+          "37.7",
+          "FREE",
+          "12",
+          "1,496"
+        ],
+        [
+          "12",
+          "Johnson's Baby Skincare Wipes 72",
+          "280",
+          "3.89",
+          "37.7",
+          "FREE",
+          "10",
+          "1,744"
+        ],
+        [
+          "13",
+          "Mother Sparsh 99% Pure Water Wipes 72",
+          "299",
+          "4.15",
+          "37.7",
+          "FREE",
+          "6",
+          "1,118"
+        ],
+        [
+          "14",
+          "Himalaya Gentle Baby Soap 75g 3+1 (already stocked)",
+          "195",
+          "—",
+          "34.8",
+          "FREE",
+          "12",
+          "1,527"
+        ],
+        [
+          "15",
+          "Johnson's Baby Soap 100g",
+          "81",
+          "—",
+          "34.8",
+          "FREE",
+          "12",
+          "634"
+        ],
+        [
+          "16",
+          "Himalaya Gentle Baby Shampoo 100ml",
+          "115",
+          "—",
+          "32.4",
+          "FREE",
+          "8",
+          "622"
+        ],
+        [
+          "17",
+          "Himalaya Gentle Baby Shampoo 200ml (already stocked)",
+          "225",
+          "—",
+          "32.4",
+          "FREE",
+          "8",
+          "1,217"
+        ],
+        [
+          "18",
+          "Himalaya Baby Massage Oil 100ml",
+          "150",
+          "—",
+          "27.6",
+          "FREE",
+          "8",
+          "869"
+        ],
+        [
+          "19",
+          "Himalaya Baby Hair Oil 200ml",
+          "280",
+          "—",
+          "27.6",
+          "FREE",
+          "6",
+          "1,216"
+        ],
+        [
+          "20",
+          "Johnson's Baby Oil 100ml",
+          "150",
+          "—",
+          "27.6",
+          "FREE",
+          "6",
+          "652"
+        ],
+        [
+          "21",
+          "Himalaya Gentle Baby Cream 50ml",
+          "105",
+          "—",
+          "29.8",
+          "FREE",
+          "8",
+          "590"
+        ],
+        [
+          "22",
+          "Himalaya Gentle Baby Cream 100ml",
+          "200",
+          "—",
+          "29.8",
+          "FREE",
+          "6",
+          "842"
+        ],
+        [
+          "23",
+          "Himalaya Gentle Baby Powder 400g",
+          "350",
+          "—",
+          "29.8",
+          "FREE",
+          "6",
+          "1,474"
+        ],
+        [
+          "24",
+          "Johnson's Baby Powder 100g",
+          "135",
+          "—",
+          "29.8",
+          "FREE",
+          "8",
+          "758"
+        ],
+        [
+          "25",
+          "Himalaya Baby Gentle Baby Wash 400ml",
+          "380",
+          "—",
+          "32.4",
+          "FREE",
+          "4",
+          "1,028"
+        ],
+        [
+          "26",
+          "Cetaphil Baby Daily Lotion 50ml (one facing, premium)",
+          "275",
+          "—",
+          "29.8",
+          "FREE",
+          "3",
+          "579"
+        ],
+        [
+          "27",
+          "Dermadew Diaper Cream 50g — CATEGORY GAP",
+          "175",
+          "—",
+          "29.8",
+          "FREE",
+          "8",
+          "982"
+        ],
+        [
+          "28",
+          "Tedibar B4 Nappi Rash Cream 75g — CATEGORY GAP",
+          "329",
+          "—",
+          "29.8",
+          "FREE",
+          "4",
+          "924"
+        ],
+        [
+          "29",
+          "Nestle Cerelac Wheat Apple Cherry 350g (8m+)",
+          "290",
+          "0.83/g",
+          "24.0",
+          "RESTRICTED",
+          "3",
+          "661"
+        ],
+        [
+          "30",
+          "Nestle Cerelac Multigrain & Fruits 300g (12-24m)",
+          "295",
+          "0.98/g",
+          "24.0",
+          "RESTRICTED",
+          "3",
+          "673"
+        ],
+        [
+          "31",
+          "Nestle Nestogen 1 400g",
+          "285",
+          "0.71/g",
+          "23.7",
+          "RESTRICTED",
+          "2",
+          "435"
+        ],
+        [
+          "32",
+          "Nestle Nestogen 2 400g",
+          "285",
+          "0.71/g",
+          "23.7",
+          "RESTRICTED",
+          "2",
+          "435"
+        ],
+        [
+          "33",
+          "Nestle Lactogen Pro 2 400g",
+          "460",
+          "1.15/g",
+          "23.7",
+          "RESTRICTED",
+          "2",
+          "702"
+        ],
+        [
+          "34",
+          "Nestle NAN Pro 1 400g — INDENT ONLY, no shelf stock",
+          "775",
+          "1.94/g",
+          "23.7",
+          "RESTRICTED",
+          "0",
+          "0"
+        ],
+        [
+          "35",
+          "Philips Avent Anti-Colic Bottle 125ml",
+          "319",
+          "—",
+          "37.9",
+          "RESTRICTED",
+          "3",
+          "594"
+        ],
+        [
+          "36",
+          "Little's Poly Mini 3-in-1 BPA-free 120ml",
+          "99",
+          "—",
+          "37.9",
+          "RESTRICTED",
+          "4",
+          "246"
+        ],
+        [
+          "37",
+          "Sirona Maternity & Nursing Breast Pads 12 + 30+6, Nipcare 20g (phase 2, beside sanitary pads)",
+          "199-449",
+          "—",
+          "~30",
+          "FREE",
+          "6 ea",
+          "3,400"
+        ],
+        [
+          "",
+          "TOTAL — 29 of 37 SKUs fully promotable and discountable",
+          "",
+          "",
+          "30 blended",
+          "8 restricted",
+          "",
+          "~55,000"
+        ]
+      ]
+    },
+    {
+      "title": "IMS Act 1992 — what a retailer may and may not do (VERIFIED from statute)",
+      "columns": [
+        "Product",
+        "In scope?",
+        "May stock",
+        "May discount",
+        "May display / shelf-talk",
+        "May contact mothers",
+        "May sample or gift"
+      ],
+      "rows": [
+        [
+          "Infant formula (Nestogen, Lactogen, NAN, Aptamil, Similac, Dexolac, Lactodex)",
+          "YES — 'infant milk substitute', up to age 2",
+          "YES",
+          "NO — reads as s.4(c) inducement; market holds 0% off",
+          "Plain price ticket only. No baby photo, no 'best for baby' claim",
+          "NO — s.4(b) offence",
+          "NO — s.4(a)"
+        ],
+        [
+          "Cerelac and all milk/cereal complementary foods 6-24m",
+          "YES — 'infant food'",
+          "YES",
+          "NO",
+          "Plain ticket only",
+          "NO",
+          "NO"
+        ],
+        [
+          "Feeding bottles, teats and valves (Avent, Pigeon, Little's)",
+          "YES — definition expressly 'includes a teat and a valve'",
+          "YES",
+          "NO",
+          "Plain ticket only",
+          "NO",
+          "NO"
+        ],
+        [
+          "Diapers and diaper pants",
+          "NO",
+          "YES",
+          "YES — sell the L-64 at Rs 1,250 to beat online",
+          "YES — end-cap, size ladder, price-per-diaper shelf-talk",
+          "YES — for diapers only, never in the same message as formula",
+          "YES"
+        ],
+        [
+          "Baby wipes",
+          "NO",
+          "YES",
+          "YES",
+          "YES",
+          "YES (diaper/wipe messaging only)",
+          "YES"
+        ],
+        [
+          "Baby soap, oil, lotion, cream, powder, shampoo, wash, rash cream",
+          "NO",
+          "YES",
+          "YES",
+          "YES",
+          "YES (toiletry messaging only)",
+          "YES"
+        ],
+        [
+          "Breast pads, nipple cream, breast pumps (lactation SUPPORT, not substitution)",
+          "NO",
+          "YES",
+          "YES",
+          "YES",
+          "YES",
+          "YES"
+        ],
+        [
+          "Penalty for breach",
+          "—",
+          "s.20: up to 3 yrs imprisonment or fine up to Rs 5,000 or both",
+          "—",
+          "s.20 label breach is harsher: min 6 months to 3 yrs PLUS min Rs 2,000 fine",
+          "binds 'no person', retailers included",
+          "—"
+        ]
+      ]
+    },
+    {
+      "title": "The economics — segment model (ESTIMATED cohorts, VERIFIED prices and margins)",
+      "columns": [
+        "Cohort",
+        "Est. children",
+        "Wallet Rs/child/mo",
+        "Captured Rs/child/mo",
+        "Segment Rs/mo",
+        "Basis"
+      ],
+      "rows": [
+        [
+          "0-6 months",
+          "9",
+          "1,699",
+          "1,008",
+          "9,072",
+          "diapers 45% + wipes 70% + toiletries 70% + formula 55% x 25% penetration"
+        ],
+        [
+          "6-24 months",
+          "27",
+          "2,424",
+          "1,387",
+          "37,444",
+          "adds Cerelac at 55% capture; diaper use rises"
+        ],
+        [
+          "2-6 years",
+          "72",
+          "450",
+          "295",
+          "21,240",
+          "toiletries only, 70% capture, occasional pull-ups"
+        ],
+        [
+          "TOTAL achievable",
+          "108",
+          "—",
+          "—",
+          "67,756/mo = Rs 8.13 L/yr",
+          "1.08% of ARY's Rs 7.55 Cr turnover"
+        ],
+        [
+          "Current actual (VERIFIED)",
+          "—",
+          "—",
+          "—",
+          "11,810/mo = Rs 1.42 L/yr",
+          "0.19% of turnover"
+        ],
+        [
+          "INCREMENTAL revenue",
+          "—",
+          "—",
+          "—",
+          "55,946/mo = Rs 6.71 L/yr",
+          ""
+        ],
+        [
+          "Gross profit at 30% blended",
+          "—",
+          "—",
+          "—",
+          "16,784/mo",
+          "margins from ProductChildMaster, VERIFIED"
+        ],
+        [
+          "less ARY's own 4.1% shrink at cost",
+          "—",
+          "—",
+          "—",
+          "(1,606)/mo",
+          "lifetime count variance -Rs 91.5 L on net sales"
+        ],
+        [
+          "NET incremental gross profit",
+          "—",
+          "—",
+          "—",
+          "15,178/mo = Rs 1.82 L/yr",
+          "0.32% of ARY gross profit — small, and that is the honest answer"
+        ]
+      ]
+    },
+    {
+      "title": "Break-even — the base is 9x too big, not too small",
+      "columns": [
+        "Item",
+        "Value",
+        "Note"
+      ],
+      "rows": [
+        [
+          "Working capital (37 SKUs at the depths above)",
+          "Rs 55,000",
+          "one-time, recycles"
+        ],
+        [
+          "One-off cost (4-ft rack, signage, 2 days catalogue cull)",
+          "Rs 21,000",
+          ""
+        ],
+        [
+          "Carrying cost on stock at 12%/yr",
+          "Rs 550/mo",
+          ""
+        ],
+        [
+          "One-off amortised over 24 months",
+          "Rs 875/mo",
+          ""
+        ],
+        [
+          "Total fixed monthly burden",
+          "Rs 1,425/mo",
+          "no incremental staff — Ary Pos counter already exists"
+        ],
+        [
+          "Net gross profit per 0-2 baby",
+          "Rs 376/mo",
+          "Rs 1,387 captured x 30% margin less 4.1% shrink"
+        ],
+        [
+          "BREAK-EVEN",
+          "3.8 babies",
+          "call it 4"
+        ],
+        [
+          "Estimated 0-2 babies on campus",
+          "36 (range 25-55)",
+          "9x break-even at the central estimate, 6x at the low end"
+        ],
+        [
+          "Diaper-buying households ARY already sees monthly",
+          "20-27",
+          "VERIFIED — already above break-even TODAY, at Rs 11,810/mo of sales"
+        ],
+        [
+          "Payback on the Rs 21,000 one-off",
+          "1.4 months",
+          ""
+        ],
+        [
+          "Verdict",
+          "DO IT — but as a service fix",
+          "The base clears break-even easily; the absolute prize (Rs 1.82 L/yr GP) does not justify a project, a hire, or a management review cycle"
+        ]
+      ]
+    },
+    {
+      "title": "Dead-stock and shelf-life risk, ranked",
+      "columns": [
+        "Line",
+        "Unit cost Rs",
+        "Shelf life",
+        "Margin %",
+        "Can be marked down?",
+        "Risk verdict"
+      ],
+      "rows": [
+        [
+          "Infant formula (NAN Pro Rs 775, Aptamil Rs 1,010)",
+          "590-770",
+          "18-24 months",
+          "23.7",
+          "NO — IMS Act reading",
+          "HIGHEST. Indent-only. Zero shelf stock above Nestogen/Lactogen."
+        ],
+        [
+          "Cerelac 300-350g",
+          "221-227",
+          "18 months from manufacture",
+          "24.0",
+          "NO",
+          "HIGH. ARY sold 13 boxes in 12 months. Cap at 3 units per flavour, 2 flavours."
+        ],
+        [
+          "Avent / Pigeon feeding bottles",
+          "198-535",
+          "indefinite",
+          "37.9",
+          "NO",
+          "MEDIUM. Long life offsets the no-markdown rule. 3 units max."
+        ],
+        [
+          "Baby wipes",
+          "124-186",
+          "24-30 months (they dry out)",
+          "37.7",
+          "YES",
+          "LOW. Discountable, fast-moving, 37.7% margin."
+        ],
+        [
+          "Diaper monthly packs",
+          "1,003",
+          "24-36 months",
+          "28.3",
+          "YES",
+          "LOW. Discountable. Rs 20,000 covers the whole 5-size ladder."
+        ],
+        [
+          "Baby toiletries (soap, oil, lotion, powder, shampoo)",
+          "53-247",
+          "24-36 months",
+          "27.6-34.8",
+          "YES",
+          "LOWEST. This is the base of the range and should be the deepest."
+        ],
+        [
+          "Rash cream",
+          "123-231",
+          "24-36 months",
+          "29.8",
+          "YES",
+          "LOWEST, and currently ZERO in a 21,466-SKU catalogue."
+        ]
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "step": "Get the actual number, and stop modelling. Ask Kalgidhar Trust HR / Akal Academy administration for one figure: how many resident staff households have a child under six, split 0-2 and 2-6. Separately ask Akal Charitable Hospital for AGGREGATE annual deliveries (a count, not names — asking for mothers' names to market to is a Section 4(b) offence). Everything below scales off this.",
+      "sequence": 1,
+      "owner": "ARY Baru Sahib store in-charge, with Kalgidhar Trust HR and the Akal Charitable Hospital medical records desk",
+      "cost": "none",
+      "duration": "2 days",
+      "dependsOn": "nothing — start here"
+    },
+    {
+      "step": "Place ONE diaper order with Nirman Associates Pvt Ltd (the existing diaper supplier, last billed 2026-08-11) for the five-size monthly-pack ladder: MamyPoko Extra Absorb M-76, L-64, XL-52, XXL-44 and Pampers Premium Care New Baby 70, 2-4 packs each, plus Pampers New Baby Taped 24 for newborns. The SKU codes ALREADY EXIST in ProductMaster and have never once been purchased. Confirm in the same call whether Nirman carries MamyPoko or is Pampers-only; if Pampers-only, add a second distributor for the XL/XXL ladder.",
+      "sequence": 2,
+      "owner": "ARY purchase desk",
+      "cost": "Rs 20,000 (stock)",
+      "duration": "1 week to land",
+      "dependsOn": "step 1 only for depth; the order itself needs nothing"
+    },
+    {
+      "step": "Fix the reorder point, which is the actual root cause. Set a minimum shelf quantity per baby SKU and a fortnightly review, because the data shows only 8 diaper purchase bills in 12 months and Baby Oil and Baby Shampoo dry since 2026-03-07. Nothing else in this plan matters if the shelf is empty four months a year.",
+      "sequence": 3,
+      "owner": "ARY Baru Sahib store in-charge (Ary Pos counter)",
+      "cost": "none",
+      "duration": "1 day to set, permanent thereafter",
+      "dependsOn": "step 2 — set the reorder point against the new range"
+    },
+    {
+      "step": "Add the two absolute gaps that need no argument: diaper rash cream (Dermadew 50g Rs 175, Tedibar B4 Nappi 75g Rs 329) — ZERO exist in a 21,466-SKU catalogue — and branded 72-count wipes (Himalaya Rs 200, Johnson's Rs 280) to replace the Tulips 25s that are the entire current wipe shelf. Order from Himachal Wholesale Syndicate and Sita Ram Chaman Lal, both already on the ledger.",
+      "sequence": 4,
+      "owner": "ARY purchase desk",
+      "cost": "Rs 6,300 (stock)",
+      "duration": "1 week",
+      "dependsOn": "nothing — can run parallel with step 2"
+    },
+    {
+      "step": "Deepen the unregulated toiletries core, which is the reliable base of the category at 27.6-34.8% margin and 24-36 month shelf life: Himalaya baby soap, shampoo (100ml and 200ml), massage oil, hair oil, cream (50ml and 100ml), powder 400g, baby wash 400ml; Johnson's baby soap 100g, oil 100ml, powder 100g. Most codes already exist — this is a reorder, not a listing. One Cetaphil Baby facing at Rs 275 for the paediatrician-referral case; skip Sebamed entirely (Rs 1,620 lotion against a Rs 207 average bill).",
+      "sequence": 5,
+      "owner": "ARY purchase desk with Himachal Wholesale Syndicate",
+      "cost": "Rs 12,000 (stock)",
+      "duration": "2 weeks",
+      "dependsOn": "step 3 — reorder discipline must be in place first or this dies the same way"
+    },
+    {
+      "step": "Cull the catalogue: deactivate the 169 baby SKUs that sold nothing in 12 months, keeping every code that is in the new 37-SKU range. Priority is the diaper screen — 73 lines down to 10 — because a counter clerk facing 73 near-identical Pampers rows cannot reorder correctly, which is plausibly how the monthly packs stayed unpurchased for three years. Also fix the two master-data faults found: subgroup 261 'Baby Poeder' (1 SKU, typo duplicate of 262) and 'Cetaphil Moisturising Lotion 25 Ml' mis-coded into Baby Lotion (258).",
+      "sequence": 6,
+      "owner": "ARY Baru Sahib store in-charge with FusionERP8 master-data access",
+      "cost": "Rs 6,000 (2 days of staff time)",
+      "duration": "2 days",
+      "dependsOn": "step 2 — do not deactivate a code you are about to order"
+    },
+    {
+      "step": "Write the IMS Act operating rule on one laminated card at the counter, because Section 20 is criminal liability on 'any person' and the exposure is imprisonment, not just the token Rs 5,000 fine. Card says: formula, Cerelac-type infant cereals, feeding bottles and teats — sell at MRP, plain price ticket, no discount, no combo, no sample, no free gift, no baby picture on any shelf-talker, never approach a pregnant woman or a mother about them. Everything else on the baby shelf — diapers, wipes, soap, oil, lotion, cream, powder, shampoo, rash cream, breast pads, nipple cream — is unrestricted, promote freely. Never mix the two in one message or one bundle. On goods inwards, reject any formula or infant cereal carton lacking the Section 6 notice ('MOTHER'S MILK IS BEST FOR YOUR BABY') or showing a picture of a baby or a woman.",
+      "sequence": 7,
+      "owner": "ARY Baru Sahib store in-charge; ARY / Jivo Wellness compliance for sign-off",
+      "cost": "none",
+      "duration": "1 day",
+      "dependsOn": "step 8 must not start before this card exists"
+    },
+    {
+      "step": "Only now touch nutrition, and keep it deliberately shallow because it is the highest unit cost, shortest shelf life, lowest margin (23.7-24.0%) and the ONLY part of the range you cannot mark down to clear. Shelf-stock just five: Cerelac Wheat Apple Cherry 350g and Multigrain 300g (3 each), Nestogen 1 and 2 400g (2 each), Lactogen Pro 2 400g (2). Make NAN Pro, Similac, Aptamil order-to-demand against named requests only — never shelf stock. Reactivate the Rachna Enterprises Cerelac line (last billed 2025-12-24).",
+      "sequence": 8,
+      "owner": "ARY purchase desk with Rachna Enterprises",
+      "cost": "Rs 2,900 (stock)",
+      "duration": "2 weeks",
+      "dependsOn": "step 7 — the compliance card must be at the counter first"
+    },
+    {
+      "step": "Phase 2, only if steps 2-6 show the volume: add three mother-care SKUs beside the sanitary-pad bay, which already turns Rs 4.47 lakh a year on 4,696 bills to this same population — Sirona nursing/maternity breast pads 12s (Rs 199) and 30+6s (Rs 449), and Nipcare nipple cream 20g (Rs 211). These are lactation SUPPORT, outside the IMS Act, fully promotable. Skip breast pumps at Rs 7,599+.",
+      "sequence": 9,
+      "owner": "ARY purchase desk",
+      "cost": "Rs 3,400 (stock)",
+      "duration": "1 week, at month 3",
+      "dependsOn": "90 days of sell-through data from steps 2-6"
+    },
+    {
+      "step": "Review at day 90 against one test: did diaper units per month rise from ~30 packs toward 60-80, and did at least 8 monthly packs sell in month 3? If yes, hold the range and stop managing it. If no, cut the monthly-pack ladder back to M and L only and accept the category at ~Rs 25,000/month — still triple today, still worth having, and stop spending attention on it.",
+      "sequence": 10,
+      "owner": "ARY Baru Sahib store in-charge",
+      "cost": "none",
+      "duration": "1 day at day 90",
+      "dependsOn": "steps 2-6 running for 3 full months"
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Fix the reorder point for the baby range. It is out of stock for months at a time — only 8 diaper purchase bills in 12 months, Baby Oil and Baby Shampoo not purchased since 2026-03-07, Cerelac not since 2025-12-24 — and sales provably track purchase events with a 1-2 month lag, not demand. This one change is worth more than every new SKU on this list combined and it costs nothing.",
+      "priority": "P0",
+      "monthlyImpactInr": 6000,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Order the five-size monthly-pack diaper ladder from Nirman Associates on the existing account: MamyPoko Extra Absorb M-76 / L-64 / XL-52 / XXL-44 (all MRP Rs 1,399) and Pampers Premium Care New Baby 70 (Rs 1,299). Every one of these codes already exists in ProductMaster and has NEVER been purchased in ARY's lifetime. Price at Rs 1,250-1,299, not Rs 1,399, to beat the Rs 1,077-1,189 online net — legal, because diapers are outside the IMS Act. There is currently no XL or XXL in stock at all, so a two-year-old has nothing to buy.",
+      "priority": "P0",
+      "monthlyImpactInr": 5000,
+      "oneOffCostInr": 20000,
+      "effort": "weeks",
+      "blocker": "Confirm Nirman Associates carries MamyPoko; if Pampers-only, a second distributor is needed for XL/XXL"
+    },
+    {
+      "action": "Stock diaper rash cream — Dermadew 50g (Rs 175) and Tedibar B4 Nappi 75g (Rs 329). ARY has ZERO rash cream in a 21,466-SKU catalogue; every 'RASH' hit is a Dr. Rashel face mask. It is the most certain purchase a nappy parent makes, it is unregulated, it carries ~30% margin, it has a 2-3 year shelf life, and it costs Rs 2,300 to stock.",
+      "priority": "P1",
+      "monthlyImpactInr": 1200,
+      "oneOffCostInr": 2300,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Replace the wipe shelf. The entire current range is 93 units of Tulips 25s and 20s. Add Himalaya Gentle Baby Wipes 72 (Rs 200) and Johnson's Baby Skincare Wipes 72 (Rs 280) at 37.7% margin — the second-highest margin line in the whole baby range and fully discountable.",
+      "priority": "P1",
+      "monthlyImpactInr": 1500,
+      "oneOffCostInr": 4000,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Cull 169 dead baby SKUs and cut the diaper screen from 73 lines to 10. Three-quarters of the baby catalogue sold nothing in 12 months, and a counter clerk facing 73 near-identical Pampers rows is plausibly why the monthly packs went unordered for three years. Also fix subgroup 261 'Baby Poeder' (typo duplicate of 262) and the Cetaphil adult lotion mis-coded into Baby Lotion.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 6000,
+      "effort": "days",
+      "blocker": "none — but do not deactivate a code you are about to reorder"
+    },
+    {
+      "action": "Put an IMS Act card at the counter before touching formula. Section 20 carries up to three years' imprisonment on 'any person', retailers included, and the label offence carries a six-month minimum. The rule is one line: formula, Cerelac-type cereals, bottles and teats sell at MRP with a plain ticket and nothing else — no discount, no combo, no sample, no gift, no baby picture, no approaching a mother; everything else on the shelf is free to promote; never mix the two in one message. The specific trap to name out loud: getting a list of new mothers from Akal Charitable Hospital and offering them a baby bundle is a Section 4(b) offence the moment the bundle contains formula, cereal or a bottle.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Keep infant nutrition deliberately shallow and indent-driven: shelf-stock only Cerelac Wheat Apple Cherry 350g (Rs 290), Cerelac Multigrain 300g (Rs 295), Nestogen 1 and 2 400g (Rs 285), Lactogen Pro 2 400g (Rs 460) at 2-3 units each. Make NAN Pro (Rs 775), Similac (Rs 900) and Aptamil (Rs 1,010) order-to-demand only. This is the worst line in the range on every axis — highest unit cost, 18-month shelf life, 23.7-24.0% margin — and it is the ONLY line you cannot discount to clear.",
+      "priority": "P2",
+      "monthlyImpactInr": 2000,
+      "oneOffCostInr": 2900,
+      "effort": "weeks",
+      "blocker": "the IMS Act counter card must exist first"
+    },
+    {
+      "action": "Add three mother-care SKUs beside the sanitary-pad bay at month 3: Sirona nursing/maternity breast pads 12s (Rs 199) and 30+6s (Rs 449), Nipcare nipple cream 20g (Rs 211). The adjacency is proven — the sanitary-pad shelf turns Rs 4.47 lakh a year on 4,696 bills to this exact population. These are lactation support, outside the IMS Act, fully promotable. Skip breast pumps at Rs 7,599+.",
+      "priority": "P2",
+      "monthlyImpactInr": 1000,
+      "oneOffCostInr": 3400,
+      "effort": "weeks",
+      "blocker": "90 days of sell-through from the P0/P1 items"
+    },
+    {
+      "action": "Replace the baby headcount estimate with a count: resident staff households with a child under six (Kalgidhar Trust HR), and aggregate annual deliveries at the 280-bed Akal Charitable Hospital. My whole revenue model scales linearly off an ESTIMATED 36 children aged 0-2 with an honest range of 25-55, and ARY's own data cannot narrow it because 97% of bills carry the anonymous 'Cash' customer 00001.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "needs a person at Kalgidhar Trust HR to answer"
+    },
+    {
+      "action": "Do NOT scale this into a project. The full prize is Rs 1.82 lakh a year of net gross profit — 0.32% of ARY's gross profit. It breaks even at four babies against an estimated 36, so it is worth doing because it is nearly free and staff families are stranded 30-50 km from a market. It is not worth a hire, a management review cycle, or a capital request. Two weeks of one person's attention, then leave it alone.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    }
+  ],
+  "openQuestions": [
+    "How many resident staff households actually have a child under six, split 0-2 and 2-6? This is the load-bearing unknown — every revenue figure scales linearly off an ESTIMATED 36 children aged 0-2 (honest range 25-55). Kalgidhar Trust HR or Akal Academy administration can answer it in an afternoon. ARY's own data cannot: 97% of bills carry the anonymous 'Cash' customer 00001 and SalesPersonID is [NONE] on 99.7% of bills, so there is no way to count buying families from the ledger.",
+    "How many deliveries a year does the 280-bed Akal Charitable Hospital do? That single number pins the birth cohort exactly and replaces my whole fertility model. Ask for an AGGREGATE count only — requesting mothers' names to market to would be a Section 4(b) IMS Act offence.",
+    "Does Amazon or Flipkart actually deliver to PIN 173101, and at what lead time and cost? This sets the real competitive benchmark for a monthly pack. If online delivers in 2 days, ARY must price the L-64 at Rs 1,250 and will still lose the price-led families; if it takes 8 days or does not deliver, ARY can hold Rs 1,399 and my revenue model is conservative. I could not verify this — every marketplace page needs a pincode session I did not have.",
+    "Does Nirman Associates Pvt Ltd carry MamyPoko and Huggies, or is it Pampers-only? MamyPoko is the only brand offering XXL and it runs one MRP (Rs 1,399) across M/L/XL/XXL, which makes the four-size ladder trivial to price. If Nirman is Pampers-only, the plan needs a second distributor and step 2 takes 3 weeks instead of 1.",
+    "Do staff families at Baru Sahib use cloth as the base with disposables only at night? ARY's catalogue has ZERO langot, nappy pad or cloth-diaper SKU, which is unusual for a hill township with an institutional laundry — either the need is met outside the store or families buy plain cloth. If cloth is the base, my diaper volume assumption (30-70 disposables per baby per month) is too high and the diaper revenue line could be 40% lower. Ten minutes with three staff mothers settles it.",
+    "Has ARY ever had an IMS Act compliance review? It has held 7 Lactogen codes and 35 Cerelac codes since the books opened on 2023-04-01, so it has been in scope of a criminal statute for over three years, and nothing in the data shows any labelled compliance process. Worth confirming with Jivo Wellness compliance before step 8, not after.",
+    "What is Himachal Pradesh's current Total Fertility Rate? I used ~1.7 from memory of NFHS-5 and could NOT verify it this session — rchiips.org failed on a TLS certificate error and census2011.co.in served the wrong district three times. It feeds Method B of my population estimate; Method A (ARY's own diaper footprint) is independent of it and lands in the same range, so the conclusion holds either way, but the number itself is unverified.",
+    "Which counter should carry the range? Baby items currently sell across two counters — Ary Pos (Rs 116,015) and Ary Clothing (Rs 25,705) — which means the range is split and neither shelf looks complete to a parent. Consolidating it into one bay at Ary Pos is probably right, but the store in-charge knows the floor and I do not."
+  ]
+}

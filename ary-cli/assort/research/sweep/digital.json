@@ -1,0 +1,702 @@
+{
+  "lane": "digital",
+  "headline": "ARY's residents already pay digitally — 56% of tenders are UPI and rising — but 96% of bills are booked to one anonymous \"Cash\" account, so ARY has 1.09 million transactions and almost no customers; buy customer identity first (a phone number at the till, then WhatsApp order-to-pickup for ~₹2,500/month), and treat the app, the wallet, the shelf labels and loyalty as things that only work after identity exists.",
+  "confidence": "medium",
+  "confidenceGap": "Every ARY-side number here is live-queried and solid, but the demand side is not: I do not know how many of the ~5,000 residents actually carry a smartphone. Akal Academy is a residential school, so a large share of the population is children who plausibly have no phone, and the Trust may restrict phones. Every consumer-facing recommendation (WhatsApp, app, wallet top-up by parents) is sized against an addressable base I could not measure. One roll count of \"staff + married-staff families + university students with a phone\" would move this to high confidence or kill half the plan.",
+  "findings": [
+    {
+      "claim": "Residents are ALREADY digital-first. UPI (booked as 'Paytm') is 56.3% of all tenders and 42.9% of collections value in FY26-27, versus 40.7% of tenders in FY24-25. The 'they won't use digital' objection is dead — it is already the majority payment method.",
+      "status": "VERIFIED",
+      "evidence": "ary sales payment-mix --from 2026-04-01 --to 2026-08-22 → Paytm 96,593 tenders ₹1,62,94,274 (42.87%), Cash 69,791 ₹1,22,78,943 (32.31%), Credit Sale 5,192 ₹94,32,897 (24.82%). Monthly trend: ary query on SalePayment JOIN SaleHeader grouped by month, MOPID=503 share of tenders rose 36.99% (2024-04) → 59.52% (2026-06) → 55.93% (2026-08).",
+      "number": "56.3% of 171,576 tenders; 42.9% of ₹3.80 Cr collections",
+      "soWhat": "No behaviour change is needed to launch a digital layer. The rails and the habit exist; what's missing is identity and ordering on top of them."
+    },
+    {
+      "claim": "ARY has 1.09 million transactions and essentially no customers. 96.2% of FY26-27 bills (162,434 of 168,881) are booked to walk-in account 00001. Only 776 customers were identified on a bill all year. Just 173 of 3,514 customer records carry a mobile number, 3 carry an email.",
+      "status": "VERIFIED",
+      "evidence": "ary query: SELECT CASE WHEN CustomerID='00001' ... FROM SaleHeader WHERE VoucherDate>='2026-04-01' → walkin_00001 162,434 bills ₹251.41 L avg ₹154.78; identified 6,447 bills ₹102.25 L avg ₹1,586.07, 776 customers. ary query on CustomerMaster → 3,514 total, has_mobile 173, has_email 3, has_deposit 0, has_points 0.",
+      "number": "96.2% of bills anonymous; 4.9% of customer records have a phone number",
+      "soWhat": "This is the single blocking constraint on the whole digital lane. Wallet, loyalty, WhatsApp ordering, personalised assortment and per-household demand data are all downstream of knowing who bought. Identity is the cheapest thing on this list and the prerequisite for everything expensive."
+    },
+    {
+      "claim": "The identified-customer basket (₹1,586) is 10x the walk-in basket (₹155) — but this is NOT evidence that identifying a shopper grows their basket. The 776 identified accounts are institutions (Akal Academy, Eternal University, the Trust, the mess) and credit families buying in bulk. Comparing them to a ₹155 counter purchase is comparing two different businesses.",
+      "status": "VERIFIED",
+      "evidence": "Same query as above. Cross-checked against ary customers credit → the top identified accounts are Jivo Wellness Haryana branch, Akal Catering Services (Mess), Akal Academy, Eternal University, Akal Hospital — institutional, not household. Credit-sale average tender is ₹1,817 (₹94,32,897 / 5,192) vs cash ₹176 (₹1,22,78,943 / 69,791).",
+      "number": "₹1,586 vs ₹155 — confounded by segment, not causal",
+      "soWhat": "Anyone building the business case must not multiply 4,200 walk-ins by ₹1,586. The honest uplift case for identity is frequency and pre-order convenience, not a 10x basket."
+    },
+    {
+      "claim": "WhatsApp order-to-pickup is nearly free at ARY's scale, because a customer-initiated conversation opens a 24-hour window in which every reply — including utility templates — costs Meta nothing. Verified India rates from 1-Jan-2026: Marketing ₹1.09/message, Utility ₹0.145, Authentication ₹0.145, Service free.",
+      "status": "VERIFIED",
+      "evidence": "https://aisensy.com/pricing (Meta BSP, rates effective 1-Jan-2026): 'Marketing ₹1.09, Utility & Authentication ₹0.145 per message for Indian users; Service conversations are always free' and 'Utility templates delivered within a customer service window won't be charged.' Confirmed structurally at https://developers.facebook.com/docs/whatsapp/pricing/ — 'Utility templates delivered within an open customer service window are free.' Platform: AiSensy Basic ₹1,500/mo or ₹16,200/yr; Indian virtual number ₹2,000+GST/yr.",
+      "number": "₹1,500/mo platform + ~₹870/mo messages ≈ ₹2,540/month all-in",
+      "soWhat": "The cheapest customer-facing channel ARY can open costs less per month than one day's sales at one counter. There is no capex case to argue about."
+    },
+    {
+      "claim": "WhatsApp already has native catalogue, cart and order plumbing — no app build required. Multi-product messages carry up to 30 products in sections, the cart accepts up to 99 units per item, and orders arrive at the business as a webhook. What it does NOT have on the Cloud API is native payment or a cart icon in the chat header.",
+      "status": "VERIFIED",
+      "evidence": "https://developers.facebook.com/docs/whatsapp/cloud-api/guides/sell-products-and-services — catalog / single-product / multi-product / carousel message types; 'up to 30 products organized into sections'; cart holds 'up to 99 units of each single catalog item'; orders delivered via 'webhook notifications containing order details'; 'Messages sent via the Cloud API currently do not display a shopping cart icon in the chat thread header.'",
+      "number": "30 products per message, 99 units per line",
+      "soWhat": "Order intake is a solved problem to be configured, not engineered. Payment is deliberately skippable: ARY's customer already scans a Paytm QR at pickup, so pay-on-collection avoids a gateway integration entirely."
+    },
+    {
+      "claim": "A campus wallet spendable only at ARY counters is a CLOSED-SYSTEM PPI and needs no RBI authorisation, no escrow account, no KYC and has no RBI balance limit. The single biggest regulatory fear about a student wallet does not apply.",
+      "status": "VERIFIED",
+      "evidence": "RBI Master Directions on Prepaid Payment Instruments, https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12156, clause 2.1: PPIs 'issued by an entity for facilitating the purchase of goods and services from that entity only and do not permit cash withdrawal… The issuance or operation of such instruments is not classified as a payment system requiring approval / authorisation by RBI.' Escrow (para 12), KYC/AML (para 6) and customer-protection (para 16) obligations apply only to semi-closed and full-KYC PPIs. PMLA still applies generally.",
+      "number": "Zero RBI licences required",
+      "soWhat": "Removes the reason this kind of project usually dies at legal review. The remaining questions are accounting and tax, not banking regulation — and the moment the wallet becomes spendable outside ARY, it stops being closed-loop and every one of those obligations switches on."
+    },
+    {
+      "claim": "ARY does not need to build a wallet data model — FusionERP8 already ships one, fully configured and never used. CustomerMaster carries CardID, CardTypeID, Deposit, Limit, Spent, OpeningPoint/EarnedPoint/RedeemedPoint/BalancePoint, CardIssueDate/CardExpiryDate. Mode-of-payment 98 'Prepaid' (posts to 'Prepaid Card') and 97 'CRM Point Redeem' are both defined and active. Zero rupees of Deposit and zero loyalty points exist across 3,514 customers and 1,088,607 bills.",
+      "status": "VERIFIED",
+      "evidence": "ary schema columns CustomerMaster (48 columns incl. Deposit, BalancePoint, CardID). ary masters payment-modes → id 98 Prepaid → 'Prepaid Card', id 97 'CRM Point Redeem', both active:true. ary query on SaleHeader → 1,088,607 bills, with_points 0, total_points 0.00. ary query on CustomerMaster → has_deposit 0, deposit_sum 0.00, has_points 0.",
+      "number": "2 payment modes and 8 wallet/loyalty fields live and unused since inception",
+      "soWhat": "The wallet is a configuration and process project, not a software project. That changes the cost estimate by an order of magnitude and removes the integration risk."
+    },
+    {
+      "claim": "ARY already finances its residents. 1,459 individual student/staff accounts in the 'Akal Academy Cs' group carry ₹48.02 lakh of net receivable, and credit sales ran ₹94.33 lakh across 5,192 bills to 760 customers in FY26-27 to date — 24.8% of collections value. The largest single household balance is ₹95,000.",
+      "status": "VERIFIED",
+      "evidence": "ary query on RefMaster JOIN AccountMaster WHERE GroupID=506 AND IsDeleted=0 → 1,459 accounts, net Dr ₹48.02 lakh; top balances ₹95,000 (Setan S/O Mahesh Kumar), ₹80,366, ₹63,455. ary query on SalePayment MOPID=2 from 2026-04-01 → 5,192 bills, ₹94.33 lakh, 760 distinct customers. ary accounts groups → 'Akal Academy Cs' = 3,604 accounts under Sundry Debtors (Assets).",
+      "number": "₹48.02 lakh receivable across 1,459 households; ₹20.1 lakh/month of credit sales",
+      "soWhat": "This is the wallet's real business case and it is defensive, not growth. A prepaid balance converts a receivable ARY chases into float ARY holds. It also converts 1,459 monthly collection conversations into zero."
+    },
+    {
+      "claim": "UPI collections are structurally unreconcilable inside the POS. Mode 503 (Paytm) stores no DocumentNo, no BankName and no gateway Response on ANY of its 524,295 tenders — only mode 3 (Credit Card/Cheque, 12 rows lifetime) captures a reference. There is no field holding a UTR, so no UPI receipt can ever be matched to a bill.",
+      "status": "VERIFIED",
+      "evidence": "ary query: SELECT MOPID, COUNT(*), SUM(CASE WHEN LEN(Response)>2…), SUM(CASE WHEN LEN(DocumentNo)>1…), SUM(CASE WHEN LEN(BankName)>1…) FROM SalePayment GROUP BY MOPID → MOPID 503: 524,295 rows, has_resp 0, has_docno 0, has_bank 0. MOPID 3: 12 rows, has_docno 12, has_bank 12.",
+      "number": "0 of 524,295 UPI tenders carry a payment reference",
+      "soWhat": "'Paytm' at ARY is a button a cashier presses, not an integration. A cashier can press it without a payment arriving, and nothing in the system would ever know. Before ARY layers a wallet or an app on this, the till must capture the UTR — otherwise digital growth grows an unauditable channel."
+    },
+    {
+      "claim": "The consequence is visible in the ledger: 528,478 vouchers have hit the Paytm bank account and bill-wise references are never cleared, leaving ₹7.97 Cr of open references of which ₹5.95 Cr are over 180 days old — while the account itself nets to only −₹16.68 lakh. The money is settling; the reference matching never happens.",
+      "status": "VERIFIED",
+      "evidence": "ary accounts ageing → Paytm (id 2072): d0_30 ₹24.59 L, d31_60 ₹25.78 L, d61_90 ₹39.02 L, d91_180 ₹1.13 Cr, d180+ ₹5.95 Cr, total ₹7.97 Cr. ary accounts get 2072 → group 'Bank Accounts', debits ₹11.04 Cr, credits ₹11.12 Cr, balance −₹16.68 lakh, 528,478 vouchers. Open references are individual POS bills of ₹10–₹662 dated 2026-08-21.",
+      "number": "₹7.97 Cr open references vs a −₹16.68 lakh actual balance",
+      "soWhat": "I want to be precise: this is NOT ₹7.97 Cr of missing money — the account nets out. It is that every one of half a million UPI collections is left as an unmatched reference, so the ageing report on ARY's largest digital channel is meaningless and a genuine shortfall would be invisible inside it."
+    },
+    {
+      "claim": "54.4% of all bills land in a four-hour window (17:00–21:00), and 64.9% in six hours (16:00–21:00), served by 6 stations and 10 cashiers. The peak hour (19:00) runs ~184 bills/hour store-wide — roughly one bill every 2 minutes per station, on a 2.64-line basket.",
+      "status": "VERIFIED",
+      "evidence": "ary query: SELECT DATEPART(hour, RecordDateTime), COUNT(*), SUM(BillAmount) FROM SaleHeader WHERE VoucherDate>='2026-04-01' GROUP BY hour → 17h 22,268 / 18h 20,670 / 19h 26,269 / 20h 22,641 of 168,881 total. ary query → 10 distinct UserID, 6 distinct StationID, 1 LocationID. ary query on SaleDetail → 2.64 lines/bill (445,533 lines / 168,881 bills).",
+      "number": "91,848 of 168,881 bills in 4 hours; 1,181 bills/day",
+      "soWhat": "The queue, not the assortment, is what a digital layer fixes first. Pre-order-and-collect is the only lever that moves demand OUT of 17:00–21:00 without hiring cashiers or adding tills."
+    },
+    {
+      "claim": "The pre-order and delivery lifecycle already exists in the POS schema and has been used 17 times in its life. SaleOrderHeader carries Status, AcceptedDate, PreparationDate, PreparedDate, DelivedredDate, DeliveryType, DeliveryDate, Packages, StreetID, LocalityID, ApprovalNo — and 17 rows, all bulk supply orders to The Kalgidhar Society at ~₹6.8 lakh each.",
+      "status": "VERIFIED",
+      "evidence": "ary schema tables → SaleOrderHeader 17 rows, SaleOrderDetail 800 rows. ary peek SaleOrderHeader -n 3 → columns include Status/AcceptedDate/PreparationDate/PreparedDate/DelivedredDate/DeliveryType/LocalityID; rows are CustomerID 002CM 'The Kalgidhar Society', BillAmount ₹687,686 / ₹673,908 / ₹681,562. SaleHeader also carries SOSerialNumber, ServiceModeID, DeliveryDateTime, TableName, NoOfPax.",
+      "number": "17 orders lifetime against a 1.09 M-bill sales table",
+      "soWhat": "ARY does not need to buy or build an order-management system. It needs to point a WhatsApp intake at a module it already owns — which also means orders flow into the same books, with no reconciliation seam."
+    },
+    {
+      "claim": "The catalogue is the real cost of any app or WhatsApp shop, and it is images only — not prices. Picture1, WebItemName, WebProductName and WebGroupID are empty on ALL 21,466 SKUs. But the price/cost master is essentially complete: ProductChildMaster has 111,021 rows with MRP on 110,916 (99.9%), SellingPrice on 111,018 and PurchaseCost on 111,021 (100%).",
+      "status": "VERIFIED",
+      "evidence": "ary query on ProductMaster → 21,466 SKUs, has_pic 0, has_webname 0, has_webgroup 0, has_hsn 21,466, MaxRetailPrice>0 on 0, StandardCostPrice>0 on 41. ary query on ProductChildMaster → 111,021 rows, MRP>0 on 110,916, SellingPrice>0 on 111,018, PurchaseCost>0 on 111,021.",
+      "number": "0 images on 21,466 SKUs; 99.9% price coverage on 111,021 child rows",
+      "soWhat": "A digital shelf can go live with correct live prices tomorrow. It cannot go live with pictures. Budget the photography, not the pricing project — and note that the same SKU is priced per counter, so any shelf display must be counter-specific."
+    },
+    {
+      "claim": "A 500-SKU curated catalogue covers 63.4% of what residents actually spend. Only 6,386 SKUs sold at all in the last 12 months (out of 19,481 active); the top 100 are 33.1% of value, top 300 are 52.9%, top 500 are 63.4%, top 1,000 are 77.5%.",
+      "status": "VERIFIED",
+      "evidence": "ary query: CTE over SaleDetail JOIN SaleHeader WHERE VoucherDate>='2025-08-01', ROW_NUMBER by value → skus_sold_12m 6,386, total ₹817.44 lakh, pct_top100 33.05, pct_top300 52.90, pct_top500 63.36, pct_top1000 77.47.",
+      "number": "500 SKUs = 63.4% of ₹8.17 Cr",
+      "soWhat": "Photographing and describing 500 SKUs is a two-week job, not a two-year one. This is what makes WhatsApp-first credible and makes 'we need a full 21,000-SKU app' the wrong answer."
+    },
+    {
+      "claim": "UPI Lite is a free, zero-integration speed win that fits ARY's basket exactly. Per-transaction limit ₹1,000 and wallet limit ₹5,000 since RBI's 4-Dec-2024 MPC, no UPI PIN, debit processes offline, auto top-up via e-mandate since Nov 2024, and NPCI mandated balance transfer-out plus a passcode lock from 1-Apr-2025. ARY's average bill is ₹176.",
+      "status": "VERIFIED",
+      "evidence": "https://economictimes.indiatimes.com/topic/upi-lite — 'RBI increases UPI Lite per transaction limit to Rs 1000, up from Rs 500… total limit of ₹5,000' (4 Dec 2024); auto top-up from 1 Nov 2024; 'transfer out' + mandatory passcode from 1 Apr 2025 (26 Feb 2025); 'debit transaction offline while the credit will happen when the device goes online' (https://en.wikipedia.org/wiki/Unified_Payments_Interface). ARY average cash tender ₹175.9, Paytm ₹168.7 (ary sales payment-mix FY26-27).",
+      "number": "₹1,000 no-PIN limit vs ₹176 average bill — 100% of baskets fit",
+      "soWhat": "A poster at each till that says 'turn on UPI Lite' removes the PIN keystroke and the network round-trip from ~56% of transactions during the 17:00–21:00 crush. Cost to ARY: printing. Caveat: an on-device balance is lost if the resident changes phone platform, number or the bank's IFSC."
+    },
+    {
+      "claim": "UPI is about to stop being free for some merchants, and a wallet top-up is exactly the transaction that would attract the charge. The Payment and Settlement Systems Amendment Bill (Aug 2026) removed the zero-MDR guarantee; reported proposals put 0.25%–0.4% MDR on UPI transactions above ₹2,000 for larger merchants. Every ARY retail tender is far below ₹2,000 — but a ₹2,000–₹5,000 parent top-up is above it.",
+      "status": "VERIFIED",
+      "evidence": "https://economictimes.indiatimes.com/topic/upi-mdr — FM Sitharaman 10–11 Aug 2026: 'Any future MDR would apply only to limited merchant transactions above a prescribed threshold'; 7 Aug 2026: 'the Centre could allow a levy of 0.25% to 0.4% as merchant discount rate (MDR) charges on UPI transactions above Rs 2000'; Parliament panel 13 Aug 2026: UPI costs ₹20,700 Cr against a ₹2,000 Cr allocation; PCI 7 Aug 2026: kirana/small merchants should stay exempt. Threshold and scope still undecided.",
+      "number": "0.25%–0.4% proposed above ₹2,000; ARY average tender ₹176",
+      "soWhat": "This inverts the naive wallet pitch. Consolidating 20 exempt ₹176 payments into one ₹3,500 top-up may CREATE an MDR liability where none existed. On ₹48 lakh of top-ups a year at 0.3% that is ~₹14,400/yr — small, but the design should assume it and the rule should be re-checked before launch, because the threshold is not yet notified."
+    },
+    {
+      "claim": "Loyalty has no retention job to do here, because there is nowhere else to shop. Baru Sahib is a closed township 30–50 km of hill road from a market town, and India's quick-commerce build-out — now 477 cities, 3,536 dark stores in the top 10 cities alone — is not coming for it.",
+      "status": "VERIFIED",
+      "evidence": "https://economictimes.indiatimes.com/topic/quick-commerce-unit-economics — CLSA, 27 Aug 2026: 'Quick commerce expands to 477 cities'; 26 Aug 2026: 'The 10 cities together account for 3,536 dark stores… Blinkit leading at 969.' ARY's monopoly position and the 30–50 km distance are given in the brief, not independently verified by me.",
+      "number": "477 quick-commerce cities, none of them Baru Sahib",
+      "soWhat": "Do not buy a points programme to stop churn that cannot happen. If loyalty is used at all, aim it at two jobs ARY genuinely has: getting residents to identify themselves at the till, and clearing dead stock (the top 5 dead SKUs alone hold ₹3.06 Cr at cost, one with no sale for 778 days)."
+    },
+    {
+      "claim": "Electronic shelf labels are the wrong first purchase and carry a real trading risk. ARY would need per-counter labels across 19,481 active SKUs priced in 111,021 location-specific child rows, and ESL failure can stop a shop dead: a price glitch closed all 185 Woolworths stores in New Zealand on 7-Apr-2025.",
+      "status": "VERIFIED",
+      "evidence": "https://economictimes.indiatimes.com/topic/electronic-shelf-labels — 'A technical glitch forced all 185 Woolworths stores in New Zealand to shut down temporarily on April 7' (7 Apr 2025); Reliance Trends adding 'self-checkout counters to electronic shelf labels' (23 Jul 2023). ARY scale from ary query on ProductChildMaster (111,021 rows) and ary warehouses (19,481 active SKUs across 8 active counters).",
+      "number": "19,481 SKUs × up to 8 counters; 185 stores closed by one ESL fault",
+      "soWhat": "Defer. The 80/20 is a price-check that costs nothing: 'send the item name on WhatsApp, get the price' reading the child price table that is already 99.9% populated. No hardware, no single point of failure."
+    },
+    {
+      "claim": "The POS vendor markets integrations but publishes no API. RanceLab (the FusionERP8 vendor) lists an 'Integrations & Apps Panel' promising delivery apps, payment gateways, 'UPI, card, wallet, and QR payments' and an 'API-ready gateway for future integrations' — with no named integration, no public API documentation and no pricing anywhere on the site.",
+      "status": "VERIFIED",
+      "evidence": "https://www.rancelab.com/ (8 modules incl. 'Customer Success Studio' with 'built-in loyalty and campaigns'); https://www.rancelab.com/products/integrations-apps-panel ('Marketplaces, delivery apps, payment gateways, QR and wallets', 'API-ready gateway for future integrations') — no platform named; sitemap shows no pricing, API, wallet, loyalty or online-ordering pages. /fusionerp/, /integration/, /customer-engagement/ all 404.",
+      "number": "0 documented API endpoints; 0 named integrations",
+      "soWhat": "Budget for either a paid vendor engagement or direct SQL Server integration. ARY already has the latter working — the read-only `ary` CLI — so the pragmatic path is: read live from SQL, write nothing, and let orders reach staff who key them into the POS until the vendor quotes a write path."
+    },
+    {
+      "claim": "Two infrastructure facts will bite any integration. The database login in use is `sa` with sysadmin rights, and the sales feed is currently 6 days stale — SaleHeader's last row is 2026-08-21 14:05 while accounting vouchers are current to 2026-08-27 15:51 (the sales module pauses for the physical stock audit).",
+      "status": "VERIFIED",
+      "evidence": "ary doctor → host 138.252.101.118:1433, login sa, 'privileges sysadmin (OVER-PRIVILEGED — prefer a read-only login)'; 'sales (SaleHeader) 2026-08-21 14:05 · 1088607 bills' vs 'accounting (vouchers) 2026-08-27 15:51'. ary sales daily --from 2026-08-01 also shows 2026-08-18 missing entirely and last_entry timestamps lagging VoucherDate by up to 2 days.",
+      "number": "6 days stale sales feed; sysadmin credential",
+      "soWhat": "An app or WhatsApp bot reading this database today would quote 6-day-old availability to a resident standing in the shop. Any customer-facing promise must be 'reserve and we'll confirm', never 'in stock'. And no consumer-facing service should ever hold the `sa` credential."
+    },
+    {
+      "claim": "Stock accuracy is good enough for a curated catalogue but not for a guarantee: 449 of 24,593 SKU-warehouse positions (1.8%) show negative book stock, and the worst offenders sit in the inactive Talwandi Sabo counter (Tomato Sauce at −48,239 units, −₹1.45 Cr at cost).",
+      "status": "VERIFIED",
+      "evidence": "ary query: COUNT over (SELECT ProductID, WarehouseID, SUM(Quantity) FROM Stock GROUP BY … HAVING SUM(Quantity)<0) → 449 negative of 24,593 total positions. ary stock negative → top rows are Talwandi Sabo (inactive) and 'Stiching Charges From Customer' (a service line, not stock).",
+      "number": "1.8% of positions negative",
+      "soWhat": "Show availability as a soft signal on the top 500 SKUs at Ary Pos and reserve-then-confirm. Do not build an app promise on a book stock that is negative 449 times."
+    },
+    {
+      "claim": "Staff attribution is absent, so no digital layer can be measured by person. SalesPersonID is [NONE] on 1,085,051 of 1,088,607 bills (99.7%), per the brief, and the whole of FY26-27 was rung up by 10 distinct UserIDs on 6 stations.",
+      "status": "VERIFIED",
+      "evidence": "SalesPersonID figure taken from the task brief (not re-queried). Independently verified: ary query → COUNT(DISTINCT UserID)=10, COUNT(DISTINCT StationID)=6, COUNT(DISTINCT LocationID)=1 for VoucherDate>='2026-04-01'.",
+      "number": "99.7% of bills have no salesperson; 10 cashiers",
+      "soWhat": "UserID (10 people) is the usable accountability handle, not SalesPersonID. Any pilot — wallet, pre-order, UPI-reference capture — should be measured per UserID/StationID, which is the only staff dimension the data actually carries."
+    },
+    {
+      "claim": "There is a natural, seasonal, high-value pre-order use case sitting in the clothing counter: bill volume swings 16.6x between the quiet month and session start (412 bills in Jan-2026 → 6,841 in Mar-2026 → 4,041 in Apr-2026).",
+      "status": "VERIFIED",
+      "evidence": "ary query on SaleHeader JOIN SaleDetail WHERE WarehouseID=11 grouped by month → 2026-01: 412 bills; 2026-02: 1,551; 2026-03: 6,841; 2026-04: 4,041; 2025-12: 708. (Value column in this query is inflated by the line-level join; the bill COUNTS are the reliable figure.) Lifetime Ary Clothing sales ₹4.27 Cr per the brief.",
+      "number": "412 → 6,841 bills/month, a 16.6x swing",
+      "soWhat": "Uniforms and stationery at session start are exactly what parents want to order before they arrive and exactly what jams the counter when they don't. It is a narrow, seasonal, size-and-quantity problem — the highest-value first pilot for the dormant SaleOrderHeader module."
+    },
+    {
+      "claim": "The Indian reference model for this is already standardised: school ERPs ship a cashless canteen module plus RFID as a bundled feature, and campus payment platforms exist to let parents fund student purchases.",
+      "status": "VERIFIED",
+      "evidence": "https://www.myclassboard.com/ — module list includes 'Canteen: Enhance cafeteria operations with cashless transactions' and 'RFID Technology'. https://www.eduqfix.com/ — 'equip the institute with a digital platform to facilitate supplies & services to the students/parents'. Neither publishes pricing.",
+      "number": "Not disclosed by either vendor",
+      "soWhat": "ARY is not pioneering. But note what the market sells: a canteen module inside a school ERP, sold to the school. ARY's own POS already has the wallet fields, so buying a second system would duplicate what FusionERP8 holds — and split the books."
+    },
+    {
+      "claim": "The lifetime cash figure this toolkit reports is wrong and should never be quoted. `ary sales payment-mix` shows lifetime Cash at ₹10,023 Cr because SalePayment.Amount stores cash TENDERED, not applied, and 11 fat-finger rows carry the error — the largest is ₹89,014,903,084 tendered with ₹89,014,903,079 returned as change.",
+      "status": "VERIFIED",
+      "evidence": "ary sales payment-mix (no dates) → Cash 557,305 tenders ₹100,230,380,328.81 (99.85%). ary query: SELECT SerialNumber, Amount, TenderAmount, ReturnAmount FROM SalePayment WHERE Amount>1000000 → top row Amount=TenderAmount=89,014,903,084.000, ReturnAmount=89,014,903,079.000; 11 rows exceed ₹1 lakh on MOPID 1. Applied value = Amount − ReturnAmount.",
+      "number": "₹10,023 Cr reported vs ~₹9 Cr real lifetime cash",
+      "soWhat": "Two consequences. Any digital-payments business case built from the CLI's lifetime cash share is nonsense — use dated windows and Amount−ReturnAmount. And a till that accepts an ₹89 billion cash tender has no input validation, which is the same class of gap as the missing UPI reference."
+    },
+    {
+      "claim": "The CLI's own gross-margin column is also unreliable, because it reads ProductMaster.StandardCostPrice (populated on 41 of 21,466 SKUs) instead of ProductChildMaster.PurchaseCost (populated on 111,021 of 111,021). Computed properly, FY26-27 gross margin is 25.8%.",
+      "status": "VERIFIED",
+      "evidence": "ary sales by-product --from 2026-04-01 shows cost_at_std 0.00 and gross_margin = full sale value for nearly every SKU. Correct calculation — ary query: SUM(Quantity*SaleRate)=₹398.20 lakh vs SUM(Quantity*ProductChildMaster.PurchaseCost)=₹295.44 lakh over 465,733 lines, only 113 lines missing a cost → gross margin ₹102.76 lakh = 25.81%.",
+      "number": "25.8% gross margin (₹102.76 L on ₹398.20 L)",
+      "soWhat": "This is the multiplier for every sales-uplift claim in this report, and it is a real measured number rather than the trial-balance approximation. Anyone re-running the analysis must join to the child table or they will report 100% margins."
+    }
+  ],
+  "tables": [
+    {
+      "title": "FY26-27 payment mix (1 Apr – 21 Aug 2026) — VERIFIED",
+      "columns": [
+        "Mode",
+        "Tenders",
+        "% tenders",
+        "Value (₹ lakh)",
+        "% value",
+        "Avg tender (₹)"
+      ],
+      "rows": [
+        [
+          "Paytm / UPI",
+          "96,593",
+          "56.3%",
+          "162.94",
+          "42.9%",
+          "169"
+        ],
+        [
+          "Cash",
+          "69,791",
+          "40.7%",
+          "122.79",
+          "32.3%",
+          "176"
+        ],
+        [
+          "Credit sale",
+          "5,192",
+          "3.0%",
+          "94.33",
+          "24.8%",
+          "1,817"
+        ],
+        [
+          "TOTAL",
+          "171,576",
+          "100%",
+          "380.06",
+          "100%",
+          "222"
+        ]
+      ]
+    },
+    {
+      "title": "UPI share of tenders, month by month — VERIFIED",
+      "columns": [
+        "Month",
+        "Tenders",
+        "UPI tenders",
+        "UPI %"
+      ],
+      "rows": [
+        [
+          "Apr 2024",
+          "29,830",
+          "11,034",
+          "37.0%"
+        ],
+        [
+          "Dec 2024",
+          "21,346",
+          "11,600",
+          "54.3%"
+        ],
+        [
+          "Jun 2025",
+          "29,831",
+          "16,195",
+          "54.3%"
+        ],
+        [
+          "Dec 2025",
+          "29,768",
+          "18,446",
+          "62.0%"
+        ],
+        [
+          "Mar 2026",
+          "31,587",
+          "18,510",
+          "58.6%"
+        ],
+        [
+          "Jun 2026",
+          "39,183",
+          "23,322",
+          "59.5%"
+        ],
+        [
+          "Aug 2026",
+          "22,714",
+          "12,703",
+          "55.9%"
+        ]
+      ]
+    },
+    {
+      "title": "When the shop is busy — bills by hour, FY26-27 — VERIFIED",
+      "columns": [
+        "Hour",
+        "Bills",
+        "% of day",
+        "Value (₹ lakh)"
+      ],
+      "rows": [
+        [
+          "09:00",
+          "15,590",
+          "9.2%",
+          "30.72"
+        ],
+        [
+          "11:00",
+          "8,435",
+          "5.0%",
+          "31.15"
+        ],
+        [
+          "13:00",
+          "10,643",
+          "6.3%",
+          "20.71"
+        ],
+        [
+          "16:00",
+          "10,930",
+          "6.5%",
+          "19.37"
+        ],
+        [
+          "17:00",
+          "22,268",
+          "13.2%",
+          "47.07"
+        ],
+        [
+          "18:00",
+          "20,670",
+          "12.2%",
+          "52.88"
+        ],
+        [
+          "19:00",
+          "26,269",
+          "15.6%",
+          "38.41"
+        ],
+        [
+          "20:00",
+          "22,641",
+          "13.4%",
+          "43.08"
+        ],
+        [
+          "21:00",
+          "6,872",
+          "4.1%",
+          "16.49"
+        ],
+        [
+          "16:00–21:00 subtotal",
+          "109,650",
+          "64.9%",
+          "217.30"
+        ]
+      ]
+    },
+    {
+      "title": "Digital option scorecard — what it solves, what it costs, what the POS must give",
+      "columns": [
+        "Option",
+        "What it actually solves at ARY",
+        "Cost",
+        "What FusionERP8 must provide",
+        "Main risk",
+        "Verdict"
+      ],
+      "rows": [
+        [
+          "Identity at the till (mobile no. / QR ID)",
+          "96.2% of bills are anonymous; unlocks every other item on this list",
+          "≈₹0 — CustomerMaster.Mobile already exists (173/3,514 filled)",
+          "Nothing new. A cashier prompt + a field",
+          "Queue time per bill in the 17:00–21:00 crush; residents refusing a number",
+          "DO FIRST"
+        ],
+        [
+          "WhatsApp order → counter pickup",
+          "54.4% of bills jam into 4 hours; 2.64-line baskets from memory",
+          "₹1,500/mo platform + ~₹870/mo utility msgs ≈ ₹2,540/mo (VERIFIED rates)",
+          "Webhook receiver + staff keying orders into SaleOrderHeader (already exists, 17 rows used)",
+          "6-day-stale stock feed → never promise 'in stock'; who answers at 19:00",
+          "DO SECOND"
+        ],
+        [
+          "Campus wallet (prepaid, closed-loop)",
+          "₹48.02 L receivable across 1,459 households; 1,459 monthly collection chases",
+          "Config, not build — Deposit/CardID/MOPID 98 all live and unused",
+          "Enable MOPID 98 Prepaid; top-up voucher process; per-account balance display at till",
+          "Float custody (Trust vs ARY); GST/accounting on the advance; MDR may now hit a ₹2,000+ top-up",
+          "DO THIRD"
+        ],
+        [
+          "UPI-on-collection / UPI Lite push",
+          "PIN + network round-trip on 56% of tenders; ₹176 avg fits the ₹1,000 no-PIN limit",
+          "₹0 — a poster at each till",
+          "Nothing",
+          "On-device balance lost on phone/number/IFSC change",
+          "DO NOW (free)"
+        ],
+        [
+          "UPI reference capture (UTR at the till)",
+          "0 of 524,295 UPI tenders carry any reference; ₹7.97 Cr of open refs never cleared",
+          "Small — DocumentNo field already exists on SalePayment",
+          "Make DocumentNo mandatory on MOPID 503, or read the soundbox/settlement file",
+          "Adds keystrokes at peak; needs a settlement file from Paytm",
+          "DO NOW (control)"
+        ],
+        [
+          "In-campus delivery runner",
+          "Peak crush + elderly/parents-with-babies who cannot queue at 19:00",
+          "≈₹30,000/mo for 2 runners + cycles (ESTIMATED, HP wage not verified)",
+          "Nothing new — SaleOrderHeader carries DeliveryType/DelivedredDate/LocalityID",
+          "A cost until order volume exists; cash handling by runners",
+          "AFTER ordering works"
+        ],
+        [
+          "Ordering app / PWA",
+          "Nothing WhatsApp doesn't already solve, at 30 products/message and 99 units/line",
+          "Catalogue is the cost: 0 images on 21,466 SKUs; 500 SKUs = 63.4% of value",
+          "Read-only SQL access on a NON-sa login",
+          "Unknown smartphone base; residential school children have no phones",
+          "DEFER"
+        ],
+        [
+          "Loyalty / points",
+          "No churn to prevent — nearest market 30–50 km, no quick-commerce in 477 cities reaches here",
+          "Config — CRMPoints + MOPID 97 live, 0 points issued on 1,088,607 bills",
+          "Enable point accrual; needs identity first",
+          "Discounting a monopoly for no return",
+          "REFRAME: use for identity capture + dead-stock clearance only"
+        ],
+        [
+          "Electronic shelf labels",
+          "Price accuracy — but prices are already 99.9% populated per counter",
+          "19,481 active SKUs × up to 8 counters of labels + gateway + software",
+          "Per-counter price feed from ProductChildMaster (exists)",
+          "One glitch closed all 185 Woolworths NZ stores (7 Apr 2025)",
+          "DEFER — do a WhatsApp price-check instead"
+        ]
+      ]
+    },
+    {
+      "title": "Catalogue readiness for any digital shelf — VERIFIED",
+      "columns": [
+        "Field",
+        "Table",
+        "Populated",
+        "Of",
+        "Coverage"
+      ],
+      "rows": [
+        [
+          "MRP",
+          "ProductChildMaster",
+          "110,916",
+          "111,021",
+          "99.9%"
+        ],
+        [
+          "SellingPrice",
+          "ProductChildMaster",
+          "111,018",
+          "111,021",
+          "100.0%"
+        ],
+        [
+          "PurchaseCost",
+          "ProductChildMaster",
+          "111,021",
+          "111,021",
+          "100.0%"
+        ],
+        [
+          "HSN/SAC",
+          "ProductMaster",
+          "21,466",
+          "21,466",
+          "100.0%"
+        ],
+        [
+          "MaxRetailPrice",
+          "ProductMaster",
+          "0",
+          "21,466",
+          "0.0%"
+        ],
+        [
+          "StandardCostPrice",
+          "ProductMaster",
+          "41",
+          "21,466",
+          "0.2%"
+        ],
+        [
+          "Picture1 (image)",
+          "ProductMaster",
+          "0",
+          "21,466",
+          "0.0%"
+        ],
+        [
+          "WebItemName",
+          "ProductMaster",
+          "0",
+          "21,466",
+          "0.0%"
+        ],
+        [
+          "WebGroupID",
+          "ProductMaster",
+          "0",
+          "21,466",
+          "0.0%"
+        ],
+        [
+          "Mobile number",
+          "CustomerMaster",
+          "173",
+          "3,514",
+          "4.9%"
+        ],
+        [
+          "Email",
+          "CustomerMaster",
+          "3",
+          "3,514",
+          "0.1%"
+        ],
+        [
+          "Deposit (prepaid balance)",
+          "CustomerMaster",
+          "0",
+          "3,514",
+          "0.0%"
+        ],
+        [
+          "Loyalty points issued",
+          "SaleHeader",
+          "0",
+          "1,088,607",
+          "0.0%"
+        ]
+      ]
+    },
+    {
+      "title": "Verified external cost inputs",
+      "columns": [
+        "Item",
+        "Rate",
+        "Effective / dated",
+        "Source"
+      ],
+      "rows": [
+        [
+          "WhatsApp marketing message (India)",
+          "₹1.09 per message",
+          "1 Jan 2026",
+          "aisensy.com/pricing (Meta BSP)"
+        ],
+        [
+          "WhatsApp utility message (India)",
+          "₹0.145 per message",
+          "1 Jan 2026",
+          "aisensy.com/pricing"
+        ],
+        [
+          "WhatsApp utility inside 24h service window",
+          "FREE",
+          "current",
+          "developers.facebook.com/docs/whatsapp/pricing"
+        ],
+        [
+          "WhatsApp service (user-initiated) reply",
+          "FREE",
+          "current",
+          "aisensy.com/pricing"
+        ],
+        [
+          "BSP platform subscription",
+          "₹1,500/mo or ₹16,200/yr",
+          "Aug 2026",
+          "aisensy.com/pricing"
+        ],
+        [
+          "Indian virtual number for WABA",
+          "₹2,000 + GST/yr",
+          "Aug 2026",
+          "aisensy.com/pricing"
+        ],
+        [
+          "Closed-system PPI (campus wallet)",
+          "No RBI authorisation, no escrow, no KYC, no limit",
+          "current",
+          "RBI PPI Master Directions cl. 2.1"
+        ],
+        [
+          "UPI Lite",
+          "₹1,000/txn, ₹5,000 wallet, no PIN, offline debit",
+          "RBI MPC 4 Dec 2024",
+          "ET topic/upi-lite"
+        ],
+        [
+          "UPI MDR (proposed)",
+          "0.25%–0.4% above ₹2,000, large merchants only",
+          "Bill passed Aug 2026, threshold NOT yet notified",
+          "ET topic/upi-mdr, FM 10–11 Aug 2026"
+        ],
+        [
+          "WhatsApp multi-product message",
+          "30 products per message, 99 units per line",
+          "current",
+          "developers.facebook.com/docs/whatsapp/cloud-api/guides/sell-products-and-services"
+        ]
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Start capturing customer identity at the till TODAY, before any technology is bought. Make the cashier ask for a mobile number on every bill above a threshold (say ₹300) and write it to CustomerMaster.Mobile, which already exists and is filled on only 173 of 3,514 records. Target: 1,500 identified households in 90 days. Measure it per UserID/StationID — the 10 cashiers are the only staff dimension the data carries, since SalesPersonID is blank on 99.7% of bills. Nothing else in this report works without this, and it costs nothing.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "Cashier time in the 17:00–21:00 window, when 54.4% of bills land. Pilot it at 09:00–16:00 first and at the Fruits & Veg / G Canteen counters, not at Ary Pos in the evening."
+    },
+    {
+      "action": "Make DocumentNo mandatory on mode-of-payment 503 (Paytm) so a UTR is captured with every UPI collection, and start clearing bill-wise references on ledger account 2072. Today 0 of 524,295 UPI tenders carry any reference, and ₹7.97 Cr of open references sit on that account (₹5.95 Cr over 180 days) even though it nets to −₹16.68 lakh. Also add an upper-bound validation on cash tendered — the till currently accepts ₹89,014,903,084.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "Whether RanceLab can make DocumentNo mandatory per mode-of-payment through configuration, or whether it needs a vendor change. Ask them before designing around it. Also need Paytm's daily settlement file to reconcile against."
+    },
+    {
+      "action": "Launch WhatsApp order-to-counter-pickup on a curated 500-SKU catalogue (63.4% of what residents actually spend), using Meta's native multi-product messages and cart, with orders landing in the SaleOrderHeader module ARY already owns. Payment on collection via the existing Paytm QR — no gateway integration. Rule: reserve-and-confirm, never 'in stock', because the sales feed to this database is 6 days stale and 449 stock positions are negative.",
+      "priority": "P0",
+      "monthlyImpactInr": 57000,
+      "effort": "weeks",
+      "blocker": "Photographing 500 SKUs — Picture1 is empty on all 21,466 products. That is the whole critical path; the messaging costs ₹2,540/month. Impact figure is ESTIMATED: 8% of 1,181 daily bills pre-ordering with a +₹78 basket, at the VERIFIED 25.8% gross margin. The basket-lift assumption is unvalidated at ARY."
+    },
+    {
+      "action": "Turn on UPI Lite promotion at every till — a printed card saying 'pay under ₹1,000 with no PIN, works even with bad network'. ARY's average tender is ₹176, so 100% of baskets fit inside the ₹1,000 no-PIN limit, and the debit works offline. Cost is printing. This is the only item here with zero build, zero integration and zero vendor.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "None. Do warn residents that a UPI Lite balance is lost if they change phone platform, mobile number, or the bank changes its IFSC."
+    },
+    {
+      "action": "Convert the 1,459 credit households in the 'Akal Academy Cs' group (₹48.02 lakh receivable, largest single balance ₹95,000) to a prepaid balance using CustomerMaster.Deposit and mode-of-payment 98 'Prepaid' — both already configured in FusionERP8 and never used. It is a closed-system PPI, so no RBI authorisation, escrow or KYC applies. Start with the ~200 largest balances, not all 1,459.",
+      "priority": "P1",
+      "monthlyImpactInr": 36000,
+      "effort": "weeks",
+      "blocker": "Two things a lawyer and an accountant must settle first, not a technologist: (a) who holds the float — ARY or The Kalgidhar Trust — and (b) the GST and accounting treatment of the customer advance and of unredeemed balances. I could not verify the GST position on advances for goods or on vouchers from a primary source; do not launch on my word. Impact is ESTIMATED: ₹48.02 L × 9% cost of funds ÷ 12."
+    },
+    {
+      "action": "Run one seasonal pre-order pilot for uniforms and stationery in Feb–Mar 2027, when clothing-counter bills swing 16.6x (412 in Jan-2026 to 6,841 in Mar-2026). Parents order sizes and quantities before the child arrives; staff pick against SaleOrderHeader. This is the highest-value, narrowest, most testable use of the dormant order module.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "Nobody has measured what session-start demand is currently LOST to stockouts and queues — so the upside is genuinely NOT-CHECKED. Get the clothing counter to log turn-aways for two weeks in Mar-2027 before sizing this."
+    },
+    {
+      "action": "Give any digital service its own read-only SQL login. The `ary` toolkit is currently connecting as `sa` with sysadmin rights on FR8HODBNEW, and no customer-facing WhatsApp bot, app or dashboard should ever hold that credential.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "Needs the DBA / RanceLab to create the login on 138.252.101.118. Confirm FusionERP8 itself does not require sysadmin for its own service account before changing anything."
+    },
+    {
+      "action": "Add an in-campus delivery runner ONLY after WhatsApp ordering sustains ~50 orders/day, and start with the two constituencies who genuinely cannot queue at 19:00: married staff families with babies, and the elderly. Two runners with cycles, ≈₹30,000/month.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "Order volume. Until it exists this is pure cost. I did not verify Himachal Pradesh minimum wages, so the ₹30,000 is an ESTIMATE — get the real figure from ARY's own payroll before committing."
+    },
+    {
+      "action": "Re-purpose the dormant loyalty engine (CRMPoints, mode 97 'CRM Point Redeem') for two jobs only: rewarding a resident for giving their mobile number, and clearing dead stock — the top 5 dead SKUs alone hold over ₹3 Cr at cost, one with no sale in 778 days. Do NOT buy a retention programme: with no competitor within 30–50 km and quick commerce nowhere near Baru Sahib, there is no churn to prevent.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "Identity. Points against account 00001 are meaningless, and 96.2% of bills go there."
+    },
+    {
+      "action": "Defer electronic shelf labels and any native app. ESL would mean labels across 19,481 active SKUs priced per counter in 111,021 child rows, and an ESL fault closed all 185 Woolworths NZ stores in April 2025. The 80/20 is a WhatsApp price-check reading the child price table that is already 99.9% populated — no hardware, no single point of failure.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "effort": "months",
+      "blocker": "Nothing to solve — this is a decision not to spend. Revisit ESL only if ARY opens a second format store where price changes are frequent."
+    }
+  ],
+  "openQuestions": [
+    "How many of the ~5,000 residents actually carry a smartphone, and does The Kalgidhar Trust permit phones for Akal Academy school children? This is the single biggest hole in this report — every consumer-facing recommendation is sized against an addressable base I could not measure. Who could answer: the Akal Academy administration and the ARY store manager.",
+    "Is GST payable when a resident tops up a closed-loop ARY wallet, or only when they buy? I could not retrieve a primary source (CBIC and taxguru URLs 404'd or were blocked) and I will not state a position from memory. It matters because it decides whether a top-up creates an immediate tax liability. Who could answer: ARY's tax advisor — Divya's tax desk (SAP USER04) already handles JIVO's GST work.",
+    "Who legally holds a prepaid wallet float — Akal Rozgar Yojana (a unit of Jivo Wellness Pvt Ltd) or The Kalgidhar Trust, whose institutions are ARY's biggest debtors? The closed-loop PPI exemption is clean, but the custody and inter-entity question is not. Who could answer: Jivo Wellness finance + the Trust.",
+    "Where will the notified UPI MDR threshold actually land? The Payment and Settlement Systems Amendment Bill passed in Aug 2026 and the reported figure is 0.25%–0.4% above ₹2,000 for larger merchants, but the threshold and merchant-size definition are explicitly still undecided. It decides whether consolidating small exempt payments into one large top-up creates a new cost. Who could answer: nobody yet — re-check before the wallet launches.",
+    "Can RanceLab make DocumentNo mandatory per mode-of-payment through configuration, and does FusionERP8 expose ANY documented write API? Their site promises an 'API-ready gateway' and names not one integration; /fusionerp/, /integration/ and /customer-engagement/ all 404. Who could answer: RanceLab sales/support directly.",
+    "Why is the sales feed 6 days stale (SaleHeader last written 2026-08-21 14:05, vouchers current to 2026-08-27 15:51), and does the pause recur? If it is the annual physical stock audit, an ordering service must be designed to survive it. Also: 2026-08-18 is missing from the daily sales series entirely. Who could answer: the ARY store manager and whoever runs the audit.",
+    "What does the store lose to stockouts and turn-aways at session start? The clothing counter's 16.6x February-to-March swing is the strongest pre-order case in the data, but the lost-sale figure behind it does not exist anywhere. Two weeks of manual turn-away logging in Mar-2027 would settle it.",
+    "Does a prepaid balance change how ARY residents actually spend? Every general retail claim says yes; I found zero ARY evidence, because Deposit is 0 on all 3,514 customers and no points have ever been issued on 1,088,607 bills. This can only be answered by running the 200-account pilot and measuring it."
+  ]
+}
