@@ -4,7 +4,7 @@ date: 2026-08-29
 author: Daman
 area: sales
 severity: high
-status: active
+status: superseded
 supersedes: 
 tags: [orders]
 ---

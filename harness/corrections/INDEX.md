@@ -57,4 +57,4 @@ any default assumption. If one contradicts your instinct, the correction wins.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
 - **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.
-- **[C-0052]** POs by channel: Mart = ecom.jivo.in (ecom CLI); MT and GT = OMS (oms.jivo.in). Go to the owning system for a PO, never assume one source.
+- **[C-0053]** POs by ARRIVAL CHANNEL, not company: q-commerce + Amazon + Flipkart into Mart = ecom.jivo.in (ecom CLI); MT and GT = OMS. Jivo Mart exists in both - the channel decides, never the company.
