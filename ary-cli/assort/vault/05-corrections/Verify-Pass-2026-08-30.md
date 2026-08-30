@@ -106,15 +106,28 @@ residents.** Any earlier framing of it as a charitable subsidy is wrong.
 
 ## 🔧 Tool defects that produced wrong findings (fix before trusting output)
 
-- **~~`ary assort probe` is non-deterministic / zeroes on hyphens~~ — NOT REPRODUCIBLE.
-  The critic and two sizers reported this; I tested it and it is FALSE.** Five identical
-  runs of `probe lassi` returned byte-identical results (104/104/33/15/Rs 473,057), and
-  `probe anti-dandruff` returns 1 SKU, `probe glucose-d` returns 5 — hyphens match fine
-  (a hyphen is not a LIKE wildcard). The real cause is in the agents' own shell: the
-  beverages-cold sizer said it plainly — *"probe under zsh does NOT word-split an
-  unquoted variable — my first probe batch returned 0 for everything including lassi."*
-  **That is an agent scripting error, not a CLI defect. Probe-zero verdicts are SAFE,
-  and the two real gaps stand.** Pass each term as its own argument.
+- **⚠️ `ary assort probe` WAS broken — and my first verdict on it was wrong.**
+  The critic and two sizers reported probe failing on hyphens. I tested `anti-dandruff`
+  and `glucose-d`, got non-zero results, and recorded the report as NOT REPRODUCIBLE.
+  **That test was wrong.** Those two terms match products whose names actually contain a
+  hyphen, so they could never expose the defect. The real failure is a hyphenated *term*
+  against a space-separated *product name*: **`probe sugar-free` returned 0 while ARY
+  holds 24 such SKUs written "Sugar Free" (Rs 68,825), and `probe mamaearth` returned 0
+  against 16 SKUs written "Mama Earth"** — precisely the false-gap class probe exists to
+  prevent. **1,116 of 21,479 product names carry a hyphen.**
+  **✅ FIXED 2026-08-30** (`internal/cli/assort.go`, `assortSquash`/`assortSquashSQL`):
+  matching is now normalised on both the term and the column, so sugar-free / sugarfree /
+  "sugar free" all return the same 24 SKUs. Genuine zeros stay zero — paracetamol and
+  denture still return nothing.
+  **The non-determinism half of the report remains NOT REPRODUCED** — five identical runs
+  of `probe lassi` returned byte-identical output (104/104/33/15/Rs 473,057). Recorded as
+  unsupported rather than actioned.
+  **Consequence: probe-zero verdicts recorded BEFORE this fix are unsafe if the term was
+  hyphenated or concatenated.** The two REAL_GAP confirmations (pharmacy-Rx 49 of 51
+  lines, medical devices) used multi-variant molecule and brand probes, so they most
+  likely stand — but re-run them on the fixed binary before acting.
+  **Lesson: a test that cannot fail is not a test.** I cleared a real defect by probing
+  terms that could not have exposed it.
 - **✅ FIXED 2026-08-30 — `internal/cli/assort.go` stock valuation.** It read
   `SUM(Quantity) * MAX(PurchaseCost)`, pricing every unit at the dearest warehouse row's
   cost and applying it to a netted quantity. Measured: the book read **Rs 30.78 L against
