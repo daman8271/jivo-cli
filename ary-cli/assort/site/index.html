@@ -232,7 +232,7 @@ const esc = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 /* hero */
 const M = D.meta;
 document.getElementById('herostats').innerHTML = [
-  ['','' + fmt(M.lines_total), 'product lines 5,000 residents need, across '+M.categories+' categories'],
+  ['','' + M.cats_full+' / '+M.categories, 'categories properly stocked, of the '+M.categories+' that campus life needs ('+fmt(M.lines_total)+' lines) — '+M.cats_half+' half-done, '+M.cats_empty+' empty'],
   ['ok', fmt(M.have), 'ARY has, and it sells — '+M.have_pct+'%'],
   ['dead', fmt(M.listed_dead), 'listed on the books but dead (no sale in 12m)'],
   ['gap', fmt(M.missing), 'missing outright — '+M.missing_pct+'%'],
