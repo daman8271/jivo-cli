@@ -1,0 +1,617 @@
+{
+  "lane": "campus-retail-bench",
+  "headline": "Every comparable Indian captive retailer — the Army's CSD/URC network, the Central Police Canteen, Kendriya Bhandar, Auroville, the IIT campuses — runs a deliberately narrow range at a centrally published price, sold to a named cardholder with a monthly ceiling, and earns almost nothing on margin; ARY is the mirror image (19,481 listed SKUs, 97% of 1.09 m bills booked to one anonymous \"Cash\" account, no price list, Rs 6.87 Cr lent with zero credit limits, and count variance of 19% of sales gross / 4.1% net against a world benchmark of 1.2-1.5%), so the expansion that pays is not another counter — it is copying the four control mechanisms these operations were forced to invent.",
+  "findings": [
+    {
+      "claim": "Every captive Indian retailer of scale sells to a NAMED cardholder, not a walk-in. The Army built CIMS + a canteen smart card in April 2004 explicitly 'to automate URCs, facilitate better inventory management and arrest the misuse of the canteen facilities'; by the 2016 audit there were 50,05,438 active primary Canteen Smart Cards against ~44.12 lakh beneficiaries.",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016, Chapter 5 (Internal Control), paras 5.2 — https://cag.gov.in/uploads/download_audit_report/2017/Chapter_5_Internal_Control_Report_38_of_2016_Union_Government_Defence_PA.pdf ; earlier card/beneficiary counts in CAG Report 14 of 2010 — https://cag.gov.in/webroot/uploads/download_audit_report/2010/Union_Performance_Defence_Canteen_Stores_Department_14_2010.pdf",
+      "number": "50,05,438 active primary smart cards; 44.12 lakh beneficiaries",
+      "soWhat": "This is ARY's single largest structural gap: customer 00001 ('Cash') carries 1,054,205 of 1,088,607 lifetime bills (97%) and SalesPersonID is [NONE] on 99.7%. Nothing about assortment, credit, leakage or wallet share can be managed until the buyer has a name — and no comparator operates without one."
+    },
+    {
+      "claim": "Captive retail prices are set by a published rule, never by the shop. CSD's MoD pricing policy (October 1977) fixes selling price as 'Into Warehouse Cost' — inward freight, transportation, insurance and incidentals — plus a profit of approximately 1 to 12 per cent; the basic price is identical all over India with local taxes added on top; and a PICTORIAL price list with photographs is published twice a year.",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016, Chapter 3 (Pricing policies and quality of goods), para 3 — https://cag.gov.in/uploads/download_audit_report/2017/Chapter_3_Pricing_policies_and_quality_of_Goods__Report_38_of_2016_Union_Government_Defence_PA.pdf ; corroborated in CAG 14 of 2010 para 4.1 ('gross profit of approximately one to six per cent on general stores')",
+      "number": "cost + 1-12% margin band; price list twice a year (January and July)",
+      "soWhat": "ARY has 11 counters and no evidence of a single governing price list. Its own data shows 21 SKUs sold BELOW purchase cost over 12 months (Rs 2.75 lakh), including 'Am Lower' at Rs 106.62 against a Rs 197.41 cost on 1,491 units. A published cost-plus-band list, one price across all counters, fixes this class of loss permanently."
+    },
+    {
+      "claim": "The margin band is enforced in software, because operators cheat it. 29 of 37 URCs audited were charging profit in excess of the prescribed limit on test-checked items; CSD's remedy was to hard-code the retail rate in the CIMS software at the URC.",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016, Chapter 6, para 6.1 and Table 20 (worked examples on shampoo, Tide, Red Label tea, Titan watches, Dairy Milk) — https://saiindia.gov.in/uploads/download_audit_report/2017/Chapter_6_Audit_of_Unit_Run_Canteens_Report_38_of_2016_Union_Government_Defence_PA.pdf",
+      "number": "29 of 37 URCs over-charging",
+      "soWhat": "A price list that the POS does not enforce will be ignored. ARY's price rule must live in FusionERP8 as a locked field per SKU per counter, not in a circular."
+    },
+    {
+      "claim": "Supplier price CUTS pass through automatically, and price RISES are time-locked. CSD policy: if a product's price falls in the civil market the reduction applies to CSD supplies from the date of that reduction and the difference is debited to the supplier; a price increase is granted only after one year from the item's introduction; all revisions must complete within 45 days. The audit found no mechanism to monitor civil-market prices, so Rs 11.09 crore of price reductions never reached consumers (Rs 6.61 crore later recovered from suppliers).",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016, Chapter 3, paras 3.2.1 and 3.2.2 — same PDF as above; delays of 9-177 days provisional and 45-3,100 days for final ratification in 25 cases",
+      "number": "Rs 11.09 crore of un-passed price cuts; 45-day revision SLA",
+      "soWhat": "ARY buys through vendors whose prices move constantly. A written pass-through clause plus a monthly market-price check is the cheapest margin protection available, and it is what keeps a monopoly shop's prices defensible to the community it serves."
+    },
+    {
+      "claim": "The outlet's income is a REBATE on purchases, not a free margin. Quantitative Discount is paid to URCs as free stores at 4.5% of prior-year purchases where CSD loaded a margin of 6% or more, and 3.5% where it loaded 5%. Rs 883.46 crore was transferred this way in six years.",
+      "status": "VERIFIED",
+      "evidence": "CAG 14 of 2010 para 3.6 and CAG 38 of 2016 para 6.3 — 'QD is payable @ 4.5 per cent in respect of goods on which CSD is loading a profit of 6 per cent and above and QD @ 3.5 per cent in respect of goods on which loading of profit margin is 5 per cent only'",
+      "number": "QD 3.5-4.5% of purchases",
+      "soWhat": "A direct model for ARY's 11 counters: pay each counter a fixed rebate on what it draws, and remove its ability to set price at all. Counter incentive shifts from marking up to selling volume and holding stock accurately."
+    },
+    {
+      "claim": "Assortment is gated hard and centrally. Between 2010-11 and 2015-16, suppliers offered CSD 9,134 items; the Preliminary Screening Committee recommended 3,234 (35.4%) and only 3,035 (33.2%) were introduced. In the previous cycle 69-87% of offered items were rejected every single year. CSD's entire NATIONAL range was 3,044 items as of March 2009 — serving 44.12 lakh beneficiaries.",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016 Chapter 2 paras 2.1 / 2.1.1 (https://cag.gov.in/uploads/download_audit_report/2017/Chapter_2_Business_Activities__Report_38_of_2016_Union_Government_Defence_PA.pdf); CAG 14 of 2010 Table 6 (items offered/recommended/introduced 2003-04 to 2009-10) and Table 7 (CSD HO listed items 1,636 in 2004 rising to 3,044 in 2009)",
+      "number": "9,134 offered → 3,035 introduced (33.2%); national range 3,044 items (Mar 2009)",
+      "soWhat": "ARY lists 19,481 active SKUs for 5,000 residents and only ~6,100 sold in the last 12 months. Even its SELLING range is 2.0x CSD's entire 2009 national range, for 0.1% of the population. There is no comparator anywhere that carries this much breadth for this few people — and CSD's discipline is a three-tier screening gate with a market survey before any code is created."
+    },
+    {
+      "claim": "The operating KPI in captive retail is AVAILABILITY, not breadth. CSD formally measures 'denials' — indent lines a depot cannot supply. Across nine Area Depots denials ran 4.48% to 33.21%, worth Rs 1,122.01 crore over five years (Rs 2,915.13 crore nationally), and the stated cause was that depots held only 40-92% of the listed range.",
+      "status": "VERIFIED",
+      "evidence": "CAG 14 of 2010 para 4.4.3 and Table 8 — 'the holding of the items ranged between 40 and 92 per cent'",
+      "number": "denials 4.48-33.21%; depot range holding 40-92%",
+      "soWhat": "ARY should report weekly fill rate against a defined core list per counter and treat a stock-out on a core line as the reportable failure. In a township 30-50 km from a market, one stock-out sends a whole household's monthly basket to town — the breadth of the tail never recovers that."
+    },
+    {
+      "claim": "Big-ticket goods are ORDERED, not stocked. CSD's AFD route: the beneficiary submits demand with payment to the depot (or on afd.csdindia.gov.in), the depot places the order on the manufacturer, and an authorised dealer delivers. Entitlements are capped by periodicity and value — 2 TVs and 4 ACs per four-year block, a two-wheeler every 3 years, a car once at Rs 20 lakh (officers) / Rs 10 lakh (JCOs) / Rs 8 lakh (other ranks), plus Rs 5 lakh extra for EVs.",
+      "status": "VERIFIED",
+      "evidence": "https://nfpc.in/facilities/csd-canteen-stores-department/ (secondary source: a serving-personnel information site summarising CSD/AFD rules, not the MoD order itself); AFD group and portal also described in Wikipedia 'Canteen Stores Department (India)' and CAG 38 of 2016",
+      "number": "AFD: pay first, order against paid demand, zero inventory",
+      "soWhat": "ARY can offer appliances, phones, cycles, furniture and mattresses to 5,000 residents with no working capital and no dead stock — collect payment, order, have the dealer deliver. This is the single lowest-risk revenue addition in the whole benchmark set, and it needs no shelf space at 1,551 m altitude."
+    },
+    {
+      "claim": "Monthly spend CEILINGS per card are normal in captive retail, and they are the anti-leakage device. Officer Cadets are limited to Rs 5,000/month of grocery plus Rs 20,000/year of AFD-II; Agniveers and Sainik School students to Rs 3,500/month of grocery; all beneficiaries may draw two months' quota in one month; the smart card is valid 10 years and is activated at any canteen.",
+      "status": "VERIFIED",
+      "evidence": "https://nfpc.in/facilities/csd-canteen-stores-department/ (secondary source, as above). The principle is independently confirmed by CAG 14 of 2010 para 3.6: 'CSD operates a Government funded monopoly selling in a closed market with pre determined prices with captive consumers having monetary ceiling on purchases.'",
+      "number": "Rs 5,000/month (cadets), Rs 3,500/month (Agniveer/Sainik School students)",
+      "soWhat": "This is exactly the mechanism Baru Sahib needs for its 1,250 school children and 1,100 university students: a named, parent-funded, capped account. It converts the confectionery counter from unmanaged pocket-money churn into a controlled, parent-visible spend — and it is the only credible way to give minors credit in a shop their school owns."
+    },
+    {
+      "claim": "A card system is only as strong as the control over WHO ISSUES cards and WHO RUNS the software. HQ Southern Command recovered 800 canteen smart cards, one master card, two card readers and 15 CDs of canteen software in a racket implicating 16 CSD civilian staff, 11 service personnel, 5 ex-servicemen, 8 civilian touts and 4 CIMS technicians — technicians were ERASING purchase history to reuse cards, and TAMPERING with the recorded rank to raise the purchase limit. CSD had no system to tell a cardholder what had been bought on their card; CGHS does this by SMS.",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016, Chapter 5, para 5.2 and Conclusion 15 — 'At present CSD does not have any system for communicating the intended beneficiary about details of purchase of CSD stores through his/her smart card.'",
+      "number": "800 cards, 4 CIMS technicians implicated",
+      "soWhat": "If ARY issues resident cards: SMS the account holder on every transaction (this alone is the whole audit trail), and never let the same person administer card issue and the POS/back-office. ARY's ledger already shows the failure mode — several DIFFERENT named individuals (Jaskirat Kaur, Divjot Kaur, Dr Boparai, 'Baba Ji Room') all map to the SAME ledger account 'Enquiry The Kalgidhar Trust' with the same Rs 32.39 lakh outstanding."
+    },
+    {
+      "claim": "In captive retail the leak is at the GOODS-INWARD / indent door, not the till. Verified CSD cases: Rs 1.83 crore of stores drawn on a URC's indent but paid for by a THIRD PARTY (referred to MoD for CBI examination); Rs 32.42 lakh of stores collected by a URC employee and paid for with his personal cheque, then sold in the civil market; Rs 1.56 crore issued against forged and fabricated indents and authority letters.",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016, Chapter 5, para 5.3 (CSD Depots Ahmedabad, Mumbai, Kolkata)",
+      "number": "Rs 1.83 Cr + Rs 1.56 Cr + Rs 32.42 L in three documented cases",
+      "soWhat": "ARY's Rs 2.59 Cr of posted shortage should be investigated at receiving and inter-counter transfer FIRST — who authorised the indent, who paid, who signed the transfer — before anyone looks at the counter staff. That is where every comparable operation found its money going."
+    },
+    {
+      "claim": "Segregation of duties is the control that was missing everywhere. CSD, a trading organisation with an annual budget over Rs 15,000 crore, appointed its Joint General Manager handling PROCUREMENT as its Vigilance Officer in 1997, against CVC guidelines; the Ministry refused to agree, CSD proposed no alternative, and the Procurement Officer still held the vigilance post at the time of audit.",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016, Chapter 5, para 5.1.3 and Conclusion 14",
+      "number": "CSD annual budget 'over Rs 15,000 crore' (2016)",
+      "soWhat": "At ARY, whoever orders and receives stock must be barred from counting it or valuing the count. This is a free control — it costs a rota change, not money — and without it every future physical count is unverifiable."
+    },
+    {
+      "claim": "Perishables run on an explicit shelf-life rule with dates recorded on the receipt document. CSD: a Depot Manager must NOT accept perishables with less than 85% residual shelf life; NO perishable stock below 50% remaining shelf life may be issued to a URC; the manufacturing date must be written on the indent-cum-invoice against each item; stack cards are maintained at the depot. The audit found the manufacturing date was not being recorded and stack cards were missing or incomplete — including for baby food.",
+      "status": "VERIFIED",
+      "evidence": "CAG Report 38 of 2016, Chapter 3, para 3.3.4",
+      "number": "85% residual life in / 50% remaining life out",
+      "soWhat": "A ready-made, copyable SOP for ARY's Fruits & Vegetables (Rs 5.01 lakh/month), dairy, bakery and any frozen expansion — the categories that grew fastest and the ones where a hill supply chain destroys value invisibly."
+    },
+    {
+      "claim": "Net margin in India's captive consumer cooperatives is near zero BY DESIGN. Kendriya Bhandar's own published figures for FY2022-23: 149 stores/offices, 353 employees, sales Rs 3,122.93 crore, other income Rs 9.61 crore, net profit Rs 5.06 crore — a net margin of 0.16% of sales. In 2006-07 it was Rs 218.79 crore of sales and Rs 1.84 crore of net profit, 0.84%.",
+      "status": "VERIFIED",
+      "evidence": "https://kendriyabhandar.org/aboutus/?action=financial (official 'Financial Data as on 31st March 2023', Rs in lacs: stores/offices 149, sales 312,292.99, other income 960.63, net profit 505.80, paid-up capital 100.84, employees 353); 2006-07 figures from https://dopt.gov.in/welfare/kendriya-bhandar",
+      "number": "net margin 0.162% (FY23); 0.84% (FY07)",
+      "soWhat": "ARY cannot price its way out of a Rs 2.70 Cr debit balance in Profit & Loss. India's largest consumer cooperative earns 16 paise per Rs 100 of sales. ARY's profit has to come from buying better (JIVO's own distribution scale), killing shrinkage, and capturing more of the resident wallet — never from raising prices on a captive population."
+    },
+    {
+      "claim": "And these operators CLOSE outlets. Kendriya Bhandar's own Delhi store list marks six outlets '(STORE CLOSED)', including New Moti Bagh, Dilshad Colony, the Air Force Station Race Course outlet and Sekhon Vihar.",
+      "status": "VERIFIED",
+      "evidence": "https://kendriyabhandar.org/aboutus/?action=kbstore — 6 occurrences of 'STORE CLOSED' in the Delhi retail store list",
+      "number": "6 closed stores listed",
+      "soWhat": "ARY still carries two dead counters on its books — Ary Apple A Day (Rs 25.21 lakh of posted shortage, zero sales since 2023) and Talwandi Sabo (Rs 12.44 lakh shortage, last counted 37 months ago). Formally closing and writing them off is normal practice, not an admission of failure."
+    },
+    {
+      "claim": "Tax status, not retailing skill, decides whether captive retail is actually cheaper — and ARY has no tax advantage. The Central Police Canteen (119 master canteens and 1,778 subsidiary canteens under the Ministry of Home Affairs) was REFUSED the GST relief that CSD enjoys; the government instead opted for 'budgetary support compensation' in October 2019, so CPC goods are costlier than CSD's.",
+      "status": "VERIFIED",
+      "evidence": "https://en.wikipedia.org/wiki/Central_Police_Canteen — 119 master canteens, 1,778 subsidiary canteens, founded 26 September 2006; 'Products lack tax relief available through Defence Ministry's Canteen Stores Department'",
+      "number": "119 master + 1,778 subsidiary canteens",
+      "soWhat": "CSD's price advantage is substantially a tax subsidy. ARY, as a GST-registered private-company unit with three GSTINs, gets none of it — so its only price weapons are procurement scale and low overhead. That argues for routing more of ARY's buying through JIVO's own distribution rather than trying to be cheap at the shelf."
+    },
+    {
+      "claim": "CSD's tax concession is widely reported as a 50% exemption across CGST/SGST/IGST/UTGST, and CSD prices are quoted without local taxes with taxes added on top.",
+      "status": "ESTIMATED",
+      "evidence": "Secondary aggregator page (allcsdprices.in via search snippet) claims '50% exemption on all GST types'. The EXISTENCE of CSD tax relief is independently verified by the Central Police Canteen Wikipedia article; the 50% figure itself was NOT verified against a CBIC notification. CAG 38 of 2016 Chapter 3 confirms only that 'local taxes like excise, sales tax and Octroi duty would be charged in addition to the listed price'.",
+      "number": "50% GST refund (claimed, unverified)",
+      "soWhat": "Do not build any ARY pricing comparison against CSD shelf prices — they are not a like-for-like commercial benchmark. Use CSD's METHOD (cost-plus-band, published list), not its prices."
+    },
+    {
+      "claim": "Assortment purges done by LIST fail; purges done by DATA work. The Central Police Canteen identified 1,026 'non-indigenous' items to ban on 29 May 2020 in response to the Atmanirbhar Bharat appeal; the order was withdrawn on 1 June 2020 because the list was flawed, and the CEO was removed.",
+      "status": "VERIFIED",
+      "evidence": "https://en.wikipedia.org/wiki/Central_Police_Canteen — 'Attempted ban list: 1,026 non-indigenous items ... Order withdrawn 1 June 2020 due to flawed list; CEO removed'",
+      "number": "1,026 items, withdrawn in 3 days",
+      "soWhat": "ARY's 13,290 non-selling active SKUs must be delisted by a WRITTEN RULE applied to its own sales data (no sale in 12 months AND zero book stock → delist), never by a manually assembled list. A hand-built purge of a 21,466-SKU catalogue will contain errors that discredit the whole exercise."
+    },
+    {
+      "claim": "The best-documented closed township in India settles internally WITHOUT CASH, and has done so for forty years. Auroville's Financial Service (Maintenance Fund) 'started in the 1980s as an attempt to do away with physical money circulation in Auroville'; 'nearly all internal transactions between units and Aurovilians have been done through electronic transfers', covering gas bottles, water, electricity, telephone, grocery and restaurant bills; registered guests use an 'Aurocard'. Its Pour Tous Distribution Centre issues NO BILL at all — registered members take what they need, individual consumption is monitored, and accounts balance across the membership.",
+      "status": "VERIFIED",
+      "evidence": "https://auroville.org/page/financial-service and https://auroville.org/page/ptdc",
+      "number": "cashless internal accounting since the 1980s",
+      "soWhat": "Proof that a ~5,000-person township can run its retail on accounts rather than tills. ARY already has the rails: by transaction count Paytm is 524,295 of ~1.11 m tenders (~47%), so residents are already paying digitally — the missing piece is not technology, it is an account per resident."
+    },
+    {
+      "claim": "A single-employer town that also owns the only shop and lends against wages is the textbook COMPANY STORE — a model documented as producing monopoly pricing and debt bondage, and legislated against. Company stores 'faced little or no competition for workers' earnings on account of their geographical remoteness', charged high prices, and their credit 'enforced a kind of debt slavery, obligating employees to remain with the company until the debt was cleared'. Mexico ordered the elimination of the tiendas de raya in 1915.",
+      "status": "VERIFIED",
+      "evidence": "https://en.wikipedia.org/wiki/Company_store",
+      "number": "",
+      "soWhat": "This is the risk on the other side of the card recommendation, and it is a reputational risk to a Sikh institution, not just a commercial one. The sequence therefore matters: publish the price rule and the credit terms FIRST, then issue the card. A capped, transparently priced, SMS-notified account is the opposite of a company store; an uncapped payroll-deducted tab at unpublished prices is exactly one."
+    },
+    {
+      "claim": "Statutory captive retail in Indian plantations is priced as WELFARE, not trade, and the state now pushes it onto PDS. The Plantations Labour Act 1951 obliges estates to provide food rations, housing, healthcare and primary education as part of a cash-plus-in-kind wage 'blend'; Assam has urged estates to take Fair Price Shop licences and issued ration cards to garden workers so rations flow through the National Food Security scheme instead of the estate.",
+      "status": "VERIFIED",
+      "evidence": "https://www.drishtiias.com/daily-updates/daily-news-analysis/labour-rights-tea-estates-of-assam ; Fair Price Shop licence push corroborated by Deccan Herald coverage of the Assam wage hike and ration-card announcement",
+      "number": "",
+      "soWhat": "An option ARY has never used: put a SUBSIDISED price tier on the shelf that ARY does not fund — a NAFED/NCCF 'Bharat' Atta/Rice/Dal channel arrangement (Bharat Atta Rs 295 per 10 kg and Bharat Rice Rs 29/kg are already sold through Kendriya Bhandar), or a Fair Price Shop licence. It answers the affordability complaint of a captive population at zero margin cost to ARY."
+    },
+    {
+      "claim": "Campus retail in India is usually a LANDLORD business, not a retail business. IIT Madras's residential campus runs roughly 30 vendor-operated non-food shops across 12 categories — groceries, apparel, tailoring, footwear, salon/spa, automobile workshop, stationery, cycle repair (three separate shops), photo, telecom, laundry, flour mill — plus around 20 food outlets. The ration/PDS shop is run by TUCS, India's first consumer cooperative (founded 1904). The facilities are 'vendor-operated rather than institutionally managed'.",
+      "status": "VERIFIED",
+      "evidence": "https://dost.iitm.ac.in/shops.php (full shop directory by location); TUCS founding from https://en.wikipedia.org/wiki/Triplicane_Urban_Co-Operative_Society . Campus headcount NOT checked.",
+      "number": "~30 non-food shops in 12 categories + ~20 food outlets",
+      "soWhat": "ARY does not need to own every counter. Licence the service categories where ARY has no advantage — salon, tailoring, cycle and two-wheeler repair, mobile repair, laundry, print/photo — for rent, and keep ARY's own capital and management attention in grocery, fresh, uniforms and the card."
+    },
+    {
+      "claim": "An ARY-only prepaid card or wallet needs NO RBI permission. RBI's PPI Master Directions: closed-system PPIs 'are issued by an entity for facilitating the purchase of goods and services from that entity only' and 'the issuance or operation of such instruments is not classified as a payment system requiring approval / authorisation by RBI and are, therefore, not regulated or supervised by RBI'. The conditions are that it cannot permit cash withdrawal and cannot be used for third-party payments.",
+      "status": "VERIFIED",
+      "evidence": "https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12156 — RBI Master Directions on Prepaid Payment Instruments, definition of Closed System PPI",
+      "number": "zero RBI authorisation required",
+      "soWhat": "This removes the single biggest perceived blocker to the highest-leverage recommendation. ARY can issue resident and student accounts tomorrow as a closed-system instrument, provided it never allows cash-out or payment to third parties."
+    },
+    {
+      "claim": "The global retail shrinkage benchmark is 1.2-1.5% of sales, measured as (booked inventory − physical count) ÷ sales. ARY's posted physical-count variance is 4.07% of lifetime net sales NET, and 18.97% GROSS.",
+      "status": "VERIFIED",
+      "evidence": "Benchmark: https://en.wikipedia.org/wiki/Shrinkage_(accounting) — US 1.52%, Europe 1.27%, Asia-Pacific 1.20% of sales; theft is 78.3% of shrinkage (employee theft 42.7%, shoplifting 35.6%). ARY side pulled live: `ary audit variance` (2026-08-28) summed across 11 warehouses — shortage Rs 2,59,06,149.38, excess Rs 1,67,57,376.03, net −Rs 91,48,773.35; against Rs 22.49 Cr lifetime net sales.",
+      "number": "ARY 4.07% net / 18.97% gross vs 1.2-1.5% benchmark",
+      "soWhat": "Even after netting excess against shortage ARY runs at roughly 3x the world average. But the gross figure is the real message: a Rs 4.27 Cr swing on Rs 22.49 Cr of sales means the perpetual inventory is not a book — the count is finding stock the system never knew about as often as it finds stock missing."
+    },
+    {
+      "claim": "The mechanical cause of that variance is visible in ARY's own data and it is not primarily theft: 180 active SKUs carry NEGATIVE book stock worth minus Rs 155.82 lakh, and 12,685 of the 13,290 non-selling active SKUs carry ZERO book stock. Only 425 dead SKUs hold positive inventory, worth Rs 12.39 lakh.",
+      "status": "VERIFIED",
+      "evidence": "`ary assort dead -n 20000 --csv` (2026-08-28), split by sign of value_at_cost: 13,290 rows; 425 positive totalling Rs 12,39,xxx; 180 negative totalling −Rs 1,55,82,xxx; 12,685 zero.",
+      "number": "180 SKUs at −Rs 155.82 lakh book stock; 12,685 zombie codes",
+      "soWhat": "Negative book stock is arithmetically impossible in a real warehouse — it means sales are being posted without the matching receipt or transfer. Fix posting discipline at goods-inward before believing any count, and note the honest corollary: SKU rationalisation releases almost no cash (Rs 12.39 lakh), so justify it on catalogue usability and buyer attention, not on working capital."
+    },
+    {
+      "claim": "Counting cadence is the other half of the problem: most ARY counters were last counted in late December 2025 — eight months before this analysis — and Talwandi Sabo was last counted 37 months ago while still carrying Rs 1.61 lakh of book stock. Ary Clothing has been counted 155 times but not since 2025-12-27, and Ary G Canteen only 9 times ever.",
+      "status": "VERIFIED",
+      "evidence": "`ary audit uncounted` (2026-08-28): Ary Clothing last_count 2025-12-27 (8 months, 155 counts ever), Ary G Canteen 2025-12-29 (9 counts ever), Talwandi Sabo 2023-07-22 (37 months, 1 count ever), Ary Lite 2026-01-29, Basement 2025-12-28.",
+      "number": "8 months since last count; 37 months at one counter",
+      "soWhat": "CSD depots run continuous stock verification with a Physical Stock Verification Report; a captive shop with 6 bills per resident per month cannot run on an annual count. Monthly cycle counts on the top 500 movers plus a quarterly full count per live counter is the minimum that makes the variance number mean anything."
+    },
+    {
+      "claim": "ARY already runs a credit business of Rs 6.87 crore with NO limits and NO terms: of its top 200 credit customers, ZERO have a credit limit set and only 3 have credit days set. Rs 5.95 crore sits in the Paytm control account aged over 180 days, and Rs 1.43 crore of institutional/individual balances (Akal Academy Rs 56.81 L, Kalgidhar Trust enquiry Rs 26.82 L, one individual at Rs 25.00 L, Advance From Student Rs 11.96 L, De-Addiction Ward Rs 9.93 L and others) is also over 180 days old.",
+      "status": "VERIFIED",
+      "evidence": "`ary customers credit -n 200 --csv` (2026-08-28): 200 rows, 189 distinct ledger accounts, Rs 687.01 lakh outstanding, 0 rows with crm_limit>0, 3 rows with credit_days>0. `ary accounts ageing` (2026-08-28): Paytm total Rs 7,97,36,162.44 of which Rs 5,94,90,813.01 in the 180-plus bucket. Note: 3,062 of 3,514 customers are flagged credit_allowed. The largest single balance, Jivo Wellness Pvt Ltd – Haryana at Rs 4.996 Cr, is intercompany, not resident credit.",
+      "number": "Rs 6.87 Cr outstanding, 0 credit limits, Rs 5.95 Cr Paytm >180 days",
+      "soWhat": "The wallet recommendation is not new spending — it is putting terms on money already lent. At a 10% cost of funds the Rs 1.43 Cr of aged institutional credit alone carries about Rs 1.19 lakh a month. And the Rs 5.95 Cr Paytm balance is most likely an unposted settlement backlog rather than missing cash, but nobody can say which without the bank statements — which is itself the finding."
+    },
+    {
+      "claim": "ARY's counters are URC-scale, not supermarket-scale, so URC operating discipline is the right model to copy — not DMart's. Derived per-outlet annual sales: CSD ~Rs 1.93 Cr per URC (2008-09, at depot/wholesale prices); Kendriya Bhandar Rs 20.96 Cr per store/office (FY23); DMart Rs 123.9 Cr per store (FY25); ARY Rs 0.63 Cr per counter (FY25-26), Rs 0.81 Cr annualising FY26-27.",
+      "status": "ESTIMATED",
+      "evidence": "Derived by division from verified inputs: CSD Rs 6,955.11 Cr sales / 3,600 URCs (CAG 14 of 2010 para 1.1); Kendriya Bhandar Rs 3,122.93 Cr / 149 stores-and-offices (kendriyabhandar.org financial page); DMart Rs 59,358 Cr FY25 / 479 stores (https://en.wikipedia.org/wiki/DMart); ARY Rs 6.92 Cr / 11 counters. CAVEAT: Kendriya Bhandar has only 353 employees for 149 stores, which cannot staff 149 shops — most of that Rs 3,123 Cr is institutional and government supply, not shop-floor retail, so the per-store figure is not a retail benchmark.",
+      "number": "ARY Rs 0.63 Cr/counter vs CSD Rs 1.93 Cr/URC vs DMart Rs 123.9 Cr/store",
+      "soWhat": "Stop importing supermarket practice. A URC is a small captive shop with a locked price list, a fixed rebate, a card, a ceiling and a fill-rate target — that is the operating template that fits an ARY counter."
+    },
+    {
+      "claim": "Per-capita capture looks reassuringly close to CSD's, but the denominators are not comparable and the comfort is false. CSD moved Rs 15,764 per beneficiary per year (Rs 1,314/month) at depot prices in 2008-09; ARY captures Rs 1,259 per resident per month over the 12 months to 21-Aug-2026 on 6.08 bills and a Rs 206.86 average bill.",
+      "status": "ESTIMATED",
+      "evidence": "CSD side derived: Rs 6,955.11 Cr / 44.12 lakh beneficiaries (CAG 14 of 2010) — but a CSD 'beneficiary' is a cardholder covering eligible dependents, i.e. closer to a household, and the figure is at wholesale not retail price. ARY side VERIFIED live: `ary assort wallet` — 365,087 bills, Rs 7,55,20,594.21, Rs 1,258.68 per resident per month, 6.08 bills, Rs 206.86 average bill; denominator is the STATED 5,000 headcount, not a queried one.",
+      "number": "ARY Rs 1,259/resident/month, Rs 207 average bill, 6.08 visits",
+      "soWhat": "A Rs 207 ticket six times a month is a convenience-store pattern, not a monthly-basket pattern. The sole retailer for a township 30-50 km from a market should be capturing the monthly household basket too — the fact that it is not is the clearest sign the wallet is leaking to town trips, and it cannot be sized until residents are named accounts."
+    },
+    {
+      "claim": "ARY's category mix is a tuck shop plus a uniform shop, not a township grocer. Confectionery is the #1 revenue group at 13.04% (Rs 164.11 per resident per month); clothing-related groups together are ~17.7% (Academy Dress 6.16%, Winter Wear 5.73%, Footwear 2.91%, Fabrics 2.86%); Personal Care 6.71%; Fruits and Vegetable together 8.31%.",
+      "status": "VERIFIED",
+      "evidence": "`ary assort wallet` BY CATEGORY (2026-08-28), 12-month window",
+      "number": "Confectionery 13.04% of revenue",
+      "soWhat": "No captive comparator leads with confectionery. CSD's seven groups lead with toiletries and cosmetics, household and electrical goods, general-use items (hosiery, bicycles, footwear, luggage), watches and stationery, food and medicinal items, and AFD durables. ARY's thinnest side is precisely the household, hardware, durables and medicinal wallet — which is also the side the AFD order-and-collect model can open with no inventory."
+    },
+    {
+      "claim": "ARY's payment table cannot be used for value analysis, which is itself a finding. By tender count the mix is Cash 557,305, Paytm 524,295, Credit Sale 28,300, Credit Card/Cheque 12 — Paytm is ~47% of all tenders. But the table's cash AMOUNT sums to Rs 10,023 crore against a Rs 22.49 crore lifetime business, implying an impossible Rs 1.8 lakh average cash tender.",
+      "status": "VERIFIED",
+      "evidence": "`ary sales payment-mix` (2026-08-28): Cash 557,305 tenders / 100,230,380,328.81; Paytm 524,295 / 103,663,013.53 (a plausible Rs 198 average); Credit Sale 28,300 / 44,208,291.56; Credit Card/Cheque 12 / 119,556.00. Total tenders ~1.11 m against 1,088,607 bills.",
+      "number": "Paytm ~47% of tenders by count; cash value column corrupt by ~450x",
+      "soWhat": "Two consequences. First, the good news for the card recommendation: residents already transact digitally about half the time, so an account-based counter is not a behaviour change. Second, no payment-mix rupee figure from this system should be quoted to anyone until the cash column is explained."
+    }
+  ],
+  "tables": [
+    {
+      "title": "The captive-retail comparator set — how each one actually runs",
+      "columns": [
+        "Operation",
+        "Who it serves",
+        "Outlets",
+        "Range",
+        "Pricing model",
+        "Payment / credit",
+        "Verified scale",
+        "The transferable lesson"
+      ],
+      "rows": [
+        [
+          "CSD + Unit Run Canteens (MoD)",
+          "44.12 lakh armed-forces beneficiaries and dependents",
+          "33 Area Depots, ~3,600 URCs",
+          "3,044 items nationally (Mar 2009); 9,134 offered → 3,035 introduced over 2010-16",
+          "Into-warehouse cost + 1-12% margin band; identical basic price nationwide; pictorial price list twice a year; supplier price cuts pass through automatically",
+          "10-year smart card per beneficiary; monthly grocery ceilings (Rs 5,000 cadets, Rs 3,500 Agniveer/Sainik); AFD durables paid first then ordered",
+          "Rs 6,955.11 Cr sales FY09; budget >Rs 15,000 Cr by 2016; 50,05,438 active cards",
+          "The complete template: locked price, capped margin, named card, spend ceiling, fill-rate KPI, zero-inventory durables"
+        ],
+        [
+          "Central Police Canteen (MHA)",
+          "CAPF, central and state police, MHA staff",
+          "119 master + 1,778 subsidiary canteens",
+          "Not published; 1,026-item purge attempted 2020",
+          "Central Purchase Committee negotiates; NO GST relief, so costlier than CSD; government pays 'budgetary support' instead",
+          "Not published",
+          "Founded 26 Sep 2006",
+          "Tax status, not retailing, drives a captive shop's price advantage — and an assortment purge by hand-built list collapses in three days"
+        ],
+        [
+          "Kendriya Bhandar (DoPT)",
+          "Central government employees and the public",
+          "149 stores/offices, 15 states; 6 Delhi stores marked CLOSED",
+          "Grocery, consumer and household, stationery and office equipment, medicines (Jan Aushadhi), solar",
+          "Reasonable price on daily needs; channel partner for subsidised Bharat Atta (Rs 295/10 kg) and Bharat Rice (Rs 29/kg); PDS role",
+          "Institutional CREDIT ACCOUNTS on indent — B2B, not consumer payroll credit",
+          "Rs 3,122.93 Cr sales FY23, net profit Rs 5.06 Cr = 0.16%; 353 employees",
+          "Captive cooperatives earn near zero net margin by design — and they close outlets that do not work"
+        ],
+        [
+          "Auroville — PTDC + Financial Service",
+          "~3,000-plus residents of a closed township",
+          "PTDC plus Auroville units and kitchens",
+          "Food, ready meals, own bakery bread, own dairy milk, gas bottles, own food-processing units",
+          "Income and expenditure balanced, no stated profit; PTDC issues no bill — take what you need, contribute what you can",
+          "Cashless internal account since the 1980s; nearly all internal transactions by electronic transfer; Aurocard for registered guests",
+          "Running 40+ years",
+          "A township of this size can run retail on accounts rather than tills — and individual consumption is monitored even without a bill"
+        ],
+        [
+          "IIT Madras residential campus",
+          "Students, faculty, staff and families",
+          "~30 non-food shops in 12 categories + ~20 food outlets",
+          "One shop per niche; ration/PDS shop run by TUCS (India's first consumer co-op, 1904)",
+          "Not published; vendor-set",
+          "Vendor-operated, not institutionally managed — the institute is landlord and regulator",
+          "Directory published by Dean (Students)",
+          "Do not own every counter: licence the service categories, keep capital in the core"
+        ],
+        [
+          "Tea estates under the Plantations Labour Act 1951",
+          "Plantation workers and families",
+          "Estate store / Fair Price Shop",
+          "Statutory ration basket",
+          "Welfare, not trade: rations, housing, healthcare and primary education form part of a cash-plus-in-kind wage",
+          "Deducted from / counted against wages; Assam now pushing estates onto Fair Price Shop licences and PDS ration cards",
+          "Statutory since 1951",
+          "A subsidised price tier can be put on the shelf via PDS / NAFED / NCCF without the retailer funding the subsidy"
+        ],
+        [
+          "Company stores (historical, global)",
+          "Workers in remote single-employer towns",
+          "One",
+          "Whatever the company chose",
+          "Monopoly pricing enabled by remoteness",
+          "Scrip and credit against wages",
+          "Legislated against — Mexico abolished tiendas de raya in 1915",
+          "The cautionary case: uncapped payroll credit at unpublished prices in a one-shop town produces debt bondage. Publish prices and limits BEFORE issuing any wallet"
+        ],
+        [
+          "DMart (open-market control)",
+          "General public",
+          "479 stores (Mar 2026), 500 by Apr 2026",
+          "Not published",
+          "Everyday low price",
+          "Cash, card, UPI",
+          "Rs 59,358 Cr FY25, net margin 4.56%, Rs 123.9 Cr per store",
+          "Not ARY's model — an ARY counter is 1/200th of a DMart store; copy URC discipline instead"
+        ]
+      ]
+    },
+    {
+      "title": "ARY against the bench — every figure sourced",
+      "columns": [
+        "Metric",
+        "ARY (verified)",
+        "Benchmark",
+        "Benchmark source",
+        "Read"
+      ],
+      "rows": [
+        [
+          "Bills booked to one anonymous account",
+          "1,054,205 of 1,088,607 = 97%",
+          "CSD: one smart card per beneficiary, 50,05,438 active cards; Auroville: one account per resident",
+          "CAG 38 of 2016 ch.5; auroville.org/page/financial-service",
+          "The defining gap. No comparator operates without naming the buyer"
+        ],
+        [
+          "Active SKUs per 1,000 people served",
+          "3,896 (19,481 active / 5,000)",
+          "CSD: 0.69 (3,044 items / 44.12 lakh)",
+          "CAG 14 of 2010 Table 7",
+          "ARY's selling range alone (~6,100) is 2.0x CSD's entire 2009 national range"
+        ],
+        [
+          "Non-selling active SKUs",
+          "13,290 — of which 12,685 hold ZERO stock",
+          "CSD rejects 65-87% of items offered before a code is ever created",
+          "CAG 38 of 2016 ch.2; CAG 14 of 2010 Table 6",
+          "The cost is catalogue usability, not capital: only Rs 12.39 lakh of dead stock is real"
+        ],
+        [
+          "Negative book stock",
+          "180 SKUs at minus Rs 155.82 lakh",
+          "Impossible in a controlled book",
+          "ary assort dead, 2026-08-28",
+          "Sales posted without receipts — fix before trusting any count"
+        ],
+        [
+          "Physical-count variance, net",
+          "4.07% of lifetime net sales",
+          "1.20-1.52% of sales (Asia-Pacific to US)",
+          "en.wikipedia.org/wiki/Shrinkage_(accounting)",
+          "~3x the world average even after netting"
+        ],
+        [
+          "Physical-count variance, gross",
+          "18.97% of lifetime net sales (Rs 2.59 Cr shortage + Rs 1.67 Cr excess)",
+          "No published benchmark tolerates this",
+          "ary audit variance, 2026-08-28",
+          "The perpetual inventory is not a book"
+        ],
+        [
+          "Months since last physical count",
+          "8 at most counters; 37 at Talwandi Sabo",
+          "CSD depots: continuous verification with a PSVR",
+          "CAG 14 of 2010 para 5.1.4",
+          "An annual count cannot govern 6 bills per resident per month"
+        ],
+        [
+          "Credit customers with a credit limit set",
+          "0 of the top 200 (3 have credit days)",
+          "Kendriya Bhandar opens formal institutional credit accounts on indent",
+          "kendriyabhandar.org Credit Account Opening",
+          "Rs 6.87 Cr lent on no terms; Rs 5.95 Cr of it aged >180 days in the Paytm account"
+        ],
+        [
+          "SKUs sold below purchase cost",
+          "21 SKUs, Rs 2.75 lakh over 12 months",
+          "CSD: cost + 1-12%, price locked in the POS software",
+          "CAG 38 of 2016 ch.3 and ch.6",
+          "A published price list would make this arithmetically impossible"
+        ],
+        [
+          "Net margin ambition",
+          "P&L A/C Rs 2.70 Cr DEBIT",
+          "Kendriya Bhandar 0.16% (FY23), 0.84% (FY07)",
+          "kendriyabhandar.org financial page; dopt.gov.in",
+          "Margin will never fund this. Buying, shrink and wallet capture will"
+        ],
+        [
+          "Sales per outlet per year",
+          "Rs 0.63 Cr (FY25-26); Rs 0.81 Cr annualised",
+          "CSD Rs 1.93 Cr per URC (FY09, wholesale prices)",
+          "Derived from CAG 14 of 2010",
+          "ARY counters are URC-scale — adopt URC controls"
+        ],
+        [
+          "Spend captured per person per month",
+          "Rs 1,259 on 6.08 bills, Rs 207 average",
+          "CSD Rs 1,314 per BENEFICIARY (household-equivalent, wholesale)",
+          "Derived from CAG 14 of 2010",
+          "Denominators differ — treat the similarity as a warning, not a pass"
+        ],
+        [
+          "Digital share of tenders",
+          "Paytm 524,295 of ~1.11 m tenders (~47%)",
+          "Auroville: nearly all internal transactions electronic since the 1980s",
+          "auroville.org/page/financial-service",
+          "The rails exist. The missing piece is an account per resident, not a terminal"
+        ],
+        [
+          "Top revenue category",
+          "Confectionery 13.04% (Rs 164/resident/month)",
+          "CSD groups lead with toiletries, household/electrical, general-use, food and medicinal",
+          "Wikipedia CSD (India) group list",
+          "ARY is a tuck shop plus a uniform shop; the household and durables wallet is untouched"
+        ]
+      ]
+    },
+    {
+      "title": "The CSD rulebook ARY can copy without inventing anything",
+      "columns": [
+        "Rule",
+        "The exact provision, as audited",
+        "ARY today",
+        "The change"
+      ],
+      "rows": [
+        [
+          "One published price",
+          "Selling price = into-warehouse cost (freight, transport, insurance, incidentals) + approx 1-12% profit; identical basic price nationwide; pictorial price list published twice a year",
+          "No governing price list; 21 SKUs sold below purchase cost; 11 counters priced independently",
+          "Publish one ARY price list per season; lock the rate per SKU in FusionERP8; taxes on top, never inside"
+        ],
+        [
+          "Enforce the band in software",
+          "29 of 37 URCs were over-charging; the fix was to hard-code the retail rate in the CIMS software",
+          "Counter-level discretion",
+          "POS refuses a sale outside the band; exceptions need a named approver"
+        ],
+        [
+          "Automatic pass-through of price cuts",
+          "A civil-market price reduction applies from the date of reduction and the difference is debited to the supplier; increases only after one year; revisions within 45 days",
+          "Not practised; Rs 2.75 lakh of below-cost sales is the symptom",
+          "One clause in every vendor agreement plus a monthly market-price check on the top 200 lines"
+        ],
+        [
+          "Rebate, not markup, at the counter",
+          "Quantitative Discount 4.5% on lines loaded 6%+, 3.5% on lines loaded 5%, paid as free stores",
+          "Counters have no defined economics",
+          "Pay each counter a fixed rebate on what it draws; remove pricing power"
+        ],
+        [
+          "Gate every new code",
+          "Three-tier screening (PSC → market survey → Price Negotiation Committee → Board); 65-87% of offered items rejected; generic codes group like items",
+          "21,466 SKUs, 13,290 dead, no hierarchy discipline",
+          "A one-page new-SKU form with a named approver and a mandatory sales-potential note; generic codes for like items"
+        ],
+        [
+          "Delist by rule",
+          "CSD publishes a monthly bulletin of newly introduced and DELETED items",
+          "No delisting rule; 12,685 zombie codes with zero stock",
+          "Written rule: no sale in 12 months and zero book stock → delist automatically, monthly"
+        ],
+        [
+          "Measure denials, not breadth",
+          "Denials tracked per depot (4.48-33.21%); root cause was depots holding only 40-92% of the listed range",
+          "No fill-rate metric",
+          "Weekly fill-rate report per counter against a defined core list; a core-line stock-out is a reportable failure"
+        ],
+        [
+          "Card + monthly ceiling",
+          "10-year smart card per beneficiary; Rs 5,000/month grocery for cadets, Rs 3,500/month for Agniveers and Sainik School students; two months' quota drawable in one month",
+          "One 'Cash' account carries 97% of bills",
+          "Closed-system PPI account per household and per student; parent-funded ceilings; SMS on every transaction"
+        ],
+        [
+          "Guard the card system itself",
+          "800 cards, 2 readers and 15 software CDs recovered in a racket; technicians erased purchase history and tampered with rank to raise limits; CSD had NO purchase notification to the holder (CGHS sends SMS)",
+          "N/A",
+          "Separate card issue from POS administration; SMS the holder on every transaction from day one"
+        ],
+        [
+          "Segregate ordering from counting",
+          "CSD's Procurement Officer was also its Vigilance Officer, against CVC guidelines, and stayed so",
+          "Not verified at ARY",
+          "Whoever orders or receives stock is barred from counting or valuing the count"
+        ],
+        [
+          "Watch the inward door, not the till",
+          "Rs 1.83 Cr drawn on a URC indent but paid by a third party; Rs 32.42 lakh on an employee's personal cheque; Rs 1.56 Cr against forged indents",
+          "Rs 2.59 Cr of posted shortage, cause unknown",
+          "Investigate receiving and inter-counter transfer authorisation first"
+        ],
+        [
+          "Shelf-life rule for perishables",
+          "Do not accept below 85% residual shelf life; do not issue below 50% remaining life; manufacturing date on the indent-cum-invoice; stack cards maintained",
+          "Fruits & Veg and dairy scaling with no stated rule",
+          "Adopt 85%-in / 50%-out; manufacturing date mandatory on every GRN line"
+        ],
+        [
+          "Durables without inventory",
+          "AFD: beneficiary pays the depot or portal, depot orders from the manufacturer, authorised dealer delivers; periodicity caps per four-year block",
+          "Not offered",
+          "Order-and-collect desk for appliances, phones, cycles, furniture — payment first, zero stock"
+        ]
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Give every resident, household and student a NAMED ARY account and stop booking sales to customer 00001. Structure it as a closed-system PPI — usable only at ARY counters, no cash-out, no third-party payment — which RBI's Master Directions explicitly place outside its authorisation and supervision. Issue a card or a phone-number account, and SMS the holder on every transaction from day one (the control CSD admitted it lacked). This is the precondition for assortment, credit, wallet and leakage work alike.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "Whether FusionERP8's POS can hold a customer-level prepaid/credit account with a per-account limit — only the ARY IT owner or the FusionERP vendor can answer. Get that answer before designing anything else."
+    },
+    {
+      "action": "Publish ONE ARY price list, built as into-warehouse cost plus a capped margin band, identical across all 11 counters, revised twice a year, with the rate locked in the POS so a sale outside the band is refused. Add one clause to every vendor agreement: a price reduction in the open market applies to ARY from the day it happens, and the difference is recoverable. This alone makes the 21 below-cost SKUs (Rs 2.75 lakh over 12 months, one SKU at Rs 1.35 lakh) arithmetically impossible, and it is the price-integrity defence a sole retailer in a Sikh township needs to have in writing.",
+      "priority": "P0",
+      "monthlyImpactInr": 22884,
+      "effort": "weeks",
+      "blocker": "Nobody currently owns pricing — StandardCostPrice is set on 41 of 19,481 SKUs and MaxRetailPrice on none, so cost and price live only in the per-location product-children table. Name a pricing owner first."
+    },
+    {
+      "action": "Stop the book bleeding before trusting any count: investigate and clear the 180 SKUs carrying minus Rs 155.82 lakh of book stock (sales posted without receipts), then move to monthly cycle counts on the top 500 movers plus a quarterly full count at every live counter — and bar whoever orders or receives stock from counting or valuing it. Follow CSD's evidence and look at the inward door and inter-counter transfers first, not at counter staff.",
+      "priority": "P0",
+      "monthlyImpactInr": 111000,
+      "effort": "weeks",
+      "blocker": "Posting discipline at goods-inward. Until receipts and transfers are posted before sales, every count will keep producing an impossible book — and the Rs 2.23 lakh/month of net posted variance cannot be attributed to anything."
+    },
+    {
+      "action": "Put limits and terms on the Rs 6.87 crore already lent — a credit limit and credit days on every one of the 3,062 credit-allowed customers, starting with the institutions (Akal Academy Rs 73.07 lakh, Kalgidhar Trust enquiry Rs 32.39 lakh, De-Addiction Ward Rs 11.33 lakh) — and separately reconcile the Paytm control account, where Rs 5.95 crore is aged over 180 days. Stop mapping different named individuals to a single shared ledger account.",
+      "priority": "P0",
+      "monthlyImpactInr": 119000,
+      "effort": "weeks",
+      "blocker": "The Trust has to accept formal terms for its own institutions, since ARY and its main debtors sit under the same roof. That is a governance decision, not an analytical one."
+    },
+    {
+      "action": "Delist by rule, not by list. Write the rule — no sale in 12 months AND zero book stock, delist automatically, reviewed monthly — and apply it to the 12,685 zombie codes. Add a one-page gate for new codes on CSD's model (a named approver and a sales-potential note before a code exists) and use generic codes to group like items. Justify this on catalogue usability and buyer attention, NOT on cash: only Rs 12.39 lakh of dead stock is real, and pretending otherwise will make the whole programme look overstated.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "none"
+    },
+    {
+      "action": "Open an order-and-collect desk for durables on CSD's AFD model: appliances, phones, cycles, furniture, mattresses, water heaters. The customer pays, ARY orders against the paid demand, the dealer delivers to Baru Sahib. Zero inventory, zero obsolescence, and it opens the household and durables wallet where ARY is thinnest — while a 1,551 m hill site makes a town trip for a heavy purchase genuinely painful for residents.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "One dealer or distributor agreement that will deliver to Rajgarh, Sirmaur against ARY purchase orders. Until that exists the desk cannot promise a date."
+    },
+    {
+      "action": "Switch the operating metric from SKU count to FILL RATE. Define a core list per counter (the ~500 lines that make 80% of that counter's revenue), report weekly what fraction of core lines were in stock all week, and treat a core-line stock-out as the reportable failure. CSD tracks exactly this as 'denials' and found the cause was depots holding only 40-92% of their listed range — the same disease ARY has in a more extreme form.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "none — the data to build the core list is already in the sales history"
+    },
+    {
+      "action": "Give the 1,250 school children and 1,100 university students parent-funded accounts with a monthly ceiling, on the CSD cadet model (Rs 5,000/month grocery for officer cadets, Rs 3,500 for Agniveers and Sainik School students). This turns the Confectionery counter — ARY's single largest revenue group at 13.04% and Rs 164 per resident per month — from unmanaged pocket-money churn into a controlled, parent-visible spend, and it is the only defensible way for a school-owned shop to extend anything like credit to minors.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "months",
+      "blocker": "Depends entirely on the named-account work landing first, plus Trust and parent consent on ceilings."
+    },
+    {
+      "action": "Adopt the CSD perishables SOP before scaling fresh, dairy or frozen: refuse inward stock below 85% residual shelf life, do not move stock to a counter below 50% remaining life, and make the manufacturing date a mandatory field on every goods-receipt line. Fruits & Vegetables and Basement are ARY's two fastest-growing counters and the two where a hill supply chain destroys value invisibly.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "none"
+    },
+    {
+      "action": "Licence the service categories instead of operating them, on the IIT Madras model — salon, tailoring, cycle and two-wheeler repair, mobile repair, laundry, print and photo. IIT Madras runs ~30 vendor-operated shops in 12 categories and manages them as a landlord, not a retailer. ARY earns rent with no inventory, no staff and no shrink, and keeps its management attention on grocery, fresh, uniforms and the card.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "effort": "months",
+      "blocker": "Kalgidhar Trust policy on outside vendors operating inside a closed residential township — a decision only the Trust can make."
+    },
+    {
+      "action": "Put a subsidised price tier on the shelf that ARY does not fund: apply to be a channel for NAFED/NCCF 'Bharat' Atta, Rice and Dal (already sold through Kendriya Bhandar at Rs 295 per 10 kg atta and Rs 29/kg rice), or explore a Fair Price Shop licence the way Assam has pushed tea estates to do. It answers the affordability complaint of a captive population at zero margin cost, and it removes the single most damaging accusation a company store can attract.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "effort": "months",
+      "blocker": "Eligibility — these channels are built for cooperatives and licensed fair-price shops, and ARY is a private-company unit. Confirm eligibility with NCCF/NAFED before promising anything."
+    },
+    {
+      "action": "Formally close and write off the two dead counters — Ary Apple A Day (Rs 25.21 lakh of posted shortage, no sales since 2023) and Talwandi Sabo (Rs 12.44 lakh shortage, last counted 37 months ago, still carrying book stock). Kendriya Bhandar lists six closed Delhi stores on its own website; closing a counter that does not work is standard practice in this peer group, and leaving them open keeps polluting every shrinkage and per-counter number ARY reports.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "effort": "weeks",
+      "blocker": "An accounting decision on how the write-off is booked, which needs the Trust's sign-off."
+    }
+  ],
+  "openQuestions": [
+    "What does a Baru Sahib household actually spend per month, and how much of it goes to town? Nobody has measured the denominator. ARY captures Rs 1,259 per resident per month, but the leak is unquantifiable without a sample — a 200-household survey through the Trust's HR, hostel and staff-quarters offices would settle it in a fortnight and is the missing input for every wallet-capture claim in this report.",
+    "Can FusionERP8's POS hold a customer-level prepaid/credit account with a per-account limit and refuse a sale outside a price band? Every P0 recommendation depends on this. Only the ARY IT owner or the FusionERP8 vendor can answer, and the answer determines whether the card is a software configuration or a bolt-on.",
+    "Is the Rs 5.95 crore of Paytm receivable aged over 180 days an unposted settlement backlog or genuinely missing money? Only the bank statements plus Paytm's settlement reports resolve it. I did not check, and it should not be characterised either way until someone does.",
+    "What is ARY's actual headcount and payroll? Kendriya Bhandar runs Rs 3,123 crore of sales with 353 employees at a 0.16% net margin; without ARY's staff cost the near-zero-margin comparison cannot be turned into a cost target.",
+    "Will the Kalgidhar Trust permit payroll deduction and spend ceilings for its own staff and students? This is the governance fork in the road — and given the documented history of company stores, it should be approved only together with the published price list, not before it.",
+    "Three of the requested benches could NOT be verified at all and remain NOT-CHECKED: PSU steel and mining township stores (Bhilai, Rourkela, Jamshedpur/JUSCO), tea-estate stores as operating businesses rather than as a statutory obligation, and corporate campus retail (Infosys, TCS). Their pages returned 403s or carried no operating data, and this session's WebSearch budget (200/200) had already been spent by parallel agents while every alternative engine — DuckDuckGo, Mojeek, Brave, Ecosia — served a CAPTCHA or a firewall. A single fresh search budget, or a request to the SAIL/Tata Steel employee cooperative societies for their annual reports, would close this.",
+    "CSD's CURRENT item count is unverified. Secondary sites claim more than 5,500 registered items; the primary record I could verify is 3,044 items as of March 2009 plus 3,035 introduced over 2010-16 gross of delistings. If the current range matters to the assortment argument, it needs the CSD price catalogue itself.",
+    "Do any of the comparators run a formal patronage rebate or dividend to members (the classic cooperative device for returning surplus without cutting shelf price)? Kendriya Bhandar has members and paid-up capital of Rs 100.84 lakh, but I found no published dividend or rebate policy. Its bye-laws PDF would say, and it is a live option for ARY if the Trust wants to return value to residents without touching price."
+  ],
+  "confidence": "medium",
+  "confidenceGap": "The mechanisms and the numbers I do report are primary-sourced and strong — three CAG performance-audit chapters on CSD and the URCs, Kendriya Bhandar's own published FY23 financials, Auroville's own pages, IIT Madras's own shop directory, and RBI's PPI Master Directions — and every ARY figure was pulled live from FR8HODBNEW today with the command recorded. Three things stop this from being certain. First, COVERAGE: the session's WebSearch budget was already exhausted by parallel agents and every alternative search engine served a CAPTCHA, so the playbook rests on five verified comparators instead of the nine requested — steel/mining townships, tea-estate stores as businesses, and corporate campus retail are genuinely NOT-CHECKED, not merely thin. Second, DENOMINATORS: every per-capita comparison mixes CSD's cardholder/household beneficiary and its wholesale depot prices against ARY's per-person retail figure on a STATED 5,000 headcount nobody has queried, so those ratios are directional only and I have labelled them ESTIMATED. Third, ARY's own books are internally inconsistent — 180 SKUs at negative book stock, a payment table whose cash column is out by roughly 450x, and Rs 4.27 Cr of gross count variance on Rs 22.49 Cr of sales — which means the benchmark gaps I have measured are real in direction but their exact size cannot be trusted until the posting discipline in recommendation three is fixed."
+}

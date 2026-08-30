@@ -1,0 +1,784 @@
+{
+  "lane": "suppliers-hp",
+  "headline": "ARY needs almost no new suppliers for the new categories — every principal that owns them (P&G/Pampers, Unicharm/MamyPoko, Nestle/Lactogen-Cerelac, ITC/Master Chef, McCain, Vadilal) already has a named distributor invoicing Baru Sahib on a live route; the only genuine gaps are a drug licence + Rx wholesaler and an optical/hardware rack, and Delhi HO cannot help because in 3.5 years it has booked exactly one purchase voucher, for zero rupees.",
+  "findings": [
+    {
+      "claim": "There is no Delhi HO purchasing function to leverage. LocationID 1 (Ary Ho, 07AACCJ4223F1ZY, New Delhi 110027) has ONE purchase voucher in the entire book — dated 2023-04-01, value ₹0. Baru Sahib (LocationID 15) has booked 7,711 bills / ₹19.03 Cr all-time and 100% of the last 12 months. Bathinda (16) bought ₹41.2 L but stopped 2024-07-08.",
+      "status": "VERIFIED",
+      "evidence": "ary query \"SELECT h.LocationID, COUNT(*) bills, CAST(SUM(h.BillAmount) AS bigint) val, MIN(h.VoucherDate) frm, MAX(h.VoucherDate) tto FROM PurchaseHeader h WHERE h.IsDeleted=0 GROUP BY h.LocationID\" → 15: 7711 bills ₹190,348,455 (2023-04-01→2026-08-21); 16: 1509 bills ₹4,122,595 (→2024-07-08); 1: 1 bill ₹0 (2023-04-01 only). Plus 12m: only LocationID 15, 2,966 bills ₹6.36 Cr, 149 suppliers.",
+      "number": "1 voucher, ₹0, all-time at Delhi HO vs 2,966 bills / ₹6.36 Cr in 12m at Baru Sahib",
+      "soWhat": "Every plan that says 'Delhi HO will negotiate/buy this' is fiction. The buying desk is at Baru Sahib and it is the only one with vendor relationships, so new-category onboarding must be given to the Baru Sahib purchase desk. Delhi HO's only proven use is as an intercompany SUPPLIER (₹9.42 L / 19 bills, 2023-04 to 2024-09, now dormant)."
+    },
+    {
+      "claim": "Every FMCG principal that owns a new category already has a named, live distributor delivering to Baru Sahib. P&G (→ Pampers) comes via Nirman Associates Pvt Ltd, Parwanoo, GSTIN 02AAHCN2037L1ZM. Unicharm (→ MamyPoko) via Himachal Wholesale Syndicate, Parwanoo 173220, 02AABFH6020J1ZX. Nestle (→ Lactogen/NAN/Cerelac) via Parhlad Chand Batra & Sons, 02ABMPB2280L1ZV. ITC (→ Master Chef frozen) via Solan Agencies, 02AERPS9622K1ZX.",
+      "status": "VERIFIED",
+      "evidence": "Brand-keyword classification over 12m purchase lines: ary query mapping ProductName LIKE patterns to principals, joined to AccountMaster — P&G/Nirman ₹414,611 (195 lines); Unicharm/Himachal Wholesale Syndicate ₹212,210 (33); Nestle/Parhlad Chand Batra ₹1,223,837 (250); ITC/Solan Agencies ₹1,510,605 (485). Window 2025-08-01→2026-08-21.",
+      "number": "17 principals mapped to 15 named distributors, ₹1.19 Cr of 12m purchases",
+      "soWhat": "Category entry is a phone call to an existing vendor with an existing credit line and an existing vehicle, not a vendor hunt. Onboarding cost for diapers, infant formula and branded frozen is effectively zero — which collapses the timeline from months to weeks."
+    },
+    {
+      "claim": "The deep-freeze cold chain into Baru Sahib already exists and runs. Vadilal ice cream arrives via Shiv Shakti, Baddi (02DMSPK8891Q1ZV) — ₹350,856 over 173 purchase lines in 12m; McCain frozen arrives via Laxmi Narayan Suresh Kumar, Solan (02AAZPA4737B1Z0) — 23 bills in 12m, one every 16 days, ₹14,660 average bill.",
+      "status": "VERIFIED",
+      "evidence": "ary query on PurchaseDetail joined to ProductMaster where ProductName LIKE '%Vadilal%' / '%Mccain%'/'%Mccam%', grouped by AccountMaster, 2025-08-01 onward; plus cadence query COUNT(*) bills per supplier 12m (Shiv Shakti 14 bills avg ₹31,440; Laxmi Narayan Suresh Kumar 23 bills avg ₹14,660).",
+      "number": "Vadilal ₹3.51 L / 173 lines; McCain 23 deliveries in 12m",
+      "soWhat": "Frozen is an ASSORTMENT decision, not a cold-chain capex project. The brief's 'Frozen Rs 0.52 L / 57 SKUs' is a range problem — ARY is running a freezer route 23 times a year to sell ₹52k. Filling that same vehicle with Godrej Yummiez, ITC Master Chef and Safal is the cheapest revenue in this whole lane."
+    },
+    {
+      "claim": "Fresh fruit & vegetables — ₹62.7 L of 12m sales — are single-sourced from ONE vendor 100+ km away in Haryana with no GSTIN on file: M/S Shashi Bhushan Manoj Kumar Aeron, Naraingarh (Ambala dist.), pincode 134203. 261 bills in 12 months (one every 1.4 days), ₹71.0 L, ₹27,192 average bill, and it also supplies the pizza cheese and Hf Super Milk.",
+      "status": "VERIFIED",
+      "evidence": "ary purchases by-supplier -n 40; per-supplier product mix (Apple ₹11.67 L, Onion ₹11.10 L, Banana ₹8.27 L, Tomato ₹7.87 L, Potato ₹7.44 L, Pomegranate ₹6.34 L, Pizza Cheese ₹7.47 L); groups 129 Fruits + 159 Vegetable 24m = 298 + 452 bills, ₹1.11 Cr, this vendor >98% of both; AccountMaster/CityMaster → CityName 'Naraingarh', StateName 'Haryana', GSTINNo blank.",
+      "number": "₹71 L / 261 deliveries / 1 vendor / 0 GSTIN",
+      "soWhat": "This is the single biggest continuity risk in ARY's supply chain — one unregistered proprietor, one hill road, 6,197 selling SKUs depending partly on him. A second source (Solan/Nahan APMC, HPMC Parwanoo, local Rajgarh growers) is risk work, not growth work, and should be priced as insurance."
+    },
+    {
+      "claim": "There is an on-site cold store at Baru Sahib being purchased from: supplier account 'Cold Store Baru Sahib Customer' issued 93 bills in 12m (₹1,688 average) into groups 129/159 (Fruits/Vegetable), and 'Akal Bakery - Baru Sahib' (115 bills), 'Akal Dairy - Baru Sahib' (73), 'Akal Catering Mess' (56), 'Akal Modi Khana - Baru Sahib' and 'Local Purchase' (105) are all active supplier accounts.",
+      "status": "VERIFIED",
+      "evidence": "ary delivery-cadence query on PurchaseHeader 12m grouped by AccountName; and group 129/159 supplier query 24m showing 'Cold Store Baru Sahib Customer' 30 + 135 bills.",
+      "number": "93 cold-store bills, 115 bakery, 73 dairy, 56 mess in 12m",
+      "soWhat": "The campus already operates its own cold store, bakery, dairy and mess and ARY buys from them. Any fresh/frozen/dairy expansion should be routed through that existing cold store rather than new equipment, and the campus dairy caps how much packaged milk expansion is realistic."
+    },
+    {
+      "claim": "₹1.28 Cr — 20% of 12-month purchases, 1,825 of 2,966 bills — comes from 16 suppliers with NO GSTIN recorded in AccountMaster, including the #1 (Aeron, ₹71 L), Hygienic Milk (Mohali, ₹25.7 L) and Sehgal Trading Co. (Rajgarh, ₹7.9 L).",
+      "status": "VERIFIED",
+      "evidence": "ary query grouping PurchaseHeader 12m by CASE WHEN LTRIM(RTRIM(a.GSTINNo))='' → NO GSTIN: 16 suppliers, 1,825 bills, ₹12,755,511; HAS GSTIN: 133 suppliers, 1,141 bills, ₹50,823,898.",
+      "number": "₹1.28 Cr / 20% of purchases from 16 GSTIN-less vendors",
+      "soWhat": "Either these are composition/unregistered dealers (no input tax credit, correct as recorded) or the GSTIN is simply missing from the master and ITC is being lost on ₹1.28 Cr. At an 18% blended rate the second case is worth up to ~₹23 L/yr. It has to be resolved before adding vendors, or the new categories inherit the same hole."
+    },
+    {
+      "claim": "Prescription medicine is genuinely absent — not thin. A LIKE scan for tablet / syrup / capsule / paracetamol / crocin / dolo across all 21,466 SKUs returns zero medicines (only rose syrup and Hershey's syrup). The 'Medicare' group 138 with 272 active SKUs is pure OTC: Dettol antiseptic ₹20,214, GSK Eno ₹17,931, Dabur Honitus ₹17,202, Vicks Vaporub ₹10,833, Boroline ₹9,945, Dabur Glucose-D, Johnson's Benadryl.",
+      "status": "VERIFIED",
+      "evidence": "ary query on ProductMaster ProductName LIKE '%tablet%'/'%syrup%'/'%capsule%'/'%paracetamol%'/'%crocin%'/'%dolo%' → no drug SKUs; group 138 top sellers 12m via SaleHeader/SaleDetail join.",
+      "number": "0 Schedule-H SKUs in 21,466; Medicare = ₹3.15 L/yr of OTC",
+      "soWhat": "A 5,000-person township 30–50 km from a market has no pharmacy in its only shop. This is the largest single category gap in the business and the only one that needs a licence rather than a phone call."
+    },
+    {
+      "claim": "Baby care is NOT absent — the brief's '3 Baby Accessories SKUs' undercounts it badly. 69 SKUs containing baby/diaper/Pampers/Johnson's sold ₹1.89 L in 12 months: Pampers pants in 3 sizes (223 packs, ₹21,790), the full Johnson's baby range (~₹40k) and Himalaya baby range (~₹41k). The comparable adjacent category — Sofy/Stayfree/Whisper sanitary — did ₹4.54 L on 18 SKUs, 2.4× the entire baby range.",
+      "status": "VERIFIED",
+      "evidence": "ary query SaleHeader/SaleDetail/ProductMaster 12m, ProductName LIKE baby/diaper/pamper/mamy/cerelac/lactogen/johnson → 69 SKUs, 1,627 units, ₹189,456; sanitary query → ₹454,017 across 18 SKUs. Purchase side: all Pampers via Nirman Associates Pvt Ltd, Parwanoo (last bill 2026-08-11); MamyPoko bought once via Himachal Wholesale Syndicate, Dec-2023, then dropped.",
+      "number": "Baby ₹1.89 L vs sanitary ₹4.54 L on 18 SKUs",
+      "soWhat": "The category is mis-taxonomised, not missing. Fixing the group tree and adding a MamyPoko line back (the Unicharm vendor is already live, already ARY's Sofy supplier) is a same-week action with no new vendor and no new licence."
+    },
+    {
+      "claim": "Dairy already runs on three named routes with proven cadence: Amul via Leela Associates, Hospital Road Solan 173212 (02BHSPB6268F2ZC) — 126 bills in 12m, one every 2.9 days, ₹12,931 average; Verka via Sahni Trading Co., Parwanoo 173220 (02ABZPS8831R1ZG) — ₹174,095; loose milk and desi ghee via Hygienic Milk, Mohali — 880 bills in 12m, 2.4 per day; local paneer via Sehgal Trading Co., Rajgarh 173101 — 215 bills.",
+      "status": "VERIFIED",
+      "evidence": "ary query on Verka/Amul/Hf brand SKUs grouped by supplier; delivery-cadence query 12m (Hygienic Milk 880 bills avg ₹2,922; Leela Associates 126 bills; Sehgal Trading 215 bills); group 193 Dairy supplier query 24m.",
+      "number": "Amul every 2.9 days; loose milk 2.4×/day",
+      "soWhat": "A cold, 2–3-day-cycle dairy route into 173101 already exists. Dahi/paneer/butter/UHT range extension needs no new logistics — but the campus's own Akal Dairy caps how much packaged milk ARY can realistically take."
+    },
+    {
+      "claim": "HP Milkfed (Himachal Pradesh State Co-operative Milk Producers' Federation) formally covers Sirmaur district — it took over dairy development in Mandi, Bilaspur, Hamirpur, Sirmaur, Solan and part of Shimla — and is an untapped route. No plant or chilling centre in Nahan or Paonta Sahib could be confirmed.",
+      "status": "NOT-CHECKED",
+      "evidence": "hpmilkfed.org/about and hpmilkfed.org/sirmaur exist and state the district coverage (via search result text), but every direct fetch failed: https://hpmilkfed.org/plant-locations/ → 'certificate has expired'; r.jina.ai proxy → HTTP 422; hpmilkfed.org.in → DNS not found.",
+      "number": "6 districts incl. Sirmaur",
+      "soWhat": "A state co-operative dairy that already has a Sirmaur mandate is the cheapest possible second dairy source and a political win with a Himachal institution. It needs one phone call to HP Milkfed Shimla, which nobody at ARY appears to have made."
+    },
+    {
+      "claim": "HPMC (HP Horticultural Produce Marketing & Processing Corp) has a fruit processing plant with 18,000 MT apple capacity AND cold-storage terminal capacity at PARWANOO — the exact town where four of ARY's biggest FMCG vendors sit (173220). Total HPMC cold storage ~11,500 MT across Delhi, Mumbai, Chennai and Parwanoo. Corporate office Shimla, +91-177-2623835.",
+      "status": "VERIFIED",
+      "evidence": "https://www.hpmc.in/ — Parwanoo plant 18,000 MT apple processing; CA stores at Gumma, Jarol, Oddi, Rohru, Patlikhul (640 MT); cold storage terminals Delhi/Mumbai/Chennai/Parwanoo ~11,500 MT; product range apple juice concentrate, tetrapak juices, cider vinegar, jams, pickles, wines, squash, mineral water.",
+      "number": "18,000 MT plant at Parwanoo; ₹0 new logistics",
+      "soWhat": "ARY's Parwanoo vendors already run a vehicle to Baru Sahib. HPMC Parwanoo is a same-town backhaul for (a) a second F&V source and (b) a Himachal-branded juice/jam/pickle line that fits a Himachal institution's story. This is the highest-leverage unexploited route found."
+    },
+    {
+      "claim": "A retail pharmacy needs Form 19 application → Form 20 (drugs other than Schedule C/C1) and Form 21 (Schedule C/C1), a minimum 10 sq m premises, and a registered pharmacist (B.Pharm/D.Pharm on the State Pharmacy Council register). If ARY also wants to wholesale to the campus hospital it needs Form 20-B/21-B and the premises rises to 15 sq m with a 'competent person' (graduate + 1 yr drug-trade experience, or non-graduate + 4 yrs). Application fees fall in the ₹500–₹1,500 band; the licence is valid 5 years and is issued by the state drug control authority.",
+      "status": "VERIFIED",
+      "evidence": "https://cleartax.in/s/drug-license (forms 19/19A/19B/19C, retail 10 sq m, retail+wholesale 15 sq m, fees 'Rs.1,500 to 500', 5-year validity, State Drugs Standard Control Organisation) corroborated by https://www.indiafilings.com/learn/drug-license/ ('minimum area of 10 square meters' for Form 20/21 or 20-B/21-B; 'For retail sale registered pharmacist'; 'For wholesale licence competent person'; issued by the state Food Safety and Drug Administration).",
+      "number": "10 sq m + 1 registered pharmacist + ₹500–1,500 fee + 5-yr validity",
+      "soWhat": "The barrier is a person, not money. ₹1,500 of fees and 10 sq m of an existing counter are trivial; finding and naming a pharmacist on the HP register who will sit at Baru Sahib is the whole project. The campus hospital is the obvious place to find one."
+    },
+    {
+      "claim": "Named Rx wholesale candidates exist inside the 60 km catchment — Nahan (173001): Malhotra Medical Hall, Gautam Medical Store, Shivam Pharma; Paonta Sahib (173025): Utkarsh Medicose, Vidit Healthcare, Q Care; Solan (173212): Sharma Medicose, Utthan Medicos, Arogya Pharmacy, TSD Enterprises, M S Hadimba Medical Store, Chimak Health Care; Baddi/Nalagarh: Sahil Pharma, Sony Traders, Daneesha Enterprises. Note that Himachal's Baddi–Barotiwala–Nalagarh and Kala Amb belts are MANUFACTURING hubs (Softex Surgical Cotton and Symbiosis Pharmaceuticals at Kala Amb; SBS Biotech at Village Jattan, Nahan Road, Kala Amb) — manufacturers, not the stockists a shop buys from.",
+      "status": "VERIFIED",
+      "evidence": "https://dir.indiamart.com/sirmaur/pharmaceutical-drug.html; https://dir.indiamart.com/solan/pharmaceutical-drug.html; https://dir.indiamart.com/paonta-sahib/pharmaceutical-drug.html; https://dir.indiamart.com/baddi/pharmaceutical-drug.html; Kala Amb/Nahan manufacturer addresses from ayurveda.hp.gov.in licensed-pharmacy listings surfaced in search.",
+      "number": "14 named candidates across Nahan / Paonta Sahib / Solan / Baddi",
+      "soWhat": "Directory-grade names, phones unverified — treat as a call list, not a shortlist. The strategic point is that Baru Sahib's pharma supply will come from a Nahan or Solan chemist-wholesaler, NOT from the Baddi pharma hub, and the Baddi 'India's pharma capital' framing is a red herring for a retail shop."
+    },
+    {
+      "claim": "Hardware, electricals, kitchen and crockery already ride two established out-of-state vendors, so a hardware/tools line needs no new supplier: Harminder Singh & Bros, New Delhi (07AASPS8364B1Z8) — Appliances ₹126,279 + Kitchen Utility ₹119,003 + Household ₹57,534 + Cookware ₹37,210 over 24m, 16 bills in 12m; R.K. Sales Corporation, Chandigarh (04ACPPD8329N1Z6) — Household ₹370,475 + Kitchen ₹80,535 + Cookware ₹57,908; R.K Glass & Crockery, Chandigarh, Shiv Mandir Road Sec-52 (04ABGPK9611A1Z6) — ₹362,299 + ₹103,900; locally Bansal Brothers, Solan (02BAGPB6317J2Z3) and Cm Trading Co., Solan (02AFYPA7109M1Z8) already supply Electricals.",
+      "status": "VERIFIED",
+      "evidence": "ary query on groups 123 Electricals / 109 Appliances / 116 Cookware / 136 Kitchen Utility / 134 House Hold, 24m, grouped by AccountMaster + CityMaster.",
+      "number": "5 existing vendors, ₹13.2 L of 24m hardware-adjacent purchases",
+      "soWhat": "'No group exists for hardware/tools' is a taxonomy gap, not a sourcing gap. Ask the same five vendors for a Taparia/Stanley hand-tool and a Havells/Anchor electrical rack and it lands on the next vehicle."
+    },
+    {
+      "claim": "For new-vendor electrical and optical lines, Chandigarh is the real wholesale market with priced, named suppliers. Electricals: New Jaspal Electricals (L&T switches ₹35/pc), Jai Durga Electric Co. (Havells modular), Aggarwal Electric Store, Durga Yantra India (+91 8047526885, ₹149/pc), Bharat Electrical Industries (+91 7942624377, ₹140/pc), R.M. Engineering — brands Havells, Anchor, Legrand, Schneider, L&T, Great White, ₹8–₹2,550/pc. Optical frames: Spectsmakers (TR-90 half rim ₹110/pc), A-One Opticals (₹140/pc), Trident Enterprises (polycarbonate TR-90 ₹350/pc); Chandigarh frame band ₹85–₹900/pc with most mainstream frames ₹100–₹200.",
+      "status": "VERIFIED",
+      "evidence": "https://dir.indiamart.com/chandigarh/electrical-switches.html and https://dir.indiamart.com/chandigarh/spectacle-frames.html (fetched 2026-08-28).",
+      "number": "Frames ₹85–900/pc, mainstream ₹100–200; switches ₹8–2,550/pc",
+      "soWhat": "A reading-glasses and sunglasses rack for 5,000 residents including elderly staff costs ₹110–350 a frame at wholesale against ₹400–800 retail — the highest-margin, lowest-risk new SKU family in this lane, and it fits on a shelf. ARY already buys from Chandigarh (04) vendors 6 times a year, so the route is proven."
+    },
+    {
+      "claim": "Pet care has no real Himachal distribution and probably no real demand. The only HP-area listings are Thapa Golds (Solan, carries Pedigree), Gopalji Medicare Solutions (Samolac pet food, +91 7942824936), Tak Herbals (+91 8043823360), G K Manufacturers India (+91 8047643574) and Danodia Foods (bird seed) — none are brand distributors. Brands available in the region are Pedigree, Drools, Royal Canin, Whiskas, Farmina at ₹170–₹2,400/kg.",
+      "status": "VERIFIED",
+      "evidence": "https://dir.indiamart.com/solan/pet-food.html (fetched 2026-08-28). Demand judgement is inference from the campus profile, not measured — ARY's catalogue has no pet SKU to measure.",
+      "number": "₹170–2,400/kg; 0 distributor-grade vendors in HP",
+      "soWhat": "Deprioritise. A residential Sikh institution of students and staff quarters is not a pet market, there is no supply route, and the effort is better spent on the pharmacy. Say no to this one rather than half-building it."
+    },
+    {
+      "claim": "Mobile accessories have no verifiable HP or Chandigarh wholesale route in the directories, so this stays a Delhi run — which fits ARY's existing pattern (it already buys appliances and electricals from Harminder Singh & Bros, New Delhi, and garments from Chandni Chowk 110006 via 27 vendors, ₹25.8 L in 12m). Named Delhi accessory markets are Gaffar Market/Karol Bagh, Bhagirath Palace and Nehru Place, but no named firm could be retrieved.",
+      "status": "NOT-CHECKED",
+      "evidence": "Three fetch attempts failed: https://dir.indiamart.com/chandigarh/mobile-accessories.html → 404; https://dir.indiamart.com/delhi/mobile-accessories.html → 404; https://dir.indiamart.com/impcat/mobile-phone-accessories.html?city=Chandigarh returned only Delhi/Mumbai/Surat national sellers with no Chandigarh firm. Current state VERIFIED: 8 active mobile SKUs, ₹2,690 of 12m sales (brief).",
+      "number": "8 SKUs, ₹2,690/yr today",
+      "soWhat": "Do not commit to a mobile-accessory line until someone walks Gaffar Market or Bhagirath Palace, and check first whether the residential school permits selling chargers and earphones to students — that rule, not supply, decides the size of this category."
+    },
+    {
+      "claim": "Lead times and minimum orders are already measurable from bill cadence and minimum bill values — no vendor negotiation needed to know them. Daily/near-daily: Hygienic Milk (Mohali) 880 bills, Aeron (Naraingarh) every 1.4 days, Sehgal Trading (Rajgarh) every 1.7 days. Twice-weekly: Leela Associates (Solan) every 2.9 days. Fortnightly: Sahni Trading 13.0 days, Mangla Sales 13.5, Solan Agencies 14.6, Parhlad Chand Batra 16.6. Monthly: Shiv Shakti (Baddi) 26.1, Dharam Pal & Sons (Chandigarh) 28.1. Effective MOQ from minimum bill: Himachal Wholesale Syndicate ₹570 (no MOQ), Mangla Sales ₹5,000, Solan Agencies ₹7,949, Dharam Pal & Sons ₹111,271 (truckload).",
+      "status": "VERIFIED",
+      "evidence": "ary query on PurchaseHeader 12m: COUNT(*) bills, 365.0/COUNT(*) as avg_days_between, AVG/MIN/MAX(BillAmount) grouped by supplier, HAVING COUNT(*)>=6.",
+      "number": "0.4 to 28.1 days between deliveries; MOQ ₹570 to ₹1.11 L",
+      "soWhat": "A new SKU's replenishment cycle is decided by which vendor carries it, and that is now knowable before committing. Put fast-moving new lines (diapers, OTC, frozen) on the ≤3-day vendors (Himachal Wholesale Syndicate at ₹570 min, Leela Associates) and slow lines (optical, hardware) on the monthly Chandigarh/Delhi runs."
+    },
+    {
+      "claim": "Pincode geography of the catchment, confirmed: 173101 is Baru Sahib AND Rajgarh plus ~26 villages (Bhawani, Habban, Nohra, Sarahan-side hamlets) — one pincode for the whole tehsil pocket. Nahan 173001, Paonta Sahib 173025, Kala Amb 173030, Sarahan 173024; Parwanoo 173220, Solan 173212, Saproon/Deothi 173211, Baddi 173205, Kumarhatti 173229. Full postal address: Baru Sahib, Via Rajgarh, Teh. Pachhad, Distt. Sirmaur, HP – 173101.",
+      "status": "VERIFIED",
+      "evidence": "https://www.mapsofindia.com/pincode/india/himachal-pradesh/sirmaur/ and .../solan/; address from https://www.akalacademy.in/contact-us (phones 9816033303-05, toll free 18001807755).",
+      "number": "1 pincode = 28 named places",
+      "soWhat": "Any courier or vendor 'serviceable to 173101' check is meaningless at village granularity — deliveries land at Rajgarh or the campus gate and are carried in. Every vendor MOU should name 'Baru Sahib campus, Via Rajgarh' as the delivery point, not the pincode."
+    },
+    {
+      "claim": "ARY's supply spine has four geographic legs, and Himachal is only 43% of it. 12m purchases by supplier GST state: HP (02) ₹2.71 Cr / 31 suppliers; Delhi (07) ₹1.01 Cr / 68 suppliers; Haryana (06) ₹62.0 L / 16; Chandigarh (04) ₹59.8 L / 6; Punjab (03) ₹9.3 L / 9; Maharashtra (27) ₹3.4 L; plus ₹1.28 Cr from GSTIN-less vendors. By pincode the hubs are Parwanoo 173220 ₹1.02 Cr, Naraingarh 134203 ₹71 L, Solan 173212 ₹55.9 L, Sonipat 131101 ₹42 L, Rajgarh/Baru Sahib 173101 ₹27.7 L, Chandni Chowk 110006 ₹25.8 L across 27 vendors.",
+      "status": "VERIFIED",
+      "evidence": "ary query grouping 12m PurchaseHeader by LEFT(a.GSTINNo,2) and separately by a.Pincode.",
+      "number": "HP ₹2.71 Cr (43%), Delhi ₹1.01 Cr, Haryana ₹62 L, Chandigarh ₹59.8 L",
+      "soWhat": "Parwanoo–Solan is the FMCG artery, Naraingarh the fresh artery, Chandni Chowk the garment artery, Chandigarh the household artery. Slot every new category onto the artery that already runs, and only build a new leg for the pharmacy."
+    },
+    {
+      "claim": "JIVO group companies are already ARY suppliers, so intercompany supply is a proven mechanism — but the Delhi leg is dormant. Jivo Wellness Pvt Ltd - Haryana Branch (06AACCJ4223F1Z0, Sonipat): 67 bills ₹32.2 L, plus a new 'Vend-06' account since Apr-2026 (18 bills ₹8.5 L). Jivo Wellness Pvt Ltd - Delhi (07AACCJ4223F1ZY): 19 bills ₹9.4 L, last 2024-09-03. Jivo Mart Pvt Ltd - Punjab (03AAFCJ4102J1Z0, Patiala): 6 bills ₹8.1 L, last 2024-03-31.",
+      "status": "VERIFIED",
+      "evidence": "ary query on PurchaseHeader joined AccountMaster WHERE AccountName LIKE '%Jivo%', all time, grouped with min/max VoucherDate.",
+      "number": "₹50.2 L of intercompany supply all-time; Delhi leg dead 23 months",
+      "soWhat": "If JIVO wants Delhi HO involved, the working pattern is Delhi/Sonipat invoicing ARY as a vendor — not Delhi running a buying desk. Reviving account 284 (Delhi, 07AACCJ4223F1ZY) is the realistic way to put HO-negotiated national deals (Nestle, ITC, P&G) into Baru Sahib at HO prices."
+    },
+    {
+      "claim": "Additional named frozen and general-trade vendors exist in the Solan–Baddi–Parwanoo belt beyond ARY's current list: Nav Durga Traders (Parwanoo), Madhvi Agencies (Solan), Dharam Chand And Bros (Solan), Kedar Trading Company (Baddi), Crystal Mega Mart (Baddi), Shivansh Traders (Baddi), Devyani Food Industries Limited (Baddi), Ashu Food and Anahat Foods (Solan). Baby/hygiene: Navi Hygiene & Healthcare Pvt Ltd (Solan), Easeplus Healthcare Pvt Ltd (Solan), Aurum Medicare Pvt Ltd (Baddi), Sri Rajbhan Enterprises (Solan), M.K. Enterprises (Nalagarh), Sahil Pharma (Solan) — brands seen: Pampers, MamyPoko, Huggies, Libero, Babyhug, Little Angel.",
+      "status": "VERIFIED",
+      "evidence": "https://dir.indiamart.com/solan/frozen-food.html and https://dir.indiamart.com/solan/baby-diapers.html (fetched 2026-08-28). Directory listings — company existence sourced, phones and trading status not verified.",
+      "number": "~20 additional named vendors in the 60–90 km belt",
+      "soWhat": "Gives the purchase desk a real second-quote list so the incumbent Parwanoo/Solan vendors face price competition on the new lines — worth more than the vendor names themselves."
+    },
+    {
+      "claim": "ARY's own 12-month P&L shape from the same book: purchases ₹6.36 Cr against gross billed sales ₹8.18 Cr at Baru Sahib, implying ~22% gross margin on sales.",
+      "status": "VERIFIED",
+      "evidence": "ary query: SUM(BillAmount) PurchaseHeader IsDeleted=0 from 2025-08-01 = ₹63,579,409; SUM(BillAmount) SaleHeader same window = ₹81,807,636.",
+      "number": "₹6.36 Cr purchases vs ₹8.18 Cr sales, ~22% GM",
+      "soWhat": "The ₹8.18 Cr gross figure is higher than the brief's ₹7.55 Cr — different window or net-of-returns treatment. Use ~22% as the margin to convert every revenue estimate below into gross profit: the ~₹4.2 L/month of new revenue in the recommendations is worth roughly ₹90k–₹95k/month of gross margin, not ₹4.2 L of profit."
+    }
+  ],
+  "tables": [
+    {
+      "title": "Principal → the named distributor that already delivers to Baru Sahib (live, 12m purchases)",
+      "columns": [
+        "Principal",
+        "Distributor (as in ARY's books)",
+        "GSTIN",
+        "Town / PIN",
+        "12m purchase (₹)",
+        "Deliveries in 12m",
+        "Unlocks which new category"
+      ],
+      "rows": [
+        [
+          "ITC",
+          "Solan Agencies",
+          "02AERPS9622K1ZX",
+          "Solan",
+          "15,10,605",
+          "25 (14.6 days)",
+          "ITC Master Chef frozen, Savlon, Fiama, Nimyle"
+        ],
+        [
+          "PepsiCo",
+          "Mangla Sales Corporation",
+          "02BDQPR7603L1Z5",
+          "Parwanoo 173220",
+          "17,66,981",
+          "27 (13.5 days)",
+          "Quaker, Tropicana, Doritos"
+        ],
+        [
+          "Nestle",
+          "Parhlad Chand Batra & Sons",
+          "02ABMPB2280L1ZV",
+          "Solan (PIN 173122)",
+          "12,23,837",
+          "22 (16.6 days)",
+          "Lactogen / NAN / Cerelac / Nestum infant nutrition"
+        ],
+        [
+          "HUL",
+          "Raja Ram Jai Prakash & Co.",
+          "02AAEFR2111D1Z5",
+          "Parwanoo 173220",
+          "9,23,972",
+          "55 (6.6 days)",
+          "Kwality Wall's frozen desserts, Horlicks, Pureit"
+        ],
+        [
+          "Amul (GCMMF)",
+          "Leela Associates",
+          "02BHSPB6268F2ZC",
+          "Solan 173212, Hospital Rd",
+          "7,65,789",
+          "126 (2.9 days)",
+          "Amul frozen, cheese range, Amulspray infant"
+        ],
+        [
+          "Amul (2nd)",
+          "Virender Kumar Sahni & Co.",
+          "02AEXPS0067C1ZJ",
+          "Solan 173212",
+          "4,89,618",
+          "18 (20.3 days)",
+          "second-quote lever on dairy"
+        ],
+        [
+          "Coca-Cola",
+          "Gian Chand Faquir Chand",
+          "02AABFG7465L1ZB",
+          "Solan 173212",
+          "5,76,615",
+          "23 (15.9 days)",
+          "Minute Maid, Maaza, Kinley water"
+        ],
+        [
+          "Britannia",
+          "Sahni Trading Co.",
+          "02ABZPS8831R1ZG",
+          "Parwanoo 173220",
+          "4,23,870",
+          "28 (13.0 days)",
+          "Britannia dairy/cheese; also carries Verka"
+        ],
+        [
+          "P&G",
+          "Nirman Associates Pvt Ltd.",
+          "02AAHCN2037L1ZM",
+          "Parwanoo",
+          "4,14,611",
+          "13 (28.1 days)",
+          "PAMPERS diapers (already flowing), Vicks, Whisper"
+        ],
+        [
+          "Vadilal",
+          "Shiv Shakti",
+          "02DMSPK8891Q1ZV",
+          "Baddi",
+          "3,50,856",
+          "14 (26.1 days)",
+          "proof the DEEP-FREEZE route works"
+        ],
+        [
+          "Colgate-Palmolive",
+          "Himachal Wholesale Syndicate",
+          "02AABFH6020J1ZX",
+          "Parwanoo 173220",
+          "2,67,987",
+          "36 (10.1 days)",
+          "oral care depth"
+        ],
+        [
+          "Unicharm",
+          "Himachal Wholesale Syndicate",
+          "02AABFH6020J1ZX",
+          "Parwanoo 173220",
+          "2,12,210",
+          "36 (10.1 days)",
+          "MAMYPOKO diapers (bought once Dec-23, dropped)"
+        ],
+        [
+          "Dabur",
+          "Himachal Wholesale Syndicate + Baghat Enterprises",
+          "02AABFH6020J1ZX / 02AGXPP8800G1Z5",
+          "Parwanoo / Solan",
+          "1,82,231 + 37,770",
+          "36 / 13",
+          "Ayurvedic OTC depth"
+        ],
+        [
+          "Marico",
+          "Himachal Wholesale Syndicate",
+          "02AABFH6020J1ZX",
+          "Parwanoo 173220",
+          "1,78,226",
+          "36 (10.1 days)",
+          "Saffola, baby oil"
+        ],
+        [
+          "Verka (Punjab Milkfed)",
+          "Sahni Trading Co.",
+          "02ABZPS8831R1ZG",
+          "Parwanoo 173220",
+          "1,74,095",
+          "28 (13.0 days)",
+          "Verka dairy depth, dairy whitener"
+        ],
+        [
+          "Himalaya",
+          "Himachal Wholesale Syndicate",
+          "02AABFH6020J1ZX",
+          "Parwanoo 173220",
+          "1,22,066",
+          "36 (10.1 days)",
+          "Himalaya BabyCare full range"
+        ],
+        [
+          "Kenvue / J&J",
+          "Baghat Enterprises",
+          "02AGXPP8800G1Z5",
+          "Solan 173212",
+          "93,644",
+          "13 (28.1 days)",
+          "Johnson's baby, Band-Aid, Listerine"
+        ],
+        [
+          "McCain",
+          "Laxmi Narayan Suresh Kumar",
+          "02AAZPA4737B1Z0",
+          "Solan",
+          "44,801",
+          "23 (15.9 days)",
+          "the frozen vehicle — currently 90% empty"
+        ]
+      ]
+    },
+    {
+      "title": "Route sheet for each new category — how goods physically reach 173101",
+      "columns": [
+        "New category",
+        "Physical route to Baru Sahib",
+        "Named companies to call",
+        "Lead time (evidence)",
+        "Minimum order",
+        "New vendor needed?"
+      ],
+      "rows": [
+        [
+          "Pharmacy (Rx + Schedule H)",
+          "Nahan (173001) or Solan (173212) chemist-wholesaler → NH-907 / Sarahan → Rajgarh → campus gate. NOT from Baddi — Baddi is manufacturing.",
+          "Nahan: Malhotra Medical Hall, Gautam Medical Store, Shivam Pharma. Paonta Sahib: Utkarsh Medicose, Vidit Healthcare, Q Care. Solan: Sharma Medicose, Utthan Medicos, Arogya Pharmacy, TSD Enterprises, M S Hadimba Medical Store, Chimak Health Care",
+          "2–4 days once licensed (ESTIMATED; matches the 2.9–16 day Solan/Nahan band ARY already sees)",
+          "Chemist wholesalers typically ₹5,000–10,000 (ESTIMATED)",
+          "YES — plus a drug licence and a registered pharmacist. The only category that truly needs both."
+        ],
+        [
+          "Baby care — diapers",
+          "Parwanoo 173220 → Solan → Chail/Sadhupul → Rajgarh. Same vehicle as today's Pampers.",
+          "Nirman Associates Pvt Ltd (P&G/Pampers, 02AAHCN2037L1ZM) — already invoicing. Himachal Wholesale Syndicate (Unicharm/MamyPoko, 02AABFH6020J1ZX) — already invoicing Sofy. Backups: Navi Hygiene & Healthcare Pvt Ltd (Solan), Sri Rajbhan Enterprises (Solan), M.K. Enterprises (Nalagarh)",
+          "10–28 days (VERIFIED cadence)",
+          "₹570 at Himachal Wholesale Syndicate — effectively none",
+          "NO"
+        ],
+        [
+          "Baby care — infant formula",
+          "Solan → Rajgarh on the existing Nestle run",
+          "Parhlad Chand Batra & Sons (Nestle, 02ABMPB2280L1ZV); Leela Associates for Amulspray",
+          "16.6 days (VERIFIED)",
+          "₹2,367 min bill observed",
+          "NO — but IMS Act 1992/2003 restricts promotion, display incentives, discounts and free samples on infant milk substitutes. Get the rule in writing before stocking."
+        ],
+        [
+          "Frozen & cold chain",
+          "Baddi/Solan → Solan → Rajgarh. Insulated route ALREADY RUNNING for Vadilal + McCain.",
+          "Laxmi Narayan Suresh Kumar (McCain, 02AAZPA4737B1Z0); Shiv Shakti (Vadilal, Baddi, 02DMSPK8891Q1ZV); Solan Agencies for ITC Master Chef; Leela Associates for Amul frozen/HUL Kwality Wall's. New quotes: Nav Durga Traders (Parwanoo), Madhvi Agencies (Solan), Kedar Trading Company (Baddi), Crystal Mega Mart (Baddi)",
+          "16–26 days today; can be pulled to 10 by riding the Himachal Wholesale Syndicate run",
+          "₹710 min bill observed on the McCain vendor",
+          "NO — for Godrej Yummiez and Safal, YES (no HP distributor found; go via a Chandigarh/Panchkula cold-chain wholesaler)"
+        ],
+        [
+          "Dairy depth",
+          "Three live legs: Solan (Amul, 2.9 days), Parwanoo (Verka, 13 days), Mohali (loose milk, daily), plus the campus's own Akal Dairy",
+          "Leela Associates; Virender Kumar Sahni & Co.; Sahni Trading Co. (Verka); Rachna Enterprises (Parwanoo). UNTAPPED: HP Milkfed, Shimla +91-177 (Sirmaur is in its mandate)",
+          "2.9 days (VERIFIED)",
+          "₹382 min bill at Leela Associates",
+          "NO for Amul/Verka. HP Milkfed is a new — and politically attractive — route."
+        ],
+        [
+          "Fresh fruit & vegetables (2nd source)",
+          "Today: Naraingarh 134203 → Nahan → Sarahan → Rajgarh, every 1.4 days, one unregistered vendor. Alternatives: Solan/Parwanoo APMC and HPMC Parwanoo → existing Parwanoo backhaul; local Rajgarh growers (stone-fruit belt) → 0 km",
+          "M/S Shashi Bhushan Manoj Kumar Aeron (incumbent, Naraingarh); Hanuman Trading Co. (Naraingarh, 12 bills — an existing second source already); HPMC Shimla +91-177-2623835 (Parwanoo plant 18,000 MT); on-campus Cold Store Baru Sahib; Radha Seed House (173211); Purambika Desi Cow Natural Farming Inputs LLP (Rajgarh 173101)",
+          "1.4 days today (VERIFIED)",
+          "₹987 min bill observed",
+          "NO new vendor strictly needed — Hanuman Trading Co. already exists and should be grown from 12 to 50+ bills"
+        ],
+        [
+          "Optical / eyewear",
+          "Chandigarh → Parwanoo → Solan → Rajgarh on the monthly Chandigarh household run (R.K. Sales / R.K Glass, 6–8 bills/yr)",
+          "Spectsmakers (TR-90 half rim ₹110/pc), A-One Opticals (₹140/pc), Trident Enterprises (polycarbonate TR-90 ₹350/pc) — all Chandigarh",
+          "28 days (VERIFIED Chandigarh cadence)",
+          "Frame wholesalers usually 12–24 pc/model (ESTIMATED)",
+          "YES, one small Chandigarh frame vendor. No licence needed for ready-made readers and sunglasses; a POWERED prescription dispensing counter would need an optometrist."
+        ],
+        [
+          "Hardware / tools / electrical",
+          "Delhi and Chandigarh runs already in place (Harminder Singh & Bros 16 bills/yr; R.K. Sales 6; R.K Glass 8); Solan for top-ups",
+          "EXISTING: Harminder Singh & Bros, New Delhi 07AASPS8364B1Z8; R.K. Sales Corporation, Chandigarh 04ACPPD8329N1Z6; R.K Glass & Crockery, Chandigarh 04ABGPK9611A1Z6; Bansal Brothers, Solan 02BAGPB6317J2Z3; Cm Trading Co., Solan 02AFYPA7109M1Z8. NEW quotes: New Jaspal Electricals (L&T ₹35/pc), Jai Durga Electric Co. (Havells modular), Aggarwal Electric Store, Durga Yantra India, Bharat Electrical Industries — all Chandigarh",
+          "22–28 days (VERIFIED)",
+          "₹1,061–5,140 min bills observed",
+          "NO"
+        ],
+        [
+          "Mobile & electronics accessories",
+          "Delhi (Gaffar Market/Karol Bagh, Bhagirath Palace, Nehru Place) → Chandigarh → Solan → Rajgarh, riding the existing Delhi appliance/garment run",
+          "No named firm retrieved — three directory fetches failed. Existing Delhi vendors that could be asked to carry it: Harminder Singh & Bros (appliances), Sita Ram Chaman Lal (22 bills/yr)",
+          "22–28 days (ESTIMATED, matches Delhi run)",
+          "Unknown",
+          "YES — and unresolved. Walk the market before committing."
+        ],
+        [
+          "Pet care",
+          "No route found",
+          "Thapa Golds (Solan, Pedigree); Gopalji Medicare Solutions; Tak Herbals. Brands Pedigree/Drools/Royal Canin/Whiskas/Farmina at ₹170–2,400/kg",
+          "n/a",
+          "n/a",
+          "YES — recommend NOT doing it"
+        ]
+      ]
+    },
+    {
+      "title": "Drug licence checklist for an ARY pharmacy counter at Baru Sahib",
+      "columns": [
+        "Item",
+        "Requirement",
+        "Status / source",
+        "Cost"
+      ],
+      "rows": [
+        [
+          "Application form",
+          "Form 19 (retail) / Form 19A; wholesale on the same application",
+          "Drugs & Cosmetics Rules 1945 — cleartax.in/s/drug-license, indiafilings.com",
+          "₹500–₹1,500 per application"
+        ],
+        [
+          "Licence granted",
+          "Form 20 (drugs other than Schedule C & C1) + Form 21 (Schedule C & C1). Add Form 20-B / 21-B only if ARY will wholesale to the campus hospital",
+          "Same sources",
+          "included"
+        ],
+        [
+          "Premises",
+          "10 sq m minimum for retail only; 15 sq m if retail + wholesale on the same premises",
+          "VERIFIED (both sources agree)",
+          "₹0 — Ary Pos counter already exceeds this"
+        ],
+        [
+          "Qualified person",
+          "Retail: a REGISTERED PHARMACIST (B.Pharm or D.Pharm) on the HP State Pharmacy Council register, with appointment letter. Wholesale: a 'competent person' — graduate + 1 yr drug-trade experience, or non-graduate + 4 yrs",
+          "VERIFIED. This is the real blocker.",
+          "₹25,000–45,000/month salary (ESTIMATED)"
+        ],
+        [
+          "Cold storage",
+          "Refrigerated storage required for thermolabile drugs; specific AC mandate not documented in the sources found",
+          "PARTIAL — 'storage facility and temperature control are required', specifics NOT-CHECKED",
+          "₹35,000 for a pharmacy refrigerator (ESTIMATED)"
+        ],
+        [
+          "Validity",
+          "5 years, renewed before expiry",
+          "VERIFIED",
+          "renewal fee at 5 yrs"
+        ],
+        [
+          "Issuing authority",
+          "State drug control / Food Safety & Drug Administration, Himachal Pradesh. Zonal drug inspector for Sirmaur.",
+          "VERIFIED in principle; the HP portal could NOT be reached (drugcontrol.hp.gov.in and investhimachal.hp.gov.in both DNS-fail)",
+          "—"
+        ],
+        [
+          "Also needed",
+          "FSSAI (ARY already holds one for food), Shops & Establishment, Legal Metrology for any weighing",
+          "NOT-CHECKED against ARY's current licence file",
+          "—"
+        ]
+      ]
+    },
+    {
+      "title": "Where ARY's money actually goes — 12m purchase by hub",
+      "columns": [
+        "Hub",
+        "PIN",
+        "12m purchase (₹)",
+        "Suppliers",
+        "What it carries",
+        "Which new category it can also carry"
+      ],
+      "rows": [
+        [
+          "Parwanoo",
+          "173220",
+          "1,02,00,000",
+          "4",
+          "HUL, PepsiCo, Britannia, Verka, Unicharm, Colgate, Marico, Dabur, Himalaya, P&G",
+          "Diapers, OTC depth, frozen, hygiene — the widest single lever"
+        ],
+        [
+          "Naraingarh (Haryana)",
+          "134203",
+          "71,00,000",
+          "2",
+          "All fresh fruit & veg, pizza cheese, Hf milk",
+          "Frozen veg backhaul; needs a second source regardless"
+        ],
+        [
+          "Solan",
+          "173212",
+          "55,90,000",
+          "8",
+          "ITC, Nestle, Amul, Coca-Cola, J&J, McCain, electricals",
+          "Rx pharmacy, frozen, baby, electricals"
+        ],
+        [
+          "Sonipat (JIVO/Katebaa)",
+          "131101",
+          "42,00,000",
+          "3",
+          "Academy uniform fabric, JIVO intercompany",
+          "JIVO-negotiated national deals"
+        ],
+        [
+          "Rajgarh / Baru Sahib",
+          "173101",
+          "27,70,000",
+          "6",
+          "Local dairy, paneer, desi-cow, campus cold store/bakery/dairy",
+          "Local F&V from the stone-fruit belt"
+        ],
+        [
+          "Chandni Chowk, Delhi",
+          "110006",
+          "25,80,000",
+          "27",
+          "Garments, shawls, steel, crockery",
+          "Photo frames, household — already there"
+        ],
+        [
+          "Chandigarh",
+          "(04)",
+          "59,80,000",
+          "6",
+          "Bulk atta/rice, household, crockery, cookware",
+          "Optical frames, hardware, electrical, cold-chain frozen"
+        ],
+        [
+          "GSTIN-less vendors",
+          "—",
+          "1,27,60,000",
+          "16",
+          "F&V, loose milk/ghee, local",
+          "Must be regularised before adding volume"
+        ]
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "step": "Stop routing anything through 'Delhi HO purchasing'. Name the Baru Sahib purchase desk as the single owner of new-category onboarding, and confirm in one sitting that LocationID 1 has never bought anything (1 voucher, ₹0, 2023-04-01).",
+      "sequence": 1,
+      "owner": "ARY Baru Sahib purchase desk + ARY Accounts",
+      "cost": "none",
+      "duration": "1 day",
+      "dependsOn": "nothing — the evidence is already in FR8HODBNEW"
+    },
+    {
+      "step": "Ring the six vendors who already carry the new categories and ask for their full principal price list: Nirman Associates Pvt Ltd (P&G/Pampers), Himachal Wholesale Syndicate (Unicharm/MamyPoko, min order ₹570), Parhlad Chand Batra & Sons (Nestle infant nutrition), Solan Agencies (ITC Master Chef), Laxmi Narayan Suresh Kumar (McCain), Shiv Shakti Baddi (Vadilal). No new vendor, no new credit line.",
+      "sequence": 2,
+      "owner": "ARY Baru Sahib purchase desk",
+      "cost": "none",
+      "duration": "1 week",
+      "dependsOn": "step 1"
+    },
+    {
+      "step": "Fix the taxonomy before buying anything: create real Baby Care, Frozen, Optical, Hardware & Tools and Pharmacy groups; move the 69 baby SKUs already selling ₹1.89 L/yr out of Personal Care/Toiletories into Baby Care so the category becomes visible to whoever reads the reports.",
+      "sequence": 3,
+      "owner": "ARY Baru Sahib counter head (Ary Pos) + FusionERP8 admin",
+      "cost": "none",
+      "duration": "3 days",
+      "dependsOn": "step 1 (do it in parallel with step 2)"
+    },
+    {
+      "step": "Fill the freezer vehicle. It already comes 23 times a year for ₹44,801 of McCain. Add ITC Master Chef via Solan Agencies, Amul frozen/cheese via Leela Associates, HUL Kwality Wall's via Raja Ram Jai Prakash, and take a quote from Nav Durga Traders (Parwanoo) and Kedar Trading Company (Baddi) for Godrej Yummiez and Safal.",
+      "sequence": 4,
+      "owner": "ARY Baru Sahib purchase desk",
+      "cost": "₹0 capex — the cold chain exists; ₹60,000 opening stock",
+      "duration": "3 weeks",
+      "dependsOn": "step 2"
+    },
+    {
+      "step": "Find the pharmacist BEFORE filing anything. Ask the Akal Charitable Hospital / campus dispensary whether a B.Pharm or D.Pharm already on campus is registered with the HP State Pharmacy Council and would sign as the named pharmacist, and settle whether a retail pharmacy complements or cannibalises what the hospital already dispenses.",
+      "sequence": 5,
+      "owner": "Kalgidhar Trust campus admin + ARY unit head",
+      "cost": "none",
+      "duration": "2 weeks",
+      "dependsOn": "a decision that ARY wants a pharmacy at all"
+    },
+    {
+      "step": "File Form 19 for Form 20 + Form 21 at the HP drug control office (Sirmaur zone), for a 10 sq m carve-out of the existing Ary Pos counter. Do NOT apply for 20-B/21-B unless ARY will wholesale to the hospital — that pushes the premises to 15 sq m and needs a separate competent person.",
+      "sequence": 6,
+      "owner": "ARY Accounts (Baru Sahib) with the named pharmacist",
+      "cost": "₹1,500 fees + ₹35,000 pharmacy refrigerator + ₹40,000 shelving",
+      "duration": "6–12 weeks (HP processing time NOT verified)",
+      "dependsOn": "step 5 — a named registered pharmacist"
+    },
+    {
+      "step": "Line up the Rx wholesaler in parallel with the licence, so stock lands the week the licence does. Call the Nahan and Solan chemist-wholesalers (Malhotra Medical Hall, Sharma Medicose, Utthan Medicos, TSD Enterprises, Utkarsh Medicose, Vidit Healthcare) for terms, credit days and delivery cadence to Rajgarh. Ignore the Baddi pharma hub — those are manufacturers.",
+      "sequence": 7,
+      "owner": "ARY Baru Sahib purchase desk + the named pharmacist",
+      "cost": "₹2,00,000 opening pharmacy stock (ESTIMATED)",
+      "duration": "4 weeks, overlapping step 6",
+      "dependsOn": "step 6 filed (wholesalers will not open an account without a licence number)"
+    },
+    {
+      "step": "De-risk fresh. Grow Hanuman Trading Co. (Naraingarh, already 12 bills/yr) into a real second F&V source, open a line with HPMC Parwanoo (+91-177-2623835) for Himachal-branded juice/jam/pickle plus a fresh backhaul on the existing Parwanoo vehicle, and buy the Rajgarh stone-fruit season locally through Purambika/Sai Industries.",
+      "sequence": 8,
+      "owner": "ARY Baru Sahib purchase desk",
+      "cost": "none — backhaul on existing vehicles",
+      "duration": "4 weeks",
+      "dependsOn": "step 1"
+    },
+    {
+      "step": "Regularise the ₹1.28 Cr of purchases from 16 GSTIN-less vendors — establish for each whether it is genuinely unregistered/composition or simply missing from AccountMaster, starting with Aeron (₹71 L), Hygienic Milk (₹25.7 L) and Sehgal Trading (₹7.9 L). Do this before adding purchase volume to any of them.",
+      "sequence": 9,
+      "owner": "ARY Accounts (Baru Sahib) + Jivo Wellness GST desk",
+      "cost": "none",
+      "duration": "3 weeks",
+      "dependsOn": "step 1"
+    },
+    {
+      "step": "Add the two shelf categories with no licence risk: a ₹110–₹350 wholesale optical rack (Spectsmakers / A-One Opticals / Trident Enterprises, Chandigarh) and a hand-tool + Havells/Anchor electrical rack from the existing Harminder Singh & Bros and R.K. Sales runs. Both ride vehicles already scheduled 6–16 times a year.",
+      "sequence": 10,
+      "owner": "ARY Baru Sahib counter head (Ary Pos)",
+      "cost": "₹1,20,000 combined opening stock",
+      "duration": "6 weeks",
+      "dependsOn": "step 3 (the groups must exist first)"
+    },
+    {
+      "step": "Only then decide on mobile accessories — after someone walks Gaffar Market or Bhagirath Palace for named vendors AND the Akal Academy administration confirms whether chargers and earphones may be sold to resident students. Drop pet care entirely.",
+      "sequence": 11,
+      "owner": "ARY unit head + Akal Academy administration",
+      "cost": "none to decide",
+      "duration": "4 weeks",
+      "dependsOn": "steps 2–10 delivering; this is the last, not the first, category"
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Open a licensed pharmacy counter inside Ary Pos — 10 sq m, Form 20 + 21, one registered pharmacist, supplied by a Nahan or Solan chemist-wholesaler. 5,000 residents 30–50 km from a market currently buy ₹3.4 L/yr of Dettol and Eno and zero medicine. Revenue estimate is ESTIMATED, not measured, and must be halved if the campus hospital already dispenses to residents.",
+      "priority": "P0",
+      "monthlyImpactInr": 200000,
+      "oneOffCostInr": 275000,
+      "effort": "months",
+      "blocker": "A registered pharmacist on the HP State Pharmacy Council who will sit at Baru Sahib — and an answer on whether Akal Charitable Hospital already dispenses to residents. Both are people questions, not money."
+    },
+    {
+      "action": "Fill the frozen vehicle that already runs. Add ITC Master Chef (Solan Agencies), Amul frozen and cheese (Leela Associates), HUL Kwality Wall's (Raja Ram Jai Prakash) to the existing McCain and Vadilal cold route — 23 deliveries a year currently carrying ₹44,801 of stock.",
+      "priority": "P0",
+      "monthlyImpactInr": 40000,
+      "oneOffCostInr": 60000,
+      "effort": "weeks",
+      "blocker": "none — the deep-freeze route is live and proven by 173 Vadilal purchase lines"
+    },
+    {
+      "action": "Rebuild the baby-care shelf on two vendors who already invoice ARY: full Pampers ladder from Nirman Associates plus MamyPoko back from Himachal Wholesale Syndicate (₹570 minimum order, delivers every 10 days). Baby is ₹1.89 L/yr against ₹4.54 L/yr of sanitary on 18 SKUs — the demand is there and under-served.",
+      "priority": "P0",
+      "monthlyImpactInr": 30000,
+      "oneOffCostInr": 40000,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Fix the product taxonomy first — create Baby Care, Frozen, Optical, Hardware & Tools, Pharmacy groups and reclassify the 69 baby SKUs currently hidden in Personal Care. Every category decision after this depends on being able to see the category.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Break the fresh-produce single point of failure: grow Hanuman Trading Co. (Naraingarh) from 12 to 50+ bills a year and open HPMC Parwanoo as a backhaul on the vehicle that already comes from Parwanoo. ₹71 L/yr and 261 deliveries currently ride one unregistered proprietor and one hill road.",
+      "priority": "P1",
+      "monthlyImpactInr": 14000,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "none — the second vendor already exists in the ledger"
+    },
+    {
+      "action": "Resolve the ₹1.28 Cr of 12-month purchases from 16 GSTIN-less suppliers. If the GSTINs merely aren't in AccountMaster, the recoverable input credit is worth materially more than every new category in this list combined.",
+      "priority": "P1",
+      "monthlyImpactInr": 100000,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "Needs the vendors' actual registration status — some are genuinely composition dealers, in which case the impact is ₹0. Unresolved."
+    },
+    {
+      "action": "Add a ₹110–₹350 wholesale optical rack (readers and sunglasses) from Spectsmakers / A-One Opticals / Trident Enterprises, Chandigarh, on the existing monthly Chandigarh run. No licence needed for non-prescription; do NOT attempt powered dispensing without an optometrist.",
+      "priority": "P1",
+      "monthlyImpactInr": 25000,
+      "oneOffCostInr": 60000,
+      "effort": "weeks",
+      "blocker": "none for ready-made; an optometrist is required if ARY wants to dispense powered lenses"
+    },
+    {
+      "action": "Open a hardware, hand-tool and Havells/Anchor electrical rack through the vendors already delivering household goods — Harminder Singh & Bros (Delhi), R.K. Sales Corporation and R.K Glass & Crockery (Chandigarh), Bansal Brothers and Cm Trading Co. (Solan). Serves 5,000 residents plus campus maintenance.",
+      "priority": "P1",
+      "monthlyImpactInr": 40000,
+      "oneOffCostInr": 60000,
+      "effort": "weeks",
+      "blocker": "none"
+    },
+    {
+      "action": "Call HP Milkfed, Shimla and open a second dairy leg — Sirmaur is inside its stated mandate and it is the only state-cooperative route nobody at ARY has tried. Politically strong for a Himachal institution.",
+      "priority": "P2",
+      "monthlyImpactInr": 50000,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "Could not confirm any HP Milkfed plant or chilling centre in Sirmaur — the site's SSL certificate has expired and every fetch route failed. And the campus's own Akal Dairy limits how much packaged milk ARY can take."
+    },
+    {
+      "action": "Add Nestle Lactogen / NAN / Cerelac via Parhlad Chand Batra & Sons, who already delivers ₹12.2 L of Nestle a year — but get the IMS Act 1992/2003 restrictions in writing first (no promotion, no display incentives, no discounts, no free samples on infant milk substitutes).",
+      "priority": "P2",
+      "monthlyImpactInr": 20000,
+      "oneOffCostInr": 25000,
+      "effort": "weeks",
+      "blocker": "IMS Act compliance not verified — the BPNI and NHP sources both failed to fetch. Do not stock formula until someone reads the Act."
+    },
+    {
+      "action": "Revive Jivo Wellness Pvt Ltd - Delhi (account 284, 07AACCJ4223F1ZY, dormant since 2024-09-03) as the intercompany vendor for HO-negotiated national deals with Nestle, ITC and P&G — this is the only working shape in which Delhi HO can add value, since it has no buying desk.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "Needs a JIVO-level decision on whether HO wants to hold ARY's national-brand terms"
+    },
+    {
+      "action": "Do not build a mobile-accessory line yet. No named wholesaler could be verified in HP or Chandigarh, and the residential-school rules on students buying chargers and earphones are unknown. Walk Gaffar Market / Bhagirath Palace and get the school's answer first.",
+      "priority": "P3",
+      "monthlyImpactInr": 35000,
+      "oneOffCostInr": 80000,
+      "effort": "weeks",
+      "blocker": "No named supplier verified; school policy unknown"
+    },
+    {
+      "action": "Say no to pet care. Himachal has no distributor-grade pet-food supply (only Thapa Golds in Solan carrying Pedigree), and a residential Sikh institution of students and staff quarters is not a pet market. Spend the shelf on the pharmacy instead.",
+      "priority": "P3",
+      "monthlyImpactInr": 3000,
+      "oneOffCostInr": 25000,
+      "effort": "weeks",
+      "blocker": "No supply route and no measured demand — ARY's catalogue has no pet SKU to measure"
+    }
+  ],
+  "openQuestions": [
+    "Does Akal Charitable Hospital / the campus dispensary already dispense medicines to residents free or subsidised? If yes, the ₹2 L/month pharmacy estimate could be wrong by more than half. Only the Kalgidhar Trust campus admin can answer, and the whole P0 depends on it.",
+    "Is there a B.Pharm or D.Pharm already on the Baru Sahib campus who is registered with the HP State Pharmacy Council and would be named on ARY's Form 20/21? Without that person the pharmacy cannot start at any price. Ask the hospital and Eternal University pharmacy faculty.",
+    "What are the actual HP drug-licence fees and current processing time at the Sirmaur zonal drug office? drugcontrol.hp.gov.in and investhimachal.hp.gov.in both fail DNS; the ₹500–₹1,500 band and 5-year validity are national-rule figures, not HP-verified.",
+    "Does HP Milkfed have a plant or chilling centre in Sirmaur and does it appoint retail agents? hpmilkfed.org's certificate has expired and the r.jina.ai proxy returns 422 — three fetch routes failed. One phone call to +91-177 Shimla settles it.",
+    "Is M/S Shashi Bhushan Manoj Kumar Aeron (₹71 L/yr, 261 deliveries, ARY's #1 supplier) genuinely unregistered/composition, or is the GSTIN simply missing from AccountMaster? Same for Hygienic Milk (₹25.7 L) and Sehgal Trading (₹7.9 L). ARY Accounts + the Jivo GST desk.",
+    "What is 'Lmk Gas' — ₹16.08 L of purchases from Hygienic Milk, Mohali, at roughly ₹2,032 a unit? It looks like commercial LPG cylinders, and 'Lmk' recurs as a prefix on Pts/Bc/Bst/Pizza Base/Makki Atta SKUs, suggesting a Langar-Modi-Khana internal code. Needs an operator at Baru Sahib to explain.",
+    "Do Akal Academy's residential rules permit selling mobile chargers, earphones and accessories to student residents? This single answer decides whether the mobile category is worth ₹35,000/month or ₹0.",
+    "Which town is pincode 173122 (Parhlad Chand Batra & Sons, the Nestle distributor, ₹12.2 L/yr)? CityMaster says Solan but 173122 appears in neither the Solan nor the Sirmaur pincode list — CityName in AccountMaster is demonstrably unreliable (it also shows Parwanoo vendors as Solan).",
+    "Are there named mobile-accessory and hand-tool wholesalers in Delhi's Gaffar Market / Bhagirath Palace and Chandigarh? Four directory fetches 404'd, and the session's 200-call WebSearch budget was exhausted before these could be searched.",
+    "What is the real number of babies and under-5s on campus? Baby care is sized here from Pampers and sanitary sales as a proxy (₹1.89 L vs ₹4.54 L), not from a headcount. Kalgidhar Trust staff-quarters records would give the true denominator."
+  ],
+  "confidence": "medium",
+  "confidenceGap": "Two different grades of evidence are mixed here and they should not be read as equal. Everything about ARY's own routes is HIGH confidence — the principal-to-distributor map, the delivery cadences, the effective minimum orders, the ₹1.28 Cr of GSTIN-less purchases, the zero medicine and zero optical SKUs, and the finding that Delhi HO has booked exactly one purchase voucher for ₹0 in 3.5 years all came from live SQL against FR8HODBNEW and can be re-run in a minute. Everything about NEW vendors is LOW-to-MEDIUM: the named pharma, frozen, diaper, optical and electrical companies come from IndiaMART directory pages, so the companies exist but their phone numbers, trading status and willingness to deliver 60–100 km up a hill road to 173101 are all unverified — nobody has called one. The session's 200-call WebSearch budget was exhausted after four searches, so the rest of this lane ran on WebFetch against guessed URLs, and eleven of those fetches failed (hpmilkfed.org SSL expired, drugcontrol.hp.gov.in and investhimachal.hp.gov.in DNS-dead, McCain cert error, four IndiaMART 404s, indiacode 403, DuckDuckGo CAPTCHA) — which is why HP Milkfed's Sirmaur presence, the actual HP drug-licence fee schedule, the IMS Act retail restrictions, and every mobile-accessory and hand-tool vendor name remain unresolved. All road distances and lead times for routes that do not yet exist are estimates anchored on the observed cadence of routes that do. And the single largest number in the recommendations — ₹2 L/month from a pharmacy — is an estimate that has not been tested against the one fact that could halve it: whether the campus hospital already gives residents their medicines."
+}

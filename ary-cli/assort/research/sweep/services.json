@@ -1,543 +1,577 @@
 {
   "lane": "services",
-  "headline": "ARY books exactly Rs 0 of service income today, yet already pays 18 tailors Rs 5.77 lakh a year for a service it never bills — a Rs 6 lakh/month service stack layered onto the existing 1,018-bills-a-day footfall would add ~Rs 38.6 lakh/year of gross profit, the same as growing merchandise turnover 17.8% (Rs 1.37 Cr), because a service rupee earns ~54% against merchandise's verified 28.19%.",
-  "confidence": "medium",
-  "confidenceGap": "Every ARY-side fact and both government rate cards are verified from live queries and primary PDFs, but all twelve monthly revenue figures are modelled estimates built on assumed penetration rates, not observed service demand — ARY has never sold a service, so there is no historical base to calibrate against. Compounding this, the session's WebSearch budget was already exhausted (200/200) before I began, so AePS/DMT payouts, courier franchise shares, recharge margins, IRCTC agent caps and the India Post franchise scheme could not be verified against primary sources. The single largest swing factor is whether the Kalgidhar Trust already provides laundry, pharmacy and printing internally as part of hostel/school fees — if it does, roughly half the sized opportunity (laundry Rs 54k/mo + Jan Aushadhi Rs 36k/mo + part of the print counter) disappears, and nobody outside the Trust can answer that.",
+  "headline": "ARY does not need to invent a services business — it already has the SKUs sitting unused in its own catalogue (\"Xerox Charges\" and \"Delivery Charges\" have literally never been billed, 0 sales ever), and the one service it does run, tailoring through 18 contract tailors, has earned a 2.9% gross margin over 3.4 years on ₹15.79 L of revenue while attaching to only 13.9% of the fabric it sells; fixing what exists is worth more than any new licence, and the two bank branches physically at Baru Sahib (SBI SBIN0011784, PNB PUNB0975500) kill the AePS/banking-correspondent idea that looks most attractive from the outside.",
   "findings": [
     {
-      "claim": "ARY earns zero service or commission income today — not a small amount, literally none. No income account carries a service balance, none of the 93 product groups is a service group, and the POS's commission field is unused on every payment mode.",
+      "claim": "ARY already created a photocopy revenue SKU and never used it once. ProductID 0A32 'Xerox Charges' exists and is active, with zero sale lines in 1,088,607 lifetime bills.",
       "status": "VERIFIED",
-      "evidence": "ary query \"SELECT a.AccountID,a.AccountName,g.GroupName,a.DebitAmount,a.CreditAmount FROM AccountMaster a JOIN GroupMaster g ON g.GroupID=a.GroupID WHERE a.GroupID IN (14,15,16,29,30,31,516,526,508,512)\" — the only income accounts with balances are Sales A/C, Sales Return, Discount Received, Creditors Written Off, Interest On Fdr, Other Charges, Unclaimed Balances W/O. Plus: ary query on ProductGroupMaster (93 rows, all merchandise) and ary masters payment-modes (commission_pct = 0.000 on all 11 modes).",
-      "number": "Rs 0 of 21.22 Cr lifetime income",
-      "soWhat": "There is no baseline to defend and no internal politics to unwind — every rupee of service revenue is additive, and the chart of accounts must be extended before anything can even be measured."
+      "evidence": "ary query \"SELECT COUNT(*) AS lines, ISNULL(SUM(FinalSaleAmount),0) AS amt FROM SaleDetail WHERE ProductID='0A32'\" -> lines 0, amt 0",
+      "number": "0 lines, ₹0 lifetime",
+      "soWhat": "Someone at ARY already decided print/copy belongs in the catalogue. The gap is execution and a machine, not strategy or a new idea to sell internally."
     },
     {
-      "claim": "ARY's realised merchandise gross margin is 28.19%. This is the bar any service must beat, and services clear it by roughly 1.9x.",
+      "claim": "ARY also created a delivery-fee SKU and never used it. ProductID 0BVD 'Delivery Charges' is active with zero sale lines ever.",
       "status": "VERIFIED",
-      "evidence": "ary query joining SaleDetail to ProductChildMaster.PurchaseCost over 2025-08-22..2026-08-21: gross_sales 77,003,742, cogs 55,299,270, gm_pct 28.19. Line coverage 1,043,344 of 1,044,180 lines = 99.92%.",
-      "number": "28.19% (Rs 7.70 Cr sales, Rs 5.53 Cr COGS, Rs 2.17 Cr gross profit)",
-      "soWhat": "A blended ~54% service margin means Rs 38.6 L of service gross profit equals Rs 1.37 Cr of extra merchandise turnover — a 17.8% sales jump ARY would otherwise have to fight for."
+      "evidence": "Same query, ProductID IN ('0A32','0BVD','0C19','0BO0','07NL') -> 0BVD: 0 lines, ₹0",
+      "number": "0 lines, ₹0 lifetime",
+      "soWhat": "An in-campus delivery service was contemplated and never launched, even though 54.4% of footfall crushes into the 17:00-20:00 window."
     },
     {
-      "claim": "ARY already runs a tailoring operation as a pure cost centre: 18 named tailors on a payable account, Rs 5.77 lakh paid in 2025 and Rs 3.58 lakh to Aug-2026, growing ~46% a year — with no stitching revenue account and no stitching SKU anywhere in the catalogue.",
+      "claim": "Tailoring is a real, running service — 18 named contract tailors on their own ledger group 'Stiching Charges Payable' (group 508), a customer-facing revenue SKU (07NL 'Stiching Charges From Customer'), and a Direct Expenses cost account.",
       "status": "VERIFIED",
-      "evidence": "ary query on AccountMaster GroupID 508 'Stiching Charges Payable' (18 tailor accounts: Anita-Tailor Rs 4.39 L, Rahul Talior Rs 3.51 L, Balwinder Singh Tailor Rs 1.54 L, Virender Singh Tailor Rs 1.44 L, Pooja, Joginder, Kuldeep Kaur, Inderpreet Kaur, Suman Kaur, Sukhdeep Kaur and 8 more). Cost by year: ary query on TransactionChild/TransactionMaster AccountID IN (2228,1922) → 2023: 205,995 / 2024: 392,532 / 2025: 576,534 / 2026-to-Aug: 358,451. Product-name search for STITCH/STICH/TAILOR/ALTERAT returns only 'Unstiched Suits' fabric SKUs, no service line.",
-      "number": "Rs 5.77 L (2025) cost, Rs 0 revenue, 18 tailors",
-      "soWhat": "The single cheapest action in this lane: the labour, the payable accounts, the fabric sales and the POS all already exist — only a service SKU and a price list are missing. Days of work, no capex, no licence."
+      "evidence": "ary query \"SELECT AccountID, AccountName FROM AccountMaster WHERE GroupID=508\" -> 18 rows (Anita-Tailor, Kuldeep Kaur - Tailor, Balwinder Singh Tailor, ...); ProductMaster 07NL in ProductGroupID=1",
+      "number": "18 tailors",
+      "soWhat": "The operating model for an outsourced, per-piece service is already built and proven inside ARY. Every other service can be bolted onto this same pattern instead of being designed from scratch."
     },
     {
-      "claim": "ARY sells Rs 44.5 lakh a year of fabric and unstitched suits — goods that physically cannot be worn until someone stitches them — inside a Rs 2.29 crore a year clothing book.",
+      "claim": "Tailoring is priced at cost: +₹45,511 gross on ₹15,79,023 of revenue across 3.4 years = 2.9% gross margin, versus the 35-50% a captive alteration desk should earn. FY25-26 was an outright loss of ₹51,324.",
       "status": "VERIFIED",
-      "evidence": "ary query grouping SaleDetail by ProductGroupMaster for 2025-08-01 onward: Unstiched Suits Rs 22,01,412 (1,088 bills) + Fabrics Rs 22,50,381 (1,871 bills) = Rs 44,51,793. Full clothing/fabric set totals Rs 2,28,96,777 across 14 groups (Academy Dress Rs 49,81,036 on 12,242 units; Winter Wear Rs 44,32,720; Footwear Rs 23,56,007).",
-      "number": "Rs 44.5 L/yr unstitched, Rs 2.29 Cr/yr clothing",
-      "soWhat": "Stitching is not a new business to invent — it is the missing second half of a Rs 44.5 L transaction ARY already completes for free, and alteration on 12,242 school-uniform units a year is a separate near-zero-cost attach as children grow."
+      "evidence": "Revenue: SUM(SaleDetail.FinalSaleAmount) WHERE ProductID='07NL' by FY. Cost: SUM(Debit)-SUM(Credit) on AccountMaster.AccountName IN ('Stiching Charges','Stiching Exp.') by FY (both are group 30 Direct Expenses, so tailor cost is expensed, not capitalised into garment stock).",
+      "number": "+₹45,511 on ₹15.79 L = +2.9% GM; FY25-26 -₹51,324",
+      "soWhat": "The single cheapest margin gain available. No capex, no licence, no new counter — just a price reset in a market with no competing tailor within 30-50 km."
     },
     {
-      "claim": "Residents are hand-washing their clothes with single-use sachets and almost nobody owns an iron — the clearest unmet service need in the entire dataset.",
+      "claim": "I initially measured the tailoring cost from the tailors' payable ledger (group 508) and got a worse answer (-₹1.24 L cumulative). That was wrong — group 508 mixes in opening balances and receipts. The Direct Expenses accounts are the correct cost measure and give +₹45,511.",
       "status": "VERIFIED",
-      "evidence": "ary query on SaleDetail for detergent/fabric-care names over 12m: Rs 7,90,725 across 13,574 bills, 26,311 units, 71 SKUs. Signature items: Surf Excel Easy Wash 70 Gm — 5,915 units across 2,623 separate bills (single-wash sachets); Surf Excel Detergent Cake 84g — 2,242 units/1,172 bills; Rin Bar 250g — 827 units/605 bills. Only three 'Matic' machine-wash liquid SKUs (Rs 68k total). Separate query for IRON/PRESS: just 23 electric irons sold in 12 months (Bajaj 7, Prince 10, Havells 6) totalling Rs 17,703.",
-      "number": "Rs 7.91 L/yr detergent over 13,574 bills; 23 irons sold to 5,000 residents",
-      "soWhat": "37 detergent transactions a day and 23 irons a year means no laundry service exists and there are almost no washing machines — a pressing counter needs Rs 60k of steam irons and no licence, and it is competing against a bucket."
+      "evidence": "Group 508 voucher-type breakdown: Journal ₹15,25,741 Cr / Opening Balance ₹45,790 / Receipt ₹1,31,398 — i.e. the payable ledger is not a P&L measure. Contra-leg query showed the expense lands on 'Stiching Charges' and 'Stiching Exp.', both group 30 Direct Expenses.",
+      "number": "-₹1.24 L (wrong) vs +₹45,511 (right)",
+      "soWhat": "Reported because the wrong number would have justified an aggressive price rise on a false premise. Tailoring is break-even, not loss-making."
     },
     {
-      "claim": "A campus charge-account rail is already live and carries a quarter of ARY's value — 987 Akal Academy accounts plus 37 employee accounts billed Rs 2.09 crore on credit in 12 months. Services can bill straight onto it with no new payment infrastructure.",
+      "claim": "Stitching attaches to only 13.9% of the fabric ARY sells — the largest single service gap in the business, and it sits inside a category ARY already dominates.",
       "status": "VERIFIED",
-      "evidence": "ary query on SalePayment MOPID=2 joined to CustomerMaster/AccountMaster/GroupMaster for 2025-08-01 onward: Akal Academy Cs 987 customers / 4,623 bills / Rs 39,90,707; Local Debtors - Baru Sahib 12 / 4,636 / Rs 49,72,380; Employee Customer Account 37 / 837 / Rs 6,37,058; Zomato Debtors 1 / 13 / Rs 77,43,191. Total credit sale 11,019 bills, Rs 2,08,83,791, avg Rs 1,895.",
-      "number": "1,024 individual campus accounts; Rs 2.09 Cr/yr on credit",
-      "soWhat": "The hardest part of selling services to students and staff — collecting the money — is already solved. A print job or a laundry bag can be charged to the same account number the resident already uses."
+      "evidence": "FY26-27 to 21-Aug: 1,341 distinct bills containing a line from ProductGroupID IN (183 Unstiched Suits, 124 Fabrics, 165 Fabric); 705 bills containing ProductID 07NL; 187 bills containing both.",
+      "number": "187 / 1,341 = 13.9% attach",
+      "soWhat": "Fabric + unstitched suits ran ₹16.07 L in 4.7 months (~₹41 L/yr). Taking attach from 13.9% to 35% at a normal 35% GM turns ₹22 k/yr of gross profit into roughly ₹6.8 L/yr."
     },
     {
-      "claim": "Himachal Pradesh has officially notified what a Lok Mitra Kendra may charge, and it covers photocopying, printing, scanning, government applications and electricity bill collection — the legal rate card for four of the services in scope.",
+      "claim": "Himachal Pradesh has an officially notified rate card for exactly these services, and it includes printing and scanning. A Lok Mitra Kendra may charge ₹25 per G2C application, ₹5/page B&W print, ₹15/page colour print, ₹5/page scanning, ₹10/page Nakal Jamabandi, ₹25 per G2B application; HPSEB pays ₹5 per domestic bill collected (₹10 commercial).",
       "status": "VERIFIED",
-      "evidence": "https://himseva.hp.gov.in/pages/staticSite/Rate%20List%20of%20LMK%20Charges%20for%20G2C%20Services.pdf (extracted with pdftotext -layout). '*LMK User Charges' table: G2C e-District services Rs 25/application; HPSEB Rs 5 per domestic bill, Rs 10 per commercial bill; Nakal Jamabandi Rs 10/page; G2B Rs 25/application; Scanning Rs 5/page; Black & White Page Print Rs 5/page; Color Print Rs 15/page. Per-certificate breakdown for 17 Revenue Dept certificates: Rs 20 govt fee + Rs 23.60 processing + Rs 25 LMK = Rs 68.60 total.",
-      "number": "Rs 25/application; Rs 5/page B&W; Rs 15/page colour; Rs 5/page scan; Rs 5/domestic electricity bill",
-      "soWhat": "ARY can charge Rs 5 a page for black-and-white printing with government backing, against a consumable cost near Rs 0.75 — and even pricing at Rs 2 to be fair to students leaves a ~65% margin. This converts a guess into a defensible price list."
+      "evidence": "https://himseva.hp.gov.in/pages/staticSite/Rate%20List%20of%20LMK%20Charges%20for%20G2C%20Services.pdf — 8-page notified rate list, 74 numbered G2C/EoDB services, '*LMK User Charges' table on the final page. (HP e-District was renamed the HimSeva Portal; edistrict.hp.gov.in now redirects there.)",
+      "number": "₹25/application; ₹5 & ₹15/page print; ₹5/page scan; ₹5/HPSEB domestic bill",
+      "soWhat": "The state has already set the price ARY may charge, which removes the pricing argument entirely and gives the print/copy business a government-sanctioned rate card plus 74 chargeable government services on top."
     },
     {
-      "claim": "A Jan Aushadhi Kendra pays 20% trade margin plus a monthly incentive of up to Rs 20,000 until Rs 5 lakh is exhausted, with an extra Rs 2 lakh for geographically disadvantaged locations — against ARY's current medicine business of just Rs 3.4 lakh a year.",
+      "claim": "The AePS / banking-correspondent thesis is dead on arrival: there are TWO full bank branches at Baru Sahib itself, both with NEFT, RTGS, IMPS and UPI live.",
       "status": "VERIFIED",
-      "evidence": "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2026/mar/doc202637814101.pdf (PIB, March 2026, extracted with pdftotext): 'Operators receive a 20% trade margin on the MRP of each drug (excluding taxes)'; 'eligible for incentives of up to Rs 5.00 lakh. The incentive is provided at 20% of monthly purchases, subject to a maximum of Rs 20,000 per month and compliance with stocking requirements'; 'A minimum stocking requirement mandates that Kendras maintain at least 200 fast-moving medicines to qualify for incentives'; 'An amount of Rs. 2.00 lakhs in addition to normal incentives' for women/Divyang/SC/ST/aspirational and geographically disadvantaged regions; 18,000+ kendras, target 25,000 by March 2027. ARY baseline: ary query on Medicare product group = Rs 3,39,640 over 5,045 bills in 12m.",
-      "number": "20% margin + Rs 20,000/month incentive to a Rs 5 L cap + Rs 2 L special; ARY today Rs 3.4 L/yr",
-      "soWhat": "Rs 57 of medicine per resident per year is implausibly low for a township with school children and elderly residents — the spend is either going 30-50 km away or through the Trust hospital. Sirmaur's hill blocks plausibly qualify for the Rs 2 L special incentive."
+      "evidence": "razorpay/ifsc dataset v2.0.61 IFSC.csv (36.3 MB, grep 'BARU'): 'State Bank of India,SBIN0011784,BARU SAHIB,...,VILL AND P O BARU SAHIB,DISTT SIRMAUR,HIMACHAL PRADESH 173101' and 'Punjab National Bank,PUNB0975500,GURUDWARA BARU SAHIB,RAJGARH,...,VPO BARU SAHIB, TEH RAJGARH, DISTT SIRMAUR HP 173101' — both IMPS/RTGS/NEFT/UPI true.",
+      "number": "2 branches on campus",
+      "soWhat": "The '30-50 km to the nearest market' framing does not extend to banking. Cash-out demand that would justify a micro-ATM largely does not exist; only the after-hours and surrounding-village slice survives."
     },
     {
-      "claim": "The campus empties in winter — bills swing 2.7x between the January trough and the May peak. Services must be sized on about ten effective months, and term-break travel demand is concentrated into a few weeks.",
+      "claim": "Baru Sahib's postal infrastructure, by contrast, IS weak — it has only a Branch Post Office, the smallest single-handed unit. Of the 16 post offices sharing PIN 173101, exactly one is a Sub Post Office (Rajgarh) and fifteen are Branch Post Offices.",
       "status": "VERIFIED",
-      "evidence": "ary query grouping SaleHeader by month for 2024-08 onward: Jan-2026 15,078 bills / Rs 32.5 L vs May-2026 41,388 bills / Rs 95.4 L; the same pattern repeats a year earlier (Jan-2025 10,038 bills vs Apr-2025 29,125). Full 25-month series pulled.",
-      "number": "41,388 (May-26) vs 15,078 (Jan-26) bills = 2.7x",
-      "soWhat": "Any service with fixed staff or a leased machine loses money in Jan-Feb, which argues for the collection-agent model over an in-house laundry plant in year one — and makes a seasonal ticket-booking desk genuinely valuable rather than a gimmick."
+      "evidence": "https://api.postalpincode.in/pincode/173101 -> 16 PostOffice records; 'Baru Sahib' BranchType 'Branch Post Office', Block Pachhad, Division Solan; only 'Rajgarh (Siramur)' is BranchType 'Sub Post Office'.",
+      "number": "1 Sub PO, 15 Branch POs in PIN 173101",
+      "soWhat": "Courier and parcel is the genuinely underserved logistics gap, not banking — and it is the one every residential-school parent and hostel student feels monthly."
     },
     {
-      "claim": "Footfall is ~1,018 bills a day at an average of Rs 207 — the traffic a service counter would sit inside, and a basket small enough that a delivery threshold is a real lever.",
+      "claim": "Residents are already digitally native, which guts the mobile-recharge case. Paytm/UPI is 56.3% of all tender lines and 42.9% of value in FY26-27.",
       "status": "VERIFIED",
-      "evidence": "ary query on SaleHeader for 2025-08-22..2026-08-21: 371,721 bills, Rs 7,70,05,838 billed, Rs 207.16 average. By counter (2025-08-01 onward): Ary Pos 246,356 bills, Fruits & Vegetables 50,062, Ary G Canteen 46,173, Ary Lite 39,092, Ary Clothing 10,392.",
-      "number": "371,721 bills/yr ≈ 1,018/day; Rs 207.16 avg bill",
-      "soWhat": "No service here needs customer acquisition — a thousand people a day already walk in. That is why attach services beat new formats, and why the Rs 207 basket makes a Rs 400-500 free-delivery threshold worth more than the delivery fee itself."
+      "evidence": "SalePayment joined to ModeOfPayment, VoucherDate>='2026-04-01': Paytm 96,593 lines / ₹1,62,94,274; Cash 69,791 / ₹1,22,78,943; Credit Sale 5,192 / ₹94,32,897. Total ₹3.80 Cr.",
+      "number": "Paytm 56.3% of tenders, 42.9% of value",
+      "soWhat": "People who pay by UPI recharge their own phones. Assisted recharge is a near-zero-margin courtesy here, not a revenue line — include it only as a free rider on a CSC licence."
     },
     {
-      "claim": "Residents are already digitally self-sufficient — 46.8% of value is paid by Paytm — which kills mobile recharge as a headline service rather than supporting it.",
+      "claim": "Footfall is large and violently concentrated in the evening: ~36,650 bills/month in FY26-27, with 54.4% of all bills struck between 17:00 and 20:00 and a second spike at 09:00.",
       "status": "VERIFIED",
-      "evidence": "ary query on SalePayment using (Amount - ReturnAmount) for 2025-08-01 onward: Paytm (MOPID 503) 222,237 tenders / Rs 3,82,96,226 / 46.81%; Cash (MOPID 1) 166,072 / Rs 2,26,27,945 / 27.66%; Credit Sale 11,019 / Rs 2,08,83,791 / 25.53%.",
-      "number": "Paytm 46.8% / Cash 27.7% / Credit 25.5% of value",
-      "soWhat": "A population that pays by phone recharges by phone. Recharge belongs as a free rider on a banking terminal, never as a staffed counter — this is the one candidate in the brief that the data argues against."
+      "evidence": "SaleHeader monthly counts Apr-Aug FY26-27: 37,085 / 41,388 / 38,563 / 29,576 / 22,269(to 21 Aug). Hourly DATEPART(hour,DateTimeIn) FY26-27: 17h 22,268; 18h 20,670; 19h 26,269; 20h 22,641 of 168,881 total.",
+      "number": "~36,650 bills/month; 91,848 of 168,881 bills in 4 evening hours",
+      "soWhat": "Any service counter must be staffed 17:00-20:00, and the same window is why an in-campus delivery/order-ahead service would relieve a real queue rather than invent a need."
     },
     {
-      "claim": "ARY's payment-mix report is wrong and overstates cash roughly 44x, because for cash tenders the Amount column stores what the customer handed over, not what was billed.",
+      "claim": "The print/copy adjacency is already proven by traffic: 7,709 bills touched the Stationary category in 4.7 months (~1,640/month, ₹5.35 L), so the people who need photocopying are already standing at the counter.",
       "status": "VERIFIED",
-      "evidence": "'ary sales payment-mix' reports Cash Rs 1,00,23,03,80,328 (Rs 10,023 Cr) against Rs 21 Cr of lifetime sales. Diagnosis: ary query on a real bill — SerialNumber 2264293.0015 has BillAmount 153.000 while SalePayment shows Amount 200.000, TenderAmount 200.000, ReturnAmount 47.000. True value requires Amount - ReturnAmount; digital modes (MOPID 503) carry ReturnAmount 0.",
-      "number": "Rs 10,023 Cr reported vs Rs 2.26 Cr actual cash",
-      "soWhat": "A reporting bug worth fixing in the ary CLI before anyone uses payment mix to justify a cash-handling investment — and a caution that ARY's own dashboards are not yet trustworthy for service business cases."
+      "evidence": "SaleDetail joined ProductGroupMaster, VoucherDate>='2026-04-01', ProductGroupID IN (148,181,124,183,165,161): Stationary 7,709 bills / ₹5,35,316; Academy Dress 1,195 / ₹18,86,923; Unstiched Suits 488 / ₹9,55,391; Fabrics 853 / ₹6,52,307.",
+      "number": "1,640 stationery bills/month",
+      "soWhat": "Zero customer-acquisition cost for a print desk — it converts existing stationery footfall, and stationery buyers are the exact population that photocopies."
     },
     {
-      "claim": "ARY already operates a B2B wholesale channel — 'Hunger Heroes', filed under a Zomato Debtors group, buys Rs 5.5-6.9 lakh at a time, about 13 times a year.",
+      "claim": "A third service SKU was tried and abandoned: 0C19 'Cabin Booking' billed 119 lines / ₹6,070 in FY23-24 and has produced nothing since.",
       "status": "VERIFIED",
-      "evidence": "ary query on SaleHeader BillAmount>100000 for 2025-08-01 onward: customer 002CM appears 13 times, Rs 4,35,378 to Rs 6,87,686 each. ary query on CustomerMaster: 002CM = 'Hunger Heroes', AccountID 4416, GroupName 'Zomato Debtors'. Also customer 0029M = 'University Students' mapped to account 'Advance From Student'.",
-      "number": "Rs 77.4 L/yr on 13 bills",
-      "soWhat": "Institutional selling is already proven here, which matters more than retail for services: exam-paper printing, a uniform-stitching contract and institutional laundry sold to the Trust would each dwarf the retail version, and a student-advance account already exists as a prepaid rail."
+      "evidence": "Service-SKU sales by FY: Cabin Booking fy_start 2023 only, 119 lines, ₹6,070; no rows for later years. 0BO0 'Gift Packing' is the one that stuck: 3,616 lines, ₹52,835 lifetime.",
+      "number": "₹6,070, then zero",
+      "soWhat": "ARY has a pattern of launching a service SKU and letting it die. Whatever killed Cabin Booking (staffing? no owner?) will kill the next one unless a named person owns the service line."
     },
     {
-      "claim": "The mobile category is effectively dead — Rs 2,690 of sales on 5 bills in a year — in a township with roughly 3,000 phones and no repair shop within 30-50 km.",
+      "claim": "Mobile repair is genuinely unserved and adjacent to a category ARY already lists: its entire 'Mobile' product group is 8 SKUs, all of them chargers — no handsets, no accessories of substance, no repair.",
       "status": "VERIFIED",
-      "evidence": "ary query grouping SaleDetail by ProductGroupMaster for 2025-08-01 onward: Mobile group = 5 bills, Rs 2,690. For contrast: Personal Care Rs 54,55,221 / 40,604 bills; Stationary Rs 14,87,845 / 21,600 bills; Accessories Rs 11,95,871.",
-      "number": "Rs 2,690/yr over 5 bills",
-      "soWhat": "Screen and battery repair plus the accessory merchandise that rides with it is greenfield — and the accessory half may be the bigger prize precisely because the category is currently at zero."
+      "evidence": "ary query \"SELECT ProductID, ProductName, IsActive FROM ProductMaster WHERE ProductGroupID=139\" -> 8 rows: Gold Charger 02, Gold Charger 5 In 1, Kish Charger Gold, Atek Charger 5 In 1, Charger 38, Charger 41, Charger 5 In 1, Charger Pin 01",
+      "number": "8 SKUs, all chargers",
+      "soWhat": "5,000 residents demonstrably carry smartphones (56% UPI tenders) with the nearest repair shop 30-50 km of hill road away. Screen and battery repair is the highest-margin service on this list."
     },
     {
-      "claim": "UClean, the largest Indian laundry franchise, publishes an average store revenue of Rs 1.80 lakh a month at 30-40% gross margin with a 12-18 month payback — the closest external benchmark for a laundry unit.",
+      "claim": "The CSC/Digital Seva route would give ARY a bundle it cannot assemble piecemeal: CSC is itself a BBPOU (so Bharat BillPay for electricity, water, gas, DTH, broadband, landline), is partnered with 42 banks for BC-agent/Customer Service Point work, and carries mobile recharge for 14 telcos, DTH for 6 operators, PAN, Passport, FASTag and e-District.",
       "status": "VERIFIED",
-      "evidence": "https://www.ucleanlaundry.com/franchise — '₹180K+' average monthly store revenue, '30-40%' average gross profit margin, '12-18 months' payback, '900+ Franchise Worldwide'. Verified as the franchisor's own published claim, not an independent audit; investment fee, royalty and per-kg pricing are not disclosed on the page.",
-      "number": "Rs 1.80 L/month revenue, 30-40% GM, 12-18 month payback",
-      "soWhat": "A captive 5,000-person campus with no competing laundry and no washing machines should reach at least a typical open-market store's revenue — which is why I size laundry at Rs 1.2 L/month conservatively rather than the Rs 1.8 L benchmark."
+      "evidence": "csc.gov.in/governmenttocitizen and /financialinclusion (via Wayback, snapshots 2023-05-19 and 2023-12-05 — the live pages currently 500 with 'Unable to load the requested file: gtoc.php'). csc.gov.in/vle (live): '5.4 lakh VLEs, of which 4.35 lakh are in Gram Panchayats'.",
+      "number": "42 partner banks; 14 telcos; 6 DTH operators; 5.4 lakh VLEs",
+      "soWhat": "One licence unlocks a dozen small fee lines at once. Caveat: the service counts and application volumes on those pages date to 2016-17, and Himachal Pradesh was NOT among the 11 states whose e-District was integrated with Digital Seva — in HP the channel is the state's own Lok Mitra Kendra."
     },
     {
-      "claim": "Commission rates for AePS/DMT, courier franchises, mobile recharge, IRCTC agency and the India Post franchise scheme could not be verified — the session's web-search budget was exhausted before this task began, and the operators do not publish slabs.",
+      "claim": "Only 296-432 distinct named customers transact per month; 97% of bills go to the single walk-in account 00001. There is no per-resident identity on which to run a subscription or a billed service today.",
+      "status": "VERIFIED",
+      "evidence": "SaleHeader FY26-27 GROUP BY month WHERE CustomerID<>'00001': Apr 296 / May 345 / Jun 373 / Jul 432 / Aug 303 distinct customers.",
+      "number": "~350 identified customers/month of ~5,000 residents",
+      "soWhat": "Laundry, print accounts, delivery subscriptions and monthly service billing all need a named account. The 3,604 'Akal Academy Cs' ledger accounts are the rail — but they are barely used at the till, so this is a prerequisite, not a detail."
+    },
+    {
+      "claim": "Counter economics point to where a service desk goes: Ary Pos carries 104,491 bills / ₹1.92 Cr in FY26-27, while Ary Clothing does only 4,623 bills but ₹53 L at a ₹1,146 average bill.",
+      "status": "VERIFIED",
+      "evidence": "SaleDetail joined WarehouseMaster, VoucherDate>='2026-04-01': Ary Pos 104,491/₹1,91,66,715; Ary Clothing 4,623/₹52,99,903; Basement 9/₹51,38,246; Fruits & Vegetables 24,807/₹26,99,620; Ary G Canteen 20,250/₹23,69,215; Ary Lite 14,701/₹7,36,582.",
+      "number": "Ary Clothing avg bill ₹1,146 vs Ary Pos ₹183",
+      "soWhat": "Tailoring and alteration belong at Ary Clothing where the ticket is 6x higher and the customer is already buying fabric; print/copy/courier belong at Ary Pos where the traffic is. Note Basement is wholesale, not retail — 9 bills for ₹51 L."
+    },
+    {
+      "claim": "Tailors are settled up, so the thin tailoring margin is not a timing artefact — net payable to all 18 tailors is -₹3,388 (a slight overpayment).",
+      "status": "VERIFIED",
+      "evidence": "SUM(CreditAmount)-SUM(DebitAmount) over TransactionChild for AccountMaster.GroupID=508, IsDeleted=0 -> -3,388",
+      "number": "-₹3,388",
+      "soWhat": "Removes the obvious objection that the low margin is just unbilled work in progress. The pricing really is at cost."
+    },
+    {
+      "claim": "India Post Franchise Outlet commission rates could not be verified — indiapost.gov.in's franchise pages 404 on both the legacy .aspx path and the new Next.js route, and no Wayback snapshot exists for them.",
       "status": "NOT-CHECKED",
-      "evidence": "WebSearch returned 'this session has used its web search budget (200 of 200 WebSearch calls)' on the first attempt. Fallback channels failed: NPCI (403 on /what-we-do/aeps/product-overview and JS-gated), DuckDuckGo HTML and lite (CAPTCHA), Mojeek (403), Bing RSS (topic-collapses on multi-word queries and at one point returned unrelated adult-site results). Operator homepages fetched — spicemoney.com, digitalgraminseva.in/home/AEPS, aepsindia.com, csc.gov.in — all confirm the services exist but state no rates; aepsindia.com only says commissions 'vary'. India Post franchise scheme pages 404 on the rebuilt indiapost.gov.in portal.",
+      "evidence": "HTTP 404 on https://www.indiapost.gov.in/VAS/Pages/Content/Franchise-Scheme.aspx, /VAS/Pages/Franchise.aspx and /business-services/franchise-scheme; archive.org/wayback/available returns {} (no snapshots) for the franchise page.",
       "number": "",
-      "soWhat": "The five services sized purely on my own priors (banking correspondent Rs 10.5k/mo, courier Rs 14.5k/mo, tickets Rs 18k/mo, recharge Rs 5.7k/mo) together account for only Rs 48.6k of Rs 3.22 L monthly gross profit — 15%. The four verified-anchor services carry 85% of the case, so the unverified rates do not change the recommendation, only the tail."
+      "soWhat": "The courier recommendation is therefore built on a private-carrier aggregation model (Delhivery/DTDC handling fee), not on postal franchise commission. Someone should confirm the postal route with the Solan divisional office before committing."
     },
     {
-      "claim": "Baru Sahib's existing infrastructure was not checked: whether the township already has a bank branch, ATM, post office, institutional laundry, a Trust pharmacy or a registered pharmacist.",
+      "claim": "NPCI's actual AePS interchange is not public. The consolidated interchange circular is restricted, and NPCI blocks automated fetches.",
       "status": "NOT-CHECKED",
-      "evidence": "No ARY table records these, and I did not attempt to contact the Trust or verify PIN 173101 facility listings. The 'ary' CLI reads only ARY's own FusionERP database.",
+      "evidence": "NPCI AePS circular index (via Wayback 2025-09-19) lists 'NPCI/2017-18/AEPS/01 - Circular 18a Consolidated circular on Switching Fee/ Interchange/ MDR on Aadhaar Based Transaction' with the access note 'Please get in touch with your bank' — no download link. www.npci.org.in returns HTTP 403 to curl even with a browser user-agent; the public AePS Product-Booklet.pdf contains no fee table; Circulars 19(a) and 25(a) download but are scanned images with no text layer.",
       "number": "",
-      "soWhat": "This is the largest single risk to the sizing. An existing hostel laundry removes Rs 54k/month, a Trust dispensary removes Rs 36k/month, and an on-campus bank removes the banking-correspondent case entirely. One conversation with the Trust administrator resolves all of it and should precede any capex."
+      "soWhat": "Any AePS commission figure quoted to ARY should be treated as a sponsor bank's offer, not an industry rate. Since the two on-campus branches already sink this idea, it does not need resolving."
+    },
+    {
+      "claim": "AePS mechanics and scope are confirmed even though the pricing is not: it is a bank-led model requiring an authorised Business Correspondent or bank agent, supporting balance enquiry, cash withdrawal, cash deposit, Aadhaar-to-Aadhaar transfer, mini statement and merchant purchase.",
+      "status": "VERIFIED",
+      "evidence": "https://www.digitalindia.gov.in/initiative/aeps/ (page last updated 27 Aug 2026)",
+      "number": "7 transaction types",
+      "soWhat": "Confirms ARY cannot do this alone — it needs a sponsor bank or a CSC/BC network. Given SBI and PNB are both on campus, the sponsor is more likely to see ARY as a competitor than a partner."
+    },
+    {
+      "claim": "Baru Sahib's institutional scale supports a print/documentation business: Akal Academy has ~1,538 students in an 11-storey building, Eternal University runs 24 programmes with hostels across colleges of Basic Sciences, Agriculture and Nursing, and the Trust network spans 129 CBSE schools with ~60,000 students.",
+      "status": "VERIFIED",
+      "evidence": "https://en.wikipedia.org/wiki/Baru_Sahib (Akal Academy 1,538 students; Eternal University 24 programmes; 129 schools; ~60,000 students; 400 acres purchased 1956). eternaluniversity.edu.in confirms residential hostels and names 'Apple a Day' as the campus food outlet — which matches ARY's own 'Ary Apple A Day' counter.",
+      "number": "1,538 school students; 129-school network HQ",
+      "soWhat": "A 129-school head office generates continuous forms, circulars, exam papers and admission documentation. The print opportunity is institutional, not just retail — and institutional volume is what pays off a copier."
+    },
+    {
+      "claim": "Total realistic contribution from the recommended service set is roughly ₹2.0-2.2 L/month (~₹25 L/yr), about 2.8% of ARY's ~₹8.96 Cr annualised revenue but at far higher margin than merchandise.",
+      "status": "ESTIMATED",
+      "evidence": "Sum of the per-service estimates in the sizing table below; derived, not observed. Only the tailoring component rests on verified ARY history.",
+      "number": "~₹2.0-2.2 L/month contribution",
+      "soWhat": "Services will not move ARY's top line much. They defend the captive relationship, lift basket size and fix a margin leak — that is the case for them, and overselling them as a growth engine would be wrong."
     }
   ],
   "tables": [
     {
-      "title": "Service stack sized for 5,000 residents — monthly, steady state after 12-18 months (all revenue/profit figures ESTIMATED)",
+      "title": "HP Lok Mitra Kendra — officially notified charges an operator may keep (VERIFIED, himseva.hp.gov.in)",
       "columns": [
         "Service",
-        "What it needs (licence / device / partner)",
-        "Fee or commission basis",
-        "Monthly revenue (Rs)",
-        "Monthly gross profit (Rs)",
-        "Status of the rate"
-      ],
-      "rows": [
-        [
-          "Document counter — photocopy, print, scan, binding, lamination, passport photos",
-          "No licence. ~Rs 1.5 L capex: multifunction copier, comb/spiral binder, laminator, photo backdrop + dye-sub printer. One operator (can be an existing Ary Lite counter hand).",
-          "Rs 2/page B&W (HP notifies up to Rs 5), Rs 15/page colour, Rs 5/page scan, Rs 30-60 binding, Rs 70/sheet passport photos",
-          "1,10,000",
-          "77,000",
-          "Price ceiling VERIFIED (HP notified LMK card); volume ESTIMATED"
-        ],
-        [
-          "Laundry + pressing — collection-agent model first",
-          "No licence. Phase A ~Rs 60k: 2 industrial steam irons, tables, racks, token system. Phase B in-house washing Rs 8-12 L and needs water, drainage and reliable power.",
-          "Rs 15-20 per garment pressed; Rs 70/kg wash-and-fold",
-          "1,20,000",
-          "54,000",
-          "ESTIMATED (benchmark: UClean publishes Rs 1.8 L/mo avg store, 30-40% GM)"
-        ],
-        [
-          "Stitching + alteration, billed as a service",
-          "Nothing new to buy. 18 tailors and their payable accounts already exist. Needs one service SKU, a published price list and a service revenue account.",
-          "Tailor job-rate + ~50% markup; alterations Rs 40-80",
-          "87,000",
-          "34,500",
-          "Cost side VERIFIED (Rs 5.77 L in 2025); price side ESTIMATED"
-        ],
-        [
-          "Mobile repair + accessories",
-          "No licence. A technician (visiting 2 days/week is enough to start). ~Rs 40k in tools plus a screen/battery parts float.",
-          "~Rs 800 average repair at ~40% margin; accessories at ~35%",
-          "88,000",
-          "32,200",
-          "ESTIMATED"
-        ],
-        [
-          "Jan Aushadhi Kendra (generic pharmacy)",
-          "Registered pharmacist (B.Pharm/D.Pharm) + drug licence + ~120 sq ft + PMBI application. Must stock 200 fast-moving medicines to draw the incentive.",
-          "20% trade margin on MRP ex-tax, plus 20% of monthly purchases capped at Rs 20,000/month until Rs 5 L total",
-          "80,000",
-          "36,000",
-          "Margin + incentive VERIFIED (PIB, Mar 2026); volume ESTIMATED"
-        ],
-        [
-          "In-campus delivery to hostels and staff quarters",
-          "WhatsApp order channel + 2 delivery staff. POS already carries 'Cash on Delivery' and 'Advance against Order' modes.",
-          "Rs 25/order, waived above a Rs 400-500 basket",
-          "45,000",
-          "27,000",
-          "ESTIMATED"
-        ],
-        [
-          "Ticket booking desk (bus + rail) — seasonal",
-          "IRCTC authorised agent via a principal agent/RSP; a bus aggregator agent login. Near-zero capex.",
-          "~Rs 30/ticket service charge; bus commission ~6%",
-          "20,000",
-          "18,000",
-          "NOT-CHECKED (IRCTC agent caps unverified)"
-        ],
-        [
-          "Courier / parcel point, inbound and outbound",
-          "India Post franchise outlet (most reliable at a remote HP PIN) and/or a private courier franchise. Barcode scanner, label printer, lockable holding area.",
-          "~Rs 12 per inbound parcel handled; ~Rs 25 per outbound booking share",
-          "17,000",
-          "14,500",
-          "NOT-CHECKED"
-        ],
-        [
-          "Banking correspondent — AePS cash-out + money transfer",
-          "BC partner (Spice Money / PayNearby / Fino / IPPB). UIDAI-certified biometric device Rs 2,000-3,500. KYC. A working cash float.",
-          "~Rs 6 per cash withdrawal; ~Rs 20 per remittance",
-          "11,000",
-          "10,450",
-          "ESTIMATED"
-        ],
-        [
-          "Lok Mitra Kendra / CSC government-services counter",
-          "HP Lok Mitra Kendra authorisation via the HimSeva portal, or a CSC VLE ID. PC, printer, scanner, biometric device, internet.",
-          "Rs 25/application; Rs 5 per domestic HPSEB bill; Rs 10/page nakal",
-          "8,000",
-          "7,200",
-          "Rates VERIFIED (HP notified); volume ESTIMATED"
-        ],
-        [
-          "Cobbler + cycle repair (vendor-licence model)",
-          "Nothing. License a vendor a pitch outside the counter and take a share — no ARY payroll or capex.",
-          "Pitch fee or revenue share",
-          "5,000",
-          "5,000",
-          "ESTIMATED"
-        ],
-        [
-          "Recharge / DTH / bill payment (free rider only)",
-          "Rides the banking-correspondent terminal. Never staff it separately.",
-          "2-4% on recharge value",
-          "6,000",
-          "5,700",
-          "NOT-CHECKED"
-        ],
-        [
-          "TOTAL",
-          "",
-          "",
-          "5,97,000",
-          "3,21,550",
-          ""
-        ]
-      ]
-    },
-    {
-      "title": "The HP government's notified Lok Mitra Kendra rate card — the legal price list for four services in scope (VERIFIED)",
-      "columns": [
-        "Service",
-        "Charge the LMK may collect",
+        "Notified charge to the LMK/CSC operator",
         "Paid by"
       ],
       "rows": [
         [
           "G2C Himachal Online Seva (e-District) application",
-          "Rs 25 per application submission",
-          "Citizen"
-        ],
-        [
-          "HPSEB electricity bill collection — domestic",
-          "Rs 5 per bill",
-          "As notified by HPSEB"
-        ],
-        [
-          "HPSEB electricity bill collection — commercial",
-          "Rs 10 per bill",
-          "As notified by HPSEB"
-        ],
-        [
-          "Issuance of Nakal Jamabandi",
-          "Rs 10 per page",
+          "₹25 per application submission",
           "Citizen"
         ],
         [
           "G2B (Government to Business) application",
-          "Rs 25 per application",
+          "₹25 per application",
+          "Citizen"
+        ],
+        [
+          "EoDB / District Administration licences (S.No 69-74)",
+          "₹50 per application",
+          "Citizen"
+        ],
+        [
+          "HPSEB bill collection — domestic",
+          "₹5 per bill",
+          "HPSEB"
+        ],
+        [
+          "HPSEB bill collection — commercial",
+          "₹10 per bill",
+          "HPSEB"
+        ],
+        [
+          "Issuance of Nakal Jamabandi",
+          "₹10 per page",
           "Citizen"
         ],
         [
           "Scanning",
-          "Rs 5 per page",
+          "₹5 per page",
           "Citizen"
         ],
         [
           "Black & white page print",
-          "Rs 5 per page",
+          "₹5 per page",
           "Citizen"
         ],
         [
           "Colour print",
-          "Rs 15 per page",
+          "₹15 per page",
           "Citizen"
         ],
         [
-          "Typical certificate (income / caste / bonafide / domicile)",
-          "Rs 68.60 total = Rs 20 govt fee + Rs 23.60 processing + Rs 25 to the LMK",
-          "Citizen"
-        ],
-        [
-          "Character certificate with online police verification",
-          "Rs 218.60 total (adds Rs 150 verification); LMK still keeps Rs 25",
-          "Citizen"
+          "Scope of the notified list",
+          "74 numbered services across Revenue, Women & Child, Horticulture, Agriculture, Animal Husbandry, MC Shimla, District Admin",
+          "—"
         ]
       ]
     },
     {
-      "title": "What ARY's own books already prove about service demand (all VERIFIED by live query)",
+      "title": "Tailoring — the one service ARY already runs, by financial year (VERIFIED from live DB)",
       "columns": [
-        "Signal",
-        "Figure",
-        "Why it matters"
+        "FY",
+        "Revenue (SKU 07NL)",
+        "Direct stitching expense",
+        "Gross",
+        "GM %"
       ],
       "rows": [
         [
-          "Service or commission income booked today",
-          "Rs 0",
-          "No income account carries a service balance; no service group among 93; commission_pct = 0.000 on all 11 payment modes"
+          "FY23-24",
+          "₹2,96,690",
+          "₹2,61,938",
+          "+₹34,752",
+          "+11.7%"
         ],
         [
-          "Realised merchandise gross margin, trailing 12m",
-          "28.19% (Rs 7.70 Cr sales, Rs 2.17 Cr gross profit)",
-          "The bar services must beat — a ~54% service blend is worth ~1.9x a merchandise rupee"
+          "FY24-25",
+          "₹4,34,416",
+          "₹4,22,540",
+          "+₹11,876",
+          "+2.7%"
         ],
         [
-          "Footfall",
-          "371,721 bills in 12m ≈ 1,018/day",
-          "No customer acquisition needed; a thousand people a day already walk past the counter"
+          "FY25-26",
+          "₹5,48,052",
+          "₹5,99,376",
+          "-₹51,324",
+          "-9.4%"
         ],
         [
-          "Average bill",
-          "Rs 207.16",
-          "Small enough that a Rs 400-500 free-delivery threshold is a stronger lever than the delivery fee"
+          "FY26-27 (to 21-Aug)",
+          "₹2,99,865",
+          "₹2,49,658",
+          "+₹50,207",
+          "+16.7%"
         ],
         [
-          "Charge-account rail already live",
-          "987 Akal Academy + 37 employee accounts; 11,019 bills; Rs 2.09 Cr",
-          "Services can bill onto an existing account number — collection is already solved"
-        ],
-        [
-          "Payment mix by value",
-          "Paytm 46.8% / Cash 27.7% / Credit 25.5%",
-          "Residents self-serve digitally, which is the argument against a recharge-led strategy"
-        ],
-        [
-          "Tailoring paid for but never billed",
-          "Rs 5.77 L (2025), Rs 3.58 L to Aug-2026, 18 tailors, growing ~46%/yr",
-          "A service already running as a pure cost centre — the cheapest fix in the lane"
-        ],
-        [
-          "Fabric + unstitched suits sold",
-          "Rs 44.5 L/yr (inside a Rs 2.29 Cr clothing book)",
-          "Goods that need a tailoring service to become wearable"
-        ],
-        [
-          "Laundry demand signature",
-          "Rs 7.91 L/yr detergent over 13,574 bills; 5,915 single-wash 70g sachets; 23 electric irons sold in 12 months",
-          "Residents hand-wash garment by garment and almost nobody owns an iron"
-        ],
-        [
-          "School uniform volume",
-          "Academy Dress Rs 49.81 L on 12,242 units",
-          "Alteration demand as children grow, at near-zero marginal cost"
-        ],
-        [
-          "Seasonality",
-          "Jan-26 15,078 bills vs May-26 41,388 (2.7x)",
-          "Size on ~10 effective months; favour the collection-agent model over a laundry plant in year one"
-        ],
-        [
-          "Pharmacy gap",
-          "Medicare Rs 3.4 L/yr over 5,045 bills = Rs 57/resident/year",
-          "Implausibly low for a township with children and elderly — spend is leaving or going to the Trust"
-        ],
-        [
-          "Mobile category",
-          "Rs 2,690/yr over 5 bills",
-          "Greenfield repair and accessory business against ~3,000 phones on campus"
-        ],
-        [
-          "Institutional B2B already proven",
-          "'Hunger Heroes' Rs 77.4 L/yr on 13 bills",
-          "Selling services to the Trust would dwarf the retail version"
-        ],
-        [
-          "Winter-wear book (dry-clean attach)",
-          "Winter Wear Rs 44.3 L + Thermals Rs 5.0 L per year",
-          "Hill-campus woollens need seasonal dry cleaning — a natural laundry upsell"
+          "TOTAL",
+          "₹15,79,023",
+          "₹15,33,512",
+          "+₹45,511",
+          "+2.9%"
         ]
       ]
     },
     {
-      "title": "Deliberate skip list — candidates from the brief the evidence argues against",
+      "title": "Service SKUs already in ARY's catalogue and what they have actually earned (VERIFIED)",
       "columns": [
-        "Candidate",
-        "Why not",
-        "What to do instead"
+        "SKU",
+        "Name",
+        "Sale lines (lifetime)",
+        "Amount (lifetime)",
+        "Status"
       ],
       "rows": [
         [
-          "Mobile / DTH recharge as a headline service",
-          "46.8% of ARY's value is already paid by Paytm — residents recharge themselves. Retailer margin is 2-4% (unverified). Best case ~Rs 6,000/month.",
-          "Take it free as a rider on the banking-correspondent terminal; never give it a staffed counter"
+          "07NL",
+          "Stiching Charges From Customer",
+          "3,957",
+          "₹15,79,023",
+          "Live, priced at cost, 13.9% attach"
         ],
         [
-          "FASTag issuance",
-          "Closed residential township with few private vehicles; no through traffic.",
-          "Skip entirely"
+          "0BO0",
+          "Gift Packing",
+          "3,616",
+          "₹52,835",
+          "Live, small, working"
         ],
         [
-          "Gas / LPG booking",
-          "Refill booking is free and self-service by app/IVR; an actual distributorship is a separate oil-company licence ARY will not get.",
-          "At most a Rs 10-20 assisted-booking courtesy for elderly residents; no counter"
+          "0C19",
+          "Cabin Booking",
+          "119",
+          "₹6,070",
+          "Abandoned after FY23-24"
         ],
         [
-          "Insurance POSP",
-          "Long sales cycle, needs a separately licensed person, no synergy with a retail counter.",
-          "Skip"
+          "0A32",
+          "Xerox  Charges",
+          "0",
+          "₹0",
+          "NEVER USED — created, never billed"
         ],
         [
-          "Amazon / Flipkart pickup point as the anchor",
-          "The per-package handling fee alone is too thin to justify space and staff.",
-          "Fold it into a single courier/parcel point that also books outbound"
+          "0BVD",
+          "Delivery Charges",
+          "0",
+          "₹0",
+          "NEVER USED — created, never billed"
         ],
         [
-          "Full in-house laundry plant in year one",
-          "Rs 8-12 L capex against a 2.7x winter demand trough, and the Trust may already provide hostel laundry.",
-          "Start as a pressing counter + wash-and-fold collection agent at ~Rs 60k, then decide"
+          "07NM",
+          "Stiching Bom",
+          "1",
+          "₹2",
+          "Effectively unused"
+        ]
+      ]
+    },
+    {
+      "title": "Baru Sahib infrastructure reality check — what is and is not already served (VERIFIED)",
+      "columns": [
+        "Service need",
+        "What already exists locally",
+        "Verdict for ARY"
+      ],
+      "rows": [
+        [
+          "Banking / cash withdrawal",
+          "SBI branch SBIN0011784 'BARU SAHIB' + PNB PUNB0975500 'GURUDWARA BARU SAHIB', both NEFT/RTGS/IMPS/UPI",
+          "SERVED — drop AePS as a primary play"
         ],
         [
-          "e-Mitra",
-          "e-Mitra is Rajasthan-only. Himachal's equivalent is the Lok Mitra Kendra under the HimSeva portal.",
-          "Apply for an HP Lok Mitra Kendra, not e-Mitra"
+          "Post / parcel",
+          "'Baru Sahib' Branch Post Office only; nearest Sub PO is Rajgarh; 15 BOs + 1 SPO across PIN 173101",
+          "WEAK — real courier gap"
+        ],
+        [
+          "Mobile recharge",
+          "Residents self-serve: Paytm/UPI = 56.3% of ARY tender lines",
+          "SERVED by the customer's own phone"
+        ],
+        [
+          "Mobile repair",
+          "ARY's whole 'Mobile' group is 8 charger SKUs; nearest market town 30-50 km",
+          "UNSERVED — best margin on the list"
+        ],
+        [
+          "Print / photocopy / scan",
+          "ARY's Xerox SKU never used; HP notifies ₹5/₹15 per page; 1,640 stationery bills/month already at the counter",
+          "UNSERVED at ARY — biggest new line"
+        ],
+        [
+          "Government services (certificates)",
+          "HP channel is Lok Mitra Kendra on the HimSeva portal; 74 notified services at ₹25 each",
+          "OPPORTUNITY — needs an LMK allotment"
+        ],
+        [
+          "Tailoring / alteration",
+          "ARY itself, via 18 contract tailors, at 2.9% GM",
+          "EXISTS — fix the price and the attach rate"
+        ]
+      ]
+    },
+    {
+      "title": "Sized service portfolio (tailoring VERIFIED; every other revenue figure ESTIMATED)",
+      "columns": [
+        "Service",
+        "What it needs",
+        "Fee / commission basis",
+        "Est. monthly revenue",
+        "Est. monthly contribution",
+        "Status of number"
+      ],
+      "rows": [
+        [
+          "Tailoring & alteration — reprice + push attach",
+          "Nothing new (18 tailors, SKU, counter all exist)",
+          "Per-piece; reset customer price, target 35% GM, attach 14%→35%",
+          "₹1,60,000",
+          "₹56,000",
+          "ESTIMATED from VERIFIED base"
+        ],
+        [
+          "Print / photocopy / scan / lamination / binding / passport photo",
+          "Multifunction copier (₹1.2-2.5 L buy, or ₹4-6k/mo rental + per-copy), laminator ₹5k, binder ₹8k, photo setup ₹20k, 1 operator",
+          "₹2/page bulk copy; ₹10-15 colour; HP notified ₹5 B&W / ₹15 colour / ₹5 scan",
+          "₹95,000",
+          "₹55,000",
+          "ESTIMATED"
+        ],
+        [
+          "Mobile repair + accessories",
+          "Trained technician (or visiting 2 days/week), ₹40-60k tools/spares float",
+          "₹250-400 margin/repair; 25-35% on accessories",
+          "₹55,000",
+          "₹35,000",
+          "ESTIMATED"
+        ],
+        [
+          "Courier / parcel desk (inbound hold + outbound booking)",
+          "Delhivery/DTDC/Post partner agreement, shelving, scanner, register",
+          "₹20-30 handling per parcel + carrier commission",
+          "₹30,000",
+          "₹25,000",
+          "ESTIMATED"
+        ],
+        [
+          "Laundry & dry cleaning (agency model)",
+          "Collection point + tie-up with a Solan/Nahan plant; no plant capex",
+          "₹50-80 net margin per piece",
+          "₹22,000",
+          "₹15,000",
+          "ESTIMATED — depends on Trust laundry"
+        ],
+        [
+          "CSC / Lok Mitra Kendra licence",
+          "LMK allotment (HimSeva), PC + printer + scanner + biometric device, VLE registration",
+          "₹25/G2C application; ₹5/HPSEB domestic bill; ₹25/G2B",
+          "₹14,000",
+          "₹12,000",
+          "ESTIMATED on VERIFIED rates"
+        ],
+        [
+          "In-campus delivery (activate SKU 0BVD)",
+          "2 delivery staff for the 17:00-20:00 peak, WhatsApp/phone order line",
+          "₹20 per delivery + basket uplift (uplift not sized)",
+          "₹12,000",
+          "₹6,000",
+          "ESTIMATED"
+        ],
+        [
+          "Ticket booking (IRCTC / bus)",
+          "IRCTC authorised agent registration; commission NOT verified",
+          "₹20-40 per ticket, highly seasonal at term breaks",
+          "₹8,000",
+          "₹7,000",
+          "ESTIMATED, rate NOT-CHECKED"
+        ],
+        [
+          "Cobbler / cycle repair",
+          "Space + a part-time artisan on revenue share",
+          "₹40-80 per job",
+          "₹6,000",
+          "₹4,000",
+          "ESTIMATED"
+        ],
+        [
+          "Mobile / DTH recharge + BBPS",
+          "Rides free on the CSC licence",
+          "1.5-3% recharge; ₹3-10 flat BBPS",
+          "₹5,000",
+          "₹4,000",
+          "ESTIMATED — deliberately low"
+        ],
+        [
+          "AePS / banking correspondent",
+          "Sponsor bank + micro-ATM + biometric device",
+          "Interchange share (NOT verified)",
+          "₹6,000",
+          "₹4,000",
+          "ESTIMATED — thesis largely dead"
+        ],
+        [
+          "LPG gas booking",
+          "Nothing; booking is free via app/IVRS",
+          "Effectively no fee income",
+          "₹2,000",
+          "₹1,000",
+          "ESTIMATED — goodwill only"
         ]
       ]
     }
   ],
   "recommendations": [
     {
-      "action": "Bill the stitching ARY already pays for. Create a 'Services' product group and a stitching/alteration SKU, publish a price list (tailor job-rate + ~50%, alterations Rs 40-80), and open a service revenue account in the chart of accounts. The 18 tailors, their payable accounts, the Rs 44.5 L/yr fabric book and the POS all already exist — nothing needs buying. Estimated Rs 87,000/month revenue at ~Rs 34,500 gross profit.",
+      "action": "Reprice tailoring and drive fabric→stitching attach from 13.9% to 35%. Nothing needs to be bought: the 18 tailors, the revenue SKU (07NL), the cost account and the Ary Clothing counter all exist. Set a per-garment price card that clears a 35% gross margin, and make the till prompt for stitching on every fabric/unstitched-suit line. Captive market — no competing tailor within 30-50 km — so the price will hold.",
       "priority": "P0",
-      "monthlyImpactInr": 34500,
-      "effort": "days",
-      "blocker": "Confirm with the ARY accountant whether Academy Dress and stitched-garment selling prices already absorb the tailors' cost. If they do, separating it out is a re-labelling and only the markup plus alterations is genuinely incremental — still worth doing for visibility, but size it down."
+      "monthlyImpactInr": 56000,
+      "effort": "weeks",
+      "blocker": "Confirm the 18 tailors' commercial terms — are they independent piece-rate contractors whose rates ARY can reset, or Trust-affiliated workers whose rates are fixed by someone else?"
     },
     {
-      "action": "Instrument services before selling any. Add a Direct/Indirect Income account per service line and a 'Services' product group in FusionERP, and start using the POS's existing per-payment-mode commission_pct field (currently 0.000 on all 11 modes). Without this, every service below is invisible in the books exactly as tailoring has been for three years.",
+      "action": "Launch the print/copy/scan desk that ARY already has a SKU for. Activate 0A32 'Xerox Charges', put a multifunction copier at Ary Pos (rent first at ₹4-6k/month + per-copy rather than buying, so the volume assumption gets tested cheaply), and add lamination, spiral binding and passport photos. Price against the HP notified card (₹5/page B&W, ₹15 colour, ₹5 scan) for one-off jobs and ₹1.50-2/page for bulk. Convert the 1,640 stationery bills/month already walking past.",
       "priority": "P0",
+      "monthlyImpactInr": 55000,
+      "effort": "weeks",
+      "blocker": "Whether the Akal Academy / Eternal University administration already runs a photocopy facility for students and staff. If it does, this number roughly halves and the play becomes an institutional print contract instead of a retail counter."
+    },
+    {
+      "action": "Add mobile repair — screen and battery replacement plus a real accessories range. ARY's entire mobile category is 8 charger SKUs, while 56% of its tender lines are UPI, so every resident carries a smartphone and the nearest repair is 30-50 km of hill road away. Start with a technician visiting two days a week on revenue share before hiring.",
+      "priority": "P1",
+      "monthlyImpactInr": 35000,
+      "effort": "weeks",
+      "blocker": "Sourcing a competent technician willing to work at Baru Sahib; spares supply chain from Solan/Chandigarh."
+    },
+    {
+      "action": "Open a courier and parcel desk. This is the one genuine logistics gap: Baru Sahib has only a Branch Post Office and the nearest Sub Post Office is Rajgarh. Sign a Delhivery or DTDC pickup/drop arrangement and run an inbound parcel hold-and-notify service for hostel students, charging ₹20-30 handling. Start with inbound holding, which needs no carrier agreement at all — just shelving, a scanner and a register.",
+      "priority": "P1",
+      "monthlyImpactInr": 25000,
+      "effort": "weeks",
+      "blocker": "Carrier willingness to serve PIN 173101 daily; hill-road pickup frequency is the real constraint, not the agreement."
+    },
+    {
+      "action": "Apply for a Lok Mitra Kendra licence via the HimSeva portal. It pays ₹25 per G2C application across 74 notified services, ₹5 per HPSEB domestic bill collected, and — importantly — it puts ARY's print and scan charges on an officially notified rate card. The catchment is not just the 5,000 campus residents but the 15 surrounding Branch-Post-Office villages.",
+      "priority": "P1",
+      "monthlyImpactInr": 12000,
+      "effort": "months",
+      "blocker": "Whether an LMK is already allotted for Baru Sahib or the Rajgarh block — allotments are typically exclusive by area. Check before investing effort."
+    },
+    {
+      "action": "Activate SKU 0BVD 'Delivery Charges' and run in-campus delivery in the 17:00-20:00 window, where 54.4% of all bills already land. Charge ₹20 a drop. Judge it on basket size and queue relief for staff families with small children, not on the fee — the fee will never pay for itself alone.",
+      "priority": "P2",
+      "monthlyImpactInr": 6000,
+      "effort": "days",
+      "blocker": "No per-resident identity at the till: 97% of bills go to the single walk-in account 00001 and only ~350 named customers transact monthly. Delivery needs an address and a name."
+    },
+    {
+      "action": "Build the named-customer rail before any subscription or billed service. The 3,604 'Akal Academy Cs' ledger accounts exist but are barely used at the counter. Without a resident identity on the bill, laundry accounts, print accounts, delivery and monthly service billing are all impossible to operate or measure.",
+      "priority": "P2",
       "monthlyImpactInr": 0,
-      "effort": "days",
-      "blocker": "none"
-    },
-    {
-      "action": "Open a document counter at Ary Lite: photocopy, printing, scanning, spiral/comb binding, lamination and passport photos. Price black-and-white at Rs 2/page — well under the Rs 5 that Himachal officially notifies for a Lok Mitra Kendra — with colour at Rs 15 and scanning at Rs 5. ~Rs 1.5 L capex, no licence, and Stationary already does Rs 14.9 L/yr over 21,600 bills, so the customers are provably at the counter. Estimated Rs 1,10,000/month revenue at ~Rs 77,000 gross profit; payback about two to three months.",
-      "priority": "P0",
-      "monthlyImpactInr": 77000,
       "effort": "weeks",
-      "blocker": "none — but ask the Akal Academy office who prints their exam papers today; that single B2B contract could be larger than all retail printing combined."
+      "blocker": "Till workflow and staff habit — cashiers default to the cash account because it is faster at a 1,200-bill day."
     },
     {
-      "action": "Start a pressing and wash-and-fold collection counter — the highest-confidence unmet need in the data. Two industrial steam irons, tables, racks and a token system for about Rs 60,000, at Rs 15-20 per garment pressed and Rs 70/kg wash-and-fold. Justified by Rs 7.91 L/yr of detergent across 13,574 bills, 5,915 single-wash sachets, and just 23 electric irons sold to 5,000 people in a year. Defer the Rs 8-12 L in-house washing plant until the collection volumes are real. Estimated Rs 1,20,000/month revenue at ~Rs 54,000 gross profit.",
-      "priority": "P1",
-      "monthlyImpactInr": 54000,
-      "effort": "weeks",
-      "blocker": "Confirm with the hostel wardens whether Akal Academy and Eternal University hostels already provide laundry inside their fees. If they do, this collapses to a staff-family and dry-cleaning service and should be resized down sharply."
-    },
-    {
-      "action": "Launch in-campus delivery on WhatsApp with two delivery staff, priced at Rs 25 per order and waived above a Rs 400-500 basket. Sell it on basket uplift, not the fee: the average bill is Rs 207, so pulling delivery orders to a Rs 400 threshold is worth an estimated Rs 76,000/month in extra merchandise gross profit on top of ~Rs 27,000 in fee margin. Target married staff families with small children and elderly residents — the people least able to walk to the counter. The POS already carries 'Cash on Delivery' and 'Advance against Order' modes.",
-      "priority": "P1",
-      "monthlyImpactInr": 27000,
-      "effort": "weeks",
-      "blocker": "Trust permission to move staff and goods around the residential township, and agreement on delivery hours"
-    },
-    {
-      "action": "Revive the mobile category with repair plus accessories — currently Rs 2,690 of sales on 5 bills a year against roughly 3,000 phones and no repair shop within 30-50 km. Bring a technician in two days a week to start, with about Rs 40,000 in tools and a screen/battery parts float. Estimated Rs 88,000/month revenue at ~Rs 32,200 gross profit, of which the accessory half is really a merchandise gap sitting at zero.",
-      "priority": "P1",
-      "monthlyImpactInr": 32200,
-      "effort": "weeks",
-      "blocker": "Finding a competent technician willing to travel to Baru Sahib, or training an existing counter hand"
-    },
-    {
-      "action": "Apply for a Jan Aushadhi Kendra. Verified economics: 20% trade margin on MRP ex-tax plus 20% of monthly purchases capped at Rs 20,000/month until Rs 5 lakh is drawn, with a possible extra Rs 2 lakh because Sirmaur's hill blocks plausibly qualify as geographically disadvantaged. ARY's Medicare group does only Rs 3.4 L/yr — Rs 57 per resident per year — for a township with school children and elderly residents. Estimated Rs 80,000/month revenue at ~Rs 36,000 gross profit including the incentive.",
+      "action": "Scope laundry and dry cleaning as an agency, not a plant — collection point at ARY, processing at a Solan or Nahan facility. Aim at winter wear and staff-family laundry rather than student uniforms, which the Trust probably already handles.",
       "priority": "P2",
-      "monthlyImpactInr": 36000,
+      "monthlyImpactInr": 15000,
       "effort": "months",
-      "blocker": "A registered pharmacist (B.Pharm/D.Pharm) and a drug licence. Before spending anything, establish whether the Kalgidhar Trust hospital already dispenses to residents — if it does, this is not an opportunity."
+      "blocker": "Find out whether the Trust already runs institutional laundry for its ~1,538 boarders. If it does, the addressable market is only staff families and dry cleaning."
     },
     {
-      "action": "Open a courier and parcel point handling both inbound collection and outbound booking. Pursue an India Post franchise outlet first, since India Post is the carrier most likely to serve PIN 173101 reliably, and add a private courier as a second rail. Estimated Rs 17,000/month revenue at ~Rs 14,500 gross profit — modest money, but it is what makes online shopping and returns usable at all from a closed township 30-50 km from a market, and every collection trip is a footfall event.",
-      "priority": "P2",
-      "monthlyImpactInr": 14500,
-      "effort": "weeks",
-      "blocker": "India Post franchise commission rates and eligibility at PIN 173101 could not be verified — the scheme document is not reachable on the rebuilt indiapost.gov.in portal. Get the rate card from the Nahan or Rajgarh head post office."
-    },
-    {
-      "action": "Run a seasonal ticket-booking desk for bus and rail, opening about six weeks before each term break. Verified seasonality justifies it: bills fall from 41,388 in May to 15,078 in January, meaning thousands of children and students travel out within a few weeks. Near-zero capex via an IRCTC authorised-agent arrangement through a principal agent plus a bus aggregator login. Estimated Rs 20,000/month averaged over the year at ~Rs 18,000 gross profit, concentrated into a few weeks.",
-      "priority": "P2",
-      "monthlyImpactInr": 18000,
-      "effort": "weeks",
-      "blocker": "IRCTC agent authorisation route and the permitted service-charge cap are unverified. Also ask the school whether it books group travel — an institutional travel desk would be far larger than retail ticketing."
-    },
-    {
-      "action": "Apply for a Lok Mitra Kendra authorisation through the HimSeva portal (the LMK login already exists there). The direct fee income is small — an estimated Rs 8,000/month at ~Rs 7,200 gross profit from Rs 25 per application and Rs 5 per domestic HPSEB bill — but it is what legitimises charging for printing and scanning at the officially notified rates and gives ARY a government-service identity in the township.",
-      "priority": "P2",
-      "monthlyImpactInr": 7200,
-      "effort": "months",
-      "blocker": "Whether an LMK allotment is available for the Rajgarh block of Sirmaur, and whether a Lok Mitra Kendra already operates nearby"
-    },
-    {
-      "action": "Sign up as a banking correspondent for AePS cash-out and domestic money transfer with one partner (Spice Money, PayNearby, Fino or IPPB) — a UIDAI-certified biometric device costs Rs 2,000-3,500. The strategic case beats the revenue case: ARY takes in Rs 2.26 Cr of cash a year that must be physically banked from a hill campus, and cash-out converts that till cash into bank balance while earning commission. Estimated Rs 11,000/month revenue at ~Rs 10,450 gross profit, plus real goodwill with non-teaching staff who need to remit money home.",
+      "action": "Do NOT invest in AePS or a banking-correspondent setup as a standalone play. Baru Sahib already has two full bank branches on campus (SBI SBIN0011784 and PNB PUNB0975500), both with UPI, NEFT, RTGS and IMPS. If a micro-ATM ever goes in, justify it only on after-hours access — banks shut at 16:00 while 54% of ARY's footfall is 17:00-20:00 — and on the surrounding villages, not on campus demand.",
       "priority": "P3",
-      "monthlyImpactInr": 10450,
-      "effort": "weeks",
-      "blocker": "Establish first whether Baru Sahib already has a bank branch or ATM inside the township — if it does, drop this. Also weigh AePS fraud liability and the Trust's view on cash handling."
+      "monthlyImpactInr": 4000,
+      "effort": "months",
+      "blocker": "none — the recommendation is to not spend"
     },
     {
-      "action": "License a cobbler and a cycle repairer a pitch outside the counter on a revenue share rather than putting them on ARY's payroll — zero capex, zero payroll risk, an estimated Rs 5,000/month to ARY, and high resident goodwill against 5,059 pairs of footwear a year sold onto hill terrain.",
+      "action": "Treat mobile/DTH recharge and BBPS as free riders on the CSC licence, never as a reason to buy anything. Residents already self-serve: Paytm is 56.3% of tender lines. Same for LPG booking, which now carries no fee at all — offer it as goodwill.",
       "priority": "P3",
       "monthlyImpactInr": 5000,
       "effort": "days",
       "blocker": "none"
     },
     {
-      "action": "Fix the ary CLI's payment-mix report before anyone builds a business case on it. It overstates cash roughly 44x (Rs 10,023 Cr against Rs 21 Cr of lifetime sales) because it sums SalePayment.Amount, which for cash tenders holds what the customer handed over rather than what was billed. Correct value is Amount minus ReturnAmount.",
-      "priority": "P3",
+      "action": "Ask why 'Cabin Booking' (SKU 0C19) died after ₹6,070 in FY23-24, and assign a single named owner to each new service line before launch. ARY's own history shows the failure mode is not bad ideas — it is unowned SKUs: two service SKUs have zero lifetime sales and a third was abandoned.",
+      "priority": "P1",
       "monthlyImpactInr": 0,
       "effort": "days",
       "blocker": "none"
     }
   ],
   "openQuestions": [
-    "Does Baru Sahib township already have a bank branch, ATM, post office or India Post outlet inside it? This single answer decides the banking-correspondent and courier recommendations. Ask the Trust administrator or the ARY counter manager.",
-    "Do the Akal Academy and Eternal University hostels already provide laundry as part of their fees, and who does it? This is the largest swing factor in the whole sizing — Rs 54,000/month of estimated gross profit rests on the answer. Ask the hostel wardens.",
-    "Is the Rs 5.77 lakh/year of stitching cost already recovered inside Academy Dress and garment selling prices, or genuinely absorbed as a Direct Expense against margin? Determines whether billing stitching separately is new revenue or a re-labelling. Ask the ARY accountant to trace one uniform SKU's price build-up.",
-    "Does the Kalgidhar Trust hospital or dispensary already supply medicines to residents, and is a registered pharmacist available on campus? Decides whether the Jan Aushadhi Kendra is an opportunity or a duplication. Ask the Trust medical officer.",
-    "Who prints Akal Academy's exam papers, worksheets and school stationery today, and at what annual cost? A single institutional print contract could exceed all retail photocopying combined. Ask the school office.",
-    "Would the Trust permit cash-handling (AePS), a pharmacy and a laundry inside a closed religious township, and are there restrictions on outside vendors on campus? Ask Trust management before any capex.",
-    "What are the India Post Franchise Outlet commission rates per article and the security deposit, and is PIN 173101 eligible? Could not be verified — the scheme document 404s on the rebuilt indiapost.gov.in portal. Ask the Nahan or Rajgarh head post office directly.",
-    "What does a specific BC partner actually pay per AePS withdrawal and per DMT remittance in 2026? No operator publishes slabs. Get written quotes from Spice Money, PayNearby, Fino and IPPB and compare.",
-    "What is IRCTC's permitted agent service charge per ticket today, and what is the cheapest route to authorised-agent status for a non-travel business? Ask an IRCTC principal agent / RSP.",
-    "Is 'Hunger Heroes' (Rs 77.4 lakh a year, filed under Zomato Debtors) a campus food-delivery operation? If so, ARY's proposed delivery staff could serve it too, and the two should be planned together. Ask the Basement counter manager.",
-    "How many of the ~5,000 residents are HP-domiciled? This sets the real ceiling on Lok Mitra Kendra certificate volume, which I could only guess at 1,200-1,500. Ask the Academy and University registrars.",
-    "Is there mains water, drainage and reliable three-phase power at the counter for a future in-house laundry, and what does power cost? ARY's Electricity Expense is Rs 8.39 lakh — ask the ARY site manager before committing to Phase B."
-  ]
+    "Does the Akal Academy / Eternal University administration already run a photocopy and printing facility for its students and staff? This is the single biggest swing factor — it would halve the print estimate and turn a retail counter into an institutional print contract. Ask the ARY manager or the Trust's campus administration.",
+    "Does the Trust already run institutional laundry for the ~1,538 residential-school boarders? Determines whether laundry is a real opportunity or only a staff-family/dry-cleaning niche.",
+    "Are the 18 tailors on ledger group 508 independent piece-rate contractors whose rates ARY can reset, or Trust-affiliated workers on fixed rates? The whole tailoring repricing recommendation depends on this. Ask the Ary Clothing counter in-charge.",
+    "Why was 'Cabin Booking' (0C19) abandoned after FY23-24, and what was it actually booking — guest rooms, a hall, transport? Someone at ARY knows, and the answer probably predicts what will kill the next service SKU.",
+    "Is a Lok Mitra Kendra already allotted for Baru Sahib or the Rajgarh block, and what is the current LMK application procedure? The 'How to apply for LMK' link on himseva.hp.gov.in is JavaScript-driven and did not resolve to a document. The HP District e-Governance Society, Sirmaur (Nahan) would know.",
+    "Can an India Post Franchise Outlet be opened at Baru Sahib given a departmental Branch Post Office already exists there? The franchise scheme's eligibility rules could not be retrieved — indiapost.gov.in 404s on every franchise path and has no Wayback snapshot. Confirm with the Solan postal division.",
+    "Is there an ATM at Baru Sahib (either bank's), and what are the SBI and PNB branch working hours? This decides whether the after-hours cash argument for a micro-ATM has anything left in it.",
+    "What is Eternal University's current student headcount and how many live in hostels? Their website carries testimonials but no enrolment figure, and this is a direct multiplier on the print, courier and laundry estimates.",
+    "Do staff families in campus quarters hold individual HPSEB domestic connections, or does the Trust hold bulk connections? The ₹5-per-bill HPSEB collection commission is worth nothing if there are no individual bills.",
+    "What did the surrounding-village catchment look like historically — do residents of the 15 nearby Branch-Post-Office villages already shop at ARY? Sales are booked 97% to one anonymous walk-in account, so the data cannot answer this; the counter staff can."
+  ],
+  "confidence": "medium",
+  "confidenceGap": "Every internal figure here was pulled live from FR8HODBNEW and is solid, and the Himachal LMK rate card is an official government notification — but every revenue number for a service ARY has never run is a model, not an observation. ARY has operated exactly one service at scale (tailoring), so there is no internal precedent to calibrate attach rates or per-resident consumption against. Two specific unknowns could each move the total by 25% or more: whether the Academy/University already provides photocopying on campus (halves the largest new line) and whether the Trust already runs laundry. A process caveat worth stating plainly: this session's WebSearch budget was already exhausted (200/200) before my first call, so the external research was done by scraping Bing, the Wayback Machine, a text proxy and official sites directly with curl. That worked well for government sources — it is how the HP LMK rate card, the postal hierarchy and the two bank branches got verified — but it failed on commercial commission rates, which is why India Post franchise terms and NPCI's AePS interchange are reported as NOT-CHECKED rather than guessed at."
 }

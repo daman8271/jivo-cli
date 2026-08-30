@@ -1,0 +1,688 @@
+{
+  "lane": "licence-map",
+  "headline": "ARY is already selling allopathic drugs (₹8,849 across 181 bills in 12 months) and infant formula, infant food and feeding bottles (59 active SKUs) without the two licences that carry India's harshest retail penalties — a minimum ₹1 lakh fine and 3-5 years for the drugs, a mandatory-minimum 6 months' imprisonment for the infant food — so the first move is closing a live exposure worth ₹15,274 a year of revenue, not opening new categories; after that, only pharmacy and medical devices actually need a licence, and both cost ₹3,000 in Sirmaur.",
+  "confidence": "medium",
+  "confidenceGap": "Two things. (1) I could not read Schedule K entry 5 of the Drugs and Cosmetics Rules 1945 live — that is the one provision that could legally excuse ARY's Crocin/Disprin sales as \"household remedies\", and its condition is a village population under 1,000. Baru Sahib has ~5,000 people, so I believe the exemption fails, but a drugs inspector's view on a closed township is untested and this single point decides whether the P0 is urgent or merely tidy. (2) peso.gov.in, cpcb's battery-rules text, HP Fire Services and every pet-food source refused connection or 404'd this session, so LPG, battery waste, fire NOC and pet food are marked NOT-CHECKED rather than guessed.",
+  "findings": [
+    {
+      "claim": "ARY is TODAY retailing allopathic drugs with no drug licence on record — Crocin 500mg (paracetamol), Disprin (aspirin) and Volini gel/spray (diclofenac). Retail sale of any allopathic drug without a Form 20 licence is an offence under s.18(c) of the Drugs and Cosmetics Act 1940.",
+      "status": "VERIFIED",
+      "evidence": "ary query: SELECT COUNT(*) lines, SUM(Quantity) units, SUM(Quantity*SaleRate) inr, COUNT(DISTINCT sh.SerialNumber) bills FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID WHERE sh.VoucherDate>='2025-08-01' AND <'2026-08-22' AND (ProductName LIKE '%CROCIN%' OR '%DISPRIN%' OR '%VOLINI%')",
+      "number": "183 bill lines, 198 units, Rs 8,848.56, across 181 separate bills in 12 months; 14 such SKUs still IsActive=1",
+      "soWhat": "This reframes the whole exercise. The pharmacy licence is not a growth decision for a category ARY 'wants to add' — it is remediation for a category ARY is already running at Rs 737/month. Either de-list the 14 SKUs this week or file Form 19 this month; carrying on is the one option that is not available."
+    },
+    {
+      "claim": "ARY carries 9 active infant-milk-substitute SKUs (Lactogen-1, Lactogen-3), 34 active infant-food SKUs (Cerelac range) and 16 feeding-bottle/nipple/soother SKUs. Every one of these is inside the Infant Milk Substitutes, Feeding Bottles and Infant Foods Act 1992 — the strictest promotion ban in Indian retail law.",
+      "status": "VERIFIED",
+      "evidence": "ary query over ProductMaster WHERE IsActive=1, name-matched on LACTOGEN/NAN PRO/CERELAC/FAREX/NESTUM/FEEDING BOTTLE/NIPPLE/SOOTHER/MILK FEEDER; sales joined via SaleHeader.SerialNumber. IMS Act text read in full from https://www.bpni.org/docments/IMS-act.pdf (ss.2(c),(f),(g),(j), 3, 4, 5, 8, 10, 11, 20)",
+      "number": "59 active SKUs; 12-month sales Rs 3,878 infant food + Rs 2,547 bottles/teats + Rs 0 formula = Rs 6,425",
+      "soWhat": "ARY is carrying a criminal statute for Rs 535 a month. The Act's own definitions are wider than anyone assumes: s.2(f) covers any food marketed as a complement to mother's milk 'after the age of six months and up to the age of two years' — so all 34 Cerelac SKUs are in, not just the formula tins."
+    },
+    {
+      "claim": "IMS Act s.11(1) makes it an offence to sell an infant milk substitute or infant food unless the container bears the BIS Standard Mark, and s.20(2) sets a MANDATORY MINIMUM of six months' imprisonment (extendable to three years) plus a minimum Rs 2,000 fine for that. s.11(2) does the same for feeding bottles without the mark, punishable up to three years or Rs 5,000 under s.20(1).",
+      "status": "VERIFIED",
+      "evidence": "Primary text, https://www.bpni.org/docments/IMS-act.pdf: s.11(1) '...no person shall sell or otherwise distribute any infant milk substitute or infant food unless it conforms to the standards... and the container thereof has the relevant Standard Mark specified by the Bureau of Indian Standards'; s.20(2) '...punishable with imprisonment for a term which shall not be less than six months but which may extend to three years and with fine which shall not be less than two thousand rupees.'",
+      "number": "Minimum 6 months' imprisonment; minimum Rs 2,000 fine",
+      "soWhat": "This is the single sharpest penalty found anywhere in this lane, and it attaches to a Rs 6,425/year category. 'Bonne Plastic Feeding Bottle 250 Ml' and 'Bonne Plastic Feeding Bottle 125Ml' must be physically checked for an ISI mark on the container before the next sale — a goods-inward check, not a licence."
+    },
+    {
+      "claim": "IMS Act s.3 and s.4 ban EVERY form of promotion of formula, infant food and feeding bottles, and s.2(j) defines promotion as 'to employ directly or indirectly any method of encouraging any person to purchase or use' them. An end-cap, a shelf-talker, a 'baby corner' sign, a discount, a bundle, a loyalty point or a free gift on any of the 59 SKUs is a criminal offence.",
+      "status": "VERIFIED",
+      "evidence": "Primary text ss.3(a)(b)(c), 4(a)(b)(c), 2(j), https://www.bpni.org/docments/IMS-act.pdf",
+      "number": "Up to 3 years' imprisonment or Rs 5,000 fine or both (s.20(1))",
+      "soWhat": "This is enforceable in FusionERP8, not by a poster in the staff room. Put the 59 SKUs in a locked item group with ProductDiscount forced to 0, AllowOperatorDiscount=false, SPCommPercent=0 and exclusion from every scheme/promo table. Today all 59 already read ProductDiscount 0.00 / AllowOperatorDiscount false / SPCommPercent 0.00 — verified — so this is about keeping it that way, permanently, by design."
+    },
+    {
+      "claim": "IMS Act s.10(1) forbids paying any employee a commission based on the volume of formula/infant food/bottles sold. s.2(d) puts a pharmacy or drug store inside the 'health care system', and s.8(1) then bans any placard or poster promoting these products in it.",
+      "status": "VERIFIED",
+      "evidence": "Primary text ss.10(1), 2(d), 8(1), https://www.bpni.org/docments/IMS-act.pdf",
+      "number": "",
+      "soWhat": "Two forward traps. First: ARY has SalesPersonID [NONE] on 99.7% of bills, so there is no exposure today — but the moment a staff incentive scheme is built, infant products must be carved out of the commission base. Second: if the pharmacy counter is opened, it legally becomes part of the 'health care system' and can never display baby-formula material — so put the pharmacy and the baby aisle in different parts of the store from day one."
+    },
+    {
+      "claim": "IMS Act prosecutions can be launched not only by a food inspector or Class I officer but by 'a representative of such voluntary organisation engaged in the field of child welfare... as the Government may... authorise' (s.21(1)(c)). BPNI is the best-known such body and audits retailers.",
+      "status": "VERIFIED",
+      "evidence": "Primary text s.21(1)(c), https://www.bpni.org/docments/IMS-act.pdf; BPNI monitoring role described at https://ysph.yale.edu/news-article/indias-infant-milk-substitutes-act-monitoring-and-enforcement/",
+      "number": "",
+      "soWhat": "The usual comfort — 'no inspector will ever climb to Baru Sahib' — does not hold. A single photo of a discounted Lactogen shelf, taken by anyone and sent to an authorised NGO, is enough to start a complaint. Enforcement risk here is not proportional to remoteness."
+    },
+    {
+      "claim": "An HP retail drug licence costs exactly Rs 3,000, is applied for in Form 19 to the Drugs Control Licensing Authority via HPODLS, and must be granted within 21 days under the HP Public Service Guarantee Act. Rs 6,000 buys a combined retail + wholesale application.",
+      "status": "VERIFIED",
+      "evidence": "Primary: https://dhsr.hp.gov.in/Files/Checklist%20Grant%20of%20Retail_0.pdf (downloaded and text-extracted) — 'Copy of the online generated receipt of the Challan for Rs. 3000... Treasury Code: SOL05, DDO Code: 019, Major 0210, Sub-major 02, Minor 800, Sub-Head 09'. Plus https://dcla.hp.gov.in/ — 13 district circles including Sirmaur (Nahan), 'Time limit as per Public Service Guarantee Act 21 days', Rs 3,000 per licence type / Rs 6,000 combined.",
+      "number": "Rs 3,000; 21 days; treasury head 0210-02-800-09, DDO 019, Treasury SOL05",
+      "soWhat": "The fee is not the obstacle and neither is the timeline. The pharmacy is a Rs 3,000 government cost with a statutory 21-day clock in ARY's own district. The only real cost is the pharmacist."
+    },
+    {
+      "claim": "The binding constraint on the pharmacy is a person, not paper: HP requires a pharmacist registered specifically with the Himachal Pradesh Pharmacy Council, Shimla, employed full-time, not engaged in any other service or business, who swears a notarised affidavit to that effect and undertakes to give the Licensing Authority one month's notice before leaving.",
+      "status": "VERIFIED",
+      "evidence": "Primary: https://dhsr.hp.gov.in/Files/Checklist%20Grant%20of%20Retail_0.pdf — item 10 'Pharmacist's Registration certificate duly issued by the Himachal Pradesh Pharmacy Council, Shimla'; competent-person affidavit paras 1, 3, 5: 'is not engaged anywhere else in any kind of service or business', 'I shall intimate the Licensing Authority at least one month before leaving the firm'",
+      "number": "1 full-time HP-registered pharmacist; ~Rs 25,000-35,000/month in Sirmaur (ESTIMATED)",
+      "soWhat": "Recruit first, apply second. The affidavit is personal and criminal-liability-bearing, so a borrowed registration number from a Delhi pharmacist will not work — and if the pharmacist walks, the licence lapses. For a hill posting 30-50 km from a market this is the whole project risk. The Kalgidhar Trust's own hospital or Eternal University's pharmacy faculty is the obvious recruiting pool."
+    },
+    {
+      "claim": "Because Baru Sahib is rural, the HP drug-licence file needs a premises map 'duly stamped and signed by the Pradhan', not a municipal approved map — and because ARY is a unit of a private limited company, it needs a Board of Directors resolution authorising the applicant, plus the MoA/AoA and photo IDs of ALL directors.",
+      "status": "VERIFIED",
+      "evidence": "Primary: https://dhsr.hp.gov.in/Files/Checklist%20Grant%20of%20Retail_0.pdf items 5, 15, 16, 17",
+      "number": "2 notarised affidavits, 1 board resolution, 2 copies of site/layout plan to scale",
+      "soWhat": "Two things that stall files. The Pradhan's signature is a village-level dependency nobody plans for. And the board resolution has to come from Jivo Wellness Pvt Ltd's board in Delhi, not from the store — start that ~3 weeks before you want the licence."
+    },
+    {
+      "claim": "Schedule H1 drugs need a SEPARATE bound register recording prescriber name and address, patient name, drug and quantity, kept three years and open to inspection; Rule 65(11A) forbids substituting any other preparation for a Schedule H/H1/X prescription. Schedule X needs its own licence (Form 19-C application, Form 20-F retail) and a two-year register with duplicate prescriptions retained.",
+      "status": "ESTIMATED",
+      "evidence": "Corroborated across https://laafon.com/understanding-the-schedule-h1-drug-list/, https://ntep.in/node/938/CP-schedule-h-1-regulation, https://shelflifepro.in/blog/schedule-h1-drug-register-compliance-guide/ and https://www.bitmed.in/blogs/schedule-x-drugs-rules — consistent on register contents and the 3-year retention. I did not read the Rules text itself.",
+      "number": "H1 register: 3 years. Schedule X register: 2 years",
+      "soWhat": "Decide the pharmacy's scope up front. If ARY skips Schedule H1 (antibiotics, anti-TB, some sedatives) and Schedule X entirely, the daily compliance load drops to almost nothing and a single pharmacist can run the counter. A township school and university population mostly needs analgesics, antipyretics, ORS, antacids, antiseptics and first aid — none of which needs H1."
+    },
+    {
+      "claim": "A Form 20/21 drug licence does NOT cover medical devices. Retail sale of any notified medical device needs a separate Registration Certificate in Form MD-42 (applied for in Form MD-41) from the State Licensing Authority, mandatory for all four risk classes since 1 October 2022.",
+      "status": "VERIFIED",
+      "evidence": "Form titles quoted from https://thehealthmaster.com/2021/06/20/forms-all-types-of-medical-devices/ — MD-41 'Application for grant of registration certificate to sell, stock, exhibit or offer for sale or distribute a medical device', MD-42 the certificate itself. Scope and 1-Oct-2022 date from https://blogs.seyecs.com/medical-device-wholesale-license-md-41-and-md-42/ and https://www.corpseed.com/knowledge-centre/medical-device-wholesalers-traders-and-retailers-registration-cdsco-form-md-42",
+      "number": "Fee Rs 3,000 (Class A/B) / Rs 5,000 (Class C/D); 5-year validity (ESTIMATED)",
+      "soWhat": "This is the licence nobody expects, and it is the one that unlocks three of ARY's wanted categories at once. MD-42 covers thermometers (Class A), glucometers and strips, BP monitors, adult diapers, condoms, gloves, masks, wheelchairs and walkers — AND reading glasses. So 'Medicare' (Rs 3.40 L today), the whole optical idea, and adult incontinence for elderly residents all sit behind one Rs 3,000 registration, not behind a pharmacy."
+    },
+    {
+      "claim": "Mosquito coils, liquid vaporisers and household insect sprays need NO insecticide licence at ARY. Rule 10 of the Insecticides Rules 1971 exempts 'the retail sales of household insecticides from the building wherefrom other articles consumable by human beings or animals are usually sold provided such household insecticides have been registered as such and are packed and labelled in accordance with these rules'.",
+      "status": "VERIFIED",
+      "evidence": "Exemption wording returned identically by two independent readings of Rule 10: https://www.medindia.net/indian_health_act/insecticides-rules-1971-grant-of-licences.htm (via search) and https://www.legitquest.com/act/insecticides-rules-1971/9717",
+      "number": "Rs 0 licence cost. (Without the exemption: Rs 500 per insecticide capped at Rs 7,500, or Rs 250 per place for household products, reduced to one-fifth in rural areas)",
+      "soWhat": "A free win, and in a Sirmaur hill township with 5,000 residents including babies, mosquito control is a real need. But the exemption has two conditions with teeth: the product must be REGISTERED as a household insecticide and correctly labelled. That makes it a goods-inward check on the label — and it means no agricultural or garden pesticide can enter the store, because the moment it does, the full Rule 10 licence applies and Rule 10(1A) demands a graduate in Agricultural Sciences/Chemistry/Botany/Zoology or a 12-week MANAGE certificate on staff."
+    },
+    {
+      "claim": "ARY has NO e-waste registration or EPR duty as a retailer. The E-Waste (Management) Rules 2022 apply only to 'every manufacturer, producer, refurbisher, dismantler and recycler' (Rule 2), and Rule 4 offers only those four registration categories. 'Dealer, retailer, e-retailer' appear in the Rules solely inside the definition of 'producer' — as selling techniques of a brand owner (Rule 3(1)(t)).",
+      "status": "VERIFIED",
+      "evidence": "Primary text downloaded and read: https://cpcb.gov.in/uploads/Projects/E-Waste/e-waste_rules_2022.pdf — Rule 2, Rule 3(1)(b),(k),(t), Rule 4(1)-(4), Rule 8",
+      "number": "Rs 0; zero returns to file",
+      "soWhat": "Kills a phantom cost. Electricals, mobiles and LED lighting can be added with no environmental registration and no quarterly returns, as long as ARY buys branded goods from the brand owner or its distributor rather than assembling or private-labelling anything — the instant ARY puts its own name on a product it becomes a 'producer' and inherits full EPR."
+    },
+    {
+      "claim": "There IS one e-waste duty that could catch ARY, and it is as a consumer, not a seller. Rule 8: a 'bulk consumer' — any entity that has used at least 1,000 units of Schedule I electrical/electronic equipment in a financial year — must hand its own e-waste only to a registered producer, refurbisher or recycler.",
+      "status": "VERIFIED",
+      "evidence": "Primary text, same PDF: Rule 3(1)(b) definition, Rule 8 'Bulk consumers... shall ensure that e-waste generated by them shall be handed over only to the registered producer, refurbisher or recycler.'",
+      "number": "Threshold: 1,000 units of Schedule I EEE in a financial year",
+      "soWhat": "Across 11 counters plus the Trust's schools and university, tube lights, LED bulbs, POS terminals, CCTV and computers plausibly cross 1,000 units. Cheap to comply with (a named recycler and a paper trail) and expensive to be caught on. Worth a one-hour count before anyone claims it does not apply."
+    },
+    {
+      "claim": "FSSAI's turnover thresholds were raised with effect from 1 April 2026: Registration up to Rs 1.5 crore, State Licence Rs 1.5-50 crore, Central Licence above Rs 50 crore. ARY at Rs 7.55 crore trailing (annualising Rs 8.96 crore) sits squarely in State Licence territory on turnover.",
+      "status": "VERIFIED",
+      "evidence": "Two independent sources agreeing on figures and instrument: https://cliniexperts.com/regulatory-update/... (FSSAI order F. No. RCD-01002/1/2021-Regulatory-FSSAI-Part(1) [Comp. No. 4550] dated 13 March 2026) and https://www.mondaq.com/india/food-and-drugs-law/1801924/... (Amendment Regulations dated 10 March 2026, effective 1 April 2026). Previous limits were Rs 12 lakh / Rs 12 lakh-20 crore / above Rs 20 crore.",
+      "number": "Rs 1.5 Cr / Rs 1.5-50 Cr / Rs 50 Cr+; effective 01-04-2026",
+      "soWhat": "Good news that needs acting on: under the OLD rule (Rs 20 crore Central threshold) nothing changed for ARY, but the thresholds moved five months ago and every FSSAI answer written before April 2026 is now wrong. Re-check what licence each of the 11 counters actually holds — several small counters (Ary Lite Rs 18.4 L, Fruits & Veg Rs 50.1 L, G Canteen Rs 52.7 L) may now qualify for cheap Basic Registration instead of a State Licence."
+    },
+    {
+      "claim": "Turnover is not the only test. A food business with premises in two or more states must hold a CENTRAL licence for its head/registered office, with each state unit then holding its own licence. ARY has three GST registrations across Delhi (07AACCJ4223F1ZY), HP (02AACCJ4223F1Z8) and Punjab (03AACCJ4223F1Z6).",
+      "status": "ESTIMATED",
+      "evidence": "https://www.setindiabiz.com/fssai-applicability — 'Food businesses with premises in two or more states must obtain Central Licence at the head office/registered office level, with each unit in each state then separately requiring its own Central or State Licence.' Secondary source only; I could not open the FSS (Licensing and Registration) Regulations 2011 Schedule 1 text — every FSSAI PDF URL returned HTML, and foscos.fssai.gov.in renders via JavaScript.",
+      "number": "Central Licence fee Rs 7,500/year; State Rs 5,000/year; Basic Registration Rs 100/year (ESTIMATED)",
+      "soWhat": "If correct, this is a gap ARY may already have: a Rs 7,500/year Central Licence at the Delhi HO that nobody applied for, plus per-state licences. It is trivially cheap to fix and awkward to explain if an inspector finds it first. Verify against the FoSCoS 'Kind of Business' eligibility matrix before filing anything."
+    },
+    {
+      "claim": "Toys: no licence, but a hard prohibition on the SELLER. The Toys (Quality Control) Order 2020 bars any person from selling, distributing, STORING, hiring, leasing or exhibiting for sale a toy for under-14s that does not bear the ISI mark under a BIS licence. It covers IS 9873 Parts 1, 2, 3, 4, 7 and 9 plus IS 15644 for electric toys.",
+      "status": "VERIFIED",
+      "evidence": "https://www.services.bis.gov.in/php/BIS_2.0/BISBlog/toys-quality-control-order/ — 'no person is permitted to manufacture, import sell or distribute, store, hire, lease or exhibit for sale toys which do not conform to the Indian Standard and do not bear the ISI Mark'; standards list from https://www.standphillindia.in/qco/bis-qco-for-safety-of-toys-is-9873-is-15644-toys-quality-control-order-2020. Effective date: BIS says 1 Jan 2021, the other source says 1 Sep 2020 (probably the notification date) — the discrepancy does not change the obligation.",
+      "number": "7 Indian Standards; Rs 0 licence cost",
+      "soWhat": "Toys are a zero-licence, zero-fee category for a 5,000-person township full of school children — the cheapest new category on the list. The entire compliance burden is one line in the goods-inward SOP: no ISI mark on the box, the carton goes back. Note that 'storing' is in the prohibition, so a non-ISI carton in the Basement counter is already an offence even before it is sold."
+    },
+    {
+      "claim": "Legal Metrology bites in two different ways and only one applies to ARY today. A shop that USES weighing instruments must have them verified and stamped by the state Controller; a shop that SELLS weighing instruments is a 'dealer' and needs a licence in Form LD-1 under Rule 11(1) of the Legal Metrology (General) Rules 2011. ARY currently has zero SKUs flagged for weighing-scale export.",
+      "status": "ESTIMATED",
+      "evidence": "Dealer licence and penalties from https://www.mbgcorp.com/in/insights/compliance-guide-navigating-the-legal-metrology-act-2009-for-businesses-in-india/ (secondary). ARY side is VERIFIED: ary query SELECT COUNT(*) FROM ProductMaster WHERE IsActive=1 AND WeighingScaleExport=1 returned 0. HP's Weights & Measures Wing confirmed to exist under the Department of Food, Civil Supplies and Consumer Affairs (https://food.hp.gov.in/), but its fee schedule is behind a JavaScript menu I could not open.",
+      "number": "Wrong package declaration: fine up to Rs 50,000, extendable to Rs 1 lakh, 1 year for repeat (s.36). Dealer licence failure: up to Rs 25,000, 6 months for repeat",
+      "soWhat": "The trap is in the hardware/tools category specifically: the moment ARY stocks kitchen scales or luggage scales it becomes a dealer in weights and measures and needs LD-1. Everything else — Rule 6 declarations, MRP inclusive of taxes on the principal display panel — is a supplier-side duty ARY inherits by stocking, so it belongs in goods-inward, not in a licence file."
+    },
+    {
+      "claim": "HP base registrations are cheap, online-only and fast. Shops and Commercial Establishments registration costs Rs 50 to Rs 2,000 depending on headcount, is filed as Forms 1, 6 and 7 exclusively online at labour.hp.gov.in, is decided by the Labour Inspector, and carries a 15-day statutory timeline.",
+      "status": "VERIFIED",
+      "evidence": "Primary: https://labour.hp.gov.in/files/Service_Delivery_Process.PDF (downloaded, text-extracted). Fee table: no person Rs 50; up to 5 persons Rs 200; 6-10 Rs 300; 11-25 Rs 500; 25+ Rs 2,000. 'Department has mandated timelines (15 days after completion of all codal formalities) through the Public Service Delivery Guarantee Act... vide notification No. Shram (A)6-2/10-Part-File-1-L dated 27.02.2016.'",
+      "number": "Rs 50-2,000; Forms 1/6/7; 15 days",
+      "soWhat": "Every new counter — a pharmacy, a baby aisle in a new room, reactivating Talwandi Sabo — is its own establishment for this purpose. At Rs 500 for an 11-25 person shop this is noise financially, but it is the PREREQUISITE the trade licence checks for, so it has to be first in the queue."
+    },
+    {
+      "claim": "HP's trade licence is issued through the same labour portal but is decided by the local urban body — Municipal Corporation, Municipal Council or Nagar Panchayat — and its checklist is literally two items: a valid shop licence and the Shops and Commercial Establishment licence number. Fees are Rs 100/200/500 per year by scale of business, or Rs 700/1,400/3,500 for ten years.",
+      "status": "VERIFIED",
+      "evidence": "Primary: https://labour.hp.gov.in/Checklist%20and%20Procedure%20for%20Trade%20License.pdf (downloaded, text-extracted) — full fee table and the three routing paths (Municipal Corporation / Municipal Council / Nagar Panchayat, each via Junior Engineer then Municipal Engineer)",
+      "number": "Rs 100 / 200 / 500 per year (small / medium / large); Rs 700 / 1,400 / 3,500 for 10 years",
+      "soWhat": "Note what is missing from that routing list: a Gram Panchayat. Baru Sahib is in Rajgarh tehsil, rural — the HP drug-licence checklist itself proves it by asking rural applicants for a map signed by the Pradhan instead of a municipal map. So this municipal trade licence may simply not apply at Baru Sahib, while the Bathinda counter (Talwandi Sabo, a municipal town) does need one. Do not let a consultant bill for a trade licence that has no issuing authority."
+    },
+    {
+      "claim": "HP runs a Single Window Clearance System 2.0 with a 'Know Your Approval' questionnaire, 120+ online services and a 12-day average processing time, and the state is one of 34 on the central National Single Window System (325 central and 2,364 state approvals, with its own Know Your Approvals module).",
+      "status": "VERIFIED",
+      "evidence": "https://app.emerginghimachal.hp.gov.in/frontend/web/index.php (Department of Industries, HP — '120+ Online Services', '12 Days Average Processing Time', 'Know Your Approval (KYA)') and https://www.nsws.gov.in/",
+      "number": "120+ HP services; 12-day average; 2,364 state approvals on NSWS",
+      "soWhat": "Run KYA on both portals with ARY's real parameters (rural Sirmaur, retail trade, private limited unit, 11 counters) BEFORE hiring any consultant. It is free, it is the state's own authoritative answer, and it will catch the HP-specific items this lane could not reach — fire NOC being the main one."
+    },
+    {
+      "claim": "COTPA is not applicable and that is worth stating rather than assuming. ARY sells no tobacco by institutional policy, and the store sits inside the Akal Academy / Eternal University campus, where s.6(b) of COTPA 2003 independently prohibits tobacco sale within 100 yards of an educational institution.",
+      "status": "ESTIMATED",
+      "evidence": "Statutory content from working knowledge of COTPA 2003 ss.5, 6(b), 7; not re-verified this session — my WebSearch budget was exhausted before I reached it. Institutional context from the brief (Sikh institution, no tobacco, no alcohol).",
+      "number": "Rs 0",
+      "soWhat": "Two practical consequences. ARY needs no tobacco-vendor licence of the kind several states now demand, and the 100-yard rule means the policy is also the law — so no future manager can 'try' tobacco as a footfall driver, and no supplier can put a COTPA-regulated product into a mixed carton."
+    },
+    {
+      "claim": "GST rates after the 22 September 2025 reform favour every category ARY wants — but the specific figures I could obtain are secondary and at least three look wrong.",
+      "status": "ESTIMATED",
+      "evidence": "https://cleartax.in/s/gst-rates (effective 22 Sep 2025). I could not reach a primary source: cbic-gst.gov.in redirects to a JavaScript portal, and the PIB 56th-Council releases are ASP.NET viewstate pages that returned no readable text under curl.",
+      "number": "Reported: medicines 5% (33 lifesaving drugs nil), diapers/feeding bottles/infant food 5%, spectacles 5%, dog and cat food 5%, pressure cookers 5%, frozen veg 5%, nutraceuticals 5%, mobiles 18%, hand tools 18%. Reported toys 18% and helmets 18% and dairy 5% — I believe non-electronic toys are 5%, ISI helmets 5%, and UHT milk and paneer NIL.",
+      "soWhat": "Do not price a new category off this row. Every figure needs one check against CBIC Notification 9/2025-Central Tax (Rate) before it reaches a price label, because at ARY's Rs 207 average bill a 13-point rate error is the whole margin. The direction of travel is clear and helpful though: pharmacy, baby care, optical and pet food all landed at 5%."
+    },
+    {
+      "claim": "LPG cannot be added the way the other categories can. In HP, LPG cylinder retail runs through an oil-marketing-company distributorship selected by the state Department of Food, Civil Supplies and Consumer Affairs, which publishes its own 'Guidelines for selection of LPG Distributorship' and maintains lists of Gas Dealers and Petrol Dealers.",
+      "status": "NOT-CHECKED",
+      "evidence": "The HP department page and those exact menu items are VERIFIED at https://food.hp.gov.in/. The PESO side is NOT-CHECKED: peso.gov.in returned ECONNREFUSED on 164.100.166.115:443 throughout this session, so I have no verified figure for the Gas Cylinders Rules 2016 licence forms or the exemption quantity below which LPG may be held without a licence.",
+      "number": "",
+      "soWhat": "Treat LPG cylinders as out of scope for this expansion — it is a distributorship allotment, not a licence purchase, and Baru Sahib almost certainly already has one. LPG ACCESSORIES are a different and probably viable question (regulators and suraksha hoses are under compulsory BIS certification), but I could not verify the standards, so nobody should order stock on my word."
+    },
+    {
+      "claim": "Three obligations remain genuinely unresolved and I am not going to guess them: the Battery Waste Management Rules 2022 duty (if any) on a retailer selling third-party branded batteries; whether pet food needs any registration and which authority owns it; and HP's fire NOC thresholds, fee and issuing route for a retail building.",
+      "status": "NOT-CHECKED",
+      "evidence": "Battery rules: cpcb.gov.in/rules-4/ is a link directory with no rule text, and the gazette PDF I retrieved (CG-DL-E-13082022-238098) was a different notification. Pet food: fssai.gov.in/cms/pet-food.php renders via JavaScript; vetlegal.in does not resolve; corpseed's page had no substance. Fire: hpfireservices.hp.gov.in, hpfire.hp.gov.in and fire.hp.gov.in are all NXDOMAIN.",
+      "number": "",
+      "soWhat": "These three are exactly what the HP Single Window 'Know Your Approval' questionnaire and one phone call to the Nahan drug/food offices will answer in an afternoon. Do not let them hold up the P0 items — none of them carries anything like the penalty attached to the drugs and infant-food gaps."
+    }
+  ],
+  "tables": [
+    {
+      "title": "Licence map: every new category ARY wants, and whether it can start without one",
+      "columns": [
+        "Category",
+        "Licence / registration needed",
+        "Authority",
+        "Form",
+        "Fee",
+        "Timeline",
+        "Can ARY start WITHOUT it?"
+      ],
+      "rows": [
+        [
+          "Pharmacy — allopathic (Crocin, Disprin, Volini, ORS, antacids)",
+          "Retail drug licence Form 20 (+ Form 21 if any Schedule C/C1 item needs a fridge)",
+          "Drugs Control Licensing Authority HP, Sirmaur circle at Nahan, via HPODLS",
+          "Application in Form 19",
+          "Rs 3,000 (Rs 6,000 if retail+wholesale)",
+          "21 days statutory (HP PSGA)",
+          "NO — and 14 such SKUs are already live. s.18(c) D&C Act 1940"
+        ],
+        [
+          "Ayurvedic / ASU (Moov, Himani, Dabur, Boroline)",
+          "None for retail sale of ASU drugs",
+          "—",
+          "—",
+          "Rs 0",
+          "—",
+          "YES — already selling, no gap"
+        ],
+        [
+          "Medical devices (thermometer, glucometer + strips, BP monitor, condoms, gloves, adult diapers, wheelchairs, READING GLASSES)",
+          "Registration Certificate Form MD-42",
+          "State Licensing Authority (State Drug Controller), HP",
+          "Application in Form MD-41",
+          "Rs 3,000 Class A/B, Rs 5,000 Class C/D (ESTIMATED)",
+          "30 working days after inspection; 45-90 days in practice (ESTIMATED)",
+          "NO. A Form 20/21 does NOT cover devices — separate registration since 01-10-2022"
+        ],
+        [
+          "Baby care — infant formula, infant food, feeding bottles, teats, soothers",
+          "No extra licence beyond FSSAI. But the IMS Act 1992 governs CONDUCT absolutely",
+          "FSSAI (product) + food inspector / Class I officer / authorised child-welfare NGO (enforcement)",
+          "—",
+          "Rs 0",
+          "—",
+          "YES to stock, NO to promote. 59 SKUs already live. Selling without the BIS Standard Mark = minimum 6 months' imprisonment (s.20(2))"
+        ],
+        [
+          "Baby care — diapers, wipes, baby oil, baby soap",
+          "None beyond FSSAI/LMPC label checks",
+          "—",
+          "—",
+          "Rs 0",
+          "—",
+          "YES — Pampers already selling"
+        ],
+        [
+          "Food supplements / nutraceuticals (retail only)",
+          "Covered by the FSSAI licence ARY needs anyway",
+          "FSSAI",
+          "—",
+          "Included",
+          "—",
+          "YES. (MANUFACTURERS need a Central Licence; a retailer does not)"
+        ],
+        [
+          "Dairy / frozen / chilled",
+          "FSSAI State Licence + Schedule 4 Part II hygiene and cold-chain conditions",
+          "FSSAI (FoSCoS)",
+          "Form B",
+          "Rs 5,000/yr State (ESTIMATED)",
+          "30-60 days",
+          "YES if the counter's FSSAI licence already lists the right Kind of Business — check per counter"
+        ],
+        [
+          "Toys",
+          "No licence. Absolute ban on selling, storing or exhibiting non-ISI toys",
+          "BIS (Toys QCO 2020, DPIIT)",
+          "—",
+          "Rs 0",
+          "—",
+          "YES — but only ISI-marked stock. IS 9873 Parts 1,2,3,4,7,9 + IS 15644"
+        ],
+        [
+          "Mosquito coils / liquid vaporisers / household insect sprays",
+          "NONE — Rule 10 household-insecticide exemption applies to a shop selling consumable articles",
+          "(exempt)",
+          "—",
+          "Rs 0",
+          "—",
+          "YES. Conditions: product REGISTERED as a household insecticide and correctly labelled. No agricultural pesticide, ever"
+        ],
+        [
+          "Electricals, mobiles, LED lighting",
+          "No EPR registration for a retailer. Buy branded goods only; check BIS/CRS mark",
+          "(none on ARY) BIS/MeitY on the brand owner",
+          "—",
+          "Rs 0",
+          "—",
+          "YES — E-Waste Rules 2022 Rule 2 does not reach a retailer"
+        ],
+        [
+          "Hardware / tools",
+          "None — UNLESS stocking weighing instruments, then a dealer licence in Form LD-1",
+          "Controller of Legal Metrology, HP (Weights & Measures Wing)",
+          "LD-1 (Rule 11(1), LM General Rules 2011)",
+          "State scale (ESTIMATED)",
+          "—",
+          "YES for tools. NO for kitchen/luggage scales without LD-1"
+        ],
+        [
+          "Optical / eyewear",
+          "Reading glasses are Class A medical devices → MD-42. Prescription dispensing has no central licence",
+          "State Licensing Authority",
+          "MD-41 → MD-42",
+          "Rs 3,000 (ESTIMATED)",
+          "45-90 days",
+          "NO for ready readers. Same MD-42 as the device category — one filing covers both"
+        ],
+        [
+          "Pet care — packaged food",
+          "NOT-CHECKED — could not verify the authority",
+          "(unresolved)",
+          "—",
+          "—",
+          "—",
+          "UNKNOWN. Run HP Single Window 'Know Your Approval' before ordering"
+        ],
+        [
+          "Pet care — dewormers, flea/tick treatment",
+          "Veterinary drugs → a drug licence with veterinary scope",
+          "Drugs Control Licensing Authority HP",
+          "Form 19 → Form 20",
+          "Rs 3,000",
+          "21 days",
+          "NO"
+        ],
+        [
+          "LPG cylinders",
+          "Oil-marketing-company distributorship + PESO storage licence",
+          "HP Dept of Food, Civil Supplies & Consumer Affairs (distributorship) + PESO",
+          "Allotment, not application",
+          "n/a",
+          "Months to years",
+          "NO — out of scope. Not a licence you can buy"
+        ],
+        [
+          "Tobacco",
+          "N/A — none sold. COTPA s.6(b) bans sale within 100 yards of an educational institution anyway",
+          "—",
+          "—",
+          "Rs 0",
+          "—",
+          "N/A. No tobacco-vendor licence needed"
+        ]
+      ]
+    },
+    {
+      "title": "The live exposure today — pulled from FusionERP8, not assumed",
+      "columns": [
+        "What",
+        "Active SKUs",
+        "12-month bill lines",
+        "12-month value (Rs)",
+        "Statute breached",
+        "Worst-case penalty"
+      ],
+      "rows": [
+        [
+          "Allopathic drugs — Crocin 500mg, Disprin, Volini gel/spray",
+          "14",
+          "183 lines across 181 bills",
+          "8,848.56",
+          "Drugs and Cosmetics Act 1940 s.18(c) — sale of a drug without a licence",
+          "Imprisonment 3-5 years + fine not less than Rs 1 lakh or 3x value (s.27(b)(ii)) — ESTIMATED, not re-verified this session"
+        ],
+        [
+          "Infant milk substitutes — Lactogen-1, Lactogen-3",
+          "9",
+          "0",
+          "0",
+          "IMS Act 1992 s.3/s.4 (promotion), s.11(1) (BIS Standard Mark)",
+          "s.20(2): minimum 6 months' imprisonment, minimum Rs 2,000 fine"
+        ],
+        [
+          "Infant food — Cerelac range (34 SKUs, incl. explicit '6M+' and '8M+' packs)",
+          "34",
+          "—",
+          "3,878",
+          "IMS Act 1992 s.2(f) — complement to mother's milk, 6 months to 2 years",
+          "Same as above"
+        ],
+        [
+          "Feeding bottles, nipples, milk feeders, soothers — Bonne, Camera",
+          "16",
+          "—",
+          "2,547",
+          "IMS Act 1992 s.11(2) — no sale without the BIS Standard Mark on the container",
+          "s.20(1): up to 3 years or Rs 5,000 or both"
+        ],
+        [
+          "Ayurvedic / proprietary — Moov range",
+          "(9 sold)",
+          "138 lines",
+          "13,768",
+          "None. Retail sale of ASU drugs needs no licence",
+          "Nil"
+        ],
+        [
+          "TOTAL at-risk revenue",
+          "59 + 14",
+          "—",
+          "15,273.56",
+          "",
+          "Two statutes with mandatory-minimum sentences, for Rs 1,273/month of turnover"
+        ]
+      ]
+    },
+    {
+      "title": "HP base registrations — verified fees, no estimates",
+      "columns": [
+        "Registration",
+        "Authority",
+        "Form",
+        "Fee",
+        "Statutory timeline",
+        "Source"
+      ],
+      "rows": [
+        [
+          "Shops and Commercial Establishments (per establishment)",
+          "Labour Inspector, HP Dept of Labour & Employment, online only at labour.hp.gov.in",
+          "Forms 1, 6, 7 (e-forms)",
+          "Rs 50 (no staff) / Rs 200 (≤5) / Rs 300 (6-10) / Rs 500 (11-25) / Rs 2,000 (25+)",
+          "15 days — PSDG Act, notification No. Shram (A)6-2/10-Part-File-1-L dated 27.02.2016",
+          "labour.hp.gov.in/files/Service_Delivery_Process.PDF"
+        ],
+        [
+          "Trade Licence (urban bodies only)",
+          "Municipal Corporation / Municipal Council / Nagar Panchayat, filed via labour.hp.gov.in",
+          "Portal form; checklist is just a valid shop licence + the S&CE licence number",
+          "Small Rs 100/yr or Rs 700/10yr; Medium Rs 200/yr or Rs 1,400/10yr; Large Rs 500/yr or Rs 3,500/10yr",
+          "Not stated",
+          "labour.hp.gov.in/Checklist and Procedure for Trade License.pdf"
+        ],
+        [
+          "Retail drug licence",
+          "Drugs Control Licensing Authority HP, Sirmaur circle (Nahan), via HPODLS",
+          "Form 19; licence issues as Form 20 / Form 21",
+          "Rs 3,000 (Rs 6,000 retail+wholesale). Challan: Treasury SOL05, DDO 019, 0210-02-800-09",
+          "21 days — HP Public Service Guarantee Act",
+          "dhsr.hp.gov.in/Files/Checklist Grant of Retail_0.pdf; dcla.hp.gov.in"
+        ],
+        [
+          "FSSAI (per premises)",
+          "FSSAI via FoSCoS",
+          "Form A (Registration) / Form B (Licence)",
+          "Basic Registration Rs 100/yr; State Rs 5,000/yr; Central Rs 7,500/yr (ESTIMATED)",
+          "30-60 days",
+          "setindiabiz / cliniexperts (thresholds VERIFIED from the 13-03-2026 FSSAI order)"
+        ],
+        [
+          "Fire NOC",
+          "NOT-CHECKED — every HP fire-services domain is NXDOMAIN",
+          "—",
+          "—",
+          "—",
+          "Use HP Single Window 'Know Your Approval'"
+        ]
+      ]
+    },
+    {
+      "title": "IMS Act — the six controls that must live in FusionERP8, not in a staff briefing",
+      "columns": [
+        "Control",
+        "Statutory basis",
+        "Current state in the ERP",
+        "Action"
+      ],
+      "rows": [
+        [
+          "No discount of any kind on the 59 SKUs",
+          "s.3(c) + s.2(j) — promotion is 'any method of encouraging any person to purchase or use'",
+          "ProductDiscount 0.00, AllowOperatorDiscount false on all 59 — VERIFIED clean today",
+          "Lock it. Flag the item group so no counter operator or scheme can ever set a discount"
+        ],
+        [
+          "No scheme, bundle, combo or loyalty point",
+          "s.4(c) — 'offer inducement of any other kind'",
+          "Not checked against the scheme/promo tables",
+          "Exclude the group from every scheme table and audit it monthly"
+        ],
+        [
+          "No sales commission on these SKUs",
+          "s.10(1) — remuneration may not be fixed on volume of sale",
+          "SPCommPercent 0.00 on all 59; SalesPersonID is [NONE] on 99.7% of bills",
+          "Carve the group out permanently, BEFORE any staff incentive scheme is built"
+        ],
+        [
+          "BIS Standard Mark verified at goods inward",
+          "s.11(1) formula and infant food; s.11(2) feeding bottles",
+          "No control exists",
+          "Block GRN on the item group without a recorded ISI/BIS mark check. This is the one carrying a minimum 6-month sentence"
+        ],
+        [
+          "No free sample, no gift, no utensil giveaway",
+          "s.4(a)",
+          "No control exists",
+          "Bar the group from any sample/giveaway document type"
+        ],
+        [
+          "No display material, poster, shelf-talker or 'baby corner' signage — and never inside a pharmacy counter",
+          "s.3(a) advertisement (which includes any label, wrapper, notice or visible representation); s.8(1) read with s.2(d), which puts a pharmacy inside the 'health care system'",
+          "No control exists",
+          "Written store rule + physical separation of the pharmacy from the baby aisle from day one"
+        ]
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "step": "Freeze the two live exposures the same day. Pull the 14 allopathic SKUs (Crocin, Disprin, Volini) from every counter's sellable list, and pull the 9 Lactogen SKUs and any feeding bottle whose container cannot be shown to carry a BIS Standard Mark. This is not a de-listing decision, it is a pause while step 2 runs — nothing is written to the ERP by me; the counter in-charge does it.",
+      "sequence": 1,
+      "owner": "ARY store manager, Baru Sahib (execution) — Daman's call on scope",
+      "cost": "revenue paused: Rs 1,273/month",
+      "duration": "1 day",
+      "dependsOn": "Nothing. This is the step that stops the clock on a mandatory-minimum-sentence statute"
+    },
+    {
+      "step": "Write the IMS Act controls into FusionERP8 as configuration, not policy: a locked item group covering all 59 infant SKUs, with discount, scheme, commission and giveaway all structurally impossible, and a goods-inward block until a BIS mark check is recorded. Then, and only then, the paused baby SKUs come back on sale.",
+      "sequence": 2,
+      "owner": "FusionERP8 administrator + ARY store manager",
+      "cost": "none",
+      "duration": "1 week",
+      "dependsOn": "Step 1"
+    },
+    {
+      "step": "Recruit one pharmacist registered with the Himachal Pradesh Pharmacy Council, Shimla, willing to be full-time and exclusive at Baru Sahib. Start with the Kalgidhar Trust's own hospital staff and Eternal University's pharmacy faculty and alumni — a hill posting 30-50 km from a market will not fill from a job board. Get the person before touching the licence file: the affidavit is personal and criminal-liability-bearing.",
+      "sequence": 3,
+      "owner": "ARY HR with The Kalgidhar Trust",
+      "cost": "Rs 25,000-35,000/month salary (ESTIMATED)",
+      "duration": "4-8 weeks",
+      "dependsOn": "Independent of steps 1-2; start it on day one, in parallel"
+    },
+    {
+      "step": "Assemble the HP drug-licence file while recruiting runs: two notarised affidavits in the department's prescribed language, a site and layout plan to scale in 2 original copies, the premises map stamped and signed by the Pradhan (rural rule), the Jivo Wellness Pvt Ltd board resolution authorising the applicant, MoA/AoA, and photo IDs of every director. The board resolution has the longest lead time — start it three weeks early.",
+      "sequence": 4,
+      "owner": "Jivo Wellness Pvt Ltd company secretary (board resolution) + ARY store manager (premises, Pradhan)",
+      "cost": "Rs 3,000 government fee + ~Rs 5,000 notary/drafting (ESTIMATED)",
+      "duration": "3-4 weeks, overlapping step 3",
+      "dependsOn": "Board meeting date and the Pradhan's availability"
+    },
+    {
+      "step": "File Form 19 on HPODLS with the Rs 3,000 challan to Treasury SOL05 / DDO 019 / head 0210-02-800-09, addressed to the Sirmaur (Nahan) circle. Hold the department to its 21-day HP Public Service Guarantee Act clock — cite the PSGA in the covering letter.",
+      "sequence": 5,
+      "owner": "ARY store manager, Baru Sahib",
+      "cost": "Rs 3,000",
+      "duration": "21 days statutory",
+      "dependsOn": "Steps 3 and 4 both complete — the pharmacist's registration certificate and affidavit are part of the file"
+    },
+    {
+      "step": "File Form MD-41 for the MD-42 medical device registration in the same visit to the same State Licensing Authority. One filing unlocks three wanted categories at once: Medicare devices, adult incontinence, and the entire optical/reading-glasses idea. Restrict the application to Class A and B to keep the fee at Rs 3,000 and the technical-staff bar low.",
+      "sequence": 6,
+      "owner": "ARY store manager, Baru Sahib",
+      "cost": "Rs 3,000 (ESTIMATED)",
+      "duration": "45-90 days",
+      "dependsOn": "Step 5 — same authority, same premises documents, so bundle the visit"
+    },
+    {
+      "step": "Run the HP Single Window 'Know Your Approval' questionnaire and the NSWS 'Know Your Approvals' module with ARY's real parameters — rural Sirmaur, retail trade, a unit of a private limited company, 11 counters — to close the four items this research could not reach: fire NOC, battery waste, pet food, and whether a Gram Panchayat area needs a trade licence at all. Free, authoritative, and it stops a consultant billing for a licence with no issuing authority.",
+      "sequence": 7,
+      "owner": "Jivo Wellness compliance / whoever holds the GST portal logins",
+      "cost": "none",
+      "duration": "1 day of clicking, plus one call each to the Nahan drug and food offices",
+      "dependsOn": "Nothing — can run in parallel from day one"
+    },
+    {
+      "step": "Audit the FSSAI position across all 11 counters against the thresholds that changed on 1 April 2026 (Registration up to Rs 1.5 Cr, State Rs 1.5-50 Cr, Central above Rs 50 Cr), and check whether Jivo Wellness needs a Central Licence at its Delhi head office because ARY has food premises in Delhi, HP and Punjab. Several small counters may now downgrade to a Rs 100/year Basic Registration.",
+      "sequence": 8,
+      "owner": "Jivo Wellness compliance",
+      "cost": "Rs 7,500/year Central Licence if the multi-state rule applies; net saving possible on the small counters",
+      "duration": "2 weeks",
+      "dependsOn": "Step 7 confirms the multi-state head-office rule against the FoSCoS Kind of Business matrix"
+    },
+    {
+      "step": "Add the no-licence categories, which are the cheapest growth on the whole list: toys (ISI mark check at goods inward only), household insecticides (Rule 10 exemption — registered and labelled products only, never an agricultural pesticide), electricals and mobiles (no EPR duty on a retailer), and hardware and tools (LD-1 only if weighing scales are stocked). Compliance for all four is one paragraph in the goods-inward SOP.",
+      "sequence": 9,
+      "owner": "ARY category buyer",
+      "cost": "working capital only",
+      "duration": "4-6 weeks",
+      "dependsOn": "Nothing licence-wise. Sequenced last only because steps 1-2 are more urgent"
+    },
+    {
+      "step": "Verify every GST rate against CBIC Notification 9/2025-Central Tax (Rate) before a single price label is printed. My figures are secondary and I believe at least three are wrong — non-electronic toys, ISI helmets, and UHT milk/paneer. At a Rs 207 average bill, a 13-point rate error is the entire margin.",
+      "sequence": 10,
+      "owner": "Jivo Wellness tax desk (Divya's box has the tax role)",
+      "cost": "none",
+      "duration": "2 days",
+      "dependsOn": "Step 9 category list is fixed"
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Stop selling Crocin, Disprin and Volini today, or file Form 19 this month. Rs 8,849 a year of turnover is carrying a Drugs and Cosmetics Act s.18(c) exposure whose fine floor is Rs 1 lakh. There is no third option and no version of this where waiting is the cheap choice.",
+      "priority": "P0",
+      "monthlyImpactInr": -737,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none — the SKUs can be blocked at the counter without touching a licence"
+    },
+    {
+      "action": "Lock the 59 infant SKUs into a discount-proof, scheme-proof, commission-proof item group in FusionERP8, and block goods inward on them until a BIS Standard Mark check is recorded. The IMS Act is the only statute found in this lane with a MANDATORY MINIMUM prison sentence, and prosecutions can be launched by an authorised child-welfare NGO, not only by an inspector — remoteness is not protection.",
+      "priority": "P0",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none. All 59 SKUs already read discount 0 and commission 0 — this makes it structural instead of accidental"
+    },
+    {
+      "action": "Recruit an HP-Pharmacy-Council-registered pharmacist from inside the Baru Sahib ecosystem — the Trust's hospital or Eternal University's pharmacy faculty — and open a real Form 20 pharmacy. A 5,000-person captive population 30-50 km of hill road from the nearest market, with a residential school, a university and married staff families, is the single best pharmacy catchment ARY will ever have, and the licence itself costs Rs 3,000 with a 21-day statutory clock.",
+      "priority": "P1",
+      "monthlyImpactInr": 250000,
+      "oneOffCostInr": 38000,
+      "effort": "months",
+      "blocker": "Finding a pharmacist willing to live at Baru Sahib. Everything else in the file is paperwork"
+    },
+    {
+      "action": "File Form MD-41 for an MD-42 registration in the same trip as the drug licence, restricted to Class A and B. One Rs 3,000 filing legitimises Medicare devices, adult incontinence for elderly residents, AND the entire optical/reading-glasses category — and a Form 20/21 does not cover any of them.",
+      "priority": "P1",
+      "monthlyImpactInr": 90000,
+      "oneOffCostInr": 3000,
+      "effort": "weeks",
+      "blocker": "none — same authority and same premises documents as the drug licence"
+    },
+    {
+      "action": "Add household insecticides now. Rule 10 of the Insecticides Rules 1971 exempts retail sale of registered, correctly-labelled household insecticides from a shop that already sells consumables — so a Sirmaur hill township with 5,000 residents including babies gets mosquito control at zero licence cost. The one hard rule: no agricultural or garden pesticide ever enters the store, because that triggers the full licence plus a graduate-in-agriculture staffing requirement.",
+      "priority": "P1",
+      "monthlyImpactInr": 25000,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Add toys with an ISI-mark rule at goods inward. Zero licence, zero fee, and the customer base is a residential school. But the Toys QCO 2020 prohibition covers STORING and EXHIBITING, not just selling — so a non-ISI carton sitting in the Basement counter is already an offence. One line in the goods-inward SOP: no ISI mark on the box, the carton goes back.",
+      "priority": "P1",
+      "monthlyImpactInr": 35000,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "none"
+    },
+    {
+      "action": "Run HP Single Window 'Know Your Approval' and NSWS 'Know Your Approvals' before hiring any compliance consultant. It is free, it is the state's own answer, and it closes the four gaps this research could not reach — fire NOC, battery waste, pet food, and whether a Gram Panchayat area needs a trade licence at all. Baru Sahib is rural, and a Gram Panchayat is not on HP's trade-licence routing list.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Re-audit FSSAI across all 11 counters against the thresholds that changed on 1 April 2026, and settle the multi-state head-office question. Every FSSAI answer written before April 2026 is now wrong: Basic Registration went from Rs 12 lakh to Rs 1.5 crore, so Ary Lite, Fruits & Veg and G Canteen may each drop to a Rs 100/year registration — while Jivo Wellness may owe a Rs 7,500/year Central Licence at its Delhi HO that nobody has filed.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 7500,
+      "effort": "weeks",
+      "blocker": "Needs confirmation against the FoSCoS Kind of Business eligibility matrix — my source for the multi-state rule is secondary"
+    },
+    {
+      "action": "Add electricals, mobiles and hardware/tools. No EPR registration, no e-waste returns and no licence, provided ARY sells branded goods bought from the brand owner or its distributor. Two conditions: never private-label anything (that makes ARY a 'producer' with full EPR), and take a dealer licence in Form LD-1 before stocking any kitchen or luggage weighing scale.",
+      "priority": "P2",
+      "monthlyImpactInr": 80000,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "none"
+    },
+    {
+      "action": "Count Schedule I electrical and electronic units in use across the 11 counters and the Trust's campus. Cross 1,000 in a financial year and ARY becomes a 'bulk consumer' under Rule 8 of the E-Waste Rules 2022 and may hand its own e-waste only to a registered recycler. Cheap to comply with, awkward to be caught on, and one hour of counting settles it.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Drop LPG cylinders from the expansion list. It is an oil-marketing-company distributorship allotted through the HP Department of Food, Civil Supplies and Consumer Affairs, not a licence anyone can buy, and Baru Sahib almost certainly already has one. LPG accessories may be viable but I could not verify their BIS position, so nobody should order stock on my word.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "peso.gov.in refused connection throughout this session — this needs a call to the Nahan food office, not more desk research"
+    }
+  ],
+  "openQuestions": [
+    "Does Schedule K entry 5 of the Drugs and Cosmetics Rules 1945 excuse ARY's Crocin/Disprin sales as 'household remedies'? Its condition is a village population under 1,000 and no licensed dealer nearby. Baru Sahib has ~5,000 residents, so I believe the exemption fails — but I could not read Schedule K live and this single point decides whether the P0 is urgent or merely tidy. Ask: Drugs Control Licensing Authority, Sirmaur circle at Nahan.",
+    "Are the 'Bonne Plastic Feeding Bottle 250 Ml / 125Ml' and the Cerelac and Lactogen containers currently carrying the BIS Standard Mark? This is a physical inspection nobody can do from a database, and it is the one question attached to a mandatory-minimum six-month sentence. Ask: ARY store manager, with the cartons in hand.",
+    "Does Jivo Wellness Pvt Ltd already hold an FSSAI Central Licence at its registered office? ARY has food premises in Delhi, HP and Punjab, which per a secondary source triggers a Central Licence at the head office. Ask: Jivo Wellness compliance, then verify on the FoSCoS Kind of Business eligibility matrix.",
+    "What FSSAI licence does each of the 11 counters actually hold today, and does its 'Kind of Business' cover dairy, frozen and nutraceuticals? Ask: whoever holds the FoSCoS logins.",
+    "What is HP's fire NOC threshold, fee and issuing route for a retail building at Baru Sahib? Every HP fire-services domain is NXDOMAIN. Ask: HP Single Window 'Know Your Approval', or the Sirmaur Deputy Commissioner's office.",
+    "Does a Gram Panchayat area need a trade licence at all? HP's own routing covers only Municipal Corporation, Municipal Council and Nagar Panchayat, and the drug-licence checklist treats rural areas separately (Pradhan-signed map). Ask: labour.hp.gov.in helpdesk, 18001808076.",
+    "Which authority regulates pet food in India in 2026 — FSSAI, BIS or the Department of Animal Husbandry and Dairying — and does a retailer need anything? Every source I tried was unreachable or empty. Ask: NSWS 'Know Your Approvals', or FSSAI's own helpline.",
+    "Do the Battery Waste Management Rules 2022 place any duty on a shop selling third-party branded batteries? CPCB's page is a link directory and the gazette PDF I retrieved was a different notification. Ask: HP State Pollution Control Board, or CPCB's EPR helpdesk.",
+    "Are the post-22-September-2025 GST rates I have correct? I believe cleartax is wrong on non-electronic toys (5%, not 18%), ISI helmets (5%, not 18%) and UHT milk/paneer (nil, not 5%). Ask: the Jivo Wellness tax desk, against CBIC Notification 9/2025-Central Tax (Rate).",
+    "Are my revenue estimates for the new categories anywhere near right? monthlyImpactInr figures in this lane are my own derivations from Rs 1,259 spend per resident per month and a 5,000-person base — they are ESTIMATED, not modelled, and the pharmacy figure of Rs 2.5 lakh/month is the one most likely to be wrong in either direction. Ask: the assortment/wallet lane, which has the spend data."
+  ]
+}

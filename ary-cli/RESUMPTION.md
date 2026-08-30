@@ -5,7 +5,52 @@
 > `assort/vault/00-ARY-Atlas.md`, then pick up at "What to run first" below.**
 
 **Paused:** 2026-08-29, 00:20 IST · **Reason:** Anthropic session quota exhausted
-**Owner:** Daman · **Resumes:** when the user says so, in this chat or any other
+**RESUMED:** 2026-08-30 · **Owner:** Daman
+
+## ⚡ What changed on resumption (2026-08-30) — read this before anything else
+
+1. **THE DATA IS LIVE AGAIN.** The internal physical stock audit that froze the feed at
+   2026-08-21 is over. Sales, purchases and accounting now run to **2026-08-30**
+   (1,099,364 bills; ~1,100-1,200 bills/day since 08-22, normal). **Every figure in the
+   vault and in VERIFIED-FACTS.md is windowed to 2026-08-21 and is now slightly stale.**
+   Catalogue is 21,472 SKUs / 19,487 active (was 21,466 / 19,481).
+2. **10 "missing" demand lanes were never missing — they were unharvested.**
+   `harvest.py` pulled them straight out of the workflow journals: demand **36 → 46
+   (COMPLETE)**, sweep **10 → 15**. Zero agent cost. Gap #3 below is CLOSED.
+3. **Two dated, legal findings were buried by the quota wall** — see "Live exposures" below.
+   Neither is in the published brief.
+4. **✅ The `verify` + `priority` stages are DONE** — workflow `wf_b45e4f60-a14`,
+   38/38 agents. **293 claims tested, 106 REFUTED, 91 load-bearing. 7 of 15 lanes now
+   rate LOW.** Full record: **`assort/vault/05-corrections/Verify-Pass-2026-08-30.md`
+   — READ THAT BEFORE QUOTING ANY FIGURE FROM THIS VAULT OR THE PUBLISHED BRIEF.**
+5. **Coverage diff COMPLETE — 46/46.** (A `timeout 900 ... | tail` pipeline had masked
+   a kill at 24/46: a pipeline returns `tail`'s exit code, not `timeout`'s. Re-run
+   unbuffered.) Across the 22 new categories: **1,280 SKU lines checked, 8 missing.**
+6. **The finding: 3,049 of 5,953 retail SKUs that sold this year are OUT OF STOCK today
+   (51.2%), with Rs 1.51 Cr of trailing sales behind them — 27 of the top 100 sellers
+   among them.** Sizing verdict across 21 categories: **18 AVAILABILITY_NOT_ASSORTMENT,
+   2 REAL_GAP, 1 FALSE_GAP.** The fleet's Rs 13.3 Cr of recommendations grounded to
+   **Rs 53 L revenue / Rs 9.8 L GM — a 96% cut.**
+7. **🔴 The biggest customer sells at cost.** Hunger Heroes (Delhi NGO, 9.2% of turnover):
+   **1.04% GM on Rs 69.81 L** vs retail's 24.42%. Loose milk to them is **-10.49%**, and
+   **100% of the -Rs 67,094 loose-milk loss goes to that NGO — zero litres to campus
+   residents.** Any framing of it as a subsidy for boarding children is wrong.
+8. **🔴 REVERSED: FusionERP8 CANNOT hold batch/expiry.** An earlier correction saying it
+   could was wrong. `ProductChildMaster` = 111,253 rows, **0 real expiry dates**; only
+   MatrixID 3 covers 49 SKUs (0.25%) while MatrixID 4 covers 19,054 and defines no such
+   fields; Benadryl's "22 batches" are nine years of price revisions. **The pharmacy
+   blocker is REAL — restore the vendor question.**
+9. **🔧 `ary assort probe` is NON-DETERMINISTIC and silently zeroes on hyphens.** It is
+   the mandated anti-false-gap guard, so **every "probe returned zero" verdict is unsafe.**
+   Fix before trusting further output.
+
+### 🔴 Live exposures found in the newly harvested lanes (hand-verified against live DB)
+
+| | Lane finding | My live re-check | Status |
+|---|---|---|---|
+| **Allopathic drugs, no Form 20 licence** | Rs 8,849/yr, 183 lines | **Rs 29,668/yr, 598 bill lines, 14 active SKUs** (Volini gel/spray, Disprin, Crocin) | ⚠️ **3.4x worse than the lane said**. NOTE: Schedule K of the D&C Rules exempts certain household remedies in rural areas — a lawyer or the drug inspector must settle whether it applies before either de-listing or filing Form 19. I did NOT confirm this either way. |
+| **IMS Act 1992 — infant formula/food/bottles** | 59 active SKUs | **59 exactly** — 9 formula + 34 infant food + 16 bottles/nipples | ✅ confirmed. Mandatory-minimum 6 months' imprisonment under s.20(2) for a category doing ~Rs 535/month. |
+| **BIS QCO 2026 appliance cliff, 1-Oct-2026** | 34 SKUs, Rs 2.08 L | 59 SKUs / Rs 3.07 L on a loose name-match — **the lane's group-scoped 34 is the better cut** | ⚠️ needs a clean re-cut. The escape hatch is FREE: a six-month sell-down declaration to BIS, filed before the deadline. |
 
 ---
 
@@ -63,18 +108,21 @@ TaskStop if it reports "still running".**
   but every research-derived figure has exactly one pair of eyes.
 - **`priority` — all 46 lanes.** Rupee-sizing each gap with a stated penetration assumption.
 
-### 3. Demand research missing — 10 of 46 categories
+### 3. ~~Demand research missing — 10 of 46 categories~~ ✅ CLOSED 2026-08-30
 
-`kidswear · winterwear · stationery · books · sports · toys · mobile-tech · appliances ·
-gurmat · festival-gift`
+All 46 lanes were already in the workflow journals; `python3 assort/bin/harvest.py`
+folded them into the corpus. **Lesson: check `harvest.py --list` against
+`ary assort research` before commissioning any agent — the journals routinely hold
+finished work the corpus has not absorbed.**
 
 **Note:** `gurmat` matters more than its position suggests — dastar/patka is already
 ARY's fourth-largest per-resident category at ₹198.70/resident/yr
 (`assort/vault/02-categories/Institution-Range.md`) and no external benchmark contains it.
 
-### 4. Coverage diff — 15 of 36 categories
+### 4. Coverage diff — in progress 2026-08-30
 
-`diff.py` stalled. Re-run: `python3 assort/bin/diff.py` (safe to re-run; it overwrites).
+Now 46 demand lanes to diff, not 36. `diff.py` re-running in background (23/46 at last
+check; it is slow, ~1 category/min). Safe to re-run; it overwrites.
 
 ### 5. Six questions that need a HUMAN, not an agent
 

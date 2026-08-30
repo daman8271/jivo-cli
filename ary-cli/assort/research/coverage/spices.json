@@ -1,662 +1,391 @@
 {
   "category": "spices",
-  "categoryName": "Spices, masalas, salt, sugar, jaggery, cooking essentials",
-  "windowMonths": 12,
-  "minSalesFloorInr": 5000.0,
-  "method": "name-match across all product groups (ARY's category tree is unreliable for this question); terms from the researcher's brand examples plus distinctive nouns, generic retail words dropped; a line counts as covered only above Rs 5,000 of 12-month sales",
-  "coveragePct": 49.1,
-  "commodityOnlyPct": 50.9,
+  "aryGroupsChecked": [
+    "146 Spices (444 active SKUs)",
+    "144 Salt & Sugar (74 active)",
+    "197 Cooking Consumable (2 — firewood/LPG, not in lane)",
+    "190 Raw Material (149 BOM per-gram canteen consumables, zero sales)",
+    "135 Jam & Sauce (pickles, vinegar, GG paste)",
+    "130 General Items (baking powder, cornflour, pani puri)",
+    "121 Dry Fruits (coconut gari, elaichi)",
+    "143 Rice & Other Grains (til, kalonji, Jivo cardamom, ararot)",
+    "138 Medicare (Sugar Free / stevia)",
+    "113 Confectionery (sugar-coated saunf / mukhwas)",
+    "131 Gurmat",
+    "110 Atta & Other Flours",
+    "plus a full 21,466-row ProductMaster dump joined to 12m SaleDetail and name-searched across all 93 groups"
+  ],
+  "aryActiveSkusInCategory": 518,
+  "arySales12mInr": 1585696,
+  "coveragePct": 88.7,
   "lines": [
     {
       "line": "Turmeric powder (haldi) — everyday mass grade",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Everest Turmeric, MDH Haldi, Patanjali Haldi, Goldiee Haldi",
-      "arySkus": 6,
-      "arySales12m": 12346.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: turmeric + powder"
+      "arySkuExamples": "Ruchi Termaric Powder 100 Gm (475 bills, ₹15,942); Mdh Termaric Powder 100Gm (288); Catch Turmeric Powder 100 Gm (242); Termaric Powder 1 Kg (₹27,451, Basement); Haldi Powder_L loose (₹18,580)",
+      "evidence": "grep 'haldi|turmeric|termaric' over full catalogue + 12m SaleDetail; 5 SKUs with real rotation, 14 more listed at zero"
     },
     {
       "line": "Turmeric powder — premium / single-origin, high-curcumin",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families",
-      "examples": "Tata Sampann Turmeric (natural oils), 24 Mantra Organic Haldi, Lakadong / Salem turmeric, Pro Nature Organic",
-      "arySkus": 6,
-      "arySales12m": 12346.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: turmeric + powder"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "searched sampann|24 mantra|pronature|lakadong|salem|organic haldi — only Tata Sampann DRY FRUITS exist; zero premium/organic turmeric in 21,466 SKUs"
     },
     {
       "line": "Red chilli powder (lal mirch) — everyday hot",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Everest Tikhalal, MDH Lal Mirch, Catch Red Chilli, Goldiee Mirch",
-      "arySkus": 2,
-      "arySales12m": 9275.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: mdh + lal"
+      "arySkuExamples": "Mdh Lal Mirch Powder 100 Gm (156 bills); Ruchi Red Chilli Powder 100 Gm (257); Catch Red Chilli Powder 100Gm (171); Mirch Powder 1Kg (₹11,396); Mirchi Powder 100 G_L loose",
+      "evidence": "grep 'mirch|chilli powder'; 8 moving SKUs, 20 dormant (incl. every 500 g pack except Catch)"
     },
     {
       "line": "Kashmiri / Deggi Mirch chilli powder — colour, low heat",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families, staff",
-      "examples": "MDH Deggi Mirch, Everest Kashmiri Lal, Catch Kashmiri Chilli",
-      "arySkus": 1,
-      "arySales12m": 15945.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: mdh + deggi"
+      "arySkuExamples": "Mdh Deggi Mirch 100 Gm (126 bills, ₹16,143 — top branded powder in the category); Mdh Kashmiri Mirch 100 Gm (15)",
+      "evidence": "grep 'deggi|degi|kashmiri'; Catch Kashmiri Mirch, Goldiee Kashmiri, Nilins Degchi and Degi Mirch 100 Gm all dormant"
     },
     {
       "line": "Coriander powder (dhania) and dhania-jeera blend",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Everest Dhania Powder, Tata Sampann Coriander, MDH Dhania, Vasant Coriander",
-      "arySkus": 66,
-      "arySales12m": 52561.85,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'dhania' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Coriander Powder 1 Kg (₹16,330); Coriander Powder_L loose; Catch Coriander Powder 100Gm (105 bills); Mdh Dhania Powder 100 Gm (108); Ruchi Coriander 100 Gm (118)",
+      "evidence": "grep 'dhania|coriander'; powder covered, but no dhania-jeera blend SKU exists"
     },
     {
       "line": "Cumin powder (jeera powder)",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Everest Jeera Powder, MDH Jeeravan/Jeera, Catch Cumin Powder",
-      "arySkus": 74,
-      "arySales12m": 291215.6,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: jeera"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "ary products list --search 'jeera powder' = 1 row (Jal Jeera Powder - Rm, a BOM item); 'cumin pow' = 0 rows. Zero retail jeera-powder SKU despite jeera whole being a top-3 line"
     },
     {
       "line": "Black pepper powder + table sprinkler",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Catch Black Pepper Sprinkler, Everest Kali Mirch Powder, Keya Black Pepper",
-      "arySkus": 173,
-      "arySales12m": 514982.41,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'black' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Catch Black Pepper Powder 10/- (119 bills); Jivo Black Pepper 100 Gm (45); Keya BP Powder 50 Gm (10); Mdh White Pepper Powder (6)",
+      "evidence": "grep 'pepper|kali mirch|sprinkl'; powder moves, but Catch Black Pepper 100G Sprinklers and Catch Peri Peri 90Gm Sprinkler are both dormant — the sprinkler format is dead here"
     },
     {
       "line": "Amchur (dry mango powder)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families, staff",
-      "examples": "Everest Amchur, MDH Amchur, Pushp Amchur",
-      "arySkus": 5,
-      "arySales12m": 6829.97,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amchur' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Catch Dry Mango Powder 100 Gm (35 bills); Mdh Amchur Powder 100 Gm (27); Amchur 100 G_L loose; Amchur Powder 1Kg (Basement)",
+      "evidence": "grep 'amchur|amchoor|dry mango'; 5 of 8 SKUs moved"
     },
     {
       "line": "Asafoetida (hing) — compounded and strong grade",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, babies",
-      "examples": "Vandevi Hing, LG Hing, Ramdev Hing, Pushp Shahi Hing, Bandhani/Dabur",
-      "arySkus": 135,
-      "arySales12m": 245754.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: dabur"
+      "arySkuExamples": "Mdh Hing (117 bills, ₹16,024); Mdh Hing Powder 50Gm (9); Catch Hing 25 Gm (36)",
+      "evidence": "grep '(^| )hing|asafo|vandevi|bandini'; only compounded MDH/Catch grade — no Vandevi/LG strong hing, and Patanjali Bandini + Badshah + Mdh 20Gm are dormant"
     },
     {
       "line": "Supporting powders — dry ginger (sonth), kasuri methi, garlic/onion powder",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families, staff, elderly",
-      "examples": "Everest Kasuri Methi, MDH Kasoori Methi, Zandu/local sonth, Keya Garlic Powder",
-      "arySkus": 79,
-      "arySales12m": 414055.28,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'onion' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Catch Kasuri Methi 25 Gm (123 bills); Ruchi Kasoori Methi 25 Gm (30); Catch Ginger Powder 100 Gm (39); Sonth 50 Gm (3 bills only)",
+      "evidence": "grep 'kasuri|kasoori|sonth|ginger powder|garlic powder'; 14 kasoori-methi SKUs of which 4 sell; sonth near-dead (3 bills, Mdh Sonth Powder 100 Gm = 0); garlic/onion powder = 0 rows in whole catalogue"
     },
     {
       "line": "Anardana (dried pomegranate) — whole and powder",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "staff, families",
-      "examples": "Local Sirmaur/Chamba anardana (loose), Pushp Anardana, Nature's Own",
-      "arySkus": 13,
-      "arySales12m": 9954.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'nature's' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Anardana 100 Gm (41 bills, ₹3,650)",
+      "evidence": "grep 'anardana|anar dana'; Sunil Anardana 1Kg is dormant, and there is no loose-by-gram local Sirmaur anardana — one 100 g pack carries the whole signature Himachali souring line"
     },
     {
       "line": "Cumin seeds whole (jeera)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Tata Sampann Jeera, Everest Jeera Whole, loose Unjha jeera",
-      "arySkus": 74,
-      "arySales12m": 291215.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'jeera' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Catch Jeera Whole 100 Gm (484 bills, ₹31,152); Shiv Pujari Jeera 100Gm (363); Catch Jeera 200 Gm (126); Jeera 1 Kg (₹33,988 Basement); Jeera Sabut_L loose (₹22,652); Jivo Cumin Seeds 100 Gm (40)",
+      "evidence": "grep 'jeera|cumin'; strongest whole-spice line in the category"
     },
     {
       "line": "Coriander seeds whole (sabut dhania)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "families, staff",
-      "examples": "Loose Rajasthan/MP dhania, Tata Sampann Coriander Whole",
-      "arySkus": 1,
-      "arySales12m": 9800.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: rajasthan"
+      "arySkuExamples": "Sabat Dhania 100 Gm (361 bills, ₹10,245); Sabat Dhania 80 Gm (36); Sunil Sabat Dhania 500 Gm (1)",
+      "evidence": "grep 'sabat dhania|sabut dhania|dhania sabut'; 6 further variants (Shrinathji ×2, Shyam, 1 Kg) all dormant"
     },
     {
       "line": "Mustard seeds (rai / sarson) — black and yellow",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Loose black rai, Everest Rai, yellow sarson (pickling grade)",
-      "arySkus": 173,
-      "arySales12m": 514982.41,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'black' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Sunil Sarso 100 Gm (96 bills); Sunil Rai 100Gm (62); Ceepee Mustard Seeds 100Gm (34); Sunil Kalonji 100 Gm (75, filed under Rice & Other Grains)",
+      "evidence": "grep 'rai|mustard|sarso|kalonji'; Catch Rai, Shrinath Ji Rai, Shiv Pujari Rai, Ceepee Kalaunji dormant; no separately-labelled coarse yellow pickling sarson"
     },
     {
       "line": "Methi dana (fenugreek seeds) and ajwain (carom seeds)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, babies, elderly",
-      "examples": "Loose methi dana, Everest Ajwain, Tata Sampann Ajwain",
-      "arySkus": 3,
-      "arySales12m": 11976.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: methi + dana"
+      "arySkuExamples": "Catch Ajwain 100 Gm (350 bills, ₹32,994); Ruchi Ajwain 100 Gm (195); Catch Methi Dana 100G (303); 756 Methi Dana 100 Gm (133); Ajwain 1 Kg + Ajwain_L (Basement)",
+      "evidence": "grep 'ajwain|methi dana|methi whole'; ajwain is the #3 spice SKU by value — the infant-colic demand the ideal list predicted is visible in the data"
     },
     {
       "line": "Fennel (saunf) — cooking grade and mukhwas/sugar-coated",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Loose Lucknowi saunf, Everest Saunf, Chandan Mukhwas, sugar-coated (mishri) saunf",
-      "arySkus": 24,
-      "arySales12m": 16173.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'chandan' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Bikaner Sunf 100Gm (512 bills, ₹20,810); Ceepee Saunf 100Gm (206); Sauf 100 Gm (71); Bikaner Sauf 100G (40); Sugar Coated Saunf 100 Gm (182 bills, in Confectionery > Toffee)",
+      "evidence": "grep 'saunf|sauf|sunf|fennel|mukhwas|sugar coated'; mukhwas exists but is coded as a toffee, not a spice"
     },
     {
       "line": "Whole dry red chillies (sabut lal mirch)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "families, staff",
-      "examples": "Loose Guntur (hot), Byadgi/Kashmiri (colour), Everest whole chilli",
-      "arySkus": 11,
-      "arySales12m": 27682.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: kashmiri"
+      "arySkuExamples": "Red Chilli Sabat 100 Gm (239 bills, ₹9,800); Catch Kuti Mirch 100 Gm (55)",
+      "evidence": "grep 'chilli sabat|mirch sabat|kuti mirch'; the 50 g, 500 g and 1 Kg Raja packs plus Ceepee Kuti Mirch are all dormant — and no grind-to-order service SKU exists"
     },
     {
       "line": "Black peppercorns whole (sabut kali mirch)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Loose Malabar/Wayanad pepper, Tata Sampann Black Pepper Whole",
-      "arySkus": 173,
-      "arySales12m": 514982.41,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'black' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Black Pepper Sabat 1 Kg (₹13,125, Basement); Kali Mirch Sabut_L loose (₹9,013); Catch Kali Mirch 10/- (297 bills); Savour Kali Mirch 10/- (62); Black Pepper Sabat 50 Gm (3)",
+      "evidence": "grep 'kali mirch|peppercorn|pepper sabat'; retail depth is only the ₹10 sachets — Catch Black Pepper Whole 100 Gm and Ceepee Kali Mirch Whole are dormant"
     },
     {
       "line": "Green cardamom (choti elaichi)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Loose Idukki/Alleppey elaichi, Everest Elaichi, Catch Cardamom",
-      "arySkus": 3,
-      "arySales12m": 20889.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: green + cardamom"
+      "arySkuExamples": "Green Elaichi 10 Gm (222 bills, ₹17,500); Catch Elichi Rs 10/- (471); Savour Green Cardamom 3 Gm (302); Jivo Green Cardamom 100 Gm (30, filed under Rice & Other Grains); Savour Elachi 10Gm/28Gm (Dry Fruits)",
+      "evidence": "grep 'elaichi|elachi|cardamom'; counter-sized 3-10 g packs carry it exactly as the ideal predicted; 20 larger Sunil/Elaichi Jumbo SKUs dormant"
     },
     {
       "line": "Whole garam masala spices — laung, dalchini, tej patta, badi elaichi, jaiphal-javitri, star anise",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Loose cloves, cassia/dalchini, bay leaf, black cardamom; Everest / Pushp whole packs",
-      "arySkus": 12,
-      "arySales12m": 70510.82,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: garam + masala"
+      "arySkuExamples": "Catch Long Whole Rs 10/- (595 bills); Dal Chinni 50 Gm (288); Tej Patta 50 Gm (173); Elaichi Black 1 Kg (₹14,040); Elaichi Badi_L loose; Shrinathji Big Elaichi 100 Gm (26); Sunil Long 10 Gm (46); Jivo Cinnamon Sticks 100 Gm (24)",
+      "evidence": "grep 'long|laung|dalchini|cinnamon|tej patta|jaifal|javitri|star anise'; 5 of the 6 sub-spices move, but Jaifal 100Gm + Sunil Jaifal 500Gm are dormant and javitri / star anise return 0 rows"
     },
     {
       "line": "Sesame (til), kalonji and poppy (khus khus) seeds",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Loose white/black til, Everest Kalonji, khus khus (loose)",
-      "arySkus": 212,
-      "arySales12m": 3478955.8,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'white' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Sunil Khas Khas 100 Gm (68 bills, ₹19,500); Sunil White Til 100 Gm (226); White Til 100 Gm (98); Black Til 100 Gm (46); Sunil Kalonji 100 Gm (75)",
+      "evidence": "grep 'til|sesame|khas khas|kalonji|magaj'; til/kalonji live in group 143 Rice & Other Grains > Til, not in Spices"
     },
     {
       "line": "Tamarind (imli) — seedless block and paste/concentrate",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Loose seedless imli, Dabur Hommade Tamarind Paste, Tata Sampann Imli",
-      "arySkus": 135,
-      "arySales12m": 245754.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'dabur' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Chulbuli Imli 100 Gm (286 bills, ₹10,825); Sunil Imli 250Gm (81); Imli 200 Gm (63); Sunil Imli 200 Gm (58)",
+      "evidence": "grep 'imli|tamarind'; block covered, but BOTH tamarind pastes (Mother's Recipe 200 Gm and 300 Gm) are dormant — no paste option through the monsoon"
     },
     {
       "line": "Saffron (kesar)",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff, families",
-      "examples": "Baby Brand Kesar, Lion Dates Saffron, Kashmiri Mongra (loose/branded), Upakarma",
-      "arySkus": 45,
-      "arySales12m": 77080.85,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'kesar' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'kesar' returns 45 rows and 'saffron' 10 — every one is flavoured milk, kulfi, tea, agarbatti, face wash or MTR Kulfi Kesar Sweet Mix. Zero saffron strands in the whole 21,466-SKU catalogue"
     },
     {
       "line": "Dry coconut (copra gola) and desiccated coconut powder",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Loose copra halves, Sri Sri/Anmol desiccated coconut, Nutraj",
-      "arySkus": 71,
-      "arySales12m": 546194.05,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'coconut' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Sunil Coconut Gari (350 bills, ₹24,980 — Dry Fruits > Coconut); Sunil Coconut Powder 1 Kg (4 bills)",
+      "evidence": "grep 'coconut|copra|gari|desiccated'; gola strong, powder near-dead (Mangal Coconut Powder 1Kg and Raja Coconut Gari dormant)"
     },
     {
       "line": "Garam masala — mass and premium facings",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Everest Garam Masala, MDH Garam Masala, Catch (low-temp ground), Pushp Punjabi Garam Masala",
-      "arySkus": 1,
-      "arySales12m": 15654.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: mdh + garam"
+      "arySkuExamples": "Garam Masala 100 Gm (170 bills, ₹36,164 — highest-value SKU in Spices); Mdh Garam Masala 100 Gm (156); Garam Masala 100 G_L loose (₹17,646); Ruchi Garam Masala 100 Gm (27)",
+      "evidence": "grep 'garam masala'; Catch, Goldiee, Nilons, Savour and both Royal whole-garam-masala SKUs dormant; no Everest and no Punjabi regional premium facing"
     },
     {
       "line": "Pulse-dish masalas — chole/chana, rajma, dal makhani",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "MDH Chana Masala, Everest Chhole Masala, MDH Dal Makhani Masala, Aachi Chana Masala",
-      "arySkus": 262,
-      "arySales12m": 1655344.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'masala' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Cholle Masala (₹6,825); Rajma Masala 100 Gm (₹6,622); Cholle Masala 100 G_L + Mdh Rajma Masala 100 G_L loose; Mdh Chana Masala 100 Gm (52 bills); Mdh Dal Makhni Masala 100 Gm (12)",
+      "evidence": "grep 'chana masala|cholle|rajma masala|dal makh'; 11 further SKUs (Catch ×3, Tata, Mtr, Mdh Rajmah) dormant"
     },
     {
       "line": "Kitchen King / all-purpose sabji masala",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "staff, families, students",
-      "examples": "MDH Kitchen King, Tata Sampann Kitchen King, Everest Sabji Masala, Badshah",
-      "arySkus": 1,
-      "arySales12m": 12448.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: mdh + kitchen"
+      "arySkuExamples": "Mdh Kitchen King Mix 100 Gm (136 bills, ₹12,544); Kitchen Masala 100 Gm (₹11,536); Kitchen King Masala 100 G_L loose; Mdh Sabzi Masala 100G (78)",
+      "evidence": "grep 'kitchen king|sabzi masala'; Catch Kitchen King and Catch Sabzi Masala dormant; no Tata Sampann Kitchen King"
     },
     {
       "line": "Street-food masalas — chaat masala, pani puri masala, jaljeera",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "students, university, families",
-      "examples": "Everest Chaat Masala, MDH Chunky Chat, Badshah Pav Bhaji/Chaat, Everest Pani Puri Masala 50 g",
-      "arySkus": 16,
-      "arySales12m": 26200.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: chaat"
+      "arySkuExamples": "Mdh Chanky Chat Masala 100 Gm (89 bills, ₹9,505); Catch Jaljeera 100Gm (36); Catch Chat Masala 100G (27); Vatika Pani Puri Masala 50 Gm (5)",
+      "evidence": "grep 'chat masala|pani puri|jal jeera'; Catch Pani Puri Masala, Mdh Jal Jeera, Keya Chaat Masala 80G, Ruchi Chaat and Nilons Jal Jeera all dormant"
     },
     {
       "line": "Pav bhaji masala",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "students, university, staff",
-      "examples": "Everest Pav Bhaji Masala 100 g, Badshah Pav Bhaji, MDH Pav Bhaji",
-      "arySkus": 262,
-      "arySales12m": 1655344.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'masala' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Mdh Pav Bhaji Masala Powder 100G (13 bills, ₹1,111)",
+      "evidence": "grep 'pav bhaji'; exactly one moving SKU against a Pav Bhaji canteen dish doing 456 bills — the retail side of a proven demand is one facing deep"
     },
     {
       "line": "Biryani and pulao masala",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Everest Shahi Biryani Masala, MDH Biryani, Aachi Biryani 100 g (~₹74), Badshah Biryani",
-      "arySkus": 262,
-      "arySales12m": 1655344.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'masala' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Daawat Biryani Kit 334Gm (0); Mtr Peas Pulao 250 Gm (0); Mtr Veg Pulao 250 Gm (0)",
+      "evidence": "ary products list --search biryani = 3 rows, two of them basmati rice; no standalone biryani/pulao masala blend exists and all three ready-mix SKUs logged zero bills in 12m"
     },
     {
       "line": "Paneer and curry-base masalas (shahi paneer, kadai paneer, matar paneer)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families, students",
-      "examples": "MDH Shahi Paneer, Everest Kadai Paneer, Badshah Paneer Masala",
-      "arySkus": 262,
-      "arySales12m": 1655344.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'masala' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Mdh Shahi Paneer Masala 100Gm (10 bills, ₹970)",
+      "evidence": "grep 'paneer masala|shahi paneer|kadai paneer'; Catch Shahi Paneer, Gits Shahi/Matar Paneer, Mtr Paneer Butter/Tikka all dormant — thin for the celebration protein on a vegetarian campus"
     },
     {
       "line": "South Indian powders — sambar and rasam",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, university",
-      "examples": "MTR Sambar Powder, Aachi Sambar, Everest Sambhar Masala, MTR Rasam Powder",
-      "arySkus": 262,
-      "arySales12m": 1655344.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'masala' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Mdh Sambar Masala 100 Gm (20 bills, ₹1,696); Mtr Sambar Mix 180 Gm (14)",
+      "evidence": "grep 'sambar|sambhar|rasam'; sambar covered, Ruchi Sambar + Mtr Sambar Mix 200 Gm + Gits Sambar dormant, and 'rasam' returns 0 rows catalogue-wide"
     },
     {
       "line": "Chai masala and milk masala",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all, students, elderly",
-      "examples": "Everest Tea Masala, MDH Chai Masala, Vasant Chai Masala, kesar-badam milk masala (Sanjivani/Amul-type)",
-      "arySkus": 262,
-      "arySales12m": 1655344.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'masala' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Keya Chai Masala 90 Gm (0 bills); Ruchi Tea Masala 20 Gm (0 bills)",
+      "evidence": "'chai masala|tea masala' = 2 SKUs, both zero in 12m; 'milk masala' = 0 rows. On a cold hill campus that drinks tea all day and gives children night milk, this line is listed but not available"
     },
     {
       "line": "Achar / pickle masala and pickling kit",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families, staff",
-      "examples": "Pushp Achar Masala, Everest Achar Masala, Priya/Ramdev pickle masala; kit = masala + yellow rai + methi + crystal salt",
-      "arySkus": 2,
-      "arySales12m": 19040.24,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: kit + masala"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'achar masala' and 'pickle masala' both = 0 rows. ARY stocks ~55 finished pickle SKUs but nothing to pickle WITH — and category sales spike to ₹2.68 L (May-26) / ₹2.20 L (Jun-26) from a ₹90k-140k baseline, i.e. the pickle window is real and unserved"
     },
     {
       "line": "Continental / Indo-Chinese seasonings — oregano, chilli flakes, mixed herbs, peri-peri",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "students, university",
-      "examples": "Keya Oregano, Catch Sprinklers, Veeba/Ching's seasoning, Sprig",
-      "arySkus": 184,
-      "arySales12m": 598025.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'chilli' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Keya Piri Piri Masala 7 Gm (15 bills); Keya Pasta Masala 7 Gm (12); Keya Chilli Flakes 7 Gm (11); Keya Pizza Oregano 7 Gm (7); Keya Paneer Chilli Masala 20 Gm (35); Chings/Keya Schezwan sachets",
+      "evidence": "grep 'oregano|peri peri|chilli flakes|pasta masala'; only the ₹10-class 7 g sachets move — Keya Pizza Oregano 80 Gm, Catch Peri Peri 90Gm, Oregano 500 Gm/1Kg, Red Chilli Flakes 500 Gm/1Kg, Veeba 750Ml all dormant. Note these 4 Keya sachets are miscoded into Salt & Sugar > Salt"
     },
     {
       "line": "Non-vegetarian and tandoori masalas",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff",
-      "examples": "Everest Chicken Masala, MDH Meat Masala, Everest Tandoori Masala",
-      "arySkus": 262,
-      "arySales12m": 1655344.6,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'masala' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'chicken masala' = 0, 'meat masala' = 0, 'tandoori masala' = 0 (the 17 'tandoori' hits are canteen parathas and mayonnaise). Correctly absent — Kalgidhar Trust campus — and the ideal list's own flag to confirm with the Trust is answered: do not list"
     },
     {
       "line": "Iodised free-flow table salt",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Tata Salt (1 kg MRP ₹30, Aug 2026), Aashirvaad Salt, Catch Salt, Patanjali Salt, Sambhar/local",
-      "arySkus": 1,
-      "arySales12m": 6275.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: aashirvaad + salt"
+      "arySkuExamples": "Tata Salt 1 Kg (758 bills, ₹32,597 + 353 kg to Basement); Aashirvaad Salt 1 Kg (254); Salt_L loose (205 kg, Basement); Catch Table Salt 200Gm (16)",
+      "evidence": "grep 'salt|namak'; Tata I-Shakti, Patanjali Iodine Namak 1Kg and Keya Table Salt 200G dormant"
     },
     {
       "line": "Rock salt / sendha namak — crystal and powdered",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, families, elderly",
-      "examples": "Tata Sampann Sendha Namak, Patanjali Sendha Namak, loose crystal rock salt",
-      "arySkus": 4,
-      "arySales12m": 5880.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: rock + salt"
+      "arySkuExamples": "Sunil Sendha Namak 200Gm (161 bills, ₹3,130); Sendha Namak 200Gm (91); Catch Pink Rock Salt 1Kg (27); Catch Pink Rock Salt 500 Gm (20)",
+      "evidence": "grep 'sendha|rock salt|sengha'; Sunil Sendha 100Gm, Lion Sengha, Manjeet Sengha, Catch Sendha Sprinklers and Rock Salt 200Gm all dormant — 4 moving SKUs against a hard Navratri spike"
     },
     {
       "line": "Specialty salts — black salt (kala namak) and Himalayan pink salt",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Tata Sampann Black Salt, Everest Kala Namak, Himalayan pink salt (Nutriorg/Urban Platter/loose)",
-      "arySkus": 3,
-      "arySales12m": 18290.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: himalayan + pink"
+      "arySkuExamples": "Ruchi Black Salt 100Gm (664 bills — 6th most-bought SKU in the category); Catch Blact Salt 200G Sprinklers (37); Keya Black Salt 200G (18); Tata Himalayan Rock Salt 1 Kg (13); Keya Pink Salt 200 Gm (11); Keya Pink Salt 1 Kg (1)",
+      "evidence": "grep 'black salt|kala namak|pink salt|himalayan'; kala namak over-indexes hard; Organic Himalayan Pink Salt 100Gm, Balaji/Onkar/Ceepee/Pmc/Manjeet black salts dormant"
     },
     {
       "line": "Low-sodium / lite salt",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "elderly, staff",
-      "examples": "Tata Salt Lite, Nirogam/Saffola low-sodium, Aashirvaad Low Sodium",
-      "arySkus": 4,
-      "arySales12m": 41147.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: tata + salt"
+      "arySkuExamples": "Tata Salt 1 Kg Low Sodium (135 bills, ₹7,500)",
+      "evidence": "grep 'low sodium|less sodium|lite salt'; exactly one moving facing — Saffola Salt Plus 1 Kg Less Sodium is dormant"
     },
     {
       "line": "Loose crystal (dhela) salt and institutional salt bags",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "families, staff",
-      "examples": "Loose dhela/crystal salt, 25 kg and 50 kg iodised bags (Sambhar, regional)",
-      "arySkus": 14,
-      "arySales12m": 132879.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'bags' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Salt_L (205 kg over 5 bills, ₹4,797, Basement only); Tata Salt 1 Kg × 353 units to Basement",
+      "evidence": "warehouse split of SaleDetail: every weight-priced salt sale goes through the Basement indent. No 25 kg / 50 kg bag SKU and no retail crystal/dhela salt facing exists — the pickling household half of this line is unserved"
     },
     {
       "line": "Refined white sugar (S30) — retail to institutional",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Madhur, Uttam, Dhampure, Trust/local mill sugar, loose",
-      "arySkus": 1,
-      "arySales12m": 16315.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: uttam"
+      "arySkuExamples": "Raja Sugar 1 Kg (3,119 bills, ₹1,83,815 — #1 by value); Sugar 1 Kg (2,800 kg to Basement, ₹1,12,012); Sugar_L (1,875 kg, ₹76,602); Uttam Sugar Trust Classic 1 Kg (244); Dhampure Sugar 1Kg (135)",
+      "evidence": "grep 'sugar' + warehouse split; highest-tonnage line exactly as predicted, and the Basement bulk channel is the prasad/mess quantity buyer"
     },
     {
       "line": "Unrefined and speciality sugars — sulphurless, organic, brown, demerara",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families",
-      "examples": "Dhampure Sulphurless, 24 Mantra Organic Sugar, Trust Organic, Urban Platter Demerara",
-      "arySkus": 5,
-      "arySales12m": 16315.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: trust"
+      "arySkuExamples": "Dhampure Desi Khand 1 Kg (60 bills); Yadu Brown Sugar 1 Kg (37); Dhampure Brown Sugar 1 Kg (30); Yadu Desi Khand 1 Kg (10)",
+      "evidence": "grep 'brown sugar|desi khand|sulphurless|organic sugar|demerara'; 'demerara' = 0 rows, no organic/24 Mantra sugar, Health Mark and Msm M-30 dormant"
     },
     {
       "line": "Bura / tagar / boora sugar",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, families",
-      "examples": "Loose bura, Dhampure Bura, local halwai-grade tagar",
-      "arySkus": 6,
-      "arySales12m": 16119.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'dhampure' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Yadu Bura Sugar 1 Kg (45 bills, ₹4,851)",
+      "evidence": "grep 'bura|boora|tagar|khand'; one moving SKU — 'Sugar Bura' (0GCI-adjacent code 0F1W) is dormant. Thin for a Sikh institution's panjiri/pinni/prasad demand, exactly the under-indent the ideal list warned about"
     },
     {
       "line": "Mishri (dhaga/crystal) and patase / batasha",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, students, elderly",
-      "examples": "Loose dhaga mishri, crystal mishri, patase/batasha (local halwai supply)",
-      "arySkus": 2,
-      "arySales12m": 10760.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'mishri' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Sunil Mishri 100 Gm (534 bills, ₹7,980); Ajay Mishri 100 Gm (225); Sunil Patasa 250 Gm (32); Sunil Patasa 700 Gm (6)",
+      "evidence": "grep 'mishri|misri|patasa|patasha|batasha'; the Sikh prasad/degh line is genuinely live — 759 mishri bills a year; Raja Patasha 250Gm dormant"
     },
     {
       "line": "Icing sugar, sugar cubes and 5 g sachets",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff, students",
-      "examples": "Weikfield Icing Sugar, Blue Bird Icing Sugar, sugar cubes (Trust/Madhur), 5 g service sachets",
-      "arySkus": 177,
-      "arySales12m": 3039900.58,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'blue' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Trust Sugar Cubes 500 Gm (0); Trust Suger Pouch 1Kg (0); Trust Classic Sugar 150 Pcs Pouch (0); Ccd Sugar Pouch 5Gm (0); only Sugar 1 Kg 5Gm*200Pcs moved (3 bills)",
+      "evidence": "grep 'icing|sugar cube|sugar pouch'; 'icing' returns one row and it is a piping Icing Bag — icing sugar does not exist; every cube/service-pouch SKU is at zero"
     },
     {
       "line": "Tabletop sweeteners — sucralose/aspartame tablets and sachets, stevia, monk fruit",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "elderly, staff",
-      "examples": "Sugar Free Gold, Sugar Free Natura, Equal, Zevic/INJIYA Stevia, Earthful MonkSweet",
-      "arySkus": 24,
-      "arySales12m": 69125.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: sugar + free"
+      "arySkuExamples": "Zydus Sugar Lite 500G Stevia (52 bills, ₹5,619); Zydus Sugar Free Gold 50 Gm (11)",
+      "evidence": "grep 'sugar free|stevia|sucralose|monk fruit|sweetener'; both live SKUs sit in group 138 Medicare, not Salt & Sugar; Sugar Free Gold 100 Nos, Natura 200 pellets, Sugar Free Gold 25 Sachets dormant; monk fruit = 0 rows"
     },
     {
       "line": "Jaggery block / cube (gur)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, families, elderly",
-      "examples": "Loose Punjabi/UP gur, Bebe Gur, Dhampure Jaggery Cubes, Patanjali Gur",
-      "arySkus": 43,
-      "arySales12m": 287193.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'punjabi' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Raja Gud 1 Kg (749 bills, ₹48,230); Gud 1 Kg (61); Cm Gud 1 Kg (17)",
+      "evidence": "grep 'gud|gur|jaggery'; Dhampure Gur 500Gm, Savastya Gud 700Gm, Raja Gud Lt ×3 and Gud Lt 1 Kg dormant"
     },
     {
       "line": "Jaggery powder / shakkar",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, families, babies, elderly",
-      "examples": "Loose shakkar, Bebe Jaggery Powder, 24 Mantra Organic Jaggery Powder, Dhampure",
-      "arySkus": 6,
-      "arySales12m": 50499.1,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: shakkar"
+      "arySkuExamples": "Raja Shakkar 500 Gm (1,135 bills, ₹44,879 — #3 by value); Yadu Jaggery 500 Gm (91); Yadu Shakkar 500 Gm (80); Shakkar 500 Gm (15); Yadu Desi Khand 1 Kg (10)",
+      "evidence": "grep 'shakkar|sakkar|jaggery powder'; Dhampure Jaggery Powder 1Kg, Royal Shakkar 1 Kg, Cm Shakkar and Raja Shakkar 3670 dormant"
     },
     {
       "line": "Palm and date jaggery",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff",
-      "examples": "Natural Spices Palm Jaggery, karupatti/nolen gur, Conscious Food date sugar",
-      "arySkus": 15,
-      "arySales12m": 72882.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'date' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'palm jagg|karupatti|nolen|date sugar|date jagg' = 0 rows catalogue-wide"
     },
     {
       "line": "Baking soda (meetha soda) and baking powder",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, staff, families",
-      "examples": "Weikfield Baking Powder, Blue Bird Baking Powder, Arm & Hammer/local sodium bicarbonate, Urban Platter",
-      "arySkus": 177,
-      "arySales12m": 3039900.58,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'blue' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Sunil Mitha Soda 100 Gm (119 bills, ₹1,470); Ajanta Baking Powder 100 Gm (38); Weikfield Baking Soda 100G (27); Weikfield Baking Powder 100 Gm (12)",
+      "evidence": "grep 'baking|mitha soda|bicarb'; baking powder/soda live in group 130 General Items > Baking Powder while mitha soda sits in Spices > Soda — the shelf-confusion risk the ideal flagged is baked into the master data; Weikfield 400 Gm, Town Mitha Soda and Baking Powder 100 Gm dormant"
     },
     {
       "line": "Cornflour and custard powder",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families, students",
-      "examples": "Brown & Polson Corn Flour, Weikfield Custard Powder, Blue Bird Cornflour, Bird's",
-      "arySkus": 177,
-      "arySales12m": 3039900.58,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'blue' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Brown & Polson Custerd Powder Vanilla 100 Gm (67 bills); Weikfield Custard Powder 100 Gm (42); Brown & Polson Cornflour 100 Gm (31 bills, General Items > Cornflour)",
+      "evidence": "grep 'cornflour|custard|ararot'; Weikfield Cornflour 100G, Weikfield Custard 200G/75G ×3 and both Ararot 1 Kg SKUs dormant"
     },
     {
       "line": "Vinegar — synthetic white and apple cider",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all, staff",
-      "examples": "Kissan/Weikfield Synthetic Vinegar, Dabur/Bragg-type ACV, American Garden ACV",
-      "arySkus": 212,
-      "arySales12m": 3478955.8,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'white' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Minchy's Organic Apple Cider Vinegar 500 Ml (16 bills, ₹5,083); Ruchi White Vinegar 600Ml (45); Organic India Apple Vinegar 500Ml (6); Minchy's Synth Vinegar 700 Ml (15); Foodcoast Nieu Synthetic 640 Gm (13); Jayant White Vinegar 700Ml (13)",
+      "evidence": "grep 'vinegar|sirka'; both halves move; Everest Vinegar 700Ml, American Garden Sirka, Abbie's Apple Cider and Food Coast 1Kg dormant"
     },
     {
       "line": "Instant dry yeast and bread improver",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff, families",
-      "examples": "Gloripan Instant Yeast, Blue Bird Yeast, Angel Instant Yeast",
-      "arySkus": 177,
-      "arySales12m": 3039900.58,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'blue' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'yeast' = 0 rows in 21,466 SKUs; 'bread improver' = 0. ARY runs its own Bakery Items group (127 SKUs) but sells no yeast to households"
     },
     {
       "line": "Food colours and essences — vanilla, kewra, rose water, elaichi essence",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all, families",
-      "examples": "Bush/Weikfield food colour, Bush Vanilla Essence, Dabur/Hamdard Gulab Jal, Keva Kewra Water",
-      "arySkus": 135,
-      "arySales12m": 245754.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: dabur"
+      "arySkuExamples": "Magic Colour 25 Ml (1 bill); Fab Oil Soluble Flavour 20 Ml Orange (1); Fab Oil Soluble Flavour 20 Ml Mango (1) — 3 bills total in 12 months",
+      "evidence": "grep 'essence|food colour|gulab jal|kewra'; technically covered but effectively dead — Ajanta Food Color ×3 and Sun Food Colour dormant, no vanilla essence and no kewra water anywhere; the only rose water is Dabur Gulabari in Personal Care (276 bills, sold as a cosmetic)"
     },
     {
       "line": "Ginger-garlic paste (and green chilli paste)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families, students",
-      "examples": "Dabur Hommade Ginger Garlic Paste, Ching's, Mother's Recipe, Priya",
-      "arySkus": 135,
-      "arySales12m": 245754.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'dabur' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Smith & Jones Ginger Garlic Pest 30 Gm (374 bills); Keya Ginger Garlic Paste 200 Gm (82, Jam & Sauce); Catch Ginger Garlic Pest 20 Gm (85); S&J 200 Gm (74); Nilon's 22 Gm (73); Catch 200 Gm (11)",
+      "evidence": "grep 'ginger garlic|garlic paste|green chilli paste'; single-serve sachets outsell jars; 11 further paste SKUs (Mother's Recipe ×5, Bambino ×2, Dabur, S&J Garlic) dormant; retail green-chilli paste exists only as a BOM item"
     },
     {
       "line": "Kitchen chemistry — citric acid (nimbu sat), papad khar, alum (phitkari), cooking soda",
       "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "families, staff",
-      "examples": "Loose citric acid, papad khar (sajji), phitkari, Urban Platter citric acid",
-      "arySkus": 15,
-      "arySales12m": 53437.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'papad' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Fitkari 100 Gm (175 bills, ₹2,680); Sunil Mitha Soda 100 Gm (119); Sunil Fitkari 100 Gm (7)",
+      "evidence": "grep 'citric|nimbu sat|papad khar|sajji|fitkari'; alum and cooking soda covered, but 'citric' = 0 rows and 'papad khar' = 0 rows — the mid-recipe stockout that sends a household to Nahan"
     },
     {
       "line": "Loose weighed spice counter — buy-by-gram on the top 12 spices",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all, families, elderly",
-      "examples": "Loose jeera, dhania, haldi, sabut mirch, elaichi, laung, methi, rai, ajwain, saunf, anardana, til",
-      "arySkus": 1,
-      "arySales12m": 8923.23,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: sabut + mirch"
+      "state": "missing",
+      "arySkuExamples": "15 weight-priced '_L' SKUs exist (Jeera Sabut_L, Haldi Powder_L, Coriander Powder_L, Kali Mirch Sabut_L, Mirchi Powder 100 G_L, Ajwain_L, Elaichi Badi_L, Amchur 100 G_L, Salt_L, Sugar_L, Garam Masala/Kitchen King/Cholle/Rajma/Pickles_L) — but ALL of them sell only through Basement",
+      "evidence": "warehouse split of SaleDetail for group 146+144: Ary Pos = 19,109 bills across 180 packaged SKUs; Basement = 12 bills across 30 SKUs. Every '_L' code logged exactly 5 bills, all Basement. 'Raja Loose Sugar' = 0 bills. There is no retail by-gram spice counter at the POS — the highest-gross-margin play in the category is absent, and ARY has an institutional bulk desk instead"
     },
     {
       "line": "Institutional bulk masala packs for canteens, messes and langar",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "staff",
-      "examples": "1 kg / 5 kg pouches of haldi, mirch, dhania, garam masala; 5-10 kg jeera; 25-50 kg salt and sugar",
-      "arySkus": 12,
-      "arySales12m": 70510.82,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: garam + masala"
+      "arySkuExamples": "Basement channel: Sugar 1 Kg (2,800 kg), Sugar_L (1,875 kg), Termaric Powder 1 Kg (150 kg), Jeera 1 Kg (116 kg), Coriander Powder 1 Kg (115 kg), Garam Masala 100 G_L (300), Kitchen King 100 G_L (190), Pickles_L (205), Mirch Powder 1Kg, Elaichi Black 1 Kg, Black Pepper Sabat 1 Kg, Salt_L, Ajwain 1 Kg, Amchur Powder 1Kg",
+      "evidence": "warehouse split: Basement = ₹5,08,825 on 12 bills / 30 SKUs = 32% of the whole category's 12m value. Confirms a real mess/langar indent contract, though only ~12 issues a year (roughly monthly) and priced off the same list as retail"
     }
   ],
-  "mustHaveMissing": [],
-  "surprises": []
+  "surprises": [
+    "The category is only 2.05% of ARY's revenue (₹15.86 L of ₹7.73 Cr in 12m to 2026-08-21) vs 6-10% typical for a kirana — because canteen spice consumption is booked as BOM, not sales: group 190 'Raw Material' holds 149 per-gram recipe SKUs (Haldi Powder - Rm 1 Gm, Garam Masala - Rm 1 Gm, Pav Bhaji Masala - Rm 1 Gm…) with zero sales value. Real campus spice throughput is much larger than the retail figure.",
+    "32% of category value (₹5.09 L) comes from just 12 bills through the 'Basement' warehouse — the mess/langar indent. Every weight-priced '_L' SKU sells ONLY there, at exactly 5 bills each. So ARY has an institutional bulk desk but NO retail buy-by-gram spice counter, which is the single highest-margin item on the ideal list.",
+    "Zero Everest spices. India's largest spice brand (~3.5 bn packs/yr) has 3 SKUs at ARY — a green chilli sauce, a snack topping and a vinegar — and all three are dormant. The rack runs on MDH + Catch + Ruchi + Sunil + unbranded local, plus Jivo own-label.",
+    "Jivo (the parent company) own-label spices are on the shelf: Jivo Black Pepper 100 Gm (45 bills), Jivo Cumin Seeds 100 Gm (40), Jivo Cinnamon Sticks 100 Gm (24), Jivo Green Cardamom 100 Gm (30) — the cardamom filed under 'Rice & Other Grains > Pulses & Lenitils'.",
+    "A pahari/Punjabi winter-and-post-natal cluster the ideal list never named, and it moves: Gond Kachira 50Gm (278 bills, ₹11,135), Mulethi 50 Gm (195 bills), Magaj / melon seeds (92 bills, ₹9,580), Kamarkash 100Gm/50Gm, Sabu Dana 100 Gm, Harad 50 Gm, Sunil Sandal Powder. Gond + magaj are the panjiri/laddoo inputs; sabudana is the fasting staple that pairs with sendha namak.",
+    "Ajinomoto (MSG) is stocked in 500 g at retail (Ajinomoto 500 Gm, Golden Crown Ajinomoto 500 Gm) — a canteen input the ideal list never considered; both currently dormant at POS.",
+    "Ruchi Black Salt 100Gm does 664 bills — the 6th most frequently bought SKU in the category, ahead of every branded haldi or mirch. Kala namak massively over-indexes here.",
+    "Maggi Masala Magic ₹5 sachet is the #1 spice SKU by frequency (3,916 bills, ₹44,880). Low-unit-price formats dominate throughout: Catch Long Whole ₹10 (595 bills), Catch Elichi ₹10 (471), S&J GG paste 30 Gm (374), Savour Green Cardamom 3 Gm (302) — while nearly every 500 g and 1 kg retail pack is dormant.",
+    "60% of the shelf list is dead: only 207 of 518 active SKUs sold in 12 months, driven by duplicate-code sprawl — 14 Kasoori Methi codes (4 sell), 'Catch Ajwain 100 Gm' / '100Gm' / '100Gms' as three codes (one sells), 'Ruchi Red Chilli Powder 100 Gm' as three codes, 'Appu Termaric Powder 100 Gm' twice, 'Shrinath Ji Sabat Dhania 100 Gm' twice.",
+    "Group coding is unreliable — search by name, never by group: 'Chips', 'Chips Gol Gappa' and 'Soya Katori' are filed under Salt & Sugar > Salt; Dabur Meswak (a toothpaste) and Del Monte Beans under Spices > Spices Paste; 9 Saffola Masala Oats SKUs under Spices > Masala; the four Keya 7 g Italian/peri-peri sachets under Salt & Sugar > Salt; MTR upma/dhokla/vada ready-mixes and 7 custard powders under Spices.",
+    "Monthly data confirms the pickle-season thesis and the gap: category sales sat at ₹90k-140k/month through 2025, then spiked to ₹2.68 L (May-26) and ₹2.20 L (Jun-26) — and ARY has no achar masala, no pickling kit, no coarse yellow sarson and no crystal dhela salt to sell into that window. It sells ~55 finished pickle SKUs instead.",
+    "Warehouse-level oddity worth flagging to the operator: Ary Pos shows ₹9,99,722 of 'excess' and ₹1,73,550 of 'shortage' in the physical-count columns, and Ary Clothing carries a negative book stock of -323,760 units. Also, the sales feed stops at 2026-08-21 (SaleHeader latest) while accounting runs to 2026-08-27 — the 12m window used here is 2025-08-21 to 2026-08-22."
+  ]
 }

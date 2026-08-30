@@ -1,0 +1,720 @@
+{
+  "lane": "hardware-build",
+  "headline": "ARY sells Rs 9.70 lakh a year of hardware-adjacent goods (1.28% of turnover) with literally ONE plumbing/paint/tool/wire SKU in a 19,481-SKU catalogue — and a 380-SKU range plus a Trust maintenance-supply account is worth about Rs 35 lakh of revenue and Rs 7.8 lakh of gross margin a year — but the first action is not stocking anything, it is that 34 appliance SKUs worth Rs 2.08 lakh become illegal to sell on 1-Oct-2026 under a QCO that makes the RETAILER liable for up to Rs 5 lakh and two years' imprisonment.",
+  "findings": [
+    {
+      "claim": "A hardware / tools / home-maintenance category does not exist at ARY. Across paint, hand tools, wire by sqmm, CPVC, taps, MCBs, tarpaulin, hinges, tower bolts and ladders, the active catalogue holds exactly ONE genuine SKU — 'Tarpaulin Plastic (Tirpal)', which has sold 1 unit for Rs 1,000 in its entire life. The other six name-matches are drink emulsions (Tree Bird Kala Khatta Emulsion 500Ml) and hinged food boxes.",
+      "status": "VERIFIED",
+      "evidence": "ary query \"SELECT ProductID,ProductName,ProductGroupID FROM ProductMaster WHERE IsActive=1 AND (ProductName LIKE '%Asian Paint%' OR '%Emulsion%' OR '%Taparia%' OR '%Stanley%' OR '%Screwdriver%' OR '%Plier%' OR '%Spanner%' OR '%Sqmm%' OR '%Bib Cock%' OR '%Angle Valve%' OR '%Cpvc%' OR '%Mcb%' OR '%Tarpaulin%' OR '%Hinge%' OR '%Tower Bolt%' OR '%Ladder%')\" -> 7 rows, 6 of them false positives; then ProductID='0FDA' lifetime = 1 unit / Rs 1,000",
+      "number": "1 real SKU out of 19,481 active; Rs 1,000 lifetime sales",
+      "soWhat": "This is not a thin category to deepen, it is a greenfield build. Nothing can be 'expanded' — the taxonomy, the supplier base for these HSNs, the price file and the shelf all have to be created from zero, which is why the plan below starts with a range decision and not a reorder."
+    },
+    {
+      "claim": "The full hardware-adjacent footprint that DOES exist is Rs 9,69,972 in 12 months = 1.28% of the Rs 7.55 Cr turnover, or Rs 16.17 per resident per month. It splits into three verified blocks: Electricals & Electronics dept Rs 3,60,783 (83 SKUs sold of 391 active); padlocks Rs 1,44,120 (16 SKUs of 53 active, 2,187 units); and maintenance consumables — bucket, broom, wiper, scrubber, dustpan, mop, brush, mat, rope, cloth clip, duster, hanger, tub — Rs 4,65,069 (131 SKUs of 253 active, 6,434 units).",
+      "status": "VERIFIED",
+      "evidence": "Three inner-join queries on SaleDetail x SaleHeader x ProductMaster with h.VoucherDate>='2025-08-01': ProductGroupID IN (109,123,114) -> 83 SKUs / Rs 360,782.69; SubGroupName='Lock' -> 16 SKUs / 2,187 units / Rs 144,120; SubGroupName IN (18 consumable subgroups) -> 131 SKUs / 6,434 units / Rs 465,068.50",
+      "number": "Rs 9,69,972 / yr = 1.28% of turnover = Rs 16.17 per resident per month",
+      "soWhat": "Gives an honest baseline to grow from and kills any claim the category is already served. It also tells you which end works: the cheap, need-driven consumable end sells, the durable-appliance end mostly does not."
+    },
+    {
+      "claim": "THE CLIFF: 34 appliance SKUs worth Rs 2,07,638 in 12 months — 58% of ARY's entire electricals department — fall inside the 'Safety of Household, Commercial and Similar Electrical Appliances (Quality Control) Order, 2026', notified 6-Apr-2026, standard IS 302 (Part 1):2024, enforced from 1-Oct-2026. They are sold under Shine Star, Skyline, Gopika, Ovastar, Prince, Vardhman and Hotline — regional brands whose ISI status is unverified. Retailers carry the SAME liability as manufacturers: fine up to Rs 5 lakh, imprisonment up to two years for repeat or wilful violation.",
+      "status": "VERIFIED",
+      "evidence": "ARY side: ary query on ProductGroupID IN (109,123,114) filtered to heater/immersion/iron/kettle/induction/dryer/tandoor/microwave/rod/cooker, VoucherDate>='2025-08-01' -> 34 SKUs / 275 units / Rs 207,638. Regulation: https://siacc.co.in/blog/bis-certification-electrical-appliances-qco-2026-india (explicit: 'Indian distributors and retailers who stock non-certified electrical appliances after October 1, 2026 face the same legal exposure as the manufacturer'; Rs 5 lakh / 2 years), corroborated on dates and standard by https://www.india-briefing.com/news/india-electrical-appliances-qco-2026-bis-certification-guide-for-foreign-manufacturers-44541.html/ , https://www.elitasrcs.com/quality-control-orders/bis-qco-for-safety-of-household-commercial-and-similar-electrical-appliances and https://www.ssglobalservices.in/news-updates/bis-certification-electrical-appliances-qco-2026-india",
+      "number": "34 SKUs, Rs 2,07,638/yr at risk; max penalty Rs 5,00,000 + 2 years; 34 days to deadline from 2026-08-28",
+      "soWhat": "The maximum fine is 2.4x the entire annual revenue of the category it protects. This inverts the priority order: before adding a single hardware SKU, ARY must audit these 34 cartons for the ISI mark and file the six-month sell-down declaration with BIS. Doing the range build first would multiply the exposure."
+    },
+    {
+      "claim": "Enforcement is staggered by enterprise size — 1-Oct-2026 for large and medium, 1-Jan-2027 for small, 1-Apr-2027 for micro — and stock manufactured or imported before the deadline may be sold for a further six months provided a formal declaration is submitted to BIS.",
+      "status": "VERIFIED",
+      "evidence": "https://www.elitasrcs.com/quality-control-orders/bis-qco-for-safety-of-household-commercial-and-similar-electrical-appliances (table: General 1-Oct-2026, Small 1-Jan-2027, Micro 1-Apr-2027) and https://www.ssglobalservices.in/news-updates/bis-certification-electrical-appliances-qco-2026-india (6-month clearance window with BIS declaration)",
+      "number": "6-month sell-down window; three enforcement dates",
+      "soWhat": "This is the escape hatch and it is free — a declaration, not a certification. It converts a forced write-off of Rs 2.08 lakh of stock into an orderly sell-through to ~1-Apr-2027. It expires the moment the deadline passes without the filing, so it is a P0 with a date."
+    },
+    {
+      "claim": "The 'Basement' counter is NOT a bulk hardware or maintenance channel. All 13 of its large bills in the window go to ONE customer, 002CM 'Hunger Heroes' of Green Park, New Delhi, and the contents are pure langar ration — Rice_L 1,400 kg at Rs 68, Atta_L 1,830 at Rs 45, Milk_Z 1,500 at Rs 47, Soyabean Fortune_L, Paneer_Z, Dalia_L, Kala Chana_L. Zero hardware lines.",
+      "status": "VERIFIED",
+      "evidence": "ary query on SaleHeader for SerialNumbers touching WarehouseName LIKE '%asement%' -> all CompanyName/CustomerID = 002CM; ary customers get 002CM -> 'Hunger Heroes, Green Park Main, New Delhi 110016'; ary query on SaleDetail WHERE SerialNumber=2168780.0001 -> 28 food lines, no hardware",
+      "number": "Rs 5.5-6.9 lakh per bill, ~monthly, Rs 70.78 lakh in 12 months",
+      "soWhat": "Corrects the brief's assumption. But it proves something more valuable than it disproves: ARY already runs a working institutional B2B line — one credit customer, monthly billing through a dedicated counter, Rs 6 lakh a month of throughput. A Trust maintenance-supply account needs no new machinery, only a new customer on proven rails."
+    },
+    {
+      "claim": "CORRECTION to the brief: 'Packing Material Exp.' shortage is Rs 11.01 LAKH, not Rs 1.1 crore — a 10x misread. And it is not a packaging or hardware finding at all: 0APK is an expense being run through inventory with no product group, no subgroup, StandardCostPrice 0 and MaxRetailPrice 0, purchased from Sai Industries and Talwar Plastic Products at ~Rs 155.",
+      "status": "VERIFIED",
+      "evidence": "ary audit shortage -> row '0APK Packing Material Exp. / Ary Warehouse / 28776.66 qty / 1101425.68 at cost'; ary query on ProductMaster WHERE ProductID='0APK' -> ProductGroupName [None], SubGroupName [None], StandardCostPrice 0, MaxRetailPrice 0; ary query on PurchaseDetail for 0APK -> Sai Industries / Talwar Plastic Products at Rs 155",
+      "number": "Rs 11,01,425.68 (not Rs 1.1 Cr)",
+      "soWhat": "Removes a Rs 1 crore phantom from the business case. Whatever justifies the hardware build, it is not this — and any plan that leaned on it was leaning on a decimal error."
+    },
+    {
+      "claim": "The Trust's maintenance department does not buy through ARY and does not exist in ARY's books. The Trust IS a customer — 13+ ledger accounts (The Kalgidhar Trust, Trust Delhi, Trust Rent A/C, Trust Final A/C, Akal Academy, Eternal University, Akal Hospital, Akal Nursing College, Akal De-Adiction Ward, Akal Mahila Mandal, Trust Staff Credit) plus 3,604 'Akal Academy Cs' student credit accounts — but a name search across CustomerMaster for paint / repair / engineer / estate / construct / civil / electric returns exactly one row, and it is 'State Bank Of India Baru Sahib'.",
+      "status": "VERIFIED",
+      "evidence": "ary query on AccountMaster JOIN GroupMaster for groups Akal Academy / Sundry Debtors / Local Debtors - Baru Sahib / Bsu Branches / Branch Use -> 71 rows, no maintenance or estate account; ary query \"SELECT CustomerID,CustomerName FROM CustomerMaster WHERE CustomerName LIKE '%aint%' OR '%epair%' OR '%ngineer%' OR '%state%' OR '%onstruct%' OR '%ivil%' OR '%lectric%'\" -> 1 row, State Bank Of India",
+      "number": "0 maintenance-department accounts; 13+ Trust accounts already open",
+      "soWhat": "The addressable institutional spend is 100% leakage today — every rupee of it is going to a hardware store in Rajgarh, Nahan or Solan. And the credit relationship, the GSTIN and the billing rails to capture it already exist, so the sales job is one conversation with the estate office, not a customer acquisition."
+    },
+    {
+      "claim": "ARY is itself a CUSTOMER of the local hardware trade, and the ledger carries twelve dormant hardware and electrical supplier shells — Shiv Hardware Store, Vardhman Lock And Hardware, New Deep Electricals & Hardware Store, Gandhi Electricals, Sharma Electricals, Kay Dee Electricals, Shree Ji Electricals, Hammarman Engineering, Sna Power Engineering, Ganesh Elec & Mech Engineers, R.D Priya Repairing Works, Sahil Hot Plate & Repairing Centre. But almost none has throughput: only Vardhman Lock And Hardware ever transacted (Rs 3,068, in 2023). ARY's own maintenance spend runs through 'Repair & Maintenance Expenses' — Rs 2,19,562.22 across 47 vouchers from 2023-05-23 to 2026-08-14, about Rs 66,500 a year.",
+      "status": "VERIFIED",
+      "evidence": "ary query on AccountMaster name-search for aint/epair/ngineer/state/lectric/ardware/ivil/uilding/lumb -> the 12 accounts; ary query on TransactionChild JOIN TransactionMaster for those AccountIDs -> only 2 rows returned, Vardhman Lock And Hardware Rs 3,068 (2023-04 to 2023-08) and R&M Expenses Rs 219,562.22 / 47 lines; ary accounts get 1978 -> debits 219,562.22, 47 vouchers",
+      "number": "Rs 2,19,562 lifetime R&M (~Rs 66,500/yr); 11 of 12 hardware supplier accounts have zero transactions",
+      "soWhat": "Two things. First, an honest deflation: the supplier accounts are name-only, so there is no existing hardware buying relationship to leverage — sourcing has to be built. Second, an independent cross-check on demand: ARY spends ~Rs 66,500 a year maintaining roughly six counters and a warehouse; scaled to a 5,000-resident campus that lands in the same Rs 40-70 lakh band as the per-resident benchmark below, which is the only reason I trust that estimate at all."
+    },
+    {
+      "claim": "The live electrical supply base is small but real and it is a DELHI supply chain, not a Himachal one. Twelve-month purchases into groups 109/123/114 total Rs 2,32,256 across 10 suppliers, led by Harminder Singh & Bros (10 bills, Rs 1,03,533, GSTIN 07AASPS8364B1Z8 = Delhi) with 'Tools & Spares' (GSTIN 07AANPS4748N1ZS, also Delhi, Rs 7,391) already on the books.",
+      "status": "VERIFIED",
+      "evidence": "ary query on PurchaseDetail x PurchaseHeader x ProductMaster x AccountMaster WHERE ProductGroupID IN (109,123,114) AND VoucherDate>='2025-08-01' -> 10 suppliers, Rs 232,255.9; ary accounts list --search Harminder / Tools -> GSTINs 07AASPS8364B1Z8 and 07AANPS4748N1ZS",
+      "number": "Rs 2,32,256 of 12-month electrical purchases; 2 Delhi hardware suppliers already onboarded",
+      "soWhat": "Sourcing does not start cold. Harminder Singh & Bros can be asked for BIS licence numbers on the QCO SKUs immediately, and Delhi origin means ARY can consolidate hardware onto the existing Delhi HO inbound leg rather than paying hill freight from Solan — but it also means 3-5 day lead times, which is why the range must be shallow and fast-moving, not deep."
+    },
+    {
+      "claim": "PRICE POINT IS THE WHOLE GAME, and ARY's own book proves where it sits. Residents bought 2,187 padlocks in 12 months at Bhagwati 25mm Rs 25, 32mm Rs 35, 38mm Rs 55, 40mm Rs 70, 50mm Rs 130, 65mm Rs 185 and Harrison 25mm Rs 55 to 65mm Rs 160. The premium tier of the same product is Godrej Freedom 5-lever Rs 221, Ace Pro SS304 Rs 288, Navtal Round Rs 1,200, Navtal 8-lever Rs 1,725. The same gap runs through lighting: ARY sells Havells LED 5W at Rs 40, 9W at Rs 75, Reo LED tube 20W at Rs 155 and Reo CFL LED 9W at Rs 70, while the branded premium catalogue prices Havells Adore 10W at Rs 334/pc and New Adore 15W at Rs 2,985.",
+      "status": "VERIFIED",
+      "evidence": "ARY rates: ary query on SaleDetail x SaleHeader x ProductMaster x SubGroupMaster WHERE SubGroupName LIKE '%Lock%' AND VoucherDate>='2025-08-01' (Bhagwati/Harrison rates and 2,187 units) and ary assort probe bulb tube led switch socket wire holder mcb extension plug (Havells 5W Rs 40 / 9W Rs 75, Reo tube Rs 155.45, Reo CFL Rs 70). Premium: https://dir.indiamart.com/impcat/godrej-locks.html and https://www.moglix.com/brands/havells/lighting-luminaries/led/211200000",
+      "number": "Padlocks Rs 25-185 sell 2,187 units/yr; premium equivalents cost 3-13x",
+      "soWhat": "This is the single most actionable finding for the range design. The 380-SKU list must be value-tier-first — Bhagwati/Harrison locks, Anchor and GM switches at Rs 21-80, Wipro Garnet and Havells bulbs at Rs 40-185, Taparia not Stanley, Tractor Emulsion not Royale. A range built off a premium dealer catalogue would go straight into the 13,284-dead-SKU pile."
+    },
+    {
+      "claim": "ARY's proven gross margin on the electricals it already sells is 27-47% net of GST, verified SKU by SKU against last purchase cost: Shine Star Immersion Water Heater 1500W cost Rs 203.40 -> sold Rs 450 (46.7% net); Immersion Rod 1500W Rs 211.88 -> Rs 409.20; Shine Star Kettle 1.8L Rs 550.88 -> Rs 931.21 (30.2% net); Eveready Cell AA Rs 8.447 -> Rs 13.658 (27% net); Havells LED Inverter Bulb 20W Rs 473.55 -> Rs 699; Havells 4+1 Powerstrip Rs 457.60 -> Rs 640.",
+      "status": "VERIFIED",
+      "evidence": "ary query on SaleDetail x SaleHeader x ProductMaster for ProductGroupID IN (109,123) with a correlated subquery pulling the latest PurchaseDetail.PurchaseCost; ary masters taxes confirms Output GST is inclusive=true, so SaleRate is grossed up and net margin = (SaleRate/1.18 - cost)/(SaleRate/1.18)",
+      "number": "27-47% net-of-GST GM verified; blended ~30-35%",
+      "soWhat": "Grounds the P&L in ARY's own realised prices instead of a trade assumption. It also flags the two low-margin traps to price defensively: wire and paint are the most price-transparent lines in hardware and will run 12-25%, so they belong in the range as traffic and institutional-volume drivers, not as margin."
+    },
+    {
+      "claim": "Adding SKUs is cheap in capital but ARY has a proven listing-discipline problem in exactly this department: 308 of 391 active Electricals & Electronics SKUs (78.8%) did not sell in 12 months, yet they hold only 94 units of stock between them.",
+      "status": "VERIFIED",
+      "evidence": "ary query counting active ProductGroupID IN (109,123,114) SKUs NOT IN the 12-month SaleDetail set, LEFT JOIN Stock -> 308 dead SKUs / 94 units; per-group: 109 = 184 active vs 48 sold, 123 = 120 vs 31, 114 = 87 vs 4",
+      "number": "78.8% of electrical SKUs dead; 94 units of stock behind them",
+      "soWhat": "The risk in this build is not working capital, it is catalogue rot — the same disease as the 13,284 campus-wide dead SKUs. Every hardware SKU must be added with a reorder level and a 90-day kill rule, or in a year there will be 380 more dead lines and no revenue."
+    },
+    {
+      "claim": "The physical and operational home for the institutional half already exists and is idle: Ary Warehouse carries 9,094 active SKUs and Rs 11,86,604 of stock at cost with ZERO sales — it is a stock-holding node, not a counter. Meanwhile Ary Pos turns 7.9x a year on Rs 54,27,303 of stock across 9,867 stocked SKUs (Rs 550 of cost per stocked SKU), so the retail floor is lean, not stock-fat.",
+      "status": "VERIFIED",
+      "evidence": "ary assort headroom -> Ary Warehouse 9,094 stocked / 0 sold / Rs 1,186,604.27 stock at cost / 0.00 turns; Ary Pos 9,867 stocked / 5,496 sold / Rs 5,427,303.33 / 7.90 turns; Rs 5,427,303.33 / 9,867 = Rs 550.05 per SKU",
+      "number": "Warehouse: 9,094 SKUs, Rs 11.87 L stock, 0 turns. Pos: 7.9 turns, Rs 550/SKU",
+      "soWhat": "The trade counter for Trust supply goes in Ary Warehouse — it needs no new building, no new till and no retail shelf space, and it keeps 20-litre paint drums and 90-metre wire coils off a floor that is doing 7.9 turns. It also gives the Rs 550/SKU figure used to size opening stock below."
+    },
+    {
+      "claim": "GST on the ENTIRE proposed hardware range is a single uniform 18%, effective 22-Sep-2025 after the 56th GST Council rationalisation — paints and varnishes, adhesives, PVC pipes and fittings, electrical switches and sockets, wires and cables, LED lamps and luminaires, hand tools, locks, taps and sanitary fittings, and cement, all at 18%. Paints and cement came DOWN from 28%; LED lamps went UP from 12%.",
+      "status": "VERIFIED",
+      "evidence": "https://cleartax.in/s/gst-rates — post-56th-Council slab table, all ten categories at 18%, effective 22 September 2025. ARY's own tax master already carries Output Gst @ 18% (id 30) plus the new 40% slab (ids 38, 37), confirming the reform is configured: ary masters taxes",
+      "number": "18% flat across all 10 hardware categories; effective 22-Sep-2025",
+      "soWhat": "Operationally this is the best news in the lane — one tax code for 380 SKUs, no slab-mapping errors, no reclassification disputes, and ARY's tax master is already configured for it. The 28%-to-18% cut on paint and cement also means a hardware range launched now is 8% cheaper to the customer than the same range would have been last year."
+    },
+    {
+      "claim": "Verified 2026 landed prices exist for every block of the proposed range. Hand tools: Taparia 812 5-blade screwdriver set Rs 209, 1013 8-pc kit Rs 580, WS-05 wire stripper Rs 68, 1621 combination plier Rs 194, 1172N 255mm adjustable spanner Rs 639, 1808 8-pc ring spanner set Rs 703; Stanley 3m tape Rs 99, 51-152 claw hammer Rs 280, 70-461 combination plier Rs 287, 70-964E 12-pc spanner set Rs 661. Paint: Asian Paints Tractor Emulsion 4L Rs 859 / 10L Rs 2,149 / 20L Rs 3,868, Apcolite Premium Emulsion 10L Rs 4,550, Apcolite Satin Enamel 4L Rs 1,705, Ace Exterior 20L Rs 4,599. Adhesives: Pidilite Fevikwik 20g Rs 59, M-Seal 1kg Rs 257, WoodGrip Super 1kg Rs 255 / Marine 1kg Rs 300, Holdtite UPVC solvent cement 50ml Rs 62 / 250ml Rs 184.",
+      "status": "VERIFIED",
+      "evidence": "https://www.moglix.com/brands/taparia ; https://www.moglix.com/brands/stanley ; https://www.moglix.com/brands/asian-paints ; https://www.moglix.com/brands/pidilite",
+      "number": "~40 named SKUs priced; Taparia Rs 68-703, Stanley Rs 99-763, paint Rs 269-4,599, adhesive Rs 18-300",
+      "soWhat": "The range can be costed and priced this week rather than after a sourcing trip. Note the Taparia/Stanley overlap — a combination plier is Rs 194 Taparia vs Rs 287 Stanley — which is exactly where the value-tier rule from the padlock evidence says to buy Taparia."
+    },
+    {
+      "claim": "Prices are also established for the commodity blocks, where the sourcing decision is grade not brand. House wire 90m coils: 1.0 sqmm Rs 540-1,190, 1.5 sqmm Rs 540-1,870 (Polycab FR Rs 1,870), 2.5 sqmm Rs 3,100-3,685 (KEI ConFlame-FRLS Rs 3,685). MCBs: single-pole 6-32A Rs 39-107 (Schneider 16A Rs 107), L&T enGem 32A DP Rs 471, Havells 40A 4-pole Rs 761. Taps: PVC bib cock Rs 14-60, long body Rs 40-199, angle valve Rs 28-46, PTMT sink cock Rs 224-910, pan cock Rs 4-15. CPVC: 1/2 inch length Rs 102-150, Supreme 1 inch Rs 140, elbow Rs 60. Switches: modular 1-way 6-10A Rs 21-42, 6A socket Rs 38-80, switch-socket combo Rs 41-57, 32A DP Rs 140-149. Fasteners: drywall screw Rs 130-250/kg, self-drilling Rs 0.45/pc, machine screw Rs 120/kg. Hinges: 4 inch Rs 10-120, SS ball-bearing 5 inch Rs 82-166, clip-on Rs 40-110/pair. Paint brushes 1-5 inch Rs 5-120 (Berger 4 inch Rs 239). Extension boards Rs 33-429. Ladders: 3.9ft A-type Rs 1,339, 5ft step Rs 1,899-4,100, 6ft heavy-duty Rs 6,500.",
+      "status": "VERIFIED",
+      "evidence": "https://dir.indiamart.com/impcat/house-wire.html ; https://dir.indiamart.com/impcat/miniature-circuit-breaker.html ; https://dir.indiamart.com/impcat/pvc-water-tap.html ; https://dir.indiamart.com/impcat/cpvc-pipe.html ; https://dir.indiamart.com/impcat/electrical-switches.html ; https://dir.indiamart.com/impcat/screws.html ; https://dir.indiamart.com/impcat/door-hinges.html ; https://dir.indiamart.com/impcat/paint-brush.html ; https://dir.indiamart.com/impcat/extension-board.html ; https://dir.indiamart.com/impcat/aluminium-ladders.html",
+      "number": "9 commodity blocks priced; wire Rs 540-3,685/coil, MCB Rs 39-761, taps Rs 4-910",
+      "soWhat": "Confirms the two margin-thin lines. Wire spreads 3.5x on the same nominal spec (1.5 sqmm Rs 540 to Rs 1,870) purely on copper grade and FR/FRLS rating — so wire must be bought on ISI IS 694 conformity, not on price, or ARY will be selling undersized copper into staff quarters. That is a safety exposure, not a margin one."
+    },
+    {
+      "claim": "The campus-wide institutional maintenance-material pool is roughly Rs 5 lakh a month (Rs 60 lakh a year), with a wide band of Rs 36-96 lakh. Two independent methods land in the same range: (a) a per-resident institutional maintenance-material benchmark of Rs 60-160 per resident per month x 5,000 residents; (b) scaling ARY's own verified Rs 66,500/yr of R&M spend across roughly six counters and a warehouse up to full campus built-up area.",
+      "status": "ESTIMATED",
+      "evidence": "Method (b) uses the VERIFIED Rs 219,562.22 / 47 vouchers over 2023-05-23 to 2026-08-14 from ary accounts get 1978. Method (a) is a benchmark from my own knowledge of Indian residential-institution maintenance ratios and was NOT confirmed against a published source — both search engines (DuckDuckGo, Bing) returned CAPTCHA pages and the WebSearch budget was exhausted at 200/200 calls.",
+      "number": "Rs 5 lakh/month central estimate; band Rs 3-8 lakh/month",
+      "soWhat": "This is the weakest number in the lane and it drives 59% of the forecast revenue. It must not be used to authorise stock. The plan below therefore puts a single conversation with the Trust estate office — asking for last year's maintenance-material purchase total — ahead of any institutional buying, because that one figure replaces the entire estimate."
+    },
+    {
+      "claim": "A 380-SKU range at ~70% sell-through supports about Rs 14.6 lakh a year of resident retail (Rs 1.20 lakh a month, Rs 24 per resident per month) — derived from ARY's own revenue-per-selling-SKU, which is Rs 4,347 in electricals (Rs 3,60,783 / 83) and Rs 9,008 in padlocks (Rs 1,44,120 / 16), blended to ~Rs 5,500 for a hardware mix with higher tickets.",
+      "status": "ESTIMATED",
+      "evidence": "Derived arithmetic on the VERIFIED per-cluster figures above: 380 SKUs x 0.70 sell-through = 266 selling SKUs x Rs 5,500 = Rs 14.63 lakh. The 70% sell-through assumption is my own and is deliberately set well above the 33% ARY currently achieves in electricals, on the reasoning that hardware demand is need-driven and the nearest alternative is 30-50 km of hill road.",
+      "number": "Rs 14.6 lakh/yr resident retail; Rs 1.20 lakh/month; Rs 24/resident/month",
+      "soWhat": "Sets the retail half of the split. The 70% assumption is the sensitivity that matters — at ARY's current 33% electricals sell-through the figure is Rs 6.9 lakh a year, less than half. That is precisely why the 90-day kill rule is in the plan: sell-through is not a forecast input, it is a management action."
+    },
+    {
+      "claim": "THE SPLIT ASKED FOR: institutional supply to the Trust should be roughly 1.5x the resident retail demand. Year 1 steady state is Rs 2.95 lakh a month total — resident retail Rs 1.20 lakh (41%) and institutional Rs 1.75 lakh (59%, i.e. 35% capture of the Rs 5 lakh pool). Year 2 is Rs 4.45 lakh a month — resident Rs 1.45 lakh (33%), institutional Rs 3.00 lakh (67%, 60% capture). Gross margin blends to ~22% because institutional bulk runs ~15% against retail's ~32%, giving Rs 64,700 a month (Rs 7.8 lakh a year) in year 1 and Rs 1.10 lakh a month (Rs 13.2 lakh a year) in year 2.",
+      "status": "ESTIMATED",
+      "evidence": "Composed from the two sizing findings above; the ~32% retail margin is anchored on the VERIFIED 27-47% net-of-GST SKU margins, the ~15% institutional margin is my own assumption for credit bulk supply against a price-transparent range and is NOT verified",
+      "number": "Yr 1: Rs 2.95 L/mo revenue, 41:59 retail:institutional, Rs 64,700/mo GM. Yr 2: Rs 4.45 L/mo, 33:67, Rs 1.10 L/mo GM",
+      "soWhat": "Answers the brief's core question and reframes the project. This is not primarily a retail category build — it is a B2B supply contract with a retail shelf attached. That changes who owns it (the institutional-sales side that already runs Hunger Heroes, not the Pos category buyer) and it changes the sequence: win the Trust account first, and the retail range rides on its purchase volume and its supplier terms."
+    },
+    {
+      "claim": "One-off cost is about Rs 5.29 lakh, of which Rs 4.5 lakh is recoverable stock: opening stock 380 SKUs x ~Rs 1,100 at cost = Rs 4.18 lakh (rounded to Rs 4.5 lakh), fixtures for a 20-running-foot bay Rs 55,000, wire measuring wheel and cable cutter Rs 6,000, signage and bin/barcode labels Rs 8,000, staff training at a Solan or Nahan wholesaler Rs 10,000. The institutional trade counter in Ary Warehouse needs no capex.",
+      "status": "ESTIMATED",
+      "evidence": "Stock-per-SKU is anchored on the VERIFIED Rs 550.05 of cost per stocked SKU at Ary Pos (Rs 5,427,303.33 / 9,867 from ary assort headroom), doubled for hardware's heavier units — a 20L Tractor Emulsion drum is Rs 3,868 and a 2.5 sqmm 90m coil is Rs 3,380 against a Rs 207 average ARY bill. Fixture, wheel, signage and training costs are my own estimates, NOT quoted.",
+      "number": "Rs 5.29 lakh one-off; Rs 4.5 lakh of it recoverable as stock; payback ~8 months on year-1 GM",
+      "soWhat": "The build is small enough that it does not need a capital case — Rs 79,000 of true sunk cost against Rs 7.8 lakh of year-1 gross margin. The decision is therefore about management attention and catalogue discipline, not money, which is the argument to make to the board."
+    },
+    {
+      "claim": "The specific IS standards the new range must carry — house wire IS 694, switches IS 3854, plugs and sockets IS 1293, MCBs IS 8828, PVC conduit IS 9537, PVC pipes IS 4985, CPVC IS 15778, self-ballasted LED lamps IS 16102 under the CRS registration scheme — could NOT be confirmed against the BIS product list. Whether a Hand Tools QCO exists is likewise unresolved.",
+      "status": "NOT-CHECKED",
+      "evidence": "bis.gov.in/product-certification/products-under-compulsory-certification/ and .../products-under-compulsory-certification-crs/ both returned navigation-hub pages with no product registry; one attempt aborted mid-stream. DuckDuckGo and Bing both returned CAPTCHA or irrelevant results, and the session's WebSearch budget was exhausted (200/200). Only IS 15778 for CPVC was independently corroborated, via https://instapdf.in/astral-pipes-price-list/ describing Astral CPVC Pro as meeting IS 15778 cell class DP 110-2-3-2.",
+      "number": "8 IS numbers unconfirmed; Hand Tools QCO status unknown",
+      "soWhat": "Do not put these numbers in a purchase specification yet. They are the right shape of requirement and should be written into the supplier declaration as 'the applicable IS standard, stated by you', which shifts the confirmation burden onto Harminder Singh & Bros and the BIS Guidance-on-QCOs PDF rather than resting on my recall."
+    }
+  ],
+  "tables": [
+    {
+      "title": "Where ARY stands today in hardware — 12 months to Aug-2026 (all VERIFIED)",
+      "columns": [
+        "Block",
+        "Active SKUs",
+        "SKUs sold",
+        "Units",
+        "12m sales (Rs)",
+        "Dead SKU %",
+        "Verdict"
+      ],
+      "rows": [
+        [
+          "Electricals (grp 123) — bulbs, tubes, torches, cells",
+          "120",
+          "31",
+          "3,991",
+          "1,60,530",
+          "74.2%",
+          "A listing, not a range"
+        ],
+        [
+          "Appliances (grp 109) — heaters, kettles, irons, extension boards",
+          "184",
+          "48",
+          "296",
+          "1,79,251",
+          "73.9%",
+          "58% of it illegal from 1-Oct-2026"
+        ],
+        [
+          "China (grp 114)",
+          "87",
+          "4",
+          "22",
+          "21,002",
+          "95.4%",
+          "Effectively dead"
+        ],
+        [
+          "Padlocks (subgroup Lock) — Bhagwati, Harrison",
+          "53",
+          "16",
+          "2,187",
+          "1,44,120",
+          "69.8%",
+          "THE PROOF: 2,187 units at Rs 25-185"
+        ],
+        [
+          "Maintenance consumables — bucket, broom, wiper, scrubber, dustpan, mop, brush, mat, rope, clip, duster, hanger, tub",
+          "253",
+          "131",
+          "6,434",
+          "4,65,069",
+          "48.2%",
+          "Best hit rate on campus (52%)"
+        ],
+        [
+          "TOTAL hardware-adjacent",
+          "697",
+          "230",
+          "12,930",
+          "9,69,972",
+          "67.0%",
+          "1.28% of turnover, Rs 16.17/resident/mo"
+        ],
+        [
+          "Paint, hand tools, wire by sqmm, CPVC, taps, MCB, fasteners, hinges, tower bolts, ladders, conduit, sealant, hosepipe, garden tools",
+          "1 (a tarpaulin)",
+          "1 lifetime",
+          "1",
+          "1,000 lifetime",
+          "—",
+          "GREENFIELD — nothing exists"
+        ],
+        [
+          "Adhesives — 4 Fevicol SKUs, filed under 'Stationary'",
+          "4",
+          "1",
+          "n/a",
+          "540",
+          "75.0%",
+          "Miscatalogued, not stocked"
+        ]
+      ]
+    },
+    {
+      "title": "The 380-SKU range — value tier first, 2026 prices VERIFIED from named sources",
+      "columns": [
+        "#",
+        "Block",
+        "SKUs",
+        "Brands (value tier first)",
+        "2026 price band (Rs)",
+        "Est. net GM",
+        "Priced from"
+      ],
+      "rows": [
+        [
+          "1",
+          "Lamps, tubes, battens",
+          "34",
+          "Havells, Wipro Garnet, Syska, Eveready, Reo",
+          "LED 5W 40 / 9W 75 / 12W 110-184 / inverter 20W 699; batten 20W 155; Wipro 7W 110",
+          "30-40%",
+          "ARY's own rates + Moglix"
+        ],
+        [
+          "2",
+          "Switches, sockets, plates",
+          "46",
+          "Anchor Roma & Penta, GM, Goldmedal",
+          "1-way 6-10A 21-42; 6A socket 38-80; combo 41-57; 32A DP 140-149; plate 150-350",
+          "35-45%",
+          "IndiaMART + Anchor list"
+        ],
+        [
+          "3",
+          "House wire & cable",
+          "14",
+          "Polycab, KEI ConFlame-FRLS, Finolex, RR Kabel",
+          "90m coil: 1.0sq 540-1,190; 1.5sq 540-1,870; 2.5sq 3,100-3,685; 4.0sq/100m 4,973",
+          "15-25%",
+          "IndiaMART — buy on IS 694, never on price"
+        ],
+        [
+          "4",
+          "Protection — MCB, RCCB, DB",
+          "12",
+          "Havells, Schneider, L&T enGem, Anchor",
+          "SP 6-32A 39-107; DP 32A 471; 4P 40A 761; MCB box 4/8-way",
+          "30-40%",
+          "IndiaMART"
+        ],
+        [
+          "5",
+          "Extension boards, plug tops",
+          "12",
+          "Anchor, Havells, GM",
+          "ARY today: 4-way 530, 2-pin 7m 487, 4+1 strip 640, plug 6A 60 / 16A 83; generic 5-way 50-85; spike guard 275-429",
+          "28-40%",
+          "ARY's own rates + IndiaMART"
+        ],
+        [
+          "6",
+          "Plumbing — taps, valves",
+          "44",
+          "Prayag, Gravity PTMT, Hindware entry",
+          "PVC bib cock 14-60; long body 40-199; angle valve 28-46; PTMT sink cock 224-910; pan cock 4-15",
+          "35-50%",
+          "IndiaMART"
+        ],
+        [
+          "7",
+          "Pipe, fittings, conduit",
+          "24",
+          "Astral CPVC Pro, Supreme, Prince; Astral Wire Guard 20-63mm",
+          "CPVC 1/2in 102-150 per length; Supreme 1in 140; elbow 60; conduit light/med/heavy",
+          "35-50%",
+          "IndiaMART + Astral list (IS 15778)"
+        ],
+        [
+          "8",
+          "Adhesives & sealants",
+          "22",
+          "Pidilite — Fevikwik, M-Seal, WoodGrip, Holdtite, Fevicol SH",
+          "Fevikwik 20g 59; M-Seal 1kg 257; WoodGrip Super 1kg 255 / Marine 300; UPVC cement 50ml 62 / 250ml 184; Holdtite 40g 18",
+          "15-25%",
+          "Moglix"
+        ],
+        [
+          "9",
+          "Paint & painting sundries",
+          "30",
+          "Asian Paints Tractor & Apcolite, Ace exterior",
+          "Tractor 4L 859 / 10L 2,149 / 20L 3,868; Apcolite Emulsion 10L 4,550; Satin Enamel 4L 1,705; Ace 20L 4,599; spray 400ml 269; brush 1-5in 5-120",
+          "12-20%",
+          "Moglix + IndiaMART"
+        ],
+        [
+          "10",
+          "Hand tools",
+          "42",
+          "Taparia (core), Stanley (step-up only)",
+          "Taparia: 812 set 209, 1013 kit 580, WS-05 68, 1621 plier 194, 1172N spanner 639, 1808 set 703. Stanley: tape 99, claw hammer 280, plier 287, 12-pc set 661",
+          "25-35%",
+          "Moglix"
+        ],
+        [
+          "11",
+          "Fasteners & fixings — loose, by weight",
+          "34",
+          "Generic, sold from bins",
+          "Drywall screw 130-250/kg; self-drilling 0.45/pc; machine screw 120/kg; wall plugs, nails",
+          "50-100%",
+          "IndiaMART — highest-margin block"
+        ],
+        [
+          "12",
+          "Builders' hardware — locks, hinges, bolts",
+          "30",
+          "Bhagwati & Harrison (proven), Godrej top-end only",
+          "Padlock 25-185 (ARY's proven ladder); Godrej Freedom 221 / Ace Pro 288; hinge 4in 10-120; SS ball-bearing 5in 82-166; clip-on 40-110/pair",
+          "30-45%",
+          "ARY's own rates + IndiaMART"
+        ],
+        [
+          "13",
+          "Ladders, tarpaulin, hosepipe",
+          "12",
+          "Prohome, SK Ladders, local HDPE",
+          "3.9ft A-type 1,339; 5ft step 1,899-4,100; 6ft heavy 6,500; wall-supported 300-465/ft",
+          "25-35%",
+          "IndiaMART"
+        ],
+        [
+          "14",
+          "Cleaning & garden — extend what works",
+          "38",
+          "ARY's existing suppliers + khurpa, secateur, watering can",
+          "Extends the Rs 4.65 L / 131-selling-SKU line already proven",
+          "30-40%",
+          "ARY's own book"
+        ],
+        [
+          "",
+          "TOTAL",
+          "380",
+          "",
+          "Opening stock ~Rs 4.5 lakh at cost",
+          "~30% retail",
+          "—"
+        ]
+      ]
+    },
+    {
+      "title": "Monthly revenue split — resident retail vs institutional supply to the Trust (the brief's core question)",
+      "columns": [
+        "Line",
+        "Year 1 steady state",
+        "Share",
+        "Year 2",
+        "Share",
+        "Basis",
+        "Status"
+      ],
+      "rows": [
+        [
+          "Resident retail — 5,000 residents",
+          "Rs 1,20,000/mo",
+          "41%",
+          "Rs 1,45,000/mo",
+          "33%",
+          "380 SKUs x 70% sell-through x Rs 5,500/selling SKU/yr",
+          "ESTIMATED (Rs/SKU is VERIFIED)"
+        ],
+        [
+          "— of which already earned today",
+          "Rs 40,000/mo",
+          "",
+          "Rs 40,000/mo",
+          "",
+          "Rs 9,69,972/yr / 12 x hardware share",
+          "VERIFIED"
+        ],
+        [
+          "— incremental from the new range",
+          "Rs 80,000/mo",
+          "",
+          "Rs 1,05,000/mo",
+          "",
+          "new lines are all additive",
+          "ESTIMATED"
+        ],
+        [
+          "Institutional supply to the Trust",
+          "Rs 1,75,000/mo",
+          "59%",
+          "Rs 3,00,000/mo",
+          "67%",
+          "35% then 60% capture of a Rs 5 L/mo campus pool",
+          "ESTIMATED — the weak number"
+        ],
+        [
+          "TOTAL CATEGORY REVENUE",
+          "Rs 2,95,000/mo",
+          "100%",
+          "Rs 4,45,000/mo",
+          "100%",
+          "Rs 35.4 L/yr then Rs 53.4 L/yr",
+          "ESTIMATED"
+        ],
+        [
+          "Gross margin — retail at ~32%",
+          "Rs 38,400/mo",
+          "",
+          "Rs 46,400/mo",
+          "",
+          "anchored on 27-47% verified SKU margins",
+          "ESTIMATED"
+        ],
+        [
+          "Gross margin — institutional at ~15%",
+          "Rs 26,300/mo",
+          "",
+          "Rs 45,000/mo",
+          "",
+          "credit bulk, price-transparent range",
+          "ESTIMATED"
+        ],
+        [
+          "TOTAL GROSS MARGIN",
+          "Rs 64,700/mo",
+          "22% blended",
+          "Rs 1,10,000/mo",
+          "25%",
+          "Rs 7.8 L/yr then Rs 13.2 L/yr",
+          "ESTIMATED"
+        ],
+        [
+          "Per resident per month",
+          "Rs 59",
+          "",
+          "Rs 89",
+          "",
+          "vs Rs 16.17 today, in a Rs 1,258.68 wallet",
+          "—"
+        ]
+      ]
+    },
+    {
+      "title": "BIS / QCO compliance map",
+      "columns": [
+        "Item",
+        "Requirement",
+        "Status",
+        "ARY exposure",
+        "Action"
+      ],
+      "rows": [
+        [
+          "Household & commercial electrical appliances",
+          "Safety of Household, Commercial and Similar Electrical Appliances (QCO), 2026 — notified 6-Apr-2026, IS 302 (Part 1):2024, ISI mark mandatory",
+          "VERIFIED (4 sources)",
+          "34 SKUs, Rs 2,07,638/yr — Shine Star, Skyline, Gopika, Ovastar, Prince, Vardhman, Hotline",
+          "Audit cartons for ISI mark NOW"
+        ],
+        [
+          "Enforcement dates",
+          "1-Oct-2026 large & medium; 1-Jan-2027 small; 1-Apr-2027 micro",
+          "VERIFIED",
+          "34 days from 2026-08-28",
+          "Determine ARY's MSME class"
+        ],
+        [
+          "Pre-deadline stock",
+          "Sellable a further 6 months on a formal declaration to BIS",
+          "VERIFIED",
+          "Converts write-off into orderly sell-through to ~Apr-2027",
+          "FILE THE DECLARATION — free, and it expires"
+        ],
+        [
+          "Retailer liability",
+          "BIS Act 2016 assigns liability to sellers as well as manufacturers — fine up to Rs 5,00,000, imprisonment up to 2 years for repeat/wilful",
+          "VERIFIED (siacc.co.in, explicit)",
+          "Max fine = 2.4x the category's annual revenue",
+          "This is why compliance precedes range build"
+        ],
+        [
+          "House wire",
+          "IS 694 claimed; 1.5 sqmm spreads 3.5x on grade (Rs 540 to Rs 1,870 per 90m)",
+          "NOT-CHECKED (IS no.)",
+          "Undersized copper into staff quarters is a safety exposure, not a margin one",
+          "Buy on stated conformity, not price"
+        ],
+        [
+          "Switches / sockets / MCBs / conduit / PVC pipe / LED lamps",
+          "IS 3854 / IS 1293 / IS 8828 / IS 9537 / IS 4985 / IS 16102 (CRS)",
+          "NOT-CHECKED",
+          "bis.gov.in returned navigation hubs; both search engines CAPTCHA'd; WebSearch budget exhausted 200/200",
+          "Get BIS licence / R-numbers from the supplier in writing"
+        ],
+        [
+          "CPVC pipe",
+          "IS 15778, cell class DP 110-2-3-2",
+          "VERIFIED (corroborated via Astral)",
+          "—",
+          "Specify IS 15778 on the PO"
+        ],
+        [
+          "Hand tools",
+          "Whether a Hand Tools QCO exists",
+          "NOT-CHECKED",
+          "Unknown",
+          "Check the BIS Guidance-on-QCOs PDF"
+        ],
+        [
+          "GST",
+          "18% flat on all 10 hardware categories, effective 22-Sep-2025 (56th Council). Paint & cement cut from 28%; LED lamps raised from 12%",
+          "VERIFIED (cleartax)",
+          "ARY's tax master already carries Output GST 18% (id 30)",
+          "One tax code for 380 SKUs — no mapping risk"
+        ]
+      ]
+    }
+  ],
+  "plan": [
+    {
+      "step": "Pull the 34 QCO-scope appliance cartons off the Ary Pos shelf and physically check each for the ISI mark and licence number. The SKU list is fixed and short: Room Heater 17, Ovastar Room Heater 9, Gopika Room Heater, Havells Room Heater, Prestige Induction, Skyline Induction Cooker 04, Shine Star Kettle 1.8/2.0 L, Shinestar Electric Kettle 1L/1.8L, Skyline Electric Kettle, Havells Electric Kettle 1.2L, Kettle 2, Immersion Rod 1500W/2000W, Shine Star Immersion Water Heater 1500W, Vardhman Immersion Rod, Prince Iron 02, Bajaj Iron 750W/1000W, Usha Iron EL 4175-M, Havells Dry Iron Hawk, Havells Iron 1000W, Skyline Hair Dryer, Hotline Electric Tandoor, Morphy Richards Microwave 20 MWS. In parallel email Harminder Singh & Bros (GSTIN 07AASPS8364B1Z8) for the BIS licence number behind every one.",
+      "sequence": 1,
+      "owner": "ARY Baru Sahib counter in-charge + Accounts (Satnam / whoever holds the Harminder relationship)",
+      "cost": "none",
+      "duration": "3 days",
+      "dependsOn": "nothing — start immediately; 1-Oct-2026 is 34 days away"
+    },
+    {
+      "step": "Establish whether Jivo Wellness Pvt Ltd is large/medium, small or micro under the MSMED Act, which fixes ARY's enforcement date at 1-Oct-2026, 1-Jan-2027 or 1-Apr-2027, and file the six-month sell-down declaration with BIS for every non-ISI carton found in step 1. This is a declaration, not a certification — it costs nothing and it is the difference between an orderly sell-through to about Apr-2027 and dead illegal stock.",
+      "sequence": 2,
+      "owner": "Jivo Wellness Delhi HO — company secretarial / compliance, with ARY Accounts",
+      "cost": "none (filing only)",
+      "duration": "1 week",
+      "dependsOn": "step 1's carton audit — you cannot declare stock you have not counted"
+    },
+    {
+      "step": "One meeting at the Trust estate / engineering office. Ask exactly three questions and write the answers down: (a) what did the campus spend on maintenance MATERIAL last financial year, (b) who buys it and from which shops, (c) how many blocks, quarters, hostel rooms, light points and taps are on the register. Answer (a) replaces the Rs 5 lakh a month estimate that carries 59% of this forecast; (c) turns bulbs, taps and switches from a guess into a count. Do not open with a proposal — open with the questions.",
+      "sequence": 3,
+      "owner": "ARY Baru Sahib unit head, with the Jivo institutional-sales person who already runs the Hunger Heroes account",
+      "cost": "none",
+      "duration": "1 week to get the meeting, 2 weeks for the estate office to produce the figures",
+      "dependsOn": "nothing — run in parallel with steps 1-2"
+    },
+    {
+      "step": "Decide the range against the answers from step 3, using the 14-block / 380-SKU table above as the starting draft. Hard rule from ARY's own evidence: value tier first. Residents buy Bhagwati padlocks at Rs 25-185 and Havells bulbs at Rs 40-75, so Taparia not Stanley, Anchor and GM not Legrand, Tractor Emulsion not Royale, Bhagwati and Harrison not Godrej Navtal. Every SKU gets a ReorderLevel and a named subgroup at creation — ARY has 308 dead electrical SKUs and 13,284 dead SKUs campus-wide because this step was skipped before.",
+      "sequence": 4,
+      "owner": "ARY category buyer with the Baru Sahib counter in-charge",
+      "cost": "none",
+      "duration": "1 week",
+      "dependsOn": "step 3's building count for the electrical and plumbing depth"
+    },
+    {
+      "step": "Source the range. Consolidate onto the existing Delhi inbound leg through Harminder Singh & Bros and Tools & Spares (both already ledger accounts with Delhi GSTINs) rather than paying hill freight from Solan or Nahan. Get written confirmation of the applicable IS standard and BIS licence or CRS R-number for every wire, switch, socket, MCB, conduit, pipe and LED SKU — put the burden on the supplier, since the BIS product list could not be loaded. Open one new account only if a block genuinely has no supplier: paint (an Asian Paints dealer) and CPVC (an Astral or Supreme stockist).",
+      "sequence": 5,
+      "owner": "ARY category buyer + Delhi HO purchase",
+      "cost": "Rs 4,50,000 opening stock at cost (recoverable)",
+      "duration": "3 weeks",
+      "dependsOn": "step 4's approved SKU list"
+    },
+    {
+      "step": "Build the retail bay at Ary Pos — about 20 running feet of pegboard and bins, an overhead rack for ladders and tarpaulin, a paint shelf with a spill tray, a wire measuring wheel and cable cutter, and bin labels with barcodes. Keep 20-litre paint drums and 90-metre wire coils OFF the retail floor: Ary Pos is turning 7.9x on Rs 54.27 lakh of stock and should not be slowed by slow, heavy units.",
+      "sequence": 6,
+      "owner": "ARY Baru Sahib unit head",
+      "cost": "Rs 69,000 (fixtures 55,000 + measuring wheel and cutter 6,000 + signage and labels 8,000)",
+      "duration": "2 weeks, overlapping step 5",
+      "dependsOn": "step 4's block list, so the bay is sized to the range"
+    },
+    {
+      "step": "Open the institutional trade counter in Ary Warehouse — which holds 9,094 SKUs and Rs 11.87 lakh of stock at zero turns and is already a stock-holding node needing no capex. Set up the Trust maintenance account on the same rails Hunger Heroes runs on: one credit customer, monthly consolidated bill, delivery against a written indent. Send one person for three days to a Solan or Nahan hardware wholesaler first — nobody at ARY has sold wire by the metre or paint by the shade.",
+      "sequence": 7,
+      "owner": "Jivo institutional-sales (Hunger Heroes owner) + ARY warehouse in-charge",
+      "cost": "Rs 10,000 (training)",
+      "duration": "2 weeks",
+      "dependsOn": "step 3's answer on who buys and how much; step 5's stock arriving"
+    },
+    {
+      "step": "Run a 90-day review with a kill rule, and hold it. Any SKU with zero sales at day 90 is deactivated, not left listed — that single discipline is what separates this from the 308 dead electrical SKUs already on the books. Report three numbers monthly: revenue split retail vs institutional against the 41:59 forecast, gross margin against the 22% blend, and count of SKUs with zero movement.",
+      "sequence": 8,
+      "owner": "ARY category buyer, reporting to the Jivo Wellness board",
+      "cost": "none",
+      "duration": "ongoing, first review at day 90",
+      "dependsOn": "steps 6 and 7 both live"
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Audit the 34 QCO-scope appliance cartons for the ISI mark and file the six-month BIS sell-down declaration for any that lack it. Retailers carry the same liability as manufacturers under the BIS Act 2016 — up to Rs 5 lakh and two years — and the maximum fine is 2.4x the entire annual revenue of the category it would protect. This outranks the whole range build.",
+      "priority": "P0",
+      "monthlyImpactInr": 17303,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none — the SKU list is already extracted and Harminder Singh & Bros is already a ledger account"
+    },
+    {
+      "action": "Get the Trust estate office's last-year maintenance-material purchase total before buying any institutional stock. This one figure replaces the Rs 5 lakh a month estimate that carries 59% of the forecast revenue, and it is the only number in this lane I could not derive from either ARY's books or a named source.",
+      "priority": "P0",
+      "monthlyImpactInr": 175000,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "needs a meeting the ARY unit head has to ask for; no maintenance-department account exists in ARY's books to start from"
+    },
+    {
+      "action": "Open the Trust maintenance-supply account on the Hunger Heroes rails — Ary Warehouse as the trade counter, one credit customer, monthly consolidated billing against written indents. The machinery is proven at Rs 6 lakh a month of throughput, the warehouse is at zero turns, the Trust already has 13 ledger accounts, and this needs no capex at all. This is the larger half of the opportunity and it is a B2B contract, not a retail category.",
+      "priority": "P1",
+      "monthlyImpactInr": 26300,
+      "oneOffCostInr": 10000,
+      "effort": "weeks",
+      "blocker": "depends on the estate-office conversation landing"
+    },
+    {
+      "action": "Stock the 380-SKU range value-tier-first, sourced through the existing Delhi suppliers. ARY's own book settles the price ladder: 2,187 padlocks a year sell at Rs 25-185 and Havells LEDs at Rs 40-75, so a range built off a premium dealer catalogue (Godrej Navtal Rs 1,200, Havells Adore Rs 334) would go straight into the dead pile.",
+      "priority": "P1",
+      "monthlyImpactInr": 38400,
+      "oneOffCostInr": 519000,
+      "effort": "weeks",
+      "blocker": "needs the step-3 building count to size the electrical and plumbing depth correctly"
+    },
+    {
+      "action": "Attach a ReorderLevel and a named subgroup to every new SKU at creation, and enforce a 90-day zero-sales kill rule. ARY carries 308 dead electrical SKUs of 391 (78.8%) and 13,284 dead SKUs campus-wide; adding 380 lines without this discipline reproduces the disease at exactly the moment the category is trying to prove itself.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none — a policy decision, and it costs nothing"
+    },
+    {
+      "action": "Buy wire, switches, sockets, MCBs, conduit and pipe on written IS-conformity from the supplier, never on price. 1.5 sqmm house wire spreads 3.5x on the same nominal spec (Rs 540 to Rs 1,870 per 90m coil) purely on copper grade and FR/FRLS rating — undersized copper going into staff quarters and hostels is a safety exposure, not a margin question.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "the specific IS numbers are NOT-CHECKED — bis.gov.in returned navigation hubs and the WebSearch budget is exhausted, so put the burden on the supplier's written declaration"
+    },
+    {
+      "action": "Correct the Rs 1.1 crore 'Packing Material Exp.' shortage in every downstream document — it is Rs 11,01,425.68, a 10x misread, and it is an expense being run through inventory (no product group, cost and MRP both zero, bought from Talwar Plastic Products at Rs 155) rather than any hardware or packaging finding.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Reclassify the 4 Fevicol SKUs out of 'Stationary' and create a real Hardware department in the taxonomy. ARY's own tree already files loose milk under Mini Meals and kala chana under Atta — a hardware range dropped into Appliances and House Hold would be unmeasurable from day one, and the 90-day kill rule needs a group it can report on.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    },
+    {
+      "action": "Confirm whether ARY's Baru Sahib GSTIN 02AACCJ4223F1Z8 registration and any HP Shops & Establishment or local fire clearance covers retail storage of paint and solvent-based enamel. Twenty-litre drums and spray cans are flammable stock in a residential township of 5,000 with children, and this was the one part of the licence question I could not reach.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "needs the Delhi HO compliance desk; no source found for HP-specific paint-retail storage rules"
+    },
+    {
+      "action": "Do not stock the Godrej premium lock tier, Legrand modular, Royale emulsion or Stanley beyond a two-SKU step-up. Every one is 3-13x ARY's proven selling price in its own category, and the store already demonstrates what happens to over-priced listings: 95.4% of the 'China' group is dead.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "days",
+      "blocker": "none"
+    }
+  ],
+  "openQuestions": [
+    "The campus building register — how many blocks, staff quarters, hostel rooms, light points, taps, geysers and MCB boards exist at Baru Sahib. Nobody at ARY has it and barusahib.org publishes none of it. Without this count every electrical and plumbing depth decision, and the whole institutional forecast, is a benchmark rather than a measurement. Owner: The Kalgidhar Trust estate / engineering office.",
+    "What the campus actually spent on maintenance MATERIAL last financial year, and whether it is bought centrally or institution by institution. ARY's books contain zero maintenance-department accounts, so there is no internal trace to follow. This single figure carries 59% of the revenue I have forecast. Owner: Trust estate office / Trust accounts.",
+    "The ISI status of the 34 QCO-scope appliance SKUs ARY stocks today. It cannot be read from the database — it needs a person looking at the cartons on the shelf, plus BIS licence numbers from Harminder Singh & Bros (GSTIN 07AASPS8364B1Z8). Owner: ARY Baru Sahib counter in-charge.",
+    "The exact IS standards that apply to house wire, switches, sockets, MCBs, conduit, PVC pipe and LED lamps, and whether a Hand Tools QCO exists at all. bis.gov.in served navigation hubs with no product registry, one fetch aborted mid-stream, both DuckDuckGo and Bing returned CAPTCHAs, and this session's WebSearch budget was exhausted at 200/200. The BIS 'Guidance document on QCOs' PDF is the next place to look. Owner: Jivo Wellness compliance desk.",
+    "Whether ARY is large/medium, small or micro under the MSMED Act — it decides whether the enforcement date is 1-Oct-2026, 1-Jan-2027 or 1-Apr-2027, i.e. whether there are 34 days or 216 days. Owner: Jivo Wellness company secretarial.",
+    "Whether there is shelf space at Ary Pos for a 20-running-foot hardware bay, and whether Ary Warehouse can physically host a trade counter. The database shows 9,867 stocked SKUs at Pos and 9,094 idle at the warehouse but says nothing about floor area. Owner: ARY Baru Sahib unit head.",
+    "Whether the Baru Sahib GSTIN registration, HP Shops & Establishment licence and any fire clearance permit retail storage of paint and solvent-based enamel in a residential township with children. No HP-specific source was reachable. Owner: Jivo Wellness compliance desk.",
+    "Whether the Trust would prefer supply-at-cost-plus (a service to the campus, thin margin, high volume) or open-market pricing. This flips the institutional margin between roughly 8% and 15% and therefore changes year-1 gross margin by about Rs 12,000 a month. Owner: Trust leadership and the Jivo Wellness board — a policy call, not an analysis."
+  ],
+  "confidence": "medium",
+  "confidenceGap": "No campus building inventory exists — and the institutional half, which is 59% of the forecast revenue, therefore rests on a per-resident maintenance-material benchmark I could not confirm against any published source, not on a counted demand. Two things partly rescue it: an independent cross-check (scaling ARY's own VERIFIED Rs 66,500-a-year R&M spend across roughly six counters to full campus built-up area) lands in the same Rs 40-70 lakh band, and step 3 of the plan replaces the whole estimate with one figure from the Trust estate office before any institutional stock is bought. The retail half is on much firmer ground: the baseline (Rs 9,69,972 across 697 SKUs), the price ladder (2,187 padlocks at Rs 25-185), the margins (27-47% net of GST) and the dead-SKU risk (308 of 391) are all pulled live from ARY's own book, and every external price in the range table comes from a named 2026 source. The QCO finding is the most certain thing in the lane — four independent sources on the dates and standard, one explicit on retailer liability — but the specific IS numbers for wire, switches, MCBs, conduit, pipe and LED are NOT-CHECKED and must not go into a purchase specification until the BIS guidance PDF is read."
+}

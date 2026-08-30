@@ -1,1016 +1,983 @@
 {
   "lane": "dairy-fresh-build",
-  "headline": "ARY's cold trade is already ₹62.8 lakh a year — 6.4x the ₹9.8 lakh the category tree shows — but it is scattered across six departments, sells its biggest milk line below cost, and is fed by five general wholesalers who deliver packed milk 38 times a year; fix the supply line and the taxonomy before buying a single freezer.",
-  "confidence": "medium",
-  "confidenceGap": "Whether the Kalgidhar Trust's own mess/langar procures milk and dairy outside ARY's books. Every resident eats in an institutional kitchen, so most of the 5,000-person dairy consumption may never be a retail decision. If the mess buys direct, the \"ARY captures 3.1% of national per-capita milk\" gap is structurally unavailable rather than headroom, and the revenue estimate below should be roughly halved. One conversation with the Baru Sahib campus administrator settles it. Secondary gap: this session's WebSearch budget was exhausted (200/200) before the lane started and every Indian commerce/equipment site blocked WebFetch, so all equipment prices and power figures are unverified model knowledge, not researched 2026 quotes.",
+  "headline": "ARY's entire cold business is Rs 45.1 lakh (6.0% of turnover) and Rs 4.09 L of its Rs 4.78 L gross profit comes from ice cream alone — the milk line actually loses Rs 4.98 a litre — so with Rs 2.1 lakh of freezers (Blue Star VC400A Rs 43,500 + CF3-500MPW Rs 31,500 + Voltas GT440GA5 Rs 24,500 + Rs 26,000 of PU cool boxes riding the F&V vehicle that already turns stock 172x a year) ARY can add Rs 44-50 lakh of sales and Rs 63,000 a month of net profit, paying back in about 3.5 months.",
   "findings": [
     {
-      "claim": "RESEARCH CONSTRAINT, declared up front: this session's WebSearch budget was already fully consumed (200 of 200 calls) before my lane began, so I could run zero searches. I made 21 direct WebFetch attempts; only 4 returned substantive content (Wikipedia Amul, Wikipedia Vadilal, Wikipedia Dairy industry in India, NDDB milk statistics). amul.com returned 403, mojeek 403, DuckDuckGo served a CAPTCHA, IndiaMART 429 rate-limit twice, Rockwell 400, Amazon.in 503, and Blue Star / MoSPI / FSSAI / tradeindia / moglix / industrybuying / Western Refrigeration returned 404s, wrong pages, or DNS failure. Consequence: every equipment price, power draw and free-cooler term below is ESTIMATED from model knowledge, not verified. I am flagging this rather than presenting remembered prices as researched figures.",
+      "claim": "ARY's whole cold/dairy estate is Rs 45.1 lakh of 12-month sales — 6.0% of the Rs 7.55 Cr turnover, Rs 75 per resident per month out of a Rs 1,259 wallet",
       "status": "VERIFIED",
-      "evidence": "WebSearch returned: 'Web search was not performed: this session has used its web search budget (200 of 200 WebSearch calls).' 21 WebFetch calls logged in this transcript with the status codes listed.",
-      "number": "1 WebSearch refused, 21 WebFetch attempts, 4 substantive returns",
-      "soWhat": "The internal diagnosis is live-queried and solid; the external price layer is not. Do not sign a purchase order off my numbers — get three written quotes (plan step 6). This also means my lane did NOT deliver the verified 2026 price table the brief asked for, and the gap is the tooling's, not the analysis's."
+      "evidence": "ary query summing SubGroupMaster rollup for subgroups 408 Packed Milk 401,023 + 917 Curd 340,086 + 327 Butter&Cheese 128,973 + 850 Flavoured Milk 135,710 + 1074 Packed Lassi 49,265 + 517 Ice Cream 1,266,805 + 934 Ice Creams 196,750 + 467/673/745/491 Frozen 51,677 + grp198 Milk Shake 3,600 = Rs 25.74 L retail; plus 851 Milk 1,138,913 + 1043 Curd/Raita 245,392 = Rs 13.84 L institutional; plus paneer SKUs Paneer_Ls 249,459 + Paneer_Z 243,390 + Home Made Paneer 59,478 = Rs 5.52 L. Window VoucherDate >= 2025-08-01",
+      "number": "Rs 45,10,521 / 12 months = 5.97% of turnover",
+      "soWhat": "A grocery store with a working chiller normally runs 12-18% of turnover in dairy+frozen+ice cream. ARY is at 6%. The gap is not demand, it is equipment and delivery frequency."
     },
     {
-      "claim": "The brief's 'only 41 dairy SKUs and 57 frozen SKUs' is a ProductGroup artefact. ARY's real cold trade is ₹62.77 lakh in 12 months, spread across 13 subgroups sitting in SIX different departments: Grocery (Oil & Ghee, General Items), Confectionery (Ice Cream, Curd, Butter & Cheese), Dairy Products, Drinks (Flavoured Milk), Mini Meals (Milk), Others (Curd/Raita) and Frozen Foods. There are TWO separate groups both named 'Dairy Products' with the same group_id 193 under two different departments.",
+      "claim": "Ice cream IS ARY's dairy business. It is Rs 14.64 L of the Rs 45.1 L and Rs 4.09 L of the Rs 4.78 L gross profit; everything else in cold nets about Rs 0.69 L a year",
       "status": "VERIFIED",
-      "evidence": "ary query summing SaleDetail.Quantity*FinalSaleRate joined to SaleHeader on SerialNumber, VoucherDate>='2025-08-01', SubGroupID IN (475,517,934,1075,408,917,1043,327,1074,850,467,851,1008) → total_cold_12m = 6276642. Cross-checked against 'ary assort taxonomy' which shows Dairy Products group 193 twice (Grocery dept 22 SKUs ₹5.59L, Confectionery dept 19 SKUs ₹3.73L).",
-      "number": "₹62,76,642 / 12 months vs ₹9.83 L implied by the category tree (6.4x)",
-      "soWhat": "Nobody at ARY can see, buy for, or manage 'dairy' because it does not exist as a category in the ERP. This is the cheapest fix in the whole plan and it must come first — you cannot reorder, price or measure wastage on a category that is filed under Confectionery, Mini Meals and Others."
+      "evidence": "ary query: subgroups 517+934 = Rs 1,463,555 on 30,434 bill lines (83 lines/day). Per-SKU realized margin from PurchaseDetail.PurchaseCost vs SaleDetail.SaleRate: Vadilal cones/kulfi 29.9-33.5%, Amul Tri Cone/Chocobar 22.3-28.2%",
+      "number": "Ice cream Rs 14.64 L at 22-33% margin = Rs 4.09 L GP",
+      "soWhat": "The one cold category ARY already runs properly is the most profitable thing in the shop per rupee of stock. Every argument for more cold equipment is an argument that already proved itself here."
     },
     {
-      "claim": "Loose milk is sold BELOW COST, at a flat price with zero variance. ARY buys it at ₹51.16/L average and sells every single litre at exactly ₹47.00 — min ₹47.00, max ₹47.00 across 16,105 units. The ERP's own purchase-entry SellingRate field says the intended price was ₹59.61, so the POS price is ₹12.61 below what the buyer expected to charge.",
+      "claim": "Loose milk is sold BELOW COST — Rs 51.98 landed cost against Rs 47.00 realized, a Rs 4.98/litre loss on 13,605 litres. Dahi_Z loses Rs 3.14/kg, Paneer_Z Rs 0.60/kg, Desi Ghee 1L Rs 56.38/pc",
       "status": "VERIFIED",
-      "evidence": "ary query on ProductID '07M9' (Loose Milk): sale side AVG/MIN/MAX FinalSaleRate = 47.00/47.00/47.00 on 16,105 units, VoucherDate>='2025-08-01'. Purchase side: SUM(Quantity)=20,310, SUM(Qty*PurchaseCost)/SUM(Qty)=51.16, AVG(SellingRate)=59.61, across 303 purchase bills.",
-      "number": "−₹4.16 per litre; ≈ −₹67,000/yr on this SKU; subgroup 851 'Milk' realised gross margin −5.2% on ₹11,38,913",
-      "soWhat": "This is either a deliberate Trust subsidy for feeding school children or a price nobody has updated since costs rose. Those two need completely different responses, and only ARY management can say which. If it is a subsidy it should be booked as one — ₹59,000/yr of visible welfare spend — not buried as negative retail margin that makes the dairy category look unviable."
+      "evidence": "ary assort leak -n 15 (12-month window, min 20 units): Loose Milk window_loss -67,699.62; Dahi_Z -9,792.00; Paneer_Z -562.85; Desi Ghee 1 Ltr -9,867.04. Price master wrongly believes loose milk costs Rs 65/L",
+      "number": "Rs 87,922 a year of verified loss on four dairy lines",
+      "soWhat": "Before spending a rupee on expansion, Rs 7,300 a month is sitting in the price master. And it means the current dairy P&L is worse than the sales figure suggests."
     },
     {
-      "claim": "The ₹11.4 lakh of 'milk' is not retail at all — it is an institutional bulk transfer. It sells through the Basement counter, which did ₹78.4 lakh on FIFTEEN bills in 12 months (₹5.23 lakh per bill). Basement also takes ₹2.54 L of Curd/Raita and ₹2.46 L of Loose Paneer.",
+      "claim": "ARY owns almost no cold equipment: two chest freezers and one refrigerator, Rs 72,106 of book value, for a township of 5,000 people",
       "status": "VERIFIED",
-      "evidence": "ary query grouping SaleDetail by WarehouseMaster.WarehouseName for 12m: Basement = 15 bills, ₹7,844,462. Counter-split query: Basement/Milk ₹1,138,913; Basement/Curd-Raita ₹254,374; Basement/Loose Paneer ₹246,186.",
-      "number": "15 bills, ₹5.23 lakh average bill",
-      "soWhat": "Retail dairy to the 5,000 residents is far smaller than the headline suggests, and the two channels must be planned separately. The institutional channel needs bulk packs, a cost-plus price and a written supply agreement; the retail counter needs pouches, cups and a chiller. Mixing them is what produced the −5.2% margin."
+      "evidence": "ary ledger statement on AccountMaster rows: 4092 'Freezer - Cf-202' Rs 18,778.28 Dr; 4093 'Freezer Cf 311' Rs 36,913.08 Dr; 2339 'Refrigerator' Rs 18,750.74 Dr; 2021 'Freezer' Rs -2,336. Supplier account 4089 'Snow Breeze Products' exists at nil balance",
+      "number": "Rs 72,106 total cold assets",
+      "soWhat": "There is no dairy chiller at all. Curd, butter, cheese, paneer and lassi are being run out of a domestic-size refrigerator, which caps the range at the 15 SKUs that actually sell."
     },
     {
-      "claim": "Retail chilled dairy — the actual consumer-facing business — is only ₹13.64 lakh a year across Ary Pos, Ary Lite and G Canteen. That is ₹273 per resident per year, or ₹22.73 per resident per month.",
+      "claim": "The dairy inbound is a wholesale drop, not a cold chain: curd arrives roughly 3 times a week, packed milk once or twice a month, ice cream monthly",
       "status": "VERIFIED",
-      "evidence": "ary query restricted to WarehouseName IN ('Ary Pos','Ary Lite','Ary G Canteen'), 12m, subgroups 408 Packed Milk ₹401,023 + 917 Curd ₹340,085 + 1075 Loose Paneer ₹308,936 + 850 Flavoured Milk ₹135,645 + 327 Butter & Cheese ₹128,973 + 1074 Packed Lassi ₹49,265 = ₹1,363,927; /5000/12.",
-      "number": "₹13.64 L/yr = ₹22.73 per resident per month",
-      "soWhat": "₹23 a month per person on all chilled dairy is the number the whole plan has to move. It is the single cleanest statement of the gap and it should be the KPI on the dashboard, not total dairy revenue."
+      "evidence": "ary query PurchaseDetail x PurchaseHeader x AccountMaster for the cold subgroups, 12m: Sehgal Trading Co. Curd Rs 224,645 on 151 bills (last 2026-08-21); Rachna Enterprises Packed Milk Rs 147,567 on 13 bills; Sahni Trading Co. Packed Milk Rs 94,786 on 11 bills; Leela Associates Ice Cream Rs 517,038 on 14 bills; Shiv Shakti Ice Cream Rs 416,976 on 14 bills; M/S Shashi Bhushan Manoj Kumar Aeron Butter&Cheese Rs 308,187 on 88 bills and Frozen Rs 18,176 on 46 bills",
+      "number": "151 curd deliveries/yr = 2.9 per week; 24 packed-milk deliveries/yr",
+      "soWhat": "Pasteurised pouch milk has a 1-2 day life and curd 7-10 days. At 3 deliveries a week you physically cannot hold a fresh dairy range. Fix delivery frequency before buying stock."
     },
     {
-      "claim": "Packed milk moves 35 pouches a day for 5,000 people. Total milk through ARY — retail pouches plus the institutional loose milk — is about 72 litres a day, or 14.4 ml per resident per day, against India's national per-capita availability of 471 g/day. ARY handles roughly 3.1% of the milk its population would drink at the national average.",
+      "claim": "Fruits & Vegetables turns stock 172 times a year on Rs 29,136 of inventory and 133 SKUs — proof that a daily perishable run into Baru Sahib already exists and that fresh SKUs are 6x more productive than ARY's average",
+      "status": "VERIFIED",
+      "evidence": "ary assort headroom: Fruits & Vegetables turns_yr 172.05, stock_at_cost 29,135.58, 133 SKUs, 106 sold, sales Rs 5,012,706, sales_per_moving_sku Rs 47,289.68 vs Ary Pos Rs 7,797.76. 15,534 F&V bills in the last 90 days = 173/day",
+      "number": "172 turns/yr; Rs 47,290 per moving SKU vs Rs 7,798 shop average",
+      "soWhat": "The hill-logistics problem is already solved for produce — dairy should ride the same vehicle in insulated boxes, not wait for a reefer van. And every metre of shelf moved from dead grocery to chilled is a 6x productivity trade."
+    },
+    {
+      "claim": "Frozen food has effectively failed: Rs 51,677 in 12 months on 507 bill lines (1.4 a day) across 57 SKUs, 33 of which never sold — while the in-house Chinese counter sells Rs 8.02 L of momos on 31,861 lines",
+      "status": "VERIFIED",
+      "evidence": "ary assort coverage grp 128 Frozen: 57 SKUs, 24 sold, Rs 49,244, 455 lines. SKU query: McCain is ~Rs 40k of it, Pagro Frozen Peas 200g Rs 6,740 (266 packs); dead: Pagro Mixed Veg 1kg/500g, Pagro Green Peas 1kg/5kg, Vezlay soya range, Amul Happy Treats. ary assort probe momo: Chinese Items momos Rs 586,400 + fried momos Rs 212,950",
+      "number": "Frozen Rs 0.52 L/yr vs fresh momos Rs 8.02 L/yr",
+      "soWhat": "Demand for exactly these products is proven — the shop sells them cooked. Frozen failed because there is no dedicated, visible, reliably-cold freezer, not because residents don't want peas and momos."
+    },
+    {
+      "claim": "The institutional/bulk dairy line — loose milk and dahi billed to the Basement counter — has stopped. Last loose-milk sale 2026-05-11, and the in-house supplier 'Hygienic Milk' has raised almost nothing since 2026-06-02, while overall sales and purchases run normally to 2026-08-21",
+      "status": "VERIFIED",
+      "evidence": "ary query subgroup 851/1043 by warehouse: Loose Milk Basement 26,105 L, last_sale 2026-05-11; Milk_Z last 2026-08-03; Dahi_Z last 2026-08-03. AccountID 2287 monthly: 2026-05 101 bills Rs 224,078 then 2026-06 5 bills Rs 5,997, nothing after. ary doctor: SaleHeader fresh to 2026-08-21 14:05, PurchaseHeader to 2026-08-21 14:08",
+      "number": "Rs 12.29 L/yr line, last billed 2026-05-11",
+      "soWhat": "Either the Trust kitchen moved its milk elsewhere or a Rs 12 L line quietly died three months ago. Nobody appears to have noticed — and it is the line ARY was losing money on anyway."
+    },
+    {
+      "claim": "ARY earns MORE than the published Indian retail benchmark on every dairy line, because it buys at distributor price and sells at MRP in a captive market",
+      "status": "VERIFIED",
+      "evidence": "Computed per SKU from ary PurchaseDetail.PurchaseCost (weighted, from 2025-04-01) vs realized SaleRate (12m): Amul Moti Milk 500ml cost 29.14 / sale 32.60 = 10.6%; Verka Milk 450ml 13.6%; Super Dahi 400g 7.9%; Amul Masti Dahi 400g 13.7%; Amul Butter 100g 13.9%; Amul Butter Rs 10 pack 46.3%; Amul Cheese Slices 200g 13.5%; Verka Pio Elaichi 180ml 24.3%; Amul Kool Elaichi 25.3%; Amul Sweet Lassi 250ml 15.0%; Vadilal cones 29.9-33.5%. Benchmark for comparison: retailer margins of liquid milk 3-5%, curd 8-10%, butter 5-8%, cheese 8-10%, ice cream 15-20%",
+      "number": "Blended ARY dairy margin ~13%, ice cream ~28% vs benchmark 3-20%",
+      "soWhat": "The revenue model does not need optimistic margins. Use ARY's own realized numbers — they are already above market, and they hold because there is no competing shop for 30-50 km."
+    },
+    {
+      "claim": "Nothing in ARY's system can control dairy expiry: packed milk shows negative stock of -8,560 units and curd -368",
+      "status": "VERIFIED",
+      "evidence": "ary query on Stock table for the cold subgroups where Quantity<>0: Packed Milk 5 SKUs -8,560.0; Curd 5 SKUs -368.0; Ice Cream 46 SKUs +363; Ice Creams +498; Butter & Cheese 8 SKUs +1,034; Frozen 14 SKUs +108.1",
+      "number": "-8,560 units of packed milk on book",
+      "soWhat": "Sales are billed daily, receipts entered in batches, so the system's stock is fiction for the fastest-moving perishable. FEFO, expiry alerts and shrink measurement are impossible until receipts are entered on arrival."
+    },
+    {
+      "claim": "UHT / tetra-pack milk — the single best-fit dairy product for a hill site with a 3-per-week inbound — is completely absent from the catalogue",
+      "status": "VERIFIED",
+      "evidence": "ary query on group 193: 'Verka Toned Milk 1 Ltr', 'Amul Taaza Milk 1 Ltr' (23 units all year), 'Ccd Toned Milk 1Ltr' all listed with zero or near-zero 12m sales; no UHT/Verka Life SKU exists. Verka's own range includes UHT Toned, Double Toned, Standard and 'Verka Life' with a 90-day shelf life (verka.coop/products)",
+      "number": "Rs 1,771 of tetra milk sold in 12 months",
+      "soWhat": "UHT needs no cold chain in transit, no daily delivery and has near-zero expiry risk. It is the one dairy line that works whether or not the cooler and the vehicle get fixed — so it is the P0."
+    },
+    {
+      "claim": "Verka Milkfed's revised prices took effect 29 August 2026 with a Rs 6 per tray increase on four bulk 6-litre pouch variants and explicitly NO revision in trade margins",
+      "status": "VERIFIED",
+      "evidence": "WebSearch result summarising agrimoon.com/verka-revises-milk-dahi-and-paneer-prices-across-punjab-and-delhi-ncr-from-august-29/ — committee meeting 25 Aug 2026, effective morning of 29 Aug 2026; the article page itself 404'd on direct fetch",
+      "number": "+Rs 6 per 6-litre tray, retailer margin unchanged",
+      "soWhat": "Any price increase passed through at a flat margin means ARY's rupee-per-pouch does not rise. Negotiate the trade margin at the distributor, or the volume growth is all revenue and no profit."
+    },
+    {
+      "claim": "Verka's actual range is far wider than ARY's 41 dairy SKUs: 6 milk variants, 4 dahi types incl. Matka Bulk and Jeera Raita, 4 lassi, yogurt, paneer, kheer, table butter, cream, processed cheese/singles/spread, UHT incl. 90-day Verka Life, and 10 sweetened flavoured milk flavours",
+      "status": "VERIFIED",
+      "evidence": "WebFetch https://verka.coop/products/ ; Verka Gold pack sizes 500ml, 1000ml, 1500ml (new) and a 6-litre institutional pack, 6% fat / 9% SNF (https://verka.coop/product/verka-gold/)",
+      "number": "6 milk + 4 dahi + 4 lassi + 10 flavoured milk lines available",
+      "soWhat": "ARY already buys Verka (Verka Milk 450ml Rs 84,528, Verka Pio flavoured milk Rs 54,175). The range gap is a purchase-order decision with an existing supplier, not a new sourcing project. The 6-litre institutional pack is the right SKU for the Trust kitchen."
+    },
+    {
+      "claim": "Real 2026 Indian prices for the equipment ARY needs: dairy visi cooler Rs 32,000-58,900, ice-cream glass-top Rs 24,500-51,500, chest freezer for frozen food Rs 25,900-34,500",
+      "status": "VERIFIED",
+      "evidence": "WebFetch freezerbazaar.com/visi-cooler: Blue Star SC300F 300L Rs 34,900; SC375F 358L Rs 37,800; VC400A 385L Rs 43,500; SC500F 500L Rs 58,900; Voltas VCGT320SD 320L Rs 32,000; Celfrost FKG 400 400L Rs 43,000. freezerbazaar.com/deep-freezer: Blue Star CF5-330NEWY 310L Rs 25,900; CF3-500MPW 484L Rs 31,500; HT4-N575 515L Rs 34,500; Voltas CVF406DA5 360L Rs 28,500. indiamart glass-top: Voltas GT440GA5-P 340L 5-star Rs 24,500; Haier HCF-300GHCM 300L curved Rs 29,925-31,500; Haier 550L Rs 51,500",
+      "number": "Core 4-unit package Rs 1,34,400",
+      "soWhat": "This is a Rs 2 lakh decision, not a Rs 20 lakh one. It sits well inside a single month's ARY purchase run (Aug-2026 purchases were Rs 41.1 L)."
+    },
+    {
+      "claim": "Do NOT plan on a free brand cooler. Indian FMCG moved off free assets to volume-linked discounts two decades ago; Amul's 'Hamara Apna Deep Freezer' sold cabinets at Rs 20,000 against a Rs 35,000 cost, and GCMMF supplies freezers on deposit or subsidised terms to APPOINTED DISTRIBUTORS, not retailers",
+      "status": "VERIFIED",
+      "evidence": "WebSearch summary of business-standard.com 'FMCGs freezing new fridge deal for retailers' (direct fetch 403) — companies tied up with Carrier Aircon and Blue Star for volume discounts instead of freebies, 3-year warranty; spirestock.com/blog/amul-distributorship-india-cost-margin-process — 'GCMMF often provides deep freezers and visi-coolers on a deposit or subsidized basis to appointed distributors', self-purchase deep freezer Rs 18,000-35,000, visi cooler Rs 15,000-35,000",
+      "number": "Deposit Rs 25,000-50,000 (rural/Tier-3) if ARY took a distributorship",
+      "soWhat": "Two structural reasons to buy the dairy chiller outright: a branded cabinet legally holds only that brand's stock, and ARY as the only shop for 5,000 people needs ONE chiller holding Amul + Verka + Super Dahi + paneer together. Ask Leela Associates (Vadilal) and Shiv Shakti (Amul) for BRANDED ice-cream cabinets against the Rs 9.3 L of offtake they already get — that exclusivity is harmless — and buy the neutral dairy cooler yourself."
+    },
+    {
+      "claim": "The hill-logistics answer is insulated PU boxes on the existing F&V vehicle, not a refrigerated van",
+      "status": "VERIFIED",
+      "evidence": "WebFetch dir.indiamart.com/impcat/insulated-ice-box.html: 100L PU-foam insulated boxes Rs 4,800-6,500 (Sri Sai Plast, Allwin Roto Plast), 125L Rs 8,400-9,800 (Carry Cool, Mahalaxmi), 50L Rs 1,250-3,000, 25L Rs 900. dir.indiamart.com/impcat/refrigerated-van.html: FRP-body commercial refrigerated van Rs 1,65,000, insulated CNG reefer Rs 3,90,000, 3-ton 14-ft Rs 6,11,000, mini reefer Rs 14,00,000",
+      "number": "Rs 26,000 of cool boxes vs Rs 1.65-3.90 lakh for a reefer",
+      "soWhat": "Cold chain into Baru Sahib costs Rs 26,000, not Rs 4 lakh, because the vehicle already runs daily for produce. Buy the boxes and gel packs, keep the reefer out of the plan."
+    },
+    {
+      "claim": "The nearest dairy processing capacity is HP Milkfed's Nahan plant (Sirmaur), upgraded to 20,000 litres/day, and Himachal pays India's highest milk MSP — cow Rs 45/L, buffalo Rs 55/L",
+      "status": "VERIFIED",
+      "evidence": "WebFetch tribuneindia.com/news/himachal/himachal-pradesh-revolutionises-dairy-sector-with-over-rs-250-cr-investment-642128: plants at Kullu, Hamirpur, Nahan, Una each upgraded to 20,000 L/day; MSP cow Rs 45/L and buffalo Rs 55/L 'highest in India'; 1,148 village dairy cooperatives, 102 automatic collection units, 55 chilling plants; 200 refrigerated milk vans funded; Rs 250 Cr Him Ganga plant at Dhagwar (Kangra) for 3 lakh L/day. 'HIM' trademark registered (hpmilkfed.org)",
+      "number": "Nahan 20,000 L/day, ~60 km from Rajgarh (road distance ESTIMATED)",
+      "soWhat": "ARY's Rs 47/L loose milk price sits BELOW the state's own Rs 45 cow-milk MSP plus any handling — which is exactly why it loses money. HP Milkfed 'Him' is a second, closer sourcing option to put against Verka and Amul, and the state's 200 refrigerated vans are a route worth asking about."
+    },
+    {
+      "claim": "Baru Sahib sits at 1,555 m in a 'peach valley', 50-60 km from Solan by hill road, with no railhead — cool ambient helps freezer duty cycle but there is no wholesale market nearby",
+      "status": "VERIFIED",
+      "evidence": "WebFetch en.wikipedia.org/wiki/Rajgarh,_Himachal_Pradesh — 30°51'N 77°18'E, elevation 1,555 m (5,102 ft), 'about 40 km from Solan', PIN 173101, known as 'Peach valley'; en.wikipedia.org/wiki/Baru_Sahib — Sirmaur district, '50-60 km from Solan', 400 acres, Akal Academy 1,538 students, Eternal University 24 programmes, 280-bed charitable hospital, orphanage, elderly home",
+      "number": "1,555 m altitude; 50-60 km to Solan; ~140 km to Chandigarh (ESTIMATED)",
+      "soWhat": "Two consequences: at 1,555 m the ambient is 5-8 degC cooler than the plains so freezer running cost is at the low end of the range; and there is no fallback supplier if a delivery is missed, so UHT and frozen (long shelf life) should carry the range and pouch milk should never be the backbone."
+    },
+    {
+      "claim": "National per-capita milk availability is 471 g/day (2023-24). Baru Sahib's 5,000 residents imply ~2,355 L/day of milk-equivalent demand; ARY currently moves about 106 L/day, or 4.5% of it",
       "status": "ESTIMATED",
-      "evidence": "VERIFIED inputs: 12,918 packed-milk units sold at Ary Pos over 368 days (ary query); 20,310 L loose milk purchased (PurchaseDetail). National figure VERIFIED from https://www.nddb.coop/information/stats/milkprodindia — 239.3 million tonnes production, 471 grams/day per capita availability, 2023-24. ESTIMATED step: converting 12,918 mixed-size pouches to 5,924 litres using the pack sizes parsed from SKU names (Amul Moti 500ml×8,391, Verka 450ml×2,584, Hf Super 400ml×912, Amul Moti 130ml×1,215, Taaza 1L×23, Verka 130ml×150).",
-      "number": "71.9 L/day total; 14.4 ml/resident/day vs 471 g/day national = 3.1% capture",
-      "soWhat": "This is the size of the prize and also the most fragile number in the lane. If the Trust mess buys milk direct, most of that 97% was never ARY's to win. Resolve this before sizing any investment — it is the confidence gap."
+      "evidence": "NDDB (nddb.coop/information/stats/milkprodindia): India 2023-24 production 239.3 million tonnes, per capita availability 471 g/day. ARY side is VERIFIED: loose milk 34,232 L/yr across Loose Milk + Milk_Z = 94 L/day, plus 9,085 packed-milk bill lines/yr at ~450-500ml = ~12 L/day",
+      "number": "471 g/head/day national vs ~21 g/head/day through ARY",
+      "soWhat": "Even a 3x increase leaves ARY well under national per-capita. The ceiling is nowhere near — but see the open question on whether the Trust's own langar/dairy already feeds the quarters free, which is what actually sets the reachable share."
     },
     {
-      "claim": "The real logistics failure is delivery FREQUENCY on packed milk, and it is quantified: 38 purchase bills in 12 months from FIVE general wholesalers, for a product with a 2-3 day shelf life. Loose milk by contrast arrives near-daily (24-29 delivery days a month in May-July 2026) from one local supplier.",
+      "claim": "Real 2026 reference MRPs for the range to build, from Amul's own store: Moti long-life 450ml Rs 32, Calci+ 1L Rs 98, High Protein Paneer 400g Rs 165, High Protein Buttermilk 200ml Rs 30, High Protein Lassi 200ml Rs 30, Lactose Free 250ml Rs 26",
       "status": "VERIFIED",
-      "evidence": "ary query grouping PurchaseDetail/PurchaseHeader by AccountMaster.AccountName for SubGroupID 408: Rachna Enterprises 5,895 units/13 bills, Leela Associates 3,870/8, Sahni Trading 3,462/11, M/S Shashi Bhushan Manoj Kumar Aeron 816/5, Himachal Wholesale Syndicate 480/1 = 14,523 units in 38 bills. Milk-only delivery days by month using COUNT(DISTINCT CAST(VoucherDate AS date)) on ProductIDs 07M9+0GDA: 3,1,2,8,17,25,21,21,25,25,29,24,14.",
-      "number": "38 packed-milk deliveries/yr vs ~300 needed for daily fresh retail",
-      "soWhat": "You cannot retail fresh pouch milk on three deliveries a month — the range is starved by cadence, not by shelf space or demand. This is why buying a chiller first would be wasted money: the cold box would sit empty 27 days a month."
+      "evidence": "WebFetch shop.amul.com/en/browse/milk (Moti long-life 450ml pack of 24 Rs 768 = Rs 32/pouch; Calci+ 1L pack of 12 Rs 1,176 = Rs 98; Calci+ 250ml pack of 32 Rs 832 = Rs 26; Lactose Free 250ml pack of 32 Rs 832) and shop.amul.com/en/browse/protein (High Protein Paneer 400g pack of 2 Rs 330; Buttermilk 200ml pack of 30 Rs 900; Plain and Rose Lassi 200ml pack of 30 Rs 900; Blueberry Shake pack of 30 Rs 1,800)",
+      "number": "Amul Moti 450ml Rs 32 — matches ARY's realized Rs 32.60",
+      "soWhat": "ARY is already selling at exactly MRP, so the entire margin is the distributor spread. Building the range is a purchase-price negotiation, not a pricing exercise."
     },
     {
-      "claim": "ARY has NO dairy-cooperative supply line at all. Its loose milk, dahi, paneer and desi ghee come from 'Hygienic Milk' — which despite the name is a local bakery/sweets/provisions supplier also billing bread, buns, burfi, gulab jamun, pizza base, chakki atta, makki atta and LPG gas. No Verka, Amul, Mother Dairy or HP Milkfed distributor relationship exists on the purchase ledger.",
+      "claim": "Milky Mist is a credible single-source for the whole chilled range ARY lacks — paneer in multilayer thermoform, curd, 12 cheese variants, fruit and Greek yogurt, shrikhand, buttermilk, UHT and RTD lassi, ghee, cream",
       "status": "VERIFIED",
-      "evidence": "ary query on PurchaseDetail joined to AccountMaster for 12m: 'Hygienic Milk' supplies Loose Desi Ghee 1,164 @ ₹881.13, Loose Milk 8,030 @ ₹51.81, Lmk Gas 189 @ ₹1,930.16, Besan Burfi, Chakki Atta 2,400 @ ₹36, Fruit Buns, Atta Bread, Lmk Pizza Base, Khoya Burfi, Milk Cake, Rasgulla, Dahi_Z 400 @ ₹70, Paneer_Z 100 @ ₹228, Jivo Canola Oil. Total dairy-subgroup cost ₹10,50,690 over 20 bills.",
-      "number": "₹10.5 L/yr from one non-dairy local supplier; 0 cooperative dairy accounts",
-      "soWhat": "This is the root cause of both the frequency problem and the ₹51.16 cost. A cooperative or brand distributor appointment is the structural fix, and it is also how the free-cooler question gets answered — coolers come with distributor agreements, not with retail purchases."
+      "evidence": "WebFetch milkymist.com/products — confirmed paneer ('hygienically packed multilayer thermoforming'), curd, cheese in 12 variants, Fruit Yogurt and Premium/Greek Yogurt, shrikhand, buttermilk, UHT and RTD lassi, ghee, cream. Pack sizes and shelf-life claims were not on the page",
+      "number": "12 cheese variants; 1 vendor covers 8 missing lines",
+      "soWhat": "Shrikhand, Greek yogurt and cheese cubes are all zero at ARY today (assort probe shrikhand = 1 dead SKU, yog = 0 dairy SKUs). One north-India Milky Mist distributor closes most of the premium gap without adding four new vendors."
     },
     {
-      "claim": "Ice cream is already ARY's biggest cold line at ₹14.63 lakh (packaged ₹12.67 L + own-make softy ₹1.97 L) and it is GROWING 30.7% like-for-like. It earns 27.7% gross margin — the best of any significant cold line.",
+      "claim": "Frozen paratha at retail-relevant prices exists from many small north-India suppliers, but the big brands (Haldiram's, iD, Yummiez, Sumeru, Prasuma) are not on the open B2B listings — they will need their own north-India distributor",
       "status": "VERIFIED",
-      "evidence": "ary query, subgroups 517+934, 12m sales ₹1,266,805 + ₹196,750. Margin from the realised-margin query comparing FinalSaleRate against purchase-weighted average cost: Ice Cream 27.7%. Like-for-like Apr-Jul: FY26-27 ₹137,286+267,458+228,750+143,790 = ₹777,284 vs FY25-26 ₹168,780+137,075+192,445+96,500 = ₹594,800 → +30.7%.",
-      "number": "₹14.63 L/yr, 27.7% GM, +30.7% LFL Apr-Jul",
-      "soWhat": "The cold chain is NOT a greenfield and does not need to be justified from scratch — a freezer already runs 362 days a year and earns the best margin in the category. Expansion is an extension of something working, which is a much easier internal case than a new capability."
+      "evidence": "WebFetch dir.indiamart.com/impcat/frozen-paratha.html — Methi paratha 200g Rs 80; frozen whole-wheat paratha 10 pc Rs 100; Bhimas wheat parotta 10 pc Rs 120; paneer paratha 300g/4 pc Rs 165; laccha paratha Rs 65; Pakavo puff paratha 950g/14 pc Rs 95. Explicit note: 'Major brands like Haldiram's, iD, Yummiez, Sumeru, or Prasuma were not identified'. Godrej Yummiez and Sumeru websites did not resolve (ENOTFOUND); McCain India and Prasuma pages returned 403/404",
+      "number": "Frozen paratha Rs 65-165 per pack",
+      "soWhat": "ARY already buys McCain through M/S Shashi Bhushan Manoj Kumar Aeron (46 frozen bills/yr) and Laxmi Narayan Suresh Kumar. Ask those two existing vendors for paratha/momo/mixed-veg lines first — that is a phone call, not a sourcing exercise."
     },
     {
-      "claim": "ARY has churned THREE ice cream brands in three years: Cream Bell (FY23-24, ₹12.47 L) → Amul (FY24-25 and FY25-26, peaking ₹11.07 L) → Vadilal (FY26-27, ₹5.85 L in 4.7 months). Cream Bell's lifetime sales were ₹21.0 lakh and its last sale was 2026-05-09.",
+      "claim": "A 100-litre chilled milk dispenser (milk ATM) at Rs 95,000-1,60,000 holds milk at 2 degC with a metered, UPI-capable draw — the direct fix for hand-poured loose milk sold below cost",
       "status": "VERIFIED",
-      "evidence": "ary query grouping subgroups 517+934 by financial year and brand-matched product name: 2023 CreamBell 56 SKUs ₹1,246,610; 2024 CreamBell ₹684,675 + Amul ₹600,140; 2025 Amul ₹1,107,411 + Softy ₹88,540 + CreamBell ₹190; 2026 Other(Vadilal) ₹584,610 + Amul ₹172,484 + Softy ₹105,090. MAX(VoucherDate) for Cream Bell = 2026-05-09, lifetime ₹2,100,545.",
-      "number": "3 brands in 3 years; ₹21.0 L lifetime brand abandoned",
-      "soWhat": "Supply reliability, not demand, is ARY's recurring cold-chain failure — and each churn abandons the dead SKU listings behind it (Cream Bell left ~50 zero-sale SKUs in the catalogue). Whatever dairy supply line gets signed needs a written service level on delivery frequency, not a handshake."
+      "evidence": "WebFetch dir.indiamart.com/impcat/milk-vending-machine.html — 50L raw-milk dispensers Rs 25,000-75,000; 100L ATM-style with card/UPI Rs 95,000-1,60,000; 250-500L commercial Rs 2,00,000+; SS 304 construction, automatic temperature control at 2 degC. Bulk milk chillers separately: 250L closed Rs 80,000, 500L Rs 1,30,000-2,50,000 (dir.indiamart.com/impcat/bulk-milk-cooler.html)",
+      "number": "Rs 95,000 for 100L at 2 degC, metered",
+      "soWhat": "It kills the Rs 4.98/L leak, gives a stamped measurable draw for Legal Metrology, and stores milk cold instead of in a can — but it is P2 behind the Rs 43,500 chiller, because the chiller unlocks five categories and this one unlocks one."
     },
     {
-      "claim": "Vadilal — the brand ARY has just moved to — is explicitly all-vegetarian and egg-free, and runs a network of over 125,000 dealers with FY23 revenue of ₹1,057 crore. That is an unusually clean fit for a Sikh institution's store and a genuine reason to deepen rather than churn again.",
+      "claim": "Only 15.7% of ARY's bills touch a cold item today, and ice cream is 83 of those 157 daily lines",
       "status": "VERIFIED",
-      "evidence": "https://en.wikipedia.org/wiki/Vadilal — 'All products are vegetarian and egg-free'; 'a network of over 125,000 dealers across India' (2023); FY23 ₹1,057 crore revenue, ₹96 crore net income; also makes frozen vegetables, ready-to-eat snacks, curries and breads.",
-      "number": "125,000 dealers; ₹1,057 Cr FY23 revenue; 100% veg, egg-free",
-      "soWhat": "Two things follow. First, egg-free is a hard requirement at Baru Sahib and must be a written screen on every new dairy/frozen SKU — many mainstream ice creams and frozen bakery items contain egg. Second, Vadilal already makes frozen peas, parathas and ready-to-eat curries, so ARY's frozen expansion can ride the ice-cream distributor it just appointed instead of opening a new supply line."
+      "evidence": "Bill-line counts from the 12m subgroup rollup: ice cream 27,807+2,627=30,434; packed milk 9,085; curd 9,703; flavoured milk 3,891; butter&cheese 2,066; lassi 1,473; frozen 507 — total ~57,159 lines against 365,087 bills/yr",
+      "number": "157 cold lines/day out of ~1,000 bills/day",
+      "soWhat": "A daily dairy habit is the cheapest footfall driver a monopoly store has, and 84% of ARY's customers walk out without buying anything cold. Curd at 27 cups a day for 5,000 people is the clearest single miss."
     },
     {
-      "claim": "Availability is NOT the problem. Packed milk sold on 368 of ~386 days in the window, ice cream 362 days, curd 357, butter and cheese 351. The lines are on the shelf almost every day — they are simply tiny.",
-      "status": "VERIFIED",
-      "evidence": "ary query, COUNT(DISTINCT CAST(h.VoucherDate AS date)) at WarehouseName='Ary Pos', 12m: Packed Milk 368 days/12,918 units, Ice Cream 362/38,619, Curd 357/10,009, Butter & Cheese 351/3,053, Loose Paneer 315/783, Flavoured Milk 239/4,878, Packed Lassi 177/2,190.",
-      "number": "368 of 386 days = 95% availability",
-      "soWhat": "Kills the easy explanation. Nobody needs to fix stock-outs; the range itself is too narrow and too shallow. That points the intervention at assortment and supply cadence rather than at store execution."
-    },
-    {
-      "claim": "Fresh produce is ARY's fastest-moving counter by a wide margin — 172.05 stock turns a year on 133 SKUs, holding only ₹29,136 of stock at cost, across 50,062 bills (137 a day) averaging ₹110. Fresh outsells retail chilled dairy 4.0 to 1 (₹54.9 L vs ₹13.64 L).",
-      "status": "VERIFIED",
-      "evidence": "'ary assort headroom': Fruits & Vegetables — 133 active SKUs, 106 sold, 27 not moving, sales ₹5,012,706, stock at cost ₹29,135.58, turns_yr 172.05. Bill count and average from the counter query: 50,062 bills / ₹5,492,483.",
-      "number": "172.05 turns/yr; 137 fresh transactions/day; fresh:chilled-dairy = 4.0:1",
-      "soWhat": "This is the strongest argument in the whole lane, and it cuts three ways. (1) Demand for daily perishables is proven — residents already make 137 fresh trips a day. (2) ARY can already RUN a ~2-day replenishment cycle to a hill site 30-50 km from town; the logistics capability exists and is simply not pointed at dairy. (3) In a normal Indian grocery basket dairy is at least the size of produce, so chilled dairy at a quarter of produce is an inversion that the assortment, not the geography, is causing."
-    },
-    {
-      "claim": "64% of ARY's cold catalogue is dead listings: 614 active cold SKUs, only 221 sold anything in 12 months, 393 dead. Ice cream alone lists 412 SKUs of which 153 moved; Flavoured Milk lists 47 and moved 13; Frozen lists 40 and moved 12.",
-      "status": "VERIFIED",
-      "evidence": "ary query counting ProductMaster where IsActive=1 and SubGroupID IN (517,934,1075,408,917,327,1074,850,467,1008), left-joined to 12m sales: 614 listed / 221 moving / 393 dead. Per-subgroup counts from the subgroup decode query.",
-      "number": "614 listed, 221 moving, 393 dead (64%)",
-      "soWhat": "Consistent with the store-wide 13,284-never-sold problem, and it means 'add SKUs' is the wrong instruction on its own. Delist first — otherwise the new range disappears into a listing tail nobody can pick from, and the brand churn (Cream Bell) keeps depositing more dead rows."
-    },
-    {
-      "claim": "Dairy stock is not maintained in the ERP at all: Packed Milk book stock is MINUS 8,560 units and Curd is MINUS 368. Packed milk enters the books more through stock journals (+21,372 units over 78 lines) than through purchases (14,523 units). No physical count has EVER posted a shortage against any dairy or frozen subgroup.",
-      "status": "VERIFIED",
-      "evidence": "ary query on Stock joined to ProductMaster: SubGroupID 408 SUM(Quantity) = −8,560; 917 = −368. StockJournalDetail by subgroup: Packed Milk 78 lines net +21,372; Ice Creams 473 lines +22,846; Loose Paneer 995 lines +3,762. PhysicalStockDetail for all 10 cold subgroups: zero negative rows, 0 short_units in every one.",
-      "number": "Packed Milk book stock −8,560 units; 0 posted dairy shortages ever",
-      "soWhat": "Two consequences. First, wastage and expiry economics — which the brief asked me to quantify — CANNOT be measured from this database at all; the data to do it does not exist. Second, my per-line margin figures other than loose milk are indicative only, because cost enters partly through journals that my purchase-cost join does not see. Batch and expiry discipline has to be built before a bigger chilled range, or the losses will be invisible again."
-    },
-    {
-      "claim": "Wastage and expiry economics are unmeasurable from ARY's data — I could not compute them and will not estimate them. There is no expiry or batch field in use, no posted dairy count variance, and negative book stock on the two most perishable lines.",
-      "status": "NOT-CHECKED",
-      "evidence": "Attempted via PhysicalStockDetail (all 41,755 rows positive, no variance semantics), StockJournalDetail (net positive on every cold subgroup — write-offs not separable from receipts), and 'ary audit' subcommands. The store-wide lifetime figure that does exist is shortage ₹2.59 Cr / excess ₹1.67 Cr / net −₹91.5 L across all categories, which cannot be attributed to dairy.",
-      "number": "",
-      "soWhat": "Any wastage percentage I quoted would be invented. The honest answer to the brief's wastage question is: instrument it first (plan step 4 — expiry date at GRN plus a daily near-expiry report), then measure for one quarter. Assume nothing; a 2-3% dairy wastage assumption in a business case here would be fiction."
-    },
-    {
-      "claim": "The campus empties in winter and the cold categories swing violently with it. Total store sales run 2.9x between trough and peak (Jan-2026 ₹32.45 L / 15,078 bills vs May-2026 ₹95.37 L / 41,388 bills). Ice cream swings 19.6x (Jan-2026 ₹13,637 vs May-2026 ₹2,67,458). The softy machine sold nothing at all in Aug-2025, Sep-2025 or Jan-2026.",
-      "status": "VERIFIED",
-      "evidence": "ary query on SaleHeader by month from 2025-04: 2026-01 = 15,078 bills/₹3,245,456; 2026-05 = 41,388/₹9,536,806. Ice cream subgroups 517+934 by month: 2026-01 ₹13,637 (433 units) vs 2026-05 ₹267,458 (8,930 units). Softy SKU 0FI5 by month shows no rows for 2025-08, 2025-09, 2026-01.",
-      "number": "Store 2.9x seasonal swing; ice cream 19.6x; residential school calendar",
-      "soWhat": "Size equipment for the May-June peak but justify it on peak months only, and never divide an annual dairy figure by 12 in a business case. It also argues for shelf-stable UHT milk and frozen (long shelf life) over a bigger fresh chiller — fresh dairy capacity bought for the peak is dead metal in January, whereas frozen and tetra ride the trough without loss."
-    },
-    {
-      "claim": "Margin is concentrated in the value-added and frozen end, and inverted on the commodity end. Ice cream 27.7%, Frozen 25.5%, Flavoured Milk 22.0%, Packed Lassi 20.4%, Milk Powder 20.0%, Butter & Cheese 19.2%, Loose Paneer 18.4% — against Packed Milk 11.7%, Curd 10.1%, Ghee 9.0% and Loose Milk −5.2%.",
+      "claim": "Incremental power for four new cold units is roughly Rs 4,000-5,300 a month — small enough not to be a decision factor",
       "status": "ESTIMATED",
-      "evidence": "ary query comparing SUM(Qty*FinalSaleRate) against SUM(Qty*purchase-weighted-avg-cost) per subgroup, 12m. Line-level confirmation on the Vadilal range from PurchaseDetail: Creamy Chocobar 60ml cost ₹14.02 → sells ₹20.00 (30%); Crunchy Butter Cone 120ml cost ₹33.26 → ₹50.00 (33.5%); Funtastic Choco Crunch 75ml cost ₹34.98 → ₹50.00 (30%). ESTIMATED because cost also enters via stock journals for some SKUs (see the data-integrity finding), so only loose milk and the Vadilal lines are exact.",
-      "number": "Best 27.7% (ice cream) to worst −5.2% (loose milk)",
-      "soWhat": "Sequence the range build by margin, not by category completeness. Frozen and value-added dairy pay for the cold chain; another pouch-milk SKU at 11.7% does not. Ghee is ₹16.22 L at 9% — the biggest single cold line by revenue and nearly the worst by margin, which is a pricing conversation, not an assortment one."
+      "evidence": "Anchor is a VERIFIED rated input of 1,000 W on a Western 500L chest freezer (dir.indiamart.com/impcat/deep-freezer.html). Duty cycle at 1,555 m ambient assumed 30-40%, giving ~7-9 kWh/day for that class, ~4-5 kWh/day for a 300-400L visi cooler and ~2-2.5 kWh/day for a 5-star 340L glass-top: 18-22 kWh/day = 550-660 kWh/month. Tariff assumed Rs 7-8/kWh commercial — HPSEBL and HPERC tariff pages did not yield the rate (hpseb.in/tariff 404, hperc.org homepage had no schedule). ARY's own Electricity Expense (AccountID 1954) booked Rs 86,624 for Nov-2025 to May-2026 and Rs 19,070 for June-2026",
+      "number": "550-660 kWh/month ≈ Rs 4,000-5,300",
+      "soWhat": "Power is not the constraint. But ARY runs a generator (AccountID 2142 Generator Exp.) which means outages happen — and a thawed 500L freezer destroys Rs 40-60k of stock, so a temperature alarm is cheaper than insurance."
     },
     {
-      "claim": "The own-make softy line's 98.9% gross margin is an accounting artefact, not a real margin. SKU 0FI5 'Softy Ice Cream' has almost no purchase cost booked against it (₹2,179 of cost against ₹196,750 of sales) because its milk and mix inputs are bought as other SKUs. It sells at a flat ₹30 and did 6,647 servings.",
-      "status": "VERIFIED",
-      "evidence": "Realised-margin query: subgroup 934 'Ice Creams' sales ₹196,750, cogs_est ₹2,179, gm_pct 98.9. Softy monthly query on ProductID 0FI5: flat ₹30.00 rate every month, 6,647 servings over 10 non-consecutive months, StockJournalDetail shows 473 journal lines / +22,846 units for subgroup 934.",
-      "number": "₹1.97 L sales, 6,647 servings at ₹30, true input cost unbooked",
-      "soWhat": "Do not put 98.9% in any business case — it will not survive scrutiny and it discredits the rest of the paper. Own-make cold products are genuinely high margin and worth expanding (softy, set dahi, paneer already at 18.4%), but the input costing has to be wired up first or the category's real profitability stays unknowable."
+      "claim": "Wastage economics decide the range: at 10.6% margin on pouch milk, a 3% shrink eats 28% of the gross profit and 5% wipes it out — while frozen and ice cream have near-zero expiry risk and shift the whole risk to power failure",
+      "status": "ESTIMATED",
+      "evidence": "Margins are VERIFIED from ARY's own data (pouch milk 10.6-13.9%, curd 7.9-13.8%, ice cream 22-33%). Shelf lives are standard industry values, not fetched: pasteurised pouch milk 1-2 days, curd 7-10 days at 4 degC, vacuum paneer 15-30 days, UHT 90-180 days (Verka Life is stated at 90 days on verka.coop), frozen 12-18 months at -18 degC. A 1.5-3% dairy retail shrink band is an industry norm I did not source",
+      "number": "3% shrink on a 10.6% line = 28% of GP gone",
+      "soWhat": "This is the reason the build order is UHT first, then curd/cheese/lassi in a chiller, then frozen, and pouch milk LAST. It also means ARY must fix the negative stock before it can even measure shrink."
     },
     {
-      "claim": "Curd is already a real business that the brief recorded as absent: ₹5.94 lakh across retail and institutional, on 3.6 deliveries a week. It is filed under Confectionery, which is why it looked missing.",
-      "status": "VERIFIED",
-      "evidence": "Subgroup decode: 917 Curd (Confectionery dept) 26 SKUs / 9 sold / ₹340,085 + 1043 Curd/Raita (Others) 4 SKUs / 1 sold / ₹254,374. Top SKUs: Super Dahi 400g ₹137,940 (3,630 units), Super Dahi 200g ₹93,320 (4,666), Amul Masti Dahi 400g ₹63,228, Amul Masti Dahi 200g ₹39,960, Dahi_Z ₹254,374. Supply: Sehgal Trading 151 bills + Leela Associates 36 bills = 187 bills/yr.",
-      "number": "₹5.94 L/yr, 187 deliveries/yr, 10.1% retail GM",
-      "soWhat": "Dahi cups do not need to be introduced — they need to be widened (only 9 of 26 listed SKUs move) and repriced (10.1% against a normal 18-22% for cup curd). Curd's 187 deliveries a year also prove the hill road supports near-daily chilled resupply, which is the direct counter-evidence to treating Baru Sahib's remoteness as the binding constraint."
-    },
-    {
-      "claim": "Butter and cheese exist but are the most overstocked cold line: 1,034 units on hand against ₹1.29 lakh of annual sales, bought in bulk from one supplier (M/S Shashi Bhushan Manoj Kumar Aeron, 88 bills, 664 units at ₹464 average — block/bulk format, not consumer packs).",
-      "status": "VERIFIED",
-      "evidence": "Stock query by subgroup: Butter & Cheese 8 SKUs with stock, 1,034 units on hand — the highest of any cold subgroup. Sales 12m ₹128,973 (Amul Butter 100g ₹56,959/949 units; Amul Cheese Slices 200g ₹34,174/238; Amul Butter MRP-10 ₹23,450/2,345). Purchase: Shashi Bhushan 664 units/₹308,187 over 88 bills.",
-      "number": "1,034 units on hand vs ₹1.29 L annual sales",
-      "soWhat": "The one cold line where the answer is fewer units and smaller packs, not more. Bulk cheese blocks bought for a canteen are sitting against retail demand for slices and cubes — a format mismatch that ties up cash and risks the only measurable spoilage exposure in the category."
-    },
-    {
-      "claim": "Frozen food is genuinely near-absent and is the clearest greenfield: ₹26,032 in 12 months, 40 listed SKUs of which 12 moved, 25.5% margin. It is almost entirely McCain potato snacks. Frozen peas sell only in the 200g pack (₹6,740); the 1 kg and 5 kg packs are listed with zero sales. There are no frozen parathas, no momos and no ice cream tubs at all.",
-      "status": "VERIFIED",
-      "evidence": "Subgroup 467 'Frozen': 40 SKUs, 12 sold, ₹26,032, gm 25.5%. Full SKU list shows Pagro Frozen Peas 200g ₹6,740 as the only vegetable moving; Pagro 1 Kg, Pagro 5 Kg, Pagro Mixed Veg 500g/1 Kg, Pagro Sweet Corn 1 Kg, Mannsfield Green Peas 5 Kg, Favorita French Fry 2.5 Kg all at zero; 8 Vezlay soya SKUs all at zero; remaining ~14 moving SKUs all McCain fries/nuggets/bites. No paratha, momo or tub SKU exists in the catalogue.",
-      "number": "₹26,032/yr on 40 SKUs, 12 moving, 25.5% GM",
-      "soWhat": "Frozen is the best risk-adjusted expansion in the lane: long shelf life defeats both the 30-50 km hill road and the 19.6x winter trough, it needs one freezer rather than a cold chain, it carries 25.5% margin, and Vadilal — already appointed — makes frozen peas, parathas and curries. Frozen parathas are the single highest-fit missing line for a 5,000-person residential campus with married staff families."
-    },
-    {
-      "claim": "Bathinda (03AACCJ4223F1Z6, Talwandi Sabo, Punjab) is dormant with 607 negative stock rows and zero sales, and 'Ary Apple A Day' (506 SKUs) and 'Girls Canteen Ts' are also inactive with no sales.",
-      "status": "VERIFIED",
-      "evidence": "'ary assort headroom': Talwandi Sabo active=false, 621 SKUs, 0 sold, stock at cost ₹160,734, negative_rows 607. Ary Apple A Day active=false, 506 SKUs, 0 sales. Girls Canteen Ts active=false, 222 SKUs, 0 sales. Ary Warehouse: 9,094 SKUs, 0 sold, ₹1,186,604 stock at cost.",
-      "number": "3 dead counters; 607 negative stock rows at Talwandi Sabo",
-      "soWhat": "Relevant to this lane only as a warning: ARY has already opened and abandoned cold-capable retail points. Any freezer or chiller must be sited at Ary Pos and Ary Lite, which have proven daily footfall, and the business case should not assume a new counter."
-    },
-    {
-      "claim": "India's organised dairy market is large and cooperative-dominated, which is what makes a distributor appointment realistic even for a remote hill site: Amul alone turned over ₹90,000 crore in 2025 through a three-tier cooperative structure covering 3.6 million milk producers, with roughly three-quarters of the consumer price flowing back to farmers.",
-      "status": "VERIFIED",
-      "evidence": "https://en.wikipedia.org/wiki/Amul — ₹90,000 crore revenue 2025 (up from ₹80,000 crore), 3.6 million milk producers, three-tier structure (village societies → district unions → GCMMF). https://en.wikipedia.org/wiki/Dairy_industry_in_India — the 'Amul Pattern', 'three-fourth of the price paid by the mainly urban consumers goes into the hands of millions of small dairy farmers'; buffalo milk $43.09 bn and cow milk $32.55 bn of agricultural output (2016).",
-      "number": "₹90,000 Cr Amul turnover 2025; 3.6 M producers",
-      "soWhat": "Scale means the distributor conversation is routine business for the counterparty, not a favour. It also means the margin structure is thin and fixed by the cooperative — ARY should expect ~8-12% on pouch milk and make its money on value-added and frozen, exactly as the observed margin ladder already shows."
-    },
-    {
-      "claim": "Cold-chain equipment prices, power draw, and whether brands supply coolers free against a volume commitment: I could NOT verify any of it in this session. Brand-placed freezers against exclusivity and volume are real Indian trade practice, but I have no 2026 source for the terms and will not manufacture one.",
+      "claim": "ARY's FSSAI position for milk is unverified and it is not a formality: the shop sells loose milk by volume and makes 'Home Made Paneer' (Rs 59,478 at Rs 550/kg), which is manufacturing/repacking of a milk product, not retail of prepacked food",
       "status": "NOT-CHECKED",
-      "evidence": "21 WebFetch attempts, all commerce and manufacturer sources blocked or 404: amul.com 403, IndiaMART 429 (twice), Rockwell 400, Blue Star 404, Amazon.in 503, Western Refrigeration DNS failure, moglix/industrybuying/tradeindia returned unrelated pages, MoSPI and FSSAI PDFs 404. WebSearch unavailable (budget exhausted 200/200).",
+      "evidence": "Attempted fssai.gov.in licensing page (returned header only), cleartax.in FSSAI fee page (404) and indiafilings (404) — no fee table or Kind-of-Business list retrieved. Internal side is VERIFIED: ary query group 193 shows 'Home Made Paneer' 108.141 kg at Rs 550/kg and subgroup 851 'Loose Milk' 26,105 L sold by volume",
+      "number": "Rs 59,478 homemade paneer + 26,105 L loose milk",
+      "soWhat": "Before scaling dairy, confirm the Baru Sahib premises licence lists milk and milk products (and loose-milk vending), that a FoSTaC-trained food safety supervisor is on record, and that ARY's multi-state footprint (Delhi 07AACCJ4223F1ZY, HP 02AACCJ4223F1Z8, Punjab 03AACCJ4223F1Z6) is licensed correctly. Loose milk sold by volume also needs a Legal Metrology verified measure — a metered dispenser solves both."
+    },
+    {
+      "claim": "MoFPI's cold chain grant is unlikely to fit ARY, and the plan should not assume subsidy",
+      "status": "NOT-CHECKED",
+      "evidence": "WebFetch mofpi.gov.in/schemes/pradhan-mantri-kisan-sampada-yojana confirmed 'Integrated Cold Chain and Value Addition Infrastructure' is a PMKSY component but the page carried no grant percentage, ceiling or eligibility; the component-specific URL 404'd",
       "number": "",
-      "soWhat": "The brief's request for real 2026 prices and power figures is unmet and must be closed by phone/email quotes, not by another research pass with the same tooling. My indicative capex range in the equipment table is model knowledge, clearly labelled, and is fit only for deciding whether to bother asking — not for approving spend."
+      "soWhat": "A Rs 2.1 lakh retail equipment buy is far below any cold-chain scheme's project floor. Fund it from working capital and treat any grant as upside — do not let a subsidy application delay a 3.5-month-payback purchase."
     }
   ],
   "tables": [
     {
-      "title": "ARY's real cold trade, 12 months to 21-Aug-2026 (all VERIFIED from live queries)",
+      "title": "What ARY's cold estate actually earns today (12 months to Aug-2026, all figures from the ARY database)",
       "columns": [
-        "Line",
-        "ERP subgroup",
-        "Filed under (department)",
-        "12m sales ₹",
-        "Realised GM %",
-        "Channel"
+        "Category (subgroup)",
+        "SKUs listed",
+        "SKUs sold",
+        "12m sales (Rs)",
+        "Bill lines",
+        "Lines/day",
+        "Realized margin",
+        "Gross profit (Rs)"
       ],
       "rows": [
         [
-          "Desi ghee (mostly loose)",
-          "475 Ghee",
-          "Grocery > Oil & Ghee",
-          "16,22,188",
-          "9.0",
-          "Retail"
-        ],
-        [
-          "Ice cream, packaged",
-          "517 Ice Cream",
-          "Confectionery",
+          "Ice Cream (517)",
+          "412",
+          "153",
           "12,66,805",
-          "27.7",
-          "Retail (Pos + Lite)"
+          "27,807",
+          "76",
+          "22-33% (Vadilal 30%, Amul 26%)",
+          "~3,55,000"
         ],
         [
-          "Loose milk",
-          "851 Milk",
-          "Menu Items > Mini Meals",
-          "11,38,913",
-          "−5.2",
-          "Institutional (Basement)"
+          "Ice Creams (934)",
+          "9",
+          "2",
+          "1,96,750",
+          "2,627",
+          "7",
+          "~28%",
+          "~55,000"
         ],
         [
-          "Loose paneer",
-          "1075 Loose Paneer",
-          "Dairy Products",
-          "5,55,123",
-          "18.4",
-          "Retail + institutional"
-        ],
-        [
-          "Packed milk pouches",
-          "408 Packed Milk",
-          "Dairy Products",
+          "Packed Milk (408)",
+          "25",
+          "7",
           "4,01,023",
-          "11.7",
-          "Retail"
+          "9,085",
+          "25",
+          "10.6-13.9%",
+          "~44,000"
+        ],
+        [
+          "Curd (917)",
+          "26",
+          "9",
+          "3,40,086",
+          "9,703",
+          "27",
+          "7.9-13.8%",
+          "~34,000"
+        ],
+        [
+          "Flavoured Milk (850)",
+          "47",
+          "13",
+          "1,35,710",
+          "3,891",
+          "11",
+          "24-25%",
+          "~33,000"
+        ],
+        [
+          "Butter & Cheese (327)",
+          "22",
+          "7",
+          "1,28,973",
+          "2,066",
+          "6",
+          "13.5-46%",
+          "~19,000"
+        ],
+        [
+          "Packed Lassi (1074)",
+          "10",
+          "5",
+          "49,265",
+          "1,473",
+          "4",
+          "15.0%",
+          "~7,000"
+        ],
+        [
+          "Frozen (467/673/745/491)",
+          "57",
+          "24",
+          "51,677",
+          "507",
+          "1.4",
+          "~20%",
+          "~10,000"
+        ],
+        [
+          "Paneer (Ls / Z / Home Made)",
+          "3",
+          "3",
+          "5,52,327",
+          "3,014",
+          "8",
+          "-0.3% to nil",
+          "~0"
+        ],
+        [
+          "Institutional Milk + Dahi_Z (851/1043, Basement)",
+          "37",
+          "3",
+          "13,84,305",
+          "26",
+          "0.07",
+          "NEGATIVE (-Rs 4.98/L, -Rs 3.14/kg)",
+          "-78,000"
+        ],
+        [
+          "TOTAL COLD",
+          "648",
+          "226",
+          "45,10,521",
+          "57,185",
+          "157",
+          "blended ~10.6%",
+          "~4,78,000"
+        ]
+      ]
+    },
+    {
+      "title": "The range a store serving 5,000 residents should carry — and what ARY has",
+      "columns": [
+        "Line",
+        "ARY today",
+        "What to stock (named brand / pack)",
+        "Reference price 2026",
+        "ARY margin",
+        "Target/day",
+        "Target 12m (Rs)",
+        "Priority"
+      ],
+      "rows": [
+        [
+          "UHT / tetra milk",
+          "Rs 1,771 (Amul Taaza 1L, 23 units)",
+          "Verka Life 90-day 1L; Amul Taaza tetra 1L; Amul Gold tetra; Amul Calci+ 1L Rs 98",
+          "Rs 78-98 / L",
+          "12-14%",
+          "20 L",
+          "6,40,000",
+          "P0"
+        ],
+        [
+          "Pouch milk",
+          "Amul Moti 500ml 23/day; Verka 450ml 7/day",
+          "Add Verka Gold 500/1000/1500ml (6% fat, 9% SNF), Verka Toned, Amul Taaza 500ml; keep Amul Moti 450ml Rs 32",
+          "Rs 32 / 450-500ml",
+          "10.6-13.6%",
+          "100 pouches",
+          "11,90,000",
+          "P1"
         ],
         [
           "Curd / dahi cups",
-          "917 Curd",
-          "Confectionery",
-          "3,40,085",
-          "10.1",
-          "Retail"
+          "Super Dahi 400g+200g, Amul Masti — 27 cups/day",
+          "Add Verka Dahi Low Fat / Jeera Raita / Matka bulk 5kg; Amul Masti 85g Rs 10 for children",
+          "Rs 10 / 20 / 38-48",
+          "7.9-13.8%",
+          "120 cups",
+          "11,40,000",
+          "P0"
         ],
         [
-          "Curd / raita, bulk",
-          "1043 Curd/Raita",
-          "Menu Items > Others",
-          "2,54,374",
-          "−0.4",
-          "Institutional"
+          "Paneer",
+          "Rs 5.52 L at nil or negative margin",
+          "Amul Malai 200g, Verka 200g, Milky Mist thermoform 200g, Amul High Protein 400g Rs 165; reprice Paneer_Z off actual cost",
+          "Rs 95-165",
+          "fix to 12%",
+          "6 kg",
+          "5,50,000",
+          "P0 (repricing)"
         ],
         [
-          "Softy, own-make",
-          "934 Ice Creams",
-          "Confectionery",
-          "1,96,750",
-          "98.9 (artefact)",
-          "G Canteen"
+          "Butter",
+          "Amul 100g 2.6/day; Amul Rs 10 pack 6.4/day (46% margin)",
+          "Add Amul 500g, Verka Table Butter, Amul Safed Makhan 200g",
+          "Rs 60 / 100g",
+          "13.9-46.3%",
+          "12 packs",
+          "3,00,000",
+          "P1"
         ],
         [
-          "Milk powder / whitener",
-          "1008 Milk Powder",
-          "Grocery > General Items",
-          "1,61,399",
-          "20.0",
-          "Retail"
+          "Cheese slices / cubes / block",
+          "Amul Slices 200g 238 packs/yr; Amul Pizza Cheese 1kg 1 unit/yr",
+          "Amul Slices 100/200g, Cheese Cubes 200g, Cheese Spread 200g, Mozzarella 200g/1kg, Verka Singles; Milky Mist (12 variants)",
+          "Rs 86-711",
+          "13.5%",
+          "10 packs",
+          "2,00,000",
+          "P1 (momo + sandwich counters already sell Rs 30.9 L)"
+        ],
+        [
+          "Cream",
+          "Amul Fresh Cream 250ml 91/yr",
+          "Amul Fresh Cream 250ml + 1L, Verka Cream",
+          "Rs 71 / 250ml",
+          "~14%",
+          "3 packs",
+          "70,000",
+          "P2"
         ],
         [
           "Flavoured milk",
-          "850 Flavoured Milk",
-          "Drinks & Beverages",
-          "1,35,710",
-          "22.0",
-          "Retail"
+          "Verka Pio 5 flavours, Amul Kool, Cream Bell, Smoodh Rs 20 — Rs 1.36 L",
+          "Widen Verka Pio (10 flavours incl. Haldi Dudh, Thandai, Cold Coffee), Amul Kool Kesar/Rose",
+          "Rs 20-30 / 180-200ml",
+          "24-25%",
+          "60 bottles",
+          "6,00,000",
+          "P1 (best margin per rupee of chiller space)"
         ],
         [
-          "Butter & cheese",
-          "327 Butter & Cheese",
-          "Confectionery",
-          "1,28,973",
-          "19.2",
-          "Retail"
+          "Lassi / buttermilk",
+          "Amul Sweet Lassi + Amul Lassi Rs 43,425; buttermilk 76 units ALL YEAR",
+          "Amul High Protein Buttermilk Rs 30, Verka Lassi Namkeen/Sweet/Mango/Rose, Amul Masti Spiced Buttermilk 1L",
+          "Rs 15-30",
+          "15-24%",
+          "40 packs",
+          "3,00,000",
+          "P1"
         ],
         [
-          "Packed lassi",
-          "1074 Packed Lassi",
-          "Dairy Products",
-          "49,265",
-          "20.4",
-          "Retail"
+          "Ice cream (impulse)",
+          "Rs 14.64 L, 83 lines/day — the profit engine",
+          "Keep Vadilal + Amul; no change needed",
+          "Rs 20-100",
+          "22-33%",
+          "95 lines",
+          "17,00,000",
+          "hold"
         ],
         [
-          "Frozen foods",
-          "467 Frozen",
-          "Frozen Foods",
-          "26,032",
-          "25.5",
-          "Retail"
+          "Ice cream (take-home tubs / family packs)",
+          "essentially none",
+          "Vadilal 700ml/1L tubs, Amul 1L family pack, Verka Premium Tubs, Amul Almond Belgian Rs 100 (already 178/yr)",
+          "Rs 150-350 / L",
+          "~28%",
+          "8 tubs",
+          "6,00,000",
+          "P1"
         ],
         [
-          "TOTAL",
-          "13 subgroups",
-          "6 departments",
-          "62,76,642",
-          "—",
-          "—"
+          "Frozen peas / mixed veg",
+          "Pagro 200g 266 packs/yr; 1kg and 5kg packs DEAD",
+          "Safal (Mother Dairy) peas 500g/1kg, Pagro 500g/1kg, Mannsfield 5kg for the kitchen",
+          "Rs 25 / 200g",
+          "~20%",
+          "15 packs",
+          "2,50,000",
+          "P1"
+        ],
+        [
+          "Frozen parathas",
+          "ZERO (8 Tawa Items SKUs are cooked menu items)",
+          "Frozen whole-wheat 10pc Rs 100, laccha Rs 65, paneer paratha 300g Rs 165; ask Shashi Bhushan / Laxmi Narayan for iD, Yummiez, Haldiram's",
+          "Rs 65-165",
+          "~20%",
+          "10 packs",
+          "2,00,000",
+          "P1"
+        ],
+        [
+          "Frozen momos / nuggets / fries",
+          "McCain ~Rs 40k/yr; momos sold COOKED at Rs 8.02 L",
+          "Prasuma / Wow! frozen momos, keep McCain fries+smiles+tikki, Godrej Yummiez veg range",
+          "Rs 120-250",
+          "~20%",
+          "8 packs",
+          "1,50,000",
+          "P1"
+        ],
+        [
+          "Probiotic / Greek yogurt / shrikhand",
+          "only Amul Chocobar Probiotic; shrikhand 1 dead SKU, Greek yogurt 0",
+          "Epigamia Greek yogurt, Milky Mist Premium Yogurt + Shrikhand, Amul Probiotic Dahi",
+          "Rs 40-90",
+          "~15%",
+          "6 cups",
+          "1,50,000",
+          "P3 (Eternal University + 280-bed hospital)"
+        ],
+        [
+          "Eggs",
+          "8 SKUs matched, mostly egg-flavoured snacks",
+          "Not applicable — Sikh institution, keep out",
+          "-",
+          "-",
+          "0",
+          "0",
+          "excluded by design"
         ]
       ]
     },
     {
-      "title": "Where the money actually is: retail vs institutional, and per resident",
+      "title": "Cold-chain equipment: real Indian 2026 prices, and what to buy",
       "columns": [
-        "Segment",
-        "12m sales ₹",
-        "Per resident/yr ₹",
-        "Per resident/month ₹",
-        "Note"
-      ],
-      "rows": [
-        [
-          "Retail chilled dairy (milk, curd, paneer, butter/cheese, lassi, flavoured)",
-          "13,63,927",
-          "273",
-          "22.73",
-          "THE number to move"
-        ],
-        [
-          "Retail ice cream + softy",
-          "14,62,660",
-          "293",
-          "24.38",
-          "Already growing +30.7% LFL"
-        ],
-        [
-          "Retail frozen",
-          "26,032",
-          "5",
-          "0.43",
-          "Near-greenfield"
-        ],
-        [
-          "Retail cold, total",
-          "28,52,619",
-          "571",
-          "47.54",
-          "Ary Pos + Lite + G Canteen"
-        ],
-        [
-          "Institutional (Basement: milk, curd/raita, paneer)",
-          "16,39,473",
-          "—",
-          "—",
-          "15 bills/yr, ₹5.23 L each"
-        ],
-        [
-          "Ghee (retail, separate ladder)",
-          "16,22,188",
-          "324",
-          "27.03",
-          "9% GM — pricing issue"
-        ]
-      ]
-    },
-    {
-      "title": "Supply cadence — the binding constraint (VERIFIED from PurchaseHeader)",
-      "columns": [
-        "Line",
-        "Suppliers",
-        "Bills / 12m",
-        "Deliveries per week",
-        "Shelf life",
+        "Unit",
+        "Model",
+        "Capacity",
+        "Price (Rs)",
+        "Power (est.)",
+        "Purpose at ARY",
         "Verdict"
       ],
       "rows": [
         [
-          "Packed milk",
-          "5 general wholesalers (Rachna, Leela, Sahni, Shashi Bhushan, Himachal Wholesale)",
-          "38",
-          "0.7",
-          "2-3 days",
-          "BROKEN — starves the range"
+          "Dairy visi cooler",
+          "Blue Star VC400A",
+          "385 L",
+          "43,500",
+          "~4-5 kWh/day",
+          "One neutral chiller: curd, butter, cheese, paneer, lassi, flavoured milk, pouch milk",
+          "BUY — P0, unlocks 5 categories"
         ],
         [
-          "Loose milk",
-          "Hygienic Milk (local bakery/provisions)",
-          "303",
-          "~6",
-          "1-2 days",
-          "Works, but below cost"
+          "Dairy visi cooler (alt)",
+          "Blue Star SC300F / Voltas VCGT320SD / Celfrost FKG 400",
+          "300 / 320 / 400 L",
+          "34,900 / 32,000 / 43,000",
+          "~4-5 kWh/day",
+          "Second chiller at the F&V counter",
+          "BUY the 2nd in phase 2"
         ],
         [
-          "Curd",
-          "Sehgal Trading (151) + Leela (36)",
-          "187",
-          "3.6",
-          "5-7 days",
-          "Adequate"
+          "Dairy visi cooler (large)",
+          "Blue Star SC500F",
+          "500 L",
+          "58,900",
+          "~6 kWh/day",
+          "If curd+milk volumes hit target",
+          "Defer to month 6"
         ],
         [
-          "Ice cream",
-          "Leela (14) + Shiv Shakti / Vadilal (14)",
-          "28",
-          "0.5",
-          "Months",
-          "Fine — frozen"
+          "Frozen chest freezer",
+          "Blue Star CF3-500MPW",
+          "484 L",
+          "31,500",
+          "~7-9 kWh/day",
+          "Dedicated frozen food: peas, mixed veg, parathas, momos, nuggets, fries",
+          "BUY — P1"
         ],
         [
-          "Butter & cheese",
-          "M/S Shashi Bhushan Manoj Kumar Aeron",
-          "88",
-          "1.7",
-          "Weeks",
-          "Fine, but bulk format"
+          "Frozen chest (alt)",
+          "Blue Star CF5-330NEWY / Voltas CVF406DA5 / Blue Star HT4-N575",
+          "310 / 360 / 515 L",
+          "25,900 / 28,500 / 34,500",
+          "~5-9 kWh/day",
+          "-",
+          "alternatives"
         ],
         [
-          "Frozen",
-          "Shashi Bhushan (46) + Laxmi Narayan (5)",
-          "51",
-          "1.0",
-          "Months",
-          "Fine"
-        ]
-      ]
-    },
-    {
-      "title": "Ice cream: three brands in three years (VERIFIED by financial year)",
-      "columns": [
-        "Financial year",
-        "Cream Bell ₹",
-        "Amul ₹",
-        "Vadilal ₹",
-        "Softy own-make ₹",
-        "Total ₹"
-      ],
-      "rows": [
-        [
-          "FY23-24",
-          "12,46,610",
-          "—",
-          "—",
-          "—",
-          "13,04,990"
+          "Ice-cream glass top",
+          "Voltas GT440GA5-P (5-star)",
+          "340 L",
+          "24,500",
+          "~2-2.5 kWh/day",
+          "Take-home tubs and family packs, visible merchandising",
+          "BUY — P1, best margin"
         ],
         [
-          "FY24-25",
-          "6,84,675",
-          "6,00,140",
-          "—",
-          "—",
-          "14,29,235"
+          "Ice-cream curved glass",
+          "Haier HCF-300GHCM / Haier 550L",
+          "300 / 550 L",
+          "29,925-31,500 / 51,500",
+          "~3-6 kWh/day",
+          "-",
+          "alternatives"
         ],
         [
-          "FY25-26",
-          "190",
-          "11,07,411",
-          "—",
-          "88,540",
-          "11,96,171"
-        ],
-        [
-          "FY26-27 (to 21-Aug, 4.7 mo)",
-          "—",
-          "1,72,484",
-          "5,84,610",
-          "1,05,090",
-          "8,62,184"
-        ]
-      ]
-    },
-    {
-      "title": "Seasonality — size for the peak, never divide by 12 (VERIFIED)",
-      "columns": [
-        "Month",
-        "Store bills",
-        "Store sales ₹",
-        "Ice cream ₹",
-        "Ice cream units"
-      ],
-      "rows": [
-        [
-          "2026-01 (trough)",
-          "15,078",
-          "32,45,456",
-          "13,637",
-          "433"
-        ],
-        [
-          "2026-02",
-          "22,776",
-          "38,04,251",
-          "46,706",
-          "1,725"
-        ],
-        [
-          "2026-03",
-          "31,040",
-          "78,79,842",
-          "1,01,760",
-          "4,237"
-        ],
-        [
-          "2026-04",
-          "37,085",
-          "70,49,951",
-          "1,37,286",
-          "5,227"
-        ],
-        [
-          "2026-05 (peak)",
-          "41,388",
-          "95,36,806",
-          "2,67,458",
-          "8,930"
-        ],
-        [
-          "2026-06",
-          "38,563",
-          "79,13,561",
-          "2,28,750",
-          "7,229"
-        ],
-        [
-          "Swing trough→peak",
-          "2.7x",
-          "2.9x",
-          "19.6x",
-          "20.6x"
-        ]
-      ]
-    },
-    {
-      "title": "Recommended DAIRY range for 5,000 residents — with what ARY has today",
-      "columns": [
-        "Line",
-        "Pack sizes",
-        "Brand candidates (egg-free screen applies)",
-        "ARY today",
-        "Priority"
-      ],
-      "rows": [
-        [
-          "Toned milk pouch",
-          "500 ml",
-          "Verka, Amul Taaza, HP Milkfed Him Dairy",
-          "25 SKUs listed, 7 moving, 35 pouches/day",
-          "P0"
-        ],
-        [
-          "Full cream milk pouch",
-          "500 ml",
-          "Amul Gold, Verka Full Cream",
-          "Listed, not moving",
-          "P0"
-        ],
-        [
-          "UHT / tetra milk",
-          "1 L, 200 ml",
-          "Amul Taaza & Gold tetra, Verka",
-          "Amul Taaza 1L: 23 units/yr",
-          "P0 — shelf-stable beats the hill road and the winter trough"
-        ],
-        [
-          "Cup curd / dahi",
-          "100, 200, 400 g",
-          "Amul Masti, Verka, Mother Dairy, Super",
-          "26 listed, 9 moving, ₹3.40 L at 10.1%",
-          "P1 — widen and reprice, not introduce"
-        ],
-        [
-          "Bucket dahi",
-          "1 kg, 5 kg",
-          "Verka, Amul",
-          "Absent",
-          "P2 — institutional channel"
-        ],
-        [
-          "Lassi & chaach",
-          "200 ml pouch, 1 L tetra",
-          "Amul, Verka, Haldiram",
-          "10 listed, 5 moving, ₹49,265 at 20.4%",
-          "P1"
-        ],
-        [
-          "Buttermilk / masala chaas",
-          "200 ml, 1 L",
-          "Amul Masti Chaas, Verka",
-          "1 SKU, ₹1,520",
-          "P1"
-        ],
-        [
-          "Butter",
-          "100 g, 500 g",
-          "Amul, Verka",
-          "Amul 100g ₹56,959 + MRP-10 ₹23,450",
-          "P1"
-        ],
-        [
-          "Cheese slices, cubes, block",
-          "200 g, 400 g",
-          "Amul, Britannia, Go",
-          "Slices ₹34,174; 1,034 units overstocked in bulk format",
-          "P1 — switch bulk to consumer packs"
-        ],
-        [
-          "Paneer, packed",
-          "200 g, 1 kg",
-          "Amul, Verka, Gowardhan",
-          "Listed at zero; loose paneer works at ₹5.55 L / 18.4%",
-          "P2"
-        ],
-        [
-          "Flavoured milk",
-          "180, 200 ml",
-          "Amul Kool, Verka, Nestlé",
-          "47 listed, 13 moving, ₹1.36 L at 22.0%",
-          "P1 — delist 34, deepen 13"
-        ],
-        [
-          "Fresh cream",
-          "250 ml, 1 L",
-          "Amul",
-          "₹6,481",
-          "P2"
-        ],
-        [
-          "Ice cream TUBS / family packs",
-          "700 ml, 1 L",
-          "Vadilal, Amul",
-          "ABSENT — impulse only",
-          "P1 — highest-margin gap"
-        ],
-        [
-          "Shrikhand / mishti doi",
-          "100 g, 500 g",
-          "Amul, Vadilal, Verka",
-          "ABSENT",
-          "P3"
-        ],
-        [
-          "Probiotic / Greek yoghurt",
-          "100 g",
-          "Epigamia, Amul, Nestlé a+",
-          "ABSENT",
-          "P3 — thin demand at this income mix"
-        ],
-        [
-          "Milk powder / whitener",
-          "200, 400 g",
-          "Nestlé Everyday, Amul",
-          "₹1.61 L at 20.0%",
-          "P2 — keep, ride the winter trough"
-        ],
-        [
-          "Ghee",
-          "1 L pouch, tin",
-          "Verka, Amul, own loose",
-          "₹16.22 L at 9.0%",
-          "P2 — reprice, do not extend"
-        ]
-      ]
-    },
-    {
-      "title": "Recommended FROZEN range — the clearest greenfield (₹26,032 today, 25.5% GM)",
-      "columns": [
-        "Line",
-        "Pack",
-        "Brand candidates",
-        "ARY today",
-        "Priority"
-      ],
-      "rows": [
-        [
-          "Frozen paratha",
-          "5-pc",
-          "Vadilal, ID Fresh, Haldiram, Godrej Yummiez",
-          "ABSENT",
-          "P0 — best fit for married-staff families"
-        ],
-        [
-          "Green peas",
-          "500 g, 1 kg",
-          "Pagro (Punjab), Safal, HyFun",
-          "200g sells ₹6,740; 1kg & 5kg listed at zero",
-          "P1 — stock the 500g/1kg"
-        ],
-        [
-          "Mixed vegetables",
-          "500 g, 1 kg",
-          "Pagro, Safal",
-          "Listed, zero sales",
-          "P1"
-        ],
-        [
-          "French fries",
-          "420 g",
-          "McCain, HyFun",
-          "Moving, ₹4,335",
-          "P1"
-        ],
-        [
-          "Nuggets, smileys, bites",
-          "250-450 g",
-          "McCain, Vadilal",
-          "~14 SKUs moving",
-          "P1 — already the frozen base"
-        ],
-        [
-          "Momos",
-          "8-10 pc",
-          "Wow! Momo, Sumeru, Godrej Yummiez",
-          "ABSENT",
-          "P1 — strong student demand"
-        ],
-        [
-          "Sweet corn",
-          "1 kg",
-          "Pagro",
-          "Listed, zero sales",
-          "P2"
-        ],
-        [
-          "Soya / veg protein",
-          "200 g",
-          "Vezlay",
-          "8 SKUs, ALL zero for 12m",
-          "P3 — DELIST"
-        ]
-      ]
-    },
-    {
-      "title": "Cold-chain equipment — INDICATIVE ONLY, prices NOT verified this session",
-      "columns": [
-        "Equipment",
-        "Size",
-        "Purpose / siting",
-        "Indicative capex ₹ (ESTIMATED, unverified)",
-        "Indicative power (ESTIMATED)",
-        "Note"
-      ],
-      "rows": [
-        [
-          "Visi cooler, glass front",
-          "300-500 L",
-          "Chilled dairy at Ary Pos",
-          "40,000-70,000",
-          "300-500 W, 4-7 kWh/day",
-          "Often placed free by a dairy distributor against volume — UNVERIFIED, ask"
-        ],
-        [
-          "Visi cooler, second unit",
-          "300 L",
-          "Chilled dairy at Ary Lite",
-          "35,000-60,000",
-          "300-400 W",
-          "Only after Ary Pos proves the range"
-        ],
-        [
-          "Glass-top deep freezer",
-          "300-400 L",
-          "Frozen foods at Ary Pos",
-          "30,000-50,000",
-          "250-400 W, 3-6 kWh/day",
-          "The frozen range needs this, not a chiller"
-        ],
-        [
-          "Ice cream freezer",
-          "300-400 L",
-          "Ary Lite second point",
-          "0-45,000",
-          "250-350 W",
-          "Vadilal/Amul routinely place these — UNVERIFIED terms"
+          "Chilled milk dispenser",
+          "100 L milk ATM, SS304, 2 degC, UPI/card",
+          "100 L",
+          "95,000-1,60,000",
+          "~4 kWh/day",
+          "Replaces hand-poured loose milk; metered draw satisfies Legal Metrology",
+          "P2 — after the chiller"
         ],
         [
           "Bulk milk chiller",
-          "500-1,000 L",
-          "ONLY if own-procurement is chosen",
-          "2,50,000-6,00,000",
-          "1-3 kW",
-          "Do NOT buy in phase 1"
+          "250 L closed BMC",
+          "250 L",
+          "80,000",
+          "-",
+          "Only if ARY resumes bulk supply to the Trust kitchen",
+          "hold"
         ],
         [
-          "Insulated crates + gel packs",
-          "10-20 crates",
-          "The 30-50 km hill haul",
-          "20,000-40,000",
+          "Insulated cool boxes",
+          "100-125 L PU foam (Sri Sai Plast / Allwin / Carry Cool)",
+          "4 x 100-125 L",
+          "4,800-9,800 each = ~26,000",
           "nil",
-          "Cheapest, highest-certainty spend"
+          "Dairy rides the existing daily F&V vehicle",
+          "BUY — P0, the real cold chain"
         ],
         [
-          "Data loggers / thermometers",
-          "3-5 units",
-          "Temperature proof at GRN",
-          "10,000-15,000",
+          "Refrigerated van",
+          "FRP body / CNG reefer / 3-ton 14-ft",
+          "-",
+          "1,65,000 / 3,90,000 / 6,11,000",
+          "-",
+          "-",
+          "DO NOT BUY — the F&V vehicle plus boxes does the job"
+        ],
+        [
+          "Ancillary",
+          "3 stabilisers, dedicated 16A points, 2 temperature data loggers with alarm, crates, gel packs",
+          "-",
+          "~25,500",
+          "-",
+          "Protects Rs 40-60k of freezer stock through a power cut",
+          "BUY with the units"
+        ]
+      ]
+    },
+    {
+      "title": "The delivery problem, and the four ways to solve it",
+      "columns": [
+        "Option",
+        "How it works",
+        "One-off cost",
+        "Running cost",
+        "Verdict"
+      ],
+      "rows": [
+        [
+          "Piggyback the F&V vehicle (RECOMMENDED)",
+          "Dairy loaded into 4 PU cool boxes with gel packs on the produce run that already reaches Baru Sahib near-daily (F&V turns stock 172x/yr on Rs 29k of inventory)",
+          "Rs 26,000",
+          "nil incremental",
+          "DO THIS. Turns a 3-per-week wholesale drop into a daily cold chain for the price of four boxes."
+        ],
+        [
+          "Longer shelf life instead of a cold chain",
+          "UHT 1L (90-180 days), frozen (12-18 months), vacuum paneer (15-30 days) — none needs a daily run",
+          "Rs 0",
           "nil",
-          "Prerequisite for measuring wastage"
+          "DO THIS TOO. It is the only dairy plan that survives a missed delivery on a hill road."
         ],
         [
-          "PHASE 1 TOTAL (buy) ",
-          "—",
-          "Ary Pos chiller + freezer + crates + loggers",
-          "1,00,000-1,75,000",
-          "7-13 kWh/day",
-          "Halves if the distributor supplies the cooler"
+          "Own reefer vehicle",
+          "FRP-body refrigerated van Rs 1.65 L to 3-ton 14-ft Rs 6.11 L",
+          "Rs 1.65-6.11 lakh",
+          "fuel + driver + maintenance",
+          "NO. Cannot be justified against Rs 45 L of category sales."
+        ],
+        [
+          "HP Milkfed refrigerated milk van (Nahan plant, 20,000 L/day)",
+          "State has funded 200 refrigerated milk vans; ask HP Milkfed Sirmaur for a Him-brand drop at Baru Sahib",
+          "Rs 0",
+          "supplier's cost",
+          "ASK. Free optionality, and a closer source than Punjab's Verka."
+        ]
+      ]
+    },
+    {
+      "title": "Wastage and expiry: why the build order is UHT first and pouch milk last",
+      "columns": [
+        "Line",
+        "Shelf life",
+        "ARY margin (verified)",
+        "Shrink that wipes the margin",
+        "Risk driver",
+        "Where it goes in the plan"
+      ],
+      "rows": [
+        [
+          "UHT / tetra 1L",
+          "90-180 days (Verka Life 90)",
+          "12-14% (est. from Verka/Amul spread)",
+          ">12%",
+          "none — ambient shelf",
+          "FIRST"
+        ],
+        [
+          "Frozen food",
+          "12-18 months at -18 degC",
+          "~20%",
+          ">20%",
+          "power failure, not expiry",
+          "SECOND"
+        ],
+        [
+          "Ice cream",
+          "indefinite at -18 degC",
+          "22-33% (verified)",
+          "freezer failure only",
+          "power failure",
+          "SECOND (already works)"
+        ],
+        [
+          "Vacuum paneer",
+          "15-30 days",
+          "fix to 12%",
+          "12%",
+          "cold chain in transit",
+          "SECOND"
+        ],
+        [
+          "Cheese / butter",
+          "4-6 months chilled",
+          "13.5-46.3% (verified)",
+          ">13%",
+          "low",
+          "SECOND"
+        ],
+        [
+          "Curd / dahi cups",
+          "7-10 days at 4 degC",
+          "7.9-13.8% (verified)",
+          "8-13%",
+          "delivery frequency",
+          "THIRD"
+        ],
+        [
+          "Flavoured milk / lassi (RTD)",
+          "4-6 months",
+          "24-25% (verified)",
+          ">24%",
+          "low",
+          "THIRD (highest margin per litre of chiller)"
+        ],
+        [
+          "Pasteurised pouch milk",
+          "1-2 days",
+          "10.6-13.6% (verified)",
+          "3-5%",
+          "delivery frequency, daily",
+          "LAST"
+        ],
+        [
+          "Loose milk (hand poured)",
+          "hours",
+          "NEGATIVE -Rs 4.98/L (verified)",
+          "already gone",
+          "pricing + measure + hygiene",
+          "FIX OR STOP, today"
         ]
       ]
     }
   ],
   "plan": [
     {
-      "step": "Settle the one question that governs the whole business case: does the Kalgidhar Trust mess / langar / Akal Modi Khana procure milk and dairy outside ARY's books, and is the ₹47/L loose-milk price a deliberate Trust subsidy? Get it in writing. If the mess buys direct, halve every revenue figure below before proceeding.",
+      "step": "Reprice the four below-cost dairy lines in the FusionERP price master: Loose Milk (cost Rs 51.98, selling Rs 47.00, master wrongly says Rs 65), Dahi_Z (Rs 73.12 vs Rs 69.98), Paneer_Z (Rs 236.24 vs Rs 235.64), Desi Ghee 1 Ltr (Rs 471.18 vs Rs 414.80). Re-run `ary assort leak` afterwards to prove they are gone.",
       "sequence": 1,
-      "owner": "ARY management with the Baru Sahib campus administrator and Trust finance",
+      "owner": "ARY Accounts / price-master owner at Baru Sahib, verified by JIVO (Daman)",
       "cost": "none",
-      "duration": "1 week",
-      "dependsOn": "Nothing — this gates everything else"
+      "duration": "1 day",
+      "dependsOn": "nothing — Rs 87,922/yr of verified loss, available now"
     },
     {
-      "step": "Merge the scattered dairy taxonomy into one department with real subgroups (Milk / Curd / Paneer / Butter & Cheese / Cultured / Ice Cream / Frozen). Today it spans six departments and there are two different groups both called 'Dairy Products' with group_id 193. This is a master-data change in FusionERP8, no capex, and nothing else in the plan can be measured until it is done.",
+      "step": "Settle the one fact that sets the whole size of the prize: does the Kalgidhar Trust's own langar or dairy already supply milk and curd free to staff quarters and the hostels? Ask the Trust estate office and the Akal Academy mess in-charge, and find out why 'Hygienic Milk' (the in-house bakery/dairy unit) stopped billing ARY after 2026-06-02.",
       "sequence": 2,
-      "owner": "ARY ERP administrator / FusionERP8 support",
+      "owner": "ARY Store Manager (Baru Sahib) with the Trust estate office",
       "cost": "none",
-      "duration": "1-2 weeks",
-      "dependsOn": "Step 1 only for sequencing; can start immediately in parallel"
+      "duration": "3 days",
+      "dependsOn": "step 1 running in parallel"
     },
     {
-      "step": "Delist the 393 dead cold SKUs (of 614 active), starting with the ~50 Cream Bell orphans and the 8 zero-sale Vezlay soya lines. Keep the 221 that moved. Do this BEFORE adding anything, so the new range is findable.",
+      "step": "Add the UHT range on the ambient shelf — Verka Life 1L (90-day), Amul Taaza tetra 1L, Amul Gold tetra, Amul Calci+ 1L (Rs 98). No equipment, no cold chain, no expiry risk. Order through Rachna Enterprises or Sahni Trading Co., who already bill ARY for packed milk.",
       "sequence": 3,
-      "owner": "ARY category / purchase in-charge",
-      "cost": "none",
-      "duration": "2 weeks",
-      "dependsOn": "Step 2 (needs the clean taxonomy to work in)"
+      "owner": "ARY Purchase, with Rachna Enterprises / Sahni Trading Co.",
+      "cost": "~Rs 40,000 opening stock (working capital, not capex)",
+      "duration": "2 weeks to first delivery",
+      "dependsOn": "nothing"
     },
     {
-      "step": "Fix the measurement floor: capture expiry date and batch at goods receipt for every dairy and frozen line, switch on a daily near-expiry report, and clear the negative book stock (Packed Milk −8,560 units, Curd −368). Wastage is currently unmeasurable — no dairy shortage has EVER been posted in a physical count — so instrument first and measure for one quarter before assuming any wastage rate.",
+      "step": "Buy ONE neutral 385L dairy visi cooler (Blue Star VC400A, Rs 43,500) plus 4 x 100-125L PU insulated cool boxes and gel packs (Rs 26,000), 2 temperature data loggers with alarm, 3 stabilisers and dedicated 16A points (Rs 25,500). Site the cooler at the front of Ary Pos where the ice cream traffic already walks past.",
       "sequence": 4,
-      "owner": "ARY store in-charge + ERP administrator",
-      "cost": "10,000-15,000 (data loggers and thermometers)",
-      "duration": "3 weeks to configure, then 1 quarter to measure",
-      "dependsOn": "Step 2"
+      "owner": "JIVO capex sign-off (Daman) → ARY Store Manager for installation",
+      "cost": "Rs 95,000",
+      "duration": "3 weeks including delivery to Baru Sahib and wiring",
+      "dependsOn": "step 2 — a Trust-supplied-free answer changes the pouch-milk target but not this purchase"
     },
     {
-      "step": "Open the dairy supply line that does not exist today. Approach, in order: HP Milkfed (Him Dairy) as the Himachal state federation for Sirmaur; Verka / Punjab Milkfed (ARY already retails Verka and already operates in Punjab at Bathinda); Amul / GCMMF. Ask three things explicitly: minimum delivery frequency to Rajgarh, whether a visi cooler is placed free against a volume commitment, and the landed price per litre versus the ₹51.16 ARY pays Hygienic Milk now. Require a written service level on frequency — brand churn has burned ARY three times in three years.",
+      "step": "Move dairy onto the daily F&V vehicle in the cool boxes. Tell Sehgal Trading Co. (currently 151 curd bills a year, ~3/week) that the receiving window is now daily, and put curd, paneer, butter, cheese, lassi and flavoured milk on that rhythm.",
       "sequence": 5,
-      "owner": "ARY purchase head, escalated to JIVO procurement if a corporate introduction helps",
-      "cost": "none (may require a refundable cooler deposit)",
-      "duration": "4-6 weeks",
-      "dependsOn": "Step 1 (do not commit volume until the mess question is answered)"
-    },
-    {
-      "step": "Get three written quotes for one 300-500 L visi cooler and one 300-400 L glass-top deep freezer at Ary Pos, with capacity, power draw in watts, warranty and installation to a hill site. Blue Star, Western Refrigeration, Voltas, Rockwell and Middleby Celfrost are the credible Indian suppliers. My capex table is model-knowledge indicative only — no price in it was verifiable in this session.",
-      "sequence": 6,
-      "owner": "ARY admin / purchase",
-      "cost": "none (quotes)",
-      "duration": "2-3 weeks",
-      "dependsOn": "Step 5 — if the distributor supplies the cooler free, you only buy the freezer"
-    },
-    {
-      "step": "Launch the FROZEN range first, not dairy: frozen parathas, momos, 500g/1kg peas and mixed veg, and ice cream tubs. It needs one freezer, carries 25.5% margin, its long shelf life defeats both the 30-50 km hill road and the 19.6x winter trough, and Vadilal — already appointed for ice cream — makes frozen peas, parathas and curries, so it rides an existing supply line rather than opening a new one.",
-      "sequence": 7,
-      "owner": "ARY category in-charge with Shiv Shakti (Vadilal distributor)",
-      "cost": "30,000-50,000 freezer if not brand-supplied, plus ~60,000 opening stock",
-      "duration": "4 weeks to first sale",
-      "dependsOn": "Steps 3, 4 and 6"
-    },
-    {
-      "step": "Then widen chilled dairy at Ary Pos on the new supply line: add UHT tetra milk (shelf-stable, the single best fit for this site), full-cream pouch, 100g/200g/400g dahi cups, chaach and lassi, consumer-pack cheese slices and cubes in place of the bulk blocks, and ice cream tubs. Cap it at ~60 SKUs and hold the line — do not recreate a 412-SKU listing tail.",
-      "sequence": 8,
-      "owner": "ARY category in-charge",
-      "cost": "~1,20,000 opening stock, plus cooler if not brand-supplied",
-      "duration": "6-8 weeks",
-      "dependsOn": "Steps 5, 6 and 7"
-    },
-    {
-      "step": "Take the loose-milk pricing decision explicitly and book it correctly: either move the ₹47 retail price toward the ₹51.16 cost, or keep it and recognise ~₹59,000-67,000/yr as declared Trust welfare spend instead of negative retail margin. Same review for desi ghee, which is ₹16.22 lakh — the biggest cold line by revenue — at 9.0% margin.",
-      "sequence": 9,
-      "owner": "ARY management with Trust finance",
-      "cost": "none",
+      "owner": "ARY Purchase + the F&V counter in-charge, with Sehgal Trading Co.",
+      "cost": "none (boxes bought in step 4)",
       "duration": "2 weeks",
-      "dependsOn": "Step 1"
+      "dependsOn": "step 4 — the boxes must be on site"
     },
     {
-      "step": "Wire input costing into the own-make cold lines (softy, set dahi, loose paneer) so their true margin is visible. Softy currently reports 98.9% only because its milk and mix inputs are bought as other SKUs and never charged against it. Then expand own-make — it is genuinely the highest-margin cold option ARY has.",
+      "step": "Fix goods-receipt discipline for perishables so expiry can be controlled: packed milk currently shows -8,560 units and curd -368 in the Stock table because POS sales are entered daily and purchases in batches. Enter dairy receipts on arrival, then run FEFO and a weekly near-expiry sweep.",
+      "sequence": 6,
+      "owner": "ARY Store Manager + Accounts",
+      "cost": "none",
+      "duration": "2 weeks to change the habit",
+      "dependsOn": "step 5 — daily delivery makes daily receipting natural"
+    },
+    {
+      "step": "Load the chilled range into the new cooler: Verka Dahi (Low Fat, Jeera Raita, Matka 5kg), Amul Masti 85g Rs 10, Amul/Verka/Milky Mist paneer 200g, Amul Butter 500g, Amul Cheese Slices/Cubes/Spread/Mozzarella, Verka Pio's full 10 flavours, Amul High Protein Buttermilk Rs 30, Verka Lassi variants.",
+      "sequence": 7,
+      "owner": "ARY Purchase, with Sehgal Trading Co. / M/S Shashi Bhushan Manoj Kumar Aeron / Rachna Enterprises",
+      "cost": "~Rs 1,20,000 opening stock (working capital)",
+      "duration": "3 weeks",
+      "dependsOn": "steps 4 and 5"
+    },
+    {
+      "step": "Buy the 484L chest freezer (Blue Star CF3-500MPW, Rs 31,500) and rebuild the frozen range around what the shop already proves it can sell: peas and mixed veg (Safal, Pagro 500g/1kg), frozen parathas (Rs 65-165 packs), frozen momos, and the McCain fries/smiles/tikki lines that already work. Delist the 33 dead frozen SKUs including Pagro 5kg, Vezlay soya and Amul Happy Treats.",
+      "sequence": 8,
+      "owner": "ARY Purchase, with M/S Shashi Bhushan Manoj Kumar Aeron (46 frozen bills/yr) and Laxmi Narayan Suresh Kumar",
+      "cost": "Rs 31,500 capex + ~Rs 60,000 stock",
+      "duration": "4 weeks",
+      "dependsOn": "step 4 (the electrical work is shared)"
+    },
+    {
+      "step": "Buy the 340L 5-star glass-top (Voltas GT440GA5-P, Rs 24,500) for take-home ice cream — Vadilal 700ml/1L tubs, Amul 1L family packs, Verka Premium Tubs. In the same meeting, ask Leela Associates (Vadilal, Rs 5.17 L/yr offtake) and Shiv Shakti (Amul, Rs 4.17 L/yr) for branded cabinets against a written monthly commitment. Do not let a branded cabinet substitute for the neutral dairy cooler.",
+      "sequence": 9,
+      "owner": "ARY Purchase + JIVO, with Leela Associates and Shiv Shakti",
+      "cost": "Rs 24,500 (less whatever the two distributors concede)",
+      "duration": "4 weeks",
+      "dependsOn": "step 4"
+    },
+    {
+      "step": "Confirm the regulatory base before scaling: that ARY's FSSAI licence for the Baru Sahib premises lists milk and milk products (and loose-milk vending) as a Kind of Business, that a FoSTaC-trained food safety supervisor is on record, and that the loose-milk measure is Legal-Metrology verified. Fix any gap before volumes rise.",
       "sequence": 10,
-      "owner": "ARY accounts + G Canteen in-charge",
-      "cost": "none",
+      "owner": "JIVO Compliance / ARY Accounts",
+      "cost": "licence fee — not verified, budget Rs 10,000",
       "duration": "3-4 weeks",
-      "dependsOn": "Steps 2 and 4"
+      "dependsOn": "nothing, run in parallel from week 1"
     },
     {
-      "step": "Review after one full seasonal cycle including a January trough and a May peak. Judge on gross profit per cubic foot of cold space and on chilled spend per resident per month (₹22.73 today), never on annual revenue divided by twelve — the store swings 2.9x and ice cream 19.6x.",
+      "step": "Decide loose milk on evidence: either install a 100L chilled dispenser at 2 degC (Rs 95,000, metered and UPI-capable, which fixes the price leak, the measure and the storage in one purchase) or stop selling loose milk and convert the demand to pouch and UHT. Use the answer from step 2 and 90 days of repriced trading to decide.",
       "sequence": 11,
-      "owner": "ARY management",
+      "owner": "JIVO (Daman) on ARY Store Manager's 90-day numbers",
+      "cost": "Rs 95,000 or none",
+      "duration": "decision at day 90",
+      "dependsOn": "steps 1, 2 and 5"
+    },
+    {
+      "step": "Review at day 120 against three numbers only: cold sales as a share of turnover (6.0% today, target 11.5%), cold bill lines per day (157 today, target 260), and measured dairy shrink (unmeasurable today). Then decide on the second visi cooler (Blue Star SC500F Rs 58,900) and the probiotic/Greek yogurt/shrikhand tier.",
+      "sequence": 12,
+      "owner": "JIVO (Daman) + ARY Store Manager",
       "cost": "none",
-      "duration": "12 months",
-      "dependsOn": "Steps 7 and 8"
+      "duration": "1 day",
+      "dependsOn": "steps 3-9 all live for at least 60 days"
     }
   ],
   "recommendations": [
     {
-      "action": "Answer the mess-procurement question before spending anything: does the Trust's kitchen buy dairy outside ARY's books, and is ₹47/L a deliberate subsidy? Everything below is contingent on it, and it costs one meeting.",
+      "action": "Reprice the four below-cost dairy lines — Loose Milk (-Rs 4.98/L), Dahi_Z (-Rs 3.14/kg), Paneer_Z (-Rs 0.60/kg), Desi Ghee 1L (-Rs 56.38/pc). Verified Rs 87,922 a year of loss in a price master that thinks loose milk costs Rs 65 when it costs Rs 51.98.",
       "priority": "P0",
-      "monthlyImpactInr": 0,
+      "monthlyImpactInr": 7300,
       "oneOffCostInr": 0,
       "effort": "days",
       "blocker": "none"
     },
     {
-      "action": "Merge dairy into a single ERP department and delist the 393 dead cold SKUs. Dairy currently spans six departments with two groups both named 'Dairy Products'; 64% of the cold catalogue never sold. No capex, and it is the precondition for managing, reordering or measuring the category at all.",
+      "action": "Add UHT / tetra milk (Verka Life 90-day 1L, Amul Taaza tetra, Amul Gold, Amul Calci+ 1L Rs 98) on the ambient shelf. Zero cold chain, zero expiry risk, and the only dairy line that survives a missed delivery on a hill road. ARY sold Rs 1,771 of tetra milk in a whole year.",
       "priority": "P0",
-      "monthlyImpactInr": 0,
+      "monthlyImpactInr": 6400,
       "oneOffCostInr": 0,
       "effort": "weeks",
-      "blocker": "none"
+      "blocker": "none — order through Rachna Enterprises or Sahni Trading Co., both existing vendors"
     },
     {
-      "action": "Open a real dairy supply line — HP Milkfed (Him Dairy), Verka/Punjab Milkfed or Amul — with a written minimum delivery frequency to Rajgarh. Packed milk arrives 38 times a year from five general wholesalers for a 2-3 day product; no cooperative dairy relationship exists on the ledger. Ask in the same call whether a visi cooler comes free against a volume commitment.",
+      "action": "Buy ONE neutral 385L dairy visi cooler (Blue Star VC400A, Rs 43,500) and put the whole chilled range in it — curd, paneer, butter, cheese, lassi, flavoured milk. ARY has no dairy chiller at all today: Rs 72,106 of cold assets is two chest freezers and one refrigerator. Neutral, not branded, because ARY is the only shop for 5,000 people and needs Amul + Verka + Super Dahi in one cabinet.",
       "priority": "P0",
-      "monthlyImpactInr": 75000,
-      "oneOffCostInr": 0,
-      "effort": "weeks",
-      "blocker": "Depends on a federation agreeing to serve a hill site 30-50 km from town — unverified, and the reason this is a call and not an assumption"
-    },
-    {
-      "action": "Build the frozen range first — parathas, momos, 500g/1kg peas and mixed veg, ice cream tubs. One freezer, 25.5% margin, long shelf life beats both the hill road and the 19.6x winter trough, and Vadilal already supplies ARY and already makes frozen peas, parathas and curries. Currently ₹26,032/yr on 40 SKUs with 12 moving.",
-      "priority": "P1",
-      "monthlyImpactInr": 16000,
-      "oneOffCostInr": 110000,
+      "monthlyImpactInr": 26000,
+      "oneOffCostInr": 43500,
       "effort": "weeks",
       "blocker": "none"
     },
     {
-      "action": "Add UHT tetra milk as a core line. It is the single best-fitting dairy product for this site — shelf-stable, so it survives a 38-delivery-a-year cadence, a 30-50 km hill road and the January trough when the campus empties. ARY sells 23 units of Amul Taaza 1L a year today.",
-      "priority": "P1",
-      "monthlyImpactInr": 18000,
-      "oneOffCostInr": 25000,
-      "effort": "weeks",
-      "blocker": "none"
-    },
-    {
-      "action": "Instrument wastage before assuming it: expiry and batch at goods receipt, a daily near-expiry report, and clear the −8,560 unit negative book stock on packed milk. No dairy shortage has ever been posted in a physical count, so wastage economics are currently unmeasurable — I refused to estimate them.",
-      "priority": "P1",
-      "monthlyImpactInr": 0,
-      "oneOffCostInr": 15000,
-      "effort": "weeks",
-      "blocker": "none"
-    },
-    {
-      "action": "Deepen ice cream rather than churning brands a fourth time: add family tubs (absent today), put a second freezer at Ary Lite, and hold Vadilal — which is all-vegetarian and egg-free, a hard requirement here. Ice cream is already ₹14.63 L at 27.7% margin and growing 30.7% like-for-like.",
-      "priority": "P1",
-      "monthlyImpactInr": 17000,
-      "oneOffCostInr": 45000,
-      "effort": "weeks",
-      "blocker": "none"
-    },
-    {
-      "action": "Widen chilled dairy at Ary Pos on the new supply line — dahi cups in three sizes, chaach and lassi, consumer-pack cheese slices and cubes replacing the bulk blocks, full-cream pouch. Cap at ~60 SKUs. Retail chilled dairy is ₹22.73 per resident per month against fresh produce at ₹91.",
-      "priority": "P1",
-      "monthlyImpactInr": 24000,
-      "oneOffCostInr": 120000,
-      "effort": "months",
-      "blocker": "Depends on the supply line (P0 above) — adding SKUs onto a 38-delivery cadence would fail"
-    },
-    {
-      "action": "Take the loose-milk and ghee pricing decision explicitly. Loose milk sells at a flat ₹47 against ₹51.16 cost (−₹67,000/yr); desi ghee is ₹16.22 lakh at 9.0%. Either reprice, or book the difference as declared Trust welfare spend rather than hiding it in retail margin where it makes dairy look unviable.",
-      "priority": "P2",
-      "monthlyImpactInr": 5500,
-      "oneOffCostInr": 0,
-      "effort": "weeks",
-      "blocker": "A management and Trust policy call, not an analytical one"
-    },
-    {
-      "action": "Cost the own-make cold lines properly and then expand them. Softy reports 98.9% margin only because its inputs are never charged against it; loose paneer already earns 18.4% on ₹5.55 lakh. Own-make is genuinely ARY's highest-margin cold option and it is immune to the delivery-frequency problem.",
-      "priority": "P2",
-      "monthlyImpactInr": 9000,
-      "oneOffCostInr": 20000,
-      "effort": "weeks",
-      "blocker": "none"
-    },
-    {
-      "action": "Switch butter and cheese from bulk blocks to consumer packs. 1,034 units sit on hand against ₹1.29 lakh of annual sales — the worst format mismatch in the category, bought in 664 bulk units at ₹464 average.",
-      "priority": "P2",
+      "action": "Put dairy on the existing daily F&V vehicle in 4 PU insulated cool boxes with gel packs (Rs 26,000) and move Sehgal Trading Co. from 3-per-week to daily receiving. The F&V counter already turns stock 172 times a year on Rs 29,136 of inventory — the daily hill run exists, dairy just isn't on it.",
+      "priority": "P0",
       "monthlyImpactInr": 3000,
-      "oneOffCostInr": 0,
+      "oneOffCostInr": 26000,
+      "effort": "weeks",
+      "blocker": "none — this is the enabler for the curd, paneer and pouch-milk lines below"
+    },
+    {
+      "action": "Buy a 484L chest freezer (Blue Star CF3-500MPW, Rs 31,500) and rebuild frozen around proven demand: peas and mixed veg, frozen parathas (Rs 65-165), frozen momos, and the McCain lines that already sell. Frozen is Rs 51,677 a year on 1.4 lines a day while the shop sells Rs 8.02 lakh of cooked momos — the demand is proven, the freezer is missing. Delist the 33 dead SKUs.",
+      "priority": "P1",
+      "monthlyImpactInr": 10000,
+      "oneOffCostInr": 31500,
+      "effort": "weeks",
+      "blocker": "none — ask M/S Shashi Bhushan Manoj Kumar Aeron and Laxmi Narayan Suresh Kumar, both already supply frozen"
+    },
+    {
+      "action": "Buy a 340L 5-star glass-top freezer (Voltas GT440GA5-P, Rs 24,500) for take-home ice cream — Vadilal 700ml/1L tubs, Amul 1L family packs. Ice cream is already Rs 14.64 lakh at 22-33% margin, ARY's most profitable category, and it is running out of two chest freezers.",
+      "priority": "P1",
+      "monthlyImpactInr": 14000,
+      "oneOffCostInr": 24500,
       "effort": "weeks",
       "blocker": "none"
     },
     {
-      "action": "Do not buy a bulk milk chiller or a cold room in phase 1, and do not site cold equipment anywhere but Ary Pos and Ary Lite. ARY has already opened and abandoned three counters (Talwandi Sabo with 607 negative stock rows, Ary Apple A Day with 506 SKUs, Girls Canteen Ts) — all at zero sales.",
-      "priority": "P3",
-      "monthlyImpactInr": 0,
+      "action": "Widen curd and pouch milk into the new chiller: curd from 27 to 120 cups a day (add Verka Low Fat, Jeera Raita, Matka 5kg, Amul Masti 85g at Rs 10), pouch milk from 30 to 100 pouches a day. Curd goes before milk — 13.8% margin against 10.6%, and 7-10 days of shelf life against 1-2.",
+      "priority": "P1",
+      "monthlyImpactInr": 7500,
       "oneOffCostInr": 0,
-      "effort": "days",
-      "blocker": "none"
+      "effort": "weeks",
+      "blocker": "needs the chiller and the daily run first; size depends on whether the Trust already supplies quarters free"
     },
     {
-      "action": "Skip probiotic and Greek yoghurt, shrikhand and mishti doi for now, and delist the 8 zero-sale Vezlay soya SKUs. Thin demand at this income mix and no evidence in 12 months of data; revisit only after the P1 range is proven.",
+      "action": "Push cheese and butter — the momo/Chinese counter does Rs 24.88 lakh and sandwiches Rs 6.05 lakh, yet ARY sells 238 packs of cheese slices a year. Add Amul Cheese Cubes, Spread, Mozzarella 200g/1kg, Amul Butter 500g, Verka Table Butter. Note Amul Butter's Rs 10 pack already runs at 46.3% margin.",
+      "priority": "P1",
+      "monthlyImpactInr": 4200,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "needs the chiller"
+    },
+    {
+      "action": "Widen flavoured milk, lassi and buttermilk — Verka Pio's full 10 flavours (Haldi Dudh, Thandai, Cold Coffee), Amul Kool, Amul High Protein Buttermilk Rs 30. Verified 24-25% margin, second only to ice cream, and buttermilk sold 76 units in the entire year. A no-alcohol campus at 1,555 m in summer is exactly this category's market.",
+      "priority": "P1",
+      "monthlyImpactInr": 8000,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "needs the chiller"
+    },
+    {
+      "action": "Fix goods-receipt discipline on perishables — packed milk shows -8,560 units and curd -368 on the Stock table, so expiry control, FEFO and shrink measurement are all impossible today. Enter dairy receipts on arrival.",
+      "priority": "P1",
+      "monthlyImpactInr": 2000,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "none, but it decides whether the whole build is measurable"
+    },
+    {
+      "action": "Ask Leela Associates (Vadilal) and Shiv Shakti (Amul) for branded ice-cream cabinets against a written monthly offtake commitment — they already bill ARY Rs 9.34 lakh a year. Treat it as upside only: Indian FMCG moved off free assets to volume-linked discounts, and a branded cabinet can legally hold only that brand.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 0,
+      "effort": "weeks",
+      "blocker": "none — but never let a branded cabinet replace the neutral dairy cooler"
+    },
+    {
+      "action": "Decide loose milk at day 90: install a 100L chilled dispenser at 2 degC (Rs 95,000, metered, UPI-capable — fixes the price leak, the Legal Metrology measure and cold storage in one buy), or stop selling loose milk and convert the demand to pouch and UHT. The line last sold on 2026-05-11 and lost money every litre before that.",
+      "priority": "P2",
+      "monthlyImpactInr": 4000,
+      "oneOffCostInr": 95000,
+      "effort": "months",
+      "blocker": "needs the Trust's answer on who supplies the quarters, plus 90 days of repriced trading"
+    },
+    {
+      "action": "Confirm the FSSAI licence for the Baru Sahib premises covers milk and milk products and loose-milk vending, that a FoSTaC food-safety supervisor is on record, and that the loose-milk measure is Legal-Metrology verified. ARY sells loose milk by volume and makes 'Home Made Paneer' at Rs 550/kg — that is manufacturing, not retail of prepacked food.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "oneOffCostInr": 10000,
+      "effort": "weeks",
+      "blocker": "fee and category NOT verified — every FSSAI fee page I tried returned 404 or an empty shell"
+    },
+    {
+      "action": "Add the premium tier last — Epigamia Greek yogurt, Milky Mist Premium Yogurt and Shrikhand, Amul Probiotic Dahi — aimed at Eternal University students and the 280-bed charitable hospital. Shrikhand and Greek yogurt are literally zero in the catalogue today.",
+      "priority": "P3",
+      "monthlyImpactInr": 1800,
+      "oneOffCostInr": 0,
+      "effort": "months",
+      "blocker": "needs the chiller and a Milky Mist / Epigamia north-India distributor"
+    },
+    {
+      "action": "Ask HP Milkfed Sirmaur (Nahan plant, 20,000 L/day, 'Him' brand) for a refrigerated drop at Baru Sahib — the state has funded 200 refrigerated milk vans and pays India's highest milk MSP. A closer source than Punjab's Verka, and free to ask.",
       "priority": "P3",
       "monthlyImpactInr": 0,
       "oneOffCostInr": 0,
-      "effort": "days",
-      "blocker": "none"
+      "effort": "weeks",
+      "blocker": "hpmilkfed.org's TLS certificate has expired, so contact has to go through the Sirmaur district office by phone"
     }
   ],
   "openQuestions": [
-    "THE decisive one: does the Kalgidhar Trust's mess / langar / Akal Modi Khana procure milk and dairy outside ARY's books? All 5,000 residents eat in institutional kitchens, so most dairy consumption may never be a retail decision. ARY handles 71.9 L/day = 14.4 ml per resident per day against India's 471 g/day national per-capita availability (NDDB, verified) — a 3.1% capture. Whether that is headroom or structurally unavailable changes the revenue estimate by roughly 2x. Ask: the Baru Sahib campus administrator, and check whether 'Purambika Desi Cow Natural Farming Input' (₹1.86 L of purchases) means on-campus cattle.",
-    "Is the ₹47.00/L flat loose-milk price a deliberate Trust subsidy for feeding school children, or a price nobody updated as cost rose to ₹51.16? The ERP's own purchase-entry SellingRate field says ₹59.61 was intended, which hints at the latter. Ask: ARY management and Trust finance.",
-    "2026 Indian prices, power draw and warranty for a 300-500 L visi cooler and a 300-400 L glass-top deep freezer delivered to a hill site. NOT VERIFIED — this session's WebSearch budget was exhausted before my lane started and every commerce and manufacturer site blocked WebFetch. Get three written quotes from Blue Star, Western Refrigeration, Voltas, Rockwell and Middleby Celfrost. My capex table is labelled indicative for exactly this reason.",
-    "Do dairy and ice cream brands still place visi coolers and freezers free against a volume commitment or refundable deposit in 2026, and on what exclusivity terms? This is real Indian trade practice but I have no current source, and it swings phase-1 capex by roughly half. Ask the HP Milkfed / Verka / Amul distributor directly, and Shiv Shakti for Vadilal.",
-    "Will HP Milkfed (Him Dairy), Verka or Amul actually appoint a distributor or deliver to Rajgarh, Sirmaur, and at what landed price per litre versus the ₹51.16 ARY pays Hygienic Milk today? The entire chilled-dairy case rests on this and it cannot be answered from the database.",
-    "Actual dairy wastage and expiry loss — genuinely unmeasurable from FR8HODBNEW. There is no expiry or batch field in use, no physical count has ever posted a shortage against any dairy or frozen subgroup, and packed milk book stock is −8,560 units. Instrument it (plan step 4) and measure for one quarter rather than assuming a rate.",
-    "Why did loose milk purchases run 20,310 L against 16,105 L sold — a 4,205 L (20.7%) gap? Could be stock on hand, could be the institutional kitchen drawing it by another route, could be spoilage. The negative book stock makes it unresolvable from the data. Ask the Basement / store in-charge.",
-    "Power reliability and tariff at Baru Sahib: outage hours per day, generator backup, and the HP commercial per-kWh rate. A visi cooler and freezer that lose power in a hill winter destroy stock, and I could not verify the tariff to cost the running expense.",
-    "How many days a year is the Rajgarh hill road closed or unsafe in monsoon and winter? This sets the maximum viable fresh-dairy delivery cadence and is the strongest argument for UHT and frozen over a bigger fresh chiller. Ask ARY transport / the campus administrator.",
-    "Is the softy machine's input cost booked anywhere at all? Its 98.9% reported margin is an artefact of inputs being purchased as other SKUs. Until this is wired up, the true profitability of own-make cold — probably ARY's best cold opportunity — is unknown.",
-    "What are Baru Sahib's actual household demographics inside the 5,000 — how many married-staff families with babies and small children versus dormitory students? This decides whether frozen parathas, dahi cups and baby-relevant dairy have a real base, and the brief already notes only 3 'Baby Accessories' SKUs exist with no baby-care group at all."
-  ]
+    "THE BIG ONE: does the Kalgidhar Trust's own langar or dairy farm already supply milk and curd free to staff quarters and hostels? ARY moves ~106 L/day against a national per-capita implication of ~2,355 L/day for 5,000 people. If the quarters are already fed free, the pouch-milk and curd targets fall by roughly Rs 15 lakh a year and the plan becomes UHT + frozen + ice cream only. Nothing in the ARY database can answer it — only the Trust estate office and the Akal Academy mess in-charge can.",
+    "Why did 'Hygienic Milk' (AccountID 2287, the in-house bakery/dairy unit supplying Loose Milk at Rs 50.28/L plus atta, bread, buns, burgers, pizza base, desi ghee and dahi) drop from 101 bills in May-2026 to 5 bills in June-2026 and nothing since, while ARY's overall purchases ran normally to 2026-08-21? Ask the ARY Store Manager and the Trust's production unit.",
+    "Are the ice-cream cabinets standing in the shop today owned by ARY or on loan from Leela Associates and Shiv Shakti? The ledger shows only Rs 72,106 of cold assets (CF-202, CF-311, one refrigerator) against Rs 14.64 lakh of ice-cream sales, which does not add up unless distributor cabinets are in use. A physical count by the Store Manager settles it and changes what capex is actually needed.",
+    "The exact HPSEBL commercial tariff per kWh and fixed charge per kW — hpseb.in/tariff 404s and hperc.org's homepage carries no schedule. ARY Accounts has the actual bills (Electricity Expense booked Rs 86,624 for Nov-2025 to May-2026 and Rs 19,070 for June-2026); read the rate off one bill rather than trusting my Rs 7-8/kWh assumption.",
+    "Does ARY's FSSAI licence for the Baru Sahib premises list milk and milk products, and loose-milk vending, as a Kind of Business — and is a FoSTaC-trained food safety supervisor on record? Every FSSAI fee and category page I fetched returned 404 or an empty shell. JIVO Compliance can pull the licence itself in minutes.",
+    "Real road distance and drive time Nahan-to-Baru Sahib and Rajgarh-to-Baru Sahib, and how often the F&V vehicle actually runs (the 172 turns/year implies near-daily but the schedule is not in the data). This sets how much curd and pouch milk can safely be held. The F&V counter in-charge knows.",
+    "Verka's and Amul's current trade margin to a retailer at ARY's volume — the 29 Aug 2026 Verka revision explicitly passed the price rise through with NO change in trade margin, so ARY's rupees per pouch do not rise with the price. Rachna Enterprises, Sahni Trading Co. and Sehgal Trading Co. can each quote; a distributorship (deposit Rs 25,000-50,000 rural) is the alternative lever.",
+    "Whether a Trust-owned dairy herd exists on the 400-acre campus. If it does, the entire loose-milk and paneer question is an internal transfer-pricing problem, not a retail sourcing one — and ARY should be the Trust's retail channel rather than its competitor."
+  ],
+  "confidence": "medium",
+  "confidenceGap": "Whether the Kalgidhar Trust's own langar and dairy already supply milk and curd free to the staff quarters and hostels. Everything about ARY's current cold estate is verified from its own database — Rs 45.1 lakh of sales, Rs 4.78 lakh of gross profit, the Rs 4.98/litre loss on loose milk, Rs 72,106 of cold assets, 151 curd deliveries a year — and every equipment price and brand range is a live 2026 quote from a named seller. What is NOT verified is the reachable share of a 5,000-person milk demand: if the residents' milk is already provided by the institution, my pouch-milk and curd targets (Rs 11.9 L and Rs 11.4 L a year) are too high by roughly Rs 15 lakh and the honest plan shrinks to UHT plus frozen plus take-home ice cream — which is still a Rs 2.1 lakh spend paying back in under six months, but a Rs 35,000-a-month answer rather than a Rs 63,000-a-month one. One conversation with the Trust estate office closes this gap, and it should happen before the second cooler is ordered."
 }

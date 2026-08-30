@@ -1,0 +1,657 @@
+{
+  "lane": "trend-2026",
+  "headline": "Every 2026 consumption trend that has actually landed at Baru Sahib arrived in a Rs 20-80 pack and went from zero to material in under six months — Korean instant noodles went Rs 0 to a ~Rs 28,000/month run-rate since April 2026 — yet ARY stocks its trend shelf at Rs 495-595 and its basket has been frozen at 2.68 lines per bill for four straight years; the opportunity is not discovering trends, it is buying them at the price point this campus actually pays.",
+  "findings": [
+    {
+      "claim": "ARY's basket depth has not moved in four years: 2.70 lines/bill in 2023, 2.68 in 2026 (6.62-7.10 units/bill). All of ARY's growth is more visits (257k bills 2023 to 311k 2025) and higher prices (Rs 192 to Rs 222 avg bill) — zero range-widening. The national rural FMCG basket over roughly the same period went from 5.8 items (2022) to 9.3 items (2024).",
+      "status": "VERIFIED",
+      "evidence": "ary query \"SELECT CONVERT(varchar(4),h.VoucherDate,126) yr, COUNT(DISTINCT h.SerialNumber) bills, CAST(COUNT(d.SrlNo)*1.0/COUNT(DISTINCT h.SerialNumber) AS decimal(6,2)) lines_per_bill, CAST(SUM(d.Quantity*d.SaleRate)/COUNT(DISTINCT h.SerialNumber) AS decimal(9,2)) avg_bill FROM SaleHeader h JOIN SaleDetail d ON d.SerialNumber=h.SerialNumber WHERE h.VoucherDate>='2023-01-01' GROUP BY ...\" ; national basket figure: https://biizline.com/fmcg-distribution-trends-india-2026/ (18 May 2026)",
+      "number": "2.68 lines/bill (2026) vs 2.70 (2023); avg line value Rs 77.19; national rural basket 5.8 to 9.3 items",
+      "soWhat": "This is the single largest arithmetic lever in the store. +0.1 lines/bill across 30,424 bills/month at Rs 77 a line = Rs 2.35 lakh/month. Every trend category below is a candidate for line 3 and line 4 of a basket that currently stops at 2.7. Note the national 5.8-to-9.3 figure counts 'items' on a rural shopping trip and is not strictly the same metric as ARY's invoice lines — the direction, not the gap size, is the finding."
+    },
+    {
+      "claim": "K-food is the fastest-growing thing in the store and it started five months ago. Korean instant noodles were Rs 0 through March 2026, then Rs 15,025 (Apr), Rs 10,440 (Jul), Rs 19,600 in the first 21 days of Aug 2026 — from just 5 SKUs (Geki Spicy Cheese/Kimchi/Veg at Rs 52-57, Nissin Korean Ramen at Rs 60).",
+      "status": "VERIFIED",
+      "evidence": "ary query monthly rollup of SaleDetail x SaleHeader x ProductMaster on ProductName LIKE '%Korean%' OR '%Ramen%' from 2024-08-01; and: ary assort probe korean ramen ramyun kimchi gochujang \"instant noodle\" schezwan",
+      "number": "Rs 49,184 in 12m; ~Rs 28,000/month run-rate (Aug 2026 extrapolated from 21 days); 667 units",
+      "soWhat": "Empirical proof that a national youth trend reaches a closed HP campus with no lag when the pack is under Rs 60. It also validates the external K-wave data (India K-beauty/K-food 26% CAGR, Nykaa Korean GMV +58% YoY, Nongshim India exports +18.3%/yr 2023-25). ARY carries 5 Korean SKUs and zero Samyang/Buldak and zero Nongshim Shin Ramyun."
+    },
+    {
+      "claim": "ARY sells essentially no protein food. Every 'protein' SKU in the catalogue except two is shampoo. The only protein food that sold in 12 months is one RiteBite Max Protein Choco Bar 50g at Rs 80 (24 units, Rs 1,920) plus Complan Milk Protein 500g (3 units, Rs 918). Zero SKUs in the 21,466-SKU master contain 'High Protein', 'Amul Protein', 'Protinex', 'Ensure', 'Yogabar', or 'Whole Truth'.",
+      "status": "VERIFIED",
+      "evidence": "ary assort probe protein whey  (12 SKUs matched, 8 of them Personal Care/Shampoo, Rs 30,938 total of which Rs 28,100 is shampoo) ; ary query against ProductMaster for 31 trend brand strings — all returned 0 SKUs",
+      "number": "Rs 2,838 of protein food in 12 months = Rs 0.57 per resident per year, on a Rs 7.55 Cr base",
+      "soWhat": "India's high-protein FMCG segment is Rs 14,015 Cr in 2026 growing ~14% (RTD protein 16.3% CAGR, high-protein biscuits 15.3%, high-protein atta 15.0%, high-protein paneer 15.5%). ARY serves ~3,000 students and young staff on a residential campus with a canteen and captures none of it. This is the largest single category absence found."
+    },
+    {
+      "claim": "A Sikh campus is the highest-fit market in India for beard and long-hair care and the worst for shaving — and ARY has it exactly backwards. Sikh articles (kanga, comb, patka, turban) are Rs 10,66,090 over 12 months across 85 SKUs. Shaving is 68 SKUs / Rs 53,320. Beard care is THREE SKUs and Rs 2,484 — and the Rs 2,484 is a Rs 69 beard brush. Zero beard oil, zero beard wash, zero beard serum. Two Beardo deos are listed and have never sold. 'Hair Fixer' (the beard/turban setting product) is 19 SKUs of which 6 sold, Rs 12,328.",
+      "status": "VERIFIED",
+      "evidence": "ary query bucketing ProductMaster on Razor/Shav/Blade/Gillette vs Beard/Moustache vs Kanga/Comb/Patka/Turban/Dastar with 12m sales join ; ary assort probe beard moustache ; ary assort taxonomy --subgroups --group 141",
+      "number": "Sikh articles Rs 10.66 L : shaving Rs 53,320 : beard care Rs 2,484 (12 months)",
+      "soWhat": "Nationally, beard care and men's skincare are the two fastest-growing men's grooming segments (beard care sales +20% 2022-24; men's grooming Rs 20,500 Cr 2024 to Rs 38,300 Cr 2033, IBEF Mar 2026) and the driver is fashion, so penetration is ~25-35% of young men. Here the driver is religious observance, so the addressable base is close to 100% of adult males and it is permanent, not a fad. ARY is already the store these men buy their combs from."
+    },
+    {
+      "claim": "Sunscreen at ARY more than doubled year on year but the range is stocked almost entirely at premium D2C price points. Mar-Jul 2025 SPF sales Rs 29,258; Mar-Jul 2026 Rs 60,811 (+108%). Of 48 SPF/sunscreen SKUs, the top sellers are Pilgrim Rs 495, Dot & Key Rs 549-595, Foxtale Rs 495, Plix Rs 500, Cetaphil Rs 1,299 — against a store average bill of Rs 207. The best UNIT mover in the whole set is Lakme Sun Expert 18ml at Rs 102 (28 units). There is no sunscreen at all between Rs 102 and Rs 312, no kids/school SPF, and no SPF lip balm.",
+      "status": "VERIFIED",
+      "evidence": "ary assort probe sunscreen spf \"sun screen\" sunblock ; monthly SPF rollup query from 2024-08-01; ary assort taxonomy --subgroups --group 141 (Spf subgroup: 17 SKUs, 11 sold, Rs 26,178)",
+      "number": "Rs 90,357 in 12m (Rs 18.07/resident/yr); +108% YoY Mar-Jul; premium SKUs at Rs 495-595 sell 4-17 units/yr each",
+      "soWhat": "India suncare is USD 195m (2026) to USD 395m (2032), ~9% CAGR, and the category is explicitly described as still in the habit-building stage. Baru Sahib sits at ~1,100-1,700m in Sirmaur with a residential school whose children are outdoors for hours; UV load is structurally higher than the plains. A Rs 99-199 tier plus a kids SPF is the missing rung, not more Rs 595 serums."
+    },
+    {
+      "claim": "Femcare beyond disposable pads is a total blank, and pads themselves look under-supplied. 12-month sanitary pad sales are Rs 4,32,232 across 81 listed SKUs of which only 20 sold. Menstrual cups, tampons, period panties and intimate wash return ZERO SKUs in a 21,466-SKU master — the only adjacent product that sold is one Carefree Panty Liner 20-pack at Rs 99 (17 units, Rs 1,683).",
+      "status": "VERIFIED",
+      "evidence": "ary assort probe \"menstrual cup\" tampon \"period panty\" \"intimate wash\" \"panty liner\"  (1 SKU, Rs 1,683) ; ary assort probe sanitary napkin whisper stayfree sofy pad  (Rs 4,32,232, sub_groups 'Sanitary Pads' 46 SKUs/11 sold + 'Sanitary Pad' 35 SKUs/9 sold) ; ProductMaster checks for Sirona/Pee Safe/Everteen/Menstrual/Tampon = 0 SKUs each",
+      "number": "Rs 4,32,232/yr pads = Rs 36,019/month; ~Rs 15/female resident/month at an assumed 2,200 menstruating females (ESTIMATED denominator)",
+      "soWhat": "India feminine hygiene is USD 1.16bn (2025) to USD 2.29bn (2031) at 11.67% CAGR; pads hold 98.21% share, reusables/cups grow at 12.07% and natural/organic at 12.12%; rural pad penetration is 48% vs 70%+ urban. Rs 15/female/month is roughly half a pack — either the Trust supplies pads institutionally (must be confirmed) or ARY is leaving Rs 25-40k/month on the table before a single cup is stocked. Note also that the pad range is split across two duplicate subgroups, 'Sanitary Pads' and 'Sanitary Pad'."
+    },
+    {
+      "claim": "GST 2.0 built a 35-point tax wedge between carbonated drinks (40%) and dairy/juice/ORS (5%), and at ARY the wrong side of that wedge is 12x larger. Since 22 Sep 2025, 63 SKUs billed at 40% GST for Rs 12,67,744 — Coca Cola, Mountain Dew, Sprite, Limca, Thums Up, Red Bull. Flavoured milk (Rs 55,490) plus packed lassi (Rs 46,745) total Rs 1,02,235 at 5%.",
+      "status": "VERIFIED",
+      "evidence": "ary query \"SELECT d.TaxRate, COUNT(DISTINCT d.ProductID), SUM(d.Quantity*d.SaleRate), MAX(h.VoucherDate) FROM SaleDetail d JOIN SaleHeader h ... WHERE h.VoucherDate>='2025-09-22' GROUP BY d.TaxRate\" and the TOP 15 at TaxRate=40 ; ary assort probe lassi \"flavoured milk\" chaach buttermilk \"amul kool\" \"cold coffee\" milkshake ; GST 2.0 slabs: https://taxguru.in/goods-and-service-tax/gst-2-0-game-changer-fmcg-consumer-products-from-22nd-september-2025.html",
+      "number": "Rs 12.68 L/yr at 40% GST vs Rs 1.02 L/yr of RTD dairy at 5% GST",
+      "soWhat": "The tax code now pays ARY to sell protein lassi, buttermilk, flavoured milk, ORS and juices instead of colas — in an institution that has every cultural reason to prefer them anyway. Every mass-protein RTD recommendation below rides this wedge rather than fighting it."
+    },
+    {
+      "claim": "GST 2.0 has been implemented cleanly at ARY — this is NOT a problem, contrary to what a stale price master usually looks like. Only Rs 11,248 across 29 SKUs billed at the abolished 12% slab after 22 Sep 2025, and that stopped by 28 Feb 2026. Zero rupees have billed at 12% or 28% since 1 Apr 2026. Shampoo, biscuits and ORS all bill at 5%; Red Bull bills at 40%.",
+      "status": "VERIFIED",
+      "evidence": "ary query sales-by-TaxRate from 2025-09-22 (0%: Rs 1.18 Cr, 5%: Rs 4.90 Cr, 12%: Rs 11,248 last sale 2026-02-28, 18%: Rs 64.1 L, 40%: Rs 12.68 L) and the TaxRate IN (12,28) query from 2026-04-01 returning 0 rows ; ary masters taxes",
+      "number": "Rs 11,248 residual at 12%; Rs 0 since 2026-04-01",
+      "soWhat": "Kills a plausible false lead. ARY is not mispricing post-GST-2.0 and no repricing project is needed. Housekeeping only: the 'Output Gst @ 12%' and '@ 28%' tax codes are still flagged active in the tax master and should be deactivated so no one can pick them."
+    },
+    {
+      "claim": "Functional hydration has just started selling and the old format next to it is dead. RTD ORS (Cipla ORS and unbranded, Rs 32 per 200ml) was Rs 0 until May 2026 and is now Rs 1,440-2,176/month, all five SKUs live to 20-21 Aug 2026. Meanwhile 12 'Glucose' SKUs in Medicare sold ZERO in 12 months, and Sting Energy Drink 250ml — which sold 5,320 units lifetime at Rs 20 — has not sold since 9 Jul 2025, while Red Bull at Rs 125 is still stocked and current.",
+      "status": "VERIFIED",
+      "evidence": "ary assort probe ors electral electrolyte glucon rehydra prolyte ; monthly ORS rollup query ; ary query lifetime sales for '%Sting Energy%'/'%Gatorade%'/'%Red Bull%'/'%Monster%'",
+      "number": "ORS Rs 7,073 in 12m, ~Rs 3,100/month run-rate; Sting 5,320 units lifetime, last sale 2025-07-09; Red Bull 884 units lifetime, live",
+      "soWhat": "Same pattern as sunscreen: the Rs 20 mass SKU was dropped and the Rs 125 premium one kept. Hydration is the right category for a hill campus with sport and outdoor school routines. CAUTION: dropping Sting may be a deliberate institutional decision about caffeinated energy drinks for schoolchildren, not a buying error — do not 'fix' it without asking."
+    },
+    {
+      "claim": "COMPLIANCE FLAG: ARY is selling five RTD beverages with 'ORS' in the product name, live to 21 Aug 2026, after FSSAI ordered such products off the market. FSSAI directed on 14-15 Oct 2025, and again in Nov 2025, that no fruit-based beverage, ready-to-serve drink, energy drink or electrolyte drink may carry 'ORS' in its brand or product name unless it meets the WHO ORS formulation; ORSL was subject to market-withdrawal action. Whether Cipla's RTD meets the WHO formula I did NOT verify.",
+      "status": "VERIFIED",
+      "evidence": "ARY side VERIFIED: ary assort probe ors ... shows 'Cipla Ors 200 Ml' (last sale 2026-08-21), 'Cipla Ors Jeera Flavour 200 Ml' (2026-08-20), 'Cipla Ors Nimbu Paani Flav. 200Ml' (2026-08-05), 'Ors 200 Ml Apple' (2026-08-19), 'Ors 200 Ml Orange'. Regulation VERIFIED: https://www.business-standard.com/industry/news/fssai-orders-removal-of-all-drinks-using-ors-label-cites-health-concerns-125112001324_1.html and https://www.theweek.in/news/health/2025/10/25/ors-controversy-no-ors-like-drinks-without-who-approved-formulation-says-fssai.html . Product formulation: NOT CHECKED.",
+      "number": "5 SKUs, Rs 7,453 in 12 months, all selling as of Aug 2026",
+      "soWhat": "Small money, real exposure — an FSSAI-flagged label on a shelf serving 5,000 people including schoolchildren, in a state where enforcement gaps have been publicly noted. One email to the supplier settles it: WHO-formula certificate, or return the stock."
+    },
+    {
+      "claim": "The D2C-to-general-trade wave has already reached ARY — at the wrong price point. Pilgrim (20 SKUs, Rs 45,170), Dot & Key (18, Rs 34,571), Plix (24, Rs 31,068), Beardo (2, Rs 12,374), Foxtale (3, Rs 6,738) total Rs 1,29,921 over 12 months from 67 SKUs — an average of Rs 1,940 per SKU per year. Cetaphil adds Rs 48,919 from 87 units. Absent entirely (0 SKUs in the master): Mamaearth, Minimalist, Bombay Shaving Company, The Whole Truth, Yogabar, Happilo, Farmley, Epigamia, Sirona, Pee Safe.",
+      "status": "VERIFIED",
+      "evidence": "ary query with a VALUES list of 34 brand strings LEFT JOINed to ProductMaster and SaleDetail with a 12m SaleHeader window ; second ary query over 31 absent-brand strings. NOTE: 'Wow ' and 'Sugar ' rows from that query are substring-polluted and were discarded.",
+      "number": "Rs 1,29,921 across 67 D2C beauty SKUs = Rs 1,940/SKU/yr",
+      "soWhat": "D2C brands are pushing into general trade nationally as a deliberate counterweight to quick-commerce concentration (bestmediainfo, 13 Jul 2026), and 90%+ of tier-2/3 FMCG volume still moves through general trade. ARY is already on their list — but 67 slow SKUs at Rs 495-595 is a listing, not a range. The ask to these brands is their Rs 99-199 sachet/mini SKUs, which is exactly what they build for quick commerce."
+    },
+    {
+      "claim": "ARY's money is made in the Rs 20-99 pack and its trend shelf ignores that. Of 12-month sales, the Rs 20-49 band is Rs 1.76 Cr on 6.08 lakh units and Rs 50-99 is Rs 1.41 Cr on 2.20 lakh units — together 42% of revenue and 79% of FMCG-scale units. Every trend SKU that is actually working at ARY sits in or just above that band: Korean noodles Rs 52-60, RTD ORS Rs 32, roasted makhana Rs 20-155, jowar puffs Rs 10-20, RiteBite protein bar Rs 80, Amul sugar-free kulfi Rs 23.",
+      "status": "VERIFIED",
+      "evidence": "ary query price-band rollup of SaleDetail (AVG(SaleRate) bucketed) x SaleHeader from 2025-08-22 ; individual SKU rates from the assort probe outputs above",
+      "number": "Rs 20-99 = Rs 3.17 Cr of Rs 7.55 Cr (42%) and 8.28 lakh of the ~24 lakh units",
+      "soWhat": "This is the buying rule, and it explains every failure above. A trend enters this store at Rs 20-99 or it does not enter. Rs 495 sunscreen sells 6 units a year; Rs 102 sunscreen sells 28. The instruction to the buyer is a price ceiling, not a category list."
+    },
+    {
+      "claim": "Millets are present as impulse snacks and dead as staples. Kurkure Jowar Puffs at Rs 10 and Rs 20 sold 2,139 units for Rs 34,380; roasted makhana Rs 48,430; ragi atta 500g Rs 5,585 and bajra atta 500g Rs 4,725. But four Bonn millet bakery SKUs (bread, burger, pizza base) have sold zero, as have Tata Soulfull Ragi Bites, Kellogg's Ragi Chocos and Nestle Masala Millet.",
+      "status": "VERIFIED",
+      "evidence": "ary assort probe millet ragi bajra jowar makhana quinoa  (29 SKUs, 16 sold)",
+      "number": "Rs ~93,000 of millet/makhana in 12m, of which Rs 82,810 is snack format and Rs 10,310 is flour",
+      "soWhat": "Matches the national picture — millet-based PACKAGED food is the growth vector (USD 52.84m 2025 to USD 104.28m 2032, 10.2% CAGR; India leading globally on government Shree Anna promotion) while millet as a staple grain grows at only ~6.6%. Buy millets as Rs 10-20 puffs, bars and biscuits, not as bread and pizza bases. Delist the four dead Bonn SKUs."
+    },
+    {
+      "claim": "Gut health does not exist as a category here; the Rs 19,090 that looks like it is an ice cream. 'Probiotic' returns 7 SKUs, of which the seller is Amul Chocobar Probiotic 44g (802 units, Rs 19,090); the rest is Sat Isabgol (Rs 9,345). Zero Yakult, zero kombucha, zero probiotic curd or drinking yoghurt, zero Epigamia.",
+      "status": "VERIFIED",
+      "evidence": "ary assort probe probiotic yakult \"greek yogurt\" yoghurt \"gut health\" isabgol psyllium ; ProductMaster checks for Yakult/Kombucha/Epigamia = 0 SKUs",
+      "number": "Rs 28,435 in 12m, 87% of it a chocolate ice cream",
+      "soWhat": "India prebiotic and probiotic FOODS are USD 5.1bn (2025) heading to USD 19.8bn (2034) at 15.84% CAGR, and probiotic CURD alone is 41% of the India probiotics market. A cold-chain constraint on a hill campus is the real blocker here, which is why this ranks below protein and K-food rather than alongside them."
+    },
+    {
+      "claim": "Baby care is the clearest wallet leak in the store. Diapers run 19-64 units and Rs 1,208-3,940 per month, from 73 listed SKUs of which 11 sold. Total baby block (diaper, soap, shampoo, oil, cream, powder, lotion, wipes) is roughly Rs 1.37 lakh over 12 months.",
+      "status": "VERIFIED",
+      "evidence": "ary query monthly diaper rollup on ProductName LIKE Diaper/Pampers/Huggies/Mamypoko from 2025-08-01 ; ary assort taxonomy --subgroups --group 141 (Baby Diaper 73 SKUs / 11 sold / Rs 32,069; Baby Soap Rs 20,870; Baby Shampoo Rs 16,854; Baby Oil Rs 10,534; Baby Cream Rs 9,410; Baby Powder Rs 12,396; Wipes Rs 28,258)",
+      "number": "~30 diapers/month, Rs 2,672/month, from 73 listed SKUs",
+      "soWhat": "A single baby in nappies uses 150-200 diapers a month. ARY sells 30 a month to a township that explicitly includes married staff families with babies and small children. Diapers were also cut to 5% GST in Sep 2025. If there are even 40 under-3s on campus at Rs 500/month, that is Rs 20,000/month and ARY captures an eighth of it — but I do not know the under-3 headcount, so the size is ESTIMATED and the headcount is the first thing to confirm."
+    },
+    {
+      "claim": "The trend SKUs are in the wrong counter. Korean noodles sell Rs 47,824 at Ary Pos (the main store) and only Rs 960 at Ary Lite — even though Ary Lite is the student food counter that sells Rs 79,850 of cooked 'Noodles Half', Rs 94,750 of steam momos and Rs 1,03,020 of samosas. Sunscreen and ORS sell zero rupees at both Ary Lite and G Canteen.",
+      "status": "VERIFIED",
+      "evidence": "ary query counter-split of Korean/SPF/ORS/pads over SaleDetail x WarehouseMaster from 2025-08-22 ; ary query top Ary Lite SKUs 12m",
+      "number": "Korean noodles: Rs 47,824 Ary Pos vs Rs 960 Ary Lite vs Rs 400 G Canteen",
+      "soWhat": "Ary Lite already cooks noodles to order for students. Putting a Korean ramen bowl on its menu, and the packets on its rack, is the cheapest distribution move available — no new supplier, no new customer, no new trip."
+    },
+    {
+      "claim": "Personal Care is 3,060 SKUs of which only 1,062 sold in 12 months — roughly 2,000 dead listings sitting on the shelf that the trend SKUs need. Shampoo alone is 395 SKUs / 113 sold; Parfums 252 / 105; Hair Oil 152 / 63; Serum only 11 SKUs (Rs 8,550) despite serum being the fastest-growing skincare format nationally.",
+      "status": "VERIFIED",
+      "evidence": "ary assort taxonomy -n 400 (Personal Care group 141: 3,060 SKUs, 3,060 active, 1,062 sold, Rs 50,67,280) and ary assort taxonomy --subgroups --group 141",
+      "number": "~2,000 dead Personal Care SKUs; Serum 11 SKUs / Rs 8,550",
+      "soWhat": "Shelf, not money, is the binding constraint on every recommendation below. Delisting is the enabler, not a separate project."
+    },
+    {
+      "claim": "Himachal-specific and hill-state-specific consumption data: NOT CHECKED. The session's WebSearch budget (200 calls, shared across lanes) was exhausted before the Himachal query and the kids'-nutrition query ran.",
+      "status": "NOT-CHECKED",
+      "evidence": "WebSearch returned: 'this session has used its web search budget (200 of 200 WebSearch calls)'",
+      "number": "",
+      "soWhat": "Two things I would have wanted are missing: (a) HP/hill per-capita FMCG and altitude-UV data to harden the sunscreen case beyond a geographic inference, and (b) India kids'/school-nutrition category growth, which matters more here than anywhere given a residential school. Both are cheap to close in a follow-up with the budget raised."
+    }
+  ],
+  "tables": [
+    {
+      "title": "Trend fit ranking for a captive campus of 5,000 in rural Himachal (1 = act now)",
+      "columns": [
+        "#",
+        "Trend",
+        "National 2026 signal",
+        "ARY today (12m to 21-Aug-26)",
+        "Campus fit",
+        "First move"
+      ],
+      "rows": [
+        [
+          "1",
+          "Protein at a mass price point",
+          "High-protein FMCG Rs 14,015 Cr, ~14% CAGR; RTD protein 16.3%, hi-pro biscuits 15.3%, atta 15.0%",
+          "Rs 2,838 (one RiteBite bar + one Complan)",
+          "Very high — ~3,000 students/young staff, a canteen, a gym culture, vegetarian institution needs non-meat protein",
+          "Dairy-protein RTD (Amul high-protein lassi/buttermilk 200ml) + Rs 40-80 bars/biscuits. AVOID whey — global whey prices up ~4x in 2026"
+        ],
+        [
+          "2",
+          "K-food (Korean noodles, sauces, snacks)",
+          "K-beauty/K-food in India 26% CAGR, USD 400m to 1.5bn; Nongshim India exports +18.3%/yr; 15m+ K-pop fans",
+          "Rs 49,184, Rs 0 to ~Rs 28k/month since Apr 2026 from 5 SKUs",
+          "Very high and PROVEN in the data — but must be strictly vegetarian (no beef/pork broth)",
+          "8-10 more veg Korean SKUs + a cooked Korean ramen bowl on the Ary Lite menu"
+        ],
+        [
+          "3",
+          "Beard and long-hair (kesh) care",
+          "Beard care sales +20% 2022-24; beard care + men's skincare are the two fastest-growing men's grooming segments",
+          "3 SKUs, Rs 2,484 — and it is a Rs 69 brush. Sikh articles by contrast: Rs 10.66 L",
+          "Highest fit in India — religious observance, not fashion, so base is ~100% of adult males and permanent",
+          "Beard oil, beard wash, beard serum, wide-tooth combs, a real Hair Fixer range, shaping trimmers"
+        ],
+        [
+          "4",
+          "Small-pack / bridge-pack everything",
+          "NIQ: unit growth ahead of volume growth = shift to smaller packs; 90%+ of tier-2/3 FMCG volume is general trade",
+          "Rs 20-99 band = 42% of revenue and 8.28 L of ~24 L units",
+          "Structural — Rs 207 average bill, 6.08 visits/resident/month",
+          "A standing buying rule: no trend SKU above Rs 99 without a named reason"
+        ],
+        [
+          "5",
+          "Sunscreen and skinification",
+          "India suncare USD 195m (2026) to 395m (2032), ~9% CAGR; category still habit-building; skinification blends SPF into serums and tints",
+          "Rs 90,357, +108% YoY Mar-Jul, but 80% of the range is Rs 495-595",
+          "High — ~1,100-1,700m altitude, residential school, outdoor routines",
+          "Add the Rs 99-199 rung, a kids/school SPF, and an SPF lip balm"
+        ],
+        [
+          "6",
+          "Femcare depth (before cups)",
+          "India femcare USD 1.16bn to 2.29bn, 11.67% CAGR; rural pad penetration 48% vs 70% urban; organic +12.12%",
+          "Pads Rs 4.32 L/yr, 81 SKUs but 20 sold; cups/tampons/intimate wash = 0 SKUs",
+          "High — ~2,200 menstruating females (assumed), hostels, no easy market trip",
+          "Fix pad depth and pack range first; add liners, intimate wash, period-pain relief"
+        ],
+        [
+          "7",
+          "Functional hydration (ORS, electrolyte)",
+          "GST 2.0 puts these at 5% vs 40% on carbonates; FSSAI has cleaned up ORS labelling",
+          "Rs 7,073, Rs 0 to ~Rs 3.1k/month since May 2026; 12 Glucose SKUs dead",
+          "High — sport, school routines, hill trekking",
+          "Verify the 'ORS'-named stock is WHO-formula, then build the range properly"
+        ],
+        [
+          "8",
+          "Millets as impulse snacks",
+          "Millet PACKAGED food USD 52.84m (2025) to 104.28m (2032), 10.2% CAGR; India leads on Shree Anna",
+          "Rs ~93k, of which Rs 83k is snack format",
+          "Medium-high — works as a Rs 10-20 impulse, fails as bread",
+          "Millet puffs, bars, biscuits at Rs 10-20. Delist the 4 dead Bonn millet bakery SKUs"
+        ],
+        [
+          "9",
+          "Baby care / diapers",
+          "Diapers cut to 5% GST Sep 2025; small-pack baby care is a rural growth story",
+          "~30 diapers/month, Rs 2,672/month, from 73 listed SKUs",
+          "High on need, unknown on size — married staff families with babies",
+          "Confirm the under-3 headcount, then stock 4-6 sizes deep in small packs"
+        ],
+        [
+          "10",
+          "Sugar-free / low sugar",
+          "India sugar-free & diabetic foods USD 1.2bn (2025) to 2.7bn (2034), 8.84%; FSSAI labelling driving reformulation",
+          "Rs 79,949 — mostly Jivo wheatgrass juice and Amul sugar-free ice cream",
+          "Medium — matters for older staff, not students",
+          "Ride it through existing winners (Amul sugar-free, Britannia NutriChoice) rather than a new shelf"
+        ],
+        [
+          "11",
+          "D2C brands' mass SKUs",
+          "D2C going offline as a deliberate counterweight to quick-commerce concentration",
+          "Rs 1.30 L across 67 SKUs at Rs 495-595 = Rs 1,940/SKU/yr",
+          "Medium — the brands want the door; the price is wrong",
+          "Ask Pilgrim/Dot & Key/Plix for their Rs 99-199 minis; add Mamaearth and Minimalist (0 SKUs today)"
+        ],
+        [
+          "12",
+          "Gut health / probiotics",
+          "India pre/probiotic foods USD 5.1bn (2025) to 19.8bn (2034), 15.84%; probiotic curd = 41% of the market",
+          "Rs 28,435, 87% of it a probiotic chocobar",
+          "Medium — cold chain is the blocker on a hill campus",
+          "Start with shelf-stable: probiotic drink shots, isabgol/fibre (already selling Rs 9,345)"
+        ],
+        [
+          "13",
+          "K-beauty",
+          "India K-beauty 18-26% CAGR; Nykaa Korean GMV +58%, Amazon +75%, Myntra ~+200% YoY",
+          "0 identifiable K-beauty SKUs; Rs 1.30 L of Indian D2C premium proves a beauty shelf exists",
+          "Medium — Gen Z/Gen Alpha demand is real, but Rs 99-249 only",
+          "6-8 test SKUs (sheet masks, cleansers) on the Ary Clothing beauty shelf"
+        ],
+        [
+          "14",
+          "Refill / eco packs",
+          "Refill pouches are the mainstream sustainable format across home and personal care",
+          "Mechanism already works: mustard oil Rs 88,375, edible oil Rs 74,528, shampoo Rs 33,359, detergent Rs 21,579, Horlicks Rs 6,120 in refill/pouch form",
+          "Medium — cost saving is the pull here, not sustainability",
+          "Extend refills to handwash, floor cleaner, dishwash where only bottles are stocked"
+        ],
+        [
+          "15",
+          "Menstrual cups / reusables",
+          "Reusables 12.07% CAGR but off a very small base; stigma and cost keep pads default",
+          "0 SKUs",
+          "Structurally the best setting in India (hostels, no disposal infrastructure, 30-50km to a market) but the shop cannot lead it",
+          "A pilot run by the school's health staff, not a buying decision"
+        ]
+      ]
+    },
+    {
+      "title": "Trend positions inside ARY — verified, 12 months to 2026-08-21 (via ary assort probe)",
+      "columns": [
+        "Probe",
+        "SKUs matched",
+        "Sold in 12m",
+        "ARY sales (INR)",
+        "Per resident/yr (INR)",
+        "Read"
+      ],
+      "rows": [
+        [
+          "protein whey",
+          "12",
+          "7",
+          "30,938",
+          "6.19",
+          "Rs 28,100 of it is SHAMPOO. Real protein food: Rs 2,838"
+        ],
+        [
+          "sunscreen spf sunblock",
+          "48",
+          "23",
+          "88,414",
+          "17.68",
+          "Present, +108% YoY, but premium-only; no Rs 99-199 rung"
+        ],
+        [
+          "korean ramen ramyun kimchi gochujang",
+          "29",
+          "19",
+          "53,466",
+          "10.69",
+          "The fastest-growing thing in the store; Rs 0 before Apr 2026"
+        ],
+        [
+          "millet ragi bajra jowar makhana quinoa",
+          "29",
+          "16",
+          "~93,000",
+          "~18.6",
+          "Snacks work (Rs 83k), staples and bakery do not"
+        ],
+        [
+          "\"sugar free\" stevia jaggery diabetic",
+          "29",
+          "13",
+          "79,949",
+          "15.99",
+          "Jivo wheatgrass + Amul sugar-free ice cream carry it"
+        ],
+        [
+          "probiotic yakult yoghurt \"gut health\" isabgol",
+          "7",
+          "3",
+          "28,435",
+          "5.69",
+          "87% is one probiotic chocobar. No category exists"
+        ],
+        [
+          "ors electral electrolyte glucon",
+          "25",
+          "7",
+          "7,453",
+          "1.49",
+          "New since May 2026; 12 Glucose SKUs sold zero"
+        ],
+        [
+          "sanitary napkin whisper stayfree sofy",
+          "126",
+          "33",
+          "482,717",
+          "96.54",
+          "Pads Rs 4.32 L; 81 pad SKUs but only 20 sold"
+        ],
+        [
+          "\"menstrual cup\" tampon \"intimate wash\" liner",
+          "1",
+          "1",
+          "1,683",
+          "0.34",
+          "One panty liner. Total blank otherwise"
+        ],
+        [
+          "beard moustache",
+          "3",
+          "1",
+          "2,484",
+          "0.50",
+          "A Rs 69 beard brush. Zero beard oil/wash/serum"
+        ],
+        [
+          "refill pouch \"refill pack\"",
+          "116",
+          "34",
+          "292,461",
+          "58.49",
+          "Refill format already works — extend it"
+        ]
+      ]
+    },
+    {
+      "title": "Monthly momentum — the trends that are moving now (Aug-2026 is 21 days only; sales feed stops 2026-08-21)",
+      "columns": [
+        "Month",
+        "Korean noodles (INR)",
+        "Sunscreen / SPF (INR)",
+        "RTD ORS (INR)",
+        "Makhana (INR)"
+      ],
+      "rows": [
+        [
+          "2025-08",
+          "950",
+          "5,529",
+          "0",
+          "6,020"
+        ],
+        [
+          "2025-11",
+          "0",
+          "3,208",
+          "0",
+          "5,440"
+        ],
+        [
+          "2026-02",
+          "960",
+          "1,834",
+          "0",
+          "3,665"
+        ],
+        [
+          "2026-03",
+          "378",
+          "13,005",
+          "0",
+          "2,865"
+        ],
+        [
+          "2026-04",
+          "15,025",
+          "6,838",
+          "0",
+          "2,940"
+        ],
+        [
+          "2026-05",
+          "1,023",
+          "12,580",
+          "2,016",
+          "1,820"
+        ],
+        [
+          "2026-06",
+          "1,758",
+          "14,756",
+          "1,440",
+          "1,680"
+        ],
+        [
+          "2026-07",
+          "10,440",
+          "13,632",
+          "1,441",
+          "4,760"
+        ],
+        [
+          "2026-08 (21d)",
+          "19,600",
+          "5,876",
+          "2,176",
+          "1,960"
+        ]
+      ]
+    },
+    {
+      "title": "The price-point rule — where ARY's money actually is (12m to 2026-08-21)",
+      "columns": [
+        "Avg selling price band",
+        "Sales (INR)",
+        "Units",
+        "SKUs",
+        "Trend SKUs that live here"
+      ],
+      "rows": [
+        [
+          "Under Rs 20",
+          "70,40,587",
+          "14,70,271",
+          "826",
+          "Jowar puffs Rs 10-20, Foodcoast ketchup Rs 1, Amul kulfi Rs 23"
+        ],
+        [
+          "Rs 20-49",
+          "1,76,25,500",
+          "6,08,190",
+          "1,202",
+          "RTD ORS Rs 32, makhana Rs 20, Amul sugar-free cup Rs 40 — BIGGEST unit band"
+        ],
+        [
+          "Rs 50-99",
+          "1,41,27,494",
+          "2,19,535",
+          "1,199",
+          "Korean noodles Rs 52-60, RiteBite protein bar Rs 80, Lays Rs 20-55"
+        ],
+        [
+          "Rs 100-199",
+          "98,94,890",
+          "76,116",
+          "1,208",
+          "Red Bull Rs 125, Lakme SPF 18ml Rs 102, panty liner Rs 99"
+        ],
+        [
+          "Rs 200-499",
+          "1,03,73,327",
+          "37,017",
+          "1,130",
+          "Lakme Sun Expert Rs 312-430, Complan Rs 306, Wok Tok mayo Rs 211"
+        ],
+        [
+          "Rs 500+",
+          "1,78,76,367",
+          "19,462",
+          "669",
+          "Pilgrim/Dot & Key/Foxtale/Plix Rs 495-595, Cetaphil Rs 1,299 (mostly apparel/footwear)"
+        ]
+      ]
+    },
+    {
+      "title": "Zero SKUs in a 21,466-SKU master (verified against ProductMaster)",
+      "columns": [
+        "Absent line",
+        "Why it matters in 2026",
+        "Fit for this campus"
+      ],
+      "rows": [
+        [
+          "Any SKU containing 'High Protein'",
+          "High-protein FMCG Rs 14,015 Cr, ~14% CAGR; Amul's range going to 25+ items",
+          "Highest — vegetarian campus, 3,000 young people"
+        ],
+        [
+          "Amul high-protein lassi/buttermilk/paneer",
+          "Dairy protein sidesteps the ~4x whey price spike of 2026; 200ml packs are Rs 30-35",
+          "Highest — Rs 30-35 hits the biggest unit band"
+        ],
+        [
+          "Protinex, Ensure, Yogabar, The Whole Truth",
+          "Mainstream protein formats now in general trade",
+          "High"
+        ],
+        [
+          "Samyang / Buldak, Nongshim Shin Ramyun",
+          "The two names driving K-noodle demand; Nongshim India exports +18.3%/yr",
+          "High — but veg variants only"
+        ],
+        [
+          "Beard oil / beard wash / beard serum (any brand)",
+          "Beard care +20% 2022-24, fastest-growing men's segment",
+          "Highest in India — religious observance, 100% of adult males"
+        ],
+        [
+          "Mamaearth, Minimalist, Bombay Shaving Company",
+          "D2C brands actively courting general trade in 2026",
+          "High if bought as Rs 99-199 minis"
+        ],
+        [
+          "Menstrual cup, tampon, period panty, intimate wash",
+          "Reusables 12.07% CAGR; organic femcare 12.12%",
+          "Structurally excellent, culturally slow — pilot only"
+        ],
+        [
+          "Sirona, Pee Safe, Everteen",
+          "The femcare-adjacent brands (wipes, sprays, cramp relief)",
+          "Medium-high, low risk"
+        ],
+        [
+          "Yakult, kombucha, probiotic curd, Epigamia",
+          "Probiotic curd = 41% of India's probiotics market",
+          "Blocked by cold chain"
+        ],
+        [
+          "Happilo, Farmley",
+          "Branded dry fruit / makhana — ARY already sells Rs 48k of loose makhana",
+          "High and easy — Dry Fruits is already a Rs 14.7 L group"
+        ]
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "action": "Put a trend rack at the till in Ary Pos and a trend shelf at Ary Lite, and hold the buyer to one rule: no new trend SKU above Rs 99 unless there is a written reason. Basket depth has been 2.68 lines/bill for four years while visits and prices did all the growing; the Rs 20-99 band is already 42% of revenue. Every category below is a candidate for line 3 of the basket. Ary Lite is the obvious host — it already cooks noodles for students but sells only Rs 960 of packaged Korean noodles against Ary Pos's Rs 47,824.",
+      "priority": "P0",
+      "monthlyImpactInr": 235000,
+      "effort": "weeks",
+      "blocker": "Shelf space — Personal Care alone carries ~2,000 SKUs that did not sell in 12 months. Delist before you buy. And 99.7% of bills have no SalesPersonID, so nobody is currently accountable for a cross-sell."
+    },
+    {
+      "action": "Buy protein at Rs 30-80, and buy it from DAIRY not whey. Start with Amul's high-protein lassi and buttermilk 200ml (Rs 30-35, lands squarely in ARY's biggest unit band) plus 4-6 protein bars/biscuits at Rs 40-80 and one high-protein atta. ARY sells Rs 2,838 of protein food a year to a campus of 3,000 students and young staff; the RiteBite bar at Rs 80 already sells 24 units with zero support.",
+      "priority": "P0",
+      "monthlyImpactInr": 30000,
+      "effort": "weeks",
+      "blocker": "Amul retails its high-protein range mainly D2C and on quick commerce, not through distributors — this needs a direct conversation with the Amul territory office. Do NOT chase whey-based SKUs: global whey prices are up nearly 4x in 2026 and the economics will not hold at Rs 207 average bill."
+    },
+    {
+      "action": "Double the Korean shelf and put a Korean ramen bowl on the Ary Lite menu. Five SKUs took this from Rs 0 in March to Rs 19,600 in the first 21 days of August. Add 8-10 veg Korean SKUs (the two that sell best are Geki Spicy Cheese and Spicy Kimchi at Rs 52-57; Nissin Carbonara Creamy Veg also works), plus Korean sauces which already sell (Wok Tok mayo Rs 211, chilli sauce Rs 189) and Korean-style chips (Bingo Knockin Korean already sells 243 units).",
+      "priority": "P0",
+      "monthlyImpactInr": 25000,
+      "effort": "weeks",
+      "blocker": "Strictly vegetarian sourcing — most Korean ramen SKUs carry beef or pork broth and cannot come onto this campus. Needs an importer/distributor in Chandigarh or Delhi who can guarantee veg SKUs, and a label check on every pack."
+    },
+    {
+      "action": "Build a real beard-and-kesh care shelf. This campus buys Rs 10.66 lakh a year of turbans, kangas, patkas and combs and Rs 2,484 of beard care — three SKUs, one of which is a brush. Stock beard oil, beard wash, beard serum, beard wax, wide-tooth combs and shaping trimmers, and fix the Hair Fixer range (19 SKUs, 6 sold). Nationally this is fashion-driven with 25-35% penetration; here it is religiously mandated, so the base is close to every adult male and it never goes out of style.",
+      "priority": "P0",
+      "monthlyImpactInr": 20000,
+      "effort": "weeks",
+      "blocker": "None material — Beardo is already in the master (2 dead deo SKUs) so the vendor relationship exists. Keep the shave range small; do not treat this as a men's-grooming shelf, treat it as a kesh shelf."
+    },
+    {
+      "action": "Add the missing Rs 99-199 rung to sunscreen, plus a kids/school SPF and an SPF lip balm. Sunscreen more than doubled YoY (Rs 29,258 to Rs 60,811, Mar-Jul) but the range is Rs 495-595 D2C serums selling 4-17 units a year each, while the Rs 102 Lakme 18ml is the best unit mover in the set. A residential school at 1,100-1,700m with children outdoors for hours is the strongest sunscreen use-case ARY will ever have, and the whole range currently prices them out.",
+      "priority": "P1",
+      "monthlyImpactInr": 15000,
+      "effort": "weeks",
+      "blocker": "None on supply. Worth one conversation with the school so SPF for children is endorsed rather than just stocked — that is what turns 28 units into 280."
+    },
+    {
+      "action": "Fix femcare depth before adding femcare novelty. Pads are Rs 36,019/month across 81 listed SKUs of which only 20 sold — roughly Rs 15 per female resident per month, about half a pack. Consolidate the duplicate 'Sanitary Pads' / 'Sanitary Pad' subgroups, stock 3 sizes x 2 price tiers deep, and add panty liners (the one liner SKU already sells), intimate wash, wipes and period-pain relief. Sirona / Pee Safe / Everteen are all absent.",
+      "priority": "P1",
+      "monthlyImpactInr": 25000,
+      "effort": "weeks",
+      "blocker": "First confirm with the Trust whether pads are issued institutionally to hostel students — if they are, the Rs 15/female/month is correct and this recommendation shrinks to the adjacencies only. Everything after that depends on this one answer."
+    },
+    {
+      "action": "Settle the ORS labelling question this week, then build functional hydration properly. Five SKUs with 'ORS' in the product name are selling as of 21 Aug 2026, after FSSAI ordered (Oct and Nov 2025) that no RTD or electrolyte drink may carry 'ORS' in its name unless it meets the WHO formulation. Get the WHO-formula certificate from the supplier or return the stock. Then delist the 12 dead Glucose SKUs and stock the category on purpose — it went Rs 0 to Rs 3,100/month since May with no support.",
+      "priority": "P1",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "I did not verify whether Cipla's RTD meets the WHO formula — that is a question for the supplier, not the data. Small money, but it is a regulator-flagged label on a shelf serving schoolchildren."
+    },
+    {
+      "action": "Work the GST 2.0 wedge: shift drinks volume from 40% to 5%. Carbonates and Red Bull are Rs 12.68 lakh a year at 40% GST; flavoured milk and packed lassi together are Rs 1.02 lakh at 5%. Chill and front-face lassi, buttermilk, flavoured milk, protein RTD and ORS; move colas back off the impulse zone. The tax code, the margin and the institution's own values all point the same way.",
+      "priority": "P1",
+      "monthlyImpactInr": 10000,
+      "effort": "weeks",
+      "blocker": "Chiller capacity and cold-chain reliability at the counters. Also do NOT quietly reinstate Sting (Rs 20, 5,320 units lifetime, last sale 9 Jul 2025) on the assumption it was a buying error — dropping a caffeinated energy drink from a school campus may have been a deliberate institutional decision. Ask first."
+    },
+    {
+      "action": "Size and fix baby care. Diapers sell ~30 units and Rs 2,672 a month from 73 listed SKUs — one baby's partial usage for a township that includes married staff families with babies. Confirm the under-3 headcount with the Trust, then stock 4-6 sizes in small packs (diapers moved to 5% GST in Sep 2025) alongside baby wipes, soap and lotion.",
+      "priority": "P1",
+      "monthlyImpactInr": 15000,
+      "effort": "weeks",
+      "blocker": "The under-3 headcount is unknown — the entire size estimate hangs on it. Everything else here is ordinary retail execution."
+    },
+    {
+      "action": "Ask the D2C brands already on the shelf for their Rs 99-199 minis, and add the ones that are absent. Pilgrim, Dot & Key, Plix, Foxtale and Beardo occupy 67 SKUs and produce Rs 1,940 per SKU per year at Rs 495-595. These same brands are building offline distribution deliberately in 2026 as a counterweight to quick-commerce concentration, and they already make small packs for quick commerce. Add Mamaearth and Minimalist (0 SKUs today). Same call, same visit: 6-8 K-beauty test SKUs at Rs 99-249 for the Ary Clothing beauty shelf.",
+      "priority": "P2",
+      "monthlyImpactInr": 20000,
+      "effort": "months",
+      "blocker": "ARY is one 5,000-person account in rural Sirmaur — it has little pull with a D2C brand's own sales team. The realistic route is a Chandigarh/Delhi modern-trade distributor who already carries several of these brands, not brand-by-brand negotiation."
+    },
+    {
+      "action": "Buy millets as impulse, not as staples, and cut the dead millet tail. Kurkure Jowar Puffs at Rs 10 and Rs 20 sold 2,139 units; four Bonn millet bakery SKUs (bread, burger, pizza base), Tata Soulfull Ragi Bites, Kellogg's Ragi Chocos and Nestle Masala Millet sold zero. Add millet puffs, bars and biscuits at Rs 10-20; delist the bakery formats. Same logic for branded makhana (Happilo/Farmley are absent while loose makhana does Rs 48k).",
+      "priority": "P2",
+      "monthlyImpactInr": 8000,
+      "effort": "weeks",
+      "blocker": "None."
+    },
+    {
+      "action": "Run a reusable-menstrual-product pilot through the school's health staff, not through the shop. A hill campus with hostels, no waste infrastructure and a 30-50km round trip to a market is structurally the best case in India for cups and reusable cloth pads — and a Sikh residential institution is among the hardest places to sell them off a shelf. Nationally reusables grow 12.07% but off a very small base against real stigma. Stock follows adoption here, not the other way round.",
+      "priority": "P3",
+      "monthlyImpactInr": 0,
+      "effort": "months",
+      "blocker": "This needs the school's or Eternal University's health/wellness staff to own the education. If they will not, do not stock it — dead cup inventory teaches the buyer the wrong lesson about the whole trend."
+    }
+  ],
+  "openQuestions": [
+    "What is the actual demographic split of the 5,000 residents — school children by age band, university students, teaching vs non-teaching staff, married staff, children under 3, and menstruating females? Every rupee estimate in this report scales directly off assumptions I could not source. Ask The Kalgidhar Trust / Akal Academy administration and Eternal University registrar.",
+    "Does the Trust issue sanitary pads (and possibly soap, toothpaste, other basics) institutionally to hostel students? Pads at Rs 15 per female resident per month is either a large gap or a correct number depending entirely on this answer. Ask the hostel wardens / school health staff.",
+    "Is the absence of Sting (Rs 20 energy drink, 5,320 units lifetime, no sale since 9 Jul 2025) a deliberate institutional ban on caffeinated energy drinks for schoolchildren, or a stock-out that nobody fixed? Red Bull at Rs 125 is still stocked, which argues for a stock-out rather than a policy. Ask the ARY buyer and the school administration — and note this is the one recommendation I have deliberately not made.",
+    "Do the five 'ORS'-named RTD SKUs on ARY's shelf meet the WHO ORS formulation? FSSAI's Oct/Nov 2025 orders make this a yes/no compliance question and I could not verify the formulation from the data. Ask the supplier for the certificate.",
+    "Are there dietary or purchasing rules beyond no-tobacco/no-alcohol that constrain assortment — eggs, gelatin, non-veg-derived ingredients (whey and collagen included), imported broths, caffeine for minors? This determines whether half the protein and K-food range is even admissible. Ask the Trust.",
+    "What is the under-3 headcount on campus? Diapers at 30 units/month is either a Rs 15-40k/month leak or roughly correct.",
+    "Can a Chandigarh or Delhi modern-trade distributor service Baru Sahib at a viable drop size, and how often? Every recommendation here assumes ARY can get 10-30 new low-value SKUs delivered reliably 30-50km up a hill road. Ask ARY purchase and the existing FMCG distributors.",
+    "Himachal/hill-state per-capita FMCG data and the altitude-UV relationship at Baru Sahib's elevation — not checked, WebSearch budget was exhausted. Would harden the sunscreen case from geographic inference to measured fact.",
+    "India kids'/school-nutrition category growth — not checked, same reason. This matters more here than anywhere given a residential school, and it is the one trend area I cannot rank with confidence.",
+    "The repo already carries a research corpus at /Users/damanpreetsingh/jivo-cli/ary-cli/assort/research (36 demand files, 21 coverage files, 10 sweep files, 0 priority files) built by other lanes. Whoever consolidates should diff my findings against it rather than assume they are additive — 'ary assort gaps' and 'ary assort priority' may already contain overlapping conclusions."
+  ],
+  "confidence": "medium",
+  "confidenceGap": "Two things. First, the demographic split of the 5,000 residents is assumed, not sourced — students vs staff vs married families vs under-3 children vs menstruating females — and every monthlyImpactInr figure scales directly off it, so treat those as order-of-magnitude, not forecasts. Second, the national market figures come from secondary market-research aggregators (IMARC, Mordor, MarkNtel, Spherical, Future Market Insights) whose methodologies are unverifiable and which openly contradict each other — India's protein market is quoted as USD 1.52bn by one and INR 44,048 Cr by another, roughly a 3.5x spread, and the PRNewswire release headlining 'INR 30.9 Cr' has segments that sum to ~INR 30,985 Cr, so the headline is a typo. I used directions and CAGRs from these, never levels. By contrast everything I state about ARY itself was pulled live from FR8HODBNEW with the read-only 'ary' CLI on 2026-08-28 and is reproducible from the commands in the evidence fields — with the standing caveat that the sales feed stops at 2026-08-21 (paused for the internal stock audit), so every August 2026 figure is 21 days, not a month."
+}

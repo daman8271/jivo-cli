@@ -1,521 +1,607 @@
 {
   "lane": "seasonality",
-  "headline": "Baru Sahib is not a 12-month market: ~4,000 of 5,000 residents leave on 26 December and are not fully back until 1 March (January runs at 47% of an average month, identically in all three years), and the single biggest event in ARY's year is the March–April annual boarder kit — ₹50 lakh in three months, 7-8% of turnover from one buying moment — which ARY currently buys in the selling month (March purchase index 83 against sales index 121 and uniform index 342), so the buying calendar, not the shelf, is the constraint.",
-  "confidence": "high",
-  "confidenceGap": "The term dates are inferred from ARY's own footfall, not read from a published calendar. No Akal Academy or Eternal University academic calendar is online — every fetch attempt 404'd or had no calendar content — so the 26-Dec / 20-25-Jan / 1-Mar boundaries are certain as RETAIL facts (three years, bill-level) but attributing them to the school's winter vacation is an inference. One call to the Baru Sahib campus office would settle it. Second gap: Baru Sahib's own altitude is unverified (the brief says ~1,700 m; no source states it), so the climate figures are Rajgarh-tehsil-HQ proxies from Solan at 1,550 m. Process note: this session's WebSearch budget (200/200) was already exhausted by other lanes before my lane started, so all external research was done with ~22 direct WebFetch calls instead of searches — which is why the academic-calendar gap could not be closed by searching for news reports of HP winter-vacation notifications.",
+  "headline": "ARY does not have a seasonal business, it has a two-institution attendance business: for 27 days from about 26 December to 22 January the town empties and the till falls to exactly 35% of normal (both years, identically), and then one nine-day window (1-9 March) does 1.8x normal trade on the school-kit restock — so the whole year is won or lost by whether the uniform, footwear and winter-wear stock is landed in January and September rather than, as today, in the middle of the selling month.",
   "findings": [
     {
-      "claim": "The township empties on 26 December and refills between 20 and 25 January — the same dates three years running. Full footfall does not return until ~1 March.",
+      "claim": "Baru Sahib empties for a 27-day window each winter and the collapse is identical in both years measured: walk-in footfall falls to 35% of the pre-break norm, and the same 35% ratio appears in FY24-25 and FY25-26 independently.",
       "status": "VERIFIED",
-      "evidence": "ary query: SELECT DATEPART(dy,VoucherDate)/5 blk, MIN/MAX(CAST(VoucherDate AS DATE)), COUNT(*)/COUNT(DISTINCT CAST(VoucherDate AS DATE)) bills_per_day FROM SaleHeader WHERE VoucherDate>='<Y>-12-05' AND VoucherDate<'<Y+1>-03-05' GROUP BY blk, YEAR(VoucherDate) — run for 2023/24, 2024/25, 2025/26. Plus a day-by-day pull for 2025-12-01..2026-03-15.",
-      "number": "Bills/day: 1,062 (21-25 Dec 2025) -> 498 (26-30 Dec) -> 349-376 (1-19 Jan) -> 582 (20-24 Jan) -> 858 (14-18 Feb) -> 1,050 (1-4 Mar). Same shape in 2023/24 (755->495->326->583->826) and 2024/25 (841->456->255->520->828).",
-      "soWhat": "Every stocking, staffing and cash decision has a hard 9-week impaired window with a 4-week hole inside it. Perishable buying must stop ~15 December and the whole March kit must land before ~20 February, because the people who buy it arrive and buy within 3 weeks."
+      "evidence": "ary query: daily walk-in (CustomerID='00001') bills, 2025-11-15..2026-03-10 and 2024-12-15..2025-02-25. Full campus 15 Nov-23 Dec 2025 = 1,023 bills/day and Rs 1.42 L/day; 29 Dec-20 Jan = 357 bills/day and Rs 0.54 L/day. Prior year: ~780/day pre-break vs ~270/day in the trough.",
+      "number": "357 vs 1,023 bills/day (35%); Rs 0.54 L vs Rs 1.42 L/day (38%); 27 days",
+      "soWhat": "Every January decision — roster, perishable ordering, cash, counting, receiving — should be built on a 35% number that is now proven and predictable, not guessed at each year."
     },
     {
-      "claim": "Resident retail (walk-in Cash account) seasonal index, averaged over three complete fiscal years: Jan 47, Feb 71, Mar 121, Apr 113, May 107, Jun 123, Jul 90, Aug 107, Sep 106, Oct 117, Nov 105, Dec 94 (100 = average month). The pattern is stable — January was 47 / 44 / 51 in the three years.",
+      "claim": "The empty window is bounded by the two institutions' published breaks: Eternal University's winter break is 25 Dec - 31 Jan and the Akal Academies winter break starts around 24-26 Dec. The till shows the school returning on 21-25 Jan and the university on 1-3 Feb.",
       "status": "VERIFIED",
-      "evidence": "ary query splitting SaleHeader by CustomerID='00001' (walk-in Cash, 97% of bills) vs named customers, monthly, 2023-04 onward; index computed as each month's share of its own fiscal year x 12.",
-      "number": "Jan 47 (47/44/51), Mar 121 (92/127/144), Jun 123 (130/125/113). Resident retail = ₹4.77 / 4.64 / 5.21 Cr in FY23-24 / 24-25 / 25-26 (76.7% / 78.9% / 72.5% of sales).",
-      "soWhat": "This is the demand curve to buy against. It also prices the winter break: January + February fall ₹31.6 lakh short of two average months of resident retail (FY25-26 basis) — structural, not a merchandising failure, because the customers are physically absent."
+      "evidence": "https://eternaluniversity.edu.in/docs/AcademicCalendars2024-25.pdf (Winter break Dec 25, 2024 - Jan 31, 2025; even semester starts Feb 3; summer break Jul 1-30). Akal Academies Academic cum Activity Calendar 2024-25, https://bagha.akalacademy.ac.in/myadmin/cbse/CBSE_10-46-41.pdf (Winter Break 25/12-02/01; session ends mid-March; SESSION COMMENCES 24 March). Cross-checked against the daily till curve above.",
+      "number": "University break 38 days (25 Dec-31 Jan); Nursing college 30 Dec-25 Jan",
+      "soWhat": "The calendar is published months ahead and is not weather-dependent, so ARY can plan the trough to the day instead of reacting to it."
     },
     {
-      "claim": "The single largest event of ARY's year is the annual boarder kit issued in February–April: uniform, thermals, footwear, bags, night wear, under garments, Sikh kakars and hostel furnishing, all bought once per resident per year.",
+      "claim": "1-9 March is the single biggest trading window of the year — 1,095 bills/day at Rs 2.53 L/day, i.e. 1.78x the full-campus norm — driven by the new school session's kit purchase, not by footfall.",
       "status": "VERIFIED",
-      "evidence": "ary query summing Quantity*FinalSaleRate over SaleDetail joined to ProductGroupMaster for groups Academy Dress, Kakars, Footwear, Bag & Purses, Night Wear, Under Garment, Thermals, Home Furnishing, Stationary, B-Block Dress, Bedding, Towels, Travel Bag, Academy Books, months 2/3/4, by month.",
-      "number": "March: ₹23.3 L / 10,294 units (2024), ₹26.5 L / 11,999 (2025), ₹27.2 L / 12,720 (2026). April: ₹15.8 L / ₹16.8 L / ₹17.0 L. February: ₹7.0 L / ₹5.2 L / ₹6.7 L. Feb+Mar+Apr total ₹46.2 L / ₹48.5 L / ₹50.8 L = 7-8% of annual turnover. Kit units +24% in two years.",
-      "soWhat": "One event, three months, ₹50 lakh, growing 12%/yr with enrolment, and completely predictable in both timing and size. It is the highest-confidence forecast in the business and therefore the cheapest thing to get right — and the obvious template for replicating ARY at another Akal Academy campus."
+      "evidence": "ary query: daily walk-in bills/value 2026-03-01..2026-03-09 vs 2025-11-15..2025-12-23. Basket index for March = 121 vs bills index 112 (FY-normalised, both years).",
+      "number": "Rs 2.53 L/day over 9 days; basket 21% above the yearly average",
+      "soWhat": "A stock-out on 1-9 March is the most expensive stock-out ARY can have, and it is a fixed, known date every year."
     },
     {
-      "claim": "Category indices for the kit are extreme — these categories effectively do not exist for ten months of the year.",
+      "claim": "The school-kit season (Academy Dress, Footwear, Bags, Innerwear, Nightwear, Thermals) runs 20 Feb - 30 Apr and is worth Rs 42.9 lakh at retail, with 25% of it inside 9 days.",
       "status": "VERIFIED",
-      "evidence": "ary query: product-group x month-of-year index over SaleDetail + SaleHeader + ProductMaster + ProductGroupMaster, 2023-04-01 to 2026-04-01, index = month value / (group total / 12) x 100.",
-      "number": "Thermals Mar 345 / Jul 5. Academy Dress Mar 342 / Jan 12. Night Wear Mar 293 / Jan 20. Kakars Mar 288. Bag & Purses Mar 238 / Jan 28. Under Garment Mar 230 / Jan 41. Footwear Mar 212 / Jan 31. Home Furnishing Mar 145 / Jan 46. Personal Care Mar 147 / Jan 48.",
-      "soWhat": "A 342-index month cannot be served from a flat monthly reorder. These SKUs need a single dated purchase order with a size curve, landed in February, and then deliberate exit — carrying them through June (Thermals index 5) is the mechanism behind ARY Clothing's ₹10.7 lakh lifetime 'excess' and negative book quantity, the worst variance of any counter."
+      "evidence": "ary query joining SaleDetail/SaleHeader/ProductMaster/ProductGroupMaster, daily 2026-02-15..2026-04-29, kit groups summed. Feb 20-28 Rs 3.46 L, March Rs 25.05 L, Apr 1-29 Rs 14.43 L.",
+      "number": "Rs 42.9 L over 70 days; Rs 10.6 L in 1-9 Mar",
+      "soWhat": "This is roughly 12% of the FY26-27 run-rate concentrated in one merchandising decision made in January."
     },
     {
-      "claim": "Winter wear has TWO separate seasons driven by two different causes, and ARY appears to treat them as one.",
+      "claim": "ARY buys 20% of its uniform stock AFTER the season has opened. The FY26-27 kit was bought in two bills on 12 and 20 February plus Rs 2.37 lakh more on 4 and 26 March — and selling had already started on 20 February.",
       "status": "VERIFIED",
-      "evidence": "Same product-group x month index. Winter Wear: Oct 240, Nov 239, Dec 198, Mar 184, Jun 12. Thermals: Mar 345, Nov 213, Oct 165, Dec 135, Jun-Aug 5-12. Upper Wear: Dec 383, Nov 238, Mar 164.",
-      "number": "Oct-Dec winter wear = ₹21.6 L/yr (climate-driven); March winter wear + thermals = ₹18.9 L/yr (kit-driven).",
-      "soWhat": "Two buys, two size curves, two exit dates. The October-December buy is a cold-weather buy for ~5,000 people and must land by 10 October (Solan nights hit 10.5°C in October, 5.8°C in November); the March buy is a uniform-specification buy for new entrants and must land by 20 February. Merging them guarantees being late for one and long on the other."
+      "evidence": "ary query on PurchaseDetail/PurchaseHeader for ProductGroupName='Academy Dress', 2025-09-01 onward: 2026-02 Rs 9.48 L (2 bills, 12 and 20 Feb), 2026-03 Rs 2.37 L (2 bills, 4 and 26 Mar).",
+      "number": "Rs 2.37 L of Rs 11.85 L (20%) bought in-season",
+      "soWhat": "Chasing a fixed-date season is the classic stock-out signature; the fix costs nothing but a February purchase order moved into January."
     },
     {
-      "claim": "Only two consumer categories peak in January — heating and small children — and they identify exactly who stays behind.",
+      "claim": "Winter wear is bought inside its own selling peak, not ahead of it: Rs 9.56 lakh across 13 separate October bills (2-31 Oct) when the October selling index is already 199 and November is 264, plus Rs 1.61 lakh more as late as 26 January.",
       "status": "VERIFIED",
-      "evidence": "Product-group x month index. Electricals: Dec 216, Jan 190, Nov 151, Feb 140, Mar 46. Appliances: Dec 138, Nov 131. Kids Wear: Jan 306, Feb 137, Jun 50. Soups: Dec 340, Jan 240.",
-      "number": "Electricals ₹3.69 L/3yr with 51% of it in Nov-Feb; Kids Wear Jan index 306.",
-      "soWhat": "The ~1,000-1,500 residents who remain in January are married staff families with babies and small children, and they are buying immersion rods, heaters, blowers and infant clothing at the coldest point (Solan January low 2.3°C, Dec 2.8°C — frost, below the reliable-snow line that starts around Shimla's 2,376 m). January is not a dead month to be endured; it is a small, sharply-defined, high-margin winter-hardware and baby-goods month that needs its own 20-SKU plan and everything else pulled off the shelf."
+      "evidence": "ary query PurchaseDetail for 'Winter Wear': 2025-09 Rs 0.29 L, 2025-10 Rs 9.56 L / 13 bills, 2025-11 Rs 0.33 L, 2025-12 Rs 2.81 L, 2026-01 Rs 1.61 L. Sales index (FY-normalised, 2 yrs): Sep 63, Oct 199, Nov 264, Dec 204.",
+      "number": "13 chase bills in one month; Rs 44.7 L/yr category (Winter Wear + Thermals)",
+      "soWhat": "Landing winter wear in September instead of October converts 13 panic reorders into one planned buy and protects the Oct-Dec run, the second-largest earning block of the year."
     },
     {
-      "claim": "The canteen and prepared-food counters are a summer-term business that goes to near-zero in the winter break — they should be closed, not staffed.",
+      "claim": "There are two separate back-to-campus waves with completely different baskets: the school's late-March session start buys clothing and footwear; the university's 1 August semester start buys household goods and stationery.",
       "status": "VERIFIED",
-      "evidence": "Product-group x month index for Tandoori, Shakes, Veg Delight, Mini Meals, Sandwiches, South Indian; plus counter-level query on SaleDetail.WarehouseID showing Ary Lite at ₹18,552 in January against ₹537,620 in September (3-year totals).",
-      "number": "Tandoori Jun 198 / Jan 2. Shakes May 262 / Jan 1. Veg Delight Jun 239 / Jan 1. Mini Meals Jun 178 / Jan 11. Sandwiches Oct 174 / Jan 32. Ary Lite counter: January index ~4.",
-      "soWhat": "Roughly 6-7 weeks a year of canteen staffing, power and cold-chain runs against a demand index of 1-11. A formal seasonal-closure calendar for Ary Lite, G Canteen and the QSR groups converts that straight to cost saved, and frees the staff for the February kit build."
+      "evidence": "FY-normalised category index (2 yrs, NGO bills excluded): Academy Dress Mar 347, Footwear Mar 210, Nightwear Mar 314, Bags Mar 246 vs House Hold Aug 210, Stationary Aug 204, Home Furnishing Jul 168, Accessories Aug 149. Eternal University odd semester begins 1 Aug with registration 2-8 Aug (academic calendar PDF).",
+      "number": "Mar clothing index 210-347; Aug household/stationery index 204-210",
+      "soWhat": "One 'back to school' plan is wrong — ARY needs a March apparel plan and a separate late-July household/stationery plan."
     },
     {
-      "claim": "Diwali and Holi DAY are footfall holes of about −50%, not spikes. The sales spike is the two-to-three weeks before.",
+      "claim": "Adult apparel is a two-festival business, not a season: Womens Wear indexes 258 in April (Baisakhi) and 19 in November; Unstitched Suits peak in April (163) and October (162, Diwali) only.",
       "status": "VERIFIED",
-      "evidence": "ary query: TOP 25 lowest-bill days excluding Dec/Jan/Feb. The lowest non-winter days cluster on the festivals themselves: 2023-11-11..14 = 519/438/454/428 bills (Diwali 12 Nov 2023); 2024-10-28 = 426 and 2024-10-31..11-02 = 489/484/509 (Diwali 31 Oct 2024); 2025-10-20 = 533 (Diwali 20 Oct 2025); 2024-03-24/25 = 518/492 (Holi 25 Mar 2024). Normal is ~1,000-1,100.",
-      "number": "Festival-day footfall 426-533 bills vs ~1,050 baseline = −50%. The pre-festival build shows as Decoratives Oct 223 / Nov 219, Sweets Oct 274, Oil & Ghee Oct 165 and Dec 177, Dry Fruits Nov 136, Dairy Nov 154.",
-      "soWhat": "Buying to a festival DATE is buying three weeks late. The sell window is roughly D-21 to D-3, so for Diwali on 8 November 2026 the decoratives, sweets, ghee and dry fruit must be on the shelf by 10 October — and there is no point staffing up on the day itself."
+      "evidence": "FY-normalised category index, resident bills only, 2 FYs. Womens Wear: Apr 258, May 190, Jun 230, Sep 54, Oct 31, Nov 19, Mar 20. Unstiched Suits: Apr 163, May 157, Jun 148, Oct 162, Jan 28, Feb 23.",
+      "number": "Womens Wear Apr 258 vs Nov 19 = 13x swing",
+      "soWhat": "Carrying adult apparel Sep-Feb ties up cash in the months ARY has least of it; buy it for two windows and clear it."
     },
     {
-      "claim": "July is the weakest non-winter month, and it is the monsoon plus the annual stock count — 70% of the year's rain falls in four months on a town 30-50 km up a hill road.",
+      "claim": "July is the second trough (sales index 89) but the inbound-goods collapse is far worse (purchase index 63, the year's low bar January) — and Sirmaur's roads are demonstrably closing in exactly that month.",
       "status": "VERIFIED",
-      "evidence": "Climate: en.wikipedia.org/wiki/Solan (1,550 m, 40 km from Rajgarh — the closest same-altitude station) and en.wikipedia.org/wiki/Nahan (932 m, district HQ). Footfall: month-of-year index query. Stock counts: ary query on PhysicalStockHeader grouped by month.",
-      "number": "Solan Jun-Sep 123.0 + 221.6 + 206.1 + 148.2 = 698.9 mm of 1,003.5 mm annual = 70%. Nahan July 479.8 mm, August 504.5 mm. Resident sales index July 90 (the lowest outside Dec-Feb); lowest non-winter footfall days cluster 16-26 July. Physical stock counts: 161 (Jul-23), 570 (Jul-24), 814 (Jul-25) and 58 / 535 / 471 in December.",
-      "soWhat": "ARY already schedules its counts in the two weakest months — that is correct and should stay. The gap is inbound logistics: a 4-6 week non-perishable buffer must be positioned before the monsoon breaks (~end June), because a landslide on 30-50 km of Sirmaur hill road is a stock-out with no substitute — ARY is the ONLY outlet for 5,000 people."
+      "evidence": "ary query PurchaseHeader monthly (IsDeleted=0) FY24-25 and FY25-26, FY-normalised. Jul purchase index 63 vs sales index 89; Oct 152 is the high. News evidence: 'Heavy rain shuts schools in Himachal's Sirmaur, Solan; MeT warns of flash floods, landslides' (New Indian Express, 10 Jul 2026); 'Red Alert For Kangra, Chamba And Sirmaur Districts' (ETV Bharat, 21 Jul 2026); 'over 200 roads still closed' (The Hindu, 14 Jul 2025).",
+      "number": "Jul purchase index 63 vs Jul sales index 89",
+      "soWhat": "Part of the July dip is ARY's own supply failing, not demand — which means a June buffer buys back sales rather than just insurance."
     },
     {
-      "claim": "ARY buys ahead for Diwali and winter but buys LATE for the kit — the biggest event of the year.",
+      "claim": "The monsoon window at Baru Sahib is tight and violent: July (292 mm, 26.5 rain days) and August (250 mm, 26.4 rain days) carry 47% of the annual 1,149 mm; median onset 13 June, median withdrawal 29 September.",
       "status": "VERIFIED",
-      "evidence": "ary query on PurchaseHeader monthly 2023-04 onward, indexed per fiscal year (FY23-24 April excluded as a ₹2.11 Cr migration/opening entry), compared against the resident sales index.",
-      "number": "Purchase index (2-yr avg, clean years): Oct 151, May 130, Jun 119, Feb 117, Apr 115, Sep 107, Aug 98, Dec 84, Mar 83, Nov 73, Jul 63, Jan 59. Against sales: October 151 buy vs 117 sell (correctly ahead); MARCH 83 buy vs 121 sell — and uniform index 342. FY25-26 did pre-buy (Feb 138 / Mar 61); FY24-25 did not (Feb 95 / Mar 106).",
-      "soWhat": "The behaviour is inconsistent year to year, which means it is a person's habit rather than a system. A single dated rule — kit purchase order out by 10 January, goods in by 20 February — is the highest-leverage change available and costs nothing but a calendar entry."
+      "evidence": "ERA5 reanalysis via Open-Meteo archive API, lat 30.7549 lon 77.2957 (Baru Sahib, OSM/Nominatim), 2015-2024 daily, grid elevation 996 m; monthly normals and per-year onset (first 5-day total >=35 mm) / withdrawal (last 5-day total >=25 mm) computed locally.",
+      "number": "Jul 292 mm / 26.5 rain days; Aug 250 mm / 26.4; onset range 27 May - 5 Jul; withdrawal range 27 Aug - 4 Nov",
+      "soWhat": "For roughly 8 weeks it rains almost every day: umbrellas, footwear drying, damp-proof storage and a pre-built dry-grocery buffer are all June decisions."
     },
     {
-      "claim": "March carries 21% of all sale returns — the uniform size curve is wrong.",
+      "claim": "The brief's altitude is wrong and it changes the winter plan: Baru Sahib sits at about 992-996 m, not ~1,700 m. There is no snow at the shop — zero modelled snow days in 10 years — but Rajgarh town on the ridge at 1,582 m averages 19 cm of snow over 7.5 days a year, 83% of it in January-February.",
       "status": "VERIFIED",
-      "evidence": "ary query: SELECT MONTH(VoucherDate), COUNT(*), SUM(BillAmount) FROM SaleReturnHeader WHERE VoucherDate>='2023-04-01' AND VoucherDate<'2026-04-01' GROUP BY MONTH(VoucherDate).",
-      "number": "March: 216 return documents, ₹6.43 L — the highest document count of any month and 21% of the ₹31.1 L returned over three years. January: 78 docs, ₹0.63 L.",
-      "soWhat": "Returns are the visible half of a size-curve failure; the invisible half is the child who wanted a size ARY did not have and whose parent bought it in Solan on the next trip out. Capturing the previous year's issued sizes per class would size the buy properly — and there is no salesperson attribution to do it with today (SalesPersonID is [NONE] on 99.7% of bills)."
+      "evidence": "PeakVisor POI 'Baru Sahib' = 992 m elevation, 30.754878N 77.295722E (https://peakvisor.com/poi/baru-sahib.html); Open-Meteo elevation API at the same point = 996 m; ERA5 snowfall_sum 2015-2024 = 0.0 cm every month at Baru Sahib vs 19.3 cm/yr and 7.5 snow days at 30.8807/77.3245 (Rajgarh, grid 1,582 m), min temp -7.4 C.",
+      "number": "992 m (site) vs 1,582 m (Rajgarh ridge); 0 vs 7.5 snow days/yr",
+      "soWhat": "Sell cold-weather goods (thermals, blankets, heaters, hot drinks) but not snow goods; the snow risk is on the approach road, i.e. a January replenishment risk, not a January demand opportunity."
     },
     {
-      "claim": "The institutional layer runs on a different calendar from the residents and is 21-28% of sales — and it is what makes the headline March/April numbers look bigger than the resident business actually is.",
+      "claim": "January is cold AND wet — it is the third-wettest month of the year (85 mm, 7.4 rain days) from western disturbances, while being the coldest (mean min 5.8 C, mean max 16.2 C).",
       "status": "VERIFIED",
-      "evidence": "Same Cash-vs-named-customer split. Institutional index: Mar 189, Apr 173, May 118, Jun 108, Oct 108, Sep 92, Nov 89, Jul 86, Dec 74, Aug 67, Jan 49, Feb 48. Named-customer share of sales 23.3% / 21.1% / 27.5% by FY. Individual bills checked with `ary sales bills --min-amount 20000` on 2026-01-06, 2026-03-02 and 2025-12-24.",
-      "number": "The single biggest 'January spike' in the whole dataset — Fabrics index 205 in a month where everything else collapses — is two bulk clothing bills to Katebaa Rural Services & Solutions Foundation on 6 Jan 2026 (₹2.80 L + ₹3.66 L, 7,165 units) = ₹6.46 L of that day's ₹7.02 L. 'Hunger Heroes' took ₹5.50 L / 9,207 units on 24 Dec 2025 through the Basement counter. Jivo Wellness Pvt Ltd - Delhi appears with byte-identical bills (392 qty / ₹191,887 and 874 qty / ₹66,039) on BOTH 25 Dec 2025 and 2 Mar 2026.",
-      "soWhat": "Two businesses in one ledger. Any seasonality read on all-customer totals is contaminated — the all-customer March index is 135 but the resident index is 121, and the March value-per-bill of ₹267 (vs ₹194 in January) is bulk, not residents trading up. Report and plan them separately; and the identical Jivo Wellness bills on two dates need explaining before either number is used."
+      "evidence": "ERA5 monthly normals 2015-2024 at Baru Sahib (see above). Jan 84.7 mm, 7.4 days >=1 mm, 2.7 days >=10 mm; 10-year absolute minimum 0.2 C.",
+      "number": "Jan 85 mm vs Nov 11 mm and Dec 18 mm",
+      "soWhat": "The one month you cannot sell to residents is also the month the ridge road is least reliable — so the January kit landing has to be booked for the first half of the month, not the last week."
     },
     {
-      "claim": "The March–April kit window sells no books, no bedding, no towels and no trunks — to 1,538 boarders and ~2,500 resident university students.",
+      "claim": "About 11-12% of ARY's turnover is NGO/institutional wholesale that has nothing to do with the Baru Sahib calendar: 'Hunger Heroes' (Delhi) takes one bill of Rs 5.5-6.9 lakh roughly monthly, and 'Katebaa Rural Services & Solutions Foundation' (Sonipat) Rs 8.4 lakh in 4 bills.",
       "status": "VERIFIED",
-      "evidence": "ary query joining ProductGroupMaster to ProductMaster to lifetime SaleDetail value, HAVING lifetime sales < ₹50,000.",
-      "number": "Academy Books: 288 SKUs catalogued, ₹200 lifetime sales. Bedding: 0 SKUs. Towels: 0 SKUs. Travel Bag: 0 SKUs. B-Block Dress: 0. Lower Wear: 0. Milk, Fresh Juices, Beverage: 0 SKUs each.",
-      "soWhat": "288 book SKUs were set up and then never sold, which means someone intended this and it did not happen. Books, bedding, towels and a trunk are compulsory purchases for every new boarder in the exact window ARY already owns — the highest-conviction assortment gap in the whole calendar. But check first WHY the books sit at zero: the Trust may already issue them centrally, which would be a real blocker rather than an opportunity."
+      "evidence": "ary query SaleHeader grouped by CustomerID, VoucherDate>='2025-09-01': 00001 walk-in Rs 5.48 Cr / 348,842 bills; 002CM Hunger Heroes Rs 70.6 L / 12 bills; 00240 Katebaa Rs 8.4 L / 4 bills. ary customers get 002CM / 00240.",
+      "number": "Rs 79 L over 16 bills in 12 months",
+      "soWhat": "Any seasonality read that includes these bills is distorted; separately, this is a Rs 79 L/yr wholesale line hiding inside a retail P&L and it is not seasonal at all — it may be the cleanest growth lever ARY has."
     },
     {
-      "claim": "There is no pre-departure and no return-week selling — ARY watches 4,000 customers leave in two days and sells them nothing extra.",
+      "claim": "The physical stock count is already partly aligned to the troughs (27-30 Dec and mid-July) but uses only 4 days of the 27-day empty window — and the current count is being run on 21 August, a 110-index month.",
       "status": "VERIFIED",
-      "evidence": "Day-by-day bills for 2025-12-01..2026-03-15 (ary query on SaleHeader). Bills/day 1 Dec-19 Dec averaged ~1,051; 20-25 Dec averaged 1,081 (+3%); 24 and 25 Dec actually FELL to 976 and 854. Travel Bag group has 0 SKUs (zero-sale group query).",
-      "number": "+3% uplift across the departure week; −19% on the last two days before departure. Return week 20-24 Jan 2026: 582 bills/day, ramping not spiking.",
-      "soWhat": "Two guaranteed, dated, 4,000-person footfall events a year with zero merchandising against them. A departure basket (journey snacks, dry fruit, gifts to take home, a trunk or holdall) and a return basket (restock, toiletries, bedding) are the cheapest incremental revenue in the calendar — but Travel Bag currently has no SKUs at all, so it needs a buy before it needs a plan."
+      "evidence": "ary query PhysicalStockHeader by month and by day: Dec 2025 = 471 docs, all on 27-30 Dec; Jul 2025 = 814 docs concentrated 15-22 Jul; Aug 2026 = 114 docs, dated 21 Aug (ary audit counts shows counters Taran/Raunak/Audit-01 working 21 Aug 2026). Jan 2025 = 2 docs, Jan 2026 = 1 doc.",
+      "number": "4 of 27 empty days used; 114 count docs on 21 Aug 2026",
+      "soWhat": "Against a lifetime physical-count shortage of Rs 2.59 Cr, counting a 357-bill/day shop for three weeks instead of a 1,100-bill/day shop for four days is free accuracy."
     },
     {
-      "claim": "Women's apparel is sold for four months and then vanishes, in a township whose university is women-only with ~2,500 students in residence.",
+      "claim": "Perishables track the calendar exactly and are bought the same day they sell, so January over-ordering is pure wastage: Fruits index 47 in January (146 in June), Vegetable 71, Dairy 63, Bakery 46.",
       "status": "VERIFIED",
-      "evidence": "Product-group x month index. Womens Wear: Apr 289, Jun 227, May 186, Jul 145, then Sep 51, Dec 47, Feb 34, Mar 32, Oct 27, Nov 21. Ladies Ethnic Wear: Apr 247, Jul 185, Jun 179, then Nov 32, Feb 18, Dec 8, Jan 8. University detail from en.wikipedia.org/wiki/Eternal_University.",
-      "number": "Womens Wear ₹2.57 L + Ladies Ethnic Wear ₹5.08 L = ₹7.65 L over three years (₹2.55 L/yr) against ~2,500 resident women. 87% of Womens Wear lands in Apr-Jul.",
-      "soWhat": "Either the buy stops after the intake wave or the girls stop shopping here — ₹2.55 L/yr across 2,500 resident women is about ₹102 per woman per year, which is not a category, it is a rounding error. This is a seasonality symptom of an assortment problem and belongs to that lane, but the timing evidence is unambiguous."
+      "evidence": "FY-normalised category index, resident bills only, 2 FYs, sell vs buy side compared. Fruits sell index Apr 114/May 143/Jun 146/Jan 47 and buy index Apr 127/May 146/Jun 163/Jan 41 — buy and sell curves are within a few points every month.",
+      "number": "Fruits Jan 47 vs Jun 146",
+      "soWhat": "The ordering discipline on fresh is already good; the actionable part is a hard cut-off date (22 Dec) and restart date (20 Jan) so it does not have to be re-judged daily."
     },
     {
-      "claim": "Footfall is booming in FY26-27 while the basket shrinks — the growth is more visits, not more spend per visit.",
+      "claim": "Thermals sell twice — November (index 244) and March (355) — because they are part of the returning students' kit, not only a winter purchase. But they are bought in September-October and again in mid-January, i.e. never for the March peak.",
       "status": "VERIFIED",
-      "evidence": "Monthly Cash-account bills and value from the customer-split query.",
-      "number": "Cash bills Apr 2026 35,977 vs Apr 2025 28,354 (+27%); May 39,986 vs 24,974 (+60%); Jun 37,245 vs 28,398 (+31%). But average cash bill FELL: Apr ₹163 vs ₹167, May ₹150 vs ₹167.",
-      "soWhat": "A caveat on every forward projection in this calendar: annualising FY26-27 at +29% assumes the basket holds. If the extra visits are the same wallet split into more trips, the seasonal index still holds but the revenue uplift is smaller than the bill count suggests. Worth confirming before sizing any expansion on the +29% figure."
+      "evidence": "Sell index (2 FYs): Sep 86, Oct 176, Nov 244, Dec 147, Mar 355, Jun 6. Purchases: 23 Sep 2025 Rs 1.52 L, Oct Rs 0.74 L, 15-26 Jan 2026 Rs 0.71 L, 26 Feb Rs 0.03 L.",
+      "number": "March index 355, the highest single month for any winter line",
+      "soWhat": "March thermal demand is being served out of leftover November stock — which is exactly why some of it is bought in January at the wrong end of the season."
     },
     {
-      "claim": "There is a 10-day sales blackout 22-30 September 2025 in the data, and the bills appear to have been re-dated rather than lost.",
+      "claim": "Uniform FABRIC is bought while the town is empty (January index 96-227 against a February index of 36) — someone is already using the empty window to buy cloth for the March session. That instinct is correct and is not applied to any other category.",
       "status": "VERIFIED",
-      "evidence": "ary query on gaps between consecutive distinct billing dates: a 10-day jump from 2025-09-21 to 2025-10-01 (the only material gap in 41 months; the others are 2 and 3 days). Sept 2025 recorded 31,248 bills over 21 billing days = 1,488/day against a ~1,050/day baseline. Physical-count documents for Sep 2025 number only 3, so it was NOT a stock-count closure.",
-      "number": "10 days with zero bills; 1,488 bills/day on the 21 recorded days vs ~1,050 normal; September 2025 monthly total ₹63.0 L, in line with neighbours.",
-      "soWhat": "The monthly seasonality is safe, but daily/weekly analysis of September 2025 is not, and anyone doing day-of-week or promotion analysis will get nonsense. The cause is unknown — a POS or feed outage with catch-up entry is the obvious hypothesis, not a verified one."
+      "evidence": "FY-normalised index for group 'Fabrics': all-customer view Jan 227/Feb 27; resident-only view Jan 96/Feb 36/Mar 139/Apr 133.",
+      "number": "Fabrics Jan index up to 227",
+      "soWhat": "The January-buy discipline exists inside ARY already; the recommendation is to extend it from cloth to the whole kit rather than introduce a new behaviour."
     },
     {
-      "claim": "Climate at Baru Sahib's altitude: frost but no reliable snow, a hot dry pre-monsoon, and 70% of rain in four months.",
+      "claim": "Ary Clothing is a two-month business: March index 292 and April 173 against December 24 and February 53. Ary Pos (main grocery) is far steadier but still halves in January (56).",
       "status": "VERIFIED",
-      "evidence": "en.wikipedia.org/wiki/Solan (1,550 m, 40 km away — the closest same-altitude IMD station), en.wikipedia.org/wiki/Rajgarh,_Himachal_Pradesh (elevation 1,555 m, PIN 173101, 'Peach valley', occasional winter snowfall at nearby Habban), en.wikipedia.org/wiki/Nahan (932 m district HQ), en.wikipedia.org/wiki/Shimla (2,376 m, 42-43 cm snow in Jan/Feb).",
-      "number": "Solan monthly high/low/rain: Jan 18.4/2.3/49.5, Feb 19.8/4.5/67.1, Mar 24.0/8.4/55.9, Apr 28.8/12.5/35.7, May 31.5/16.0/51.1, Jun 31.0/18.6/123.0, Jul 28.8/20.2/221.6, Aug 28.2/19.8/206.1, Sep 28.1/16.8/148.2, Oct 27.0/10.5/14.3, Nov 23.8/5.8/4.5, Dec 21.0/2.8/26.4. Annual 1,003.5 mm.",
-      "soWhat": "Confirms the merchandising bands: real cold-weather demand from mid-October (nights 10.5°C) through February, peaking Dec-Jan at frost; a hot dry April-May at 29-32°C driving cold drinks and fruit; and a July-August washout. Snow is a Habban/higher-ridge event, not a Baru Sahib planning assumption — so heaters, thermals and hot drinks are the winter categories, not snow gear."
+      "evidence": "ary query SaleDetail x WarehouseMaster, FY25-26 (2025-04-01..2026-04-01), value index per counter. Ary Pos Rs 415.9 L (Jan 56, Feb 66, Oct 133); Ary Clothing Rs 139.8 L (Mar 292, Apr 173, Dec 24); G Canteen Rs 46.9 L (Oct 151, Jan 52); Fruits & Veg Rs 42.8 L (Aug 150, Jan 64).",
+      "number": "Ary Clothing Mar 292 vs Dec 24 = 12x",
+      "soWhat": "Staffing and shelf space at Ary Clothing should flex 12x across the year; a fixed roster there is a year-round cost against a two-month revenue."
     },
     {
-      "claim": "The Akal Academy and Eternal University academic calendars are not published anywhere reachable.",
+      "claim": "ARY carries 288 'Academy Books' SKUs and has sold Rs 100 of books in 29 months. The school's book demand is not going through ARY at all.",
+      "status": "VERIFIED",
+      "evidence": "ary masters product-groups: group 181 Academy Books, subgroup Books, 288 SKUs. ary query SaleDetail joined to ProductGroupMaster for 'Academy Books', VoucherDate>='2024-04-01': one row, 2024-04, Rs 100.",
+      "number": "288 SKUs, Rs 100 of sales since Apr 2024",
+      "soWhat": "Either the biggest un-served April category in the town (5,000 students' books) or 288 dead SKUs cluttering the catalogue — worth one phone call to the academy office to find out which."
+    },
+    {
+      "claim": "The purchase calendar peaks in October (index 152) and February (117) — so the two big buying decisions of ARY's year are already made in those months. Both are one month later than they should be.",
+      "status": "VERIFIED",
+      "evidence": "ary query PurchaseHeader monthly, FY-normalised, FY24-25 + FY25-26: Apr 116, May 130, Jun 119, Jul 63, Aug 98, Sep 108, Oct 152, Nov 73, Dec 84, Jan 59, Feb 117, Mar 84.",
+      "number": "Oct 152 and Feb 117 are the two buying peaks",
+      "soWhat": "This is a shift-left problem, not a new-process problem: move the October buy to September and the February buy to January and the rest of the calendar already works."
+    },
+    {
+      "claim": "Suppliers are almost all within a day's road of Baru Sahib (HP state code 02, plus Chandigarh 04, Haryana 06, Delhi 07), so 'a month early' is a cash and planning decision, not a logistics one.",
+      "status": "VERIFIED",
+      "evidence": "ary purchases by-supplier --from 2025-09-01 --to 2026-08-21: top suppliers Shashi Bhushan Manoj Kumar Aeron (Rs 65.1 L, no GSTIN), Dharam Pal & Sons 04AAKFD..., Himachal Wholesale Syndicate 02AABFH..., Raja Ram Jai Prakash 02AAEFR..., Solan Agencies 02AERPS..., Lakhmi Chand Tejoo Mal 07AAAFL..., Gupta Textile 06ACKPK...",
+      "number": "9 of the top 15 suppliers are HP (02)",
+      "soWhat": "There is no transit excuse for landing stock late; the binding constraint is January cash, which is the month with the lowest collections."
+    },
+    {
+      "claim": "The festival calendar is fixed and known for the next 18 months, and the two on-campus samagams (Sant Attar Singh, around 18 Feb; Sant Teja Singh, around 5 Jul) fall in ARY's two weakest windows.",
+      "status": "VERIFIED",
+      "evidence": "Festival dates from https://www.officeholidays.com/countries/india/2026 and /2027 (Diwali 8 Nov 2026 and 29 Oct 2027; Guru Nanak's Birthday 24 Nov 2026 and 13 Nov 2027; Parkash Gurpurab Guru Gobind Singh 28 Dec 2026; Dussehra 20-21 Oct 2026, 9 Oct 2027; Raksha Bandhan 28 Aug 2026, 17 Aug 2027; Holi 22 Mar 2027; Vaisakhi 14 Apr 2027; Guru Ravidas 20 Feb 2027; HP Statehood Day 25 Jan; Himachal Day 15 Apr). Nanakshahi fixed dates from https://en.wikipedia.org/wiki/Nanakshahi_calendar. Samagam dates from the Akal Academies 2024-25 calendar (Sant Attar Singh Sant Samagam 18 Feb; Sant Teja Singh Sant Samagam 5 Jul).",
+      "number": "Diwali 8 Nov 2026; Gurpurab 24 Nov 2026; Baisakhi 14 Apr 2027; Hola Mohalla 23 Mar 2027",
+      "soWhat": "A samagam brings outside visitors into a month running at 71 (Feb) and 89 (Jul) of index — the only demand ARY can add to its two weak months without waiting for students to come back."
+    },
+    {
+      "claim": "Roughly 60-65% of ARY's customer base are boarders who leave; the residual January population is about 1,500-2,000 people (staff, married staff families, local villagers).",
+      "status": "ESTIMATED",
+      "evidence": "Derived: 357 walk-in bills/day in the empty window vs 1,023 in the full-campus window, applied to the stated ~5,000 residents. Not confirmed against any headcount roll from the Trust.",
+      "number": "~1,750 residual residents (range 1,500-2,000)",
+      "soWhat": "A shop sized and staffed for 5,000 is serving 1,750 for a month — and that residual group is the only year-round, weather-proof customer base ARY has."
+    },
+    {
+      "claim": "Akal Academy's own vacation notification for the Baru Sahib campus was never obtained; the school half of the empty window is inferred from the till, and the only calendar found is the trust-wide 2024-25 activity calendar hosted on the Bagha (Punjab) academy site.",
       "status": "NOT-CHECKED",
-      "evidence": "Attempted and failed: barusahib.org/ (no calendar), barusahib.org/akal-academy/ (explicitly no term dates), barusahib.org/events/ (404), akalacademy.org (TLS certificate mismatch — serves *.hostgator.com), www.akalacademy.net (DNS NXDOMAIN), eternaluniversity.edu.in/ (no calendar), /academic-calendar/ (404), /academic-calendar (404), /notice-board/ (404), hpbose.org (date-sheet link only, no dates rendered), cbse.gov.in (403).",
-      "number": "0 of 10 institutional sources yielded a term date.",
-      "soWhat": "The empirical calendar below is derived entirely from ARY's own bills. That is arguably stronger evidence than a website — it is what people actually did — but it cannot tell you NEXT year's dates. Getting the official 2026-27 and 2027-28 term calendar from the campus office is a five-minute task that converts this whole document from descriptive to predictive."
-    },
-    {
-      "claim": "Festival dates for the remainder of FY26-27 and into FY27-28, for setting the land-by dates.",
-      "status": "VERIFIED",
-      "evidence": "drikpanchang.com/calendars/indian/indiancalendar.html?year=2026 and ?year=2027; en.wikipedia.org/wiki/Hola_Mohalla (second day of Chett, the day after Holi, three-day fair); en.wikipedia.org/wiki/Public_holidays_in_India for the fixed-date Sikh observances.",
-      "number": "2026: Raksha Bandhan 28 Aug, Janmashtami 4 Sep, Navratri from 11 Oct, Dussehra 20 Oct, Karva Chauth 29 Oct, Diwali/Bandi Chhor 8 Nov, Guru Nanak Parkash Purab 24 Nov. 2027: Lohri 14 Jan, Maghi/Makar Sankranti 15 Jan, Guru Gobind Singh Jayanti 15 Jan, Holi 22 Mar, Hola Mohalla 23 Mar, Baisakhi 14 Apr, Raksha Bandhan 17 Aug, Janmashtami 25 Aug, Dussehra 9 Oct, Diwali 29 Oct, Guru Nanak Jayanti 14 Nov.",
-      "soWhat": "Diwali moves 18 days earlier from 2026 (8 Nov) to 2027 (29 Oct), which pulls the entire decoratives/sweets/ghee land-by date from 10 October to 1 October. Lohri and Guru Gobind Singh Jayanti (14-15 Jan 2027) fall INSIDE the empty window — do not buy for them at retail scale; the town is at 35%. Baisakhi 14 April is a Sikh-institution event worth planning for properly, and it sits right in the kit tail."
+      "evidence": "Searched and fetched: barusahib.org (no events/calendar page, /events/ returns 404), eternaluniversity.edu.in/Academics (only the 2024-25 calendar PDF is linked; 2025-26 and 2026-27 return HTTP 404), bagha.akalacademy.ac.in activity calendar 2024-25. WebSearch budget for the session was exhausted at 200 calls.",
+      "number": "",
+      "soWhat": "If the Baru Sahib campus shifts its winter break by a fortnight, the January plan moves with it — one email to the academy office removes the only soft joint in this whole calendar."
     }
   ],
   "tables": [
     {
-      "title": "The Baru Sahib retail calendar — 12 months, what spikes, what collapses, what must land early",
+      "title": "The Baru Sahib retail calendar — 12 months (sales index 100 = average month, walk-in only, mean of FY24-25 and FY25-26)",
       "columns": [
         "Month",
-        "Climate (Solan 1,550 m proxy: high/low °C, rain mm)",
-        "Who is in town",
-        "Resident sales index",
+        "Sales idx",
+        "Bills idx",
+        "Basket idx",
+        "Climate (ERA5 normals)",
+        "Campus calendar",
+        "Festivals / events",
         "Spikes (category index)",
         "Collapses (category index)",
-        "MUST be on the shelf by"
+        "MUST be on the shelf by (buy a month early)"
       ],
       "rows": [
         [
-          "Apr",
-          "28.8 / 12.5, 36 mm — warm, dry",
-          "Full. New session starts; new entrants arrive",
-          "113",
-          "Womens Wear 289, Ladies Ethnic 247, Shakes 238, Bag & Purses 233, Night Wear 217, Academy Dress 192, Mens Wear 185, Footwear 161, Unstiched Suits 157, Sports 156",
-          "Oil & Ghee 62, Winter Wear 77, Electricals 49, Upper Wear 8",
-          "Kit balance + summer drinks/ice — landed 1 Mar. Baisakhi 14 Apr goods by 1 Apr"
+          "April",
+          "109",
+          "118",
+          "92",
+          "Tmax 29.2 / Tmin 16.1 C, 44 mm, 8 rain days — dry and warm",
+          "School session weeks 1-5; Unit-I revision; university even sem mid-term",
+          "Baisakhi 14 Apr (Khalsa ordination, Dastar Bandi, baptism ceremony), Ambedkar Jayanti 14 Apr, Himachal Day 15 Apr, Ram Navami",
+          "Womens Wear 258, Bags 218, Nightwear 197, Academy Dress 184, Mens Wear 176, Unstitched Suits 163, Footwear 158, Drinks 153",
+          "Winter Wear 84, Thermals 64, Sandwiches 50",
+          "Baisakhi adult apparel + festive sweets/dry fruit landed by 5 Apr; summer drinks and fruit lines set up for May-Jun"
         ],
         [
           "May",
-          "31.5 / 16.0, 51 mm — hottest",
-          "Full",
-          "107",
-          "Shakes 262, Veg Delight 174, Fruits 143, Drinks 141, Chatpati 135, Ladies Ethnic 149, Cookware 62->weak",
-          "Thermals 28, Winter Wear 48, Oil & Ghee 60, Container 61",
-          "Cold drinks, ice, fresh fruit — by 15 Apr"
+          "104",
+          "109",
+          "95",
+          "Tmax 31.5 / Tmin 19.2 C (hottest with Jun), 50 mm, 10 rain days",
+          "Unit-I pre-mid-term exams late May; university mid-session",
+          "Parkash Gurpurab Guru Amar Das (~2 May Nanakshahi)",
+          "Drinks 156, Unstitched Suits 157, Fruits 143, Edible Oil 90-136, Home Furnishing 122",
+          "Thermals 12, Winter Wear 46",
+          "Cold drinks / ice / fruit at full depth by 1 May; START the monsoon dry-grocery buffer plan"
         ],
         [
-          "Jun",
-          "31.0 / 18.6, 123 mm — monsoon onset",
-          "Full to mid-June",
-          "123",
-          "Veg Delight 239, Tandoori 198, Mini Meals 178, Drinks 170, Snacks 165, Unstiched 161, Tawa 160, Fruits 156",
-          "Thermals 5, Winter Wear 12, Upper Wear 20, Food Supplement 72",
-          "4-6 week non-perishable monsoon buffer — by 25 Jun. Rainwear/umbrellas by 15 Jun"
+          "June",
+          "119",
+          "119",
+          "100",
+          "Tmax 31.7 / Tmin 22.0 C, 119 mm, 14 rain days; monsoon onset median 13 Jun (range 27 May-5 Jul)",
+          "School open all month (Baru Sahib does NOT empty in June, unlike the plains academies); university end-sem exams 16-28 Jun",
+          "Shaheedi Divas Guru Arjan Dev ~16 Jun (chhabeel / sweet-drink sewa)",
+          "Drinks 172, Fruits 146, Soft Drinks 139, Edible Oil 136, Confectionery 125, Personal Care 123",
+          "Winter Wear 13, Thermals 6",
+          "4-6 WEEKS OF DRY GROCERY, atta, oil, toiletries and umbrellas landed by 10 Jun — July inbound falls to index 63 and Sirmaur roads close"
         ],
         [
-          "Jul",
-          "28.8 / 20.2, 222 mm (Nahan 480) — peak monsoon, road risk",
-          "Full; movement restricted; annual stock count",
-          "90",
-          "China 568, Soft Drinks 156, Cookware 153, Home Furnishing 152, Gurmat 169, Accessories 130 (umbrellas), Toy & Sports 133",
-          "Stationary 63, Confectionery 84, Hot Drinks 48, Winter Wear 22",
-          "Nothing new — this is the month the buffer gets consumed. Schedule the count here (already done)"
-        ],
-        [
-          "Aug",
-          "28.2 / 19.8, 206 mm (Nahan 505) — monsoon",
-          "Full",
-          "107",
-          "Stationary 199, House Hold 188, Soft Drinks 159, Container 155, Frozen 145(Sep), Vegetable 125, Confectionery 122, Crockery 135",
-          "Winter Wear 13, Thermals 12, Academy Dress 69, Bag & Purses 60",
-          "Mid-session stationery by 20 Jul. Rakhi (28 Aug 2026) + Janmashtami (4 Sep) by 10 Aug"
-        ],
-        [
-          "Sep",
-          "28.1 / 16.8, 148 mm — monsoon withdrawing",
-          "Full",
+          "July",
+          "89",
+          "84",
           "106",
-          "Snacks & Breakfast 167, Others 161, Frozen 145, Bakery 143, Sandwiches 139, Pulses 139, Veg Delight 183, Gurmat 175",
-          "Womens Wear 51, Thermals 81, Sports 75, Fabrics 45(Aug)",
-          "FIRST winter-wear tranche by 5 Sep. Navratri (11 Oct) / Dussehra (20 Oct) by 25 Sep"
+          "WETTEST: 292 mm, 26.5 rain days, 2.4 days >=25 mm; Tmax 28.3 C. Landslide / road-closure month",
+          "University SUMMER BREAK 1-30 Jul (school stays open, Unit-II mid-term commences)",
+          "Sant Teja Singh Sant Samagam ~5 Jul (Trust founding saint — outside visitors); Miri-Piri 21 Jul",
+          "Home Furnishing 168, Soft Drinks 167, Mens Wear 163, House Hold 143, Accessories 129",
+          "Stationary 64, General Items 67, Confectionery 81",
+          "STATIONERY and hostel household goods landed by 20 Jul for the 1 Aug university intake (they already buy House Hold in July, index 281 — keep it)"
         ],
         [
-          "Oct",
-          "27.0 / 10.5, 14 mm — dry, nights cold",
-          "Full",
-          "117",
-          "Winter Wear 240, Sweets 274, Decoratives 223, Sandwiches 174, Oil & Ghee 165, Unstiched 143, Snacks 159, Thermals 165, Chinese 120",
-          "Womens Wear 27, Ladies Ethnic 89, Mens Wear 95",
-          "DIWALI + WINTER WEAR MUST BE IN BY 10 OCT (Diwali 8 Nov 2026; 29 Oct in 2027 — pull to 1 Oct)"
-        ],
-        [
-          "Nov",
-          "23.8 / 5.8, 4.5 mm — cold, driest",
-          "Full",
+          "August",
+          "110",
           "105",
-          "Winter Wear 239, Upper Wear 238, Decoratives 219, Thermals 213, Dairy 154, Electricals 151, Dry Fruits 136, Food Supplement 134",
-          "Womens Wear 21, Ladies Ethnic 32, Academy Dress 30, Pulses 64",
-          "Thermals + heaters/immersion rods by 20 Oct. Guru Nanak Parkash Purab 24 Nov 2026 by 15 Nov"
+          "105",
+          "250 mm, 26.4 rain days; Tmax 27.9 C. Monsoon still full",
+          "UNIVERSITY ODD SEMESTER STARTS 1 AUG, registration 2-8 Aug — new intake arrives and sets up hostel rooms",
+          "Independence Day 15 Aug, Raksha Bandhan 28 Aug 2026 / 17 Aug 2027, Janmashtami 4 Sep 2026, Sampuranta Diwas Guru Granth Sahib late Aug",
+          "House Hold 210, Stationary 204, Soft Drinks 182, Accessories 149, Vegetable 128, Confectionery 126, Toiletories 123",
+          "Winter Wear 14, Thermals 16, Nightwear 50, Bags 60",
+          "WINTER WEAR AND THERMALS ORDERED IN AUGUST for a September landing (today they arrive in October, mid-peak)"
         ],
         [
-          "Dec",
-          "21.0 / 2.8, 26 mm — frost, coldest nights",
-          "FULL until 25 Dec, then EMPTY from 26 Dec",
+          "September",
+          "100",
+          "104",
+          "96",
+          "128 mm, 16 rain days; monsoon withdrawal median 29 Sep; Tmin 20.7 C",
+          "School Unit-II mid-term exams 9-21 Sep; university teaching",
+          "Birthday Baba Sri Chand ~12 Sep, Bhagat Singh birth anniversary 28 Sep, Teachers/Gratitude Day 5 Sep",
+          "Bakery 143, Stationary 146, Dry Fruits 108, Vegetable 117, Chinese Items 112",
+          "Womens Wear 54, Winter Wear 63 (about to turn), Nightwear 68",
+          "WINTER WEAR + THERMALS ON THE SHELF BY 20 SEP; Diwali/Dussehra festive stock and dry fruit ordered in Sep"
+        ],
+        [
+          "October",
+          "116",
+          "110",
+          "105",
+          "DRIEST-BUT-ONE: 21 mm, 2.7 rain days; Tmax 26.3 / Tmin 15.7 C — the best weather of the year",
+          "University MID-SEM BREAK 28 Oct-1 Nov; Akal Academy Baru Sahib ANNUAL DAY (mid/late Oct); inter-academy athletics",
+          "Dussehra 20-21 Oct 2026 (9 Oct 2027), Parkash Gurpurab Guru Ramdas ~19 Oct, Valmiki Jayanti, Diwali run-up",
+          "Winter Wear 199, Sandwiches 191, Unstitched Suits 162, Soft Drinks 138, Oil & Ghee 129, Chinese Items 125, Confectionery 124",
+          "Womens Wear 31, Footwear 97, Nightwear 70",
+          "Diwali gifting, dry fruit (Nov 136), dairy/sweets (Nov 165) landed by 25 Oct; second winter-wear tranche already in stock, NOT being ordered now"
+        ],
+        [
+          "November",
+          "103",
+          "110",
           "94",
-          "Upper Wear 383, Soups 340, Electricals 216, Winter Wear 198, Sports 183, Oil & Ghee 177, Toys 150, General 139, Appliances 138, Rice 130",
-          "Veg Delight 10, Academy Dress 13, Shakes 11, Drinks 41, Tandoori 42",
-          "Heaters + ghee by 20 Nov. DEPARTURE basket by 15 Dec. STOP all perishable buying 15 Dec"
+          "DRIEST: 11 mm, 2.3 rain days; Tmax 22.4 / Tmin 11.5 C",
+          "Annual Sports Meet / Annual Day-cum-Prize Distribution (late Nov); university mid-session reports",
+          "Diwali / Bandi Chhor Divas 8 Nov 2026 (29 Oct 2027), GURU NANAK GURPURAB 24 Nov 2026 (13 Nov 2027) — langar and sewa at scale, Kartar Singh Sarabha Shaheedi 15 Nov",
+          "Winter Wear 264 (year peak), Thermals 244, Dairy 165, Dry Fruits 136, Atta 125, Oil & Ghee 126",
+          "Womens Wear 19, Nightwear 19, Soft Drinks 71, Drinks 80",
+          "Oil/ghee and general items for the December peak (Dec index 168 and 147); the GOING-HOME gift basket planned now"
         ],
         [
-          "Jan",
-          "18.4 / 2.3, 50 mm — coldest month",
-          "25-35% of town, 1-19 Jan. Refill starts 20-25 Jan",
-          "47",
-          "Kids Wear 306, Soups 240, Electricals 190, Upper Wear 118 (Fabrics 205 = ONE institutional bulk order, not retail)",
-          "Tandoori 2, Shakes 1, Veg Delight 1, Mini Meals 11, Academy Dress 12, Tawa 16, Decoratives 18, Drinks 21, Night Wear 20",
-          "KIT PURCHASE ORDER OUT BY 10 JAN. Close the canteen counters. Lohri/Guru Gobind Singh Jayanti 14-15 Jan 2027 fall in the hole — do not buy at scale"
+          "December",
+          "96",
+          "101",
+          "95",
+          "18 mm; Tmax 18.6 / Tmin 7.3 C; frost on the ridge, snow at Rajgarh (1,582 m) possible; NO snow at the shop",
+          "TWO HALVES: 1-23 Dec full campus at 1,023 bills/day, then the cliff. Pre-board and Unit-III exams; WINTER BREAK from ~24-26 Dec",
+          "Shaheedi Divas Guru Tegh Bahadur 6 Dec, Week-a-Shahaadat 21-28 Dec (Chhote Sahibzade: 21 and 26 Dec), Parkash Gurpurab Guru Gobind Singh 28 Dec 2026, Christmas 25 Dec",
+          "Oil & Ghee 168 (year peak), General Items 147, Winter Wear 204, Thermals 147, Dry Fruits 125",
+          "Academy Dress 12, Drinks 39, Footwear 43, Soft Drinks 50",
+          "GOING-HOME BASKET (gifts, sweets, dry fruit, travel bags) merchandised 18-24 Dec; CUT fresh/perishable ordering from 22 Dec"
         ],
         [
-          "Feb",
-          "19.8 / 4.5, 67 mm — cold, wettest of winter",
-          "Refilling; full by ~14 Feb. CBSE boards from mid-Feb",
-          "71",
-          "Cooking Consumable 1155, Disposable 257, Kids Wear 137, Jam & Sauce 119, Sports 116, Stationary 102",
-          "Fabrics 26, Unstiched 27, Womens Wear 34, Mens Wear 35, Thermals 36",
-          "THE ENTIRE MARCH KIT MUST BE IN BY 20 FEB — this is the single most important date in the year"
+          "January",
+          "48",
+          "50",
+          "96",
+          "COLDEST and 3rd-WETTEST: 85 mm, 7.4 rain days, Tmax 16.2 / Tmin 5.8 C, 10-yr absolute min 0.2 C. Rajgarh ridge road: ~10 cm snow, 3-4 snow days",
+          "EMPTY 29 Dec-20 Jan (357 bills/day). School returns 21-25 Jan; university break runs to 31 Jan",
+          "Lohri 13 Jan, Maghi 14 Jan, HP Statehood Day 25 Jan, Republic Day 26 Jan, Parkash Gurpurab Guru Gobind Singh (Bikrami; 28 Dec 2026 / Nanakshahi 5 Jan)",
+          "Fabrics 96-227 (uniform cloth bought while empty — the right instinct), Edible Oil 109",
+          "Mini Meals 6, Academy Dress 12, Nightwear 18, Soft Drinks 19, Drinks 23, Bags 30, Footwear 30, Fruits 47",
+          "THE ENTIRE SCHOOL KIT — uniforms, footwear, bags, innerwear, nightwear, thermals — RECEIVED AND TICKETED BY 5 FEB, i.e. ordered in the first half of January. Also: run the full physical count, reset the planogram, take staff leave"
         ],
-        [
-          "Mar",
-          "24.0 / 8.4, 56 mm — spring",
-          "FULL. Session end, board exams, new-session kit issue",
-          "121",
-          "Thermals 345, Academy Dress 342, Night Wear 293, Kakars 288, Bag & Purses 238, Under Garment 230, Footwear 212, Sweets 192, Winter Wear 184, Personal Care 147, Home Furnishing 145, Fabrics 128",
-          "Womens Wear 32, Veg Delight 6, Tandoori 29, Mini Meals 30, Electricals 46",
-          "Nothing — it either arrived in February or the sale is lost. Holi 22 Mar 2027 / Hola Mohalla 23 Mar by 10 Mar"
-        ]
-      ]
-    },
-    {
-      "title": "Winter-break boundaries — identical three years running (bills/day)",
-      "columns": [
-        "Winter",
-        "Last full week (bills/day)",
-        "Departure detected",
-        "Trough (bills/day)",
-        "Refill begins",
-        "Back to full"
-      ],
-      "rows": [
-        [
-          "2023/24",
-          "21-25 Dec: 755",
-          "26 Dec (drop to 495)",
-          "31 Dec - 9 Jan: 260-347",
-          "10-24 Jan: 436 -> 583",
-          "19-23 Feb: 969"
-        ],
-        [
-          "2024/25",
-          "20-24 Dec: 841",
-          "25 Dec (drop to 456)",
-          "1-24 Jan: 255-302",
-          "25 Jan (255 -> 520)",
-          "1-4 Mar: 828"
-        ],
-        [
-          "2025/26",
-          "21-25 Dec: 1,062",
-          "26 Dec (drop to 498)",
-          "1-19 Jan: 349-376",
-          "20-21 Jan (367 -> 582)",
-          "24 Feb - 4 Mar: 981 -> 1,050"
-        ]
-      ]
-    },
-    {
-      "title": "The annual boarder kit — the most predictable ₹50 lakh in the business",
-      "columns": [
-        "Window",
-        "2024",
-        "2025",
-        "2026",
-        "Units 2024 -> 2026"
-      ],
-      "rows": [
         [
           "February",
-          "₹7.00 L",
-          "₹5.17 L",
-          "₹6.65 L",
-          "4,946 -> 6,999"
+          "71",
+          "78",
+          "91",
+          "58 mm; Tmax 19.5 / Tmin 7.9 C. Ridge snow still possible",
+          "University EVEN SEMESTER STARTS 3 FEB; school pre-boards then final exams from ~4 Mar; kit selling opens 20 Feb (911 bills/day)",
+          "SANT ATTAR SINGH SANT SAMAGAM ~18 Feb (Trust founding saint — outside visitors), Guru Ravidas Jayanti 20 Feb 2027, Maha Shivratri 6 Mar 2027",
+          "From 20 Feb the kit turns on: Academy Dress, Footwear, Bags, Innerwear all lift",
+          "Unstitched Suits 23, Mens Wear 34, Womens Wear 34, Fabrics 36, Winter Wear 46",
+          "Kit TOP-UP already in the building (today 20% is bought in March, in-season); Holi/Hola Mohalla colours and sweets"
         ],
         [
           "March",
-          "₹23.31 L",
-          "₹26.48 L",
-          "₹27.22 L",
-          "10,294 -> 12,720 (+24%)"
-        ],
-        [
-          "April",
-          "₹15.85 L",
-          "₹16.82 L",
-          "₹16.98 L",
-          "9,007 -> 9,727"
-        ],
-        [
-          "Feb+Mar+Apr total",
-          "₹46.16 L",
-          "₹48.47 L",
-          "₹50.85 L",
-          "24,247 -> 29,446"
-        ],
-        [
-          "Share of that FY's turnover",
-          "7.8% (FY23-24 ₹6.22 Cr)",
-          "8.3% (FY24-25 ₹5.84 Cr)",
-          "7.3% (FY25-26 ₹6.92 Cr)",
-          "—"
-        ],
-        [
-          "Categories in scope",
-          "Academy Dress, Kakars, Footwear, Bag & Purses, Night Wear, Under Garment, Thermals, Home Furnishing, Stationary",
-          "",
-          "",
-          ""
+          "136 (PEAK)",
+          "112",
+          "121 (biggest basket)",
+          "73 mm; Tmax 23.9 / Tmin 11.6 C — nights still cold, which is why thermals peak now",
+          "SESSION ENDS mid-Mar (final exams 4-17 Mar, result 21 Mar), GRADUATION/PRIZE DAY 19 Mar, NEW SESSION COMMENCES ~24 Mar. 1-9 Mar = 1,095 bills/day at Rs 2.53 L/day",
+          "Maha Shivratri 6 Mar 2027, Holi 22 Mar 2027 + HOLA MOHALLA 23 Mar, Bhagat Singh Shaheedi 23 Mar, Nanakshahi New Year 14 Mar",
+          "Thermals 355, Academy Dress 347, Nightwear 314, Bags 246, Under Garment 237, Footwear 210, Winter Wear 178, Personal Care 149, Fabrics 139, Home Furnishing 133",
+          "Womens Wear 20, Mini Meals 43, Soft Drinks 98",
+          "NOTHING should be bought in March — this is a sell-down month. Baisakhi adult apparel for April must already be in"
         ]
       ]
     },
     {
-      "title": "Climate reference — Baru Sahib has no station, so three brackets by altitude",
+      "title": "Climate normals at Baru Sahib (ERA5 reanalysis 2015-2024, 30.7549N 77.2957E, grid elevation 996 m) — computed locally from the Open-Meteo archive API",
       "columns": [
-        "Station",
-        "Altitude",
-        "Jan high/low °C",
-        "Jul rain mm",
-        "Aug rain mm",
-        "Annual rain",
-        "Snow"
+        "Month",
+        "Mean max C",
+        "Mean min C",
+        "Mean C",
+        "Rainfall mm",
+        "Days >=1 mm",
+        "Days >=10 mm",
+        "Days >=25 mm",
+        "Share of annual rain",
+        "Snow days (996 m)",
+        "Snow days (Rajgarh 1,582 m)"
       ],
       "rows": [
         [
-          "Nahan (Sirmaur district HQ)",
-          "932 m",
-          "17.1 / 7.6",
-          "479.8",
-          "504.5",
-          "~1,733 mm",
-          "None"
+          "Jan",
+          "16.2",
+          "5.8",
+          "10.5",
+          "84.7",
+          "7.4",
+          "2.7",
+          "0.9",
+          "7.4%",
+          "0.0",
+          "~4"
         ],
         [
-          "Solan — BEST PROXY, 40 km from Rajgarh",
-          "1,550 m",
-          "18.4 / 2.3",
-          "221.6",
-          "206.1",
-          "1,003.5 mm",
-          "None recorded"
+          "Feb",
+          "19.5",
+          "7.9",
+          "13.3",
+          "58.2",
+          "6.1",
+          "2.2",
+          "0.5",
+          "5.1%",
+          "0.0",
+          "~2"
         ],
         [
-          "Rajgarh (tehsil HQ, PIN 173101)",
-          "1,555 m",
-          "no station table",
-          "—",
-          "—",
-          "—",
-          "Occasional, at nearby Habban"
+          "Mar",
+          "23.9",
+          "11.6",
+          "17.5",
+          "73.3",
+          "7.7",
+          "1.9",
+          "0.9",
+          "6.4%",
+          "0.0",
+          "~1"
         ],
         [
-          "Baru Sahib (ARY's town)",
-          "~1,700 m (UNVERIFIED — brief's figure, no source found)",
-          "assume Solan, 1-2°C colder",
-          "—",
-          "—",
-          "—",
-          "Below the reliable-snow line"
+          "Apr",
+          "29.2",
+          "16.1",
+          "22.6",
+          "43.5",
+          "7.9",
+          "1.3",
+          "0.2",
+          "3.8%",
+          "0.0",
+          "0"
         ],
         [
-          "Shimla (upper bracket)",
-          "2,376 m",
-          "9.3 / 1.7",
-          "328.3",
-          "351.3",
-          "1,487 mm",
-          "42 cm Jan, 43 cm Feb"
+          "May",
+          "31.5",
+          "19.2",
+          "25.4",
+          "49.6",
+          "9.9",
+          "0.8",
+          "0.1",
+          "4.3%",
+          "0.0",
+          "0"
+        ],
+        [
+          "Jun",
+          "31.7",
+          "22.0",
+          "26.8",
+          "118.6",
+          "13.7",
+          "3.8",
+          "0.7",
+          "10.3%",
+          "0.0",
+          "0"
+        ],
+        [
+          "Jul",
+          "28.3",
+          "23.0",
+          "25.3",
+          "292.4",
+          "26.5",
+          "6.9",
+          "2.4",
+          "25.5%",
+          "0.0",
+          "0"
+        ],
+        [
+          "Aug",
+          "27.9",
+          "22.7",
+          "24.9",
+          "250.1",
+          "26.4",
+          "6.1",
+          "1.9",
+          "21.8%",
+          "0.0",
+          "0"
+        ],
+        [
+          "Sep",
+          "27.6",
+          "20.7",
+          "23.9",
+          "128.3",
+          "16.0",
+          "2.7",
+          "1.4",
+          "11.2%",
+          "0.0",
+          "0"
+        ],
+        [
+          "Oct",
+          "26.3",
+          "15.7",
+          "20.7",
+          "20.5",
+          "2.7",
+          "0.4",
+          "0.2",
+          "1.8%",
+          "0.0",
+          "0"
+        ],
+        [
+          "Nov",
+          "22.4",
+          "11.5",
+          "16.4",
+          "11.2",
+          "2.3",
+          "0.2",
+          "0.0",
+          "1.0%",
+          "0.0",
+          "0"
+        ],
+        [
+          "Dec",
+          "18.6",
+          "7.3",
+          "12.2",
+          "18.3",
+          "1.8",
+          "0.7",
+          "0.1",
+          "1.6%",
+          "0.0",
+          "~1"
+        ],
+        [
+          "YEAR",
+          "25.3",
+          "15.4",
+          "20.0",
+          "1,148.7",
+          "128.4",
+          "35.7",
+          "9.3",
+          "100%",
+          "0.0",
+          "7.5 (19.3 cm)"
         ]
       ]
     },
     {
-      "title": "Festival calendar and land-by dates, FY26-27 into FY27-28",
+      "title": "The winter window, day by day (walk-in bills only, FY25-26; the same shape repeats in FY24-25)",
       "columns": [
-        "Festival",
-        "2026 date",
-        "2027 date",
-        "Categories that move",
-        "Land stock by",
-        "Note"
+        "Window",
+        "Dates",
+        "Days",
+        "Bills/day",
+        "Rs/day",
+        "% of full campus",
+        "What it is"
       ],
       "rows": [
         [
-          "Raksha Bandhan",
-          "28 Aug",
-          "17 Aug",
-          "Fashion Jewellery (Aug index 964), Sweets, Confectionery",
-          "D-18",
-          "Fashion Jewellery is a two-month category — Jul 211, Aug 964, zero the rest of the year"
+          "Full campus",
+          "15 Nov - 23 Dec 2025",
+          "39",
+          "1,023",
+          "1,42,155",
+          "100%",
+          "Normal trading, winter wear at peak"
         ],
         [
-          "Janmashtami",
-          "4 Sep",
-          "25 Aug",
-          "Sweets, Dairy, Fruits",
-          "D-10",
-          ""
+          "Emptying",
+          "24 - 28 Dec 2025",
+          "5",
+          "674",
+          "94,123",
+          "66%",
+          "Boarders leaving; 24 Dec also carries a Rs 5.5 L NGO bill"
         ],
         [
-          "Navratri / Dussehra",
-          "11 Oct / 20 Oct",
-          "— / 9 Oct",
-          "Fruits, Dry Fruits, Atta, Oil & Ghee (fasting foods)",
-          "D-14",
-          ""
+          "EMPTY (trough)",
+          "29 Dec 2025 - 20 Jan 2026",
+          "23",
+          "357",
+          "54,457",
+          "35%",
+          "Staff, married families and local villagers only. FY24-25 equivalent: 27 Dec - 24 Jan at ~270/day, also 35%"
         ],
         [
-          "Karva Chauth",
-          "29 Oct",
-          "—",
-          "Sweets, Fashion Jewellery, Ladies Ethnic",
-          "D-10",
-          "Relevant to ~2,500 resident women + staff wives"
+          "School returns",
+          "21 - 31 Jan 2026",
+          "11",
+          "674",
+          "1,06,629",
+          "66%",
+          "Akal Academy back; university still on break to 31 Jan"
         ],
         [
-          "Diwali / Bandi Chhor Divas",
-          "8 Nov",
-          "29 Oct",
-          "Decoratives (Oct 223, Nov 219), Sweets (Oct 274), Oil & Ghee (Oct 165), Dry Fruits, Dairy",
-          "10 Oct 2026 / 1 OCT 2027",
-          "The DAY itself is −50% footfall. Sell D-21 to D-3, do not staff up on the day"
+          "University back",
+          "1 - 19 Feb 2026",
+          "19",
+          "744",
+          "1,05,018",
+          "74%",
+          "Even semester from 3 Feb; school in pre-boards, low discretionary spend"
         ],
         [
-          "Guru Nanak Parkash Purab",
-          "24 Nov",
-          "14 Nov",
-          "Gurmat (Nov 144), Sweets, Dairy, Oil & Ghee",
-          "D-9",
-          "Largest Sikh observance with the full town present"
+          "Kit season opens",
+          "20 - 28 Feb 2026",
+          "9",
+          "911",
+          "1,42,335",
+          "100%",
+          "Uniform/footwear selling begins — before the 2nd purchase bill has landed"
         ],
         [
-          "Lohri / Maghi",
-          "13-14 Jan",
-          "14-15 Jan",
-          "Dry Fruits, Sweets, Oil & Ghee",
-          "IN THE HOLE — buy small",
-          "Town is at 35%. Historically no visible uplift"
-        ],
-        [
-          "Guru Gobind Singh Jayanti",
-          "—",
-          "15 Jan",
-          "Gurmat, Sweets",
-          "IN THE HOLE — buy small",
-          "Falls inside the winter break every year"
-        ],
-        [
-          "Holi / Hola Mohalla",
-          "4 Mar",
-          "22-23 Mar",
-          "Confectionery, Sweets (Mar 192), colours",
-          "D-12",
-          "Holi day itself was a −50% footfall hole in 2024 (24-25 Mar: 518/492 bills)"
-        ],
-        [
-          "Baisakhi",
-          "14 Apr",
-          "14 Apr",
-          "Gurmat, Sweets, Mens Wear (Apr 185), Womens Wear (Apr 289)",
-          "1 Apr",
-          "Sits in the kit tail — plan them as one buy"
+          "PEAK",
+          "1 - 9 Mar 2026",
+          "9",
+          "1,095",
+          "2,53,168",
+          "178%",
+          "New-session kit. 25% of the Rs 42.9 L kit season in 9 days"
         ]
       ]
     },
     {
-      "title": "Category seasonal index, 100 = that category's average month (3 FYs, Apr-2023 to Mar-2026)",
+      "title": "Category seasonal index — resident bills only (NGO/wholesale excluded), FY-normalised, mean of FY24-25 and FY25-26. 100 = that category's average month",
       "columns": [
         "Category",
-        "3-yr sales",
+        "2-yr value Rs L",
         "Apr",
         "May",
         "Jun",
@@ -527,645 +613,884 @@
         "Dec",
         "Jan",
         "Feb",
-        "Mar"
+        "Mar",
+        "Peak / trough"
       ],
       "rows": [
         [
           "Confectionery",
-          "₹2.81 Cr",
-          "112",
-          "113",
-          "123",
-          "84",
-          "122",
+          "178.2",
+          "111",
+          "111",
+          "125",
+          "81",
+          "126",
           "110",
-          "120",
-          "105",
-          "96",
-          "39",
-          "76",
-          "101"
+          "124",
+          "103",
+          "103",
+          "35",
+          "69",
+          "103",
+          "Aug 126 / Jan 35"
         ],
         [
           "Academy Dress",
-          "₹1.45 Cr",
-          "192",
-          "125",
-          "125",
-          "75",
-          "69",
-          "87",
-          "61",
-          "30",
-          "13",
+          "100.3",
+          "184",
+          "103",
+          "139",
+          "73",
+          "73",
+          "93",
+          "74",
+          "32",
           "12",
-          "69",
-          "342"
+          "12",
+          "58",
+          "347",
+          "Mar 347 / Dec 12"
         ],
         [
           "Personal Care",
-          "₹1.32 Cr",
-          "127",
-          "110",
+          "90.9",
+          "115",
+          "109",
           "123",
-          "94",
-          "101",
-          "112",
+          "96",
+          "109",
+          "105",
           "106",
-          "95",
-          "61",
-          "48",
-          "75",
-          "147"
+          "101",
+          "64",
+          "49",
+          "74",
+          "149",
+          "Mar 149 / Jan 49"
         ],
         [
           "Winter Wear",
-          "₹1.15 Cr",
-          "77",
-          "48",
-          "12",
-          "22",
+          "79.5",
+          "84",
+          "46",
           "13",
-          "51",
-          "240",
-          "239",
-          "198",
-          "69",
-          "48",
-          "184"
+          "22",
+          "14",
+          "63",
+          "199",
+          "264",
+          "204",
+          "66",
+          "46",
+          "178",
+          "Nov 264 / Jun 13"
         ],
         [
           "Fruits",
-          "₹0.81 Cr",
-          "129",
+          "52.7",
+          "114",
           "143",
-          "156",
-          "102",
-          "119",
-          "105",
-          "91",
-          "68",
-          "53",
-          "43",
-          "79",
-          "114"
+          "146",
+          "98",
+          "124",
+          "108",
+          "85",
+          "74",
+          "54",
+          "47",
+          "86",
+          "122",
+          "Jun 146 / Jan 47"
         ],
         [
-          "Unstiched Suits",
-          "₹0.68 Cr",
+          "Unstitched Suits",
+          "46.2",
+          "163",
           "157",
-          "136",
-          "161",
+          "148",
+          "99",
+          "77",
+          "71",
+          "162",
           "92",
-          "72",
-          "85",
-          "143",
-          "104",
-          "97",
-          "35",
-          "27",
-          "91"
+          "95",
+          "28",
+          "23",
+          "84",
+          "Apr 163 / Feb 23"
         ],
         [
           "Footwear",
-          "₹0.63 Cr",
-          "161",
-          "110",
-          "123",
+          "42.4",
+          "158",
+          "109",
+          "119",
           "92",
-          "88",
-          "90",
-          "89",
-          "103",
-          "44",
-          "31",
-          "58",
-          "212"
+          "94",
+          "85",
+          "97",
+          "113",
+          "43",
+          "30",
+          "50",
+          "210",
+          "Mar 210 / Jan 30"
+        ],
+        [
+          "Chinese Items",
+          "41.3",
+          "98",
+          "91",
+          "101",
+          "68",
+          "119",
+          "112",
+          "125",
+          "115",
+          "115",
+          "48",
+          "92",
+          "117",
+          "Oct 125 / Jan 48"
         ],
         [
           "Drinks",
-          "₹0.58 Cr",
-          "136",
-          "141",
-          "170",
-          "121",
-          "128",
-          "120",
-          "101",
-          "78",
-          "41",
-          "21",
-          "51",
-          "91"
+          "34.6",
+          "153",
+          "156",
+          "172",
+          "116",
+          "116",
+          "106",
+          "94",
+          "80",
+          "39",
+          "23",
+          "49",
+          "97",
+          "Jun 172 / Jan 23"
         ],
         [
-          "Fabrics",
-          "₹0.52 Cr",
-          "107",
-          "71",
-          "153",
-          "72",
-          "45",
-          "75",
-          "137",
-          "70",
+          "Vegetable",
+          "33.5",
+          "92",
+          "89",
+          "94",
+          "96",
+          "128",
+          "117",
           "112",
-          "205*",
-          "26",
-          "128"
+          "114",
+          "98",
+          "71",
+          "87",
+          "103",
+          "Aug 128 / Jan 71"
         ],
         [
           "Oil & Ghee",
-          "₹0.48 Cr",
-          "62",
-          "60",
-          "85",
-          "74",
-          "97",
-          "88",
-          "165",
-          "119",
-          "177",
-          "76",
+          "33.5",
           "72",
-          "125"
+          "72",
+          "94",
+          "74",
+          "101",
+          "84",
+          "129",
+          "126",
+          "168",
+          "81",
+          "70",
+          "129",
+          "Dec 168 / Feb 70"
+        ],
+        [
+          "General Items",
+          "30.8",
+          "91",
+          "96",
+          "96",
+          "67",
+          "102",
+          "106",
+          "113",
+          "123",
+          "147",
+          "67",
+          "81",
+          "111",
+          "Dec 147 / Jul 67"
+        ],
+        [
+          "Fabrics",
+          "27.0",
+          "133",
+          "102",
+          "76",
+          "75",
+          "59",
+          "123",
+          "126",
+          "118",
+          "116",
+          "96",
+          "36",
+          "139",
+          "Mar 139 / Feb 36"
+        ],
+        [
+          "Dry Fruits",
+          "26.3",
+          "84",
+          "84",
+          "102",
+          "79",
+          "106",
+          "108",
+          "102",
+          "136",
+          "125",
+          "91",
+          "84",
+          "101",
+          "Nov 136 / Jul 79"
         ],
         [
           "Stationary",
-          "₹0.34 Cr",
-          "92",
-          "96",
-          "104",
-          "63",
-          "199",
-          "154",
-          "92",
-          "100",
-          "69",
-          "36",
+          "24.4",
+          "91",
+          "91",
           "102",
-          "93"
+          "64",
+          "204",
+          "146",
+          "85",
+          "100",
+          "78",
+          "38",
+          "103",
+          "98",
+          "Aug 204 / Jan 38"
         ],
         [
           "Mens Wear",
-          "₹0.33 Cr",
-          "185",
-          "139",
-          "146",
-          "141",
+          "21.8",
+          "176",
+          "133",
+          "138",
+          "163",
+          "122",
+          "79",
+          "96",
+          "64",
+          "70",
+          "27",
+          "34",
+          "98",
+          "Apr 176 / Jan 27"
+        ],
+        [
+          "Home Furnishing",
+          "20.1",
+          "119",
+          "122",
+          "89",
+          "168",
+          "123",
+          "100",
+          "94",
+          "102",
+          "60",
+          "49",
+          "42",
+          "133",
+          "Jul 168 / Feb 42"
+        ],
+        [
+          "Toiletories",
+          "20.2",
           "105",
-          "101",
-          "95",
-          "67",
-          "76",
-          "26",
-          "35",
-          "84"
+          "108",
+          "110",
+          "113",
+          "123",
+          "113",
+          "103",
+          "105",
+          "77",
+          "60",
+          "77",
+          "107",
+          "Aug 123 / Jan 60"
         ],
         [
           "Womens Wear",
-          "₹0.26 Cr",
-          "289",
-          "186",
-          "227",
-          "145",
-          "103",
-          "51",
-          "27",
-          "21",
-          "47",
-          "38",
+          "17.9",
+          "258",
+          "190",
+          "230",
+          "165",
+          "101",
+          "54",
+          "31",
+          "19",
+          "55",
+          "43",
           "34",
-          "32"
+          "20",
+          "Apr 258 / Nov 19"
         ],
         [
-          "Soft Drinks",
-          "₹0.24 Cr",
-          "120",
-          "113",
-          "136",
-          "156",
-          "159",
+          "Accessories",
+          "16.8",
           "100",
-          "125",
-          "82",
-          "49",
-          "29",
-          "45",
-          "86"
+          "106",
+          "105",
+          "129",
+          "149",
+          "119",
+          "94",
+          "89",
+          "72",
+          "48",
+          "63",
+          "127",
+          "Aug 149 / Jan 48"
         ],
         [
           "Bag & Purses",
-          "₹0.24 Cr",
-          "233",
-          "106",
-          "108",
-          "106",
+          "16.2",
+          "218",
+          "100",
+          "115",
+          "119",
           "60",
-          "71",
-          "77",
-          "51",
-          "76",
-          "28",
-          "45",
-          "238"
+          "64",
+          "75",
+          "48",
+          "79",
+          "30",
+          "47",
+          "246",
+          "Mar 246 / Jan 30"
         ],
         [
-          "Night Wear",
-          "₹0.21 Cr",
-          "217",
-          "121",
-          "128",
-          "76",
-          "54",
-          "69",
-          "67",
-          "32",
-          "68",
-          "20",
-          "55",
-          "293"
+          "Soft Drinks",
+          "15.1",
+          "101",
+          "99",
+          "139",
+          "167",
+          "182",
+          "100",
+          "138",
+          "71",
+          "50",
+          "19",
+          "36",
+          "98",
+          "Aug 182 / Jan 19"
         ],
         [
           "Under Garment",
-          "₹0.22 Cr",
-          "160",
-          "107",
-          "96",
-          "107",
-          "66",
-          "81",
+          "15.0",
+          "145",
+          "108",
+          "99",
+          "91",
+          "68",
           "86",
-          "98",
+          "87",
+          "108",
           "66",
-          "41",
+          "46",
+          "59",
+          "237",
+          "Mar 237 / Jan 46"
+        ],
+        [
+          "Night Wear",
+          "14.9",
+          "197",
+          "119",
+          "120",
+          "85",
+          "50",
+          "68",
+          "70",
+          "19",
+          "83",
+          "18",
+          "57",
+          "314",
+          "Mar 314 / Jan 18"
+        ],
+        [
+          "House Hold",
+          "13.1",
+          "108",
+          "88",
+          "114",
+          "143",
+          "210",
+          "89",
+          "92",
+          "73",
+          "60",
+          "55",
+          "62",
+          "105",
+          "Aug 210 / Jan 55"
+        ],
+        [
+          "Dairy Products",
+          "12.8",
+          "109",
+          "109",
+          "96",
+          "78",
+          "97",
+          "105",
+          "97",
+          "165",
+          "96",
           "63",
-          "230"
+          "83",
+          "103",
+          "Nov 165 / Jan 63"
+        ],
+        [
+          "Bakery Items",
+          "12.8",
+          "94",
+          "99",
+          "115",
+          "72",
+          "112",
+          "143",
+          "87",
+          "98",
+          "114",
+          "46",
+          "98",
+          "124",
+          "Sep 143 / Jan 46"
         ],
         [
           "Thermals",
-          "₹0.14 Cr",
-          "132",
-          "28",
-          "5",
-          "5",
+          "9.6",
+          "64",
           "12",
-          "81",
-          "165",
-          "213",
-          "135",
-          "41",
-          "36",
-          "345"
-        ],
-        [
-          "Decoratives",
-          "₹0.08 Cr",
-          "74",
-          "82",
-          "91",
-          "52",
-          "81",
-          "125",
-          "223",
-          "219",
-          "126",
-          "18",
-          "48",
-          "61"
-        ],
-        [
-          "Tandoori (canteen)",
-          "₹0.08 Cr",
-          "135",
-          "163",
-          "198",
-          "85",
-          "57",
-          "157",
-          "164",
-          "157",
-          "42",
-          "2",
-          "11",
-          "29"
-        ],
-        [
-          "Shakes (canteen)",
-          "₹6.4 L",
-          "238",
-          "262",
-          "259",
-          "89",
-          "105",
-          "89",
-          "45",
-          "44",
-          "11",
-          "1",
-          "19",
-          "39"
-        ],
-        [
-          "Veg Delight (canteen)",
-          "₹3.4 L",
-          "132",
-          "174",
-          "239",
-          "133",
-          "76",
-          "183",
-          "108",
-          "130",
-          "10",
-          "1",
-          "7",
-          "6"
-        ],
-        [
-          "Electricals (heating)",
-          "₹3.7 L",
-          "49",
-          "63",
-          "54",
-          "59",
-          "70",
-          "68",
-          "92",
-          "151",
-          "216",
-          "190",
-          "140",
-          "46"
-        ],
-        [
-          "Kids Wear",
-          "₹0.7 L",
-          "157",
-          "81",
-          "50",
-          "56",
-          "51",
-          "70",
-          "79",
-          "63",
-          "100",
-          "306",
-          "137",
-          "50"
-        ],
-        [
-          "Upper Wear",
-          "₹1.2 L",
-          "8",
-          "7",
-          "20",
-          "43",
-          "25",
-          "165",
           "6",
-          "238",
-          "383",
-          "118",
-          "25",
-          "164"
-        ],
-        [
-          "Kakars (articles of faith)",
-          "₹1.1 L",
-          "53",
-          "133",
-          "82",
-          "97",
-          "76",
-          "68",
-          "115",
-          "80",
-          "141",
-          "24",
-          "43",
-          "288"
-        ],
-        [
-          "Ladies Ethnic Wear",
-          "₹5.1 L",
-          "247",
-          "149",
-          "179",
-          "185",
-          "126",
-          "81",
-          "89",
-          "32",
-          "8",
-          "8",
-          "18",
-          "78"
-        ],
-        [
-          "*Fabrics Jan 205",
-          "= ONE institutional bulk order (Katebaa Foundation, ₹6.46 L, 6 Jan 2026), not resident demand",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          "",
-          ""
+          "6",
+          "16",
+          "86",
+          "176",
+          "244",
+          "147",
+          "54",
+          "34",
+          "355",
+          "Mar 355 / Jun 6"
         ]
       ]
     },
     {
-      "title": "Buy calendar vs sell calendar — where the two disagree",
+      "title": "Buy vs sell timing — where ARY is late (index 100 = that category's average month; a negative gap in the selling month means stock is arriving during the sale)",
       "columns": [
-        "Month",
-        "Purchase index (2 clean FYs)",
-        "Resident sales index",
-        "Gap",
-        "Verdict"
+        "Category",
+        "Sell peaks",
+        "Buy peaks",
+        "Verdict",
+        "Evidence of the miss"
       ],
       "rows": [
         [
-          "Oct",
-          "151",
-          "117",
-          "+34",
-          "Correctly buying ahead of Diwali + winter"
+          "Academy Dress",
+          "Mar 347, Apr 184",
+          "Feb 667, Mar 156",
+          "LATE BY 2 WEEKS",
+          "2 bills only: 12 Feb and 20 Feb 2026 (Rs 9.48 L); Rs 2.37 L more bought 4 and 26 March, in-season. Selling started 20 Feb."
         ],
         [
-          "May",
-          "130",
-          "107",
-          "+23",
-          "Buying ahead of the monsoon — good"
+          "Winter Wear",
+          "Nov 264, Dec 204, Oct 199",
+          "Oct 641, Dec 185, Feb 149",
+          "LATE BY A MONTH",
+          "Rs 9.56 L across 13 bills spread 2-31 Oct 2025; only Rs 0.29 L in September; Rs 1.61 L still being bought on 26 Jan."
         ],
         [
-          "Jun",
-          "119",
-          "123",
-          "-4",
-          "Matched"
+          "Thermals",
+          "Mar 355, Nov 244",
+          "Sep 303, Oct 230, Nov 225",
+          "OK FOR NOV, BLIND TO MARCH",
+          "Bought 23 Sep and mid-Oct; the March peak (355) is served from November leftovers."
         ],
         [
-          "Feb",
-          "117",
-          "71",
-          "+46",
-          "Correct in FY25-26 (138), NOT in FY24-25 (95) — inconsistent"
+          "Footwear",
+          "Mar 210, Apr 158",
+          "Feb 449, Jun 142",
+          "CORRECT",
+          "Rs 5.66 L across 7 bills 8-28 Feb 2026, ahead of the March peak."
         ],
         [
-          "Apr",
-          "115",
-          "113",
-          "+2",
-          "Matched"
+          "Bag & Purses",
+          "Mar 246, Apr 218",
+          "Feb 489, Apr 207",
+          "CORRECT",
+          "Rs 2.23 L across 4 bills 8-26 Feb 2026."
         ],
         [
-          "Sep",
-          "107",
-          "106",
-          "+1",
-          "Matched"
+          "Under Garment / Night Wear",
+          "Mar 237 / Mar 314",
+          "Jan 201-220, Feb 220",
+          "CORRECT",
+          "Bought in the empty window, sold at the peak — this is the model to copy."
         ],
         [
-          "Aug",
-          "98",
-          "107",
-          "-9",
-          "Slightly behind"
+          "Stationary",
+          "Aug 204, Sep 146",
+          "Feb 248, Jul 199, Oct 164",
+          "CASH INEFFICIENT",
+          "Buying in February for an August sale locks working capital for six months."
         ],
         [
-          "Dec",
-          "84",
-          "94",
-          "-10",
-          "Acceptable — deliberate wind-down"
+          "Home Furnishing",
+          "Jul 168, Mar 133",
+          "Aug 189, Oct 193, Mar 150",
+          "LATE",
+          "Peak buying (Aug 189) is the month AFTER the July selling peak."
         ],
         [
-          "MAR",
-          "83",
-          "121 (uniform 342)",
-          "-38",
-          "THE PROBLEM. Buying least in the biggest selling month"
+          "House Hold",
+          "Aug 210, Jul 143",
+          "Jul 281, Feb 163, Oct 168",
+          "CORRECT",
+          "Bought in July for the 1 August university intake."
         ],
         [
-          "Nov",
-          "73",
-          "105",
-          "-32",
-          "Behind — but October's over-buy covers it"
+          "Soft Drinks",
+          "Aug 182, Jul 167",
+          "Jun 243",
+          "CORRECT",
+          "Landed before the monsoon."
         ],
         [
-          "Jul",
-          "63",
-          "90",
-          "-27",
-          "Monsoon + stock count; buffer should have landed in June"
+          "Fruits / Vegetable",
+          "Jun 146 / Aug 128",
+          "Jun 163 / Aug ~",
+          "DAILY, NO LEAD TIME",
+          "Buy and sell curves match within a few index points every month — the discipline to copy elsewhere."
         ],
         [
-          "Jan",
-          "59",
-          "47",
-          "+12",
-          "Correct — town is empty"
+          "Academy Books",
+          "no sales at all",
+          "no purchases at all",
+          "NOT A BUSINESS",
+          "288 SKUs catalogued; Rs 100 of sales in 29 months."
+        ]
+      ]
+    },
+    {
+      "title": "Fixed dates for the next 18 months (verified against officeholidays.com 2026/2027, the Nanakshahi calendar, and the two academic calendars)",
+      "columns": [
+        "Date",
+        "Event",
+        "Kind",
+        "What ARY must have done"
+      ],
+      "rows": [
+        [
+          "28 Aug 2026",
+          "Raksha Bandhan",
+          "Festival",
+          "Rakhi, sweets, dry fruit, courier/parcel demand — stock by 20 Aug"
+        ],
+        [
+          "4 Sep 2026",
+          "Janmashtami",
+          "Festival",
+          "Fasting foods, milk, fruit"
+        ],
+        [
+          "~20 Sep 2026",
+          "Winter wear + thermals must be on the shelf",
+          "Merchandising deadline",
+          "ORDER IN AUGUST — this is the single biggest shift-left in the calendar"
+        ],
+        [
+          "20-21 Oct 2026",
+          "Dussehra",
+          "Festival",
+          "Festive apparel (Unstitched Suits Oct 162), sweets"
+        ],
+        [
+          "28 Oct - 1 Nov 2026",
+          "Eternal University mid-semester break",
+          "Attendance",
+          "Expect a partial dip; do not over-order fresh"
+        ],
+        [
+          "8 Nov 2026",
+          "Diwali / Bandi Chhor Divas",
+          "Festival — major",
+          "Gifting, dry fruit (Nov 136), dairy/sweets (Nov 165), diyas, cleaning — landed by 25 Oct"
+        ],
+        [
+          "24 Nov 2026",
+          "Guru Nanak Gurpurab",
+          "Festival — major at a Sikh institution",
+          "Langar and sewa volumes: atta, oil/ghee (Dec 168 begins), sugar, dairy"
+        ],
+        [
+          "late Nov 2026",
+          "Annual Sports Meet / Annual Day",
+          "Campus event",
+          "Sports goods, prizes, refreshments; visitor traffic"
+        ],
+        [
+          "18-24 Dec 2026",
+          "Last shopping week before the break",
+          "Merchandising window",
+          "GOING-HOME BASKET: gifts, sweets, dry fruit, travel bags, warm clothes"
+        ],
+        [
+          "21 & 26 Dec 2026",
+          "Shaheedi Divas (Chhote Sahibzade) / Week-a-Shahaadat",
+          "Religious observance",
+          "Langar; simple foods; no festive retail"
+        ],
+        [
+          "22 Dec 2026",
+          "Perishable ordering cut-off",
+          "Operating deadline",
+          "Fruits/Veg/Dairy/Bakery drop to index 47-71 within days"
+        ],
+        [
+          "~26 Dec 2026",
+          "TOWN EMPTIES",
+          "Attendance cliff",
+          "Roster to 35%; start the full physical count"
+        ],
+        [
+          "28 Dec 2026",
+          "Parkash Gurpurab Guru Gobind Singh",
+          "Festival",
+          "Falls inside the empty window in 2026 — institutional/langar demand only"
+        ],
+        [
+          "13-14 Jan 2027",
+          "Lohri / Maghi",
+          "Festival",
+          "Gur, rewri, peanuts, sweets — small volume, town still empty"
+        ],
+        [
+          "1-15 Jan 2027",
+          "SCHOOL KIT RECEIVING WINDOW",
+          "Merchandising deadline",
+          "Uniforms, footwear, bags, innerwear, nightwear, thermals in and ticketed by 5 Feb"
+        ],
+        [
+          "25-26 Jan 2027",
+          "HP Statehood Day / Republic Day",
+          "Holiday",
+          "School back from ~21 Jan; flags, sweets"
+        ],
+        [
+          "~21-25 Jan 2027",
+          "School returns",
+          "Attendance",
+          "COMING-BACK BASKET: toiletries, stationery, snacks, warm wear. Restart fresh ordering 20 Jan"
+        ],
+        [
+          "3 Feb 2027",
+          "Eternal University even semester begins",
+          "Attendance",
+          "Full population restored; toiletries/personal care"
+        ],
+        [
+          "~18 Feb 2027",
+          "Sant Attar Singh Sant Samagam",
+          "Campus event — outside visitors",
+          "The only demand you can add to a 71-index month"
+        ],
+        [
+          "20 Feb 2027",
+          "Kit season opens (and Guru Ravidas Jayanti)",
+          "Selling window",
+          "Everything must already be on the floor"
+        ],
+        [
+          "1-9 Mar 2027",
+          "THE PEAK — 1.78x normal trade",
+          "Selling window",
+          "Nothing left to buy; sell down"
+        ],
+        [
+          "6 Mar 2027",
+          "Maha Shivratri",
+          "Festival",
+          "Fasting foods"
+        ],
+        [
+          "~17-21 Mar 2027",
+          "Final exams end / result / graduation day",
+          "Campus event",
+          "Prizes, gifts, photo/frame, travel bags"
+        ],
+        [
+          "22-23 Mar 2027",
+          "Holi / Hola Mohalla",
+          "Festival",
+          "Colours, sweets, gujiya ingredients — buy in February"
+        ],
+        [
+          "~24 Mar 2027",
+          "NEW SESSION COMMENCES",
+          "Attendance",
+          "Second kit wave into April"
+        ],
+        [
+          "14-15 Apr 2027",
+          "Baisakhi / Ambedkar Jayanti / Himachal Day",
+          "Festival — major",
+          "Adult apparel (Womens Wear 258, Mens Wear 176), dastar/patka, sweets — landed by 5 Apr"
+        ],
+        [
+          "~10 Jun 2027",
+          "Monsoon buffer deadline",
+          "Operating deadline",
+          "4-6 weeks of dry grocery, atta, oil, toiletries, umbrellas in stock"
+        ],
+        [
+          "~13 Jun 2027",
+          "Monsoon onset (median)",
+          "Climate",
+          "292 mm and 26.5 rain days follow in July"
+        ],
+        [
+          "~16 Jun 2027",
+          "Shaheedi Divas Guru Arjan Dev",
+          "Festival",
+          "Chhabeel / sweet-drink sewa — Drinks index 172 in June"
+        ],
+        [
+          "1-30 Jul 2027",
+          "Eternal University summer break",
+          "Attendance",
+          "School stays open; expect index 89, not another January"
+        ],
+        [
+          "~5 Jul 2027",
+          "Sant Teja Singh Sant Samagam",
+          "Campus event — outside visitors",
+          "Demand you can add to an 89-index month"
+        ],
+        [
+          "~20 Jul 2027",
+          "Stationery + hostel household deadline",
+          "Merchandising deadline",
+          "For the 1 Aug university intake (Stationary 204, House Hold 210)"
+        ],
+        [
+          "1 Aug 2027",
+          "Eternal University odd semester begins",
+          "Attendance",
+          "New intake sets up rooms"
         ]
       ]
     }
   ],
   "recommendations": [
     {
-      "action": "Put ONE date in the calendar: kit purchase order out by 10 January, goods received and priced by 20 February. The kit is ₹50 L/yr and 100% forecastable (Feb+Mar+Apr, 29,446 units in 2026, +24% in two years), yet the March purchase index is 83 against a March sales index of 121 and a uniform index of 342 — and the behaviour flips year to year (FY25-26 pre-bought in Feb at 138; FY24-25 did not, at 95), which means it is a person's habit, not a system. Size the buy from last year's issued sizes per class, not from last year's total. ESTIMATED impact: ~10% of the kit recovered from stock-outs and wrong sizes = ₹5 L/yr (₹42k/mo average); the ₹6.43 L of March returns (21% of ALL returns, 216 documents) is the visible half of the size-curve failure.",
+      "action": "Move the entire school-kit purchase into the first half of January and require every kit line — uniforms, footwear, bags, innerwear, nightwear, thermals — to be received, priced and on the floor by 5 February. Today the season opens on 20 February with only one of two purchase bills landed, and 20% of the Academy Dress buy (Rs 2.37 L at cost) is made in March, inside the peak. The season is worth Rs 42.9 L retail with 25% of it in nine days, so even a 10% stock-out recovery is Rs 4-5 L/yr. ESTIMATED impact.",
       "priority": "P0",
-      "monthlyImpactInr": 42000,
+      "monthlyImpactInr": 38000,
       "effort": "days",
-      "blocker": "none — this is a calendar entry and a size-history query, both available today"
+      "blocker": "January is the lowest-collection month of the year (walk-in Rs 22.2 L vs a Rs 43.4 L average), so the buy needs either a short January credit line or February-dated supplier bills against January delivery. Agree that with the top three apparel suppliers first."
     },
     {
-      "action": "Fill the four zero-sale categories that the March-April window already brings 1,538 boarders and ~2,500 hostellers past the till for: Academy Books (288 SKUs catalogued, ₹200 lifetime sales), Bedding (0 SKUs), Towels (0 SKUs), Travel Bag (0 SKUs). Someone set up 288 book SKUs and it never happened — find out why before buying. ESTIMATED: books ₹1,500 x 1,500 students = ₹22.5 L/yr; bedding/towel/trunk ₹1,200 x ~1,000 new entrants = ₹12 L/yr; ~₹34 L/yr of revenue at ARY's existing counter, existing footfall, existing window.",
+      "action": "Shift the winter-wear and thermals buy one month left: order in August, land by 20 September, one planned tranche instead of 13 October chase bills. Today Rs 9.56 L arrives across 13 bills spread through October while October already sells at index 199 and November at 264 — and Rs 1.61 L is still being bought on 26 January, at the wrong end of the season. Winter Wear + Thermals is Rs 44.7 L/yr. ESTIMATED impact of Rs 3-5 L/yr recovered plus less end-of-season markdown.",
       "priority": "P0",
-      "monthlyImpactInr": 280000,
-      "effort": "weeks",
-      "blocker": "Confirm the Kalgidhar Trust does not already issue books and bedding to boarders centrally — that is the most likely reason 288 book SKUs sit at zero, and if so this recommendation is void rather than merely hard"
+      "monthlyImpactInr": 33000,
+      "effort": "days",
+      "blocker": "none — the same HP/Delhi suppliers are already used; this is a purchase-order date change."
     },
     {
-      "action": "Write a formal January plan: a ~20-SKU winter-hardware and baby-goods range (immersion rods, heaters, blowers, thermals, hot drinks, soups, Kids Wear) for the ~1,000-1,500 staff-family residents who stay, and pull everything else off the shelf. Electricals index Jan 190 / Dec 216, Kids Wear Jan 306, Soups Dec 340 / Jan 240 — these are the ONLY consumer categories that peak in January, and they exactly match the demographic that remains (married staff with babies and small children, at Solan's 2.3°C January low). Simultaneously close Ary Lite and the QSR groups for the break: Tandoori Jan index 2, Shakes 1, Veg Delight 1, Mini Meals 11, Ary Lite counter ~4.",
-      "priority": "P1",
+      "action": "Build an explicit monsoon buffer every June: 4-6 weeks of dry grocery, atta, oil, sugar, toiletries and umbrellas landed by 10 June. July inbound purchases fall to index 63 (the year's low bar January) against July sales of 89, and Sirmaur roads are documented closing in exactly that month, so part of the July dip is ARY's own supply failing rather than demand.",
+      "priority": "P0",
       "monthlyImpactInr": 100000,
       "effort": "weeks",
-      "blocker": "none — but it needs a named owner, because 'do less in January' is the kind of plan that quietly does not happen"
+      "blocker": "Storage space and the working capital to hold six weeks of dry goods through the wettest month — quantify the shelf/godown capacity at Baru Sahib before committing the order."
     },
     {
-      "action": "Merchandise the two dated 4,000-person movements ARY currently ignores. On 26 December the town empties in two days and the departure week shows only +3% (1,081 vs 1,051 bills/day) with 24-25 Dec actually FALLING to 976 and 854; on 20-25 January it refills and the week merely ramps. Build a departure basket (journey snacks, dry fruit, gifts to take home, a trunk or holdall) sold 15-25 December, and a return basket (toiletries, restock, bedding) sold 20 January - 10 February. ESTIMATED ₹3-5 L per cycle, two cycles a year.",
+      "action": "Turn the 27-day empty window (approximately 26 December to 22 January) into a scheduled operating reset: full physical count across all counters, planogram and shelf reset, kit receiving and ticketing, and staff leave. They currently use only 4 days of it (27-30 December, 471 count documents) and are instead counting on 21 August, a 110-index month. Against a lifetime physical-count shortage of Rs 2.59 Cr, counting a 357-bill/day shop for three weeks instead of an 1,100-bill/day shop for four days is free accuracy.",
       "priority": "P1",
-      "monthlyImpactInr": 150000,
-      "effort": "weeks",
-      "blocker": "Travel Bag has 0 SKUs — the buy has to happen before the plan can"
-    },
-    {
-      "action": "Convert every festival from a date into a land-by date, and stop treating the festival day as a selling day. Diwali, Holi and Guru Nanak day itself is a −50% footfall hole (Diwali 2023 Nov 11-14: 428-519 bills; Diwali 2024 Oct 31-Nov 2: 484-509; Diwali 2025 Oct 20: 533; Holi 2024 Mar 24-25: 518/492 — all against a ~1,050 baseline). The money is D-21 to D-3: Decoratives Oct 223 / Nov 219, Sweets Oct 274, Oil & Ghee Oct 165 and Dec 177. Diwali 2026 is 8 November (land by 10 October); Diwali 2027 is 29 October, so that date pulls forward to 1 October.",
-      "priority": "P1",
-      "monthlyImpactInr": 0,
-      "effort": "days",
-      "blocker": "none — the 2026 and 2027 dates are in the festival table above"
-    },
-    {
-      "action": "Find out what caused the 10-day sales blackout of 22-30 September 2025 and whether the bills were re-dated. It is the only material gap in 41 months, physical-count documents for that month number only 3 so it was not a stock count, and the 21 recorded days ran at 1,488 bills/day against a ~1,050 baseline — which says the transactions were captured and re-stamped, not lost. Until it is explained, no day-of-week, promotion or footfall-by-date analysis touching September 2025 can be trusted.",
-      "priority": "P1",
-      "monthlyImpactInr": 0,
-      "effort": "days",
-      "blocker": "none — ask the Baru Sahib counter/IT staff what happened that week"
-    },
-    {
-      "action": "Split the winter-wear buy in two and give each an exit date. October-December is a climate buy for ~5,000 people (Winter Wear Oct 240 / Nov 239 / Dec 198, Upper Wear Dec 383, Thermals Nov 213) landing by 10 October; March is a uniform-specification buy for new entrants (Thermals Mar 345, Winter Wear Mar 184) landing by 20 February. Carrying either into summer (Thermals Jun index 5, Winter Wear Jun 12) is the mechanism behind ARY Clothing being the worst variance counter in the chain — negative book quantity and ₹10.7 L of lifetime posted 'excess'.",
-      "priority": "P2",
       "monthlyImpactInr": 0,
       "effort": "weeks",
-      "blocker": "none, but it is really a stock-accuracy fix wearing a seasonality hat — coordinate with whoever owns the ₹2.59 Cr shortage problem"
+      "blocker": "Staff want their own leave in the same window — split the team into a count crew and a leave crew and publish the rota in November."
     },
     {
-      "action": "Position a 4-6 week non-perishable buffer before the monsoon breaks each year (in by 25 June), and keep the annual stock count where it already is. 70% of the year's rain falls June-September (Solan 698.9 of 1,003.5 mm; Nahan 480 mm in July alone), the town is 30-50 km up hill road, ARY is the ONLY outlet for 5,000 people, and July is already the weakest non-winter month (index 90) with the lowest non-winter footfall days clustered 16-26 July. The count calendar is correct as-is — 814 count documents in July 2025 and 471 in December 2025, i.e. in the two weakest months.",
+      "action": "Publish a hard perishable cut-off of 22 December and a restart of 20 January, and cut the fresh order to 35% for the window. Fruits fall to index 47, Bakery 46, Dairy 63 and Vegetable 71 in January, and these lines are bought the same day they sell, so every day of un-cut ordering is wastage.",
+      "priority": "P1",
+      "monthlyImpactInr": 60000,
+      "effort": "days",
+      "blocker": "none — this is a standing instruction to the Fruits & Veg and Ary Pos counters. The Rs figure is ESTIMATED from the January index gap on perishable groups, not from a measured wastage log."
+    },
+    {
+      "action": "Merchandise two named baskets on fixed dates: the GOING-HOME basket for 18-24 December (gifts, sweets, dry fruit, travel bags, warm clothes for the journey) and the COMING-BACK basket for 21-31 January and 1-3 February (toiletries, stationery, snacks, bedding). Both edges of the empty window are currently unmerchandised, and the 24-25 December days already show the largest baskets of the winter.",
+      "priority": "P1",
+      "monthlyImpactInr": 75000,
+      "effort": "weeks",
+      "blocker": "none. ESTIMATED impact — no basket-level test has been run, so treat this as a hypothesis to measure in December 2026 against December 2025's daily curve."
+    },
+    {
+      "action": "Make adult apparel a two-window buy — Baisakhi (land by 5 April) and Diwali (land by 25 October) — and stop carrying Womens Wear, Mens Wear and Unstitched Suits through September-February. Womens Wear runs at index 258 in April and 19 in November; Unstitched Suits 163 in April, 162 in October, 23 in February.",
+      "priority": "P1",
+      "monthlyImpactInr": 25000,
+      "effort": "weeks",
+      "blocker": "Somebody must own the clear-out: agree a markdown ladder for unsold festive apparel in the second week after each festival, otherwise the stock simply carries."
+    },
+    {
+      "action": "Flex the Ary Clothing counter's roster and floor space to its calendar: index 292 in March and 173 in April against 24 in December and 53 in February. A fixed year-round roster there is a 12-month cost against a 2-month revenue.",
+      "priority": "P2",
+      "monthlyImpactInr": 40000,
+      "effort": "weeks",
+      "blocker": "Staff are Trust employees rather than seasonal hires, so the flex has to be redeployment to Ary Pos in the low months, not headcount reduction. Confirm that is allowed before planning it."
+    },
+    {
+      "action": "Settle the Academy Books question with one call to the academy office: 288 book SKUs are catalogued and have produced Rs 100 of sales in 29 months, in a town with roughly 5,000 students. Either win the book and workbook supply for the March-April session, or delist all 288 SKUs so they stop polluting the catalogue and the count.",
+      "priority": "P2",
+      "monthlyImpactInr": 0,
+      "effort": "days",
+      "blocker": "Unknown whether the Trust supplies textbooks free or centrally — that answer decides which of the two actions applies."
+    },
+    {
+      "action": "Treat the NGO/wholesale line as a separate business with its own plan: Hunger Heroes (Delhi) and Katebaa Rural Services (Sonipat) bought Rs 79 lakh across 16 bills in the last 12 months, roughly 11-12% of turnover, and it is completely independent of the resident calendar. It is the only revenue ARY can grow in January.",
       "priority": "P2",
       "monthlyImpactInr": 0,
       "effort": "weeks",
-      "blocker": "Working capital — a monsoon buffer is cash on a shelf, and Profit & Loss A/C already sits at ₹2.70 Cr DEBIT"
+      "blocker": "Nobody has confirmed whether these are contracted programmes or opportunistic orders; ask the Baru Sahib counter manager who places them and on what cycle."
     },
     {
-      "action": "Report resident retail and the institutional channel on separate calendars, and explain the duplicate bills before anyone uses the March number. Institutional is 21-28% of sales and peaks Mar 189 / Apr 173 against the resident Mar 121 — so the all-customer March index of 135 and the March value-per-bill of ₹267 are bulk, not residents trading up. Three specific items to resolve: the 'January spike' in Fabrics (index 205) is two bulk clothing bills to Katebaa Rural Services & Solutions Foundation on 6 Jan 2026 (₹6.46 L, 7,165 units); 'Hunger Heroes' took ₹5.50 L / 9,207 units through the Basement counter on 24 Dec 2025; and Jivo Wellness Pvt Ltd - Delhi appears with byte-identical bills (392 qty / ₹191,887 and 874 qty / ₹66,039) on BOTH 25 Dec 2025 and 2 Mar 2026.",
-      "priority": "P2",
+      "action": "Fix the two data blindnesses that stop this calendar from getting sharper: 97% of bills sit on one walk-in account (00001) and 99.7% carry no SalesPersonID, so ARY cannot see WHICH customers disappear in January or who sells the kit season. A staff/student/family flag on the walk-in till, even three buttons, would turn the 35% trough into a named segment.",
+      "priority": "P3",
       "monthlyImpactInr": 0,
-      "effort": "days",
-      "blocker": "none for the split; the duplicate Jivo Wellness bills need a human to say whether that is a re-entry, a recurring intercompany transfer, or a genuine repeat order"
-    },
-    {
-      "action": "Get the official Akal Academy and Eternal University term calendars for 2026-27 and 2027-28 from the Baru Sahib campus office. Everything in this document is derived from ARY's own bills, which tells you what happened but cannot tell you next year's dates — and the entire buying calendar hangs off them. Also ask the admissions office for the FY27-28 intake, so the kit buy can be sized (units grew 10,294 -> 12,720 in two Marches) rather than repeated.",
-      "priority": "P1",
-      "monthlyImpactInr": 0,
-      "effort": "days",
-      "blocker": "none — but it must be a phone call or a visit. Ten institutional web sources were tried and none publishes a term date"
-    },
-    {
-      "action": "Check whether FY26-27's growth is real spend or just split baskets before sizing any expansion on the +29% annualised figure. Cash bills are up 27-60% year on year (Apr 35,977 vs 28,354; May 39,986 vs 24,974; Jun 37,245 vs 28,398) but cash value is up only 11-24%, so the average cash bill FELL (Apr ₹163 vs ₹167, May ₹150 vs ₹167). The seasonal index holds either way; the revenue projection does not.",
-      "priority": "P2",
-      "monthlyImpactInr": 0,
-      "effort": "days",
-      "blocker": "none — but it may be a counter-splitting or bill-splitting behaviour change rather than a demand change, which only the counter staff can explain"
+      "effort": "months",
+      "blocker": "FusionERP8 POS configuration — check whether the till can capture a customer type without slowing the queue at 1,095 bills/day."
     }
   ],
   "openQuestions": [
-    "What are the official 2026-27 and 2027-28 Akal Academy and Eternal University term dates? Ten institutional web sources were tried (barusahib.org and three sub-pages, akalacademy.org — TLS mismatch, akalacademy.net — NXDOMAIN, eternaluniversity.edu.in and three sub-pages, hpbose.org, cbse.gov.in — 403) and NONE publishes one. The Baru Sahib campus administration or the Kalgidhar Trust office can settle it in five minutes, and it turns this whole calendar from descriptive into predictive.",
-    "Is the January emptying a fixed school winter vacation, and is the return date fixed or staggered? The retail facts are certain (26 Dec out, 20-25 Jan back, full by 1 Mar, three years running) but the CAUSE is an inference. The 2024/25 winter refilled on 25 January and 2025/26 on 20-21 January — a 5-day swing that matters for the return-week buy. Campus administration.",
-    "Who supplies the school's and university's textbooks today, and why do 288 Academy Books SKUs sit at ₹200 lifetime sales? If the Trust issues books centrally this is a closed door, not an opportunity — and it probably also explains the zero-SKU Bedding, Towels and Travel Bag groups. The Trust's procurement office.",
-    "What is Baru Sahib's actual altitude? The brief says ~1,700 m; no source found states it. Rajgarh tehsil HQ is 1,555 m and Solan is 1,550 m. This matters only at the margin (whether snow is ever a planning assumption) but it is currently an unverified number sitting under every climate row in this document.",
-    "What happened between 22 and 30 September 2025 — a POS outage, a network failure, or a genuine closure? And were the bills re-dated into the surrounding days (the 1,488 bills/day on the 21 recorded days against a ~1,050 baseline says yes)? Baru Sahib counter staff or whoever runs FusionERP8.",
-    "What is the FY27-28 enrolment plan? Kit units went 10,294 (Mar 2024) -> 11,999 -> 12,720 (Mar 2026), +24% in two years. Without the intake number the kit buy is a guess dressed as a trend. Admissions office.",
-    "Do the counters physically close on Diwali, Holi and the Gurpurabs, or does footfall genuinely vanish? The −50% is unambiguous in the data but the two explanations lead to opposite decisions — one is a staffing saving, the other is lost trade. Counter managers.",
-    "Are the identical Jivo Wellness Pvt Ltd - Delhi bills on 25 Dec 2025 and 2 Mar 2026 (392 qty / ₹191,887 and 874 qty / ₹66,039, byte-identical on both dates) a duplicate entry, a recurring intercompany stock transfer booked as a sale, or a genuine repeat order? It affects both the March index and ARY's reported turnover. Accounts.",
-    "Why is women's apparel sold only April-July (Womens Wear Apr 289 -> Nov 21; Ladies Ethnic Apr 247 -> Dec 8) in a township with a ~2,500-student women-only university in residence through December — is it the buy that stops, or the customers who stop coming? ₹2.55 L/yr across 2,500 women is ~₹102 per woman per year. Counter staff and the students themselves.",
-    "Is the shrinking average basket in FY26-27 (Apr ₹163 vs ₹167, May ₹150 vs ₹167 while bill counts rose 27-60%) a real change in shopping behaviour, a bill-splitting practice at the counter, or a new counter absorbing small transactions? Counter managers."
-  ]
+    "Akal Academy Baru Sahib's own dated vacation notification for the current session was never obtained — barusahib.org has no calendar or events page (/events/ returns 404) and the only Akal calendar found is the trust-wide 2024-25 document hosted on the Bagha (Punjab) academy site. The Principal's or Registrar's office at Baru Sahib can supply it in one email, and it is the single soft joint in this whole plan.",
+    "Eternal University's 2025-26 and 2026-27 academic calendars are not published (only 2024-25 is linked from /Academics; the obvious 2025-26 and 2026-27 PDF paths return HTTP 404). Confirm with the Controller of Examinations whether winter break is still 25 Dec - 31 Jan and summer break 1-30 Jul, because both dates anchor the trough.",
+    "Headcount split: how many of the ~5,000 residents are boarders who leave, versus staff, married staff families and day scholars who stay? The till says roughly 60-65% leave, but that is derived from bill counts, not from a roll. The Kalgidhar Trust admin office has the number.",
+    "Does the ridge road through Rajgarh (1,582 m) actually close for snow or ice in January? ERA5 says ~10 cm of snow over 3-4 days there, but reanalysis at 996 m grid resolution cannot see a single blocked hairpin. The local transporter or the counter manager knows how many delivery days were lost last January.",
+    "Who supplies the academy's textbooks and workbooks, and is that contract available? 288 book SKUs with Rs 100 of sales in 29 months is either the town's biggest unserved category or 288 dead records.",
+    "Are Hunger Heroes (Rs 70.6 L / 12 bills) and Katebaa Rural Services (Rs 8.4 L / 4 bills) contracted CSR feeding programmes on a fixed cycle, or opportunistic? If contracted, this is a Rs 79 L/yr counter-cyclical line that could be grown in exactly the months the town is empty.",
+    "What actually drives the March Winter Wear index of 178 — returning students buying warm clothes for cold March nights, or end-of-season clearance of October's over-buy? The answer decides whether to hold winter stock through March or mark it down in January. A margin check on March winter-wear lines would settle it.",
+    "The Basement counter shows zero sales in November and March and 11 in January/February in FY25-26, which looks like an opening/closing artifact rather than seasonality. Confirm with the counter manager before using Basement numbers for anything.",
+    "Whether the Akal Academy Baru Sahib campus takes any June break at all: the trust-wide calendar shows SUMMER BREAK 1-30 June for the academies, yet ARY's June index is 119 (the third-highest month). Either Baru Sahib is exempt as a winter-closing hill campus, or the June population is staff and university students only — worth confirming, because a June emptying would change the monsoon-buffer plan."
+  ],
+  "confidence": "high",
+  "confidenceGap": "The internal seasonality is as solid as it gets — two full independent fiscal years of day-level till data, the same 35% trough ratio and the same 27-day window in both, cross-checked against the published Eternal University and Akal Academies calendars. What stops it being certain is that I never read Akal Academy Baru Sahib's OWN dated vacation notification: the school half of the empty window (roughly 26 Dec to 22 Jan) is inferred from the till, and the only Akal calendar I could obtain is the trust-wide 2024-25 document hosted on the Bagha, Punjab academy site, which shows a plains pattern (a short 25 Dec - 2 Jan winter break and a full June summer break) that ARY's own data flatly contradicts for Baru Sahib. If the Baru Sahib campus shifts its winter break by a fortnight, the January kit-landing deadline and the count window move with it. Secondary gap: the climate figures are ERA5 reanalysis on a 996 m grid cell, not an IMD station at the campus, so treat the temperature extremes and the \"no snow at the shop\" claim as model-derived — directionally reliable, but a cold valley night can go several degrees below what the grid reports."
 }

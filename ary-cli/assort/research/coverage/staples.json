@@ -1,607 +1,357 @@
 {
   "category": "staples",
-  "categoryName": "Staples &amp; flours (atta, rice, sooji, poha, maida, besan)",
-  "windowMonths": 12,
-  "minSalesFloorInr": 5000.0,
-  "method": "name-match across all product groups (ARY's category tree is unreliable for this question); terms from the researcher's brand examples plus distinctive nouns, generic retail words dropped; a line counts as covered only above Rs 5,000 of 12-month sales",
-  "coveragePct": 34.1,
-  "commodityOnlyPct": 63.4,
+  "aryGroupsChecked": [
+    "110 Atta & Other Flours (subgroups Atta, Besan, Flours, Maida, Miada)",
+    "143 Rice & Other Grains (Ararot, Bamati Rice, Basmati Rice, Daliya, Fried Rice, Murmura, Oats, Pasta, Poha, Pulses & Lenitils, Rice, Sabu Dana, Saffron Rice, Sauth, Til)",
+    "142 Pulses (cross-check for besan/sattu/chana atta)",
+    "130 General Items (subgroups Vermicelli, Cornflour, Ready Food, Ready To Cook, Corn Flakes)",
+    "175 Snacks & Breakfast",
+    "190 Raw Material (Bom Consumable)",
+    "172 Others (found Dalia_L misfiled under Custard)",
+    "126 Food Supplement (Cerelac, cross-check for baby porridge flour)",
+    "144 Salt & Sugar",
+    "196 Food",
+    "plus a whole-catalogue name sweep across all 93 groups / 21.5k SKUs"
+  ],
+  "aryActiveSkusInCategory": 214,
+  "arySales12mInr": 3293296,
+  "coveragePct": 61,
   "lines": [
     {
       "line": "Chakki whole wheat atta — economy tier",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "staff, families",
-      "examples": "NAFED Bharat Atta 10kg, Patanjali Chakki Atta, local Solan/Nahan mill brand, store private label",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Chakki Atta (₹98,678); Raja Atta 1 Kg (₹38,745); Aaradhana Chakki Atta 5Kg (₹20,510); Shakti Bhog Atta 5 Kg (₹6,500)",
+      "evidence": "products list --group 110 subgroup Atta; 12m sales join on SaleDetail/SaleHeader 2025-08-28→2026-08-28"
     },
     {
       "line": "Chakki whole wheat atta — mainstream national brand",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Aashirvaad Atta, Fortune Chakki Fresh, Pillsbury Chakki Fresh, Shakti Bhog",
-      "arySkus": 3,
-      "arySales12m": 271050.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: aashirvaad + atta"
+      "arySkuExamples": "Aashirvaad Atta 5 Kg (₹1,53,630 — biggest branded line); Aashirvaad Atta 10 Kg (₹74,235); Aashirwad Atta 10 Kg (₹24,480)",
+      "evidence": "LIKE '%aashirvaad%' + '%atta%' in group 110; 1 kg/2 kg branded top-up pack exists only as dormant Aashirwad Chakki Atta 1 Kg (₹0)"
     },
     {
       "line": "Premium Sharbati / MP wheat atta",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families",
-      "examples": "Aashirvaad Select Sharbati, Rajdhani Sharbati, Shakti Bhog Select, 24 Mantra Organic Wheat Atta",
-      "arySkus": 10,
-      "arySales12m": 94515.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: shakti + bhog"
+      "arySkuExamples": "Aashirwad Atta Select 5 Kg (₹25,496); Aashirwad Atta Select 10 Kg (₹720)",
+      "evidence": "LIKE '%select%' + '%sharbati%' — no SKU says 'Sharbati'; Aashirvaad Select is the premium facing. Amul Organic Atta 5 Kg/1 Kg both ₹0"
     },
     {
       "line": "Loose / freshly ground chakki atta by weight",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "families, staff",
-      "examples": "Own in-store chakki output, local Rajgarh mill loose atta, unbranded sabut-gehun grind",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Atta 1 Kg (12,500 kg, ₹5,00,043 @ exactly ₹40/kg); Atta_L (7,980 kg, ₹3,39,100 @ ₹42.49/kg)",
+      "evidence": "UnitMaster join shows UnitName='Kgs'; Stock buckets show Pur/Sal in kg at the 'Basement' warehouse. NOTE: no chakki/grinding-service SKU exists (LIKE '%chakki%' returns only packed brands, '%grind%' returns mixer-grinders) — the loose atta is bought pre-ground"
     },
     {
       "line": "Sabut gehun (whole wheat grain) for own grinding",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "families, staff",
-      "examples": "Local HP/Punjab wheat, MP Sharbati sabut gehun, cleaned mill-grade wheat",
-      "arySkus": 3,
-      "arySales12m": 140725.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: punjab + wheat"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%gehun%' → 0 rows; '%wheat%' → only wheatgrass juice, bread, Cerelac; '%sabut%' → only jeera/kali mirch/dhania. No wheat grain SKU in 21.5k"
     },
     {
       "line": "Multigrain atta",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families, elderly",
-      "examples": "Aashirvaad Multigrain, Tata Sampann Multigrain, Patanjali Multigrain, Fortune Multigrain",
-      "arySkus": 1,
-      "arySales12m": 43185.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: aashirvaad + multigrain"
+      "arySkuExamples": "Aashirvaad Atta 5 Kg Multigrains (₹43,185)",
+      "evidence": "LIKE '%multigrain%' / '%multi grain%' — one atta SKU, sells well; Patanjali Daliya Multi Grain is ₹0"
     },
     {
       "line": "High-protein atta",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "university, staff",
-      "examples": "Aashirvaad Atta with High Protein (launched Sep 2025), Tata Simply Better, Rebalance high-protein atta",
-      "arySkus": 3,
-      "arySales12m": 271050.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: aashirvaad + atta"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%protein%' across all groups → only Kelloggs Muesli Plant Protein (₹0). No high-protein atta"
     },
     {
       "line": "Diabetic / low-GI / sugar-release-control atta",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "elderly, staff",
-      "examples": "Aashirvaad Sugar Release Control Atta, Tata Sampann Diabetes-friendly blends, Diabexy atta",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%diabet%', '%sugar release%', '%low gi%' → 0 rows in any group. The nearest substitutes (chana/missi atta) are also absent; only jowar/ragi/bajra attas serve this buyer"
     },
     {
       "line": "Fortified atta (+F, iron / folic acid / B12)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "students, families, babies",
-      "examples": "Aashirvaad Nature's Super Foods fortified variants, state-programme fortified atta, +F-marked mill atta",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Patanjali Fortified Atta 5Kg (₹0); Patanjali Fortified Atta 10 Kg (₹0)",
+      "evidence": "LIKE '%fortified%' → 2 SKUs, both zero sales and zero purchases in 12m. All 7 Patanjali atta SKUs are dormant"
     },
     {
       "line": "Everyday non-basmati raw rice (permal / PR-11 / PR-14 / medium grain)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Local Punjab permal, PR-126 mill rice, store private label 'daily rice', Whole Farm everyday rice",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Rice 1 Kg (9,800 kg, ₹6,66,397 — largest line in the lane); Rice_L (6,600 kg, ₹4,48,800); Delhi Gold Rice 1 Kg (₹42,373); 88 Rice 1 Kg (₹36,890); Haryali Rice 1 Kg (₹11,664); Gtc Parmal Rice 1 Kg (₹369)",
+      "evidence": "group 143 subgroup Rice, UnitName='Kgs' on the two loose lines; LIKE '%parmal%'"
     },
     {
       "line": "Subsidised economy rice (Bharat Rice tier)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families",
-      "examples": "NAFED Bharat Rice 5kg/10kg, NCCF/Kendriya Bhandar Bharat Rice",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%bharat%' → only an agarbatti; '%nafed%', '%nccf%' → 0 rows. No programme-tier rice or atta"
     },
     {
       "line": "Everyday basmati ('rozana' tier)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Daawat Rozana Super, Fortune Rozana Gold, India Gate Feast Rozana, Kohinoor Everyday",
-      "arySkus": 4,
-      "arySales12m": 6308.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: daawat + rozana"
+      "arySkuExamples": "1060 Rice Basmati 1 Kg (₹58,996); 1060 Rice Basmati 5 Kg (₹54,703); Daawat Rojana Basmati 1 Kg Gold (₹7,875); India Gate Rice 1Kg Rozzana (₹6,085); Daawat Rozana 1 Kg Super (₹4,658)",
+      "evidence": "group 143 subgroups Basmati Rice + Rice; LIKE '%rozana%'/'%rojana%'/'%rozzana%'"
     },
     {
       "line": "Premium aged basmati (classic / extra-long grain)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families",
-      "examples": "India Gate Classic, Daawat Devaaya, Kohinoor Super Silver, Lal Qilla",
-      "arySkus": 15,
-      "arySales12m": 34651.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: india + gate"
+      "arySkuExamples": "India Gate Basmati Rice 1Kg Classic (₹9,324); India Gate Rice 1Kg Super (₹4,170); Daawat Super Basmati 1 Kg +20% (₹3,400); India Gate Select Pure Basmati 1.2 Kg (₹320); India Gate Biryani Pure Basmati 1 Kg (₹180)",
+      "evidence": "subgroup Basmati Rice, 25 SKUs, 13 sold. 2 kg and 5 kg premium packs (India Gate Classic 2 Kg, Fortune Mogra 5 Kg) are all ₹0"
     },
     {
       "line": "Golden sella / parboiled basmati",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "India Gate Golden Sella, Daawat Biryani Basmati Sella, Kohinoor Sella",
-      "arySkus": 125,
-      "arySales12m": 298566.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'gate' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%sella%' → 0 rows anywhere; '%golden sella%' → 0. No parboiled basmati and no 25 kg institutional pack for langar/canteen biryani"
     },
     {
       "line": "Sona Masoori / Ponni / Kolam rice",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "university, staff",
-      "examples": "bb Royal Sona Masoori, Maharaja Ponni, Daawat Kolam, Karnataka Ponni",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Amul Organic Sona Masoori Rice 1 Kg (₹0, subgroup 'Bamati Rice')",
+      "evidence": "LIKE '%masoori%' → 1 SKU, zero sales and zero purchases in 12m; '%ponni%' and '%kolam%' → 0 rows"
     },
     {
       "line": "Idli / dosa rice (parboiled short grain)",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "university, staff",
-      "examples": "Pavizham/Nirapara idli rice, bb Royal Idli Rice, Anil parboiled rice",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%idli%' → only MTR/Gits/Haldiram instant mixes in General Items > Ready To Cook, no rice; '%parboiled%' → 0 rows"
     },
     {
       "line": "Broken rice (kanki / tukda chawal)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "babies, elderly, families",
-      "examples": "Loose broken rice, mill kanki, store-packed 'khichdi rice'",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%broken%', '%kanki%', '%tukda%', '%khichdi%' → 0 rice rows (only a Cerelac khichdi variant). No cheapest-calorie / baby-khichdi rice base"
     },
     {
       "line": "Brown rice / red rice / low-GI rice",
       "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff, elderly",
-      "examples": "India Gate Brown Basmati, 24 Mantra Organic Red Rice, Daawat Brown Basmati",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Daawat Brown Basmari Rice 1 Kg (₹2,440); India Gate Brown Basmati 1Kg Free Quinoa (₹1,020); India Gate Brown Basmati Rice 1Kg (₹960)",
+      "evidence": "LIKE '%brown%' in groups 110/143 — 3 SKUs, all sold; no red rice"
     },
     {
       "line": "Sooji / rava — coarse (Bombay rava)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Aashirvaad Sooji, bb Royal Bombay Rava, Rajdhani Sooji, Fortune Sooji",
-      "arySkus": 14,
-      "arySales12m": 508735.1,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'fortune' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Shakti Bhog Sooji 500 Gm (₹22,761); Rajdhani Sooji 500 Gm (₹700); Daawat Sooji 500 Gm (₹700); plus Sooji - Rm 1 Gm as a canteen BOM item",
+      "evidence": "LIKE '%sooji%' — filed under subgroup 'Maida', not its own; Silver Coin Sooji and Lmk Sooji are ₹0"
     },
     {
       "line": "Sooji — fine / chiroti rava",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families, staff",
-      "examples": "Chiroti rava, fine sooji, bb Royal Fine Sooji, Meenakshi chiroti rava",
-      "arySkus": 6,
-      "arySales12m": 24161.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'sooji' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%chiroti%', '%fine sooji%', '%rava%', '%rawa%', '%semolina%' → no fine-grade SKU; ARY carries one undifferentiated 'Sooji' grade only"
     },
     {
       "line": "Idli rava (rice rava)",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "university, staff",
-      "examples": "bb Royal Idli Rava, Nirapara Idli Rava, Anil Idli Rava",
-      "arySkus": 116,
-      "arySales12m": 175821.3,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'anil' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%idli rava%' → only Mtr Rice Rava Idli 500 Gm (an instant mix in Ready To Cook, ₹276), not idli rava flour"
     },
     {
       "line": "Bansi rava / samba wheat rava (coarse wheat rava)",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "university, staff",
-      "examples": "Bansi rava, samba godhumai rava, Meenakshi Bansi Rava",
-      "arySkus": 63,
-      "arySales12m": 336670.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'wheat' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%bansi%', '%samba%', '%godhumai%' → 0 rows"
     },
     {
       "line": "Maida (refined flour) — household pack",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Aashirvaad Maida, Rajdhani Maida, bb Royal Maida, Pillsbury Maida",
-      "arySkus": 4,
-      "arySales12m": 277325.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'aashirvaad' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Shakti Bhog Maida 500 Gm (₹7,630); Rajdhani Maida 500 Gm (₹760)",
+      "evidence": "group 110 subgroup Maida, 15 SKUs, only 2 sold. Maida 1 Kg, Raja Maida 1 Kg, Gobind Maida 1 Kg all show ₹0 POS sales despite heavy purchases — they go to the canteens as Consumption (see surprises)"
     },
     {
       "line": "Maida — bulk / bakery bag",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Mill 25 kg / 50 kg maida bag, Rajdhani institutional maida",
-      "arySkus": 13,
-      "arySales12m": 9660.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: mill"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "No SKU of 15 kg or larger exists anywhere in ARY (LIKE '%15 Kg%','%20Kg%','%25 Kg%','%30 Kg%','%50 Kg%' → only cooking oil, frozen smileys, dahi). Canteen maida is instead moved as 1 kg retail packs booked to Consumption (Raja Maida 1 Kg: ₹62,451 purchased, ₹0 sold, ~4,000 kg consumed at Ary G Canteen / Ary Lite / Ary Apple A Day)"
     },
     {
       "line": "Rice flour",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Whole Farm Premium Rice Flour, bb Royal Rice Flour, Nirapara Rice Powder",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%rice flour%', '%rice atta%', '%chawal%', '%chawl%' → 0 rows; a full sweep of every name containing 'flour'/'atta'/'aata' across all 93 groups returns no rice flour. A must-have gap in a state where chilra/pathande are local staples"
     },
     {
       "line": "Cornflour / corn starch (and arrowroot)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Brown &amp; Polson Corn Flour, Weikfield Corn Flour, Blue Bird, ararot powder",
-      "arySkus": 177,
-      "arySales12m": 3039900.58,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'blue' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Brown & Polson Cornflour 100 Gm (₹1,146); Sunil Ararot 1 Kg (₹120 POS + ~700 kg bought and consumed by canteens); Weikfield Cornflour 100G (₹0); Cm Ararot 1 Kg / Ararot 1 Kg (₹0)",
+      "evidence": "LIKE '%cornflour%' (General Items > Cornflour) + '%ararot%' (group 143 subgroup Ararot); Stock buckets show the Ararot volume as Cons at Ary G Canteen"
     },
     {
       "line": "Besan (gram flour)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Rajdhani Besan, Tata Sampann Besan, Aashirvaad Besan, loose mill besan",
-      "arySkus": 4,
-      "arySales12m": 277325.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'aashirvaad' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Besan 1Kg (₹39,001); Shakti Bhog Chana Besan 500 Gm (₹37,964); Besan_L loose 300 kg (₹28,740); Aashirwad Chana Besan 500 Gm (₹9,505); Shakti Bhog Besan 1Kg (₹1,038)",
+      "evidence": "group 110 subgroup Besan, 12 SKUs, 6 sold; loose Kgs SKU present; note misspelling 'Fortune Beson 500Gm' (₹0)"
     },
     {
       "line": "Sattu (roasted chana / jau sattu)",
-      "state": "dormant",
-      "essentiality": "should-have",
-      "cohort": "university, students, staff",
-      "examples": "Tata Sampann Sattu, Bharat Sattu, Manna Sattu, local roasted-chana sattu",
-      "arySkus": 5,
-      "arySales12m": 0.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'sampann' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "covered",
+      "arySkuExamples": "Gm Foods Kala Chana Sattu 500 Gm (6 packs, ₹588, last sale 2025-09-17)",
+      "evidence": "LIKE '%sattu%' → exactly 1 SKU in 21.5k. Technically covered, effectively absent — one facing, six packs a year, in a township with Bihar/UP/Jharkhand students"
     },
     {
       "line": "Chana atta / missi atta (whole bengal gram flour blend)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "elderly, staff",
-      "examples": "Rajdhani Chana Atta, Aashirvaad Missi Atta, Patanjali Chana Atta",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%chana atta%', '%missi%' → 0 flour rows (only Bonn Missi Bread). Kala Chana_L (540 kg, ₹44,080) is whole black gram, not flour"
     },
     {
       "line": "Soya flour / soya atta",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "university, staff",
-      "examples": "Nutrela Soya Atta, Patanjali Soya Atta, Fortune Soya Chunks flour",
-      "arySkus": 5,
-      "arySales12m": 506335.1,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: fortune + soya"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%soya%' returns 78 rows — oil, chunks, sauce, milk, chaap — and no soya atta/flour"
     },
     {
       "line": "Makki ka atta (maize flour)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Rajdhani Makki Atta, Aashirvaad Makai Atta, local HP maize flour, loose makki",
-      "arySkus": 3,
-      "arySales12m": 27443.82,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: makki + atta"
+      "arySkuExamples": "Lmk Makki Atta (502.67 kg, ₹23,544); Makki Atta 1 Kg (₹3,900); Makki Atta - Rm 1 Gm (canteen BOM)",
+      "evidence": "LIKE '%makki%'; also 'Makki' fresh corn ₹16,300 in group Vegetable. Note last sale of Makki Atta 1 Kg was 2025-11-21 and Lmk Makki Atta 2026-05-02 — a winter-only line, correct for the season but check Nov restock"
     },
     {
       "line": "Bajra atta (pearl millet flour)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families, elderly",
-      "examples": "Goshudh Bajra Atta, Organic Tattva Bajra Flour, 24 Mantra Bajra Atta, loose bajra grind",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Bajra Atta 500 Gm (₹4,725, last sale 2026-08-21); Bajra 250 Gm whole (₹200); Gm Foods Bajra Atta 500 Gm (₹0)",
+      "evidence": "LIKE '%bajra%' in group 110"
     },
     {
       "line": "Jowar atta (sorghum flour)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, elderly",
-      "examples": "Tata Simply Better Sprouted Jowar Atta, Organic Tattva Jowar, KEW Miller Jowar",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Zowar Atta 250 Gm (₹5,384); Zowar 250 Gm whole (₹400)",
+      "evidence": "LIKE '%jowar%' returns only Kurkure snacks — the atta is spelt 'Zowar', found only via LIKE '%zowar%'"
     },
     {
       "line": "Ragi / kodra atta (finger millet flour)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "babies, elderly, staff",
-      "examples": "Organic Tattva Ragi Flour, Manna Ragi, KEW Miller Ragi, local kodra grind",
-      "arySkus": 1,
-      "arySales12m": 5585.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: ragi + atta"
+      "arySkuExamples": "Ragi Atta 500 Gm (₹5,585, last sale 2026-08-17)",
+      "evidence": "LIKE '%ragi%' in group 110; '%kodra%'/'%kodo%' → 0 rows, so the local Kullu/HP kodra grain is absent"
     },
     {
       "line": "Jau / barley atta and barley grain",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff, families, elderly",
-      "examples": "Radha Govind Organic Jau Atta, Dinesh Flour Mills Jau, local barley flour, sattu-jau",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Jau Atta 500 Gm Barley Flour (11 packs, ₹715); Barley Whole Jau 500 Gm (3 packs, ₹150)",
+      "evidence": "LIKE '%jau%' + '%barley%'. Both present and both barely moving — one facing each"
     },
     {
       "line": "Buckwheat flour (kuttu / ogla / phaphar)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Manan Foods Kuttu Atta, Organic Mandya Kuttu, local ogla-phaphar grind",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Amar Kuttu Atta 500 Gm (46 packs, ₹2,850, last sale 2026-04-17); Amar Kuttu Atta 250 Gm (₹0)",
+      "evidence": "LIKE '%kuttu%' → 2 SKUs; '%ogla%'/'%phaphar%' → 0 rows"
     },
     {
       "line": "Singhara atta (water chestnut flour)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Manan Foods Singhara Atta, Rajdhani Singhara, local vrat-atta packs",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Singhara Atta 250 Gm (₹0 in 12m, ₹0 purchased)",
+      "evidence": "LIKE '%singhara%' → the atta SKU plus fresh 'Singhara' in group Fruits (₹505). Listed but not stocked through two Navratris"
     },
     {
       "line": "Rajgira / amaranth flour",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "all",
-      "examples": "Amwel Rajgira Atta, Organic Tattva Rajgira, 24 Mantra Amaranth Flour",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%rajgira%', '%rajgeera%', '%amaranth%' → 0 rows"
     },
     {
       "line": "Multi-millet blend atta",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff, families",
-      "examples": "Aashirvaad Multi Millet Mix, Earthen Story Multigrain Atta, Slurrp Farm millet atta",
-      "arySkus": 1,
-      "arySales12m": 43185.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: aashirvaad + multi"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%millet%' → biscuits, bread, ice cream, muesli and one dormant Nestle Masala Millet sachet; no multi-millet atta"
     },
     {
       "line": "Whole millet grains (ragi, bajra, jowar, kodo, samak)",
       "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "families, staff, elderly",
-      "examples": "Loose local millets, 24 Mantra whole millets, Dinesh Flour Mills whole grain",
-      "arySkus": 9,
-      "arySales12m": 10525.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'mantra' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Zowar 250 Gm (₹400); Bajra 250 Gm (₹200); Barley Whole Jau 500 Gm (₹150)",
+      "evidence": "group 110 subgroup Atta, whole-grain 250 g packs. Total ₹750/yr — three token facings, no ragi or kodo grain"
     },
     {
       "line": "Poha — thick / Indori",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Tata Sampann Thick Poha, Fortune Indori Poha, bb Royal Thick Poha, loose thick poha",
-      "arySkus": 14,
-      "arySales12m": 508735.1,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'fortune' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Jadugar Poha 500Gm (₹24,535); Shakti Bhog Poha 500Gm (₹9,400)",
+      "evidence": "group 143 subgroup Poha, 11 SKUs, only 2 sold (Oraya, Tata Sampurna, Rajdhani, Savour, MTR all ₹0)"
     },
     {
       "line": "Poha — thin / nylon",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "bb Royal Nylon Poha 500 g, Suraj Thin Poha, local nylon poha",
-      "arySkus": 119,
-      "arySales12m": 195175.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'thin' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%nylon%' → only Nylon Rope; '%thin%' returns no poha. ARY carries one undifferentiated poha grade — no chivda/namkeen thin poha"
     },
     {
       "line": "Red rice / brown poha",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff, families",
-      "examples": "Organic Tattva Red Rice Poha, Slurrp Farm brown poha, high-fibre poha",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "Full LIKE '%poha%' sweep (16 rows) shows no red/brown/high-fibre variant"
     },
     {
       "line": "Murmura / puffed rice (kurmura)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "students, all",
-      "examples": "Loose murmura, bb Royal Murmura, Haldiram's Murmura",
-      "arySkus": 7,
-      "arySales12m": 20040.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: murmura"
+      "arySkuExamples": "Sunil Murmura 400 Gm (444 packs, ₹17,760); Kheel 150 Gm (₹900); Gokul / Health Mark / Raja Murmura and Kheel 500 Gm all ₹0",
+      "evidence": "group 143 subgroup Murmura + LIKE '%kheel%'"
     },
     {
       "line": "Dalia / broken wheat (fada, lapsi)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "babies, elderly, families, students",
-      "examples": "Aashirvaad Daliya, Tata Sampann Dalia, Rajdhani Dalia, loose dalia",
-      "arySkus": 4,
-      "arySales12m": 81400.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: dalia"
+      "arySkuExamples": "Rajdhani Daliya 1 Kg (3,450 kg, ₹1,26,453); Dalia_L loose (2,200 kg, ₹81,400); Shakti Bhog Daliya 500 Gm (₹8,762)",
+      "evidence": "subgroup Daliya + LIKE '%dalia%'. Dalia_L is misfiled in product group 'Others → Custard' and would be invisible to any group-level staples report"
     },
     {
       "line": "Sabudana / sago",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "bb Royal Sabudana, Rajdhani Sabudana, nylon sabudana, loose sago",
-      "arySkus": 6,
-      "arySales12m": 123984.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rajdhani' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Lakshmi Sabudana 200Gm (232 packs, ₹5,310); Sabu Dana 100 Gm (₹240)",
+      "evidence": "LIKE '%sabudana%' + '%sabu dana%'; '%sago%' → 0 rows. Sabu Dana 50 Gm Gond Katira and all 5 Sunil Sabu Dana SKUs are ₹0"
     },
     {
       "line": "Samak / barnyard millet rice (vrat ke chawal)",
       "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "all",
-      "examples": "Samak chawal, Manan Foods Vrat ke Chawal, barnyard millet",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Amar Samak Rice 500 Gm (56 packs, ₹3,980, last sale 2026-06-21)",
+      "evidence": "LIKE '%samak%' → 1 SKU, sells; '%barnyard%' → 0 rows"
     },
     {
       "line": "Vermicelli / seviyan (roasted and plain)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Bambino Vermicelli, MTR Roasted Vermicelli, Anil Vermicelli, seviyan for kheer",
-      "arySkus": 5,
-      "arySales12m": 24345.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: bambino + vermicelli"
+      "arySkuExamples": "Bambino Vermicelli 200 Gm (₹16,040); Bambino Vermicelli 450 Gm (₹8,305); Bambino Seviyan 70G Thin&Roasted (₹3,540); Savour Vermicelli 150Gm (₹1,200); Seviyan 1 Kg (₹160)",
+      "evidence": "LIKE '%vermicelli%'/'%seviyan%'/'%sewian%' — lives in General Items > Vermicelli, outside both staples groups; 17 of 24 SKUs dormant"
     },
     {
       "line": "Oats — plain rolled / quick cooking",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "university, staff, elderly",
-      "examples": "Quaker Oats, Saffola Oats, Bagrry's Rolled Oats, True Elements",
-      "arySkus": 9,
-      "arySales12m": 6622.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: quaker + oats"
+      "arySkuExamples": "Kelloggs Oats 400 Gm (₹5,319); Kelloggs Oats 425 Gm (₹4,332); Kelloggs Oats 200 Gm (₹3,135)",
+      "evidence": "LIKE '%oats%' sweep — plain oats sit in General Items > Ready Food, while group 143's 'Oats' subgroup (22 SKUs) is almost all flavoured sachets, 11 of them dormant; Saffola Oats 400/500 g Natural both ₹0"
     },
     {
       "line": "Sprouted ragi / sathu maavu baby porridge flour",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "babies",
-      "examples": "Slurrp Farm Sprouted Ragi Cereal, Manna Health Mix, Healthy Panda Sathu Maavu, The Millet Store porridge mix",
-      "arySkus": 6,
-      "arySales12m": 5585.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'ragi' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%sathu%', '%health mix%', '%porridge%', '%nachni%', '%slurrp%', '%manna%', '%weaning%' → 0 rows. Only tinned Cerelac (34 SKUs, 6 sold, ₹3,878 total) serves babies — no sprouted-ragi weaning flour, despite married staff quarters and no shop for 30-50 km"
     },
     {
       "line": "Gluten-free atta blend",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff, families",
-      "examples": "Rebalance GF atta, Amwel gluten-free flour, jowar-ragi-rice GF blends",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%gluten%' → 0 rows anywhere in 21.5k SKUs"
     },
     {
       "line": "Institutional atta bag (25-30 kg)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Aashirvaad Atta Institutional Pack 25 kg, mill 30 kg atta bag, Shakti Bhog bulk",
-      "arySkus": 3,
-      "arySales12m": 271050.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: aashirvaad + atta"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "No SKU ≥15 kg exists in the whole catalogue. Largest atta pack is 10 kg (Aashirvaad 10 Kg, ₹74,235). Canteen/mess atta moves as 1 kg packs and loose kg transferred and booked as Consumption at Ary G Canteen — there is no sellable institutional bag or quotation SKU"
     },
     {
       "line": "Institutional rice bag (25-26 kg)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Mill permal 25 kg, Maharaja Ponni 26 kg, sella basmati 25 kg institutional",
-      "arySkus": 106,
-      "arySales12m": 1419620.55,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'rice' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "Largest rice pack is India Gate Mini Mogra 10 Kg (4 bags, ₹2,520). No 25/26 kg SKU; the loose Rice 1 Kg / Rice_L kg channel does the bulk work instead"
     },
     {
       "line": "Wheat bran (chokar) and mill by-products",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "families, staff, elderly",
-      "examples": "Loose chokar, mill bran, bran-added atta",
-      "arySkus": 211,
-      "arySales12m": 1833448.78,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'atta' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "LIKE '%bran%' → only rice-bran oil and bran bread; '%chokar%'/'%chokkar%' → 0 rows"
     }
   ],
-  "mustHaveMissing": [],
-  "surprises": []
+  "surprises": [
+    "Loose / repacked by-the-kilo is the whole category, not a sideline: Atta 1 Kg (12,500 kg @ exactly ₹40/kg), Rice 1 Kg (9,800 kg @ ₹68/kg), Rice_L, Atta_L, Dalia_L and Besan_L together are ₹20.64 L of the lane's ₹32.93 L — 63% of 12-month sales — sold in Kgs out of the 'Basement' warehouse. The ideal list called loose atta 'highest-margin line'; at ARY it is simply the business.",
+    "Nothing in ARY's 21,500 SKUs is packed 15 kg or bigger. The institutional atta/rice/maida bag does not exist as a sellable item. Instead the canteens are fed 1 kg retail packs transferred in and booked as internal Consumption: Raja Maida 1 Kg was bought at ₹62,451 (1,960 kg) with ₹0 POS sales, and the Stock buckets show ~4,000 kg consumed at Ary G Canteen / Ary Lite / Ary Apple A Day. Same shape for Sunil Ararot 1 Kg (₹31,900 bought, ₹120 sold), Gobind Maida 1 Kg (₹4,482 / ₹0) and Yumirra Pasta 5 Kg (₹10,724 / ₹0).",
+    "Therefore a sales-only read of this category is wrong: four of the biggest purchase lines look like dead stock and are actually the mess kitchen. Any assortment decision here has to read Stock.Cons, not just SaleDetail.",
+    "Dalia_L (2,200 kg, ₹81,400 — the lane's 5th biggest line) is filed under product group 'Others → subgroup Custard', so it is invisible to any report grouped by 'Rice & Other Grains'. Its packed sibling Rajdhani Daliya 1 Kg (₹1,26,453) is correctly filed.",
+    "Group 143 'Rice & Other Grains' is a dumping ground: it holds 15 pasta SKUs, Jivo chia/flax/pumpkin/basil/quinoa seeds, sliced black olives, green cardamom, til/kalonji/alsi, mixed dal and kulath dal — roughly 28 SKUs that are neither rice nor a grain, and they carry ₹1.0 L+ of the group total.",
+    "Spelling breaks search, and one misspelling hides the only SKU of its kind: the sole jowar atta is 'Zowar Atta 250 Gm' (LIKE '%jowar%' returns Kurkure snacks only). Also 'Bamati Rice' and an empty 'Miada' subgroup beside 'Maida', 'Pulses & Lenitils', 'Fortune Beson', 'Daawat Basmari'.",
+    "A 57% dormant tail: 138 of 242 SKUs in groups 110+143 had zero sales in 12 months — all 7 Patanjali attas, both Amul Organic attas, Samrat, Purn Adhaar, Umang Bhog, Silver Coin, 9 of 11 poha SKUs, 11 of 22 oats SKUs, 10 of 15 maida SKUs. The listed catalogue is roughly twice the size of the real one.",
+    "The fasting-flour set is half-built in a place where it should be strongest: kuttu sells (₹2,850) and samak rice sells (₹3,980), but singhara atta has sat at zero for 12 months with zero purchases, and rajgira does not exist. The vrat customer is demonstrably real and is being served incompletely.",
+    "Sattu is one SKU that sold six packs in a year (last 2025-09-17) and chana/missi atta does not exist at all — so both the Bihar/UP student summer-drink line and the traditional diabetic roti line are effectively absent, while no branded diabetic atta exists to substitute.",
+    "No chakki or grinding service SKU exists anywhere, and no whole wheat grain either — so ARY buys pre-ground loose atta and carries the full hill-humidity spoilage risk on flour rather than holding grain. That is the single largest structural gap the ideal list identified, and the data confirms it."
+  ]
 }

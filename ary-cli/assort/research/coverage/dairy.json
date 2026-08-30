@@ -1,585 +1,349 @@
 {
   "category": "dairy",
-  "categoryName": "Dairy — milk, curd, paneer, butter, cheese, cream, flavoured & UHT milk",
-  "windowMonths": 12,
-  "minSalesFloorInr": 5000.0,
-  "method": "name-match across all product groups (ARY's category tree is unreliable for this question); terms from the researcher's brand examples plus distinctive nouns, generic retail words dropped; a line counts as covered only above Rs 5,000 of 12-month sales",
-  "coveragePct": 34.9,
-  "commodityOnlyPct": 62.8,
+  "aryGroupsChecked": [
+    "193 Dairy Products (subgroups 408 Packed Milk, 1075 Loose Paneer, 1074 Packed Lassi, 1073 Fresh Cream)",
+    "113 Confectionery (327 Butter & Cheese, 917 Curd, 772 Sweets, 397 Cream Roll, 1081 Milky Bar, 517/934 Ice Cream)",
+    "120 Drinks (850 Flavoured Milk, Cold Drinks, Cold Drinks Soft)",
+    "130 General Items (1008 Milk Powder, Ready Food, Ready To Cook, 326 Peanut Butter)",
+    "140 Oil & Ghee (475 Ghee)",
+    "122 Edible Oil & Ghee",
+    "171 Mini Meals (851 Milk — incl. Loose Milk, Milk_Z)",
+    "172 Others (1043 Curd/Raita, 940 Lassi)",
+    "198 Milk Shake (1080 Maxum Java Coffee)",
+    "168 Cheese & Sandwich (910)",
+    "126 Food Supplement (Lactogen, Cerelac, Health Drink)",
+    "145 Soft Drinks (1044 Packed Juice)",
+    "128 Frozen",
+    "+ whole-catalogue name sweep across all 93 groups (~120 name variants: milk/doodh/toned/taaza/moti/verka/milkfed/gold/full cream/cow milk/shakti/slim/skimmed/uht/tetra/a2/lactose, curd/dahi/raita/yog/greek/epigamia/probiotic/yakult/mishti/misti, paneer/tofu/cheese/chese/mozz/cheddar/parmesan/feta/gouda/emmental/cream cheese/spread/cube/block, butter/makhan/malai/margarine/nutralite/chiplet, ghee, cream/whip/topping, khoya/khova/mawa/shrikhand/kalakand/rabri/rabdi/basundi/payasam/rasgulla/gulab jamun, condens/milkmaid/mithai, whiten/creamer/powder, lassi/buttermilk/chaach/chach/shake/cold coffee/smoodh/sofit, lactogen/nan/amulspray/dexolac/similac/aptamil/enfamil/farex/nusobee/cerelac/formula/infant/protein)",
+    "StockTransferHeader/Detail 12m (to catch canteen-consumed SKUs with zero retail sales)"
+  ],
+  "aryActiveSkusInCategory": 205,
+  "arySales12mInr": 4477909,
+  "coveragePct": 58.1,
   "lines": [
     {
       "line": "Fresh toned milk pouch (the daily workhorse)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Taaza, Mother Dairy Toned, Verka Standard, HP Milkfed 'Him'",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Amul Moti Milk 500 Ml (7,906 u / ₹2,57,549 — biggest packed-milk SKU); Verka Milk 450 Ml (2,391 u / ₹78,159); Amul Moti Milk 130 Ml (810 u / ₹8,100); Verka Milk 130 Ml (150 u / ₹1,500)",
+      "evidence": "products list --group 193 (subgroup 408 Packed Milk) + 12m SaleDetail join; BrandMaster confirms 0018 = brand 'Amul Moti' (Amul's toned pouch). Amul Moti also 8,095 u transferred to counters in 12m."
     },
     {
       "line": "Fresh full-cream milk pouch",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "families",
-      "examples": "Amul Gold, Mother Dairy Full Cream, Verka Full Fat, Nandini Gold",
-      "arySkus": 2,
-      "arySales12m": 29120.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: verka + fat"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "SELECT COUNT(*) FROM ProductMaster WHERE ProductName LIKE '%full cream%' → 0 rows. No Amul Gold / Verka Full Fat / Mother Dairy Full Cream anywhere in 19,481 SKUs. 'Gold' (164 hits) and 'Shakti' (19) are all chocolate, biscuits and non-dairy."
     },
     {
       "line": "Fresh cow milk pouch (single-toned / 'gauri')",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "families",
-      "examples": "Amul Cow Milk, HP Milkfed 'Him Gauri', Mother Dairy Cow Milk",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Verka Cow Milk 1 Litre (08W1) — mis-filed under Oil & Ghee > Ghee, 0 sales in 12m",
+      "evidence": "ProductName LIKE '%cow milk%' → exactly 1 SKU; 12m qty 0, val 0. No HP Milkfed 'Him Gauri' (LIKE '%milkfed%' → 0, 'Him ' → 1 non-dairy)."
     },
     {
       "line": "Double-toned / slim / skimmed milk",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff",
-      "examples": "Amul Slim n Trim, Mother Dairy Double Toned, Nestlé a+ Slim",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Today Double Toned Milk 500 Ml (08OX) 0 sales; Amul Moti Lite Milk 130 Ml (0GIX) 0; Mother Dairy Milk 500 Ml Low Fat (0AE6) 0",
+      "evidence": "subgroup 408 listing + name sweep ('double toned' → 1 SKU, 'slim' → 5 all non-dairy, 'low fat' → 1 milk SKU). All three listed, none sold in 12m, none transferred."
     },
     {
       "line": "Buffalo / high-fat standardised milk (for dahi, paneer, kheer)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families",
-      "examples": "Amul Shakti, local buffalo milk, Verka Standardised",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Hf Super Milk 400 Ml (0EFW, brand 'Super') — 912 u / ₹27,020 (₹29.6 per 400 ml = ₹74/L, high-fat pricing); 986 u transferred to counters",
+      "evidence": "subgroup 408 + BrandMaster. NOTE: 'Hf' is read as High Fat from the price point and the sibling 'Verka High Fat' whitener naming — the label itself was not verified, so treat as ~80% confidence. No 5-10 L can SKU; Verka Milk 6 Kg (0ARI) exists with 0 sales and 0 transfers."
     },
     {
       "line": "Loose / raw milk counter from local Baru Sahib & Rajgarh producers",
-      "state": "dormant",
-      "essentiality": "should-have",
-      "cohort": "families",
-      "examples": "Local cattle-rearer supply, HP Milkfed loose cow milk (₹51/L, 2026)",
-      "arySkus": 3,
-      "arySales12m": 0.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'supply' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "covered",
+      "arySkuExamples": "Loose Milk (07M9, brand 'Ary') 13,605 u / ₹6,39,444 @ ₹47/L; Milk_Z (0GDA, brand 'Ary') 8,127 u / ₹3,81,969 @ ₹47/L — both sold out of the Basement warehouse",
+      "evidence": "12m SaleDetail by warehouse (WarehouseMaster join). Loose milk = ₹10.21 L, the second-largest dairy line after loose ghee. But only ~21,700 L/yr ≈ 60 L/day for 5,000 residents (see surprises)."
     },
     {
       "line": "UHT tetra toned milk — the shelf-stable monsoon buffer",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Taaza tetra, Nandini tetra, Nestlé a+, Mother Dairy UHT",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Amul Taaza Milk 1 Ltr (0017) — 4 units / ₹308 in 12 months (₹77/u = tetra price). Amul Taaza Milk 200Ml (0CQ6) 0; Ccd Toned Milk 1Ltr (0A09) 0; Verka Toned Milk 1 Ltr / 500 Ml 0",
+      "evidence": "subgroup 408 + 12m sales. Technically 'covered' by the sold-in-12m rule, but 4 units a year is functionally absent — there is no ambient milk buffer for a Jul-Sep road cut. 'uht' and 'tetra' name sweeps → 0 SKUs."
     },
     {
       "line": "UHT full-cream / premium tetra milk",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff",
-      "examples": "Amul Gold tetra, Nestlé a+ Grade A, Pride of Cows",
-      "arySkus": 31,
-      "arySales12m": 39301.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: amul + gold"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "No full-cream SKU of any format ('full cream' → 0). No Nestlé a+, no Pride of Cows, no 6-pack case SKU."
     },
     {
       "line": "Single-serve plain fortified milk for children (200 ml)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "students",
-      "examples": "Nestlé a+ 200 ml, Amul Taaza 200 ml tetra, Mother Dairy 200 ml",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Amul Moti Milk 130 Ml (810 u / ₹8,100 @ ₹10); Verka Milk 130 Ml (150 u / ₹1,500 @ ₹10)",
+      "evidence": "subgroup 408 12m sales. Format is a ₹10 130 ml POUCH, not a 200 ml tetra-with-straw: the tetra SKU (Amul Taaza 200 Ml) has 0 sales, and no SKU name mentions fortification."
     },
     {
       "line": "A2 / desi-cow milk (premium)",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff",
-      "examples": "Sid's Farm A2, Akshayakalpa Organic, local Sahiwal/Gir A2",
-      "arySkus": 97,
-      "arySales12m": 433028.4,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: gir"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "ProductName LIKE '%a2 %' → 0; no Sid's Farm / Akshayakalpa / Sahiwal / Gir SKU. Only cow-milk SKU at all is the dormant Verka Cow Milk 1 Litre."
     },
     {
       "line": "Lactose-free milk & lactose-free curd",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Amul Lactose Free Milk, Epigamia lactose-free, Nestlé a+ Lactose Free",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "ProductName LIKE '%lactose%' → 1 hit only: Amul Lactose Free Vanilla 125 Ml (0EZU) — an ICE CREAM in Confectionery > Ice Cream, 72 u / ₹2,520. No lactose-free milk or curd."
     },
     {
       "line": "Institutional bulk milk for the two canteens, mess & langar",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "500 ml pouch crates (40-50/crate), 1 L pouches by the case, 20-40 L chilled cans",
-      "arySkus": 17,
-      "arySales12m": 40070.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: case"
+      "arySkuExamples": "Amul Moti Milk 500 Ml — 8,095 units moved on 38 stock-transfer lines to the counters in 12m; Loose Milk 7,133 L on 244 transfer lines; Verka Milk 450 Ml 2,651 u on 25 lines",
+      "evidence": "StockTransferDetail 12m join. Runs on 500 ml pouch cases, not cans: the only bulk-can SKU (Verka Milk 6 Kg) has 0 sales and 0 transfers, and no 20/40 L can SKU exists. Volume is far below 5,000-resident chai demand (see surprises)."
     },
     {
       "line": "Set curd / dahi retail cup",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Masti Dahi, Mother Dairy Classic Dahi, Verka Dahi, Milky Mist Curd",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Super Dahi 400Gm (3,393 u / ₹1,28,934); Super Dahi 200Gm (4,425 u / ₹88,500); Amul Masti Dahi 400Gm (₹56,791); Amul Masti Dahi 200 Gm (₹36,769); Dahi_Z (3,114.7 / ₹2,25,575); Amul Dahi Creamy & Tasty 180 Gm (₹1,800)",
+      "evidence": "subgroup 917 Curd + 1043 Curd/Raita, 12m sales. Curd is the healthiest-covered dairy line after milk and ghee: ₹5.4 L across cups."
     },
     {
       "line": "Curd pouch / tub 1 kg (family pack)",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "families",
-      "examples": "Amul Masti 1 kg, Mother Dairy 1 kg pouch, Milky Mist 1 kg",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Amul Masti Dahi 1Kg (0DVR) — listed, 0 sales and 0 transfers in 12m",
+      "evidence": "subgroup 917 listing. The largest curd pack that actually moves is 400 g; no 1 kg pouch/tub sells to married-staff quarters."
     },
     {
       "line": "Bulk dahi bucket / matka for canteens",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Masti Curd 5 kg bucket, Ananda Dahi Matka 5 kg, Milky Mist 5 kg, Amul Lite Dahi Matka 15 kg",
-      "arySkus": 7,
-      "arySales12m": 96080.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: amul + masti"
+      "arySkuExamples": "Amul Matka Dahi 5Kg (0D9C) ₹17.50 retail + 5 units transferred; Super Matka Dahi 5Kg (0CVF) 16 buckets on 15 transfer lines; Amul Matka Dahi 15Kg (0D9D) 0",
+      "evidence": "subgroup 917 + StockTransferDetail. Only live via transfers to the canteens — a sales-only read would call all three dead. Volume is tiny (21 buckets/yr) for two canteens plus a mess."
     },
     {
       "line": "Probiotic / low-fat curd",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "elderly",
-      "examples": "Mother Dairy b-Activ Probiotic Dahi, Nestlé a+ Dahi, Amul Probiotic Dahi",
-      "arySkus": 2,
-      "arySales12m": 19090.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: amul + probiotic"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'probiotic' → 2 hits, both Amul Chocobar Probiotic ICE CREAM; no b-Activ, no Nestlé a+ Dahi, no Amul Probiotic Dahi. 'low fat' → one milk SKU only. Healthy Way Dahi 170Gm (₹100) is a plain dahi, not a probiotic claim."
     },
     {
       "line": "Greek / strained high-protein yogurt (plain)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "university",
-      "examples": "Epigamia Natural Greek Yogurt, Milky Mist Greek Yogurt, Amul High Protein Yogurt",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'greek' → 0 rows. 'epigamia' → 0. 'yog' matches only yoga mats and Maha Yogi agarbatti. Zero yogurt SKUs of any kind in the catalogue."
     },
     {
       "line": "Flavoured fruit yogurt cups",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "students",
-      "examples": "Epigamia (mango, strawberry, blueberry), Milky Mist Fruit Yogurt, Nestlé Fruit Yogurt",
-      "arySkus": 6,
-      "arySales12m": 42185.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: blueberry"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "Same sweep — no yogurt SKU exists at all, branded or loose; no Milky Mist, no Nestlé fruit yogurt."
     },
     {
       "line": "Kids' single-serve dahi / mini yogurt (80-100 g)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "students",
-      "examples": "Mother Dairy Mishti Doi 85 g, Amul Masti 100 g, Milky Mist mini cups",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Amul Masti Dahi 85 Gm (252 u / ₹2,520); Super Dahi 100Gm (80 u / ₹800). Dormant siblings: Maklife Dahi 85 Gm, Today Dahi 75 Gm, Metro Dahi 180G",
+      "evidence": "subgroup 917, 12m sales. Thin — ₹3,320 a year across a 5,000-person campus with a 5-18 residential school."
     },
     {
       "line": "Mishti doi / sweetened set curd",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "all",
-      "examples": "Mother Dairy Misti Doi 400 g, Milky Mist Mishti Doi, Amul Mishti Doi",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'mishti' → 0, 'misti' → 0. No Mother Dairy Misti Doi / Milky Mist / Amul mishti doi."
     },
     {
       "line": "Shrikhand / kalakand / dairy dessert cups",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "all",
-      "examples": "Amul Shrikhand (elaichi, kesar, mango), Milky Mist Shrikhand, Vadilal Shrikhand",
-      "arySkus": 45,
-      "arySales12m": 77080.85,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: kesar"
+      "state": "dormant",
+      "arySkuExamples": "Amul Shrikhand 200Gm Badam Pista (0CQ9) — mis-filed under Drinks > Flavoured Milk, 0 sales in 12m",
+      "evidence": "'shrikhand' → 1 SKU, 0 sales; 'kalakand' → 0. The occasion demand is served by the store's own counter mithai instead (Khoya Burfi ₹23,750; Milk Cake ₹10,875; Desi Ghee Pinni ₹2,600) — different line."
     },
     {
       "line": "Ready-to-eat tinned / tetra dairy sweets",
       "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "all",
-      "examples": "Haldiram's & Bikano Rasgulla/Gulab Jamun tins, Amul Rabri, Milky Mist Payasam, Vadilal Basundi",
-      "arySkus": 13,
-      "arySales12m": 49113.1,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: gulab + jamun"
+      "arySkuExamples": "Haldiram Rasgulla 1 Kg (069I) 12 u / ₹2,640; Mtr Gulab Jamun 1Kg (09ZW) 8 u / ₹2,160; Rabdi 1Kg (0FOH) 1 u / ₹500. Dormant: Haldiram Gulab Jamun 1Kg, Haldiram Rasgulla 1Kg (08L2), Amul Gulab Jamun 500Gm, Amul Rabdi 85 Gm, MTR Dessert Time tins",
+      "evidence": "name sweep rasgulla/gulab jamun/rabri/rabdi/basundi/payasam + 12m sales. Live but shallow: 21 tins a year, and 6 of 9 listed SKUs are dead."
     },
     {
       "line": "Salted buttermilk / chaach",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Masti Spiced Buttermilk, Mother Dairy Pudina Chaach, Verka Chaach, Milky Mist Buttermilk",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Verka Lassi Namkeen 200Ml (135 u / ₹2,700); Amul Buttermilk 200 Ml Spiced (76 u / ₹1,520). Dormant: Amul Spiced Buttermilk 180 Ml, Cream Bell Tadka Chaach 125 Ml, canteen Namkeen Lassi / Namkeen Lassi Gc",
+      "evidence": "subgroup 1074 Packed Lassi + 'buttermilk'/'chaach' sweep, 12m sales. ₹4,220/yr total — the ₹10-15 highest-frequency student impulse point is essentially not being worked."
     },
     {
       "line": "Sweet lassi / mango lassi",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Lassi (sweet, rose, kesar), Mother Dairy Lassi, Verka Lassi, Milky Mist Lassi",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Amul Sweet Lassi 250 Ml (1,023 u / ₹25,575); Amul Lassi 200 Ml (1,130 u / ₹16,950); Britannia Sweet Lassi 180 Ml (272 u / ₹5,590); Britannia Mango Lassi 180 Ml (90 u / ₹2,250)",
+      "evidence": "subgroup 1074 + Drinks > Cold Drinks, 12m sales. 1 L family packs (Amul Sweet Lassi 1 Ltr, 1 Ltr Mango, Verka Sweet Lassi) are all dormant — only single-serve moves."
     },
     {
       "line": "Protein-fortified dairy drinks (lassi, buttermilk, shakes)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "university",
-      "examples": "Amul High Protein Lassi / Buttermilk, Epigamia Protein Shake, Amul Protein Milk",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'protein' sweep → shampoo, muesli, one Rite Bite bar and Complan Milk Protein 500 Gm (a health-drink powder). No Amul High Protein Lassi/Buttermilk/Milk, no Epigamia protein shake. The fastest-growing premium dairy shelf in India, aimed squarely at an 18-25 university cohort, is absent."
     },
     {
       "line": "Flavoured milk — chocolate, badam, rose, kesar, elaichi",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "students",
-      "examples": "Amul Kool (Kesar, Badam, Chocolate), Cavin's, Hershey's Milkshake, Mother Dairy Flavoured Milk",
-      "arySkus": 3,
-      "arySales12m": 8400.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: flavoured + milk + chocolate"
+      "arySkuExamples": "Verka Pio Elachi 180Ml (₹21,175), Butterscotch (₹12,025), Chocolate (₹10,675), Pista (₹10,325), Badam (₹10,150); Cream Bell Kesar Badam 200Ml (₹13,760); Amul Kool Elaichi 180 Ml (₹10,830); Smoodh 150 Ml ×3 (₹24,600); Amul Kool 200Ml Kesar (₹6,300)",
+      "evidence": "subgroup 850 Flavoured Milk (47 SKUs) 12m sales ≈ ₹1.4 L — the best-covered branded dairy line. But 33 of the 47 SKUs sold zero (Gopaljee ×5, Mother Dairy ×3, Britannia ×3, most Amul Kool and Cream Bell shakes)."
     },
     {
       "line": "Cold coffee / milkshake RTD",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "university",
-      "examples": "Amul Kool Cafe, Cavin's Milkshake (Badam, Rajbog, Rabri), Nescafé RTD, Amul Kool Milk Shake",
-      "arySkus": 8,
-      "arySales12m": 17130.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: amul + kool"
+      "arySkuExamples": "Amul Badam Shakers 200 Ml (89 u / ₹4,750); Cream Bell Maxum Java Coffee Milk Shake 180 Ml (120 u / ₹3,600); Cream Bell Milk Shake 200 Ml Chocolate (120 u / ₹3,600); Hershey's Milk Shake 180 Ml Butterscotch (₹370)",
+      "evidence": "subgroup 1080 Milk Shake + Drinks/Soft Drinks sweep. The canteen-made versions dwarf the packs: Cold Coffee Gc 4,289 servings / ₹2,14,450 and Mango Shake Gc ₹93,800 (Hot Drinks / Shakes groups)."
     },
     {
       "line": "Probiotic gut-health shots",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "all",
-      "examples": "Yakult, Mother Dairy Nutrifit, Amul Prolife",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'yakult' → 0; 'nutrifit' → 0; 'prolife' → 0. No 65-80 ml culture shot of any brand."
     },
     {
       "line": "Fresh paneer block (retail)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Malai/Fresh Paneer, Mother Dairy Paneer, Milky Mist Paneer, Verka Paneer",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "LOOSE, by weight: Paneer Ls (064K) 748.7 kg / ₹2,24,612; Paneer_Z (0F49) 937.9 kg / ₹2,22,687; Home Made Paneer (0FJL) 108.1 kg / ₹59,478 — ₹5.07 L total",
+      "evidence": "subgroup 1075 Loose Paneer 12m sales by warehouse (Ary Pos, Basement, Ary G Canteen). Every PACKED block SKU is dead: Amul Paneer 200 Gm, Amul Malai Paneer 200Gm, Verka Paneer 200Gm, Amul Paneer 1 Kg, Paneer Kg — all 0 sales, 0 transfers."
     },
     {
       "line": "Bulk paneer 1 kg for canteens, mess & langar",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Milky Mist Paneer 1 kg, Amul Paneer 1 kg, Verka bulk paneer",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Paneer Ls — 1,381.8 kg on 250 stock-transfer lines in 12m; 123.3 kg / ₹36,995 sold at Ary G Canteen and 33.1 kg of Home Made Paneer there",
+      "evidence": "StockTransferDetail + SaleDetail by warehouse. Served by the store's own loose/home-made paneer at ~₹300/kg, not by a branded 1 kg block (Amul Paneer 1 Kg is listed in Edible Oil & Ghee with 0 movement)."
     },
     {
       "line": "Long-life / frozen / vacuum-packed paneer (the road-cut insurance)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Milky Mist vacuum-packed paneer, frozen paneer cubes, Amul frozen paneer",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "Frozen group 128 (40+13+3+1 SKUs) holds only McCain potato/cheese-nugget lines — no frozen or vacuum-packed paneer, no Milky Mist vacuum pack. Nothing keeps protein on the shelf through a Jul-Sep landslide week."
     },
     {
       "line": "Value-added / ready paneer products",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "university",
-      "examples": "Milky Mist Smart Chef Paneer Tikka & Paneer Crunchies, Amul paneer cubes, marinated paneer",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Ambient RTE gravies only, all 0 sales: MTR Palak Paneer 300Gm, MTR Mutter Paneer 300Gm, MTR Shahi Paneer, MTR Paneer Tikka Masala 300 Gm, MTR Paneer Butter Masala, Gits Shahi/Matar/Tikka/Makhanwala 50Gm",
+      "evidence": "'paneer' sweep across General Items > Ready To Cook. No frozen Smart-Chef-type product; the canteens instead cook 11 Paneer Tikka menu items (Tandoori) and Kadai/Matar/Shahi/Palak Paneer (Veg Delight)."
     },
     {
       "line": "Tofu / soya paneer",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "all",
-      "examples": "Nutrela Tofu, Urban Platter Tofu, local soy paneer",
-      "arySkus": 58,
-      "arySales12m": 763769.07,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'paneer' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'tofu' → 2 hits, both canteen MENU items with 0 sales (Tofu Tikka, Tofu Soya Masala Paneer in Tandoori). No retail tofu SKU. Plant-based is only present as drinks: Sofit Soya Milk 200Ml Sugar Free ₹2,183, 180 Ml Vanilla ₹2,183, 180 Ml Chocolate ₹2,109."
     },
     {
       "line": "Table butter, salted",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Butter, Mother Dairy Butter, Verka Butter, Nandini Butter",
-      "arySkus": 4,
-      "arySales12m": 12025.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: verka + butter"
+      "arySkuExamples": "Amul Butter 100 Gm (905 u / ₹54,319); Amul Butter Mrp-10 (2,186 u / ₹21,860); Delicious Butter 100 Gm (57 u / ₹1,254)",
+      "evidence": "subgroup 327 Butter & Cheese 12m sales. Amul Butter 1 Kg, Amul Butter 100 Gm Garlic & Herbs, Delicious Butter 500 Gm (retail) and Nutdelight Butter 100Gm are all 0-sale."
     },
     {
       "line": "Unsalted butter / white butter (makhan)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families",
-      "examples": "Amul Unsalted Butter 500 g, local desi makhan, Verka White Butter",
-      "arySkus": 2,
-      "arySales12m": 29120.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: verka + white"
+      "arySkuExamples": "Amul Safed Makhan 100 Gm (0DRO) — 127 u / ₹7,747; 142 u transferred to counters",
+      "evidence": "'makhan' sweep + subgroup 327, 12m sales. No loose desi makhan by the kg, and no 500 g unsalted pack — so the Lohri/makki-di-roti volume format is missing even though the line exists."
     },
     {
       "line": "Butter portion packs / chiplets for mess & canteen",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Amul Butter chiplets 8.2 g / 10 g, Mother Dairy portion packs",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Amul Butter Mrp-10 (00N8) — 2,186 units / ₹21,860 at ₹10, 2,682 u transferred; the highest-unit butter SKU in the store",
+      "evidence": "subgroup 327 12m sales + transfers. The true chiplet SKUs are dead: Amul Butter 10Gm (08M0) 0 and Verka Butter 8G (0DA9) 0, both oddly filed under General Items > Peanut Butter. No box-of-100 institutional pack."
     },
     {
       "line": "Fat spread / margarine / low-fat table spread",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "staff",
-      "examples": "Amul Lite, Nutralite, Amul Margarine, Nutralite Professional Fat Spread",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Nutralite Butter 500Gm (0BX2) 0 sales; Nutdelight Butter 100Gm (0BWX) 0 sales",
+      "evidence": "'nutralite'/'margarine'/'spread' sweep. Both listed, neither sold nor transferred in 12m; no Amul Lite, no Nutralite Professional. (Delicious Butter, which does sell ₹1,254, is labelled butter in the master so it is counted on the butter line.)"
     },
     {
       "line": "Processed cheese block & cubes",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Cheese Block 200 g/1 kg, Amul Cheese Cubes, Go Cheese, Britannia Cheese Block",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Britannia Processed Cheses 400 Gm (077S) 0; Dairy Craft Farmhouse Cheese Sloce 1 Kg (06C1) 0; Goodrich Pizza Topping 1 Kg (0685) 0",
+      "evidence": "subgroup 327 listing + 'cube'/'block' sweep → 0 cheese-cube or cheese-block SKUs at all. No Amul 200 g / 1 kg block, no cubes; the only cheese that moves is slices and pizza cheese."
     },
     {
       "line": "Cheese slices",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "students",
-      "examples": "Amul Cheese Slices 10s, Britannia Slices, Go Cheese Slices, institutional 750 g / 50-slice",
-      "arySkus": 4,
-      "arySales12m": 35682.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: cheese + slices"
+      "arySkuExamples": "Amul Cheese Slices 200 Gm (234 u / ₹33,594 — the #1 branded cheese SKU); Amul Cheese Slices 100 Gm (24 u / ₹2,088)",
+      "evidence": "subgroup 327 12m sales. Britannia Cheese Slices 100/200 Gm are dormant, and there is no institutional 750 g / 50-slice pack for the canteens."
     },
     {
       "line": "Mozzarella / pizza cheese (block, diced, shredded)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "students",
-      "examples": "Amul Pizza Mozzarella, Amul Diced Mozzarella 1 kg, Go Mozzarella, Milky Mist Mozzarella",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Pizza Cheese 1Kg (09IV) — 0 retail sales but 599.5 kg moved on 84 stock-transfer lines to the counters; Amul Pizza Cheese 1Kg (07UE) 1 kg / ₹711 + 32 kg transferred",
+      "evidence": "StockTransferDetail 12m — this is the clearest case where a sales-only read is wrong. 'mozz' → 0 SKUs by name; the campus pizza/pasta cheese is bought as generic 'Pizza Cheese' and consumed by the canteens."
     },
     {
       "line": "Cheese spread & dips",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families",
-      "examples": "Amul Cheese Spread (plain, pepper, garlic), The Laughing Cow, Britannia Cheese Spread",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Amul Cheese Spread 200 Gm (00NC) 0; Amul Cheese Spread 200 Gm Spicy Garlic (0EF2) 0; Britannia Cheese Spreadz 180 Gm (0D1B) 0",
+      "evidence": "subgroup 327 listing, 12m sales and transfers all zero. No Laughing Cow wedge box."
     },
     {
       "line": "Cheese sauce / nacho cheese for canteen",
       "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "students",
-      "examples": "Amul Cheese Sauce, D'lecta Cheese Sauce, Cremica cheese dip",
-      "arySkus": 6,
-      "arySales12m": 40233.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: amul + cheese"
+      "arySkuExamples": "Veeba Cheesy Melt 200 Gm Cheddar (0FXZ) — 6 u / ₹684 (Jam & Sauce > Sauce)",
+      "evidence": "'cheese' sweep across all groups + 12m sales. Barely alive; the 1 kg pouch / 850 g tin canteen format does not exist (Goodrich Pizza Topping 1 Kg is dormant)."
     },
     {
       "line": "Speciality & premium cheese",
-      "state": "covered",
-      "essentiality": "nice-to-have",
-      "cohort": "staff",
-      "examples": "Amul Emmental/Gouda, D'lecta Cream Cheese, cheddar, parmesan, feta, Flanders/Eleftheria",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'cheddar' → only Veeba cheese sauce and Lays Peppery Cheddar chips; 'parmesan' 0, 'feta' 0, 'gouda' 0, 'emmental' 0, 'cream cheese' 0. No wedge or 1 kg cream-cheese SKU for the bakery/faculty shelf."
     },
     {
       "line": "Fresh cream (tetra)",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families",
-      "examples": "Amul Fresh Cream, Milky Mist Fresh Cream, Madhusudan Fresh Cream, Nestlé Milkmaid Cream",
-      "arySkus": 4,
-      "arySales12m": 9292.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: nestl + milkmaid"
+      "arySkuExamples": "Amul Fresh Cream 250 Ml (00N9) 91 u / ₹6,481, 108 u transferred; Amul Fresh Cream 1 Ltr (05NS) 0 retail sales but 17 u transferred to counters",
+      "evidence": "subgroup 1073 Fresh Cream (only 2 SKUs) + StockTransferDetail. The whole line is 2 SKUs and ₹6,481 a year."
     },
     {
       "line": "Whipping cream / non-dairy whip topping (bakery & birthday cakes)",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Rich's Double Dream 1 L, Tropolite Whipping Cream, D'lecta Whip Topping, Amul Whipping Cream",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "missing",
+      "arySkuExamples": "",
+      "evidence": "'whip' → Snickers Berry Whip and Nayasa water bottles only; 'topping' → pizza/chocolate/butterscotch sauces (Dr. Oetker, Veeba, Cremica, Food Coast). No Rich's, Tropolite, D'lecta whip or Amul whipping cream — in a 5,000-resident campus with birthdays every week."
     },
     {
       "line": "Malai / loose cream & khoya-mawa",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families",
-      "examples": "Local malai, Milky Mist Khova, mawa from Rajgarh halwais",
-      "arySkus": 16,
-      "arySales12m": 11525.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: malai"
+      "arySkuExamples": "Khoya_Z (0DM8) 87 kg / ₹29,545; Khoya Plain (0FLP) 11 kg / ₹6,050; Khoya Burfi (062X) 41 / ₹23,750 — all Confectionery > Sweets",
+      "evidence": "'khoya'/'khova'/'mawa' sweep + 12m sales. Khoya is a live own-counter line (₹35,595 plain khoya). Loose malai/fresh cream by weight does not exist, and 'mawa' matches only kulfi ice creams."
     },
     {
       "line": "Sweetened condensed milk",
       "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "families",
-      "examples": "Nestlé Milkmaid 380-400 g, Amul Mithaimate, Milky Mist Sweet Condensed Milk 395 g",
-      "arySkus": 4,
-      "arySales12m": 9292.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: nestl + milkmaid"
+      "arySkuExamples": "Nestle Milkmaid 190Gm (0FGB) 85 u / ₹7,325; Nestle Milkmaid 380Gm (0CF6) 13 u / ₹1,967. Dormant: Milkmaid 400G, Milkmaid 210Gm Pouch",
+      "evidence": "'milkmaid'/'condens' sweep (General Items > Ready Food) + 12m sales. No Amul Mithaimate (Amul Methai Mate 400Gm is listed under Flavoured Milk with 0 sales)."
     },
     {
       "line": "Dairy whitener / tea-coffee creamer",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Nestlé Everyday, Amulya Dairy Whitener, Sagar Tea & Coffee Whitener",
-      "arySkus": 134,
-      "arySales12m": 754843.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'dairy' — ARY is in this line, but this exact pack/grade is unproven"
+      "arySkuExamples": "Nestle Every Day 400 Gm (₹42,840); 200 Gm (₹36,120); 15 Gm sachet (2,821 u / ₹28,210); Verka High Fat 20 Gm (2,384 u / ₹23,840); Everyday Dairy Whitner 1 Kg (12 u / ₹7,500); Verka High Fat 500 Gm (₹5,280); Everyday Dairy Creamer 400 Gm (₹2,550); Every Day 150×3 Gm (₹2,340)",
+      "evidence": "subgroup 1008 Milk Powder 12m sales — ₹1.48 L, the best-covered ambient line and the real chai insurance. 10 of 19 SKUs still dead (all Amul Dairy Whitener packs, Every Day 20/18 Gm)."
     },
     {
       "line": "Full-cream & skimmed milk powder",
-      "state": "covered",
-      "essentiality": "should-have",
-      "cohort": "all",
-      "examples": "Amul Sagar Skimmed Milk Powder, Nestlé Everyday Full Cream, Amul Full Cream Milk Powder",
-      "arySkus": 638,
-      "arySales12m": 1836440.38,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'amul' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Nestle Milk Powder 200 Gm (0AGT) 0; Nestle Milk Powder 20 Gm (0AGU) 0; Amul Dairy Whitener 200/400/24 Gm all 0. Only mover: Mother Dairy Milk Powder 25Gm (124 u / ₹1,240)",
+      "evidence": "subgroup 1008 listing + 12m sales. No true SMP/FCMP in 500 g, 1 kg or 25 kg institutional format anywhere — no Amul Sagar, no Everyday Full Cream, no Amul FCMP. Reconstituting milk for the mess is not an option ARY can currently offer."
     },
     {
       "line": "Toddler growing-up milk powder (1-3 yr, stage 3/4)",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "babies",
-      "examples": "Amulspray, Nestlé Nan Grow, Lactogen 3/4, Enfamil Junior",
-      "arySkus": 205,
-      "arySales12m": 653560.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'nestl' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Nestle Lactogen 3 400 Gm (02VH), Lactogen-3 400Gm (092Y), Nestle Lactogen 3 Stage (06WN), Nestle Lactogen 4 Stage (06WQ) — all 0 sales in 12m",
+      "evidence": "'lactogen'/'amulspray'/'nan '/'nan grow' sweep; amulspray → 0, 'nan ' → 0. All-time sales for the whole Lactogen family: 6 tins, last one 2024-09-06. Nothing in the last 12 months."
     },
     {
       "line": "Infant formula, stage 1 & 2 (0-12 months)",
-      "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "babies",
-      "examples": "Nestlé Nan Pro 1/2, Lactogen 1/2, Dexolac, Similac Advance",
-      "arySkus": 205,
-      "arySales12m": 653560.0,
-      "matchQuality": "broad",
-      "evidence": "broad commodity match on 'nestl' — ARY is in this line, but this exact pack/grade is unproven"
+      "state": "dormant",
+      "arySkuExamples": "Nestle Lactogen 1 400 Gm (02VF), Lactogen-1 400Gm (092Z), Nestle Lactogen 1 200 Gm Tin (0E0N), Nestle Lactogen 2 400 Gm (02VG), Nestle Lactogen 2 400Gm (07MI) — every one 0 sales in 12m",
+      "evidence": "All-time SaleDetail on ProductName LIKE '%lactogen%': only 2 SKUs ever sold — Lactogen 1 200 Gm Tin (3 tins, last 2024-09-06) and Lactogen 1 400 Gm (3 tins, last 2024-08-28). No Nan Pro, Similac, Dexolac, Aptamil, Enfamil, Farex or Nusobee in the catalogue at all. A township with married-staff families and babies has sold zero infant formula for ~2 years."
     },
     {
       "line": "Ghee (desi ghee & cow ghee)",
       "state": "covered",
-      "essentiality": "must-have",
-      "cohort": "all",
-      "examples": "Amul Pure Ghee, Verka Desi Ghee, HP Milkfed 'Him' Ghee, Patanjali Cow Ghee",
-      "arySkus": 23,
-      "arySales12m": 1523038.0,
-      "matchQuality": "specific",
-      "evidence": "name contains ALL of: ghee"
+      "arySkuExamples": "Loose Desi Ghee (07NI) 1,396 kg / ₹13,89,024 — the single largest dairy SKU in the store; Desi Ghee 1 Ltr (0ETN) 175 u / ₹76,900; Desi Ghee 1 Kg_L (0GBV) 115 u / ₹50,600; Mahaan Ghee 200 Ml (₹441)",
+      "evidence": "subgroup 475 Ghee + group 122, 12m sales by warehouse (Ary Pos ₹13.89 L, Ary Clothing ₹500). EVERY branded ghee SKU is dead: Amul Pure Ghee 500Ml, Amul Cow Ghee 1Ltr, Verka Cow Ghee 1 Ltr, Britannia Pure Ghee 500 Ml/1 Ltr, Dodla 500Ml/200Ml, Mahaan Cow Ghee 500Ml, Shraddha Cow Ghee 200Ml, Ashtavinayak. And there is NO 5 L or 15 L langar/canteen tin SKU ('ghee 5'/'ghee 15' → 0)."
     }
   ],
-  "mustHaveMissing": [],
-  "surprises": []
+  "surprises": [
+    "THE BIG ONE — dairy is only ~5% of ARY's revenue and the campus's milk is almost certainly not bought here. Cross-group dairy = ₹44.78 L over 12m (205 active SKUs) against ₹8.96 Cr annualised = ₹75 per resident per MONTH. Loose milk moves ~21,700 L/yr ≈ 60 L/day for 5,000 people (12 ml/person/day), and packed milk adds only ~4,900 L. Two canteens, a hostel mess and a Gurdwara langar cannot run on that, so the institutional milk volume is being met outside ARY (Trust dairy/gaushala or direct canteen procurement) — that is a HYPOTHESIS, not verified: I did not check the purchase ledger or ask. It is the first thing to confirm, because it decides whether 'dairy expansion' here is a retail question or a supply-contract question.",
+    "Sales alone MISREAD availability — several zero-sale SKUs move in real volume by stock transfer to the counters: Pizza Cheese 1Kg 599.5 kg on 84 transfer lines, Delicious Butter 500 Gm 74 u on 26 lines, Super Matka Dahi 5Kg 16 buckets on 15 lines, Amul Fresh Cream 1 Ltr 17 u. Anything the canteens consume looks dead in a sales-only read. I re-classified mozzarella and bulk dahi as covered on this basis.",
+    "ZERO yogurt in 19,481 SKUs — no Epigamia, no Greek, no fruit yogurt, no probiotic dahi, no Yakult/Nutrifit/Prolife, no protein lassi or protein milk. The entire premium high-protein chilled shelf that is the national growth engine, and the one aimed straight at 18-25 Eternal University students, simply does not exist. ('yog' matches only yoga mats and Maha Yogi agarbatti.)",
+    "NO full-cream milk SKU of any kind (LIKE '%full cream%' → 0 rows; no Amul Gold) in a Punjabi-heritage Sikh institution — that is the milk families actually use for dahi, kheer, malai and karah prasad. Nor any A2/desi-cow, nor any lactose-free milk or curd.",
+    "Loose Desi Ghee alone is ₹13.89 L = 31% of the whole dairy lane and the biggest dairy SKU in the store — while every single BRANDED ghee SKU (Amul, Verka, Britannia, Dodla, Mahaan Cow, Shraddha) sold zero. There is also no 5 L or 15 L tin SKU, which is the langar/karah-prasad format on a Sikh campus.",
+    "Infant formula has sold NOTHING for ~2 years: 9 Lactogen SKUs listed, all zero in 12m, and all-time sales are 6 tins ending 2024-09-06. Nine dead SKUs is not stock — it is a shelf label. In a township 30-50 km from a market with married-staff families, this is the one gap that is a family emergency rather than a lost sale (and the IMS Act 1992 bans promoting it, so it will never sell itself off a shelf).",
+    "Dormancy in dairy is worse than the store average: 205 active dairy SKUs, only 71 sold in 12 months — 65% dead listings. ARY's own coverage report puts the Dairy Products group at 36.6% dead, but that group is only 41 SKUs and ₹9.31 L; it misses butter/cheese/curd (Confectionery), flavoured milk (Drinks), whitener (General Items), ghee (Oil & Ghee) and loose milk (Mini Meals).",
+    "DATA ODDITY — dairy is scattered and mis-filed across 13 groups, so any group-scoped dairy report understates the lane by ~5×: butter/cheese/curd sit under CONFECTIONERY, whitener under General Items, Amul Shrikhand under Drinks > Flavoured Milk, Verka Cow Milk 1 Litre and Amul Cow Ghee under OIL & GHEE, Amul Paneer 1 Kg under EDIBLE OIL & GHEE, Amul Butter 10Gm and Verka Butter 8G under GENERAL ITEMS > PEANUT BUTTER, and Amul Paneer 200 Gm / Verka Paneer 200Gm under Dairy Products > PACKED MILK.",
+    "A second own-label fresh counter runs in parallel: the '_Z' SKUs (Milk_Z ₹3.82 L, Dahi_Z ₹2.26 L, Paneer_Z ₹2.23 L, Khoya_Z ₹29.5 k), brand 'Ary', all selling out of the BASEMENT warehouse and duplicating the Ary Pos SKUs (Loose Milk, Super Dahi, Paneer Ls). Together the loose/own-label counter is ₹18.7 L = 42% of the dairy lane — ARY's fresh counter, not its packed shelf, is its dairy business.",
+    "Plant-based is ahead of lactose-free here: Sofit Soya Milk sells in 3 variants (~₹2.2 k each) while there is no lactose-free milk or curd at all. Also present and not on the ideal list: Amul Badam Shakers 200 Ml (₹4,750), Britannia Sweet/Mango Lassi 180 Ml (₹7,840 combined), Nestle Milky Bar Choo (₹4,190), a large Cerelac baby-cereal range (mostly dormant, ~₹3.9 k total), and 412 ice-cream SKUs incl. Amul Lactose Free Vanilla and mawa/rabri kulfis — the frozen dairy dessert business is far bigger than the chilled dairy business."
+  ]
 }
