@@ -100,8 +100,15 @@ func assortSoldCTE(window string) string {
 }
 
 // assortStockCTE is the per-SKU on-hand and cost valuation roll-up.
+//
+// Value MUST be summed row-wise. Stock holds one row per warehouse/location child,
+// each carrying its own PurchaseCost, and rows may be negative. The earlier form
+// SUM(Quantity) * MAX(PurchaseCost) priced every unit at the dearest row's cost and
+// then applied it to a netted quantity: measured 2026-08-30 it read the book at
+// Rs 30.78 L against a true Rs 96.90 L, and turned -Rs 13.97 L of negative book stock
+// into -Rs 182.16 L — the source of the bogus "-Rs 1.56 Cr posted without receipts".
 const assortStockCTE = "(SELECT s.ProductID, SUM(s.Quantity) AS book_qty, " +
-	"SUM(s.Quantity) * MAX(s.PurchaseCost) AS value_at_cost FROM Stock s GROUP BY s.ProductID)"
+	"SUM(s.Quantity * s.PurchaseCost) AS value_at_cost FROM Stock s GROUP BY s.ProductID)"
 
 func assortMonthsFlag(c *cobra.Command, months *int) {
 	c.Flags().IntVar(months, "months", 12, "sales window in months (0 = all time); --from/--to override")
@@ -552,6 +559,27 @@ func assortLeakCmd(app *App) *cobra.Command {
 // probe — does ARY carry this, wherever it happens to be filed?
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+// assortSquash lowercases a term and removes the punctuation and spacing that
+// ARY product names are inconsistent about, so "sugar-free", "Sugar Free" and
+// "sugarfree" all reduce to the same key.
+func assortSquash(t string) string {
+	r := strings.NewReplacer("-", "", " ", "", ".", "", "/", "", "'", "", "&", "", ",", "")
+	return strings.ToLower(r.Replace(t))
+}
+
+// assortSquashSQL applies the same normalisation to a column in T-SQL.
+func assortSquashSQL(col string) string {
+	for _, ch := range []string{"-", " ", ".", "/", "'", "&", ","} {
+		lit := "'" + ch + "'"
+		if ch == "'" {
+			lit = "''''"
+		}
+		col = "REPLACE(" + col + ", " + lit + ", '')"
+	}
+	return col
+}
+
 func assortProbeCmd(app *App) *cobra.Command {
 	var months int
 	var soldOnly bool
@@ -577,8 +605,25 @@ func assortProbeCmd(app *App) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var likes []string
 			for _, a := range args {
-				if t := strings.TrimSpace(a); t != "" {
-					likes = append(likes, fLike("p.ProductName", t))
+				t := strings.TrimSpace(a)
+				if t == "" {
+					continue
+				}
+				// Plain match, plus a punctuation- and space-insensitive match.
+				//
+				// ARY's product names are irregular about punctuation: "Sugar Free"
+				// is two words, "Mama Earth" is two words, and 1,116 of 21,479 names
+				// carry a hyphen. Probing "sugar-free" or "mamaearth" against a plain
+				// LIKE returns ZERO and reads as a gap that is not there. Since probe
+				// is the anti-false-gap guard it errs toward recall: a false "covered"
+				// is caught by the sales column, a false "missing" is invisible and
+				// has already produced five wrong findings in this project.
+				likes = append(likes, fLike("p.ProductName", t))
+				// Always add the normalised clause: the term may be clean while the
+				// COLUMN is not ("mamaearth" vs the stored "Mama Earth"), so gating
+				// this on the term changing misses exactly half the cases.
+				if n := assortSquash(t); n != "" {
+					likes = append(likes, "LOWER("+assortSquashSQL("p.ProductName")+") LIKE "+db.Lit("%"+n+"%"))
 				}
 			}
 			if len(likes) == 0 {

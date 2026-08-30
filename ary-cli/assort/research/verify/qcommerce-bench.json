@@ -1,0 +1,173 @@
+{
+  "lane": "qcommerce-bench",
+  "claims_tested": 18,
+  "lane_confidence_after": "low",
+  "single_biggest_error": "The lane never checked whether an \"active\" SKU has any stock behind it. It compares ARY's ProductMaster.IsActive flag (19,481) against Blinkit's live, in-stock, purchasable 20,000-line small-city catalogue — two different units. Live: only 3,482 SKUs hold positive Stock.Quantity, and only 2,607 on the shop floor (warehouse 'Ary Pos'); 12,725 of the 13,279 active-but-unsold lines (96%) have ZERO stock and are empty master-data rows, not shelf or capital. That single unit mismatch generates the whole lane: it manufactures a 13,400-line \"dead tail\" worth a claimed ₹1.07 Cr (real: 433 lines, ₹11.58 L), it makes ARY look over-assorted at \"small-city network breadth\", and it converts what the live data actually shows — a ~3,500-line working range with 3,145 of the 6,215 selling lines currently out of stock — from an AVAILABILITY problem into a fictitious OVER-ASSORTMENT problem. Every ARY-facing conclusion and all four P0/P1 recommendations invert once the in-stock test is applied.",
+  "verdicts": [
+    {
+      "claim": "ARY already carries the SKU breadth of an entire Blinkit city network — 19,481 active lines vs Blinkit's 20,000 for a whole tier-3 city (headline)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "19,481 active SKUs ≈ Blinkit 20,000",
+      "live_number": "19,494 active in the master, but only 3,482 SKUs hold positive stock; 2,607 of those sit on the shop floor (Ary Pos). Blinkit's comparator is a listed, in-stock catalogue (the lane's own MetricsCart source reports 77.71% in-stock → ~15,550 buyable).",
+      "query_used": "SELECT COUNT(*) all_skus, SUM(CASE WHEN IsActive=1 THEN 1 ELSE 0 END) active FROM ProductMaster;  --  SELECT COUNT(DISTINCT ProductID) FROM Stock WHERE Quantity>0;  --  SELECT w.WarehouseName, COUNT(DISTINCT s.ProductID) FROM Stock s JOIN WarehouseMaster w ON w.WarehouseID=s.WarehouseID WHERE s.Quantity>0 GROUP BY w.WarehouseName",
+      "why": "An ERP active flag is not an assortment. ARY's like-for-like buyable breadth is 3,482 lines (22% of Blinkit's in-stock small-city catalogue), or 2,607 on the shop floor (17%). Separately, 7,822 of the 19,494 active lines (40%) are apparel/footwear/stationery/toys/crockery/appliances — categories BB Now and Blinkit barely carry — so the denominators are wrong on both sides."
+    },
+    {
+      "claim": "ARY's economically supportable assortment is ~8,000 SKU lines (range 4,700-11,300); it already sells ~6,100, so ~6,100 is close to the ceiling",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "~8,000 lines central; COGS ₹6.80 Cr, 5-8 turns, ₹1,200-1,800 stock per line",
+      "live_number": "Measured: inventory at cost ₹1.2974 Cr over 3,482 stocked lines = ₹3,726/line (₹3,282 at master cost; ~₹2,509/line excluding the clothing warehouse). 12m purchases ₹5.6028 Cr → implied turns 4.32x. Feeding the lane's own model with measured inputs at its assumed 6 turns gives 2,506 lines; at measured turns it returns 3,482 — i.e. exactly what ARY already holds.",
+      "query_used": "SELECT SUM(Quantity*PurchaseCost) FROM Stock WHERE Quantity>0;  --  WITH lastcost AS (SELECT d.ProductID, AVG(d.PurchaseCost) c FROM PurchaseDetail d JOIN PurchaseHeader h ON h.SerialNumber=d.SerialNumber WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' AND ISNULL(h.IsDeleted,0)=0 AND d.PurchaseCost>0 GROUP BY d.ProductID) SELECT SUM(st.Quantity*ISNULL(lc.c,st.PurchaseCost)) FROM Stock st LEFT JOIN lastcost lc ON lc.ProductID=st.ProductID WHERE st.Quantity>0;  --  SELECT SUM(d.ItemValue) FROM PurchaseDetail d JOIN PurchaseHeader h ON h.SerialNumber=d.SerialNumber WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' AND ISNULL(h.IsDeleted,0)=0 AND ISNULL(d.IsDeleted,0)=0",
+      "why": "Both assumed constants are wrong and they do not cancel: real stock per line is 2.1-3.1x the assumed band, real turns 4.32x is below the assumed 5-8. The model is also circular — supportable inventory = COGS/turns divided by ₹/line reproduces the actual inventory by construction, so it can only ever return 'what ARY already does'. Turns is ESTIMATED (single point-in-time snapshot taken just after the physical audit; purchases ≈ COGS ignores ~14% of outbound units produced in-house)."
+    },
+    {
+      "claim": "Cut the dead tail: ~13,400 active SKUs had no sale in 12 months, consuming capital and shelf; ESTIMATED ₹1.07 Cr of dead stock (13,400 x ₹800), ₹107,000/month carrying cost (Recommendation P0)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "~13,400 dead lines, ₹1.07 Cr dead stock, ₹107,000/month",
+      "live_number": "13,279 active SKUs did not sell in 12m — but only 375 of them hold positive stock, 12,725 hold ZERO, 179 are negative. Total stock value on all non-selling lines (active + inactive) = 433 lines, ₹11.58 lakh. Carrying cost at 12%/yr = ₹11,585/month.",
+      "query_used": "WITH sold AS (SELECT DISTINCT d.ProductID FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01'), stk AS (SELECT ProductID, SUM(Quantity) qty, SUM(Quantity*PurchaseCost) val FROM Stock GROUP BY ProductID) SELECT CASE WHEN s.ProductID IS NOT NULL THEN 'SOLD' ELSE 'NOT SOLD' END, COUNT(*), SUM(CASE WHEN ISNULL(stk.qty,0)>0 THEN 1 ELSE 0 END), SUM(CASE WHEN ISNULL(stk.qty,0)=0 THEN 1 ELSE 0 END), SUM(CASE WHEN stk.qty>0 THEN stk.val ELSE 0 END) FROM ProductMaster p LEFT JOIN sold s ON s.ProductID=p.ProductID LEFT JOIN stk ON stk.ProductID=p.ProductID WHERE p.IsActive=1 GROUP BY CASE WHEN s.ProductID IS NOT NULL THEN 'SOLD' ELSE 'NOT SOLD' END",
+      "why": "The lane is 9.3x too high on the prize and wrong about its nature. There is no ₹1.07 Cr of dead stock to liquidate — 96% of the 'dead tail' is empty catalogue rows occupying no shelf and no capital. Delisting them is a data-hygiene chore worth ~₹11,600/month, not a P0 capital-release programme. The lane's own blocker text ('run Stock.Quantity x purchase_cost… if it comes back under ~₹500/line the whole cut is not worth the labour') is the query it should have run: it comes back at ₹0 for 96% of the lines."
+    },
+    {
+      "claim": "ARY today: Baby care = 3 SKUs (an 'accessories' subgroup) — worst relative gap in the catalogue, 3 lines against a 323-line benchmark; build it to ~320 lines for ₹2.5 L/month (Recommendation P1)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "3 SKUs",
+      "live_number": "168 baby SKUs, all active, filed under Personal Care: Baby Diaper 73, Wipes 23, Baby Soap 17, Baby Cream 15, Baby Oil 15, Baby Lotion 11, Baby Shampoo 7, Baby Powder 3+1, Baby Accessories 3. Broad probe: 199 matched, 71 sold in 12m, ₹1.94 L of 12m sales.",
+      "query_used": "./ary assort probe baby diaper wipes pampers huggies  --  SELECT sg.SubGroupName, pg.ProductGroupName, COUNT(*) FROM ProductMaster p LEFT JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID LEFT JOIN ProductGroupMaster pg ON pg.ProductGroupID=p.ProductGroupID WHERE sg.SubGroupName LIKE '%Baby%' OR sg.SubGroupName LIKE '%Diaper%' OR sg.SubGroupName LIKE '%Wipe%' GROUP BY sg.SubGroupName, pg.ProductGroupName",
+      "why": "This is Trap 1 verbatim — the vault warned that ARY's ProductGroupID tree misfiles categories, and the lane read the group name 'Baby' and found only the 3-row 'Baby Accessories' subgroup under Accessories, missing 165 SKUs filed under Personal Care. ARY stocks Pampers M/L pants, Johnson's and Himalaya baby soap/shampoo/lotion/powder/cream and 23 wipes lines. The real story is velocity — 71 of 199 lines sold, ₹1.94 L/yr — so a ₹30 L/yr (₹2.5 L/month) uplift is a 15x claim on lines that already exist and do not move, not on a missing shelf."
+    },
+    {
+      "claim": "ARY today: Dairy 41 SKUs, loose milk only — 'ARY currently sells loose milk with no curd/paneer/cheese range'; add depth to a ~294-line benchmark for ₹3 L/month (Recommendation P1)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "41 dairy SKUs, no curd/paneer/cheese",
+      "live_number": "219 dairy SKUs (203 active), 60 sold in 12m, ₹44.31 L of 12m sales. Includes Curd 26 SKUs (₹3.22 L) + Curd/Raita 4 (₹2.18 L), Loose Paneer 4 (₹5.09 L), Butter & Cheese 22 (₹1.16 L), Packed Milk 25 (₹3.80 L), Milk 33 (₹10.21 L), Flavoured Milk 47, Milk Powder 19, Packed Lassi 10, Ghee 14 (₹15.23 L), Fresh Cream 2, plus 9 paneer dishes.",
+      "query_used": "./ary assort probe milk dahi curd paneer butter cheese ghee khoya lassi yogurt  --  WITH sold AS (...12m by ProductID...) SELECT COUNT(*), SUM(CASE WHEN p.IsActive=1 THEN 1 ELSE 0 END), SUM(CASE WHEN s.ProductID IS NOT NULL THEN 1 ELSE 0 END), SUM(ISNULL(s.v,0)) FROM ProductMaster p JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID LEFT JOIN sold s ON s.ProductID=p.ProductID WHERE sg.SubGroupName IN ('Packed Milk','Milk','Flavoured Milk','Milk Powder','Curd','Curd/Raita','Lassi','Packed Lassi','Fresh Cream','Butter & Cheese','Cheese & Sandwich','Loose Paneer','Ghee','Edible Oil & Ghee')",
+      "why": "Same Trap 1. Curd is filed under Confectionery, paneer under Frozen, milk under Mini Meals, butter/cheese under Confectionery — only 37 SKUs sit in the group actually named 'Dairy Products'. 'No curd/paneer/cheese range' is flatly false: ARY sold ₹5.09 L of loose paneer, ₹5.40 L of curd/raita and ₹1.16 L of butter & cheese in the live 12 months. The real gap against the 294-line benchmark is ~219 vs 294, not 41 vs 294."
+    },
+    {
+      "claim": "P0 blocker: cost and price are missing on the item master (StandardCostPrice on 41 of 19,481, MaxRetailPrice on ZERO), so margin per line cannot be computed and 'every recommendation below is unenforceable until this is done' (weeks of work)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "41 of 19,481 costed; MRP on zero",
+      "live_number": "ProductChildMaster carries PurchaseCost on 19,110 of 19,494 active SKUs (98.0%), SellingPrice on 19,109, MRP on 19,107. Stock carries its own PurchaseCost: only 33 of 6,880 positive-quantity rows lack it. Master cost reconciles to the 12m purchase ledger within 14% (₹91.45 L vs ₹106.91 L on 5,650 matched rows).",
+      "query_used": "SELECT COUNT(DISTINCT p.ProductID), COUNT(DISTINCT CASE WHEN c.PurchaseCost>0 THEN p.ProductID END), COUNT(DISTINCT CASE WHEN c.SellingPrice>0 THEN p.ProductID END), COUNT(DISTINCT CASE WHEN c.MRP>0 THEN p.ProductID END) FROM ProductMaster p LEFT JOIN ProductChildMaster c ON c.ProductID=p.ProductID WHERE p.IsActive=1",
+      "why": "The lane cites the empty ProductMaster columns as evidence of missing data while its own next sentence says the children table 'already holds the real figures'. It does — on 98% of active lines. This is a known-location problem (the vault records it), not a weeks-long backfill, and gating every other recommendation on it is wrong. Note also that the vault's Trap 4 says the price master is biased HIGH; on my cross-check against the purchase ledger it runs ~14% LOW, so Trap 4 itself needs re-testing."
+    },
+    {
+      "claim": "ARY does ~1,180 bills a day — 1.08x the daily order count of one Instamart dark store — on an average bill of ₹208",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "~1,180 bills/day; ₹208 avg bill",
+      "live_number": "372,234 bills over 2025-09-01..2026-08-31 = 1,020/calendar day, 1,051/trading day (354 trading days). Average bill ₹205.74. Against a derived Instamart 1,095 orders/store/day, ARY is 0.93x, not 1.08x.",
+      "query_used": "SELECT COUNT(*) bills, SUM(BillAmount) gross, AVG(BillAmount) avg_bill, COUNT(DISTINCT CAST(VoucherDate AS date)) days FROM SaleHeader WHERE VoucherDate>='2025-09-01' AND VoucherDate<'2026-09-01'",
+      "why": "The ₹208 average bill is essentially right (₹205.74). The bills/day is inflated 13-16% because it divides an over-annualised revenue figure by that bill size instead of counting bills. Counting bills directly is the obvious query and it flips the headline comparison — ARY runs slightly BELOW one Instamart dark store, not above it."
+    },
+    {
+      "claim": "ARY annualised revenue ₹8.96 Cr, giving COGS ₹6.80 Cr at a 75.87% ratio",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹8.96 Cr annualised; COGS ₹6.80 Cr",
+      "live_number": "Trailing 12m gross ₹7.6585 Cr; sale returns ₹17.08 L; NET ₹7.4877 Cr. 12m purchases ₹5.6028 Cr = 73.1% of gross sales. ₹8.96 Cr is reproducible only as an FY26-27 YTD calendar annualisation (Apr 1-Aug 30 = ₹8.91 Cr), i.e. annualising an above-trend five months.",
+      "query_used": "SELECT COUNT(*), SUM(BillAmount) FROM SaleHeader WHERE VoucherDate>='2025-09-01' AND VoucherDate<'2026-09-01';  --  SELECT SUM(BillAmount) FROM SaleReturnHeader WHERE VoucherDate>='2025-09-01' AND VoucherDate<'2026-09-01';  --  monthly GROUP BY YEAR,MONTH shows May-26 ₹95.4 L vs Feb-26 ₹38.0 L",
+      "why": "The revenue base is 17-20% too high, and it propagates into COGS, the supportable-inventory budget, bills/day and the DMart share. The 75.87% COGS ratio itself holds up well (live purchases/sales = 73.1%) — it is the revenue it was applied to that is wrong."
+    },
+    {
+      "claim": "ARY's revenue is 6.7% of a single DMart store's",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "6.7%",
+      "live_number": "5.59% on net TTM (₹7.4877 Cr ÷ ₹133.94 Cr), 5.72% on gross",
+      "query_used": "same TTM sales query; DMart ₹66,968 Cr ÷ 500 stores = ₹133.94 Cr/store (external, confirmed by search: standalone FY26 revenue ₹66,968.03 Cr, 500 stores)",
+      "why": "Directionally right and the DMart denominator checks out externally, but the ARY numerator is over-annualised. The qualitative point (ARY is a very small store by revenue) survives unchanged."
+    },
+    {
+      "claim": "Eggs, meat and fish are a structural zero at ARY — all 7 BigBasket sub-categories (1,464 metro SKUs) must be zeroed for a vegetarian Sikh institution",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "1,464 metro SKUs → 0 at ARY",
+      "live_number": "33 name-matches on egg/chicken/mutton/fish/meat/prawn, ALL false positives or explicitly vegetarian: eggless mayonnaise (7), Veggie/Jegging/Deggi substring hits, Vezlay soya 'chicken'/'mutton'/'veg meat', Chings Chicken-65 masala, 'Ms Chicken Fabric'. Zero genuine meat/egg/fish SKUs.",
+      "query_used": "./ary assort probe egg chicken mutton fish meat prawn  (33 SKUs returned, inspected individually)",
+      "why": "Held up under the strongest available test — a deliberately over-broad probe found nothing real. This override is correct and should be applied to every other lane, as the lane recommends."
+    },
+    {
+      "claim": "Blinkit publishes a city-tier ladder: ~80k SKUs in Delhi NCR, 50k+ in the next seven cities, 20k beyond the top eight",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "80,000 / 50,000+ / 20,000",
+      "live_number": "Independently corroborated: 'Delhi NCR offers close to 80,000 SKUs. The next seven cities offer 50,000-plus, and beyond that, coverage averages around 20,000 SKUs' (Eternal Q4 FY26 shareholder letter, via web search of secondary coverage)",
+      "query_used": "WebSearch: Eternal Blinkit Q4 FY26 shareholder letter '80k SKUs' Delhi NCR '20k beyond the top eight'",
+      "why": "The one external number the whole benchmark hangs on, and it is real and correctly quoted. The failure is not the benchmark — it is what ARY figure was placed beside it."
+    },
+    {
+      "claim": "DMart runs 500 stores, ₹66,968 Cr revenue, 12.8x inventory turns, ₹33,422 revenue/sq ft, 39.8 cr bill cuts → ₹1,683 average bill and 2,181 bills/store/day",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "500 stores; ₹66,968 Cr; 12.8x; ₹33,422/sq ft; ₹1,683; 2,181 bills/day",
+      "live_number": "Revenue ₹66,968.03 Cr standalone FY26 and 500 stores CONFIRMED externally. 12.8x turns and ₹33,422/sq ft NOT independently confirmed. Analyst coverage reports bills/store/day of 2,463 — the lane's derived 2,181 (39.8 cr ÷ 500 ÷ 365) understates by ~11% because it divides by year-END store count.",
+      "query_used": "WebSearch: Avenue Supermarts DMart FY2025-26 annual report revenue 66968 crore 500 stores inventory turnover 12.8 bill cuts",
+      "why": "The headline financials check out; the two derived per-store figures do not, and one of them (12.8x turns) is the single input the lane uses to build ARY's ceiling. It is quoted from a chart in the AR that I could not re-read, so it stays unverified rather than wrong."
+    },
+    {
+      "claim": "Instamart runs 1,143 dark stores at 1,093 orders per store per day, AOV ₹700 (+33% YoY), 4.81 Mn sq ft",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "1,143 stores; 1,093 orders/store/day; ₹700 AOV; 4.81 Mn sq ft",
+      "live_number": "1,143 dark stores, AOV ₹700 +33% YoY, >4.8 Mn sq ft all confirmed externally. I re-derived orders/store/day independently: Q4 FY26 Instamart GOV ₹7,881 Cr ÷ ₹700 AOV ÷ 90 days ÷ 1,143 stores = 1,095/day.",
+      "query_used": "WebSearch: Swiggy Instamart Q4 FY2026 dark stores 1143 orders per store per day AOV 700 non-grocery 18.5% GOV; then arithmetic 78,810,000,000 / 700 / 90 / 1143",
+      "why": "Reproduced from three independent published figures to within 0.2% of the lane's number. The external comparator is sound — only ARY's side of the comparison is wrong."
+    },
+    {
+      "claim": "Instamart's non-grocery share of GOV rose from 7% to 18.5% in one year, per the Q1 FY2026 letter",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "7% → 18.5% of GOV, cited to Swiggy Q1 FY2026 letter line 408",
+      "live_number": "Endpoint 18.5% confirmed, but reported against a 6.6% base a year earlier, and attributed in coverage to the Q4 FY26 quarter (May 2026), not the Q1 FY2026 letter (Jul 2025)",
+      "query_used": "WebSearch: Swiggy Instamart Q4 FY2026 ... non-grocery 18.5% GOV → 'Non-grocery selection on Instamart, which comprised 6.6% of the mix a year ago, now contributes 18.5%'",
+      "why": "The trend and its size are right and the strategic read (non-grocery is what lifts basket) stands. The base figure and the source attribution do not survive: a July-2025 letter cannot report a figure that coverage dates to May 2026. Citation hygiene, not a wrong conclusion."
+    },
+    {
+      "claim": "The category benchmark table — 'for category X, a store serving 5,000 people should carry roughly N SKU lines' (dairy 294, baby 323, snacks 1,992 …)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "11 category benchmarks summing to 8,000; 99 sub-category benchmarks",
+      "live_number": "The 11 category rows sum to exactly 8,000. Every sub-category benchmark equals its parent's ratio applied to the BigBasket count, to 2 decimal places: dairy 294/1,605 = 18.32% vs parent 864/4,697 = 18.39%; masalas 649/3,566 = 18.20%; diapers 83/375 = 22.13% vs baby-care parent 323/1,465 = 22.05%; pooja 108/2,201 = 4.91% vs parent 795/16,220 = 4.90%.",
+      "query_used": "Arithmetic on the lane's own Tables 0 and 1 (sum of rows; sub/parent ratio comparison)",
+      "why": "The per-category benchmarks carry no independent information. They are the unmeasured 8,000-line ceiling allocated top-down by judgement weight, then split pro-rata across BigBasket-Delhi's sub-category counts. So 'ARY should hold 294 dairy lines' means 'BigBasket Delhi's dairy share of a number the lane could not measure'. Since the 8,000 is refuted (measured range 2,500-3,500), every figure in both tables is wrong by the same factor — and the two P1 recommendations sized off them (dairy 294, baby 323) inherit it."
+    },
+    {
+      "claim": "ARY has ~6,100 selling lines",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "~6,100",
+      "live_number": "6,221 distinct SKUs sold 2025-09-01..2026-08-31 (989,928 sale lines, ₹7.67 Cr). Shorter windows: 3,644 in 90 days, 2,630 in 30 days. 24 months: 7,921.",
+      "query_used": "SELECT COUNT(DISTINCT d.ProductID), COUNT(*), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01'",
+      "why": "One of the two ARY numbers the lane got right. But it is not evidence of over-assortment: the 30/90-day counts (2,630 / 3,644) sit right on top of the 3,482 lines actually in stock, which says ARY's working range is ~3,500 lines and the 6,221 is a year's accumulation. Concentration: 253 SKUs = 50% of sales, 1,111 = 80%, 2,884 = 95%."
+    },
+    {
+      "claim": "ARY uses 846 subgroups for 21,466 SKUs (~25 per subgroup), so its taxonomy granularity is already industry-normal",
+      "verdict": "QUALIFIED",
+      "materiality": "colour",
+      "original_number": "846 subgroups / 21,466 SKUs",
+      "live_number": "846 subgroups defined, 809 used by any SKU, 793 used by an active SKU; 93 product groups defined, 84 used. 19,494 active ÷ 793 = 24.6 per subgroup.",
+      "query_used": "SELECT (SELECT COUNT(*) FROM SubGroupMaster), (SELECT COUNT(DISTINCT SubGroupID) FROM ProductMaster), (SELECT COUNT(DISTINCT SubGroupID) FROM ProductMaster WHERE IsActive=1), (SELECT COUNT(DISTINCT ProductGroupID) FROM ProductMaster WHERE IsActive=1)",
+      "why": "Counts defined rather than used subgroups, but the ratio and therefore the conclusion survive. Worth noting the lane draws the opposite lesson from the vault: granularity is fine, but the tree's ACCURACY is not — which is exactly what broke its dairy and baby numbers."
+    },
+    {
+      "claim": "BigBasket BB Now metro assortment measured at 86,593 SKUs across 11 categories / 99 sub-categories, additive within 0.8%",
+      "verdict": "UNTESTABLE",
+      "materiality": "supporting",
+      "original_number": "86,593 SKUs",
+      "live_number": "Not reproducible from here — the crawl artefacts (/tmp/bb_L0.json, /tmp/bb_L1.json) are on the research agent's machine and are not in the repo; the cookie-gated listing-svc endpoint is not re-runnable in this session.",
+      "query_used": "ls /Users/damanpreetsingh/jivo-cli/ary-cli/assort/research/sweep/ (no crawl artefacts present); no independent source found",
+      "why": "The method described is sound and the additivity check is good discipline, but the raw evidence does not exist in the repo, so an auditor cannot reproduce it. It corroborates Blinkit's 80k Delhi figure, which is itself confirmed — so I have no reason to doubt it, and equally no way to confirm it. Treat as unreproduced, and note it is the denominator for all 99 sub-category benchmarks."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

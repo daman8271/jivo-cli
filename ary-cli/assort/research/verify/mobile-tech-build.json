@@ -1,0 +1,201 @@
+{
+  "lane": "mobile-tech-build",
+  "claims_tested": 21,
+  "lane_confidence_after": "low",
+  "single_biggest_error": "The lane counted FusionERP8 PARENT product codes as SKUs. \"Mobile Datacable\" is not one SKU — it is a bucket code with 99 child variants in ProductChildMaster, 44 of which sold at their own stable price points (₹40 to ₹450) in the last 12 months. Across the mobile basket there are 424 child variants defined and 134 that sold in 12m, and ProductChildMaster carries a 100%-populated per-variant PurchaseCost / MRP / SellingPrice / Margin file. That single mistake generates the lane's central diagnosis (\"only 4 SKUs, no second price point, no price ladder, no price file\"), its repricing recommendation (\"three price points at ₹99/₹149/₹249 replace one undifferentiated ₹85 cable\" — ARY already sells at ₹99, ₹150, ₹199, ₹250, ₹350 and ₹450), and its \"live pricing leak\" finding. Corrected, the story inverts: ARY does not lack a mobile range, it lacks a NAMED one. The vault's own Data-Quality-Traps.md states \"Real cost/price/margin exists only per-location on ProductChildMaster\" — the lane cites that vault and did not apply it.",
+  "verdicts": [
+    {
+      "claim": "Group 139 'Mobile' shows ₹2,690 but ARY's real mobile-accessory business is ₹1,95,532 filed under Accessories — 73x the headline",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "₹1,95,532 vs ₹2,690 (73x)",
+      "live_number": "₹2,00,809 vs ₹2,690 (74.6x), 12m to 2026-08-31",
+      "query_used": "SELECT sg.SubGroupID,sg.SubGroupName,SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' AND p.SubGroupID IN (356,437,600,601,675,753,839) GROUP BY sg.SubGroupID,sg.SubGroupName",
+      "why": "Reproduced independently: 600=₹1,03,517, 601=₹50,936, 437=₹43,666, 356 (group 139)=₹2,690. The mis-filing premise is the lane's best work and it holds. Note group 139 'Mobile' is itself inside the Accessories department, so the split is between subgroups, not departments."
+    },
+    {
+      "claim": "Sales are at an all-time high — Aug-2026 ₹23,227, highest in a 17-month series; trailing-3-month run rate ₹20,810/mo",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "₹23,227 Aug-26; ₹20,810/mo run rate",
+      "live_number": "₹30,304 for full Aug-26; run rate ₹23,169/mo; 12m ₹2,00,809 vs prior 12m ₹1,61,137 = +24.6%, units +24.9%, avg rate flat at ₹190.70",
+      "query_used": "SELECT FORMAT(sh.VoucherDate,'yyyy-MM'),SUM(sd.FinalSaleAmount),SUM(sd.Quantity) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID WHERE p.SubGroupID IN (600,601,437,356) AND sh.VoucherDate>='2025-01-01' GROUP BY FORMAT(sh.VoucherDate,'yyyy-MM')",
+      "why": "Confirmed and understated — the lane's window cut Aug-26 off at the 28th. My series matches theirs exactly on every month they quote (Apr25 11,854 / Nov25 5,404 / Jun26 17,876 / Jul26 21,326). Growth is volume-led, not price-led, which strengthens their case."
+    },
+    {
+      "claim": "Only four SKUs carry the whole category — Mobile Datacable 600u, Mobile Ear Phone 305u, Mobile Adapter 126u, Bluetooth Buds 77u = 96% of sales. No second price point, no price ladder, no model-specific anything",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "4 SKUs = 96% of category",
+      "live_number": "424 child variants defined; 134 sold in 12m; 'Mobile Datacable' alone has 99 children and 44 selling price points from ₹40 to ₹450. Parent-level the four are 91.6%, not 96%",
+      "query_used": "SELECT sd.ChildID,COUNT(*),MIN(sd.SaleRate),MAX(sd.SaleRate) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sd.ProductID='07P0' AND sh.VoucherDate>='2025-09-01' GROUP BY sd.ChildID; and SELECT COUNT(*) FROM ProductChildMaster c JOIN ProductMaster p ON p.ProductID=c.ProductID WHERE p.SubGroupID IN (600,601,437,356)",
+      "why": "Those are parent bucket codes, not SKUs. One purchase bill (2026-08-06, Tools & Spares) puts seven different cables at seven costs (₹28/40/45/50/70/120) under the single code 07P0, each with its own SellingRate. The price ladder the lane recommends building already exists. Separately, the lane's own four SKU figures sum to ₹1,97,778 — MORE than the ₹1,95,532 it states as the whole category — and reproduce on no window I could construct (its own window gives 547u/₹48,092, 287u/₹40,273, 120u/₹50,346, 69u/₹46,543)."
+    },
+    {
+      "claim": "ZERO SKUs for tempered glass, screen guard, back cover, memory card, pen drive, OTG, neckband, smartwatch, strap, keyboard, emergency light, spike guard/power strip, tripod, selfie stick, Type-C cable — 15 lines at zero",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "15 product lines at zero SKUs",
+      "live_number": "12 of 15 genuinely zero. REFUTED: extension/power strip = 5 SKUs (3 selling, ₹4,075/12m) under subgroup 'Switch'; emergency light = 2 SKUs, one selling (Havells LED Inverter Bulb 20W, 4u, ₹2,796) plus 2 rechargeable torch SKUs. Type-C = untestable at parent level",
+      "query_used": "./ary assort probe emergency extension extention socket \"plug top\" inverter rechargeable --months 12 → 18 SKUs matched across 5 subgroups, 7 selling, ₹10,401. Cross-checked with SELECT p.ProductName,sg.SubGroupName,units,gross FROM ProductMaster p ... WHERE ProductName LIKE '%exten%' OR '%socket%' OR '%plug%' OR '%emergen%' OR '%recharg%' OR '%inverter%'",
+      "why": "This is the vault's own Trap 1 repeating inside a lane that cites it. The lane probed 'emergency light', 'spike', 'power strip' — ARY's words are 'Extention Box', 'Extension Board', 'Havells 2 In 1 Socket', 'Syska Led Bulb 7W Emergency Blub', 'Havells Led Inverter Blub'. Table 0's 'Extention 3 SKUs, ZERO sales to 2,500 hostel students. Absurd' is a subgroup artefact: the working extension line lives under 'Switch' in Appliances and does ₹1,151/mo. The other 12 zeros I re-derived myself and they stand."
+    },
+    {
+      "claim": "Every mobile accessory is bought from ONE vendor, 'Tools & Spares' — the CCTV/DVR/hard-disk maintenance account — 100% of the category",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "1 supplier, 100%",
+      "live_number": "Tools & Spares ₹2,04,349 of ₹2,05,179 = 99.6%; Local Purchase ₹700, Cm Trading Co. ₹130",
+      "query_used": "SELECT a.AccountName,COUNT(DISTINCT pd.ProductID),SUM(pd.Quantity*pd.PurchaseCost),MAX(ph.VoucherDate) FROM PurchaseDetail pd JOIN PurchaseHeader ph ON ph.SerialNumber=pd.SerialNumber JOIN ProductMaster p ON p.ProductID=pd.ProductID LEFT JOIN AccountMaster a ON a.AccountID=ph.AccountID WHERE p.SubGroupID IN (600,601,437,356,675,753) AND ph.VoucherDate>='2024-09-01' GROUP BY a.AccountName",
+      "why": "Holds. One qualification the lane misses: that vendor already invoices ARY line-by-line with a per-cable SellingRate at a consistent 1.7-2.2x markup, so it is behaving like an accessories supplier with a real range, not merely 'whatever the maintenance contractor happened to bring'."
+    },
+    {
+      "claim": "BIS CRS Scheme II covers power banks, chargers, TWS, Bluetooth speakers, smartwatches, LED lamps, keyboards and alkaline cells; it does NOT cover cables, tempered glass, covers, mouse, pen drives, memory cards, torches, emergency lights or extension boards",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "9 regulated lines, 9 unregulated",
+      "live_number": "List verified on bis.gov.in. But item 20 is 'sealed SECONDARY cells/batteries for portable applications, IS 16046' — rechargeable cells only",
+      "query_used": "WebFetch https://www.bis.gov.in/product-certification/scheme-ii-registration-scheme/ — confirmed item 20 IS 16046 (secondary cells), item 30 power bank IS 13252(Pt 1), item 44 smartwatch, item 47 keyboard; mouse/pen drive/memory card/cable/tempered glass/back cover/torch/emergency light/extension board not listed",
+      "why": "The regulated/unregulated split is right and the two-tier architecture survives. But the lane drops the word 'secondary': Tier A in Table 2 says 'alkaline cells' and Recommendation 2 says stop buying 'cells'. ARY's cell line is Eveready AA/AAA, Panasonic and Duracell Ultra — PRIMARY dry cells, not under CRS — worth ₹55,250 and 3,461 units a year, its single biggest working tech line, and bought from Himachal Wholesale Syndicate and Cm Trading, not from Tools & Spares."
+    },
+    {
+      "claim": "ARY holds 7 unbranded power-bank SKUs named 'China Power Bank 2/10/11/18/19', 9 units in stock, ₹4,500 at cost — a live CRS Item 30 exposure",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "7 SKUs, 9 units, ₹4,500 at cost",
+      "live_number": "7 SKUs and 9 units confirmed; ₹5,490 at cost (6 × ₹650 + 3 × ₹530). Only 5 of the 7 are named 'China Power Bank' and those 5 hold ZERO stock; the 9 units sit on 'Power Bank 5000 Mah' and 'Power Bank 10000 Mah'",
+      "query_used": "SELECT p.ProductName,st.onhand,pc.wavg FROM ProductMaster p LEFT JOIN (SELECT ProductID,SUM(Quantity) onhand FROM Stock GROUP BY ProductID) st ... WHERE p.SubGroupID=675",
+      "why": "The exposure is real but the stated cost is 22% low and the 'unbranded' label is asserted, not evidenced: the only two SKUs carrying stock have names that state capacity, not brand. Nothing in the DB says whether they carry a BIS R-number. The lane marked this VERIFIED."
+    },
+    {
+      "claim": "My first margin read was wrong — sales are GST-inclusive, purchases GST-exclusive; true net margins are 28-36%, not 39-46%",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "28-36% true net GM",
+      "live_number": "Mobile basket net GM 31.1% at child level, 32.0% at parent level, 12m",
+      "query_used": "WITH s AS (SELECT sd.ProductID,sd.ChildID,sd.LocationCode,SUM(sd.Quantity) qty,SUM(sd.Quantity*sd.SaleRate/(1+sd.TaxRate/100.0)) net FROM SaleDetail sd JOIN SaleHeader sh ... WHERE p.SubGroupID IN (600,601,437,356) AND sh.VoucherDate>='2025-09-01' GROUP BY ...) SELECT 100.0*(SUM(s.net)-SUM(s.qty*c.PurchaseCost))/SUM(s.net) FROM s JOIN ProductChildMaster c ON c.ProductID=s.ProductID AND c.ChildID=s.ChildID AND c.LocationCode=s.LocationCode",
+      "why": "Verified independently. SaleDetail carries IncludeInRate=true with TaxableValue1 = Quantity*SaleRate/(1+TaxRate/100), and PurchaseDetail ItemValue = Quantity*PurchaseCost ex-GST. Self-correction on my part: my first pass subtracted TaxAmount plus TaxAmount1..4 and double-counted the tax, because TaxAmount is already the total of the components. The lane's method is the right one."
+    },
+    {
+      "claim": "Mobile/tech earns 3x what groceries earn — Accessories 36.2% and Electricals & Electronics 27.7% against Grocery 10.7%",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "36.2% vs 10.7% (3.4x)",
+      "live_number": "Reproduced exactly on the lane's window: Accessories 36.1, Grocery 10.6, Electricals 27.7, Stationary 35.6, Toys 40.2, Garments 25.7, Footwear 31.4. But the mobile basket itself is 31.1%",
+      "query_used": "WITH pc AS (SELECT pd.ProductID,SUM(pd.Quantity*pd.PurchaseCost)/SUM(pd.Quantity) wavg FROM PurchaseDetail pd JOIN PurchaseHeader ph ... WHERE ph.VoucherDate>='2024-08-01' GROUP BY pd.ProductID), s AS (...2025-08-01 to 2026-08-01...) SELECT d.DepartmentName, 100.0*(SUM(net)-SUM(qty*wavg))/SUM(net) GROUP BY d.DepartmentName",
+      "why": "Arithmetically reproducible, so the number is sound. But the Accessories DEPARTMENT is bags (₹3.55 L), purses (₹2.93 L), travel bags (₹2.02 L), jewellery and key rings; mobile is ₹1.98 L of ₹22.2 L, under 9%. Quoting 36.2% as the mobile margin overstates it by 5 points. The honest comparison — 31.1% mobile vs 10.6% grocery — is still 2.9x, so the conclusion survives its evidence."
+    },
+    {
+      "claim": "Category penetration is 938 bills of 365,087 — one bill in 389, 0.26% of a ₹7.55 Cr turnover",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "938 / 365,087 = 0.26%",
+      "live_number": "959 / 372,257 = 1 in 388, 0.26% of ₹7.67 Cr",
+      "query_used": "SELECT COUNT(DISTINCT sh.SerialNumber) FROM SaleHeader sh JOIN SaleDetail sd ON sd.SerialNumber=sh.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' AND p.SubGroupID IN (600,601,437,356)",
+      "why": "Clean. Ratio identical on the live window. The '3-6% of turnover is normal for a campus store' benchmark that follows it is unsourced in the lane and I could not test it."
+    },
+    {
+      "claim": "The phone-owning population is ~3,000, not 5,000 — Eternal University ~2,500 students + 170 faculty + 25 admin, the rest being Akal Academy schoolchildren with phones restricted",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "~2,695 verified + ~300 estimated = ~3,000",
+      "live_number": "Wikipedia infobox confirms 2,500 / 170 / 25 exactly. Everything after that is assumption",
+      "query_used": "WebFetch https://en.wikipedia.org/wiki/Eternal_University — 'Students: 2500', 'Faculty: 170', 'Administrative staff: 25', 450-acre, Baru Sahib",
+      "why": "The cited numbers are real, but they are enrolment, not phone ownership. The +300 resident staff, the Akal Academy phone-restriction claim and the student-to-phone-owner conversion are all unevidenced, and the lane labelled the whole finding VERIFIED. Every capture-rate percentage in Table 4 divides by this number, so a soft input is doing hard work. The lane does own up to it in confidenceGap — the failure is the label, not concealment."
+    },
+    {
+      "claim": "Baru Sahib is only a BRANCH post office, so Amazon/Flipkart leakage is structurally weak — this is ARY's moat",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Branch PO, nearest market town 30-50 km",
+      "live_number": "Confirmed: 16 offices for 173101, Baru Sahib = Branch Post Office, Solan division, Shimla HQ region",
+      "query_used": "WebFetch https://api.postalpincode.in/pincode/173101",
+      "why": "The postal fact is exactly as stated. The inference — that e-commerce delivery is therefore slow or refused — is not tested, and the lane says so itself in its own open questions. Branch-PO status does not determine courier serviceability; Delhivery/Ekart/Amazon run their own networks."
+    },
+    {
+      "claim": "Gaffar Market wholesale prices support 4-8x: tempered glass ₹7-22, covers ₹12-45, Type-C ₹28-45, MOQ 10 pieces",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "glass ₹7-22 → ₹129 retail = 83.5% net GM; MOQ 10",
+      "live_number": "The prices are real but they are CellToPhone's, not Gaffar Market's. That page's own disclaimer says it is 'a distributor bypassing Gaffar Market's typical 50-100 piece minimums, not the market itself'",
+      "query_used": "WebFetch https://celltophone.com/gaffar-market-mobile-accessories-price-list-2026/ — dated 27 Mar 2026, publisher CelltoPhone, a wholesaler; 5D glass ₹7-12, silicone covers ₹18-28, Type-C ₹28-45, MOQ 10, '60-75% gross margin'",
+      "why": "The citation does contain the numbers, but attributes them to a different seller. Gaffar's real counter MOQ is 50-100 pieces per the same source. So Table 2's sourcing plan — send Delhi HO staff 9 km to Gaffar and buy at these prices with MOQ 10 — is not supported by its own evidence, and the whole Tier B economics (glass 83.5% + covers 81.5% = ₹17,155/mo of planned GP) rests on it. The plan is salvageable by buying from CellToPhone or a similar online wholesaler, but that is a different plan from the one written."
+    },
+    {
+      "claim": "ARY is under-pricing its biggest line — Mobile Datacable realises ₹84.88 against a ₹172-273 market; three price points at ₹99/₹149/₹249 should replace one undifferentiated ₹85 cable",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹84.88 realised vs ₹172-273 market",
+      "live_number": "₹88.00 blended across 44 selling child variants at 22 distinct retail prices: ₹50 (152u), ₹55 (42u), ₹60 (44u), ₹80 (61u), ₹90 (24u), ₹99 (35u), ₹120 (31u), ₹150 (61u), ₹165 (12u), ₹199 (8u), ₹250 (5u), ₹350 (2u), ₹450 (1u)",
+      "query_used": "SELECT sd.SaleRate,COUNT(*),SUM(sd.Quantity) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sd.ProductID='07P0' AND sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' GROUP BY sd.SaleRate; plus SELECT ChildID,PurchaseCost,MRP,SellingPrice,Margin FROM ProductChildMaster WHERE ProductID='07P0'",
+      "why": "There is no ₹85 cable. ₹84.88 is the mix average of a range ARY already runs from ₹40 to ₹450, and ProductChildMaster already sets each variant's SellingPrice at a 37-52% markup. Comparing that blend to the price of one premium 65W Type-C cable is not like-for-like. The P0 repricing action and its ₹3,000/month is unsupported."
+    },
+    {
+      "claim": "There is a live pricing leak — 'Mobile Earphone 02' sold 8 units at ₹165 against a ₹267 cost, NEGATIVE 91.2% margin; nobody is watching price against cost",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "-91.2% on 8 units; MaxRetailPrice 0.000 on all 19,481 SKUs",
+      "live_number": "Exactly ONE child variant sold below cost in the whole mobile basket: Bluetooth Buds child 000C, 2 units, net ₹550.85 vs cost ₹555.00 = -0.8%. Total exposure ₹8. 134 children sold, 0 missing a cost",
+      "query_used": "WITH s AS (SELECT sd.ProductID,sd.ChildID,sd.LocationCode,SUM(sd.Quantity) qty,SUM(sd.Quantity*sd.SaleRate/(1+sd.TaxRate/100.0)) net FROM SaleDetail sd JOIN SaleHeader sh ... WHERE p.SubGroupID IN (600,601,437,356) AND sh.VoucherDate>='2025-09-01' GROUP BY ...) SELECT * FROM s JOIN ProductChildMaster c ON c.ProductID=s.ProductID AND c.ChildID=s.ChildID AND c.LocationCode=s.LocationCode WHERE s.net/s.qty < c.PurchaseCost",
+      "why": "The -91.2% is an artefact of comparing one child's ₹165 price to the PARENT's blended ₹267 cost. 'Mobile Earphone 02' has 33 children and has been rung up at ₹99, ₹100, ₹120, ₹150, ₹165, ₹450, ₹500, ₹599, ₹699, ₹720, ₹799 and ₹899. In the live 12m it sold 5 units, not 8 — four at ₹165 and one at ₹699, giving -16.1% at parent level. The lane's supporting claim that no price file exists is also wrong in the way that matters: ProductMaster's fields are empty (MaxRetailPrice 0 on all 19,494 active SKUs, StandardCostPrice on 41 — both confirmed), but the operational file is on ProductChildMaster at 100% coverage with its own Margin column."
+    },
+    {
+      "claim": "104 dead tech SKUs carry almost no capital — 71 'China Wrist Watch' SKUs with ZERO sales and ZERO stock, pure catalogue debris",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "104 dead tech SKUs, ~9 units of stock",
+      "live_number": "94-100 by my count (Watch 71, Computer Parts 9, Lamp 6, Extention 3, Tube Light 2, Internet Switch 2, Plug Top 1, Power Bank 7). Watch sold 73 units / ₹13,539 all-time, last on 2025-02-21",
+      "query_used": "SELECT sg.SubGroupName,COUNT(*),SUM(CASE WHEN st.onhand>0 THEN 1 ELSE 0 END),SUM(st.onhand) FROM ProductMaster p JOIN SubGroupMaster sg ... GROUP BY sg.SubGroupName; and SELECT MIN/MAX(sh.VoucherDate),SUM(sd.Quantity) for those subgroups all-time",
+      "why": "The delisting action is safe — zero stock, zero capital — so the recommendation stands. But 'ZERO sales, pure catalogue debris' is a 12-month artefact: those watches did sell, 73 units of them, as recently as 18 months ago. That slightly cuts against the lane's own proposal to add 4 smartwatch SKUs on the theory that the category is untested here."
+    },
+    {
+      "claim": "Electrical and Computer Parts subgroups are institutional facilities procurement in the retail catalogue — Hikvision, DVRs, Purple HDDs, biometric, D-Link, UPS; 61 Electrical SKUs, 5 sold",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "61 Electrical SKUs, 5 sold",
+      "live_number": "61 SKUs, 5 sold: Shine Star Kettle 1.8L (24u ₹22,239), Hot Water Bag (38u ₹10,240), Kettle 2.0L (12u ₹9,343), Ovastar Ceiling Fan (2u ₹2,356), Eveready Mosquito Racquet (1u ₹399)",
+      "query_used": "SELECT p.ProductName,SUM(sd.Quantity),SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ... JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID WHERE sg.SubGroupName='Electrical' AND sh.VoucherDate>='2025-09-01' GROUP BY p.ProductName",
+      "why": "Exact match, including the 'only kettles, hot water bags and a ceiling fan actually sold' detail. Good, checkable work."
+    },
+    {
+      "claim": "Existing suppliers already reach the branded electricals ARY needs — Himachal Wholesale Syndicate, Cm Trading Co., Bansal Brothers, with buys as recent as 2026-08-14",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "5 active suppliers, ₹5.02 L of tech purchases in 24m",
+      "live_number": "On cells/bulbs/torches alone, 24m: Himachal Wholesale Syndicate ₹50,656 (last 2026-08-11), Cm Trading Co. ₹28,841 (last 2026-08-14), plus 4 others",
+      "query_used": "SELECT a.AccountName,SUM(pd.Quantity*pd.PurchaseCost),MAX(ph.VoucherDate) FROM PurchaseDetail pd JOIN PurchaseHeader ph ... JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID WHERE sg.SubGroupName IN ('Cell','Bulb','Torch') AND ph.VoucherDate>='2024-09-01' GROUP BY a.AccountName",
+      "why": "Holds, dates and all. This is the finding that most de-risks the plan and it is solid."
+    },
+    {
+      "claim": "Delhi HO is 9 km from Gaffar Market and there is NO Delhi warehouse, so Gaffar vendors should invoice the HP GSTIN 02AACCJ4223F1Z8 interstate rather than setting up a branch transfer",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "110027 to 110005 ≈ 9 km; 12 warehouses, none in Delhi",
+      "live_number": "Ary Ho 07AACCJ4223F1ZY New Delhi 110027; Ary Baru Sahib 02AACCJ4223F1Z8 Rajgarh 173101; Ary Bathinda 03AACCJ4223F1Z6. 12 warehouses, all Baru Sahib counters; warehouse 19 'Baru Sahib' has 0 SKUs",
+      "query_used": "./ary locations ; ./ary warehouses",
+      "query_used_note": "",
+      "why": "Exact. The GST reasoning is sound on its face — same PAN, different GSTINs, so a direct interstate supply to 02… with IGST does avoid a branch-transfer tax invoice. The lane correctly flags as an open question whether Gaffar counter vendors will raise one."
+    },
+    {
+      "claim": "A 114-SKU range produces ₹1,74,907/month at a 45.8% blended margin; capture is only ~33% of township demand so the plan is deliberately conservative",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹1,74,907/mo; +₹1,54,097/mo revenue; ~33% capture, 'not aggressive'",
+      "live_number": "₹1,534 per SKU per month required, against an ARY median of ₹211/SKU/mo in Accessories and ₹196 in Electricals & Electronics — and above the MEAN of every non-food department in the store",
+      "query_used": "WITH s AS (SELECT sd.ProductID,SUM(sd.FinalSaleAmount) gross FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' GROUP BY sd.ProductID), r AS (ROW_NUMBER() OVER (PARTITION BY p.DepartmentID ORDER BY s.gross)) SELECT d.DepartmentName, mean and median gross/12 GROUP BY d.DepartmentName; plus SELECT SUM(FinalSaleAmount)/12 by subgroup for Bulb/Torch/Switch/Cell",
+      "why": "₹98,631/mo — 56% of the forecast — comes from lines with zero ARY sales history, and four of those are contradicted by their own adjacent base: LED bulbs ₹5,940/mo against a bulb line doing ₹964/mo (6.2x); emergency lights ₹7,686/mo against a torch line doing ₹644/mo (11.9x); extension boards ₹8,778/mo against ₹1,151/mo (7.6x, and the lane believed the base was zero); smartwatches ₹8,394/mo on a watch line that has sold nothing since Feb-2025. The plan needs 583 accessory units a month against ~96 today — 1 bill in 53 versus 1 in 388. And the conservatism test is circular: '~33% of township demand' divides by a demand estimate the same model invented from a Wikipedia enrolment figure."
+    },
+    {
+      "claim": "Opening stock is only ₹1.20 lakh and turns 8.0x, in line with Ary Pos's 7.9x; total one-off ₹1.80 lakh, payback 2.9 months",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹1,20,500 stock, 8.0 turns, ₹1.80 L one-off, 2.9-month payback",
+      "live_number": "The category's own observed turn is 3.1x — COGS ₹1,17,320 against ₹38,026 of stock at cost (86 child rows, 333 units)",
+      "query_used": "SELECT COUNT(*),SUM(st.Quantity),SUM(st.Quantity*ISNULL(c.PurchaseCost,st.PurchaseCost)) FROM Stock st JOIN ProductMaster p ON p.ProductID=st.ProductID LEFT JOIN ProductChildMaster c ON c.ProductID=st.ProductID AND c.ChildID=st.ChildID AND c.LocationCode=st.LocationCode WHERE p.SubGroupID IN (600,601,437,356) AND st.Quantity>0",
+      "why": "8.0x is asserted from a 1.5-month cover assumption and benchmarked against Ary Pos's whole-store 7.9x, which is dominated by fast-moving food. The relevant comparator is this category's own 3.1x. At 3.1 turns the plan's ₹9,63,996 of COGS needs ~₹3.11 lakh of stock, not ₹1.20 lakh — one-off ~₹3.7 lakh and payback ~6 months, even if the revenue forecast were sound. It also has to hold 45 slow model-specific glass and cover SKUs, which turn slower, not faster."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

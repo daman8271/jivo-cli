@@ -1,0 +1,200 @@
+{
+  "lane": "licence-map",
+  "claims_tested": 20,
+  "lane_confidence_after": "medium",
+  "single_biggest_error": "The drugs finding — the entire headline — was scoped by name-matching exactly three brand names (CROCIN, DISPRIN, VOLINI). That produced 14 SKUs / ₹8,849, and the lane then wrote a P0 that names those same three brands. Enumerating the Medicare product group directly instead of name-matching finds 45 active allopathic SKUs, 18 sold in the live 12 months, ₹39,672 across 613 bills — 4.5x the value, 3.4x the bills. The 31 SKUs the lane missed include Avomine (promethazine theoclate, Schedule H prescription-only), three Otrivin/xylometazoline nasal sprays, clotrimazole and miconazole antifungals, D Cold Total, Diclowin, Cofsils, Omnigel, and the single largest allopathic line in the shop — Johnsons Benadryl 150 ml at ₹8,532 across 50 bills, which on its own is bigger than the lane's entire reported exposure. Executing the lane's P0 as written de-lists 18% of the exposure by value, leaves a Schedule H drug on the shelf, and tells the operator the offence is closed. A false all-clear on a criminal exposure is worse than the original finding. This is the vault's own Trap 2 (name-match scope) running in the opposite direction from the one Trap 2 documents: the burden of proof was put on \"missing\", but nobody put any burden on \"the list of what we already sell is complete.\"",
+  "verdicts": [
+    {
+      "claim": "ARY is retailing allopathic drugs with no drug licence — 183 bill lines, 198 units, Rs 8,848.56, 181 bills in 12 months",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "183 lines / 198 units / Rs 8,848.56 / 181 bills",
+      "live_number": "Identical to the paisa on the lane's own window. On my live window (2025-09-01 to 2026-08-31): 171 lines / 186 units / Rs 7,116.06 / 169 bills / 5 of the 14 SKUs actually sold",
+      "query_used": "SELECT COUNT(*),SUM(sd.Quantity),ROUND(SUM(sd.Quantity*sd.SaleRate),2),COUNT(DISTINCT sh.SerialNumber) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID WHERE sh.VoucherDate>='2025-08-01' AND sh.VoucherDate<'2026-08-22' AND (p.ProductName LIKE '%CROCIN%' OR p.ProductName LIKE '%DISPRIN%' OR p.ProductName LIKE '%VOLINI%')",
+      "why": "The arithmetic is honest and reproduces exactly — the lane did not fabricate. The offence is real and current: ARY bought Rs 40,242 of these drugs in the live 12 months, last purchase 2026-08-13, and 13 of the 45 allopathic SKUs sold in August 2026."
+    },
+    {
+      "claim": "'14 such SKUs still IsActive=1' — i.e. the exposure to be remediated is 14 SKUs of Crocin, Disprin and Volini",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "14 SKUs, Rs 8,848.56/yr",
+      "live_number": "45 active allopathic SKUs; 18 sold in live 12m; Rs 39,671.70 across 613 bills (Rs 41,385 / 621 bills on the lane's own window). Excluding the 3 ambiguous Selsun SKUs: Rs 36,410",
+      "query_used": "SELECT sd.ProductID,COUNT(*),ROUND(SUM(sd.Quantity*sd.SaleRate),2) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' AND sd.ProductID IN ('0BL1','0A2T','0BL2','0698','03CT','0767','0EXC','0E5T','0B1I','07Q2','0768','0B1H','0E5S','07Q3','0A2S','03VH','0DDW','0DDX','0766','0B1G','0FBH','0762','01SY','01NE','01NF','01NG','0A2U','0BRF','00IO','0ELS','02DY','02DZ','08G6','02E0','0BL9','0BL8','0BL7','01N1','0BRE','06VE','03DR','03DS','0FBG','0DM4','0CV2') GROUP BY sd.ProductID — list built by reading all 272 rows of ProductGroupID=138 (Medicare), not by name-matching",
+      "why": "Three brand names is not an enumeration. Missed: Avomine (promethazine theoclate, Schedule H), Otrivin x3 (xylometazoline), Benadryl x5 (Rs 8,532 on one SKU alone), Strepsils x2 (Rs 7,325 / 216 lines), Omnigel x3, Diclowin x2, D Cold Total x3, Itch Guard x3 and Ring Guard x2 (clotrimazole/miconazole), Wincold, Cofsils, plain Paracitamol 500 Mg (Rs 590), Stopache."
+    },
+    {
+      "claim": "Headline: 'closing a live exposure worth Rs 15,274 a year of revenue'",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 15,273.56/yr (Rs 8,848.56 drugs + Rs 6,425 infant)",
+      "live_number": "Rs 46,096.70/yr (Rs 39,671.70 allopathic + Rs 6,425 IMS Act), of which Rs 0 is infant formula",
+      "query_used": "Union of the 45-SKU allopathic query above and the IMS 59-SKU query below, both on 2025-09-01 to 2026-08-31",
+      "why": "Understated 3.0x. The direction of the decision does not change — it is still under 0.1% of Rs 7.65 Cr turnover — but the scope of the remediation does, and that is what the operator acts on."
+    },
+    {
+      "claim": "P0 recommendation: 'Stop selling Crocin, Disprin and Volini today, or file Form 19 this month'",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "monthlyImpactInr -737",
+      "live_number": "Real revenue at risk from a complete allopathic de-list: Rs 3,306/month. The lane's action closes Rs 593/month of it (18% by value) and leaves 31 SKUs live",
+      "query_used": "Same 45-SKU query, /12",
+      "why": "As written this is a remedy that produces a false all-clear. It leaves a Schedule H prescription-only drug (Avomine) and the shop's largest allopathic line (Benadryl 150 ml, 50 bills) on the shelf while reporting the exposure closed."
+    },
+    {
+      "claim": "ARY carries 9 active infant-milk-substitute SKUs, 34 active Cerelac SKUs and 16 feeding-bottle/nipple/soother SKUs = 59; 12m sales Rs 0 formula + Rs 3,878 infant food + Rs 2,547 bottles = Rs 6,425",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "9 / 34 / 16 = 59 SKUs; Rs 6,425",
+      "live_number": "Identical on both windows: 9 / 34 / 16 SKUs; Rs 0.00 / Rs 3,878.00 / Rs 2,547.00",
+      "query_used": "WITH s AS (SELECT sd.ProductID,sd.Quantity,sd.SaleRate,sh.SerialNumber FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01') SELECT bucket,COUNT(DISTINCT ProductID),ROUND(SUM(s.Quantity*s.SaleRate),2) ... bucketed on LACTOGEN / CERELAC / (FEEDING BOTTLE|NIPPLE|SOOTHER|MILK FEEDER), IsActive=1",
+      "why": "Reproduces exactly, including the awkward Rs 0. My wider probe (adding FEEDER/TEETHER/INFANT/DEXOLAC/SIMILAC/ENFAMIL) finds 4 more SKUs the lane's terms missed, of which one — Small Wander Glass Feeder Bottle 125Ml, Rs 765 — is squarely an IMS Act feeding bottle. So 60, not 59. Immaterial."
+    },
+    {
+      "claim": "'ARY is carrying a criminal statute for Rs 535 a month' — the infant category is a live exposure; P0 step 1 is to pull the 9 Lactogen SKUs and the feeding bottles",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "9 live formula SKUs, Rs 535/month at risk",
+      "live_number": "All 9 formula SKUs: 0 units on hand. 7 of 9 have ZERO sale lines in the entire book. The other 2 last sold 2024-08-28 and 2024-09-06 — two years ago. The 16 bottle SKUs: 0 units on hand, last sale 2026-05-30. Of 34 Cerelac SKUs only 3 carry stock, 4 units in total",
+      "query_used": "WITH st AS (SELECT ProductID,SUM(Quantity) qty FROM Stock GROUP BY ProductID), ls AS (SELECT sd.ProductID,MAX(sh.VoucherDate) last_sale,COUNT(*) lines FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber GROUP BY sd.ProductID) SELECT p.ProductID,p.ProductName,ISNULL(s.qty,0),l.last_sale,ISNULL(l.lines,0) FROM ProductMaster p LEFT JOIN st s ON s.ProductID=p.ProductID LEFT JOIN ls l ON l.ProductID=p.ProductID WHERE p.IsActive=1 AND p.ProductName LIKE '%LACTOGEN%'",
+      "why": "The lane read IsActive=1 as shelf presence. It is a master-data flag — the vault's own Trap 2. ARY does not sell infant formula and has not for two years; the P0 pauses zero stock and zero revenue. The 6-month-minimum sentence the lane calls 'the single sharpest penalty found anywhere in this lane' attaches to 4 units of Cerelac and an empty bottle rack, while the genuinely live, actively-restocked criminal exposure (allopathic drugs, 13 SKUs sold in August 2026) got the smaller share of the lane's attention."
+    },
+    {
+      "claim": "IMS Act s.11(1)/s.11(2) require the BIS Standard Mark; s.20(2) sets a MANDATORY MINIMUM of six months' imprisonment plus a minimum Rs 2,000 fine",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "minimum 6 months, minimum Rs 2,000",
+      "live_number": "Statutory text confirmed verbatim, BUT s.20(2) carries a proviso the lane omitted: the court may, 'for any adequate and special reasons to be mentioned in the judgement', impose not less than three months / not less than Rs 1,000",
+      "query_used": "WebFetch https://www.bpni.org/docments/IMS-act.pdf, then pdftotext -layout locally; read ss.3, 4, 6, 11(1), 11(2), 20(1), 20(2), 2(f), 2(g), 21(1)(c) in the primary text",
+      "why": "The lane's quotes of ss.3, 4, 11, 20(2), 2(f) and 21(1)(c) are all accurate word-for-word — good primary-source discipline. But 'MANDATORY MINIMUM' overstates a floor the statute itself lets a court halve, and that phrase is the rhetorical engine of the P0. Separately the lane missed s.6 (the compulsory 'IMPORTANT NOTICE' label wording), which carries the SAME s.20(2) penalty and is a far easier goods-inward check than a BIS mark."
+    },
+    {
+      "claim": "All 59 infant SKUs read ProductDiscount 0.00 / AllowOperatorDiscount false / SPCommPercent 0.00 — verified clean today",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "59/59 clean",
+      "live_number": "59/59: zero non-zero ProductDiscount, zero AllowOperatorDiscount=1, zero non-zero SPCommPercent, zero populated SchemeIDs. Extended check: across all 26 infant sale lines in 12m, DiscountFinal / DiscountProduct / DiscountManual / SchemeDiscAmt / SPCommAmt are all 0.00",
+      "query_used": "SELECT COUNT(*),SUM(CASE WHEN ISNULL(ProductDiscount,0)<>0 THEN 1 ELSE 0 END),SUM(CASE WHEN AllowOperatorDiscount=1 THEN 1 ELSE 0 END),SUM(CASE WHEN ISNULL(SPCommPercent,0)<>0 THEN 1 ELSE 0 END),SUM(CASE WHEN ISNULL(SchemeIDs,'')<>'' THEN 1 ELSE 0 END) FROM ProductMaster WHERE IsActive=1 AND (name LIKE the 6 IMS patterns)",
+      "why": "Holds, and I closed the lane's own admitted gap ('not checked against the scheme/promo tables') — it comes back clean too. Note SaleDetail.SchemeID=1 on 986,932 of 989,005 lines is a system default, not a promotion."
+    },
+    {
+      "claim": "MD-42 medical-device registration 'unlocks three of ARY's wanted categories at once… Medicare (Rs 3.40 L today), the whole optical idea, and adult incontinence all sit behind one Rs 3,000 registration'",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 3.40 L of Medicare sits behind MD-42",
+      "live_number": "Medicare group = Rs 3,40,036.06 on the lane's window (exact match) / Rs 3,20,127.46 live. Notified medical devices inside it = Dettol Bandaid Rs 4,456.81 + absorbent cotton Rs 1,420 = Rs 5,876.81 — 1.8% of the group",
+      "query_used": "SELECT sg.SubGroupName,COUNT(DISTINCT sd.ProductID),ROUND(SUM(sd.Quantity*sd.SaleRate),2) FROM SaleDetail sd JOIN SaleHeader sh ... JOIN ProductMaster p ... LEFT JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID WHERE p.ProductGroupID=138 AND sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' GROUP BY sg.SubGroupName",
+      "why": "The Rs 3.40 L figure is right; the attribution is wrong. Medicare is Pain Relief, Pachak Churan, Cough Syrup, Antiseptic Lotion, Eno, Glucose, Chyawanprash, Vaporub and Mosquito Killer — none of which needs MD-42, and the regulated slice inside it (Rs 39,672 of allopathic drugs) needs a Form 20, a different licence. Two corrections in ARY's favour: the lane is RIGHT that condoms, glucometers, BP monitors, reading glasses, adult diapers and pregnancy tests are genuinely absent (probed, zero hits), so the growth case survives — but it MISSED that ARY already sells notified devices (bandages + absorbent cotton, 333 bills) without MD-42, so MD-42 is a third live exposure, not purely a growth unlock."
+    },
+    {
+      "claim": "'ARY currently has zero SKUs flagged for weighing-scale export', therefore ARY is not a dealer in weights and measures and needs no LD-1",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "0 SKUs with WeighingScaleExport=1",
+      "live_number": "0 of 19,487 active SKUs — number confirmed. But a name probe for weighing instruments (WEIGH/SCALE/TARAJU/KANTA/BALANCE) returns only 26 rows, every one a stationery ruler or an unrelated false hit; no weighing instrument is sold",
+      "query_used": "SELECT SUM(CASE WHEN WeighingScaleExport=1 THEN 1 ELSE 0 END),COUNT(*) FROM ProductMaster WHERE IsActive=1; then SELECT ProductName,ProductGroupName FROM ProductMaster p LEFT JOIN ProductGroupMaster g ... WHERE ProductName LIKE '%WEIGH%' OR '%SCALE%' OR '%TARAJU%' OR '%KANTA%' OR '%BALANCE%'",
+      "why": "Right answer, invalid evidence. WeighingScaleExport sits beside WeighingScaleConversion and is a POS-to-label-printer integration flag ('send this item to the weighing machine'), not 'this item IS a weighing machine'. It reads 0 on all 19,487 SKUs including loose vegetables and loose ghee, i.e. it is simply an unused field — the same dead-field class as QuantityOnHand. The conclusion only survives because the name probe independently backs it."
+    },
+    {
+      "claim": "FSSAI thresholds were raised effective 1 April 2026: Registration up to Rs 1.5 Cr, State Rs 1.5-50 Cr, Central above Rs 50 Cr",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "Rs 1.5 Cr / Rs 1.5-50 Cr / Rs 50 Cr+, eff. 01-04-2026",
+      "live_number": "Confirmed independently: FSS (Licensing and Registration of Food Businesses) Amendment Regulations 2026 gazetted 10-Mar-2026, FSSAI implementation order 13-Mar-2026, effective 1-Apr-2026; prior Basic ceiling Rs 12 lakh",
+      "query_used": "WebSearch 'FSSAI turnover threshold change 2026 registration 1.5 crore state licence 50 crore central licence' — corroborated by mondaq, Chambers, and an FSSAI press release PDF on fssai.gov.in",
+      "why": "The lane's figures, dates and instrument all check out against sources it did not itself cite. This is the strongest external claim in the lane."
+    },
+    {
+      "claim": "'Every FSSAI answer written before April 2026 is now wrong' — ARY at Rs 7.55 Cr trailing (annualising Rs 8.96 Cr) sits in State Licence territory",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "Rs 7.55 Cr trailing / Rs 8.96 Cr annualised; 'every pre-April-2026 answer is now wrong'",
+      "live_number": "Live 12m (2025-09-01 to 2026-08-31) = Rs 7.65 Cr on SUM(BillAmount), 371,817 bills; strict 12m to 2026-08-21 = Rs 7.60 Cr; FY26-27 to date Rs 3.71 Cr over 152 days annualises to Rs 8.90 Cr",
+      "query_used": "SELECT ROUND(SUM(BillAmount),2),COUNT(*) FROM SaleHeader WHERE VoucherDate>='2025-09-01' AND VoucherDate<'2026-09-01'",
+      "why": "Turnover figures are fine (2% drift, freshness). The soWhat is not: under the OLD bands (Rs 12 L / Rs 12 L-20 Cr / >20 Cr) ARY at Rs 7.6 Cr needed a State Licence, and under the new bands it still needs a State Licence. Nothing changed for the entity. Only the per-counter downgrade idea is new, and that rests on an untested assumption that each till is a separately licensable premises."
+    },
+    {
+      "claim": "Several small counters — Ary Lite Rs 18.4 L, Fruits & Veg Rs 50.1 L, G Canteen Rs 52.7 L — may now qualify for cheap Basic Registration; re-audit FSSAI across all 11 counters",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Ary Lite 18.4 L / F&V 50.1 L / G Canteen 52.7 L; 11 counters",
+      "live_number": "Strict 12m to 2026-08-21: Ary Lite Rs 18.86 L, Fruits & Vegetables Rs 51.07 L, Ary G Canteen Rs 53.87 L (2-3% above the lane). 11 named warehouses exist but only SIX traded in the last 12 months — Talwandi Sabo last sold 2024-07-11, Girls Canteen Ts 2024-03-22, Apple A Day 2023-11-30, Ary Warehouse 2024-08-31, 'Baru Sahib' (id 19) never",
+      "query_used": "SELECT w.WarehouseName,ROUND(SUM(sd.Quantity*sd.SaleRate),2) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber LEFT JOIN WarehouseMaster w ON w.WarehouseID=sd.WarehouseID WHERE sh.VoucherDate>='2025-08-22' AND sh.VoucherDate<'2026-08-22' GROUP BY w.WarehouseName; plus MAX(VoucherDate) per warehouse over all time",
+      "why": "Counter values are close enough to act on. 'All 11 counters' is over-scoped by roughly half: five have been dark for 1-3 years, and one of the six live ones (Ary Clothing, Rs 1.34 Cr) is apparel and needs no FSSAI at all."
+    },
+    {
+      "claim": "ARY has three GST registrations across Delhi, HP and Punjab, so Jivo Wellness may owe an unfiled Rs 7,500/yr FSSAI Central Licence at the Delhi head office",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "3 GSTINs -> multi-state -> Central Licence gap",
+      "live_number": "GSTINs confirmed: Ary Ho 07AACCJ4223F1ZY (New Delhi 110027), Ary Baru Sahib 02AACCJ4223F1Z8 (Rajgarh 173101), Ary Bathinda 03AACCJ4223F1Z6 (Talwandi Sabo 151302). But Bathinda has not sold since 2024-07-11 nor purchased since 2024-07-08, and Delhi HO has ONE purchase voucher in the entire book, dated 2023-04-01, value Rs 0",
+      "query_used": "./ary locations; SELECT MAX(sh.VoucherDate) per WarehouseID over SaleDetail x SaleHeader all-time",
+      "why": "The registrations exist. The inference that ARY has 'food premises in two or more states' rests on a counter dormant for 25 months and a head office that has never traded. The lane's own source for the rule is secondary (setindiabiz) and it says so honestly. Worth a phone call, not a filing."
+    },
+    {
+      "claim": "ARY has SalesPersonID [NONE] on 99.7% of bills, so there is no IMS s.10(1) commission exposure today",
+      "verdict": "QUALIFIED",
+      "materiality": "colour",
+      "original_number": "99.7% of bills",
+      "live_number": "SalesPersonID is a LINE attribute, not a bill attribute. Zero lines are blank; the placeholder id 1 ('[None]') carries 987,587 of 989,005 lines = 99.86%. 1,418 lines DO carry a real salesperson (ids 3,4,5,7,15,16)",
+      "query_used": "SELECT sd.SalesPersonID,COUNT(*) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' GROUP BY sd.SalesPersonID",
+      "why": "Direction right, mechanism slightly misdescribed, and it inherits the vault's figure rather than re-deriving it. The conclusion (carve infant SKUs out before any incentive scheme) is unaffected."
+    },
+    {
+      "claim": "P1: 'Add household insecticides now' — a free win at Rs 25,000/month, Rule 10 exemption applies",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "new category, monthlyImpactInr 25,000",
+      "live_number": "ARY already sells them: Rs 32,753 across 9 SKUs in the live 12 months = Rs 2,729/month. Red Hit Rs 10,494, Hit 200 ml Rs 7,010, All Out Combo Rs 4,410, naphthalene balls Rs 3,894, Hit Black 320 ml Rs 2,520, Good Knight Refill Rs 1,530, All Out Refill Rs 1,425, Hit Red Rs 1,260",
+      "query_used": "SELECT ROUND(SUM(sd.Quantity*sd.SaleRate),2),COUNT(DISTINCT sd.ProductID) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' AND sd.ProductID IN (explicit list of All Out / Good Knight / Mortein / Hit / Odomos / naphthalene SKUs); cross-checked with ./ary assort probe mosquito repellent coil vaporiser",
+      "why": "Not an addition — an existing line, and the brands are sitting in the Medicare group the lane itself printed 272 rows of. The Rs 25,000/month uplift is 9x the entire existing category's run rate and has no stated basis. The Rule 10 legal reading may well be right; the commercial recommendation is not."
+    },
+    {
+      "claim": "P1: 'Add toys with an ISI-mark rule at goods inward… the cheapest new category on the list', Rs 35,000/month",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "new category, monthlyImpactInr 35,000",
+      "live_number": "347 active toy SKUs across the Toys and Toy & Sports groups; Rs 3,64,712 sold in the live 12 months = Rs 30,393/month",
+      "query_used": "./ary assort probe toy — 347 SKUs matched, 19 sold, Rs 364,712; cross-checked by SELECT g.ProductGroupName,COUNT(DISTINCT sd.ProductID),ROUND(SUM(sd.Quantity*sd.SaleRate),2) ... WHERE p.ProductGroupID IN (154,155) GROUP BY g.ProductGroupName",
+      "why": "Toys are not a new category — they are a Rs 3.65 lakh line ARY already runs. This flips the lane's own compliance point from future to present tense: the Toys QCO 2020 bar on STORING or EXHIBITING non-ISI toys, which the lane offers as a goods-inward rule for stock ARY is about to buy, is a live condition on 347 SKUs already on the shelf. The lane hedged near this ('a non-ISI carton in the Basement counter is already an offence') without ever asking whether ARY already stocks toys."
+    },
+    {
+      "claim": "P2: 'Add electricals, mobiles and hardware/tools', Rs 80,000/month",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "new categories, monthlyImpactInr 80,000",
+      "live_number": "Electricals Rs 1,51,403 + Appliances Rs 1,76,831 + Mobile Rs 2,690 = Rs 3,30,924 in the live 12 months = Rs 27,577/month already trading; 320 active SKUs across the three groups",
+      "query_used": "SELECT ROUND(SUM(sd.Quantity*sd.SaleRate),2) FROM SaleDetail sd JOIN SaleHeader sh ... JOIN ProductMaster p ... WHERE p.ProductGroupID IN (123,109,139) AND sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01'",
+      "why": "Same failure as toys and insecticides. The lane's no-licence legal reading (E-Waste Rules 2022 Rule 2 does not reach a retailer) is sound and useful; the framing as a category to add is wrong."
+    },
+    {
+      "claim": "COTPA is not applicable — ARY sells no tobacco by institutional policy",
+      "verdict": "CONFIRMED",
+      "materiality": "colour",
+      "original_number": "Rs 0, no tobacco",
+      "live_number": "Zero SKUs match tobacco / cigarette / bidi / khaini / gutkha / zarda / pan-masala across every product group, active or not",
+      "query_used": "./ary assort probe tobacco cigarette bidi khaini gutkha zarda pan-masala — 0 SKUs matched",
+      "why": "The lane marked this ESTIMATED because its web budget ran out. The ARY half is now VERIFIED: nothing in the catalogue. The 100-yard COTPA point is untested but does not need to be."
+    },
+    {
+      "claim": "HP retail drug licence: Rs 3,000, Form 19, challan to Treasury SOL05 / DDO 019 / head 0210-02-800-09, HP Pharmacy Council certificate required, rural applicants need a map stamped and signed by the Pradhan",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 3,000; SOL05 / 019 / 0210-02-800-09; HP Pharmacy Council; Pradhan-signed map",
+      "live_number": "All confirmed verbatim from the primary checklist: item 2 'Copy of the online generated receipt of the Challan for Rs. 3000', 'Treasury SOL05 … Major: 0210 Sub-major: 02 … DDO Code: 019 … Minor: 800 Sub-Head: 09'; item 10 'Pharmacist's Registration certificate duly issued by the Himachal Pradesh Pharmacy Council, Shimla'; item 5 'copy of the approved map issued by the Municipal Corporation in Urban area and copy of the map duly stamped and signed by the Pradhan in rural [area]'",
+      "query_used": "WebFetch https://dhsr.hp.gov.in/Files/Checklist%20Grant%20of%20Retail_0.pdf then pdftotext -layout locally; grep for fee, treasury codes, pharmacist, pradhan",
+      "why": "The lane's most operationally useful findings and they hold word for word against the source. This, plus the IMS Act text, is why the lane keeps medium confidence rather than dropping to low: its legal research is genuinely good, its ARY-data scoping is not."
+    },
+    {
+      "claim": "Table 2: Moov range — 9 SKUs sold, 138 bill lines, Rs 13,768, no licence needed for ASU drugs",
+      "verdict": "QUALIFIED",
+      "materiality": "colour",
+      "original_number": "138 lines / Rs 13,768",
+      "live_number": "Rs 13,768.00 exact on the lane's window, but 105 lines / 107 units — not 138. Live window: 104 lines / Rs 13,813",
+      "query_used": "SELECT COUNT(*),SUM(sd.Quantity),ROUND(SUM(sd.Quantity*sd.SaleRate),2) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID WHERE sh.VoucherDate>='2025-08-01' AND sh.VoucherDate<'2026-08-22' AND p.ProductName LIKE '%MOOV%'",
+      "why": "Value matches to the rupee, line count does not — a transcription slip. The legal point (retail sale of Ayurvedic/Siddha/Unani drugs needs no licence) is correct and changes nothing."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

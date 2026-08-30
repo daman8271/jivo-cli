@@ -1,0 +1,164 @@
+{
+  "lane": "hardware-build",
+  "claims_tested": 17,
+  "lane_confidence_after": "low",
+  "single_biggest_error": "The P0 that the lane says \"outranks the whole range build\" — the 1-Oct-2026 QCO cliff — does not survive contact with either the database or the order itself. Three independent renderings of the schedule of the Safety of Household, Commercial and Similar Electrical Appliances (Quality Control) Order, 2026 (DPIIT S.O. 1739(E), 6-Apr-2026) do NOT name room heaters (only *thermal storage* room heaters), electric irons, hair dryers, microwave ovens or fans — the categories carrying Rs 1,13,074 of the exposure, including Room Heater 17 which is the single biggest line in the lane's own number. At the same time the lane's SKU set is wrong in the opposite direction: its filter ProductGroupID IN (109,123,114) missed the entire Cookware/Kettle subgroup (21 active SKUs, Rs 54,023 of 12m sales), so the true electrical-appliance footprint is 55 SKUs / Rs 2,81,990, not 34 / Rs 2,07,638 — this is the vault's own Trap 1 (the category tree lies), which the lane quoted for other lanes and then failed to apply to itself. The penalty is also wrong in both direction and shape: BIS Act 2016 s.29(3) sets a fine of NOT LESS THAN Rs 2 lakh for a first contravention and NOT LESS THAN Rs 5 lakh for the second, extending up to TEN TIMES the value of the goods — Rs 5 lakh is a floor, not the cap, so the lane's signature line \"the maximum fine is 2.4x the entire annual revenue of the category\" is fabricated (the real ceiling on Rs 2.82 L of appliance sales is ~Rs 28 lakh). And the \"escape hatch\" is not ARY's to pull: the six-month sell-down clause reads \"such manufacturers shall be allowed to sell... provided the manufacturer makes a formal declaration to this effect to the Bureau\", conditional on that manufacturer holding or having applied for a BIS licence. Plan step 2 therefore instructs Jivo Wellness HO to file a declaration a retailer has no standing to file, and to fix its enforcement date off ARY's own MSMED classification when the stagger keys off the certifying enterprise. Net: the lane made its most urgent, most confident recommendation on an unverified scope mapping, a mis-scoped SKU set, an inverted penalty and an inapplicable remedy.",
+  "verdicts": [
+    {
+      "claim": "'A hardware/tools/home-maintenance category does not exist at ARY... the active catalogue holds exactly ONE genuine SKU (Tarpaulin Plastic)'; summary table: paint, tools, wire, CPVC, taps, MCB, fasteners, hinges, ladders, conduit, sealant, hosepipe = 'GREENFIELD - nothing exists'",
+      "original_number": "1 real SKU of 19,481 active; Rs 1,000 lifetime",
+      "live_number": "Tarpaulin confirmed (1 unit / Rs 1,000 lifetime), but hardware-adjacent lines the lane calls greenfield already trade ~Rs 36,600/yr: adhesives 9 SKUs / 4 selling / Rs 19,300; switches-sockets-plug tops-extension boards 9 selling SKUs / Rs 13,812; LPG gas hose 2 SKUs / Rs 2,005; painting brushes 4 SKUs / Rs 1,490. Plus dormant-but-present: 'Wire' 0CFX (Rs 900 lifetime), 'Plb Hdpe Pipe 40/33 Mm' 06BK (0 sales). Catalogue is 19,487 active, not 19,481.",
+      "verdict": "QUALIFIED",
+      "query_used": "ary assort probe fevicol fevikwik adhesive; ary assort probe emulsion paint; SELECT p.ProductID,p.ProductName,g.ProductGroupName,s.SubGroupName,SUM(d.Quantity),SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ... JOIN SubGroupMaster s ... WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' AND s.SubGroupName IN ('Switch','Plug Top','Extention') GROUP BY ...; plus a 46-term LIKE sweep over ProductMaster for wire/pipe/paint/tool/tap/mcb/hinge/ladder words",
+      "why": "The hard core of the claim survives — no paint, no hand tools, no house wire by sqmm, no CPVC, no taps, no MCBs, no hinges, no ladders, no fasteners. But 'exactly ONE SKU' is wrong, and the lane's own table row 'Adhesives - 4 SKUs, 1 sold, Rs 540' is out by 35x (9 SKUs, 4 selling, Rs 19,300; Fevikwik alone is 2,240 units / Rs 11,200 a year). Two of the 14 proposed range blocks (switches/sockets/plates, extension boards/plug tops) are counted as new build in the range table while the same SKUs sit inside the lane's existing-footprint baseline. Note also that the evidence SQL as printed (ProductName LIKE '%Asian Paint%' OR '%Emulsion%' OR ...) is not valid T-SQL, so it cannot be the query that was run.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'The full hardware-adjacent footprint that DOES exist is Rs 9,69,972 in 12 months = 1.28% of the Rs 7.55 Cr turnover, or Rs 16.17 per resident per month' across three blocks",
+      "original_number": "Rs 9,69,972 / 1.28% / Rs 16.17 per resident per month; 697 active SKUs, 230 sold",
+      "live_number": "Rs 7,97,178 on the live 12m window (grp 109/123/114 Rs 3,49,236 + Lock subgroup Rs 1,33,695 + the 14 consumable subgroups Rs 3,14,247), 201 SKUs sold of 645 active = 1.04% of Rs 7.66 Cr gross (Rs 7.49 Cr net of returns); Rs 14.14 per resident per month at 4,700 residents",
+      "verdict": "QUALIFIED",
+      "query_used": "Three UNION'd inner joins SaleDetail x SaleHeader x ProductMaster, VoucherDate>='2025-09-01' AND <'2026-09-01', on ProductGroupID IN (109,123,114), SubGroupName='Lock', and SubGroupID IN (321,322,323,368,370,432,434,504,582,604,697,718,879,845); denominator SELECT SUM(d.FinalSaleAmount) over the same window = 76,602,055 gross, less SaleReturnDetail 1,708,858",
+      "why": "Not reproducible from the evidence as written: the lane cites '18 consumable subgroups' but names 13 and only 14 subgroups exist under those names; my 14-subgroup set gives Rs 3.14 L against the lane's Rs 4.65 L, and a generous 23-subgroup superset still only reaches Rs 4.21 L. The two electrical blocks reconcile cleanly once you allow for the window shift. Direction and order of magnitude hold; the specific figure is ~22% high and the percentage is 1.04%, not 1.28%.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'34 appliance SKUs worth Rs 2,07,638 in 12 months - 58% of ARY's entire electricals department - fall inside the Safety of Household, Commercial and Similar Electrical Appliances (Quality Control) Order, 2026'",
+      "original_number": "34 SKUs, 275 units, Rs 2,07,638; 58% of the electricals department",
+      "live_number": "Re-running the lane's own filter gives 35 SKUs / 272 units / Rs 2,11,797 — but that set includes 'Rk Steel Pressure Cooker 3 Ltr' (Rs 6,898, a stovetop cooker caught by LIKE '%cooker%') and 'Heater Element 1500 Watt' (Rs 2,235, a spare part caught by '%rod%'/'%heater%'). The correct all-groups electrical-appliance set is 55 SKUs / Rs 2,81,990 — 36% larger — because ProductGroupID IN (109,123,114) misses the entire Cookware/Kettle subgroup (21 active SKUs, Rs 54,023) and China/Fan.",
+      "verdict": "REFUTED",
+      "query_used": "SELECT COUNT(DISTINCT p.ProductID),SUM(d.Quantity),SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID JOIN SubGroupMaster s ON s.SubGroupID=p.SubGroupID WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' AND s.SubGroupName IN ('Kettle','Cooker','Room Heater','Iron','Immersion Rod','Mixer Grinder','Hair Dryer','Fan','Hand Mixer','Blender','Toaster','Heater Rod','Electrical') AND p.ProductID NOT IN ('0FSA','06TG','0F0P','0F8X','07T8','0B9K')",
+      "why": "This is the vault's Trap 1 firing on the lane itself — ARY's electric kettles are filed under Cookware, not Appliances, so a group-filtered query cannot see them. The 34-SKU carton-audit list is also internally inconsistent with its own money: it names SKUs with zero 12-month sales (Ovastar Room Heater 9, Usha Iron EL 4175-M, Shine Star Kettle 1.0/1.2 L) while omitting live sellers (Skyline Electric Kettle Rs 12,247, Kettle 2 Rs 13,043, Havells kettles Rs 16,646). The '58% of the electricals department' ratio is not reproducible on any consistent pair of sets.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "The 34 SKUs 'fall inside' the QCO — i.e. ARY's room heaters, kettles, irons, induction cookers, hair dryer and microwave are covered products under IS 302 (Part 1):2024",
+      "original_number": "Rs 2,07,638 of stock becomes illegal to sell on 1-Oct-2026",
+      "live_number": "Of the corrected Rs 2,81,990: Rs 1,13,074 (23 SKUs — room heaters, irons, hair dryer, fans) sits in categories NOT named in the order's schedule; Rs 86,831 (20 SKUs — kettles, immersion heaters, toaster, kitchen machines) is named or fairly derivable; Rs 82,085 (12 SKUs — induction cookers, microwave, electric tandoor, misfiled kettles) is arguable",
+      "verdict": "REFUTED",
+      "query_used": "Schedule cross-check against three independent renderings: alephindia.in/bis-qco-for-safety-of-household-and-similar-electrical-appliances-part-one.php (full 90-item list), elitasrcs.com/quality-control-orders/bis-qco-for-safety-of-household-commercial-and-similar-electrical-appliances, worldtradescanner.com/DPIIT Order S.O. 1739(E) dated 6 April, 2026.htm; DB split via the SubGroupName CASE query above",
+      "why": "The order exists and the lane's dates and standard are right (DPIIT S.O. 1739(E) of 6-Apr-2026, IS 302 (Part 1):2024/IEC 60335-1:2020, 1-Oct-2026 / 1-Jan-2027 / 1-Apr-2027). But the schedule is written in IEC 60335-2-xx product-class language ('appliances for heating liquids', 'fixed immersion heaters', 'thermal storage room heaters', 'grillers and toasters'), and all three renderings agree that room heaters, electric irons, hair dryers, microwave ovens and fans are not named. Room heaters are separately regulated under their own order (IS 302 Part 2/Sec 30), so they are not unregulated — but they are not this QCO, and the lane never did the SKU-to-class mapping it claims to have done.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'Retailers carry the SAME liability as manufacturers: fine up to Rs 5 lakh, imprisonment up to two years' and 'the maximum fine is 2.4x the entire annual revenue of the category it protects'",
+      "original_number": "max penalty Rs 5,00,000 + 2 years; 2.4x category revenue",
+      "live_number": "BIS Act 2016 s.29(3): imprisonment up to two years, or fine NOT LESS THAN Rs 2 lakh for a first contravention and NOT LESS THAN Rs 5 lakh for the second and subsequent, extending up to TEN TIMES the value of the goods sold or offered for sale, or both. On Rs 2,81,990 of appliance sales the ceiling is ~Rs 28.2 lakh, not Rs 5 lakh.",
+      "verdict": "REFUTED",
+      "query_used": "BIS Act 2016 s.29(3) text via indiankanoon.org/doc/188340632 and bis.gov.in/wp-content/uploads/2020/12/BIS-Act-2016-Bilingual.pdf; the lane's own citation siacc.co.in/blog/bis-certification-electrical-appliances-qco-2026-india fetched and read in full",
+      "why": "The retailer-liability direction is right — s.17 catches anyone who sells, stores or exhibits for sale — and the lane's cited page does contain the sentences it quotes. But the page is an SEO consultancy blog and its penalty gloss inverts the statute: Rs 5 lakh is a statutory floor for repeat contraventions, not a cap for first ones, and the real cap is 10x goods value. The lane's headline comparison ('2.4x the entire annual revenue of the category') is therefore arithmetic built on a wrong number and does not appear in any source.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'Stock manufactured or imported before the deadline may be sold for a further six months provided a formal declaration is submitted to BIS... This is the escape hatch and it is free - a declaration, not a certification'; plan step 2 tells Jivo Wellness HO to file it and to fix ARY's enforcement date off its own MSMED size",
+      "original_number": "6-month sell-down window; three enforcement dates keyed to ARY's MSMED class",
+      "live_number": "The clause reads: 'nothing in this Order shall apply to goods... domestically manufactured or imported prior to the date of implementation, provided that' the manufacturer holds BIS certification or has applied, and 'such manufacturers shall be allowed to sell, display, or offer for sale the declared stock... for a period of up to six months', with 'the manufacturer makes a formal declaration to this effect to the Bureau'",
+      "verdict": "REFUTED",
+      "query_used": "Verbatim transitional clause from alephindia.in (full order text) plus corroboration from elitasrcs.com ('Manufacturers holding existing BIS certificates or having applied for one') and bis-certifications.com ('Manufacturers and importers can sell existing stock... provided they declare it to BIS')",
+      "why": "The window is real but it belongs to the manufacturer or importer who holds or has applied for the licence — a retailer in Baru Sahib cannot file it, and the relief is conditional on a licence ARY does not hold. Plan step 2 therefore assigns Jivo Wellness's company secretarial an action it has no standing to take, and its premise — that ARY's own MSMED classification sets the enforcement date — is wrong; the stagger keys off the certifying enterprise, while a seller's exposure under s.17 attaches to the goods.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'ARY's proven gross margin on the electricals it already sells is 27-47% net of GST'; the forecast uses ~32% retail margin and the range table assumes 30-40% GM on lamps and 35-45% on switches",
+      "original_number": "27-47%, blended ~30-35%; ~32% retail margin in the Yr-1 P&L",
+      "live_number": "Blended realised GM on groups 109/123/114 over the live 12m = 21.4% using 12-month weighted-average purchase cost, 16.3% using last purchase cost. Two of the biggest lines are BELOW cost: Room Heater 17 (Rs 43,446, the single largest appliance line) sells at Rs 1,810 gross = Rs 1,534 net against a Rs 1,900 cost, -23.8%; Skyline Electric Kettle -5.3%. Havells LED bulbs — the biggest proposed block — run 19.8% (5W), 22.9% (9W), 20.1% (20W inverter), not 30-40%.",
+      "verdict": "REFUTED",
+      "query_used": "WITH S AS (SELECT d.ProductID,SUM(d.Quantity) Units,SUM(d.FinalSaleAmount) Sales FROM SaleDetail d JOIN SaleHeader h ... WHERE h.VoucherDate>='2025-09-01' AND <'2026-09-01' AND p.ProductGroupID IN (109,123,114) GROUP BY d.ProductID), P12 AS (SELECT pd.ProductID,SUM(pd.ItemValue)/SUM(pd.Quantity) Waco FROM PurchaseDetail pd JOIN PurchaseHeader ph ... WHERE pd.IsDeleted=0 AND ph.IsDeleted=0 AND ph.VoucherDate in window GROUP BY pd.ProductID) SELECT (SUM(Sales/1.18)-SUM(Units*Waco))/SUM(Sales/1.18)*100 -> 21.43",
+      "why": "The six SKUs the lane quotes all verify individually — Shine Star Immersion 1500W is 46.7% exactly as stated — but they are the six best in a set of 83 and the blend is half the quoted level. Group 123 alone (bulbs, tubes, torches, cells) is 30.0%; the whole department is 21.4%. Feeding 21% instead of 32% into the lane's own Yr-1 model drops retail GM from Rs 38,400/mo to Rs 25,200/mo and total Yr-1 GM from Rs 7.8 lakh to about Rs 6.2 lakh before anything is done to the institutional half.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "A 380-SKU range at ~70% sell-through supports Rs 14.6 lakh/yr of resident retail; 'at ARY's current 33% electricals sell-through the figure is Rs 6.9 lakh a year'",
+      "original_number": "Rs 14.63 lakh/yr base case; Rs 6.9 lakh downside at 33% sell-through",
+      "live_number": "Electricals sell-through is 21.2% (83 SKUs sold of 391 active), not 33%. 33% is the sell-through of the whole hardware-adjacent block (201 of 645). At 21.2% the downside is 380 x 0.212 x Rs 5,500 = Rs 4.43 lakh/yr, not Rs 6.9 lakh. Revenue-per-selling-SKU re-derives close: Rs 4,207 in electricals, Rs 8,913 in locks.",
+      "verdict": "QUALIFIED",
+      "query_used": "SELECT 83.0/391*100 (21.2) and 201.0/645*100 (31.2) from the block counts above; ProductMaster IsActive=1 counts by group, sold-SKU counts from the 12m SaleDetail join",
+      "why": "The arithmetic of the base case is internally consistent, but the sensitivity the lane offers as its floor uses the wrong denominator — it mislabels the whole-block rate as the electricals rate. The honest downside is 36% worse than the one presented, which matters because the lane leans on that sensitivity to argue the 90-day kill rule makes the forecast safe.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'The Basement counter is NOT a bulk hardware channel. All 13 of its large bills in the window go to ONE customer, 002CM Hunger Heroes... Zero hardware lines' and 'Rs 6 lakh a month of proven throughput'",
+      "original_number": "13 bills, 1 customer, Rs 70.78 lakh / 12 months",
+      "live_number": "14 bills, TWO customers: Hunger Heroes 002CM (12 bills, Rs 70,59,413) and Jivo Wellness Pvt Ltd - Delhi 0000L (2 bills, Rs 1,01,241). Rs 5.88 lakh/month throughput confirmed. Product mix includes Rs 1,01,241 of Womens Wear and Mens Wear lines alongside the ration. Zero hardware or electrical lines confirmed.",
+      "verdict": "QUALIFIED",
+      "query_used": "SELECT h.CustomerID,h.CompanyName,COUNT(DISTINCT h.SerialNumber),SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber JOIN WarehouseMaster w ON w.WarehouseID=d.WarehouseID WHERE w.WarehouseName LIKE '%asement%' AND h.VoucherDate in window GROUP BY h.CustomerID,h.CompanyName; then the same grouped by ProductGroupName",
+      "why": "The substantive point — Basement is a langar-ration B2B counter with no hardware, and the institutional machinery is real — is confirmed. But 'ONE customer' is now wrong (the parent company bills through it too) and 'pure langar ration' is wrong (there is uniform/clothing volume), so the lane's characterisation of the rails is looser than it presents.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "CORRECTION to the brief: 'Packing Material Exp.' shortage is Rs 11.01 LAKH, not Rs 1.1 crore",
+      "original_number": "Rs 11,01,425.68 (28,776.66 qty)",
+      "live_number": "Rs 11,04,487.68 on 29,127.66 qty at Ary Warehouse; ProductID 0APK, ProductGroupID 1 ([None]), StandardCostPrice 0, MaxRetailPrice 0, and IsActive = FALSE",
+      "verdict": "CONFIRMED",
+      "query_used": "ary audit shortage (top row); SELECT ProductID,ProductName,ProductGroupID,SubGroupID,StandardCostPrice,MaxRetailPrice,IsActive FROM ProductMaster WHERE ProductID='0APK'",
+      "why": "Reproduces exactly, moving only with the live feed. This is the lane's best work — it removed a Rs 1 crore phantom from the business case and characterised 0APK correctly as an expense run through inventory. Worth adding that the SKU is inactive, which the lane did not say.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "'The Trust's maintenance department does not buy through ARY and does not exist in ARY's books... a name search across CustomerMaster for paint/repair/engineer/estate/construct/civil/electric returns exactly one row, and it is State Bank Of India Baru Sahib'",
+      "original_number": "0 maintenance accounts; 13+ Trust ledger accounts",
+      "live_number": "Confirmed — exactly one row, 000VS State Bank Of India Baru Sahib, even after widening the search to hardware/building/plumb/works/maintenance. 19 Trust/Akal-named customer accounts. The Trust group already buys Rs 46,60,901 a year from ARY across 3,957 bills (Akal Academy Rs 25.96 L, Kalgidhar Trust Baru Sahib Rs 9.52 L, Akal Catering Rs 4.26 L, De-Adiction Ward Rs 2.31 L, Eternal University Rs 0.99 L, and five more).",
+      "verdict": "CONFIRMED",
+      "query_used": "SELECT CustomerID,CustomerName FROM CustomerMaster WHERE CustomerName LIKE '%aint%' OR '%epair%' OR '%ngineer%' OR '%state%' OR '%onstruct%' OR '%ivil%' OR '%lectric%' OR '%ardware%' OR '%uilding%' OR '%lumb%' OR '%orks%' OR '%aintenance%'; then SaleDetail x SaleHeader x CustomerMaster grouped by CustomerName over the live 12m for trust/akal/eternal/kalgidhar names",
+      "why": "Holds, and the live Trust throughput of Rs 3.9 lakh a month across ten accounts is a stronger argument for the institutional idea than the Hunger Heroes rails the lane leans on. The lane understated its own best evidence here.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'ARY spends ~Rs 66,500 a year maintaining roughly six counters and a warehouse; scaled to a 5,000-resident campus that lands in the same Rs 40-70 lakh band as the per-resident benchmark, which is the only reason I trust that estimate at all'",
+      "original_number": "Rs 2,19,562.22 across 47 vouchers, ~Rs 66,500/yr; treated as an independent cross-check on a Rs 60 lakh/yr pool",
+      "live_number": "Rs 2,19,562.22 across 47 lines, 2023-05-23 to 2026-08-14, account 1978 — exact. But a second account exists that the lane missed: 4726 'Vehicle Repair & Maintenance', Rs 1,15,201.12 across 20 lines since 2025-10-01.",
+      "verdict": "QUALIFIED",
+      "query_used": "SELECT a.AccountID,a.AccountName,COUNT(*),SUM(tc.DebitAmount),MIN(tm.VoucherDate),MAX(tm.VoucherDate) FROM TransactionChild tc JOIN TransactionMaster tm ON tm.SerialNumber=tc.SerialNumber JOIN AccountMaster a ON a.AccountID=tc.AccountID WHERE a.AccountName LIKE '%Repair%' AND tm.IsDeleted=0 GROUP BY a.AccountID,a.AccountName",
+      "why": "The base figure is exact. The use of it is not: scaling Rs 66,500/yr up by a factor of 600-1,000 to reach 'the same Rs 40-70 lakh band' is not an independent cross-check of the per-resident benchmark — the multiplier is doing all the work and it is itself unmeasured. Two guesses landing in the same band because both were tuned to that band is not corroboration, and the lane presents it as the sole reason to trust the estimate that carries 59% of its forecast.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'Twelve-month purchases into groups 109/123/114 total Rs 2,32,256 across 10 suppliers, led by Harminder Singh & Bros (10 bills, Rs 1,03,533)'",
+      "original_number": "Rs 2,32,256 / 10 suppliers / Harminder Rs 1,03,533 in 10 bills",
+      "live_number": "Rs 2,16,968 across the same 10 suppliers on the live 12m window; Harminder Singh & Bros Rs 88,820 in 9 bills, then Himachal Wholesale Syndicate Rs 35,572, Bansal Brothers Rs 33,611, Cm Trading Rs 21,417, Tools & Spares Rs 7,391",
+      "verdict": "CONFIRMED",
+      "query_used": "SELECT a.AccountName,COUNT(DISTINCT ph.SerialNumber),SUM(pd.ItemValue) FROM PurchaseDetail pd JOIN PurchaseHeader ph ON ph.SerialNumber=pd.SerialNumber JOIN ProductMaster p ON p.ProductID=pd.ProductID LEFT JOIN AccountMaster a ON a.AccountID=ph.AccountID WHERE ph.VoucherDate>='2025-09-01' AND <'2026-09-01' AND ph.IsDeleted=0 AND pd.IsDeleted=0 AND p.ProductGroupID IN (109,123,114) GROUP BY a.AccountName",
+      "why": "Same supplier set, same ranking, difference fully explained by the one-month window shift. The sourcing conclusion — a small live Delhi supply base, not a Himachal one — holds.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "'Residents bought 2,187 padlocks in 12 months at Bhagwati 25mm Rs 25, 32mm Rs 35, 38mm Rs 55, 40mm Rs 70, 50mm Rs 130, 65mm Rs 185... Havells LED 5W at Rs 40, 9W at Rs 75, Reo LED tube 20W at Rs 155'",
+      "original_number": "2,187 units; the price ladder above",
+      "live_number": "2,004 units across 15 SKUs, Rs 1,33,695. Realised average rates are LOWER than quoted: Bhagwati 25mm Rs 22.19, 30mm Rs 32.08, 32mm Rs 31.74, 38mm Rs 48.20, 40mm Rs 58.15, 50mm Rs 80.46, 65mm Rs 125.14; Harrison Rs 55-175. Havells LED 5W Rs 40.00, 9W Rs 74.55, Reo LED tube 20W Rs 156.84, Reo CFL LED 9W Rs 70.00 — all confirmed.",
+      "verdict": "CONFIRMED",
+      "query_used": "SELECT p.ProductName,SUM(d.Quantity),SUM(d.FinalSaleAmount)/SUM(d.Quantity) FROM SaleDetail d JOIN SaleHeader h ... JOIN SubGroupMaster s ON s.SubGroupID=p.SubGroupID WHERE s.SubGroupName='Lock' AND h.VoucherDate in window GROUP BY p.ProductName ORDER BY SUM(d.Quantity) DESC",
+      "why": "The lighting rates are exact. The padlock ladder appears to be list/MRP rather than realised — the biggest sizes actually clear 30-40% below the quoted figures — which makes the lane's value-tier conclusion stronger, not weaker. This is the finding that survives the audit best and it should drive the range design.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'308 of 391 active Electricals & Electronics SKUs (78.8%) did not sell in 12 months, yet they hold only 94 units of stock'; '13,284 dead SKUs campus-wide'",
+      "original_number": "308 / 391 dead, 94 units; 13,284 campus-wide",
+      "live_number": "308 dead of 391 active, 91 units on hand (Stock.Quantity); 13,274 dead active SKUs campus-wide",
+      "verdict": "CONFIRMED",
+      "query_used": "SELECT COUNT(*),SUM(ISNULL(st.Qty,0)) FROM ProductMaster p LEFT JOIN (SELECT ProductID,SUM(Quantity) Qty FROM Stock GROUP BY ProductID) st ON st.ProductID=p.ProductID WHERE p.IsActive=1 AND p.ProductGroupID IN (109,123,114) AND p.ProductID NOT IN (SELECT DISTINCT d.ProductID FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber WHERE h.VoucherDate in window)",
+      "why": "Reproduces to within the feed movement, and it is the one finding whose recommendation (attach a ReorderLevel and a 90-day kill rule to every new SKU) costs nothing and survives every other refutation in this audit.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "'Ary Warehouse carries 9,094 active SKUs and Rs 11,86,604 of stock at cost with ZERO sales... Ary Pos turns 7.9x a year on Rs 54,27,303 of stock across 9,867 stocked SKUs (Rs 550 of cost per stocked SKU)'",
+      "original_number": "Warehouse 9,094 SKUs / Rs 11.87 L / 0 turns; Pos 9,867 / Rs 54.27 L / 7.90 turns / Rs 550 per SKU",
+      "live_number": "Warehouse 9,104 stocked / 0 sold / Rs 10,56,954.51 / 0.00 turns; Pos 9,880 stocked / 5,533 sold / Rs 51,16,906.45 / 8.58 turns / Rs 517.90 of cost per stocked SKU",
+      "verdict": "CONFIRMED",
+      "query_used": "ary assort headroom",
+      "why": "Everything moves only with the live feed. The Rs 550/SKU anchor that sizes the Rs 4.18 lakh of opening stock is now Rs 517.90, so the opening-stock estimate is ~6% high before the lane's own 2x hardware uplift — immaterial next to the assumption itself, which is unquoted.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "'GST on the ENTIRE proposed hardware range is a single uniform 18%... one tax code for 380 SKUs, no slab-mapping errors'",
+      "original_number": "18% flat across all 10 categories, effective 22-Sep-2025",
+      "live_number": "Paints and cement 28% -> 18% effective 22-Sep-2025 confirmed (56th GST Council, 3-Sep-2025). ARY's own live sale lines carry TaxRate 18.000 with IncludeInRate=1 on LED bulbs, kettles, irons and heaters. But LED lamps and luminaires under HSN 9405 are reported at 5% by at least one source after the 12% slab was withdrawn, against 18% by others.",
+      "verdict": "QUALIFIED",
+      "query_used": "SELECT MAX(d.TaxRate),MAX(CAST(d.IncludeInRate AS int)) FROM SaleDetail d JOIN SaleHeader h ... for 12 named electrical SKUs; plus cross-check of the 56th GST Council rate changes against gstcouncil.gov.in press release and cleartax.in/s/gst-rates",
+      "why": "The reform, the date and the paint/cement cut are real, and ARY is in fact charging 18% on the electrical lines it already sells. But the lane's operational selling point — one tax code, no slab-mapping risk — is unsafe while the LED-lamp classification is contested in published sources, and the lane's own cited page (cleartax.in/s/gst-rates) is a general slab table, not a per-HSN ruling for ten categories.",
+      "materiality": "supporting"
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

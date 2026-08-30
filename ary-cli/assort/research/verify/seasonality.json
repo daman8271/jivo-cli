@@ -1,0 +1,191 @@
+{
+  "lane": "seasonality",
+  "claims_tested": 20,
+  "lane_confidence_after": "medium",
+  "single_biggest_error": "The lane diagnosed a stock-TIMING problem without ever looking at stock LEVELS — it never queried Stock.Quantity once. Its second P0 (\"shift the winter-wear buy one month left, order in August\") therefore points the wrong way: on 30 Aug 2026 ARY is already holding ₹16.41 L at cost / ₹21.39 L at selling of Winter Wear (₹11.24 L of it sitting on the Ary Clothing floor), which is MORE than the entire ₹9.52 L October buy the lane wants moved forward, in a month the category sells ₹0.2-0.4 L. Several of those lines have not sold since December 2025 (Boys Long Coat ₹93,100 last sold 2025-12-04; Sm Jacket ₹59,730 last sold 2025-12-14). ARY's winter-wear problem is over-carry and missing markdown, not late ordering — and the lane's P0 would add stock to the pile. Query: SELECT SUM(s.Quantity*ISNULL(NULLIF(s.PurchaseCost,0),s.SRate)) FROM Stock s JOIN ProductMaster p ON p.ProductID=s.ProductID WHERE p.ProductGroupID=160. Runner-up: the category-index table's stated basis (\"resident bills only, NGO/wholesale excluded\") is false — its 2-yr value column matches the ALL-customer totals to the decimal, which flattens exactly the apparel categories the P0s act on.",
+  "verdicts": [
+    {
+      "claim": "Baru Sahib empties for a 27-day window each winter; walk-in falls to 35% of the pre-break norm and the same 35% appears in FY24-25 and FY25-26 'identically' — 'plan the trough to the day'",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "27 days; 357 vs 1,023 bills/day (35%) both years",
+      "live_number": "DEPTH holds: FY25-26 34.9% of bills / 38.3% of value; FY24-25 37.4% / 36.8%. LENGTH does not: FY25-26 trough = 23 days (29 Dec 2025 – 20 Jan 2026); FY24-25 trough = 30 days (27 Dec 2024 – 25 Jan 2025)",
+      "query_used": "SELECT CAST(VoucherDate AS date) d, COUNT(*), SUM(BillAmount) FROM SaleHeader WHERE CustomerID='00001' AND VoucherDate>='2024-04-01' AND VoucherDate<'2026-09-01' GROUP BY CAST(VoucherDate AS date) — then a contiguous run of days below 50% of the 15 Nov–23 Dec mean",
+      "why": "The 35% depth reproduces exactly and is genuinely stable across both years — that part is solid. But the window is 23 days in one year and 30 in the other, and the recovery date moved five days (21 Jan 2026 step 425→620; 26 Jan 2025 step 337→437). '27 days' is the midpoint of 23 and 30 presented as a constant, and 'predictable to the day' is not what two observations five days apart support."
+    },
+    {
+      "claim": "1-9 March is the single biggest trading window of the year — 1,095 bills/day at ₹2.53 L/day, 1.78x the full-campus norm",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹2.53 L/day over 9 days = 1.78x; 'the single biggest trading window of the year'",
+      "live_number": "FY24-25: the biggest 9-day walk-in window was 5-13 Nov 2024 at ₹19.60 L (₹2.177 L/day) vs 1-9 Mar 2025 at ₹17.30 L (₹1.922 L/day) — November beat March by 13%. FY25-26: 1-9 Mar ₹22.79 L vs 18-26 Oct 2025 ₹22.63 L — a 0.7% tie",
+      "query_used": "Ranked every non-overlapping rolling 9-day sum of walk-in BillAmount per FY from the daily series above (Sep 21-30 2025 artefact excluded)",
+      "why": "I ranked every 9-day window in both fiscal years instead of comparing March against one hand-picked Nov-Dec baseline. March loses outright in FY24-25 to the Diwali/Gurpurab block and ties with Diwali in FY25-26. The 1.78x arithmetic against the 15 Nov–23 Dec base is correct, but the superlative is not, and it matters: the lane tells ARY 'NOTHING should be bought in March' while never flagging that the Diwali window — which moves 20 days a year (20 Oct 2025 → 8 Nov 2026) — is the equal-or-larger event."
+    },
+    {
+      "claim": "The school-kit season (Academy Dress, Footwear, Bags, Innerwear, Nightwear, Thermals) runs 20 Feb – 30 Apr and is worth ₹42.9 lakh retail, with 25% inside 1-9 March",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "₹42.9 L over 70 days; ₹10.6 L in 1-9 Mar (25%)",
+      "live_number": "₹43.33 L gross (Academy Dress 24.09 + Footwear 7.05 + Bag & Purses 3.55 + Night Wear 3.73 + Under Garment 2.86 + Thermals 2.05); ₹42.13 L net of ₹1.20 L kit returns; 1-9 Mar ₹10.57 L = 24.4%",
+      "query_used": "SELECT g.ProductGroupName, SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID JOIN ProductGroupMaster g ON g.ProductGroupID=p.ProductGroupID WHERE h.VoucherDate>='2026-02-20' AND h.VoucherDate<'2026-05-01' GROUP BY g.ProductGroupName",
+      "why": "Reproduces to within 1%, and the daily basket confirms the mechanism (late-Feb basket ₹150-180 → March ₹190-300). Two qualifications: the lane never nets sale returns (March 2026 is the year's heaviest return month, 110 docs / ₹4.39 L), and the '9-day' framing is a slice — 10-18 March 2026 did ₹19.08 L, so the real event is a three-week block."
+    },
+    {
+      "claim": "ARY buys 20% of its uniform stock AFTER the season has opened — ₹9.48 L in two Feb bills, ₹2.37 L more on 4 and 26 March",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "₹2.37 L of ₹11.85 L = 20%",
+      "live_number": "Academy Dress purchases: 2026-02 = 2 bills ₹9.48 L; 2026-03 = 2 bills ₹2.37 L. 20.0%. Same shape the prior year (2025-02 ₹6.52 L, 2025-03 ₹1.40 L)",
+      "query_used": "SELECT CONVERT(char(7),h.VoucherDate,120), COUNT(DISTINCT h.SerialNumber), SUM(d.ItemValue) FROM PurchaseDetail d JOIN PurchaseHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID WHERE p.ProductGroupID=161 AND h.IsDeleted=0 AND d.IsDeleted=0 GROUP BY 1",
+      "why": "The number is exactly right. What is NOT supported is the inference attached to it ('the classic stock-out signature'): daily Academy Dress sales run continuously through March with no collapse before either receipt — 3 Mar ₹30.2k, 4 Mar ₹58.4k, peak 8 Mar ₹108.1k — and ₹4.54 L of Academy Dress cost remained on hand in August. I could find no stock-out anywhere in the March curve, so R0's '10% stock-out recovery = ₹4-5 L/yr' rests on nothing measured."
+    },
+    {
+      "claim": "Winter wear is bought inside its own selling peak, not ahead of it: ₹9.56 L across 13 separate October chase bills",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹9.56 L / 13 October bills; '13 panic reorders'; P0 = order in August, land 20 September",
+      "live_number": "₹9.52 L / 13 bills confirmed — but from 13 DIFFERENT suppliers (Punjab Knit ₹1.91 L, K.Mark Shawls ₹1.59 L, Saroj Hosiery ₹1.18 L, Hemant, Batra, Amrik, Seema Shawls…), landing 14-25 Oct, ahead of ₹15.95 L of the ₹24 L Oct-Dec sell-through. Stock on hand 30 Aug 2026: ₹16.41 L at cost",
+      "query_used": "SELECT CAST(h.VoucherDate AS date), a.AccountName, SUM(d.ItemValue) FROM PurchaseDetail d JOIN PurchaseHeader h … LEFT JOIN AccountMaster a ON a.AccountID=h.AccountID WHERE p.ProductGroupID=160 GROUP BY 1,2 — plus the Stock.Quantity valuation above",
+      "why": "Three separate breaks. (1) The 13 bills are 13 vendors, i.e. a multi-vendor range buy (shawls + knitwear + hosiery + blazers), not chase reorders from one supplier — they cannot be collapsed into 'one planned tranche' without dropping suppliers. (2) Only ₹2.73 L of the ₹24 L Oct-Dec season sold before the mid-October landings, so the stock arrived ahead of 89% of its own sell-through. (3) The category is carrying ₹16.41 L at cost through August with lines unsold since 4 Dec 2025. The diagnosis is inverted: this is over-carry, not late buying."
+    },
+    {
+      "claim": "Uniform FABRIC is bought while the town is empty (January index 96-227 against February 36) — 'the January-buy discipline exists inside ARY already'",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Fabrics all-customer Jan index 227 / Feb 27; resident-only Jan 96",
+      "live_number": "Jan 2026 Fabrics: Katebaa NGO ₹6.46 L, walk-in ₹0.07 L, total ₹6.67 L. Walk-in Fabrics in Jan 2026 is the LOWEST of all 29 months. My walk-in Jan index = 46, not 96",
+      "query_used": "SELECT CONVERT(char(7),h.VoucherDate,120), SUM(CASE WHEN h.CustomerID='00240' THEN d.FinalSaleAmount ELSE 0 END), SUM(CASE WHEN h.CustomerID='00001' THEN d.FinalSaleAmount ELSE 0 END) FROM SaleDetail d JOIN SaleHeader h … WHERE p.ProductGroupID=124 GROUP BY 1",
+      "why": "Category error plus a single-bill artefact. The lane cited a SALES index to prove a BUYING behaviour — a high January Fabrics sales index means someone bought cloth FROM ARY, and that someone is one ₹6.46 L order from a Sonipat NGO. ARY did in fact purchase ₹8.65 L of Fabrics in Jan 2026 (PurchaseDetail, 5 bills), but in the same month as the NGO sale, which reads as back-to-back trading, not a kit pre-build. Either way the lane's evidence does not support its claim, and this claim is the 'this behaviour already exists' prop under P0 #1."
+    },
+    {
+      "claim": "The category seasonal index table is computed on 'resident bills only (NGO/wholesale excluded)'",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Table title: 'resident bills only (NGO/wholesale excluded), FY-normalised'",
+      "live_number": "The table's 2-yr value column matches the ALL-customer totals to the decimal: Personal Care 90.9=90.9, Stationary 24.4=24.4, Bag & Purses 16.2=16.2, Night Wear 14.9=14.9, House Hold 13.1=13.1, Thermals 9.6=9.6. Walk-in-only would be Academy Dress ₹40.0 L (table says 100.3), Winter Wear ₹41.8 L (79.5), Footwear ₹26.0 L (42.4)",
+      "query_used": "SELECT g.ProductGroupName, SUM(CASE WHEN h.CustomerID='00001' THEN d.FinalSaleAmount ELSE 0 END) walkin, SUM(d.FinalSaleAmount) all_cust FROM SaleDetail d JOIN SaleHeader h … WHERE h.VoucherDate>='2024-04-01' AND h.VoucherDate<'2026-04-01' GROUP BY 1",
+      "why": "I rebuilt the whole table from the raw monthly matrix. Grocery categories reproduce within a few points (Confectionery, Drinks, Fruits, Oil & Ghee, Vegetable, Stationary, Unstiched Suits) — the method is sound there. Apparel does not, because institutional bulk buying is included: real resident Academy Dress is Mar 530 / Apr 103, not Mar 347 / Apr 184; Winter Wear is Oct 273 / Nov 303 / Apr 15, not 199 / 264 / 84. A buyer following the published Apr 184 would hold April uniform stock that residents do not buy — that is an institution ordering."
+    },
+    {
+      "claim": "The empty window is bounded by the two institutions' published breaks; the till shows the school returning 21-25 Jan and the university 1-3 Feb (status: VERIFIED)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "University break 25 Dec – 31 Jan; Akal Academies break from 24-26 Dec, citing bagha.akalacademy.ac.in CBSE calendar",
+      "live_number": "The cited Bagha calendar shows a 9-day break (25/12–02/01) — it cannot explain a 23-30 day trough. No step is visible at 1-3 Feb: 30 Jan 557 → 31 Jan 715 → 1 Feb 668 → 2 Feb 716 → 3 Feb 697, against a 1,023 pre-break norm; all of Feb 2026 ran at 798 bills/day",
+      "query_used": "Daily walk-in bill counts 2026-01-15..2026-02-15 from the daily series; source PDFs fetched (HTTP 200 on both cited URLs)",
+      "why": "A citation that does not contain the number is not a confirmation. The lane's own confidenceGap says the Bagha calendar 'shows a plains pattern… which ARY's own data flatly contradicts for Baru Sahib', and its own F23 says the Baru Sahib calendar was never obtained — yet F1 is stamped VERIFIED. The 'two-step return' (school 21-25 Jan, university 1-3 Feb) is one visible step on 21 Jan and then a flat month; the second step is asserted, not observed."
+    },
+    {
+      "claim": "July is the second trough and part of the dip is ARY's own supply failing, not demand (purchase index 63 vs sales index 89); build a ₹1 L/month June monsoon buffer",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Jul purchase idx 63 vs sales idx 89; R2 monthlyImpactInr = ₹100,000 (the lane's largest single money claim)",
+      "live_number": "July purchase bills 145 (2024) / 156 (2025) / 214 (2026) — 7 bills a day in Jul 2026 at an above-average ₹21,051 each, ₹45.0 L landed. Walk-in basket RISES in July: 2024 ₹194 vs June ₹170; 2026 ₹158 vs June ₹146. Bill counts fall 25-32%",
+      "query_used": "SELECT CONVERT(char(7),VoucherDate,120), COUNT(*), SUM(BillAmount) FROM PurchaseHeader WHERE IsDeleted=0 GROUP BY 1 — plus walk-in bills and BillAmount per month from SaleHeader",
+      "why": "The purchase index reproduces (my mean Jul 63) but the causal story does not. Stock-outs depress the basket; here the basket rises while footfall falls — the signature of fewer people, not empty shelves. Goods kept arriving in normal-size consignments all July. And the lane's own calendar table already gives the demand explanation: Eternal University's summer break is 1-30 July. The cited news (Sirmaur road closures) is real but says nothing about ARY losing delivery days, which the lane's own Q3 concedes."
+    },
+    {
+      "claim": "Publish a 22 Dec perishable cut-off and 20 Jan restart; cut the fresh order to 35% — worth ₹60,000/month",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "R4 monthlyImpactInr = ₹60,000 (= ₹7.2 L/yr)",
+      "live_number": "Total perishable RETAIL sales across the entire 28-day trough (24 Dec 2025 – 20 Jan 2026): ₹3.15 L — Vegetable 1.74, Fruits 0.84, Frozen 0.28, Bakery 0.16, Dairy 0.13",
+      "query_used": "SELECT g.ProductGroupName, SUM(CASE WHEN h.VoucherDate>='2025-12-24' AND h.VoucherDate<'2026-01-21' THEN d.FinalSaleAmount ELSE 0 END) FROM SaleDetail d JOIN SaleHeader h … WHERE g.ProductGroupName IN ('Fruits','Vegetable','Dairy Products','Bakery Items','Frozen') GROUP BY 1",
+      "why": "Arithmetically impossible. ₹7.2 L/yr of saved wastage is more than double the entire retail value of every perishable item ARY sold during the window, and the opportunity exists for four weeks a year, not twelve months. The underlying seasonal fact (Fruits Jan index 43-47, Dairy 48-63) is real and the cut-off is still sensible housekeeping — but it is worth a fraction of a lakh, not ₹7 lakh."
+    },
+    {
+      "claim": "Merchandise a GOING-HOME basket 18-24 Dec — 'the 24-25 December days already show the largest baskets of the winter'",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "R5, ₹75,000/month",
+      "live_number": "24 Dec 2025 basket ₹161, 25 Dec ₹141 — against 20 Dec ₹170 and 21 Dec ₹165. The 18-24 Dec 2025 window as a whole averaged ₹152/bill vs ₹137 for 1-17 Dec",
+      "query_used": "Per-day BillAmount/bill count from the daily walk-in series, 2025-12-15..2025-12-31",
+      "why": "The specific supporting observation is false — the largest winter baskets are 20-21 December, before the departure days. The window is mildly above the Dec baseline (₹152 vs ₹137), so the idea is not silly, but the fact quoted to justify it does not hold and the ₹9 L/yr figure has no basis (the lane labels it ESTIMATED and asks for a December 2026 test, which is the honest read)."
+    },
+    {
+      "claim": "NGO/institutional wholesale is 11-12% of turnover — Hunger Heroes takes one ₹5.5-6.9 L bill roughly monthly, Katebaa ₹8.4 L in 4 bills; 'it is not seasonal at all' and 'the only revenue ARY can grow in January'",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "₹79 L / 16 bills / 11-12% of turnover; 'roughly monthly'; 'not seasonal at all'",
+      "live_number": "₹78.99 L / 16 bills confirmed (002CM ₹70.59 L / 12; 00240 ₹8.40 L / 4). Share = 10.3% of ₹7.66 Cr gross 12m sales, not 11-12%. NOT monthly: Hunger Heroes bought nothing Nov 2025 – Apr 2026, then ₹23.14 L in 4 bills in May 2026 and ₹15.95 L in 3 bills in June 2026",
+      "query_used": "SELECT CONVERT(char(7),h.VoucherDate,120), h.CustomerID, COUNT(*), SUM(h.BillAmount) FROM SaleHeader h WHERE h.CustomerID IN ('002CM','00240') GROUP BY 1,2 — and SELECT SUM(BillAmount) FROM SaleHeader WHERE VoucherDate>='2025-09-01' AND VoucherDate<'2026-09-01'",
+      "why": "The totals and both identities check out (Hunger Heroes = Green Park, Delhi 110016; Katebaa = Ganaur, Sonipat, GSTIN 06AAKCK3871G1ZD). But the line is lumpy, not monthly, and it went dark for six straight months across exactly the trough R9 says it can fill — which inverts 'the only revenue ARY can grow in January'. Two things the lane missed: Katebaa is also a SUPPLIER to ARY (₹52,426 of Winter Wear on 2 Oct 2025), and ₹11.97 L of the same 12 months is intercompany (Jivo Wellness Pvt Ltd - Delhi, 16 bills) which belongs in the same non-retail bucket."
+    },
+    {
+      "claim": "Ary Clothing is a two-month business — March index 292, December 24, a 12x swing; Ary Pos halves in January (56)",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "Ary Pos ₹415.9 L (Jan 56, Feb 66, Oct 133); Ary Clothing ₹139.8 L (Mar 292, Apr 173, Dec 24); G Canteen ₹46.9 L; Fruits & Veg ₹42.8 L",
+      "live_number": "Ary Pos ₹416.1 L (Jan 56, Feb 66, Oct 133); Ary Clothing ₹140.5 L (Mar 292, Apr 172, Dec 24); G Canteen ₹46.9 L (Oct 151, Jan 52); Fruits & Veg ₹42.8 L (Aug 150, Jan 64)",
+      "query_used": "SELECT w.WarehouseName, CONVERT(char(7),h.VoucherDate,120), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber LEFT JOIN WarehouseMaster w ON w.WarehouseID=d.WarehouseID WHERE h.VoucherDate>='2025-04-01' AND h.VoucherDate<'2026-04-01' GROUP BY 1,2",
+      "why": "Reproduces to the index point on every counter — the cleanest finding in the lane, and correctly built on the LINE-level WarehouseID rather than the header. One omission: 'Basement' is the third-largest counter at ₹55.6 L and the lane only mentions it in an open question. R7's saving is not cash, as its own blocker admits — Trust staff can be redeployed, not cut."
+    },
+    {
+      "claim": "288 'Academy Books' SKUs have produced ₹100 of sales in 29 months — either the biggest unserved category or 288 dead SKUs to delist",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "288 SKUs, ₹100 of sales since Apr 2024",
+      "live_number": "288 SKUs and ₹100 since 2024-04 both confirmed (₹200 all-time, ₹100 ever purchased). But all 288 are already IsActive=0 and carry ZERO units of stock. Meanwhile `ary assort probe book copy register notebook pen pencil` finds 674 SKUs across 11 groups selling ₹8.90 L in 12 months, including ₹4.86 L of Stationary/Note Book",
+      "query_used": "SELECT COUNT(*), SUM(CASE WHEN IsActive=1 THEN 1 ELSE 0 END) FROM ProductMaster WHERE ProductGroupID=181; plus Stock join; plus ./ary assort probe",
+      "why": "The numbers are right but the action is stale on one side and overstated on the other: there is nothing left to delist (already inactive, zero stock, zero count exposure), and 'the school's book demand is not going through ARY at all' is true only for textbooks — ARY already serves the exercise-book and stationery half at ₹8.9 L/yr. The remaining question (textbook supply contract) is real and correctly parked as a phone call."
+    },
+    {
+      "claim": "The purchase calendar peaks in October (152) and February (117) — 'the two big buying decisions of ARY's year are already made in those months'",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Apr 116 May 130 Jun 119 Jul 63 Aug 98 Sep 108 Oct 152 Nov 73 Dec 84 Jan 59 Feb 117 Mar 84",
+      "live_number": "My independent mean: Apr 115 May 130 Jun 119 Jul 63 Aug 98 Sep 107 Oct 151 Nov 73 Dec 84 Jan 59 Feb 117 Mar 83 — identical within rounding. But the two years disagree violently: Oct 180 vs 123, May 104 vs 156, Jun 142 vs 96, Mar 106 vs 61, Jan 43 vs 75",
+      "query_used": "SELECT CONVERT(char(7),VoucherDate,120), SUM(BillAmount) FROM PurchaseHeader WHERE IsDeleted=0 AND VoucherDate>='2024-04-01' AND VoucherDate<'2026-04-01' GROUP BY 1, then indexed within each FY",
+      "why": "The arithmetic is exact — good work. The interpretation is not: in FY25-26 the two biggest purchase months were May (156) and February (138), not October (123). 'October is the buying peak' is an artefact of averaging two dissimilar years, and with n=2 the mean is not a calendar."
+    },
+    {
+      "claim": "The physical count is partly aligned to the troughs but uses only 4 of the 27 empty days, and the current count is being run on 21 August, a 110-index month",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Dec 2025 471 docs on 27-30 Dec; Jul 2025 814 docs 'concentrated 15-22 Jul'; Aug 2026 114 docs on 21 Aug; Jan 2025 = 2, Jan 2026 = 1",
+      "live_number": "Dec 2025 471 docs / 27-30 Dec ✓; Jan 2025 = 2 ✓, Jan 2026 = 1 ✓. Aug 2026 is now 759 docs across 20-25 Aug (not 114 on one day). Jul 2025's 814 docs span 18 days, 4-31 Jul. Dec 2024 = 535 docs across 11 days, 19-31 Dec",
+      "query_used": "SELECT CONVERT(char(7),VoucherDate,120), COUNT(*), MIN(CAST(VoucherDate AS date)), MAX(CAST(VoucherDate AS date)), COUNT(DISTINCT CAST(VoucherDate AS date)) FROM PhysicalStockHeader WHERE VoucherDate>='2024-04-01' GROUP BY 1",
+      "why": "The core observation stands — January is essentially uncounted in both years and the December count used only four days in FY25-26. But the August figure is a snapshot of a count still in progress and is now 6.7x larger, and 'only 4 days used' is FY25-26-specific: Dec 2024 counted across 11 days. R3 is the lane's best recommendation and needs none of the wrong details."
+    },
+    {
+      "claim": "Climate: Jul 292 mm / 26.5 rain days, Aug 250 mm, annual 1,149 mm; Baru Sahib is 992-996 m not ~1,700 m; zero snow days at the shop vs 19.3 cm / 7.5 days at Rajgarh (1,582 m); January is the third-wettest month at 85 mm",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "Jan 84.7 mm / 7.4 rain days; Jul 292.4 mm / 26.5 d; Aug 250.1 mm; YEAR 1,148.7 mm; Baru 996 m 0.0 snow days; Rajgarh 1,582 m 19.3 cm / 7.5 days",
+      "live_number": "I re-ran ERA5 through the Open-Meteo archive myself for 2015-2024 at both points and got Jan 84.7 / 7.4, Jul 292.4 / 26.5, Aug 250.1 / 26.4, YEAR 1,148.7 mm; Baru Sahib 0.04 cm and 0.1 snow days/yr; Rajgarh 19.26 cm and 7.5 snow days. Elevation API returns exactly 996.0 and 1582.0 m",
+      "query_used": "curl 'https://api.open-meteo.com/v1/elevation?latitude=30.7549,30.8807&longitude=77.2957,77.3245' and archive-api.open-meteo.com/v1/archive?…daily=snowfall_sum,precipitation_sum,temperature_2m_max,temperature_2m_min&timezone=Asia/Kolkata, aggregated locally",
+      "why": "Every precipitation and snow figure reproduces to the decimal from an independent pull — this is the strongest-evidenced part of the lane, and the altitude correction is genuinely valuable: the rest of the ARY corpus repeats '1,700 m' (gurmat.json, womenswear.json, crockery.json, male-grooming.json) and '1,400-1,500 m' elsewhere, all of it wrong. Temperatures run 0.2-0.8 °C below the lane's, a UTC-vs-IST daily-window convention. The lane correctly labels the whole thing model-derived rather than an IMD station."
+    },
+    {
+      "claim": "Two separate back-to-campus waves with different baskets — March buys clothing/footwear, the university's 1 August start buys household goods and stationery",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "Academy Dress Mar 347, Nightwear Mar 314, Footwear Mar 210, Bags Mar 246; House Hold Aug 210, Stationary Aug 204",
+      "live_number": "Walk-in-only index is sharper in the same direction: Academy Dress Mar 530, Night Wear Mar 286, Footwear Mar 231, Bag & Purses Mar 206; House Hold Aug 226, Stationary Aug 220",
+      "query_used": "Category × month walk-in matrix from SaleDetail × SaleHeader × ProductGroupMaster, indexed within each FY and averaged",
+      "why": "Holds on my own numbers and holds harder once institutional bills are actually removed. Same for the Womens Wear finding: my walk-in index is Apr 280 / Nov 15 against the lane's 258 / 19, so 'adult apparel is a two-festival business' is understated rather than overstated. The July/August household and stationery wave is real."
+    },
+    {
+      "claim": "The kit is the six groups Academy Dress, Footwear, Bags, Innerwear, Nightwear, Thermals (implicit in F3, F6, R0)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "6 ProductGroups totalling ₹42.9 L",
+      "live_number": "`ary assort probe uniform shirt pant tunic pinafore blazer tie socks` returns 532 SKUs across 15 groups. Kit items sit outside the six: 'Sardar Blazer 30/48 Cm' are filed under WINTER WEAR (Blazer subgroup ₹6.15 L/yr, ₹1.46 L of it sold in March 2026 alone); 'Nursing Purple Uniform' ₹1.15 L is filed under FABRICS; school socks (₹3.55 L) under Under Garment; 'Eu Uniforms' ₹3.25 L under Academy Dress. Fabrics added another ₹5.46 L inside the same 20 Feb–30 Apr window",
+      "query_used": "./ary assort probe uniform shirt pant tunic pinafore blazer tie socks; then SELECT s.SubGroupName, CONVERT(char(7),h.VoucherDate,120), SUM(d.FinalSaleAmount) … WHERE p.ProductGroupID=160 AND s.SubGroupName IN ('Blazer','Sweat Shirt')",
+      "why": "This is the trap Data-Quality-Traps.md warns about — the whole lane is built on ProductGroupID, which the vault states is a measure of what the operator's tree says, not of what ARY carries. The consequence bites twice: the ₹42.9 L kit season is understated by roughly ₹5-7 L of blazers and uniform cloth filed elsewhere, and part of Winter Wear's March index of 178 (which the lane's Q6 wonders about) is simply school blazers — the answer to its own open question was one probe away."
+    },
+    {
+      "claim": "Implicit throughout: FY-normalising two fiscal years removes the trend, so the monthly index is clean seasonality",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Sales idx: Apr 109 May 104 Jun 119 Jul 89 Aug 110 Sep 100 Oct 116 Nov 103 Dec 96 Jan 48 Feb 71 Mar 136",
+      "live_number": "My 2×12 centred-moving-average detrend: Apr 117 May 102 Jun 120 Jul 85 Aug 123 Sep 104 Oct 116 Nov 102 Dec 93 Jan 46 Feb 68 Mar 123. Walk-in grew +12.2% FY24-25→FY25-26 and +19.0% Apr-Aug YoY",
+      "query_used": "Monthly walk-in BillAmount 2024-04..2026-08, divided by a centred 12-month moving average, then averaged by calendar month",
+      "why": "The FY-normalisation works better than I expected — Jan 46 vs 48, Feb 68 vs 71, Oct 116 vs 116, Jun 120 vs 119. One material gap: March comes out 123 detrended against the lane's 136, because FY25-26 March sits at the top of a rising trend. That ~10% overstatement is the same bias that produces the 'March is the peak' headline; by April-May 2026 the shop was running ₹58.8-60.0 L/month with no kit season at all against March's ₹62.4 L. A separate defect the lane never caught: 21 Sep 2025 carries 10,025 walk-in bills and ₹14.79 L in ONE day with 22-30 Sep 2025 completely empty — nine days of trade date-stamped onto one. Monthly totals survive it; any daily or weekly cut of September 2025 does not."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

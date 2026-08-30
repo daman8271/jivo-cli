@@ -1,0 +1,209 @@
+{
+  "lane": "campus-retail-bench",
+  "claims_tested": 22,
+  "lane_confidence_after": "low",
+  "single_biggest_error": "The lane never measured ARY's own gross margin before making \"copy CSD's cost + 1-12% published price band\" its P0 recommendation. ARY's live 12-month ledger runs Sales A/C Rs 7.08 Cr against Purchase A/C Rs 5.54 Cr — a 21.8% gross margin (independently corroborated at 22.19% from SaleDetail x PurchaseDetail) — with Rs 0.90 Cr of total operating expenses, i.e. roughly +Rs 0.67 Cr of operating surplus before inventory movement. Repricing the shelf to a 1-12% band (6.5% midpoint) would cut gross profit from ~Rs 1.54 Cr to ~Rs 0.46 Cr, destroying about Rs 1.08 Cr a year against Rs 0.90 Cr of costs and converting a profitable shop into a structurally loss-making one. The premise the lane used to justify it — \"ARY cannot price its way out of a Rs 2.70 Cr debit balance in Profit & Loss\" — is a migration artefact: AccountID 15 has exactly ONE transaction line in the whole database, voucher type \"Opening Balance\", dated 2023-04-01. This is an act-on-it error, not merely a wrong number.",
+  "verdicts": [
+    {
+      "claim": "ARY should copy CSD's pricing rule: into-warehouse cost + a 1-12% margin band, published and locked in the POS (P0 recommendation 1)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "cost + 1-12% band, monthlyImpactInr 22884",
+      "live_number": "ARY gross margin 21.77% (ledger 12m) / 22.19% (documents); repricing to a 6.5% midpoint band destroys ~Rs 1.08 Cr/yr of gross profit against Rs 0.90 Cr of annual opex",
+      "query_used": "SELECT g.GroupName, SUM(tc.DebitAmount-tc.CreditAmount) FROM TransactionChild tc JOIN TransactionMaster tm ON tm.SerialNumber=tc.SerialNumber JOIN AccountMaster a ON a.AccountID=tc.AccountID JOIN GroupMaster g ON g.GroupID=a.GroupID WHERE ISNULL(tm.IsDeleted,0)=0 AND tm.VoucherDate>='2025-09-01' AND tm.VoucherDate<'2026-09-01' GROUP BY g.GroupName  -->  Sales Accounts -70,773,104.34 ; Purchase Accounts 55,362,924.59 ; Salary 4,146,975 ; Indirect Exp 3,880,445.50 ; Direct Exp 812,038.61 ; Vehicle 193,687.12",
+      "why": "The lane imported CSD's margin band without ever querying what ARY earns. ARY is not a near-zero-margin cooperative — it runs an ordinary retailer's ~22% gross margin and clears roughly Rs 0.67 Cr of operating surplus a year. Executing this P0 would take out more gross profit than ARY's entire expense base."
+    },
+    {
+      "claim": "ARY's P&L A/C carries a Rs 2.70 Cr DEBIT — margin will never fund this",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "P&L A/C Rs 2.70 Cr DEBIT",
+      "live_number": "Rs 2,70,44,147.55 Dr, but it is a single 'Opening Balance' voucher line dated 2023-04-01 — the only line ever posted to that account",
+      "query_used": "SELECT COUNT(*), MIN(tm.VoucherDate), MAX(tm.VoucherDate), SUM(tc.DebitAmount-tc.CreditAmount) FROM TransactionChild tc JOIN TransactionMaster tm ON tm.SerialNumber=tc.SerialNumber WHERE tc.AccountID=15 AND ISNULL(tm.IsDeleted,0)=0  -->  1 line, 2023-04-01 to 2023-04-01, 27,044,147.55; voucher type 'Opening Balance'",
+      "why": "This is the balance migrated in from ARY's previous books, not a trading result computed in FR8HODBNEW. No profit or loss entry has ever been posted to this account. The lane read a migration line as evidence that ARY is Rs 2.70 Cr in the hole."
+    },
+    {
+      "claim": "180 active SKUs carry NEGATIVE book stock worth minus Rs 155.82 lakh — sales posted without receipts (P0 recommendation 2's quantitative basis)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "180 SKUs, minus Rs 155.82 lakh",
+      "live_number": "177 SKUs, minus Rs 6.98 lakh (dead SKUs) / 253 SKUs, minus Rs 12.66 lakh (all active SKUs) — overstated 22x",
+      "query_used": "Correct: SELECT COUNT(*), SUM(v) FROM (SELECT s.ProductID, SUM(s.Quantity*s.PurchaseCost) v FROM Stock s GROUP BY s.ProductID) t WHERE v<0 --> -698,299.39 over dead SKUs. Buggy reproduction: SUM(s.Quantity)*MAX(s.PurchaseCost) --> 179 SKUs, -15,651,514.68, matching the lane exactly",
+      "why": "The CLI's assortStockCTE (internal/cli/assort.go line 103) values stock as SUM(Quantity) x MAX(PurchaseCost), not SUM(Quantity x PurchaseCost). One SKU — 'Tomato Sauce' (00K6), sold both as a Rs 0.45 sachet and a Rs 300 bottle under one code — contributes Rs 1.45 Cr of the Rs 1.57 Cr. Its real value is minus Rs 33,612. The lane took the CLI output as data without checking what the CLI computed."
+    },
+    {
+      "claim": "Physical-count variance is 18.97% of sales GROSS (Rs 2.59 Cr shortage + Rs 1.67 Cr excess) against a world benchmark of 1.2-1.5% — 'the perpetual inventory is not a book'",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "18.97% gross (Rs 4.27 Cr on Rs 22.49 Cr)",
+      "live_number": "Rs 4.36 Cr gross = 19.24%, but Rs 2.16 Cr (49.5%) cancels at SKU level and Rs 1.33 Cr sits in offsetting Sho/Exc pairs on the SAME Stock row; net-of-offset is Rs 2.20 Cr = 9.72%",
+      "query_used": "WITH perSku AS (SELECT ProductID, SUM(Sho*PurchaseCost) sho, SUM(Exc*PurchaseCost) exc, SUM((Sho-Exc)*PurchaseCost) net FROM Stock GROUP BY ProductID) SELECT SUM(sho+exc), SUM(ABS(net)) FROM perSku --> 43,592,004.86 vs 22,020,666.29; 4,267 Stock rows carry both Sho and Exc",
+      "why": "Sho and Exc are cumulative buckets since 2023-04 across 3,480 count documents, and the lane summed them as two independent failures. Rice_L shows 2,800 units short and 2,800 units excess in the same warehouse at the same Rs 67 cost; Terricot Fabric White carries Sho 5,681 and Exc 4,786 on one row. Three further breaks: the numerator is at COST and the denominator at RETAIL; the set includes Ary Warehouse, whose gross 'variance' is 2,178% of its sales because it barely sells; and the cited benchmark is 2008 data that does not state its own basis."
+    },
+    {
+      "claim": "Physical-count variance is 4.07% of sales NET — roughly 3x the world average even after netting",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "4.07% net (minus Rs 91.49 lakh)",
+      "live_number": "minus Rs 91.64 lakh = 4.04% — arithmetic reproduces, but Ary Pos (57% of sales) runs 0.62% and Ary Clothing (19%) runs -0.03%; 44% of the net loss is one counter",
+      "query_used": "WITH sal AS (SELECT WarehouseID, SUM(FinalSaleAmount) s FROM SaleDetail GROUP BY WarehouseID), var AS (SELECT WarehouseID, SUM((Sho-Exc+Was)*PurchaseCost) n FROM Stock GROUP BY WarehouseID) SELECT w.WarehouseName, var.n, 100.0*var.n/sal.s FROM var JOIN sal ON sal.WarehouseID=var.WarehouseID JOIN WarehouseMaster w ON w.WarehouseID=var.WarehouseID --> Ary Pos 0.62%, Ary Clothing -0.03%, Ary G Canteen 30.60% (Rs 40.20 L), Fruits & Veg 6.99%, Ary Apple A Day 60.79%, Talwandi Sabo 22.92%",
+      "why": "The headline figure is right and the aggregate hides the answer. The two counters making 78% of ARY's sales are at or below the benchmark. Rs 40.2 lakh of the Rs 91.6 lakh sits in Ary G Canteen, whose shortage list is LPG (Rs 7.80 L), 15 L canola (Rs 6.62 L), pizza cheese, loose milk, cabbage, potato, onion, paneer — a kitchen under-posting consumption (it already books Rs 42.71 L of Cons), not a shop being stolen from. Another Rs 35.1 lakh is in two counters that stopped trading in Nov-2023 and Jul-2024. The action is one canteen's recipe costing, not a shop-wide anti-theft programme."
+    },
+    {
+      "claim": "Most ARY counters were last counted in late December 2025, eight months before this analysis; Ary Clothing counted 155 times but not since 2025-12-27",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "8 months since last count at most counters",
+      "live_number": "6 of 8 counted warehouses counted within the last 10 days; Ary Pos has 3,194 counts ever with 729 since 1 Jun 2026 and was last counted 2026-08-25",
+      "query_used": "SELECT w.WarehouseName, COUNT(*), MAX(h.VoucherDate), MAX(CASE WHEN h.RecordDateTime<'2026-08-28' THEN h.VoucherDate END) FROM PhysicalStockHeader h JOIN WarehouseMaster w ON w.WarehouseID=h.WarehouseID GROUP BY w.WarehouseName --> Ary Pos 3,194 / 2026-08-25 (2,699 and 2026-08-24 as of 08-28); Ary Clothing 164 / 2026-08-20; Ary Warehouse 68 / 2026-08-22; Basement 7 / 2026-08-22; Ary Lite 8 / 2026-08-24; Fruits & Veg 29 / 2026-08-22; Ary G Canteen 9 / 2025-12-29; Talwandi Sabo 1 / 2023-07-22",
+      "why": "ary audit uncounted is a filtered exception list — its HAVING clause drops any warehouse counted within --months (default 3), so it cannot show a recently counted one. The lane read that exception list as a census. Even on 2026-08-28 Ary Pos had 2,699 counts and had been counted four days earlier. The stale-count problem is real at exactly two counters (Ary G Canteen, Talwandi Sabo), and the recommended monthly cycle count is already running far harder than proposed at the counter that matters."
+    },
+    {
+      "claim": "21 SKUs sold below purchase cost, Rs 2.75 lakh over 12 months, including 'Am Lower' at Rs 106.62 against a Rs 197.41 cost on 1,491 units (one SKU at Rs 1.35 lakh)",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "21 SKUs, Rs 2.75 lakh; Am Lower Rs 1.35 lakh",
+      "live_number": "50 SKUs, Rs 2.55 lakh — but Am Lower is profitable lifetime (+12%): bought 2,150 units at Rs 102.64, sold 3,196 at Rs 115.20. Restricting to SKUs where 12m purchases cover 12m sales leaves 25 SKUs / Rs 87,708",
+      "query_used": "SELECT SUM(pd.Quantity), SUM(pd.Quantity*pd.PurchaseCost)/SUM(pd.Quantity) FROM PurchaseDetail pd JOIN PurchaseHeader ph ON ph.SerialNumber=pd.SerialNumber JOIN ProductMaster p ON p.ProductID=pd.ProductID WHERE p.ProductName='Am Lower' AND ISNULL(ph.IsDeleted,0)=0 --> 2,150 units @ Rs 102.64 lifetime vs 3,196 sold @ Rs 115.20; only 295 units bought inside the 12m window (Aug-25 @ Rs 279.31, Apr/May-26 @ Rs 218.95/194.24)",
+      "why": "The total is right in magnitude but the single largest line — 49% of the lane's figure — is a window artefact. ary assort leak costs a rolling 12-month weighted-average purchase price onto 12 months of sales without checking that the window's purchases cover them; Am Lower's 1,508 sold units were mostly drawn from 1,261 units bought in April 2023 at Rs 77.09. Loose Milk (Rs 67,094, 13,605 L sold vs 17,289 L bought) is the one line with a sound cost basis. Rec 1's Rs 22,884/month impact is defensibly nearer Rs 7,300/month."
+    },
+    {
+      "claim": "ARY already runs a credit business of Rs 6.87 crore with NO limits and NO terms — put terms on the Rs 6.87 crore already lent (P0 recommendation 3)",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 6.87 Cr outstanding, 0 credit limits, 3 credit days",
+      "live_number": "Rs 5.00 Cr of it is 'Jivo Wellness Pvt Ltd - Haryana-Branch' (intercompany with JIVO itself); real third-party/institutional credit is ~Rs 1.89 Cr. Top-200 sum double-counts: 200 rows / 189 accounts = Rs 8.97 Cr un-deduped vs Rs 6.89 Cr deduped",
+      "query_used": "WITH bal AS (SELECT AccountID, SUM(DebitAmount-CreditAmount) b FROM RefMaster WHERE ISNULL(IsDeleted,0)=0 GROUP BY AccountID) SELECT a.AccountName, b.b, COUNT(c.CustomerID) FROM bal b JOIN AccountMaster a ON a.AccountID=b.AccountID LEFT JOIN CustomerMaster c ON c.AccountID=b.AccountID AND ISNULL(c.AllowCreditSale,0)=1 GROUP BY a.AccountName,b.b ORDER BY b.b DESC --> Jivo Wellness Haryana-Branch 49,962,346.83; 0 of top 200 with crm_limit>0, 2 with ledger CreditLimit>0, 3 with CreditDays>0; 3,063 of 3,514 credit-allowed",
+      "why": "The 'zero credit terms' half is confirmed and is a real finding. The headline is not: the lane noted the intercompany caveat in its evidence field and then wrote Rs 6.87 Cr into the claim, the comparison table and the recommendation action anyway. It also noted that 200 customer rows map to 189 accounts and summed the 200 regardless — ary customers credit attaches a per-ACCOUNT balance to every CUSTOMER row sharing it, so any total taken from it over-counts."
+    },
+    {
+      "claim": "ARY's thinnest side is the household, hardware, durables and medicinal wallet; durables are 'Not offered'",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "untouched / not offered",
+      "live_number": "1,207 SKUs and Rs 64.9 lakh of 12m sales (8.5%): Home Furnishing 235/Rs 34.8 L, Medicare 272/Rs 10.7 L, Kitchen Utility 372/Rs 10.1 L, Appliances 197/Rs 5.3 L, Electricals 123/Rs 4.1 L, Mobile 8/Rs 0.3 L",
+      "query_used": "SELECT g.ProductGroupName, COUNT(DISTINCT p.ProductID), SUM(d.FinalSaleAmount) FROM ProductMaster p JOIN ProductGroupMaster g ON g.ProductGroupID=p.ProductGroupID LEFT JOIN SaleDetail d ... WHERE g.ProductGroupName LIKE '%Applian%' OR '%Electric%' OR '%Medic%' OR '%Kitchen%' OR '%Home%' OR '%Mobile%'; plus ./ary assort probe television fridge \"washing machine\" \"air conditioner\" laptop --> 8 SKUs matched, all false hits (fridge covers, hair conditioner)",
+      "why": "This is the burden-of-proof-on-missing trap the vault warns about. ARY already sells kettles, induction cookers, a microwave, irons, hair dryers, room heaters, mattresses, pressure cookers and 272 Medicare lines — that bloc out-sells Academy Dress or Winter Wear. What is genuinely absent, probe-verified, is BIG-ticket only: no TV, fridge, washing machine, AC, laptop or handset. The AFD order-and-collect recommendation survives but only for large durables, and 'untouched wallet' is wrong."
+    },
+    {
+      "claim": "97% of ARY's bills are booked to one anonymous 'Cash' account (1,054,205 of 1,088,607)",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "1,054,205 of 1,088,607 = 97%",
+      "live_number": "1,064,810 of 1,099,405 = 96.85%",
+      "query_used": "SELECT COUNT(*) FROM SaleHeader WHERE VoucherDate>'1901-01-01'; SELECT COUNT(*) FROM SaleHeader WHERE VoucherDate>'1901-01-01' AND CustomerID='00001'",
+      "why": "Reproduces exactly on live data through 2026-08-30. This is the lane's strongest and best-framed finding and the one genuinely sound basis for its P0 named-account recommendation."
+    },
+    {
+      "claim": "ARY lists 19,481 active SKUs for ~5,000 residents; only ~6,100 sold in the last 12 months; 13,290 non-selling active SKUs",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "19,481 active / ~6,100 selling / 13,290 dead",
+      "live_number": "19,487 active / 6,213 sold in 2025-09-01..2026-08-31 / 13,274 non-selling; and 9,414 of those have never sold a single unit in the database's entire life",
+      "query_used": "SELECT COUNT(*) FROM ProductMaster WHERE IsActive=1; SELECT COUNT(DISTINCT p.ProductID) FROM ProductMaster p JOIN SaleDetail d ON d.ProductID=p.ProductID JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber WHERE p.IsActive=1 AND h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01'",
+      "why": "Confirmed on a live 12-month window. The delist-by-rule recommendation is sound and my own query strengthens it: 9,414 dead codes have zero lifetime sales, a cleaner rule than the lane's."
+    },
+    {
+      "claim": "Only Rs 12.39 lakh of dead stock is real — SKU rationalisation releases almost no cash, so justify it on catalogue usability not working capital",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "425 SKUs, Rs 12.39 lakh",
+      "live_number": "358 SKUs, Rs 10.13 lakh (correct valuation); Rs 12.09 lakh reproduces the lane's figure using the same MAX(cost) bug",
+      "query_used": "Same dead-SKU CTE as above, WHERE SUM(Quantity*PurchaseCost)>0 --> 356-358 SKUs, Rs 10,13,065.96",
+      "why": "The number carries the same MAX(cost) inflation but only by ~19% here, and the conclusion is right and honest. This is the lane's best piece of self-discipline — it explicitly refused to claim a working-capital release it could not support."
+    },
+    {
+      "claim": "99.7% of bills have no salesperson (SalesPersonID [NONE])",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "99.7%",
+      "live_number": "1,095,854 of 1,099,405 bills = 99.68%",
+      "query_used": "SELECT ISNULL(sp.SalesPersonName,'[NONE]'), COUNT(DISTINCT d.SerialNumber) FROM SaleDetail d LEFT JOIN SalesPersonMaster sp ON sp.SalesPersonID=d.SalesPersonID GROUP BY sp.SalesPersonName",
+      "why": "Reproduces exactly."
+    },
+    {
+      "claim": "Confectionery is the #1 revenue group at 13.04%; ARY's mix is a tuck shop plus a uniform shop",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "Confectionery 13.04%; Personal Care 6.71%; Academy Dress 6.16%; Winter Wear 5.73%; Footwear 2.91%; Fabrics 2.86%; Fruits+Veg 8.31%",
+      "live_number": "Confectionery 13.14%; Personal Care 6.69%; Academy Dress 5.94%; Winter Wear 5.61%; Footwear 2.97%; Fabrics 2.87%; Fruits+Veg 8.30%",
+      "query_used": "SELECT g.ProductGroupName, SUM(d.FinalSaleAmount), 100.0*SUM(d.FinalSaleAmount)/SUM(SUM(d.FinalSaleAmount)) OVER () FROM SaleDetail d JOIN SaleHeader h ... JOIN ProductGroupMaster g ... WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' GROUP BY g.ProductGroupName ORDER BY 2 DESC",
+      "why": "All seven shares reproduce within rounding. I attacked this hard because the vault's Trap 1 says the category tree lies, but the top 25 Confectionery SKUs are Lays, Kurkure, Cadbury, candy and softy ice cream — the 'tuck shop' reading survives the taxonomy trap."
+    },
+    {
+      "claim": "Paytm is ~47% of all tenders by count — residents already transact digitally about half the time",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "524,295 of ~1.11 m tenders = ~47%",
+      "live_number": "47.33% LIFETIME, but 56.32% over the live 12 months (213,188 of 378,528) and 55.45% over the last 3 months — UPI is already the MAJORITY tender",
+      "query_used": "SELECT m.MOPName, COUNT(*), 100.0*COUNT(*)/SUM(COUNT(*)) OVER () FROM SalePayment sp JOIN SaleHeader h ON h.SerialNumber=sp.SerialNumber LEFT JOIN ModeOfPayment m ON m.MOPID=sp.MOPID WHERE ISNULL(sp.IsDeleted,0)=0 AND h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' GROUP BY m.MOPName",
+      "why": "The lane quoted a lifetime figure diluted by 2023-24 cash years and framed it in the present tense. It understated its own best supporting fact by 9 points, and it contradicts the vault's own Data-Quality-Traps note (which already recorded 55.7% for the trailing 12 months). Direction favours the lane's recommendation, so this weakens its argument rather than its integrity."
+    },
+    {
+      "claim": "ARY Rs 0.63 Cr sales per counter vs CSD Rs 1.93 Cr per URC — ARY counters are far sub-URC scale",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Rs 0.63 Cr/counter (Rs 6.92 Cr / 11 counters)",
+      "live_number": "Only 6 warehouses booked any sale in 12m, and Basement (22 bills lifetime, Rs 1.07 Cr) is a bulk-issue point not a counter. Sales per selling retail counter ~Rs 1.39 Cr — about 72% of a URC, not 33%",
+      "query_used": "SELECT w.WarehouseName, COUNT(DISTINCT d.SerialNumber), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber LEFT JOIN WarehouseMaster w ON w.WarehouseID=d.WarehouseID WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' GROUP BY w.WarehouseName --> Ary Pos 4.37 Cr, Ary Clothing 1.34 Cr, Basement 0.72 Cr on 14 bills, Ary G Canteen 0.54 Cr, Fruits & Veg 0.51 Cr, Ary Lite 0.19 Cr",
+      "why": "The denominator counts three warehouses that have not sold anything since 2024 plus a warehouse and a bulk-issue point. The FY26-27 annualisation (Rs 0.81 Cr) does reproduce — live FY26-27 is Rs 3.71 Cr over five months = Rs 8.90 Cr annualised. The conclusion ('adopt URC controls, not DMart practice') survives and is in fact strengthened: ARY counters are roughly URC-scale."
+    },
+    {
+      "claim": "Ary Apple A Day (Rs 25.21 lakh shortage, zero sales since 2023) and Talwandi Sabo (Rs 12.44 lakh, last counted 37 months ago, still carrying Rs 1.61 lakh of book stock) should be formally closed",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "2 dead counters",
+      "live_number": "Apple A Day last sale Nov-2023, Rs 25.21 L shortage, ZERO physical counts ever; Talwandi Sabo last sale Jul-2024, last count 2023-07-22, positive-only stock Rs 1,60,736 (net minus Rs 8.23 lakh). A THIRD dead counter the lane missed: Girls Canteen Ts, last sale Mar-2024",
+      "query_used": "SELECT w.WarehouseName, MAX(h.VoucherDate), COUNT(DISTINCT d.SerialNumber), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ... JOIN WarehouseMaster w ... GROUP BY w.WarehouseName; plus SELECT SUM(CASE WHEN Quantity>0 THEN Quantity*PurchaseCost ELSE 0 END) FROM Stock WHERE WarehouseID=...",
+      "why": "Both counters and both figures reproduce. Worth adding: Apple A Day has never had a single physical count, so its Rs 25.21 lakh of 'posted shortage' did not come from counting at all — which further undermines calling the aggregate a physical-count variance."
+    },
+    {
+      "claim": "ARY captures Rs 1,259 per resident per month on 6.08 bills and a Rs 206.86 average bill",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "Rs 1,258.68 / 6.08 bills / Rs 206.86",
+      "live_number": "Rs 1,275.35 / 6.20 bills / Rs 205.80 (371,817 bills, Rs 7.652 Cr gross, 2025-09-01..2026-08-31, on the same stated 5,000 denominator)",
+      "query_used": "SELECT COUNT(*), SUM(BillAmount) FROM SaleHeader WHERE VoucherDate>='2025-09-01' AND VoucherDate<'2026-09-01'",
+      "why": "Reproduces on a live window. The lane correctly labelled this ESTIMATED because the 5,000 headcount is stated, not queried, and named that denominator as its top open question — the right discipline."
+    },
+    {
+      "claim": "Kendriya Bhandar FY2022-23: sales Rs 3,122.93 Cr, net profit Rs 5.06 Cr = 0.16% net margin, 149 stores, 353 employees",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "0.162% net margin",
+      "live_number": "kendriyabhandar.org financial page: sales 312,292.99 lakh, other income 960.63, net profit 505.80, paid-up capital 100.84, 149 stores/offices, 353 employees --> 0.1619%",
+      "query_used": "WebFetch https://kendriyabhandar.org/aboutus/?action=financial",
+      "why": "Every figure the lane cited is on the cited page, in the stated units. The lane's own caveat (353 employees cannot staff 149 shops, so most of that turnover is institutional supply not shop-floor retail) is also sound. Its external sourcing is the strongest part of the lane."
+    },
+    {
+      "claim": "The global retail shrinkage benchmark is 1.2-1.5% of sales (US 1.52%, Europe 1.27%, Asia-Pacific 1.20%)",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "1.2-1.5% of sales",
+      "live_number": "The cited page carries exactly those three figures — but they are 2008 National Retail Security Survey / Global Retail Theft Barometer data, and the page does not state whether measurement is at retail or at cost",
+      "query_used": "WebFetch https://en.wikipedia.org/wiki/Shrinkage_(accounting)",
+      "why": "The quotation is accurate — this is not a citation that fails to contain its number. But the lane presented an 18-year-old figure as a current benchmark with no vintage, and since the source does not state its basis while ARY's side is valued at cost against retail sales, the like-for-like nature of the whole comparison is unverifiable."
+    },
+    {
+      "claim": "ARY's payment table cannot be used for value analysis — the cash amount column is corrupt by roughly 450x",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "Rs 10,023 Cr of 'cash' against a Rs 22.49 Cr business",
+      "live_number": "Consistent with the vault's independently recorded Trap 3 (SUM(Amount) Rs 900.35 Cr = ~119x actual sales; UPI/credit record value in Amount only, leaving TenderAmount at zero)",
+      "query_used": "Cross-checked against assort/vault/01-foundations/Data-Quality-Traps.md Trap 3 (mined 2026-08-29 from the same live DB); tender COUNTS re-derived independently above",
+      "why": "Correctly identified as unusable and correctly refused as a quotable figure. This is the lane behaving well — it found a broken column, said so, and declined to build on it."
+    },
+    {
+      "claim": "Resident denominator: ~5,000 people, of whom 1,250 school children and 1,100 university students (the basis for the capped student-account recommendation)",
+      "verdict": "UNTESTABLE",
+      "materiality": "load-bearing",
+      "original_number": "5,000 / 1,250 / 1,100",
+      "live_number": "Not derivable from FR8HODBNEW — 96.85% of bills carry no identified buyer and CustomerMaster holds 3,514 rows of which most are ledger accounts, not residents",
+      "query_used": "SELECT COUNT(*) FROM CustomerMaster --> 3,514; SELECT COUNT(*) FROM SaleHeader WHERE CustomerID='00001' --> 1,064,810 of 1,099,405",
+      "why": "Cannot be confirmed or refuted from this database, and the lane said so itself — it labelled every per-capita ratio ESTIMATED and made the missing household survey its number-one open question. Flagging it here so no downstream reader treats Rs 1,259/resident/month as measured rather than assumed."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

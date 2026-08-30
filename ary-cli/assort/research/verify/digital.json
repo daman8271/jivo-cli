@@ -1,0 +1,200 @@
+{
+  "lane": "digital",
+  "claims_tested": 21,
+  "lane_confidence_after": "medium",
+  "single_biggest_error": "REC 4 (the campus wallet, P1, ₹36,000/month) is sized on RefMaster — the exact table the lane itself proved untrustworthy two findings earlier. Finding 9 correctly diagnoses that bill-wise references on the Paytm account are never cleared, so RefMaster ageing is meaningless. Finding 7 then reads the household receivable off that same uncleared table and reports ₹48.02 lakh across \"1,459 credit households\", with a headline \"largest single household balance ₹95,000\". The real ledger (TransactionChild, which reconciles exactly to AccountMaster) says group 506 owes ₹21.98 lakh — 2.2x less — only 573 of 3,604 accounts carry any debit balance, the true largest is ₹37,595 (Parneet Kaur D/O Manohar Singh), and the ₹95,000 household (Setan S/O Mahesh Kumar, AccountID 3829) has a ledger of exactly ₹0.00: debits ₹99,299, credits ₹99,299, 16 vouchers. The named poster child for the wallet owes nothing. The float benefit halves to ~₹16,500/month at the lane's own 9% cost of funds, and the \"convert the 1,459\" instruction points at a pool that is really 573. The general pattern behind this: every number in the lane that DIAGNOSES a defect reproduces exactly, and every number that SIZES a recommendation is wrong.",
+  "verdicts": [
+    {
+      "claim": "UPI (MOPID 503) is 56.3% of all tenders in FY26-27",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "56.3% of 171,576 tenders",
+      "live_number": "56.32% of 182,992 tenders (103,088 UPI) FY26-27 to 30-Aug; 56.32% of 378,983 on a live 12m window",
+      "query_used": "SELECT p.MOPID, COUNT(*) FROM SalePayment p JOIN SaleHeader h ON h.SerialNumber=p.SerialNumber WHERE h.VoucherDate>='2026-04-01' AND h.VoucherDate<'2026-08-31' AND p.IsDeleted=0 GROUP BY p.MOPID",
+      "why": "Reproduces to two decimal places on both the lane's window and a live 12-month window. UPI is genuinely the majority payment method by transaction count, and the 'residents won't go digital' objection really is dead."
+    },
+    {
+      "claim": "UPI is 42.9% of collections value; cash 32.3%; total collections ₹380.06 lakh",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "42.9% of ₹3.80 Cr",
+      "live_number": "UPI 46.55%, cash 27.55%, credit 25.90% of ₹371.26 lakh (FY26-27); UPI 47.47% of ₹765.85 lakh on a live 12m window",
+      "query_used": "SELECT p.MOPID, COUNT(*), SUM(p.Amount) AS raw, SUM(p.Amount-p.ReturnAmount) AS applied FROM SalePayment p JOIN SaleHeader h ON h.SerialNumber=p.SerialNumber WHERE h.VoucherDate>='2026-04-01' AND h.VoucherDate<'2026-08-31' AND p.IsDeleted=0 GROUP BY p.MOPID  -- cross-checked against SELECT SUM(BillAmount) FROM SaleHeader over the same window",
+      "why": "The lane read SalePayment.Amount raw, which for cash is money TENDERED including ₹28.31 lakh of change handed back — so it counted change as revenue and understated UPI's share by ~4 points. Its own Finding 24 states the fix (applied = Amount − ReturnAmount) and never applies it to the headline. On the applied basis the split reconciles to the paisa against SaleHeader.BillAmount (₹371.26 L vs ₹371.25 L; 12m ₹765.85 L vs ₹765.85 L), so a trustworthy rupee split does exist — it is just not the one the lane published."
+    },
+    {
+      "claim": "UPI was 40.7% of tenders in FY24-25 (the growth baseline)",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "40.7%",
+      "live_number": "FY24-25 = 46.12% (125,847 of 272,853); FY25-26 = 53.77%; FY26-27 = 56.32%",
+      "query_used": "SELECT fy, COUNT(*), SUM(CASE WHEN p.MOPID=503 THEN 1 ELSE 0 END) FROM SalePayment p JOIN SaleHeader h ON h.SerialNumber=p.SerialNumber WHERE p.IsDeleted=0 GROUP BY <FY bucket on h.VoucherDate>",
+      "why": "40.7% is the CASH share of FY26-27 in the lane's own Table 0 (69,791/171,576 = 40.68%), copied into the FY24-25 UPI cell. The real growth is 46.1% → 53.8% → 56.3%, still a real trend but half as dramatic as advertised."
+    },
+    {
+      "claim": "96.2% of FY26-27 bills booked to anonymous account 00001; only 776 customers identified; 173 of 3,514 customer records carry a mobile",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "96.2%; 776 customers; 173/3,514 mobiles; 3 emails; 0 deposits; 0 points",
+      "live_number": "96.31% (173,451 of 180,096); 778 identified customers; 173 mobiles, 3 emails, 0 deposits, 0 points; 196 have Mobile OR Phone",
+      "query_used": "SELECT CASE WHEN CustomerID='00001' THEN 'walkin' ELSE 'identified' END, COUNT(*), COUNT(DISTINCT CustomerID), SUM(BillAmount) FROM SaleHeader WHERE VoucherDate>='2026-04-01' AND VoucherDate<'2026-08-31' GROUP BY ...; plus a per-column fill count over CustomerMaster",
+      "why": "Reproduces exactly on the live window. The only refinement: 196 records rather than 173 carry some number once CustomerMaster.Phone is included alongside Mobile. This is the strongest finding in the lane and REC 0 rests on it safely."
+    },
+    {
+      "claim": "Identified-customer basket ₹1,586 vs walk-in ₹155 is a 10x gap but is a segment artefact, not a benefit of identification",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "₹1,586 vs ₹155",
+      "live_number": "₹1,568 vs ₹154 (FY26-27); ₹1,637 vs ₹157 (live 12m)",
+      "query_used": "same segment query as above, AVG(BillAmount) by segment",
+      "why": "Numbers reproduce and the lane's refusal to treat the 10x as causal is correct — the identified accounts are institutions and credit households. This is the lane's best piece of discipline and it stops REC 2's business case from being inflated 10x."
+    },
+    {
+      "claim": "FusionERP8 already ships a configured, never-used wallet and loyalty model — MOPID 98 'Prepaid' and 97 'CRM Point Redeem' active, zero deposits and zero points ever",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "2 payment modes + 8 wallet fields live and unused since inception",
+      "live_number": "MOPID 97 and 98 both IsActive=true; 0 of 1,121,329 SalePayment rows use mode 97 or 98; CRMPoints non-zero on 0 rows; Deposit and BalancePoint non-zero on 0 of 3,514 customers",
+      "query_used": "SELECT MOPID, MOPName, IsActive, AccountID FROM ModeOfPayment; SELECT COUNT(*), SUM(CASE WHEN MOPID IN (97,98) THEN 1 ELSE 0 END), SUM(CASE WHEN ISNULL(CRMPoints,0)<>0 THEN 1 ELSE 0 END) FROM SalePayment",
+      "why": "Fully reproduced. This is what makes the wallet a configuration job rather than a build, and it survives the audit intact even though the wallet's business case does not."
+    },
+    {
+      "claim": "1,459 households in the 'Akal Academy Cs' group carry ₹48.02 lakh of net receivable; largest single household balance ₹95,000",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹48.02 lakh across 1,459 households; top balance ₹95,000",
+      "live_number": "₹21.98 lakh true ledger balance; only 573 of 3,604 accounts actually owe anything; true top balance ₹37,595; the named ₹95,000 household has a balance of ₹0.00",
+      "query_used": "SELECT SUM(t.dr-t.cr) FROM AccountMaster a CROSS APPLY (SELECT SUM(DebitAmount) dr, SUM(CreditAmount) cr FROM TransactionChild WHERE AccountID=a.AccountID) t WHERE a.GroupID=506  -- vs the lane's SELECT SUM(DebitAmount-CreditAmount) FROM RefMaster r JOIN AccountMaster a ON a.AccountID=r.AccountID WHERE a.GroupID=506 AND r.IsDeleted=0, which returns ₹47.87 L",
+      "why": "The lane measured the receivable on RefMaster, whose references are never cleared — the identical defect it diagnosed on the Paytm account in Finding 9. AccountID 3829 'Setan S/O Mahesh Kumar' shows ₹95,000 in RefMaster and debits ₹99,299 = credits ₹99,299 in TransactionChild: he owes nothing. The same overstatement runs group-wide (group 509 reads ₹131.87 L in RefMaster against a true −₹36.55 L). REC 4's ₹36,000/month float benefit halves to ~₹16,500."
+    },
+    {
+      "claim": "0 of ~524,295 UPI tenders carry any payment reference — no UTR field is populated anywhere",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "0 of 524,295",
+      "live_number": "0 of 530,780 MOPID-503 rows carry Response, DocumentNo, BankName, RefName or Remarks; only MOPID 3 (12 rows lifetime) carries a reference",
+      "query_used": "SELECT MOPID, COUNT(*), SUM(CASE WHEN LEN(LTRIM(RTRIM(ISNULL(Response,''))))>2 THEN 1 ELSE 0 END), SUM(... DocumentNo ...), SUM(... BankName ...), SUM(... RefName ...), SUM(... Remarks ...) FROM SalePayment GROUP BY MOPID",
+      "why": "Reproduced, and strengthened: I also tested RefName and Remarks, which the lane did not, and both are empty too. There is genuinely no column in this schema holding a UTR, so 'Paytm' really is a button a cashier presses. REC 1 is the soundest recommendation in the lane."
+    },
+    {
+      "claim": "₹7.97 Cr of open bill-wise references sit on the Paytm ledger (₹5.95 Cr over 180 days) while the account itself nets to −₹16.68 lakh",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "₹7.97 Cr open refs, ₹5.95 Cr >180d, balance −₹16.68 L, 528,478 vouchers",
+      "live_number": "₹8.07 Cr open refs across 532,280 references, ₹5.99 Cr over 180 days; true ledger balance +₹2.02 lakh DEBIT on 534,984 vouchers",
+      "query_used": "SELECT COUNT(*), SUM(DebitAmount-CreditAmount) FROM RefMaster WHERE AccountID=2072 AND IsDeleted=0, bucketed by DATEDIFF(day,RefDate,'2026-08-30'); balance from SUM(DebitAmount)-SUM(CreditAmount) over TransactionChild WHERE AccountID=2072",
+      "why": "The open-reference figures reproduce and have grown. The balance sign differs (+₹2.02 L now, and note `ary accounts get` double-counts by adding AccountMaster — which is a running total, not an opening balance — to the TransactionChild movement, reporting ₹4.07 L). The finding's substance — that the ageing report on ARY's largest digital channel is meaningless — is dead right, and it is exactly the fault the lane then walked into itself on Finding 7."
+    },
+    {
+      "claim": "54.4% of bills land in 17:00–21:00 and 64.9% in 16:00–21:00; 6 stations, 10 cashiers, 2.64 lines/bill, ~1,181 bills/day",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "54.4% / 64.9% / 2.64 lines / 1,181 bills per day",
+      "live_number": "52.4% in 17:00–20:00 and 62.7% in 16:00–21:00; 10 users, 6 stations, 1 location; 2.645 lines/bill; 1,193 bills/day over 151 trading days",
+      "query_used": "SELECT DATEPART(hour, RecordDateTime), COUNT(*) FROM SaleHeader WHERE VoucherDate>='2026-04-01' AND VoucherDate<'2026-08-31' GROUP BY DATEPART(hour, RecordDateTime); plus COUNT(DISTINCT UserID/StationID/LocationID) and a line/bill ratio over SaleDetail",
+      "why": "Structural claim holds — the evening crush is real, 19:00 peaks at 27,119 bills, and the cashier/station/line figures reproduce exactly. The two headline percentages are each about 2 points high on the live window. 'The queue, not the assortment' survives."
+    },
+    {
+      "claim": "SaleOrderHeader has been used 17 times in its life, all bulk supply orders to The Kalgidhar Society at ~₹6.8 lakh each",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "17 rows, all Kalgidhar Society, ~₹6.8 lakh each",
+      "live_number": "17 rows CONFIRMED, but 2 customers not 1: 12 to 002CM 'Hunger Heroes' (avg ₹6.30 L, max ₹6.88 L) and 5 to 0000L 'Jivo Wellness Pvt Ltd - Delhi' (avg ₹0.69 L); last order 2026-06-18",
+      "query_used": "SELECT CustomerID, COUNT(*), AVG(BillAmount), MIN(BillAmount), MAX(BillAmount) FROM SaleOrderHeader GROUP BY CustomerID; SELECT CustomerID, CustomerName FROM CustomerMaster WHERE CustomerID IN ('002CM','0000L')",
+      "why": "The load-bearing half — the order module exists and is effectively dormant — is confirmed. But the customer is misnamed: 002CM is 'Hunger Heroes', not The Kalgidhar Society, and 'all ... at ~₹6.8 lakh each' is wrong on both 'all' and the average. This is a name-attribution error of exactly the class this exercise keeps producing. Separately, 'ARY does not need to build an OMS' is an inference from schema existence, not from proven function — 17 rows is not evidence the module works for retail pre-orders."
+    },
+    {
+      "claim": "Product images are empty on all 21,466 SKUs while ProductChildMaster price coverage is 99.9–100%",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "0 images / 0 web names / 0 web groups; MRP 110,916 of 111,021",
+      "live_number": "0 filled Picture1/Picture2 on 21,479 SKUs in ProductMaster AND 0 on 21,479 rows of ProductDetail; 111,253 child rows with MRP 111,148 (99.9%), SellingPrice 111,250, PurchaseCost 111,253 (100%)",
+      "query_used": "SELECT COUNT(*), SUM(CASE WHEN LEN(LTRIM(RTRIM(ISNULL(Picture1,''))))>0 THEN 1 ELSE 0 END) FROM ProductMaster; same over ProductDetail; SELECT COUNT(*), SUM(CASE WHEN MRP>0 ...), SUM(CASE WHEN PurchaseCost>0 ...) FROM ProductChildMaster; plus INFORMATION_SCHEMA sweep for every Picture/Image/Photo column in the database",
+      "why": "I applied the burden-of-proof-on-missing rule and swept every image-shaped column in all 292 tables rather than trusting the single field. The retail catalogue genuinely has no images. Footnote the lane missed: MenuChild holds 415 real binary images for the canteen menu module — so 'ARY has no product photos anywhere' would be wrong, though none of them cover the 500-SKU grocery shelf."
+    },
+    {
+      "claim": "A 500-SKU curated catalogue covers 63.4% of what residents spend; only 6,386 SKUs sold in 12 months",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "top500 = 63.36%; 6,386 SKUs sold; ₹817.44 lakh",
+      "live_number": "top500 = 63.84%; 6,221 SKUs sold; ₹766.71 lakh over a clean 12m window (2025-09-01 to 2026-08-31); top100 33.41%, top300 53.34%, top1000 77.98%",
+      "query_used": "WITH s AS (SELECT d.ProductID, SUM(d.FinalSaleAmount) val FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' GROUP BY d.ProductID HAVING SUM(d.FinalSaleAmount)>0), r AS (SELECT *, ROW_NUMBER() OVER (ORDER BY val DESC) rn FROM s) SELECT ... FROM r",
+      "why": "Every concentration percentile reproduces within half a point on a live 12-month window, and the line total (₹766.71 L) reconciles against SaleHeader.BillAmount (₹765.85 L), which also validates FinalSaleAmount as the right revenue column. The lane's ₹817.44 L came from a 13-month window (it used 2025-08-01), which is why its total is higher."
+    },
+    {
+      "claim": "WhatsApp order-to-pickup costs ~₹2,540/month all-in: AiSensy Basic ₹1,500/mo plus ~₹870 of utility messages",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "₹1,500/mo platform, ₹16,200/yr; ₹2,540/mo all-in",
+      "live_number": "Rates confirmed verbatim on the cited page (Marketing ₹1.09, Utility & Auth ₹0.145, Service free, utility-in-window free, Indian virtual number ₹2,000+GST/yr). No ₹1,500/mo or ₹16,200/yr tier appears on aisensy.com/pricing today; the cheapest priced items shown are add-ons at ₹2,500/mo and ₹3,500/mo",
+      "query_used": "WebFetch https://aisensy.com/pricing (twice — once for rates, once specifically for plan tiers); WebFetch https://developers.facebook.com/docs/whatsapp/cloud-api/guides/sell-products-and-services",
+      "why": "The load-bearing structural claim — a customer-initiated conversation opens a free 24-hour window, so utility replies cost nothing — is confirmed verbatim from both the BSP and Meta's own docs. The specific platform subscription is not on the page the lane cited, so ₹2,540/month is not reproducible and is probably low. Materially it does not matter: even at ₹3,500/mo this is under a day's sales."
+    },
+    {
+      "claim": "WhatsApp ships native catalogue/cart/order plumbing: 30 products per multi-product message, 99 units per line, orders by webhook, no cart icon on Cloud API",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "30 products per message, 99 units per line",
+      "live_number": "All four sentences verified verbatim on developers.facebook.com/docs/whatsapp/cloud-api/guides/sell-products-and-services",
+      "query_used": "WebFetch of the exact cited Meta URL, asking for verbatim quotes of each of the four claims",
+      "why": "Best-cited finding in the lane. Every quoted string is on the cited page, including the negative claim about the missing cart icon, which the lane could have quietly dropped and did not."
+    },
+    {
+      "claim": "A campus wallet spendable only at ARY is a closed-system PPI needing no RBI authorisation, escrow or KYC (RBI PPI Master Directions cl. 2.1)",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "Zero RBI licences required",
+      "live_number": "Verbatim at paragraph 2.1: PPIs 'issued by an entity for facilitating the purchase of goods and services from that entity only and do not permit cash withdrawal… The issuance or operation of such instruments is not classified as a payment system requiring approval/authorisation by RBI and are, therefore, not regulated or supervised by RBI.'",
+      "query_used": "WebFetch https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12156 asking for the verbatim closed-system definition, its clause number, and whether paras 6/12/16 apply",
+      "why": "Clause number, quote and conclusion all check out against the primary source. The lane also correctly kept the boundary condition — the moment the wallet is spendable outside ARY every obligation switches on — and correctly refused to state a GST position it could not source. Regulatory work here is solid."
+    },
+    {
+      "claim": "The Payment and Settlement Systems Amendment Bill (Aug 2026) removed the zero-MDR guarantee; 0.25–0.4% MDR proposed above ₹2,000 for larger merchants",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "0.25%–0.4% above ₹2,000; ~₹14,400/yr risk on ₹48 lakh of top-ups",
+      "live_number": "Rates and the ₹2,000 threshold corroborated. But the instrument is the Taxation and Other Laws (Amendment) Bill, 2026 (Lok Sabha, 6 Aug 2026), amending s.10A of the Payment and Settlement Systems Act 2007 — and it 'does not impose a UPI service fee or restore merchant discount rates', it creates the legal room. Reported scope: merchants with annual turnover around ₹1–1.5 crore",
+      "query_used": "WebSearch 'Payment and Settlement Systems Amendment Bill 2026 MDR UPI 0.25% 0.4% above Rs 2000' — the lane's own citation (economictimes.indiatimes.com/topic/upi-mdr) is unfetchable from this box and is in any case a rolling auto-aggregation page, not a dated article, so it cannot pin any quote",
+      "why": "Numbers survive; the framing and the bill's name do not. More materially, the lane omits the reported ₹1–1.5 Cr turnover test — ARY turns over ~₹7.7 Cr, so it would plausibly BE a 'larger merchant' and in scope for every tender over ₹2,000, not merely for wallet top-ups. That cuts against the lane's own reassurance rather than for it. Four of the lane's external claims (F14, F15, F16, F17) all cite ET /topic/ pages, which is a structural citation weakness."
+    },
+    {
+      "claim": "Quick commerce reaches 477 cities and 3,536 dark stores in the top 10 cities, so there is no churn for loyalty to prevent at Baru Sahib",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "477 cities, 3,536 dark stores, Blinkit 969",
+      "live_number": "All three figures corroborated (CLSA, Aug 2026: 477 cities; 3,536 dark stores across the top 10; Blinkit 969, Zepto 828, Flipkart Minutes 627)",
+      "query_used": "WebSearch 'CLSA quick commerce 477 cities 3,536 dark stores top 10 cities Blinkit 969 August 2026'",
+      "why": "The statistics are right but they do not support the conclusion drawn from them — the cited story's own headline is that players are targeting smaller, untapped markets, which argues mildly the other way. The real basis for 'no churn to prevent' is the closed campus and the 30–50 km of hill road, which the lane admits it took from the brief and did not verify, while labelling the whole finding VERIFIED."
+    },
+    {
+      "claim": "The top 5 dead SKUs alone hold ₹3.06 Cr at cost, one with no sale for 778 days",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹3.06 Cr in the top 5 dead SKUs",
+      "live_number": "₹47.45 lakh at the most generous setting (--days 90) and ₹4.37 lakh on the catalogue view; largest single dead SKU is 'Button' at ₹40.45 lakh; the 778-day SKU (Jivo Canola 15 Ltr, last sold 2024-07-11) is real and now 780 days",
+      "query_used": "./ary stock dead at --days 90/180/365/730 and ./ary assort dead; cross-checked with SELECT TOP 8 ProductID, SUM(Quantity)*MAX(PurchaseCost) FROM Stock ... ORDER BY ABS(...) DESC",
+      "why": "No window of any dead-stock command produces ₹3.06 Cr in five SKUs — the figure is out by roughly 6.5x. The only SKU in the entire database holding over ₹1 Cr of stock value is Tomato Sauce at MINUS ₹1.45 Cr at the inactive Talwandi Sabo counter. Worse for REC 8: ₹40 lakh of the real ₹47 lakh is 'Button', a tailoring raw material, not something a loyalty promotion can clear to residents."
+    },
+    {
+      "claim": "Clothing-counter bills swing 16.6x into session start: 412 in Jan-2026, 6,841 in Mar-2026, 4,041 in Apr-2026",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "412 → 6,841 bills, a 16.6x swing",
+      "live_number": "229 → 1,133 bills, a 4.9x swing (Dec 328, Jan 229, Feb 437, Mar 1,133, Apr 948). By value the March peak is ₹34.16 L against ₹8.01 L in January = 4.3x",
+      "query_used": "SELECT CONVERT(char(7),h.VoucherDate,126), COUNT(DISTINCT d.SerialNumber) AS bills, COUNT(*) AS lines_, SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber WHERE d.WarehouseID=11 GROUP BY ...",
+      "why": "I reproduced the lane's numbers exactly as LINE counts — 708/412/1,551/6,841/4,041 are COUNT(*) over the joined detail table, to the row. The lane wrote 'the bill COUNTS are the reliable figure' in the same breath as caveating the value column for join inflation; it caught the fan-out on one column and not the other. The seasonality is real and REC 5 survives, but at roughly a third of the swing advertised."
+    },
+    {
+      "claim": "Stock is 1.8% negative (449 of 24,593 positions), so never promise 'in stock'",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "449 of 24,593 = 1.8%",
+      "live_number": "503 of 24,644 = 2.04% store-wide — but 276 of those sit at the INACTIVE Talwandi Sabo counter. At Ary Pos, the counter a WhatsApp shop would actually serve, it is 81 of 9,886 = 0.8%",
+      "query_used": "SELECT COUNT(*), SUM(CASE WHEN q<0 THEN 1 ELSE 0 END) FROM (SELECT ProductID, WarehouseID, SUM(Quantity) q FROM Stock GROUP BY ProductID, WarehouseID) x; then the same broken out by WarehouseID joined to WarehouseMaster",
+      "why": "The store-wide rate reproduces and has drifted slightly worse, but it is dominated by a dead counter. The operative number for the recommendation is 0.8% at Ary Pos. The lane's own soWhat already scopes the advice to Ary Pos and the top 500 SKUs, so the conclusion is right even though the headline percentage is the wrong one to quote."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

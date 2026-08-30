@@ -1,0 +1,182 @@
+{
+  "lane": "population",
+  "claims_tested": 19,
+  "lane_confidence_after": "medium",
+  "single_biggest_error": "The P0 recommendation targets the wrong buyer with a budget that is not a grocery budget. Eternal University's audited \"Mess meal charges Rs 196.00 lakh\" is a payment for COOKED MEALS — the same statement books \"Expenditure for consumable items 22.50\" as a separate line, and campus catering is run by a distinct Trust unit (\"Akal Catering Services (Mess)\") that is already an ARY account. The other Rs 55 lakh is \"Boarding & lodging expenditure for EU faculty/staff\", exactly offset by income line 5 \"Collection From Staff for Boarding & Lodging Services 55.00\" — accommodation, not food. And the Rs 1.32 lakh ARY supposedly sells \"the largest food buyer on campus\" is 84% garments and soft furnishings (Stole Rs 19,888, Kurti Rs 12,250, Curtain Rs 10,575, Than Rs 6,278, Trouser Rs 5,592, Shirts Rs 3,992) against Rs 3,709 of edible oil. So \"ARY has 1.1% of a Rs 2.51 Cr food wallet, walk in with EU's own published figure and bid for rice, atta, pulses\" divides a curtain-and-kurti account by a cooked-meal transfer charge, and sends the buyer to a registrar who does not purchase groceries.",
+  "verdicts": [
+    {
+      "claim": "Eternal University has 1,102 students (SC 212, ST 29, OBC 222, General 693; Himachali 565, non-Himachali 518, J&K 19), not 2,500",
+      "verdict": "CONFIRMED",
+      "original_number": "1,102 as on 31-Jul-2025",
+      "live_number": "1,102 — verbatim in the cited PDF",
+      "query_used": "curl the cited EU 17th Annual Report PDF, pdftotext -layout, grep. Line 1569: 'Total 212 29 222 693 1102 565 518 19'; line 401: \"Students' strength 1102\"; line 356: 'total strength of students stood at 1102'",
+      "materiality": "supporting",
+      "why": "Every element of the breakdown appears verbatim in the primary source at the URL given. The lane's external sourcing on this is exact."
+    },
+    {
+      "claim": "EU fills only 51.6% of sanctioned seats — 503 admitted against 974",
+      "verdict": "CONFIRMED",
+      "original_number": "974 sanctioned vs 503 admitted",
+      "live_number": "974 / 503 (PDF line 1378); 'New admissions 503' at line 407",
+      "query_used": "pdftotext eu.pdf; grep -n 'Grand Total' -> line 1378: 'Grand Total 974 503'",
+      "materiality": "supporting",
+      "why": "Both numbers are in the cited table. The 2015-16 comparator of 1,108 rests on the NAAC SSR, which I did not fetch, so the 'flat for a decade' half is unverified."
+    },
+    {
+      "claim": "Akal Academy board registrations: Class X 125 (2019-20) -> 98 (2024-25); Class XII 113 (2018-19) -> 57 (2025-26)",
+      "verdict": "QUALIFIED",
+      "original_number": "X -22%, XII -50%",
+      "live_number": "X: 112,102,125,115,81,90,75,98. XII: 74,113,80,75,87,56,43,63,57 — all verbatim",
+      "query_used": "WebFetch akalacademy.in/storage/2307/CBSE-Result.pdf, then pdftotext -layout on the saved binary",
+      "materiality": "supporting",
+      "why": "Every figure is in the source and the peak-to-latest percentages are right, but the endpoints are cherry-picked: both cohorts bottomed in 2023-24 and have RECOVERED since (X 75->98, +31%; XII 43->63->57). The soWhat 'the customer base is getting smaller, not bigger' is not what the last two years say."
+    },
+    {
+      "claim": "Winter shutdown, bills: term 1,066.7/day (1-23 Dec 2025) collapses to a 23-day plateau of 376.3/day inside a 306-438 band, stepping back to 638 on 21 Jan",
+      "verdict": "CONFIRMED",
+      "original_number": "1,066.7 -> 376.3 = 35.3%; also 988.0->465.9 (47.2%) and 727.8->356.4 (49.0%)",
+      "live_number": "1,066.7 -> 376.3 = 35.28%; 988.0 -> 465.9 = 47.16%; 727.8 -> 356.4 = 48.97%; band 306-438; 20 Jan 438 -> 21 Jan 638",
+      "query_used": "SELECT CONVERT(char(10),VoucherDate,120) d, COUNT(*), SUM(BillAmount) FROM SaleHeader WHERE VoucherDate>='2025-11-25' AND VoucherDate<'2026-02-15' GROUP BY 1; plus a UNION of the three term/vacation windows",
+      "materiality": "load-bearing",
+      "why": "Reproduced to the decimal on all three winters, written from scratch. The bill-count half of the seasonality finding is solid and is the strongest thing in the lane."
+    },
+    {
+      "claim": "Winter shutdown, revenue: vacation floor Rs 64,935/day = 39.2% of the Rs 165,509/day term benchmark (and 39.0% / 47.9% in the two prior winters)",
+      "verdict": "REFUTED",
+      "original_number": "Rs 64,935/day; ratios 39.0% / 47.9% / 39.2%",
+      "live_number": "Rs 92,652/day = 56.0%. Prior winters as stated: 36.6% and 50.1%. On a clean retail-only basis: 32.7% / 46.1% / 38.4%",
+      "query_used": "Same daily series. 29 Dec 2025-20 Jan 2026 = 23 days, SUM = Rs 2,130,989, mean Rs 92,652. Dropping 6 Jan 2026 and dividing by 22 gives exactly Rs 64,935",
+      "materiality": "load-bearing",
+      "why": "Rs 64,935 is only reachable by silently deleting 6 Jan 2026 (Rs 702,413) from a window the lane itself defines as 23 days — and 6 Jan is Rs 646,238 of wholesale to 'Katebaa Rural Services & Solutions Foundation-06', an account the lane never mentions. Stripping wholesale from BOTH sides (the honest fix) gives 38.4%, so the conclusion survives, but not one of the three printed revenue ratios reproduces from the stated query."
+    },
+    {
+      "claim": "Headline: ~60% of the population leaves each winter; the permanent resident base is ~1,700-2,300 people",
+      "verdict": "REFUTED",
+      "original_number": "~60% leaves; permanent base 1,700-2,300",
+      "live_number": "Untestable as stated. Basket mix during the floor: Confectionery 23.2% of term, Chinese Items 27.3%, Stationary 20.2%, Bakery 18.4% — but Dry Fruits 82.6%, Vegetable 66.3%, Personal Care 62.3%, Fruits 59.2%",
+      "query_used": "SELECT pg.ProductGroupName, term rs/day, vac rs/day, ratio FROM SaleDetail d JOIN SaleHeader h JOIN ProductMaster p JOIN ProductGroupMaster pg, wholesale accounts excluded, Dec 1-23 vs Dec 29-Jan 20",
+      "materiality": "load-bearing",
+      "why": "This converts a demand ratio into a headcount ratio, which requires leavers and stayers to spend the same per head. The category test says they do not: student-shaped lines fall to ~20-27% while household-shaped lines hold at 59-83%, so the residual demand is household-weighted and the true resident floor is BELOW 35-38% of the township, not equal to it. 1,700-2,300 is an upper bound at best."
+    },
+    {
+      "claim": "Headline: ARY's +29% growth is coming from wallet share, not more people",
+      "verdict": "REFUTED",
+      "original_number": "+29%, attributed to campus wallet share",
+      "live_number": "FY25-26 vs FY24-25 = +22.1% (Rs 588.71 -> 718.94 lakh). Ex-Basement +12.7%. The core grocery counter, Ary Pos, grew +7.4% (Rs 387.43 -> 416.07 lakh). Basement (Delhi wholesale) went 0.00 -> 55.56 lakh = 43% of ALL growth",
+      "query_used": "SELECT w.WarehouseName, SUM(CASE WHEN VoucherDate in FY24-25 ...), SUM(CASE WHEN FY25-26 ...) FROM SaleDetail d JOIN SaleHeader h JOIN WarehouseMaster w GROUP BY w.WarehouseName",
+      "materiality": "load-bearing",
+      "why": "+29% does not reproduce on any basis I can construct. Worse, the lane correctly identifies Hunger Heroes as a non-resident distortion of per-resident SPEND but never notices it is also the single largest driver of the GROWTH it attributes to campus wallet share — 43% of it. The campus grocery counter grew 7.4%, roughly food inflation."
+    },
+    {
+      "claim": "Eternal University spends Rs 2.51 Cr/yr on food and ARY has 1.1% of it",
+      "verdict": "REFUTED",
+      "original_number": "Rs 251 lakh food spend; ARY Rs 2.78 lakh = 1.1%",
+      "live_number": "Rs 196 lakh is 'Mess meal charges' (cooked meals; 'Expenditure for consumable items 22.50' is a separate line). Rs 55 lakh is 'Boarding & lodging expenditure for EU faculty/staff', exactly offset by income 'Collection From Staff for Boarding & Lodging Services 55.00'. ARY's Rs 0.99 lakh to EU in the live 12m is Stole 19,888 + Kurti 12,250 + Curtain 10,575 + Than 6,278 + Trouser 5,592 + Shirts 3,992 vs Edible Oil 3,709",
+      "query_used": "pdftotext eu.pdf, lines 2259/2277/2288 of the Income & Expenditure statement; plus SELECT sg.SubGroupName, SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h JOIN ProductMaster p JOIN SubGroupMaster sg WHERE h.CustomerID IN ('00007','0000A') AND VoucherDate 2025-09-01..2026-09-01 GROUP BY 1",
+      "materiality": "load-bearing",
+      "why": "Both sides of the ratio are the wrong thing. The denominator is a cooked-meal transfer charge plus staff accommodation, not a grocery budget; the numerator is a garments-and-curtains account. Even 'Akal Catering Services (Mess)' buys packed juice, chocolate, cold drinks, ice cream, Nutella, aprons and fabric from ARY — no rice, atta, dal or sugar in any line above Rs 3,000."
+    },
+    {
+      "claim": "ARY's campus institutional accounts total Rs 49.47 lakh, or 8.1-9.4% of a Rs 528-614 lakh food budget",
+      "verdict": "REFUTED",
+      "original_number": "Rs 49.47 lakh = 8.1-9.4% capture",
+      "live_number": "Rs 15.06 lakh (31%) of that is booked on the Ary Clothing counter — uniforms and fabric, not food. Food-and-consumables numerator is ~Rs 34.2 lakh = 5.6-6.5% capture. The lane's own nine listed components also sum to 49.17, not 49.47",
+      "query_used": "SELECT c.CustomerName, SUM(CASE WHEN d.WarehouseID=11 THEN d.FinalSaleAmount ELSE 0 END), SUM(CASE WHEN d.WarehouseID<>11 ...) FROM SaleDetail d JOIN SaleHeader h JOIN CustomerMaster c WHERE CustomerID IN (the nine) AND VoucherDate>='2025-08-01' AND <'2026-08-22' GROUP BY 1",
+      "materiality": "load-bearing",
+      "why": "A food-budget denominator is being divided into a numerator that includes Rs 8.00 lakh of Akal Academy clothing, Rs 4.75 lakh of Kalgidhar Trust clothing and Rs 1.03 lakh of Gurmat Camp clothing. Akal Academy's 12.0% share becomes 8.4%. Separately, every institutional figure quoted is a 12.7-month window (VoucherDate>='2025-08-01', no upper bound) labelled as 12 months — I reproduced all nine to the paisa only on that window."
+    },
+    {
+      "claim": "14.53% of FY26-27 revenue is nine bills to one Delhi organisation, Hunger Heroes (002CM), Green Park, credit-allowed, 20 visits",
+      "verdict": "CONFIRMED",
+      "original_number": "9 bills, Rs 51.38 lakh, 14.53%",
+      "live_number": "9 bills, Rs 51.38 lakh, now 13.86% of a live FY26-27 of Rs 370.61 lakh. CustomerMaster: 002CM 'Hunger Heroes', Green Park Main, 110016, AllowCreditSale=true, VisitCount=20",
+      "query_used": "SELECT CASE WHEN CustomerID='00001' ... END bucket, COUNT(*), SUM(BillAmount)/100000 FROM SaleHeader WHERE VoucherDate>='2026-04-01' AND <'2026-08-31' GROUP BY 1; SELECT * FROM CustomerMaster WHERE CustomerID='002CM'",
+      "materiality": "load-bearing",
+      "why": "Reproduces exactly for its stated window; the % has simply diluted to 13.9% as the year has run on. One caveat found in passing: two of the 20 lifetime bills (2026-05-11, VchNumber 2 and 3, one minute apart, same UserID 67) are byte-identical at Rs 6,01,726 / 9,991.4 units — a probable duplicate worth 1.6% of FY26-27 revenue."
+    },
+    {
+      "claim": "Recommendation 5's fix — 'one flag on customer 002CM and the Basement counter' separates wholesale from resident retail",
+      "verdict": "REFUTED",
+      "original_number": "flag 002CM + Basement",
+      "live_number": "Over the live 12m the non-resident block is Rs 91.64 lakh / 12.0% across 5 accounts and 35 bills: Hunger Heroes 70.59 (Basement), Jivo Wellness Delhi 11.97 (of which 10.96 on ARY POS), Katebaa 8.40 (on Ary Clothing), Jivo Haryana 0.35, Kalgidhar Trust Delhi 0.32",
+      "query_used": "SELECT h.CustomerID, w.WarehouseName, COUNT(DISTINCT h.SerialNumber), SUM(d.FinalSaleAmount)/100000 FROM SaleHeader h JOIN SaleDetail d JOIN WarehouseMaster w WHERE CustomerID IN ('002CM','0000L','00240') AND VoucherDate 2025-09-01..2026-09-01 GROUP BY 1,2",
+      "materiality": "load-bearing",
+      "why": "The proposed flag leaves Rs 19.36 lakh of non-resident revenue inside the retail numbers, including Rs 10.96 lakh of sales to ARY's own Delhi parent booked on the main shop till. The restated 'Rs 1,290/resident/month' is also just Rs 1,493 x (1 - the Hunger Heroes share), applied to a metric whose own window and denominator the lane never states."
+    },
+    {
+      "claim": "The Basement counter is a single wholesale channel: 22 bills, Rs 105.64 lakh lifetime, 20 of them Hunger Heroes",
+      "verdict": "CONFIRMED",
+      "original_number": "22 bills, Rs 105.64 lakh, first 2025-04-23, last 2026-08-03",
+      "live_number": "22 distinct bills, Rs 106.95 lakh on FinalSaleAmount, 2025-04-23 to 2026-08-03; 002CM 20 bills, 0000L 2 bills",
+      "query_used": "SELECT w.WarehouseID, w.WarehouseName, COUNT(DISTINCT d.SerialNumber), SUM(d.FinalSaleAmount)/100000, MIN/MAX(VoucherDate) FROM SaleDetail d JOIN SaleHeader h RIGHT JOIN WarehouseMaster w GROUP BY 1,2",
+      "materiality": "supporting",
+      "why": "Bill count, dates and customer split all reproduce; the 1.2% value gap is BillAmount vs FinalSaleAmount."
+    },
+    {
+      "claim": "ARY abandoned the Talwandi Sabo counter (91,229 bills, Rs 51.24 lakh, dark since 11-Jul-2024) serving a campus that grew 2,172 -> 2,703 students",
+      "verdict": "CONFIRMED",
+      "original_number": "91,229 bills, Rs 51.24 lakh, last 2024-07-11; Girls Canteen Ts 10,867 bills, Rs 5.13 lakh, last 2024-03-22",
+      "live_number": "WH14: 91,229 bills, Rs 51.31 lakh, 2023-04-02 to 2024-07-11. WH17: 10,867 bills, Rs 5.13 lakh, 2023-09-09 to 2024-03-22. The whole Bathinda registration (LocationID 16, GSTIN 03AACCJ4223F1Z6) is dark: last sale 2024-07-11, last purchase 2024-07-08, Rs 56.44 lakh lifetime over 102,096 bills",
+      "query_used": "warehouse query above; plus SELECT l.LocationID, l.GSTINNo, COUNT(*), SUM(BillAmount)/100000, MIN/MAX(VoucherDate) FROM SaleHeader h RIGHT JOIN LocationMaster l GROUP BY 1..; and SELECT LocationID, COUNT(*), MAX(VoucherDate) FROM PurchaseHeader WHERE IsDeleted=0 GROUP BY 1",
+      "materiality": "load-bearing",
+      "why": "The ARY side is exactly right and I found supporting evidence the lane did not have (purchases stopped three days before sales, so it was a planned wind-down). The student-growth half rests on barusahib.org counters I did not fetch. Note the Rs 416,500/month is REVENUE at a Rs 56 average bill, not margin — every monthlyImpactInr in this lane is topline."
+    },
+    {
+      "claim": "ARY lost the Eternal University cafeteria: WH13 'Ary Apple A Day' died 30-Nov-2023 after 27,178 bills / Rs 38.43 lakh, while EU still names 'Apple a-day' as its campus cafeteria",
+      "verdict": "CONFIRMED",
+      "original_number": "27,178 bills, Rs 38.43 lakh, last 2023-11-30, warehouse active=false",
+      "live_number": "27,178 bills, Rs 38.43 lakh, 2023-04-01 to 2023-11-30, IsActive=false. EU report line 505: 'courier service, cafeteria Apple a-day)'",
+      "query_used": "warehouse query above; grep -n -i 'cafeteria' eu.txt",
+      "materiality": "supporting",
+      "why": "Both halves reproduce exactly — the ARY figures to the rupee and the cafeteria name verbatim in the primary PDF."
+    },
+    {
+      "claim": "There are essentially no babies being served: 425 diaper packs and 13 formula packs in 12 months would supply about one infant",
+      "verdict": "REFUTED",
+      "original_number": "11 diaper SKUs, 425 packs, Rs 34,124; 28 formula SKUs, 13 packs, Rs 3,878",
+      "live_number": "Sales confirmed (Rs 3,878 / 13 packs to the rupee; diapers 392 units / Rs 32,351 in my tighter window). But 67 of 73 Baby Diaper SKUs hold ZERO stock, all 7 Lactogen SKUs zero stock, 32 of 35 Cerelac zero stock — and ZERO SKUs are stocked-but-unsold. Every household pack ARY lists (Monthly Pack 40 / 38 / 64 / 76, Pants 50 M, 42 L, 56 N) has sold 0 units ALL-TIME",
+      "query_used": "SELECT p.ProductID, p.ProductName, Stock.q, sales_12m, sales_alltime FROM ProductMaster p JOIN SubGroupMaster sg ON sg.SubGroupName='Baby Diaper' LEFT JOIN (SELECT ProductID,SUM(Quantity) FROM Stock GROUP BY ProductID) LEFT JOIN SaleDetail aggregates; plus ./ary assort probe",
+      "materiality": "load-bearing",
+      "why": "The arithmetic is right and the inference is backwards. You cannot read 'no babies' off a shelf that has never carried a household pack: 100% of the diapers that sold were 2-8 count emergency packs, and not one SKU with stock failed to sell. This measures ARY's availability, not the campus's under-6 cohort — the exact confound the vault's Trap 2 warns about."
+    },
+    {
+      "claim": "Recommendation 7: fixing the baby and infant category is worth Rs 50,000/month",
+      "verdict": "REFUTED",
+      "original_number": "monthlyImpactInr 50,000",
+      "live_number": "The ENTIRE baby category — diapers 32,351 + soap 21,098 + shampoo 16,952 + powder 12,051 + oil 10,559 + cream 9,235 + lotion 6,354 + wipes 29,093 + formula 3,878 — is Rs 1,41,571/yr = Rs 11,797/month",
+      "query_used": "SELECT sg.SubGroupName, COUNT(DISTINCT p.ProductID), sold_skus, SUM(qty), SUM(amt) FROM ProductMaster p JOIN SubGroupMaster sg LEFT JOIN sales aggregate WHERE sg.SubGroupName LIKE '%Baby%' OR '%Wipe%' OR IN ('Cerelac','Lactogen') GROUP BY 1",
+      "materiality": "supporting",
+      "why": "Rs 50,000/month is 4.2x the entire existing baby aisle including all toiletries, and nothing in the lane derives it. It is an unsourced number attached to an action."
+    },
+    {
+      "claim": "Recommendation 6: cut perishable and snack intake for the ~29 Dec - ~20 Jan window",
+      "verdict": "REFUTED",
+      "original_number": "cut perishables and snacks",
+      "live_number": "Perishables hold up BEST: Dry Fruits 82.6% of term, Vegetable 66.3%, Fruits 59.2%, Personal Care 62.3%. What collapses is Confectionery 23.2%, Chinese Items 27.3%, Stationary 20.2%, Bakery 18.4%, Night Wear 15.7%, Unstiched Suits 14.3%",
+      "query_used": "basket-composition query above, wholesale accounts excluded, Dec 1-23 2025 vs Dec 29 2025-Jan 20 2026 rs/day by ProductGroupName",
+      "materiality": "load-bearing",
+      "why": "The window and the 'stop treating January as underperformance' advice are right, but the specific buying instruction is inverted for fresh: cutting vegetables and fruit by two-thirds would strand the households who stay. The cut belongs on confectionery, the Chinese counter, bakery and stationery."
+    },
+    {
+      "claim": "Two independent methods agree — 38.9% non-student by headcount vs a 35-49% vacation demand floor — so the ~5,000 figure is sound",
+      "verdict": "REFUTED",
+      "original_number": "38.9% build-up vs 35-49% measured",
+      "live_number": "Not an independent agreement. The demand floor measures rupees, not people, and the basket test shows the two populations spend differently. Retail-only floors: 32.7% / 46.1% / 38.4% on revenue, 33.6% / 49.0% / 35.3% on bills",
+      "query_used": "same seasonality and basket queries",
+      "materiality": "load-bearing",
+      "why": "The lane calls this 'the strongest validation available here', but the two methods measure different quantities and can only agree by assuming equal per-capita spend — which the category mix refutes. Two numbers landing in the same range is a coincidence, not a cross-check. Additionally the 2023-24 term benchmark (988 bills/day) includes the Talwandi Sabo counters 200 km away on a different academic calendar; Baru Sahib alone that winter floors at 33.6%, not 47.2%."
+    },
+    {
+      "claim": "External counters: School of Spiritual Sciences 305, AIRWE 487, 4,409 Trust teachers, 43,706 free OPD/yr, 450 acres, 100 beds, 11 doctors, ~1,500 hostel capacity",
+      "verdict": "UNTESTABLE",
+      "original_number": "305 / 487 / 4,409 / 43,706 / 450 acres / 100 beds",
+      "live_number": "NOT CHECKED — I did not fetch barusahib.org or the NAAC SSR",
+      "query_used": "none",
+      "materiality": "supporting",
+      "why": "Out of reach of the database and I did not verify them, so I am not confirming them. Everything the lane cited that I COULD open — the EU annual report and the CBSE disclosure — reproduced verbatim, which raises but does not establish my prior on these."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

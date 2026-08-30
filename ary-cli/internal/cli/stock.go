@@ -30,6 +30,14 @@ func newStockCmd(app *App) *cobra.Command {
 	return c
 }
 
+// Stock is valued ROW-WISE: SUM(Quantity * PurchaseCost), never
+// SUM(Quantity) * MAX(PurchaseCost). The latter prices every unit at the dearest
+// row's cost and, because a SKU's rows span warehouses and cost revisions, it is
+// wrong by orders of magnitude on any SKU with negative book stock. Verified live
+// 2026-08-30: negative stock reads -Rs 17.18 lakh row-wise and -Rs 1,273 crore the
+// old way. That single defect produced a spurious "-Rs 1.56 Cr of sales posted
+// without receipts" finding.
+
 func stockWhere(f *domFilters) string {
 	return fWhere(
 		fEqInt("s.WarehouseID", f.Warehouse),
@@ -76,7 +84,7 @@ func stockListCmd(app *App) *cobra.Command {
 			}
 			q := fmt.Sprintf("SELECT TOP %d s.ProductID AS id, p.ProductName AS product, w.WarehouseName AS warehouse, "+
 				"CAST(SUM(s.Quantity) AS decimal(18,2)) AS book_qty, CAST(MAX(s.PurchaseCost) AS decimal(18,2)) AS purchase_cost, "+
-				"CAST(SUM(s.Quantity) * MAX(s.PurchaseCost) AS decimal(18,2)) AS value_at_cost, "+
+				"CAST(SUM(s.Quantity * s.PurchaseCost) AS decimal(18,2)) AS value_at_cost, "+
 				"CAST(MAX(s.MRP) AS decimal(18,2)) AS mrp "+
 				"FROM Stock s "+
 				"LEFT JOIN ProductMaster p ON p.ProductID = s.ProductID "+
@@ -137,7 +145,7 @@ func stockNegativeCmd(app *App) *cobra.Command {
 				"CAST(SUM(s.Quantity) AS decimal(18,2)) AS book_qty, CAST(SUM(s.Sal) AS decimal(18,2)) AS sold, "+
 				"CAST(SUM(s.Pur) AS decimal(18,2)) AS purchased, CAST(SUM(s.TrIn) AS decimal(18,2)) AS tr_in, "+
 				"CAST(SUM(s.TrOut) AS decimal(18,2)) AS tr_out, CAST(SUM(s.Sho) AS decimal(18,2)) AS shortage, "+
-				"CAST(SUM(s.Quantity) * MAX(s.PurchaseCost) AS decimal(18,2)) AS value_at_cost "+
+				"CAST(SUM(s.Quantity * s.PurchaseCost) AS decimal(18,2)) AS value_at_cost "+
 				"FROM Stock s "+
 				"LEFT JOIN ProductMaster p ON p.ProductID = s.ProductID "+
 				"LEFT JOIN WarehouseMaster w ON w.WarehouseID = s.WarehouseID%s "+
@@ -164,7 +172,7 @@ func stockDeadCmd(app *App) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			q := fmt.Sprintf("SELECT TOP %d s.ProductID AS id, p.ProductName AS product, "+
 				"CAST(SUM(s.Quantity) AS decimal(18,2)) AS book_qty, "+
-				"CAST(SUM(s.Quantity) * MAX(s.PurchaseCost) AS decimal(18,2)) AS value_at_cost, "+
+				"CAST(SUM(s.Quantity * s.PurchaseCost) AS decimal(18,2)) AS value_at_cost, "+
 				"CONVERT(varchar(10), MAX(ls.last_sale), 120) AS last_sale, "+
 				"DATEDIFF(day, MAX(ls.last_sale), GETDATE()) AS days_since_sale "+
 				"FROM Stock s "+

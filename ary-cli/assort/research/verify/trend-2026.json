@@ -1,0 +1,164 @@
+{
+  "lane": "trend-2026",
+  "claims_tested": 17,
+  "lane_confidence_after": "low",
+  "single_biggest_error": "The lane never once queried Stock.Quantity. It diagnosed every thin category as an assortment or price-point decision, when the ledger says the store's actual failure is replenishment. Store-wide, 15,876 of 19,487 active SKUs carry ZERO stock right now and 3,149 of those sold in the last 12 months. Inside the lane's own trend categories the stock-out rate is 50-100%: makhana 2 of 2 selling SKUs out of stock (all ₹47,090 of it), sunscreen 16 of 24 (₹48,550 of ₹88,712 = 55%), serum 27 of 37, Korean noodles 7 of 10, Amul Sweet Lassi (₹25,575) out. The clearest case is the lane's own headline: the Korean noodle \"collapse\" in May-June 2026 was not demand — the purchase ledger shows 240 units bought in April, sold out by 30 April, and NOTHING reordered until 17 July, an 84-day stock-out, while store-wide May 2026 was ARY's biggest month ever (₹95.4 L). The lane's answer to that was \"double the Korean shelf, add 8-10 more SKUs\" to a buyer who cannot keep five in stock and has three of the five at zero on the day of the audit.",
+  "verdicts": [
+    {
+      "claim": "Korean instant noodles went Rs 0 to a ~Rs 28,000/month run-rate since April 2026 (headline + Finding 1)",
+      "verdict": "REFUTED",
+      "original_number": "~Rs 28,000/month run-rate since Apr 2026; Rs 49,184 in 12m",
+      "live_number": "Full Aug-2026 = Rs 26,560 (the 21-day extrapolation was fine for August alone), but the Apr-Aug average is Rs 10,961/month: Apr 15,025 / May 1,023 / Jun 1,758 / Jul 10,440 / Aug 26,560. 12m total Rs 56,144",
+      "query_used": "SELECT CONVERT(char(7),h.VoucherDate,126), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID WHERE (p.ProductName LIKE '%korean%' OR '%ramen%' OR '%ramyun%' OR '%kimchi%') AND h.VoucherDate>='2025-08-01' GROUP BY 1; plus PurchaseDetail/PurchaseHeader for ProductID IN ('0G01','0G02','0G03','0GFZ','0GFY'); plus Stock.Quantity for the same",
+      "materiality": "load-bearing",
+      "why": "A single best month is presented as a run-rate. The purchase ledger shows why: 240 units bought 5 and 24 April, sold out in April, no reorder until 17 July. May-June was an 84-day stock-out, not a demand dip — store-wide May 2026 was ARY's largest month on record. Three of the five SKUs (0G02, 0GFY, 0GFZ) hold ZERO stock as of 2026-08-30, and 0G02 has not sold since 30 April."
+    },
+    {
+      "claim": "ARY sells essentially no protein food; Rs 2,838 in 12 months = Rs 0.57 per resident per year. The largest single category absence found.",
+      "verdict": "REFUTED",
+      "original_number": "Rs 2,838 of protein food in 12 months",
+      "live_number": "Rs 2,838 is a %protein% NAME match. Real protein food, 12m live: paneer Rs 7.71 L, soya/nutri Rs 6.68 L, chana Rs 5.65 L, curd/dahi Rs 5.46 L, almond/badam Rs 4.08 L, daal Rs 3.54 L, cheese Rs 2.73 L, rajma Rs 1.63 L, moong Rs 1.21 L, peanut Rs 1.48 L, eggs Rs 28,803, peanut butter Rs 24,653, Bournvita Rs 22,855",
+      "query_used": "WITH t AS (VALUES 25 commodity patterns) SELECT t.label, COUNT(DISTINCT p.ProductID), SUM(s.sales) FROM t LEFT JOIN ProductMaster p ON p.ProductName LIKE t.pat OUTER APPLY (12m SaleDetail x SaleHeader sum) s GROUP BY t.label",
+      "materiality": "load-bearing",
+      "why": "This is precisely the Trap-2 failure the vault documents: a word-match number laundered into a category number, then ranked #1 on the action list. The defensible claim is far narrower — ARY carries no protein-POSITIONED branded FMCG SKU (no high-protein lassi, protein biscuits or protein atta; one RiteBite bar). That is a real gap, but it is not 'ARY sells essentially no protein food' and it is not the largest absence in the store."
+    },
+    {
+      "claim": "Sikh articles (kanga, comb, patka, turban) are Rs 10,66,090 over 12 months vs beard care Rs 2,484 — ARY is already the store these men buy their combs from",
+      "verdict": "QUALIFIED",
+      "original_number": "Rs 10,66,090 across 85 SKUs",
+      "live_number": "Rs 10,53,065 total, decomposed: turban FABRIC (Fabrics group, sold by the metre) Rs 7,16,843 = 68%; Academy Dress school-uniform patkas Rs 2,74,633 = 26%; COMBS Rs 49,335 = 4.7%; FALSE POSITIVES (Kangaro staplers, All Out 'Combo', toilet-brush 'Combo') Rs 12,254",
+      "query_used": "SELECT CASE WHEN ProductName LIKE '%kangaro%' OR '%combo%' THEN 'FALSE POSITIVE' WHEN g.ProductGroupName='Fabrics' THEN 'turban fabric' WHEN g.ProductGroupName='Academy Dress' THEN 'school uniform' WHEN g.ProductGroupName='Accessories' THEN 'combs' END, COUNT(DISTINCT p.ProductID), SUM(d.FinalSaleAmount) FROM ProductMaster p JOIN SaleDetail d ... WHERE ProductName LIKE '%kanga%' OR '%comb%' OR '%patka%' OR '%turban%' OR '%dastar%' AND 12m window",
+      "materiality": "load-bearing",
+      "why": "The total reproduces, but 94% of it is turban cloth from Ary Clothing and school uniform issued to Academy pupils — neither is a discretionary grooming purchase, and LIKE '%kanga%'/'%comb%' silently swept in Kangaro staplers and every product named 'Combo'. The comparable line is Rs 49,335 of combs, not Rs 10.66 L. The 'zero beard oil, wash, serum' half is CONFIRMED — only 0BIE Beard Brush (35 units, Rs 2,454) exists."
+    },
+    {
+      "claim": "Sunscreen: there is no SKU at all between Rs 102 and Rs 312, the best unit mover is Lakme 18ml at Rs 102 (28 units), and 80% of the range is Rs 495-595",
+      "verdict": "REFUTED",
+      "original_number": "no SKU between Rs 102 and Rs 312; best unit mover 28 units at Rs 102; 80% of range at Rs 495-595",
+      "live_number": "Rs 100-199 band = 3 SKUs, 111 units, Rs 15,678 — the LARGEST unit band. Vaseline Body Lotion 100ml SPF30 at Rs 149 sold 72 units / Rs 10,728 (the actual best unit mover). Ponds BB+ SPF30 at Rs 189 = 11 units. Lotus SPF25 at Rs 99 = 11 units. Rs 500+ is 8 of 24 selling SKUs, 25 units, Rs 14,923 = 17% of value, not 80%. Biggest band by value is Rs 320-499 (Rs 37,310), led by Lakme at Rs 313.90 / 62 units",
+      "query_used": "SELECT price band, COUNT(*), SUM(units), SUM(sales) FROM (SELECT p.ProductID, SUM(d.Quantity) units, SUM(d.FinalSaleAmount) sales, SUM(d.FinalSaleAmount)/SUM(d.Quantity) rate FROM ProductMaster p JOIN SaleDetail d JOIN SaleHeader h WHERE ProductName LIKE '%sunscreen%' OR '%spf%' OR '%sunblock%' OR '%sun screen%' AND h.VoucherDate>='2025-09-01' AND <'2026-09-01' GROUP BY p.ProductID) r GROUP BY band",
+      "materiality": "load-bearing",
+      "why": "Internally inconsistent: my pattern returns the identical 48-SKU set the lane counted, so Vaseline at Rs 149 and Ponds at Rs 189 are inside the lane's own Rs 88,414 numerator while it declares the Rs 100-199 rung empty. REC 4 ('add the missing Rs 99-199 rung') asks ARY to buy a rung it already has, and the rung's own evidence cuts against the price-ceiling thesis: the Rs 99 SKU sold 11 units, the Rs 314 SKU sold 62. The +108% YoY (Rs 29,258 Mar-Jul 2025 to Rs 60,811 Mar-Jul 2026) reproduces EXACTLY and is CONFIRMED."
+    },
+    {
+      "claim": "Menstrual cups, tampons, period panties and intimate wash return ZERO SKUs in a 21,466-SKU master; the only adjacent product is one Carefree panty liner (Rs 1,683)",
+      "verdict": "REFUTED",
+      "original_number": "1 SKU, Rs 1,683",
+      "live_number": "3 SKUs, Rs 12,137, 105 units: V Wash 100Ml (38 units, Rs 7,720), V Wash 20Ml (44 units, Rs 2,140), Carefree Panty Liner 20 Pads (23 units, Rs 2,277)",
+      "query_used": "SELECT p.ProductID, p.ProductName, g.ProductGroupName, s.units, s.sales FROM ProductMaster p LEFT JOIN ProductGroupMaster g OUTER APPLY (12m sales) s WHERE p.ProductName LIKE '%menstrual%' OR '%tampon%' OR '%period%' OR '%intimate%' OR '%v wash%' OR '%vwash%' OR '%liner%' OR '%clean & dry%' OR '%meftal%' OR '%cramp%'",
+      "materiality": "load-bearing",
+      "why": "India's market-leading intimate wash is on the shelf and selling 82 units a year — the lane searched the phrase 'intimate wash' and the brands Sirona/Pee Safe/Everteen and missed the brand actually stocked. REC 5 asks ARY to 'add intimate wash' it already carries. Cups, tampons and period panties genuinely return zero and that part stands. Pads (87 SKUs, 22 sold, Rs 4,23,807) and the duplicate 'Sanitary Pad'/'Sanitary Pads' subgroups are CONFIRMED."
+    },
+    {
+      "claim": "GST 2.0 built a 35-point wedge and the tax code now pays ARY to sell lassi, buttermilk and flavoured milk instead of colas (Finding 6 soWhat, REC 7)",
+      "verdict": "REFUTED",
+      "original_number": "Rs 12.68 L/yr at 40% GST vs Rs 1.02 L/yr of RTD dairy at 5%; monthlyImpactInr 10,000 from shifting volume",
+      "live_number": "Slab counts CONFIRMED (63 SKUs, Rs 13,27,571 at 40%; RTD dairy Rs 1.04 L). But margins are the same: SaleDetail.IncludeInRate=true (Coke Rs 20 -> taxable Rs 14.286) while PurchaseDetail.IncludeInRate=false. Ex-GST gross margin: Coca-Cola 250ml 12.5%, Sprite/Limca/Thums Up 12.5%, Red Bull 16.0% vs Amul Lassi 200ml 11.8%, Amul Sweet Lassi 250ml 11.3%, Cream Bell flavoured milk 10.9%, Smoodh 16.2%, Amul Kool 16.7%. Carbonates Apr-Aug 2025 Rs 6,82,710 -> Apr-Aug 2026 Rs 8,99,663 = +31.8% YoY",
+      "query_used": "SELECT d.MRP, d.SaleRate, d.TaxRate, d.TaxAmount, d.IncludeInRate, d.TaxableValue1 FROM SaleDetail d WHERE TaxRate=40; SELECT pd.PurchaseCost, pd.TaxRate, pd.TaxAmount, pd.IncludeInRate FROM PurchaseDetail pd JOIN PurchaseHeader ph; then CROSS APPLY last PurchaseCost vs 12m avg realisation per named SKU",
+      "materiality": "load-bearing",
+      "why": "GST is a pass-through absorbed by the MRP, not by the retailer. Once you divide the GST-inclusive sale rate by (1+rate) and compare to the GST-exclusive purchase cost, a 40% cola earns ARY 12.5% and a 5% lassi earns 11.3-11.8% — the wedge is worth roughly nothing to ARY, and on the two biggest lassi SKUs the swap is margin-NEGATIVE. There is also no volume suppression to harvest: carbonates grew 32% YoY through the 40% slab. My own first pass got this wrong by using (rate-cost)/rate before checking IncludeInRate; the corrected figures are above."
+    },
+    {
+      "claim": "GST 2.0 has been implemented cleanly — only Rs 11,248 across 29 SKUs at the abolished 12% slab, stopping 28 Feb 2026; zero at 12% or 28% since 1 Apr 2026",
+      "verdict": "CONFIRMED",
+      "original_number": "Rs 11,248 residual at 12%, 29 SKUs, last 2026-02-28; Rs 0 since 2026-04-01",
+      "live_number": "Identical: TaxRate 12 = 29 SKUs, Rs 11,248, first 2026-02-01, last 2026-02-28. TaxRate IN (12,28) since 2026-04-01 returns 0 rows. Slabs since 22 Sep 2025: 0% Rs 1.20 Cr, 3% Rs 21,970, 5% Rs 5.03 Cr, 18% Rs 65.8 L, 40% Rs 13.28 L",
+      "query_used": "SELECT d.TaxRate, COUNT(DISTINCT d.ProductID), SUM(d.FinalSaleAmount), MIN/MAX(h.VoucherDate) FROM SaleDetail d JOIN SaleHeader h WHERE h.VoucherDate>='2025-09-22' GROUP BY d.TaxRate; and the same filtered to TaxRate IN (12,28) from 2026-04-01",
+      "materiality": "load-bearing",
+      "why": "Reproduces to the rupee. This is the lane's most valuable finding — it kills a plausible repricing project before anyone starts it. The only nuance: the 12% residual is a single February 2026 burst, not a decaying tail from September, so it reads like one operator picking a stale tax code for a month."
+    },
+    {
+      "claim": "Functional hydration has just started selling and the old format next to it is dead — 12 Glucose SKUs in Medicare sold ZERO in 12 months",
+      "verdict": "REFUTED",
+      "original_number": "12 Glucose SKUs sold zero; RTD ORS Rs 7,073",
+      "live_number": "Dabur Glucose-D sells Rs 11,591 across 3 live Medicare SKUs — Dabur Glucose D 125Gm (207 units, Rs 8,085, last sale 2026-08-29), Dabur Glucose-D 250 Gm (32 units, Rs 2,546, last sale 2026-08-17), Dabur Glucose-D 125 Gm (24 units, Rs 960). That is 1.4x the entire RTD-ORS line (Rs 8,161). The dead SKUs are the 7 Heinz Glucon-D listings plus Zydus and 2 large Dabur packs",
+      "query_used": "SELECT p.ProductName, g.ProductGroupName, s.units, s.sales, s.last_sale FROM ProductMaster p LEFT JOIN ProductGroupMaster g OUTER APPLY (12m sales + MAX VoucherDate) s WHERE ProductName LIKE '%ors%' OR '%electral%' OR '%electrolyte%' OR '%glucon%' OR '%glucose%' OR '%prolyte%' OR '%rehydra%'",
+      "materiality": "load-bearing",
+      "why": "The 'old format is dead' framing is backwards — glucose powder is the largest functional-hydration line in the store and it sold the day before my audit. REC 6's instruction to 'delist the 12 dead Glucose SKUs' would, executed by name, remove Rs 11,591 of live business. The correct instruction is to delist the Heinz-branded listings only (the brand moved to Zydus/Dabur)."
+    },
+    {
+      "claim": "COMPLIANCE FLAG: five RTD beverages with 'ORS' in the name are selling after FSSAI ordered such products off the market (Oct and Nov 2025)",
+      "verdict": "CONFIRMED",
+      "original_number": "5 SKUs, Rs 7,453 in 12 months, all selling as of Aug 2026",
+      "live_number": "5 SKUs, Rs 8,161 in 12m live. Four still selling to 2026-08-30 (Cipla Ors 200 Ml last sale 2026-08-30; Cipla Ors Jeera 2026-08-28; Ors 200 Ml Apple 2026-08-30; Cipla Ors Nimbu Paani 2026-08-05). One — Ors 200 Ml Orange — last sold 2026-06-06. Regulation independently verified: FSSAI orders 14-15 Oct 2025 and a follow-up 20 Nov 2025, WHO-formulation requirement, Dr Reddy's challenge in Delhi HC declined",
+      "query_used": "ProductMaster x 12m sales with MAX(h.VoucherDate) on ProductName LIKE '%ors%'; regulation cross-checked against Business Standard 20 Nov 2025, The Week 25 Oct 2025, Deccan Herald and FoodNavigator",
+      "materiality": "load-bearing",
+      "why": "The lane's best-evidenced finding, and my live check makes it stronger — the stock is still selling nine days past the lane's window. The cited sources do contain the claimed regulation and the claimed dates, which is more than can be said for most of the lane's external citations. The lane correctly marks the product-formulation half as NOT CHECKED."
+    },
+    {
+      "claim": "Absent entirely, 0 SKUs in the master: Mamaearth, Minimalist, Bombay Shaving Company, The Whole Truth, Yogabar, Happilo, Farmley, Epigamia, Sirona, Pee Safe (Finding 10, Table 4, REC 9)",
+      "verdict": "REFUTED",
+      "original_number": "Mamaearth = 0 SKUs; D2C total Rs 1,29,921 across 67 SKUs",
+      "live_number": "Mama Earth (TWO WORDS) = 16 SKUs, 9 selling, Rs 36,983 / 152 units in 12m — a bigger book than Dot & Key (Rs 33,586) or Plix (Rs 32,223) and second only to Pilgrim (Rs 45,170). Honasa Consumer Pvt Ltd is PrincipalCompanyMaster ID 4 (ML 86658), so the trade relationship already exists. Corrected D2C total: 83 SKUs, Rs 1.67 L",
+      "query_used": "SELECT p.ProductID, p.ProductName, s.units, s.sales FROM ProductMaster p OUTER APPLY (12m sales) s WHERE ProductName LIKE '%mama earth%' OR '%mamaearth%' OR '%mama-earth%'; SELECT * FROM PrincipalCompanyMaster; SELECT * FROM ProductMaster WHERE ProductName LIKE '%bombay shav%' OR '%yoga bar%' OR '%pee safe%' OR '%ever teen%' OR '%minimalist%' OR '%nong shim%' OR '%sam yang%'",
+      "materiality": "load-bearing",
+      "why": "A one-space name-match miss. REC 9 tells the buyer to 'add Mamaearth (0 SKUs today)' when ARY stocks 16 of its SKUs and holds a direct principal registration. It also matters for the lane's own thesis: Mama Earth face washes at Rs 230-243 sell 30-38 units each while Pilgrim at Rs 495 sells 17, which is the price-ladder evidence the lane wanted and did not find. Minimalist, Bombay Shaving, Whole Truth, Yogabar, Pee Safe, Everteen, Nongshim and Samyang DO return zero under spelling variants — those absences stand."
+    },
+    {
+      "claim": "The Rs 20-49 and Rs 50-99 bands are 42% of revenue and 79% of FMCG-scale units; a trend enters this store at Rs 20-99 or it does not enter",
+      "verdict": "QUALIFIED",
+      "original_number": "Rs 20-49 = Rs 1.76 Cr / 6.08 L units; Rs 50-99 = Rs 1.41 Cr / 2.20 L units; together 42% of revenue, 79% of FMCG-scale units",
+      "live_number": "Rs 20-49 = Rs 1,72,10,291 / 5,91,028 units / 1,205 SKUs; Rs 50-99 = Rs 1,52,60,415 / 2,32,701 units / 1,197 SKUs. Together 42.4% of the Rs 7.66 Cr base. But Rs 500+ is Rs 1,74,84,541 = 22.8%, the second-largest band by value. The 8.24 L units are 33.7% of all 24.4 L units — no denominator I can construct yields 79%",
+      "query_used": "SELECT band, COUNT(*), SUM(units), SUM(sales) FROM (SELECT d.ProductID, SUM(d.Quantity) units, SUM(d.FinalSaleAmount) sales, SUM(d.FinalSaleAmount)/SUM(d.Quantity) rate FROM SaleDetail d JOIN SaleHeader h WHERE h.VoucherDate>='2025-09-01' AND <'2026-09-01' GROUP BY d.ProductID) r GROUP BY band",
+      "materiality": "supporting",
+      "why": "The 42% arithmetic reproduces and the band structure is real, so the price-point instinct is sound. But '79% of FMCG-scale units' is unreproducible, and the hard rule ('no trend SKU above Rs 99 without a written reason', REC 0) is contradicted inside the lane's own showcase category: in SPF the Rs 320-499 band is the largest by value (Rs 37,310) and Lakme at Rs 313.90 outsells the Rs 99 Lotus 62 units to 11."
+    },
+    {
+      "claim": "Millets work as impulse and fail as staples: Kurkure Jowar Puffs 2,139 units / Rs 34,380; four Bonn millet bakery SKUs, Tata Soulfull Ragi Bites and Nestle Masala Millet all sold zero",
+      "verdict": "CONFIRMED",
+      "original_number": "Jowar puffs 2,139 units / Rs 34,380; 4 Bonn millet SKUs + Soulfull + Nestle Masala Millet at zero",
+      "live_number": "Kurkure Jowar Puffs 50g (1,299 units, Rs 25,980) + 25g (840 units, Rs 8,400) = 2,139 units / Rs 34,380 — exact. Bonn Millet Burger 160Gm, Bonn Hi Fiber Millet Bread 300Gm, Bonn Millet Pizza Base 200Gm, Bonn Millet Bread 300Gm, Tata Soulfull Ragi Bites Mango and Choco, Nestle Masala Millet 40 Gm, Kellogg's Chocos Ragi — all zero units in 12m",
+      "query_used": "SELECT ProductID, ProductName, IsActive FROM ProductMaster WHERE (ProductName LIKE '%bonn%' AND LIKE '%millet%') OR '%soulfull%' OR '%masala millet%'; plus 12m sales OUTER APPLY over %millet% %ragi% %bajra% %jowar% %makhana% %quinoa%",
+      "materiality": "supporting",
+      "why": "Reproduces exactly, including the identity of all four dead Bonn millet SKUs — which are distinct from ARY's live non-millet Bonn bread business (Rs 9,000 sandwich bread etc.), a distinction the lane got right. Caveat that undercuts the action: both selling makhana SKUs (Rs 47,090) hold ZERO stock today, so the 'branded makhana' recommendation is chasing a line ARY cannot currently supply."
+    },
+    {
+      "claim": "Diapers: ARY sells ~30 a month against a single baby's 150-200 a month, from 73 listed SKUs of which 11 sold",
+      "verdict": "REFUTED",
+      "original_number": "~30 diapers/month, Rs 2,672/month",
+      "live_number": "34.6 PACKS/month (415 packs / 12m), Rs 2,684/month — the rupee figure reproduces. But every SKU is a multi-pant pack: Pampers L Size 7 Pants at Rs 99, M Size 8 Pants at Rs 99, S Size 4 Pants at Rs 46, M Size 2 Pants at Rs 25. 415 packs is roughly 2,200 individual pants a year = ~183 pants/month",
+      "query_used": "SELECT p.ProductName, SUM(d.Quantity) units, SUM(d.FinalSaleAmount), rate FROM ProductMaster p JOIN SaleDetail d JOIN SaleHeader h WHERE ProductName LIKE '%diaper%' OR '%pampers%' OR '%huggies%' OR '%mamypoko%' AND 12m window GROUP BY p.ProductName",
+      "materiality": "supporting",
+      "why": "The stated comparison is unit-mismatched by roughly 6x — packs counted as individual diapers, then set against a per-diaper benchmark. This is JIVO correction C-0001 in a new setting. ARY actually moves about one baby's monthly usage, so the gap is still real and the recommendation survives, but 'a township that captures an eighth of the diaper wallet' is not what the data says."
+    },
+    {
+      "claim": "The trend SKUs are in the wrong counter: Korean noodles sell Rs 47,824 at Ary Pos and only Rs 960 at Ary Lite (Finding 15, REC 2)",
+      "verdict": "REFUTED",
+      "original_number": "Rs 47,824 Ary Pos vs Rs 960 Ary Lite vs Rs 400 G Canteen",
+      "live_number": "100% of Korean noodle sales (Rs 48,056) are at Ary Pos. Ary Lite = Rs 0, G Canteen = Rs 0. The Rs 960 at Ary Lite is 'Bingo Hot & Spicy Korean Style 42 Gm' — a potato chip. The Rs 400 at G Canteen is 'Bingo Chips 44.8 Gm Knockin Korean' — also a chip",
+      "query_used": "SELECT w.WarehouseName, SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h LEFT JOIN WarehouseMaster w WHERE d.ProductID IN ('0G01','0G02','0G03','0GFZ','0GFY','0BJ0','0BJ1') AND 12m; then the same by WarehouseName + ProductName over the broad %korean% pattern excluding Ary Pos",
+      "materiality": "load-bearing",
+      "why": "The measured 'distribution imbalance' is a name-match artefact — two Bingo chip SKUs carrying the word 'Korean'. Korean noodles were never listed at Ary Lite, so there is no imbalance to correct, only a listing that does not exist. The underlying idea (put ramen where students already buy cooked noodles) may still be right, but the evidence offered for it is not evidence. Ary Lite's own mix is CONFIRMED: Samosa Rs 1,05,000, Steam Momos Rs 94,150, Noodles Half Rs 77,850."
+    },
+    {
+      "claim": "~2,000 dead Personal Care SKUs are sitting on the shelf that the trend SKUs need; shelf, not money, is the binding constraint, and delisting is the enabler (Finding 16, REC 0 blocker). Serum is only 11 SKUs / Rs 8,550",
+      "verdict": "REFUTED",
+      "original_number": "~2,000 dead Personal Care SKUs occupying shelf; Serum 11 SKUs / Rs 8,550",
+      "live_number": "Personal Care 3,065 SKUs / 1,065 sold / Rs 51.24 L CONFIRMED, and 2,000 sold nothing in 12m — but only 25 of those 2,000 carry ANY stock, 420 units in total. Serum: 46 SKUs named 'serum', 37 selling, Rs 48,370 across 10 different subgroups (Hair Oil Rs 9,585, Moisturizer Cream Rs 8,415, subgroup 'Serum' only Rs 7,400, Face Pack Rs 4,869...)",
+      "query_used": "SELECT dead/sold bucket, COUNT(*), SUM(CASE WHEN onhand>0 THEN 1 END), SUM(onhand) FROM ProductMaster p JOIN ProductGroupMaster g ON g.ProductGroupName='Personal Care' OUTER APPLY (12m sales) OUTER APPLY (SELECT SUM(k.Quantity) FROM Stock k WHERE k.ProductID=p.ProductID); plus SELECT sg.SubGroupName, COUNT(*), SUM(sales) ... WHERE p.ProductName LIKE '%serum%' GROUP BY sg.SubGroupName",
+      "materiality": "load-bearing",
+      "why": "Two separate failures. (1) The 2,000 dead SKUs are dead LISTINGS in the master, not merchandise — 420 units across 25 SKUs, about one shelf. Delisting them frees nothing, so REC 0's stated blocker and Finding 16's 'shelf is the binding constraint' both fall. (2) 'Serum 11 SKUs / Rs 8,550' is the SubGroupMaster count read as a category count — Trap 1 in the vault, verbatim. Real serum business is 5.7x larger, and 27 of the 37 selling serum SKUs are out of stock right now."
+    },
+    {
+      "claim": "Basket depth has not moved in four years: 2.70 lines/bill 2023 to 2.68 in 2026, while the national rural basket went 5.8 items (2022) to 9.3 (2024). +0.1 lines/bill = Rs 2.35 L/month",
+      "verdict": "QUALIFIED",
+      "original_number": "2.70 (2023) -> 2.68 (2026); avg bill Rs 192 -> Rs 222; bills 257k -> 311k; Rs 2.35 L/month impact",
+      "live_number": "2023: 2.696 lines, Rs 192.01, 257,247 bills. 2024: 2.663, Rs 210.64, 282,299. 2025: 2.641, Rs 222.28, 311,286. 2026 YTD: 2.681, Rs 209.43, 248,564. Avg line Rs 77.46, 30,986 bills/month. The Kantar figure is real — GroupM/Kantar Rural Barometer 2024, 5.8 (2022) to 9.3 (2024), and the cited biizline page does carry it",
+      "query_used": "SELECT YEAR(h.VoucherDate), COUNT(DISTINCT h.SerialNumber), COUNT(*), lines_per_bill, avg_bill FROM SaleHeader h JOIN SaleDetail d ON d.SerialNumber=h.SerialNumber WHERE VoucherDate>='2022-01-01' GROUP BY YEAR; citation checked via WebFetch of biizline.com and WebSearch of the Kantar/GroupM Rural Barometer",
+      "materiality": "load-bearing",
+      "why": "Every ARY number reproduces — this is the lane's cleanest internal work. Three qualifications. (a) The Kantar metric counts FMCG CATEGORIES bought per rural household per year, not lines on a till receipt, so the comparison is apples-to-oranges; the lane half-flags this but mischaracterises the source as 'a rural shopping trip'. (b) The Rs 2.35 L is gross revenue at the average line value with no margin applied and assumes the added line is fully incremental. (c) It double-counts: REC 0 says 'every category below is a candidate for line 3', then RECs 1-11 are sized separately at a further Rs 1.68 L/month, and the twelve figures are presented additively."
+    },
+    {
+      "claim": "Every category the lane calls thin is thin because of a buying or price-point decision (structural premise underneath all 12 recommendations)",
+      "verdict": "REFUTED",
+      "original_number": "not stated — the lane never tests availability",
+      "live_number": "15,876 of 19,487 active SKUs carry ZERO stock right now, and 3,149 of them sold in the last 12 months. Inside the lane's own trend categories, SKUs that sold in 12m but are out of stock today: makhana 2 of 2 (Rs 47,090 of Rs 47,090), sunscreen 16 of 24 (Rs 48,550 of Rs 88,712), serum 27 of 37 (Rs 25,326), Korean noodles 7 of 10 (Rs 18,386), diapers 5 of 11, Amul Sweet Lassi (Rs 25,575), one of three RTD ORS",
+      "query_used": "SELECT CASE WHEN onhand>0 THEN 'has stock' WHEN =0 THEN 'ZERO stock' ELSE 'negative' END, COUNT(*), COUNT(CASE WHEN sales>0 THEN 1 END) FROM ProductMaster p OUTER APPLY (SELECT SUM(k.Quantity) FROM Stock k WHERE k.ProductID=p.ProductID) OUTER APPLY (12m sales) WHERE p.IsActive=1 GROUP BY 1; plus a per-category version over 8 trend patterns",
+      "materiality": "load-bearing",
+      "why": "Stock.Quantity is the one field the schema notes flag as the real on-hand, and the lane never reads it once across 18 findings, 5 tables and 12 recommendations. Half or more of what ARY already sells in these categories is unavailable today. That inverts the top recommendation: before adding 8-10 Korean SKUs, a Rs 99-199 sunscreen rung and a K-beauty test shelf, the store has to be able to keep the ones it has on the shelf — the Korean line alone went 84 days without a reorder after selling out in three weeks."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

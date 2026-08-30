@@ -1,0 +1,173 @@
+{
+  "lane": "babycare-build",
+  "claims_tested": 18,
+  "lane_confidence_after": "medium",
+  "single_biggest_error": "F2 — \"Only SEVEN diaper units are on the shop floor right now… 96% of the diaper stock is in the back store… the single cheapest action in this whole report is moving stock 200 metres.\" The live counter now holds 31 units across 6 codes (126 in the warehouse, 19.7% floor-facing), because on 2026-08-30 10:55 the shop transferred 30 units from Ary Warehouse to Ary Pos. Worse than the staleness: StockTransferDetail shows diapers moving into Ary Pos in 9 of the last 12 months in 20-80 unit lots, so counter replenishment is a routine monthly cycle and the lane caught it at the trough. The lane read a point-in-time Stock snapshot as a structural failure without ever opening the transfer table that sits in the same database — and this is the fact the headline leads with and the recommendation it rates cheapest.",
+  "verdicts": [
+    {
+      "claim": "ARY has 228 active baby SKUs across 13 subgroups, not three — 'repair a broken category', not 'launch one'",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "228 SKUs, all active",
+      "live_number": "228 SKUs, 228 active",
+      "query_used": "SELECT COUNT(*) AS total_skus, SUM(CASE WHEN IsActive=1 THEN 1 ELSE 0 END) AS active FROM ProductMaster WHERE SubGroupID IN (1031,257,260,258,259,261,262,1030,263,349,550,593,846)",
+      "why": "Exact match. The premise flip — this is a repair job, not a launch — is the lane's strongest contribution and it survives independent re-derivation."
+    },
+    {
+      "claim": "The lane's 13-subgroup filter captures ARY's baby range",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "228 SKUs / Rs 1,46,173 of 12m sales",
+      "live_number": "270 baby-named SKUs / Rs 1,88,136 — 42 SKUs and Rs 43,223 sit outside the filter",
+      "query_used": "SELECT sg.SubGroupName, p.ProductName, SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' AND p.SubGroupID NOT IN (1031,257,260,258,259,261,262,1030,263,349,550,593,846) AND (p.ProductName LIKE '%baby%' OR p.ProductName LIKE '%cerelac%' OR p.ProductName LIKE '%lactogen%') GROUP BY sg.SubGroupName,p.ProductName",
+      "why": "Vault Trap 1: 8 more baby powders under 'Powder', 3 shampoos under 'Shampoo', 3 lotions under 'Body Lotion', 2 soaps under 'Bath Soap', 2 oils under 'Hair Oil', 2 Lactogen under 'Ready To Cook', 1 Cerelac under 'Food Supplement', plus baby chair/bed/mat/sipper/toilet-seat/buds. The lane diagnoses this exact mis-filing in F25 and then sizes the category without it, understating the baby-word catalogue by ~29%."
+    },
+    {
+      "claim": "124 of the 228 baby SKUs have never been purchased once, including all Huggies and all Pampers monthly packs",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "124 never bought; 11 of 11 Huggies, 3 of 3 monthly packs at zero lifetime",
+      "live_number": "124 never bought; 11 of 11 Huggies and 4 of 4 monthly packs at 0 purchased and 0 sold lifetime",
+      "query_used": "SELECT COUNT(*), SUM(CASE WHEN pd.ProductID IS NULL THEN 1 ELSE 0 END) FROM ProductMaster p LEFT JOIN (SELECT DISTINCT ProductID FROM PurchaseDetail) pd ON pd.ProductID=p.ProductID WHERE p.SubGroupID IN (1031,257,...,846); plus per-code qty_purchased/qty_sold on SubGroupID=260 LIKE '%Huggi%' OR '%Monthly%' OR '%Mothly%'",
+      "why": "Exact on 124. There are four monthly-pack codes (097I, 097J, 08YB, 08YC), not three — the lane's own recommendation table lists only S/M/L. This is the lane's single best finding: a procurement failure with a paper trail."
+    },
+    {
+      "claim": "Only SEVEN diaper units are on the shop floor; 96% sits in the back store; moving stock 200 metres is the cheapest action in the report",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "7 units on 4 codes at Ary Pos vs 156 in Ary Warehouse (4.3% floor-facing)",
+      "live_number": "31 units on 6 codes at Ary Pos vs 126 in Ary Warehouse (19.7% floor-facing)",
+      "query_used": "SELECT p.ProductName, w.WarehouseName, s.Quantity FROM Stock s JOIN ProductMaster p ON p.ProductID=s.ProductID JOIN WarehouseMaster w ON w.WarehouseID=s.WarehouseID WHERE p.SubGroupID=260 AND s.Quantity<>0; and SELECT FORMAT(h.VoucherDate,'yyyy-MM'), COUNT(*), SUM(d.Quantity) FROM StockTransferDetail d JOIN StockTransferHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID WHERE p.SubGroupID=260 AND h.VoucherDate>='2025-09-01' GROUP BY FORMAT(h.VoucherDate,'yyyy-MM')",
+      "why": "A 30-unit transfer landed at Ary Pos on 2026-08-30 10:55, and transfers into Ary Pos occurred in 9 of the last 12 months at 20-80 units a time. The counter is replenished on a routine cycle; the lane sampled the trough and called it a structure."
+    },
+    {
+      "claim": "No newborn diaper code exists at all in the 73; only S, M and L have ever sold",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "0 newborn codes; 3 of 6 size bands ever sold",
+      "live_number": "2 newborn-line codes exist (09VT 'Pampers New Baby 2 Pant', 0AJ4 'Pampers New Baby S Size 2 Pants', both priced MRP 18 for a 2-pant strip); XL sold 7 units Apr-Jun 2024",
+      "query_used": "SELECT ProductID, ProductName FROM ProductMaster WHERE SubGroupID=260; ./ary assort probe \"new baby\"; SELECT ... FROM ProductChildMaster WHERE ProductID IN ('09VT','0AJ4','0DNJ'); lifetime sales on 0DNJ",
+      "why": "The lane searched '%XL%', '%NB%', '%New Born%', '%Newborn%' and never '%New Baby%' — the actual Indian brand name of Pampers' newborn line. Exactly the name-match trap the vault warns about, on the claim that drives 'order the NB/XXL ladder'. Neither code was ever purchased, so the operational conclusion survives — but the action changes from 'create a new code' to 'revive an existing one', and 'only S, M, L have ever sold' is contradicted by the lane's own table note (MamyPoko XL, last sale 2024-06-07)."
+    },
+    {
+      "claim": "Exactly ONE of 19,481 active SKUs has a reorder level; 0 of 73 diaper codes have reorder flag, level or safety level",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "1 of 19,481 active SKUs",
+      "live_number": "1 of 19,494 active SKUs; 0 safety levels and 0 reorder flags store-wide",
+      "query_used": "SELECT COUNT(*), SUM(CASE WHEN ReorderLevel>0 THEN 1 ELSE 0 END), SUM(CASE WHEN SafetyLevel>0 THEN 1 ELSE 0 END), SUM(CASE WHEN ReorderInformation=1 THEN 1 ELSE 0 END) FROM ProductMaster WHERE IsActive=1",
+      "why": "Holds on the live count (SKU total grew to 19,494 by 2026-08-30). Note this is a store-wide gap, not a baby-care one — the lane says so, which is honest."
+    },
+    {
+      "claim": "A live IMS Act breach: four feeding bottles sold below MRP — fix this before anything else in the plan",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "14 bottles, Rs 3,252, 15-27% below MRP; 9 of 18 feeder codes below-MRP in the price master",
+      "live_number": "4 codes, 13 units, Rs 3,027 (12m to 2026-08-31); 13 of 18 feeder codes below-MRP. Store-wide: 71,579 of 989,928 lines below MRP = Rs 1.62 Cr over 2,026 SKUs; and 6,911 lines / Rs 35.13 lakh / 152 SKUs sold ABOVE MRP",
+      "query_used": "SELECT p.ProductName, sd.MRP, sd.SaleRate, SUM(sd.Quantity), SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ... WHERE p.SubGroupID=593 GROUP BY ...; and SELECT COUNT(*), SUM(CASE WHEN MRP>0 AND SaleRate<MRP THEN 1 ELSE 0 END), SUM(CASE WHEN MRP>0 AND SaleRate>MRP THEN 1 ELSE 0 END), SUM(CASE WHEN ... THEN FinalSaleAmount END) over all 12m lines",
+      "why": "The bottle data is real but the framing is not. Below-MRP selling is routine at ARY (7.2% of all lines, Rs 1.62 Cr); the feeding-bottle piece is 0.019% of it, so it reads as house pricing practice, not a targeted inducement. Meanwhile Rs 35.13 lakh of ABOVE-MRP selling — an unambiguous Legal Metrology offence needing no interpretation, 1,160x larger — sits in the same table unmentioned. And the legal step (a retailer's below-MRP price = s.4 'inducement for the purpose of promoting the use or sale') is the lane's inference: its cited BPNI slide describes Medela, a manufacturer, running a discount campaign — a different fact pattern. Ranking Rs 3,027 as action #1 misallocates the operator's first move."
+    },
+    {
+      "claim": "Wipes are the profit engine of a baby range at 45.5% GM, ARY's second-biggest baby line and its single best-selling baby SKU — lead the shelf with them",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "45.5% GM; best-seller Tulips Wet Wipes 25 Aloevera & Jasmine, 134 units",
+      "live_number": "45.7% GM confirmed. But Rs 16,020 of the Rs 29,093 (55%) is generic wet wipes, not baby: Tulips Aloevera & Jasmine 8,760, Jinga Punge Cucumber 3,780, Tulips Japanese Fresh 2,100, Tulips Caramel 1,380. Baby-labelled wipes = Rs 13,073",
+      "query_used": "WITH cst AS (SELECT ProductID, SUM(PurchaseCost*Quantity)/SUM(Quantity) wac FROM PurchaseDetail WHERE IsDeleted=0 GROUP BY ProductID) SELECT sg.SubGroupName, SUM(sd.FinalSaleAmount), SUM(sd.Quantity*cst.wac), ... ; and the same split CASE WHEN p.ProductName LIKE '%baby%' on SubGroupID=846",
+      "why": "The margin re-derives cleanly (45.7% vs store-wide 28.5%). But the named shelf anchor — Tulips Wet Wipes 25 Aloevera & Jasmine — is a general-purpose wet wipe, not a baby product. The lane flags in F25 that adult wipes are mixed into subgroup 846 and then builds recommendation 6 on the blended figure anyway. Over-capture, the mirror image of the missing-category trap."
+    },
+    {
+      "claim": "Eight lines a township of 5,000 needs have NO code at all: diaper rash cream, nappy pads, baby laundry wash, teether, bib, gripe water, baby toothpaste, baby thermometer",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "8 must-have lines with zero codes, status VERIFIED",
+      "live_number": "5 of 8 hold (rash cream 0, nappy 0, teether 0, bib 0, gripe 0). Thermometers exist — 3 codes: Hicks Thermometer, Cipla Thermometer1 4797/4798. Farlin Baby Feeding Bottle Wash 700 Ml exists under Detergent Liquid",
+      "query_used": "SELECT p.ProductName, sg.SubGroupName FROM ProductMaster p JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID WHERE p.ProductName LIKE '%thermometer%' (and the same for rash/nappy/teether/bib/gripe/toothpaste/laundry); ./ary assort probe \"diaper rash\", \"rash cream\"",
+      "why": "The evidence field lists probes for only 5 of the 8 lines plus 5 irrelevant ones (romper, onesie, mittens, walker, high chair) — thermometer, toothpaste and baby laundry wash were never probed at all, yet the finding is marked VERIFIED. One of the three unprobed lines is factually wrong. The diaper-rash-cream recommendation, which is the lane's best attach idea, does survive: genuinely zero codes."
+    },
+    {
+      "claim": "Every rupee of diaper revenue is Pampers — 11 codes, 398 units, Rs 32,699, 324 bills, 100% Pampers",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "11 codes, 398 units, Rs 32,699, 324 bills",
+      "live_number": "11 codes, 392 units, Rs 32,351, 316 bills — all 11 Pampers",
+      "query_used": "SELECT p.ProductID, p.ProductName, SUM(sd.Quantity), SUM(sd.FinalSaleAmount), COUNT(DISTINCT sd.SerialNumber) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' AND p.SubGroupID=260 GROUP BY p.ProductID,p.ProductName",
+      "why": "Confirmed on the live window. 'Build the ladder on Pampers, do not split across a second brand' is sound advice off this."
+    },
+    {
+      "claim": "Demand is remarkably steady — 16-43 diaper bills every month for 25 straight months, never zero. That is the floor you are building on",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "29 bills / 41 packs a month, 25 months, CV ~30%",
+      "live_number": "Bill series matches the lane's list exactly. But packs fell 617 (2024-09..2025-08) to 392 (2025-09..2026-08), -36.5%; value rose Rs 29,220 to Rs 32,351, +10.7%. Baby category grew 5.8% while the store grew 19.1% (Rs 6.44 Cr to Rs 7.67 Cr)",
+      "query_used": "SELECT FORMAT(sh.VoucherDate,'yyyy-MM'), COUNT(DISTINCT sd.SerialNumber), SUM(sd.Quantity) ... WHERE p.SubGroupID=260 AND sh.VoucherDate>='2024-07-01' GROUP BY FORMAT(...); plus a two-year CASE split on baby subgroups and store-wide",
+      "why": "The monthly series reproduces exactly — good work. But 'steady' hides the trend: packs are down 36% year on year (mix shifted to larger strips, so value held), and baby is losing store share, 0.213% to 0.189%. The lane never ran the prior-year comparison, so 'the floor you are building on' is stated without a trend test."
+    },
+    {
+      "claim": "Rs 20,851 of baby revenue was rung up at ARY CLOTHING, a garment counter",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "Rs 20,851",
+      "live_number": "Rs 27,331",
+      "query_used": "SELECT w.WarehouseName, SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID JOIN WarehouseMaster w ON w.WarehouseID=sd.WarehouseID WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' AND p.SubGroupID IN (1031,257,...,846) GROUP BY w.WarehouseName",
+      "why": "The lane's own evidence field itemises seven subgroups at Ary Clothing (6,886+6,755+5,684+3,757+2,749+1,290+210) which sum to exactly Rs 27,331 — matching my live figure. The claim text understates its own citation by 31%, and recommendation 11 repeats the wrong number."
+    },
+    {
+      "claim": "72.7% of apparent baby revenue is boarding students buying toiletries; only Rs 39,919 is unambiguously infant",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 1,06,254 toiletries / Rs 39,919 infant (27.3%)",
+      "live_number": "Infant lines (diaper+feeder+Cerelac+Lactogen) Rs 39,571 of Rs 1,44,913 = 27.3% — split confirmed. But only 108 of 1,062 baby bills carry a named customer (Rs 20,013, 13.8%); on diapers only 29 bills / Rs 2,767 (8.6%)",
+      "query_used": "SELECT CASE WHEN sh.CustomerID='00001' THEN 'anon' ELSE 'named' END, COUNT(DISTINCT sd.SerialNumber), SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber JOIN ProductMaster p ON p.ProductID=sd.ProductID WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01' AND p.SubGroupID IN (...) GROUP BY ...",
+      "why": "The arithmetic classification is right and honestly labelled ESTIMATED. The attribution to students is not: it rests on named-customer bills that are 13.8% of the revenue, and named accounts at ARY are school and credit accounts by construction — the same selection effect the corpus praises the digital lane for catching."
+    },
+    {
+      "claim": "Not one baby subgroup has any shelf space allotted — AreaAllotted is 0 across all 14, which explains the seven units on the floor",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "0 sq units across 14 baby subgroups",
+      "live_number": "AreaAllotted = 0 on all 846 subgroups store-wide; SPCommPercent = 0 on all 846",
+      "query_used": "SELECT COUNT(*), SUM(CASE WHEN AreaAllotted<>0 THEN 1 ELSE 0 END), SUM(CASE WHEN SPCommPercent<>0 THEN 1 ELSE 0 END) FROM SubGroupMaster",
+      "why": "True but vacuous — the field is unused everywhere, so it carries no baby-specific signal, and 'until a bay is assigned, replenishment has nowhere to replenish to' is a causal claim built on a column nobody populates. The F24 evidence also lists 'Food Supplement' (462) among the 14 baby subgroups; it holds Zandu Honey, Horlicks and Dr. Oetker milk-shake mix."
+    },
+    {
+      "claim": "Nine Lactogen codes are listed; ZERO sold in 12 months; formula is stone dead",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "9 codes, 0 sold in 12m",
+      "live_number": "7 codes in the Lactogen subgroup (2 more filed under 'Ready To Cook' = 9 by name). Zero sold in 12m even with the wider net",
+      "query_used": "SELECT SubGroupID, SubGroupName, (SELECT COUNT(*) FROM ProductMaster p WHERE p.SubGroupID=sg.SubGroupID) FROM SubGroupMaster sg WHERE SubGroupName LIKE '%Lactogen%'; plus 12m sales on SubGroupID=550 and on ProductID IN ('092Z','092Y')",
+      "why": "The conclusion is right and important — no regular formula buyer exists. But the lane put a name-probe count (9) into a subgroup table (7), which is why its own category table sums to 230 while it reports 228. Same class of slip as the wipes over-capture: probe results and subgroup results mixed in one frame."
+    },
+    {
+      "claim": "No new vendor is needed — five named local wholesalers, three of them within the last three weeks",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "5 live suppliers, 3 bought within 3 weeks",
+      "live_number": "14 accounts have bought baby stock. Within 3 weeks of the lane's own 2026-08-21 cut: two (Nirman 08-11, Sita Ram 08-03). As of 2026-08-30: one. Third-largest baby buyer is an unnamed 'Cash' account, Rs 48,189",
+      "query_used": "SELECT a.AccountName, COUNT(DISTINCT ph.SerialNumber), SUM(pd.ItemValue), MAX(ph.VoucherDate) FROM PurchaseDetail pd JOIN PurchaseHeader ph ON ph.SerialNumber=pd.SerialNumber JOIN ProductMaster p ON p.ProductID=pd.ProductID JOIN AccountMaster a ON a.AccountID=ph.AccountID WHERE pd.IsDeleted=0 AND p.SubGroupID IN (1031,257,...,846) GROUP BY a.AccountName ORDER BY 3 DESC",
+      "why": "The lane's own evidence dates refute its own 'three within three weeks' — the top supplier's last baby buy was 2026-06-27, and Parhlad Chand Batra's was 2025-10-03. The headline conclusion (no new vendor needed) still holds, and holds more strongly with 14 accounts than with 5."
+    },
+    {
+      "claim": "The Cerelac pack reaching Indian retail in Aug-2026 had only about three months of life left, so any facing deeper than two packs is a guaranteed write-off",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "~3 months residual shelf life at point of retail supply",
+      "live_number": "Not supported by the citation. ARY-side facts confirmed: 13 packs in 12m, 16.4% GM (lowest baby line)",
+      "query_used": "Read of the lane's own evidence field; ARY side: WITH cst AS (...) SELECT sg.SubGroupName, SUM(sd.FinalSaleAmount), SUM(sd.Quantity*cst.wac) ... WHERE p.SubGroupID=349",
+      "why": "The cited PharmEasy line reads 'Expires on or after 26/11/2026' — a marketplace minimum-freshness guarantee, i.e. a floor on remaining life, not the pack's actual dating. The citation does not contain the number claimed. The recommendation (one facing, two deep) is still right, but on the offtake and margin evidence alone, not on shelf life."
+    },
+    {
+      "claim": "The whole prize is Rs 7,400/month of gross profit — 0.4% of ARY's Rs 2.11 Cr gross profit — so run it as a service fix, not a growth project; the dark Talwandi Sabo counter is worth 45x more",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "Store GP Rs 2.11 Cr at 28.3%; ceiling 0.42%; Talwandi Sabo Rs 3.35 lakh/month, dark since 11-Jul-2024",
+      "live_number": "Store 12m sales Rs 7.67 Cr, matched-line GM 28.5%, GP ~Rs 2.19 Cr; ceiling 0.41%. Talwandi Sabo Rs 21.85 lakh over 6.4 months of 2024 = Rs 3.41 lakh/month, last sale 2024-07-11",
+      "query_used": "WITH cst AS (SELECT ProductID, SUM(PurchaseCost*Quantity)/SUM(Quantity) wac FROM PurchaseDetail WHERE IsDeleted=0 AND Quantity>0 GROUP BY ProductID) SELECT SUM(sd.FinalSaleAmount), SUM(sd.Quantity*cst.wac), 100.0*(matched sales - cogs)/matched sales FROM SaleDetail sd JOIN SaleHeader sh ... WHERE sh.VoucherDate>='2025-09-01' AND sh.VoucherDate<'2026-09-01'; plus Talwandi Sabo by year on WarehouseMaster",
+      "why": "Both anchors re-derive. The strategic verdict — this is a two-week service fix worth 0.4% of gross profit, and the closed Talwandi Sabo counter is worth ~45x more — is the most valuable and best-supported thing in the lane, and it survives every test I ran. Note the store figure is gross of Rs 17.09 lakh of 12m sale returns, which the lane does not net."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

@@ -1,0 +1,173 @@
+{
+  "lane": "wallet",
+  "claims_tested": 18,
+  "lane_confidence_after": "low",
+  "single_biggest_error": "The Rs 10.1 Cr \"store-addressable retail wallet\" — the number the entire headline rests on (\"77% saturated, only Rs 2.3 Cr of headroom, the store cannot triple\") — is contradicted by the lane's own published arithmetic. Its category table lists an addressability factor per HCES item group; multiplying those factors by its own Rs/person/month column gives Rs 3,115/person/month = 45.5% = Rs 18.7 Cr/year, yet the same table's TOTAL row is printed as \"24.5% | = Rs 1,679/person/month\" and the funnel table carries Rs 10.1 Cr forward. The Rs 10.1 Cr comes only from the cohort table, whose four cohort sizes and per-cohort wallets are all admitted assumptions. So the two builds disagree by 1.86x, one of them is mislabelled, and the lane presents them as mutually corroborating. On its own category table, ARY's retail capture is 39-41% with roughly Rs 11 Cr of headroom — which reverses the lane's central strategic conclusion that the retail format is nearly out of room and the growth must come from wholesale.",
+  "verdicts": [
+    {
+      "claim": "HP rural MPCE is Rs 5,825/person/month, 41% above the all-India rural Rs 4,122 (HCES 2023-24)",
+      "original_number": "Rs 5,825/person/month",
+      "live_number": "Rs 5,825 rural / Rs 9,223 urban HP; all-India rural Rs 4,122 — both confirmed against MoSPI HCES 2023-24 Fact Sheet",
+      "query_used": "WebSearch against mospi.gov.in HCES FactSheet 2023-24; 5825/4122 = 1.413",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "why": "The published figures match exactly and the 41% premium is arithmetically right. The sub-claim '4th highest among major states' is unverified and is colour, not load-bearing."
+    },
+    {
+      "claim": "Escalated to Aug 2026 the HP rural MPCE is about Rs 6,850/person/month",
+      "original_number": "Rs 6,850 (range 6,550-7,300)",
+      "live_number": "arithmetic reproduces (5,825 x 1.065^2.583 = 6,855) but HP's own observed y/y rate of +4.75% gives Rs 6,567",
+      "query_used": "python: 5825*1.065**(31/12)=6854.9 ; 5825*1.0475**(31/12)=6567",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "why": "The central escalator of 6.5% is roughly the midpoint of HP's own +4.75% and all-India's +9.25%, not of anything HP-specific; using HP's own rate cuts the whole wallet by 4.2%. Every per-resident figure in the lane inherits this."
+    },
+    {
+      "claim": "About 9.5% of a normal HP rural wallet is structurally absent at Baru Sahib (meat/egg/fish 4.92%, pan-tobacco-intoxicants 3.84%, rent 0.56%, taxes 0.21%); no such product group exists in ARY's catalogue",
+      "original_number": "9.5% = Rs 652/person/month = Rs 3.92 Cr/year",
+      "live_number": "93 product groups, none meat/egg/tobacco/alcohol; every name hit is a false positive",
+      "query_used": "SELECT COUNT(*) FROM ProductGroupMaster (93); ./ary assort probe egg|meat|chicken|tobacco|cigarette|beer|wine — 'egg' returns 28 SKUs but all are Deggi Mirch / Veggie Fingers / Eggless mayo; 'wine' returns 2 = Snickers Peanut Browine; meat/tobacco/cigarette = 0",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "why": "Probe-tested exactly as the vault's burden-of-proof rule requires. The category shares also sum to 100.00 and the food subtotal 47.04% matches the lane's own HCES anchor, so the shares are genuine."
+    },
+    {
+      "claim": "The store-addressable retail wallet is Rs 84 L/month = Rs 10.1 Cr/year, i.e. 24.5% of the residents' gross consumption wallet",
+      "original_number": "Rs 10.1 Cr/year (range 9.0-13.0), 24.5% of gross",
+      "live_number": "the lane's own category-addressability table computes Rs 3,115/person/month = 45.5% = Rs 18.7 Cr/year — 1.86x the figure it reports",
+      "query_used": "python: sum(Rs_per_person_mo * addressability) over the lane's own 21 HCES rows = 3114.9 ; 3114.9/6850 = 45.5% ; x5000x12 = Rs 18.69 Cr. Cohort table separately = 1500*1050*.8 + 2400*2050*.8 + 500*2150 + 600*3538 = Rs 83.9 L/mo = Rs 1,679/person",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "why": "Two incompatible builds. The Rs 10.1 Cr comes solely from the cohort table (four assumed cohort sizes and four assumed per-cohort wallets); the category table, whose TOTAL row is printed as '24.5% = Rs 1,679', actually yields 45.5%. Neither is reconciled and the funnel's '-66.0% institution-provided' haircut is 21pp deeper than the category table's own weights imply."
+    },
+    {
+      "claim": "ARY retail is Rs 7.73 Cr/year annualised, so the store already captures ~77% of its addressable retail wallet; headroom Rs 2.3 Cr",
+      "original_number": "Rs 7.73 Cr/year; 77% capture; Rs 2.3 Cr headroom",
+      "live_number": "Rs 7.22-7.55 Cr seasonally corrected (gross); Rs 6.94 Cr on a clean trailing-12-month basis; less Rs 17.08 L of un-netted sale returns",
+      "query_used": "SELECT fy, SUM(CASE WHEN sd.WarehouseID<>16 THEN sd.FinalSaleAmount END) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber GROUP BY fy → FY23-24 622.33, FY24-25 588.72, FY25-26 663.38, FY26-27-to-30Aug 319.68 L. Share of each FY falling in 1-Apr..21-Aug = 42.89% / 43.01% / 40.22%, vs 39.2% pro-rata → 303.67/0.4022 = Rs 755 L; 3-yr mean share → Rs 722 L. SELECT COUNT(*), SUM(BillAmount) FROM SaleReturnHeader (T12M) = 1,025 docs / Rs 17.08 L",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "why": "The FY series reproduces to the rupee, but annualising a peak window (Apr-Aug) at x12/4.70 overstates by 2-7%, and no figure anywhere in the lane nets out the Rs 17.08 L of sale returns the schema notes explicitly warn about. Capture is 70-73% against the lane's own wallet, and 39-41% against its category table."
+    },
+    {
+      "claim": "Rs 71.6 L of trailing-12-month sales is 14 monthly bulk bills to one account, 'Hunger Heroes' (CustomerID 002CM), through the Basement counter",
+      "original_number": "Rs 71.61 L, 14 bills, one customer",
+      "live_number": "Rs 71.61 L, 14 bills, TWO customers: Hunger Heroes 12 bills / Rs 70.59 L and Jivo Wellness Pvt Ltd - Delhi 2 bills / Rs 1.01 L",
+      "query_used": "SELECT sh.CustomerID, cm.CustomerName, COUNT(DISTINCT sh.SerialNumber), SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ... WHERE sd.WarehouseID=16 AND sh.VoucherDate>='2025-08-22' AND <'2026-08-22' GROUP BY 1,2",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "why": "The rupee total and the basket mix (Rice 20,195 kg / Rs 12.77 L, Atta 21,740 kg / Rs 9.51 L, Vegetable 23,505 / Rs 9.12 L, Pulses 6,726 / Rs 6.70 L, Oil 3,170 / Rs 4.39 L) reproduce exactly, but 'all CustomerID 002CM' is wrong and 2 of the 14 bills are an intra-group sale to JIVO's own Delhi entity, not campus wallet. The lane also excluded the Rs 10.21 L 'Mini Meals' group as 'prepared meals' — it is 21,732 litres of loose milk at Rs 47/L, a core mess input, which is exactly the vault's Trap 1 category-tree error."
+    },
+    {
+      "claim": "The institutional channel feeds only ~374 persons on T12M volume, ~685 on the current run rate, against ~3,900 boarders",
+      "original_number": "~374 persons; ~685 on run rate",
+      "live_number": "374 reproduces exactly (41,935 kg / 9.35 kg per person-month / 12). The 685 does not — cereal per bill has FALLEN 26%, from a 2025 mean of 4,301 kg to a 2026 mean of 3,187 kg",
+      "query_used": "SELECT sh.SerialNumber, VoucherDate, SUM(CASE WHEN pg.ProductGroupName IN ('Rice & Other Grains','Atta & Other Flours') THEN sd.Quantity END) FROM SaleDetail sd ... WHERE sd.WarehouseID=16 GROUP BY 1,2 ORDER BY 2 — 2025 bills 3600/4610/4610/4610/4610/4610/3459; 2026 bills 3459 x4 /3070/2160/3070/3720/3400",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "why": "The T12M figure is sound and the unit check holds (Rice 1 Kg is Pcs of 1 kg, Rice_L is Kgs). The '~685 persons' scaling inherits the refuted Rs 1.31 Cr annualisation and points the wrong way: the tonnage per delivery is shrinking, not growing."
+    },
+    {
+      "claim": "ARY's institutional revenue is Rs 1.31 Cr annualised = 24% of a Rs 5.5 Cr mess wallet, headroom Rs 4.2 Cr",
+      "original_number": "Rs 1.31 Cr/year annualised; 24% captured",
+      "live_number": "Rs 71.6 L trailing-12-month actual; Rs 72-75 L/year true run rate; ~13% captured, headroom ~Rs 4.8 Cr",
+      "query_used": "SELECT FORMAT(VoucherDate,'yyyy-MM'), COUNT(DISTINCT SerialNumber), SUM(FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ... WHERE WarehouseID=16 GROUP BY 1 → Apr-25 8.13, May 6.74, Jun 6.82, Jul 6.82, Aug 6.84, Sep 6.84, Oct 6.88, Nov 0, Dec 5.50, Jan-26 0.51, Feb 0.51, Mar 0, Apr 0, May 23.14 (4 bills), Jun 15.95 (3 bills), Jul 6.24, Aug 6.06 L. Lifetime Hunger Heroes = 20 bills / Rs 105.93 L over 16.4 months = Rs 6.46 L/month",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "why": "The Rs 1.31 Cr is a billing-catch-up artefact. Four bills all dated 2026-05-11 carry serials 2002747-2002753, LOWER than the Dec-2025 and Feb-2026 bills — they are back-posted arrears for the missing Nov-25/Mar-26/Apr-26 months. Annualising a window that swallowed a four-month backlog inflates the run rate ~78%. The contract has billed a flat Rs 6.0-6.9 L per month since May 2025."
+    },
+    {
+      "claim": "Institutional is growing +136% and contributed 41% of incremental growth from 15% of revenue; retail is growing +16.5%",
+      "original_number": "Institutional +136%; retail +16.5%; 41% of incremental Rs 185 L",
+      "live_number": "Institutional per-bill value is DOWN 14% (2025 mean Rs 6.63 L vs 2026 mean Rs 5.71 L); retail T12M-over-T12M is +14.1% (Rs 694.50 L vs Rs 608.64 L)",
+      "query_used": "Retail: SUM(FinalSaleAmount) WHERE WarehouseID<>16 for 2025-09-01..2026-08-31 = Rs 694.50 L vs 2024-09-01..2025-08-31 = Rs 608.64 L. Institutional per-bill means from the wh16 bill list above",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "why": "Both growth rates are annualisation artefacts. Once the arrears batch is unwound the institutional channel is flat-to-shrinking on value per delivery and down 26% on cereal tonnage per delivery, so '41% of incremental growth' and 'the business is already discovering this by itself' — the lane's stated proof that the strategy is not theoretical — do not survive."
+    },
+    {
+      "claim": "The campus empties in winter: Jan 486 bills/day vs May 1,335; mean = 71% of peak on bills and 71% on value independently",
+      "original_number": "Jan 486/day, May 1,335/day, peak Sep 1,488/day, mean/peak 71.2% on both measures",
+      "live_number": "Monthly bills/day reproduce exactly, but Sep-2025's 1,488 is a posting artefact. On calendar days: peak May 1,335, trough Jan 486 = 36.4%; mean/peak 76.3% on bills and 68.0% on value — they do not agree",
+      "query_used": "SELECT CAST(VoucherDate AS date), COUNT(*) FROM SaleHeader WHERE VoucherDate>='2025-09-01' AND <'2025-10-01' GROUP BY 1 → 2025-09-21 alone has 10,297 bills and Rs 20.79 L against a ~1,030-bill daily norm, and 22-30 Sep are EMPTY. It is the only >3,000-bill day in 24 months",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "why": "The seasonal shape is real and important, but the '21 open days / 1,488 per day peak' row is nine days of trade dumped onto one date. That artefact is what made the two mean/peak measures land on the identical 71.2% the lane cites as independent corroboration for its 0.80 presence factor; corrected they are 76.3% and 68.0%."
+    },
+    {
+      "claim": "87.3% of revenue — Rs 672 L/year — is booked to a customer type of [None], i.e. the anonymous walk-in Cash account",
+      "original_number": "87.3% / Rs 672 L anonymous",
+      "live_number": "Rs 563.14 L = 73.5% is truly anonymous (customer 00001). The other Rs 105.41 L inside the [None] TYPE is named customers",
+      "query_used": "SELECT TOP 15 sh.CustomerID, cm.CustomerName, SUM(sd.FinalSaleAmount) ... GROUP BY 1,2 ORDER BY 3 DESC (live 12M) → 00001 [None] Rs 563.14 L; 002CM Hunger Heroes Rs 70.59 L; 0000L Jivo Wellness Rs 11.97 L; 00240 Katebaa Foundation Rs 8.40 L; 0000D Cash Sale Rs 6.65 L; 0029M University Students Rs 4.38 L. CustomerTypeMaster: ID 1 is literally named '[None]'",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "why": "The lane confused a customer TYPE label with the anonymous account. CustomerTypeID 1 is a catch-all bucket that holds named institutions — including the lane's own Rs 70.59 L Hunger Heroes account, so Finding 10 counts as 'no identified customer' the very revenue Finding 5 identifies by name. The size of the identification problem is overstated by Rs 109 L (19%), and P0 recommendation 1 is scoped off that inflated figure."
+    },
+    {
+      "claim": "Category gaps total Rs 3.0 Cr/year and independently match the top-down headroom; consumer services are 0% captured; packaged dairy 28%",
+      "original_number": "Rs 3.0-3.1 Cr gap; services Rs 32.5 L at 0% capture; packaged dairy Rs 8.5 L actual",
+      "live_number": "ARY-side group sales reproduce within 2%; the wallet column is the Rs 10.1 Cr decomposed (sums to Rs 1,009.2 L), so the 'independent match' is the same subtraction; tailoring already runs at Rs 5.98 L of stitching charges; packaged dairy is undercounted by the group tree",
+      "query_used": "SELECT pg.ProductGroupName, SUM(sd.FinalSaleAmount) ... GROUP BY 1 (75 groups, live 12M) — Confectionery 100.69, Personal Care 51.24, Academy Dress 45.52, Medicare 3.20. Cross-group dairy name search (excl. wh16) returns Rs 61 L gross of chocolate/thermal noise; real chiller dairy ~Rs 10-13 L. TransactionChild x GroupMaster LIKE '%tich%' → 'Stiching Charges Payable', 6 accounts, Rs 5.98 L debit in 12M",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "why": "The ARY side is sound. But the wallet side is not a second opinion — it is the contested Rs 10.1 Cr sliced up, so 'gap sum Rs 3.1 Cr independently matches the Rs 2.3-3.1 Cr top-down headroom' is circular (the difference is only the negative apparel line floored to zero). Packaged dairy 'Rs 8.5 L' is read off ProductGroupID, the exact measure the vault says is unreliable, and ARY already pays six tailors, so 'literally zero capture' on services overstates the whiteness of that space."
+    },
+    {
+      "claim": "ARY already tried a second site and closed it — Talwandi Sabo did Rs 0.51 Cr lifetime; two other counters also inactive",
+      "original_number": "Rs 0.51 Cr lifetime; wh14 book_qty -127,849; shortage Rs 1.64 L",
+      "live_number": "Rs 0.513 Cr over 91,229 bills, 2023-04-02 to 2024-07-11; wh14 Stock.Quantity sum = -127,849 over 1,838 rows; warehouses 13, 14, 17 all IsActive=false",
+      "query_used": "SELECT COUNT(DISTINCT sh.SerialNumber), MIN/MAX(VoucherDate), SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ... WHERE sd.WarehouseID=14; SELECT COUNT(*), SUM(Quantity) FROM Stock WHERE WarehouseID=14; SELECT WarehouseID, WarehouseName, IsActive FROM WarehouseMaster",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "why": "Every number reproduces. One caveat on the inference: Rs 51.3 L over 91,229 bills is Rs 56 a bill — a tuck shop, not a replication of the ARY store format — so it is weaker evidence against network expansion than recommendation 8 implies."
+    },
+    {
+      "claim": "Externally corroborated campus population is 4,433, so ~5,000 is a floor",
+      "original_number": "2,500 + 195 + 1,538 + 200 = 4,433",
+      "live_number": "Wikipedia Baru Sahib verbatim: '1538 boys and girls on its rolls', 'a 280-bed charitable hospital', 'a spiritual academy for women wherein 200 young girls'",
+      "query_used": "WebFetch en.wikipedia.org/wiki/Baru_Sahib",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "why": "The cited sentences exist verbatim and the arithmetic is right. The lane correctly flags these as undated secondary sources and correctly states that a higher true population would mean MORE headroom, not less."
+    },
+    {
+      "claim": "The Akal Academy network is ~129 schools / ~60,000 students, a ~Rs 60 Cr/year notional schoolchild wallet",
+      "original_number": "129 schools, 60,000 students, Rs 60 Cr/year",
+      "live_number": "Wikipedia verbatim: 'The Kalgidhar Society manages 129 English medium Schools... some 60,000 students'",
+      "query_used": "WebFetch en.wikipedia.org/wiki/Baru_Sahib; 60,000 x 1,050 x 0.80 x 12 = Rs 60.5 Cr",
+      "verdict": "QUALIFIED",
+      "materiality": "colour",
+      "why": "Source figures check out and the arithmetic is right, but the Rs 1,050/month per-child wallet is the lane's own assumed cohort figure applied to 129 campuses that have no university, no 450-acre site and no evidence of resembling the flagship. The lane says so itself and calls it a TAM to test, which is the correct handling."
+    },
+    {
+      "claim": "JIVO's own brands earn Rs 16.8 L/year through ARY across 73 SKUs and hold roughly 55% of ARY's Rs 30.6 lakh oil and ghee shelf",
+      "original_number": "Rs 16.8 L, 73 SKUs, ~55% oil share",
+      "live_number": "Rs 16.25 L across 73 of 126 SKUs (confirmed). Oil share is 24.5%, not 55%: Rs 7.47 L of a Rs 30.43 L oil+ghee shelf",
+      "query_used": "SELECT pg.ProductGroupName, SUM(sd.FinalSaleAmount) grp, SUM(CASE WHEN pm.ProductName LIKE '%jivo%' THEN sd.FinalSaleAmount END) jivo ... WHERE pg.ProductGroupName IN ('Oil & Ghee','Edible Oil & Ghee') → Edible Oil & Ghee 11.08 L of which JIVO 5.09 L (46.0%); Oil & Ghee 19.35 L of which JIVO 2.38 L (12.3%). JIVO by group: Soft Drinks 6.10, Edible Oil & Ghee 5.09, Oil & Ghee 2.38, Dry Fruits 1.03",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "why": "The lane divided TOTAL JIVO revenue by the oil shelf (16.83/30.62 = 55.0%), but Rs 6.10 L of that is Jivo mineral water and wheatgrass juice and Rs 1.03 L is pista — none of it oil. JIVO holds 46% of branded bottled oil but only 12% of the wider Oil & Ghee group, which is dominated by Rs 13.95 L of Loose Desi Ghee. This is the one number a JIVO reader would act on and it is more than 2x too high."
+    },
+    {
+      "claim": "Payment-mix data is corrupt: Cash tender reports Rs 8,942 crore against Rs 7.7 crore of real sales, a factor of ~1,160. Paytm has more tenders than Cash",
+      "original_number": "Rs 8,942 Cr; factor ~1,160; Paytm 212,417 tenders vs Cash 155,174",
+      "live_number": "Rs 894.22 Cr against Rs 7.66 Cr of sales = a factor of ~117. Paytm 213,188 tenders (56.3%) vs Cash 154,930 (40.9%)",
+      "query_used": "SELECT mop.MOPName, COUNT(*), SUM(sp.Amount), SUM(sp.TenderAmount), SUM(sp.TenderAmount-sp.ReturnAmount) FROM SalePayment sp JOIN SaleHeader sh ... WHERE VoucherDate 2025-09-01..2026-08-31 AND ISNULL(sp.IsDeleted,0)=0 → Paytm 213,188 / Amount 3.63 Cr / Tender 0.00; Cash 154,930 / Amount 894.22 Cr / Tender 894.22 Cr / net 2.10 Cr; Credit Sale 10,410 / 1.92 Cr / 0.00",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "why": "The corruption is real and my query reproduces the mechanism exactly (UPI and credit record only in Amount, Cash inflates both Amount and TenderAmount). But the lane's own cited raw figure, Rs 8,942,313,375, is Rs 894.23 crore — it slipped a factor of ten in the crore conversion and then stated a ~1,160x distortion that is really ~117x, all under a VERIFIED label. The UPI-majority tender-count finding stands."
+    },
+    {
+      "claim": "ARY total is Rs 9.04 Cr annualised = 58% of a Rs 15.6 Cr total campus wallet",
+      "original_number": "Rs 9.04 Cr; 58% captured",
+      "live_number": "Rs 7.9-8.3 Cr gross run rate (retail Rs 7.22-7.55 Cr + institutional Rs 0.72-0.75 Cr), Rs 7.7-8.1 Cr net of returns = 49-52% of the lane's own Rs 15.6 Cr wallet",
+      "query_used": "Composed from the seasonally-corrected retail annualisation (Rs 722-755 L) and the true institutional run rate (Rs 72-75 L) derived above, less Rs 17.08 L of SaleReturnHeader",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "why": "The headline capture rate compounds three separate upward biases: peak-window annualisation on retail (+2-7%), an arrears-batch annualisation on institutional (+78%), and no deduction of sale returns (+2.2%). Against the lane's own wallet the true figure is roughly 50%, not 58% — and against its own category table it is 32%."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

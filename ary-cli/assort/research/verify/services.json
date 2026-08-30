@@ -1,0 +1,191 @@
+{
+  "lane": "services",
+  "claims_tested": 20,
+  "lane_confidence_after": "medium",
+  "single_biggest_error": "The mobile finding is a textbook Trap-1 failure and the lane broke the toolkit's own house rule to produce it. It declared \"ARY's entire 'Mobile' product group is 8 SKUs, all of them chargers — no handsets, no accessories of substance\" from ProductGroupID=139 alone, without running `ary assort probe`, which CLAUDE.md and Data-Quality-Traps.md both mandate before any \"ARY does not carry X\". Group 139 sold ₹2,690 in 12 months — it is a dead group, not the category. ARY's real mobile business sits in ProductGroupName 'Accessories', sub-groups Mobile Accessories / Earphone / Mobile Set: 15 SKUs, ₹1,98,119 in 12 months (Mobile Adapter ₹49,796, Mobile Datacable ₹47,607, Bluetooth Buds ₹46,543, Mobile Ear Phone ₹39,983, Airpod ₹5,594), plus a \"Mobile Handset\" SKU and an \"Iphone 17 Pro Max 256Gb Silver\" filed under Confectionery. The lane measured 1.3% of the category and called the other 98.7% absent. The consequence is not just an embarrassing citation: it makes the ₹55,000/month repair estimate look like greenfield when it is in fact 3.3x the entire existing mobile category's annual sales, and it hides that ARY already has a live accessory line and a supplier to bolt repair onto.",
+  "verdicts": [
+    {
+      "claim": "ProductID 0A32 'Xerox Charges' exists, is active, and has zero sale lines in ~1.09 M lifetime bills",
+      "verdict": "CONFIRMED",
+      "original_number": "0 lines, ₹0 lifetime",
+      "live_number": "0 sale lines and 0 return lines, lifetime, to 2026-08-30",
+      "query_used": "SELECT (SELECT COUNT(*) FROM SaleDetail WHERE ProductID IN ('0A32','0BVD')) sale_lines, (SELECT COUNT(*) FROM SaleReturnDetail WHERE ProductID IN ('0A32','0BVD')) return_lines  -> 0, 0. Plus an all-groups LIKE probe on xerox/photocop/print/copy/scan/lamin/binding/spiral over ProductMaster x SaleDetail",
+      "why": "Reproduced independently, and I attacked it the right way round: I name-probed every print/copy/scan word across all 93 product groups to see whether photocopy revenue was being booked under some other SKU. It is not — the only non-stationery hit is 0A32 itself at zero. The gap is real.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "ProductID 0BVD 'Delivery Charges' is active with zero sale lines ever",
+      "verdict": "CONFIRMED",
+      "original_number": "0 lines, ₹0 lifetime",
+      "live_number": "0 sale lines, 0 return lines, lifetime",
+      "query_used": "Same zero check, plus SELECT ... WHERE ProductName LIKE '%deliver%' OR '%courier%' OR '%parcel%' OR '%freight%' OR '%carriage%' OR '%charges%' across all groups -> only 6 rows, all the known service SKUs, five of them at zero",
+      "why": "Confirmed, and no alternate delivery-fee SKU exists anywhere in the catalogue. ARY has never charged for delivery under any name.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "18 named contract tailors on their own ledger group 'Stiching Charges Payable' (group 508)",
+      "verdict": "CONFIRMED",
+      "original_number": "18 tailors",
+      "live_number": "18 accounts in GroupMaster 508 'Stiching Charges Payable' (parent 20); the stitching expense's credit leg lands exclusively on these accounts",
+      "query_used": "SELECT AccountID, AccountName FROM AccountMaster WHERE GroupID=508 -> 18 rows; plus a self-join of TransactionChild on SerialNumber to list the contra legs of accounts 2228/1922 -> every material credit is a group-508 tailor",
+      "why": "Count and group name are exact, and I verified the operating model independently by pulling the contra legs: month-end journals narrated 'BEING THE EXPENSES BOOK FOR THE TAILOR COMMISSION AS STICHING CHARGES' crediting the tailors. One qualification: only 13 of the 18 carry 'Tailor' in the name; the rest are bare personal names ('Sharma Ji', 'Rahul', 'Amita Kumari'), so '18 named contract tailors' is an inference from the group tag, not from the names.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "Tailoring earned +₹45,511 on ₹15,79,023 of revenue = +2.9% GM over 3.4 years; FY26-27 to 21-Aug was +16.7%",
+      "verdict": "QUALIFIED",
+      "original_number": "+₹45,511 on ₹15.79 L = +2.9% GM; FY26-27 +₹50,207 = +16.7%",
+      "live_number": "Like-for-like through 31-Jul-2026: +₹34,971 on ₹15,68,483 = +2.2%. FY26-27 Apr-Jul like-for-like: +₹39,667 = +13.7%",
+      "query_used": "Revenue: SELECT YEAR(DATEADD(month,-3,h.VoucherDate)) fy, SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ... WHERE d.ProductID='07NL' GROUP BY fy. Cost: SELECT YEAR(DATEADD(month,-3,m.VoucherDate)) fy, SUM(c.DebitAmount) FROM TransactionChild c JOIN TransactionMaster m ... WHERE c.AccountID IN (2228,1922) AND m.IsDeleted=0 GROUP BY fy. Then the same two by FORMAT(date,'yyyy-MM')",
+      "why": "Every full-year figure reproduces to the rupee (FY23-24 ₹2,96,690/₹2,61,938; FY24-25 ₹4,34,416/₹4,22,540; FY25-26 ₹5,48,052/₹5,99,376 = -9.4%, all exact). But the totals are cut-off mismatched. The monthly breakdown shows the stitching cost is a single month-end accrual journal and the ledger's last one is 31-Jul-2026, while 07NL revenue accrues daily — so the lane compared 4.7 months of revenue against 4.0 months of cost. Trimming both to 31-Jul gives +2.2%, not +2.9%; the FY26-27 row falls from +16.7% to +13.7%, and on today's live data the same method would print a spurious +25.0%. The headline conclusion — tailoring is break-even, not a margin business — survives and is arguably strengthened. The year-by-year table does not: the pass-through ratio swings 88% → 97% → 109% → 86%, which is accrual timing noise, not a pricing policy.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "Group 508 was the wrong cost measure (-₹1.24 L); the group-30 Direct Expenses accounts are correct (+₹45,511)",
+      "verdict": "CONFIRMED",
+      "original_number": "-₹1.24 L (wrong) vs +₹45,511 (right)",
+      "live_number": "Group 508 credits ₹17,02,929 vs Direct Expenses debits ₹15,33,512 — a ₹1,69,417 gap that is opening balances and receipts, exactly as the lane diagnosed",
+      "query_used": "Contra-leg self-join on TransactionChild for AccountID IN (2228,1922); and SELECT SUM(CreditAmount), SUM(DebitAmount) over AccountMaster.GroupID=508",
+      "why": "The lane's self-correction is right and it reported its own error rather than burying it. The expense genuinely lands on accounts 2228 'Stiching Charges' and 1922 'Stiching Exp.', both group 30 Direct Expenses, with the tailors' payable as the contra. Good discipline.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "Stitching attaches to only 13.9% of the fabric ARY sells (187 of 1,341 bills)",
+      "verdict": "QUALIFIED",
+      "original_number": "187 / 1,341 = 13.9% attach",
+      "live_number": "Arithmetic reproduces (FY26-27 to 30-Aug: 191/1,388 = 13.8%; live 12m: 314/2,713 = 11.6%; widened to all garment groups: 431/4,977 = 8.7%). But by counter: Ary Clothing 313/1,611 = 19.4%, Ary Pos 1/1,102 = 0.09%",
+      "query_used": "CTE over SaleHeader x SaleDetail x ProductMaster flagging MAX(CASE WHEN ProductGroupID IN (183,124,165)) and MAX(CASE WHEN ProductID='07NL') per SerialNumber, 2025-09-01 to 2026-09-01; then the same CTE grouped by WarehouseMaster.WarehouseName",
+      "why": "The number reproduces but the metric cannot measure what it claims, and the blend hides the actionable finding. First, 74% of stitching bills (443 of 734 in FY26-27) contain no fabric line at all — customers bring cloth back on a later visit, and with 96.3% of bills anonymous that link is unrecoverable, so same-bill co-occurrence is a floor, not an attach rate. Second, and more useful: the 13.9% is an average of a counter that runs 19.4% and a counter that runs 0.09%. Ary Pos sells ₹20.7 L/yr of fabric and unstitched suits and books 4 stitching lines a year. That is the concrete thing to fix, and the lane missed it despite building a warehouse-economics table in the very next finding.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "HP notifies a Lok Mitra Kendra rate card: ₹25/G2C application, ₹5 B&W print, ₹15 colour print, ₹5 scan, ₹10 Nakal Jamabandi, ₹25 G2B, ₹5 HPSEB domestic bill (₹10 commercial)",
+      "verdict": "CONFIRMED",
+      "original_number": "₹25/application; ₹5 & ₹15/page print; ₹5/page scan; ₹5/HPSEB domestic bill; 74 services",
+      "live_number": "All seven rates verbatim in the source PDF; 74 numbered services; S.No 69-74 (EoDB / District Administration) at ₹50",
+      "query_used": "curl -sL https://himseva.hp.gov.in/pages/staticSite/Rate%20List%20of%20LMK%20Charges%20for%20G2C%20Services.pdf (HTTP 200, 293,573 bytes, 8 pages) then pdftotext -layout and grep on the '*LMK User Charges' table",
+      "why": "The strongest claim in the lane. The cited document exists, is 8 pages as described, and its final-page table reads exactly: '1 G2C ... Himachal Online Seva (e-District) Services — Rs. 25/- Per Application Submission — Citizen'; '2 ... HPSEB Bill Collection — Rs. 5/- Per Domestic Bill / Rs. 10/- Per Commercial Bill'; 'Issuance of Nakal Jamabandi — Rs. 10/- Per Page'; '3 G2B — Rs. 25/- Per Application'; '4 Scanning — Rs. 5/- Per Page'; '5 Black & White Page Print — Rs. 5/- Per Page'; '6 Color Print — Rs. 15/- Per Page'. Serial numbers run to 74. Nothing overstated.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "Two full bank branches sit at Baru Sahib (SBI SBIN0011784, PNB PUNB0975500), which kills the AePS thesis",
+      "verdict": "CONFIRMED",
+      "original_number": "2 branches on campus, both NEFT/RTGS/IMPS/UPI",
+      "live_number": "Both IFSC records live and exact",
+      "query_used": "curl -s https://ifsc.razorpay.com/SBIN0011784 and /PUNB0975500",
+      "why": "SBIN0011784 returns BRANCH 'BARU SAHIB', ADDRESS 'VILL AND P O BARU SAHIB, DISTT SIRMAUR ... 173101', NEFT/RTGS/IMPS/UPI all true. PUNB0975500 returns BRANCH 'GURUDWARA BARU SAHIB', ADDRESS 'VPO BARU SAHIB, TEH RAJGARH, DISTT SIRMAUR HP 173101', all four rails true, with a contact number. Quoted verbatim by the lane. One honest limit: an IFSC record proves a branch is registered at that address, not that a counter is staffed daily or that an ATM exists — which the lane itself lists as an open question rather than assuming away.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "PIN 173101 has only 1 Sub Post Office (Rajgarh) and 15 Branch Post Offices; Baru Sahib is a Branch Post Office",
+      "verdict": "CONFIRMED",
+      "original_number": "1 Sub PO, 15 Branch POs, 16 total",
+      "live_number": "16 offices; Counter({'Branch Post Office': 15, 'Sub Post Office': 1}); 'Baru Sahib' = Branch Post Office, Block Pachhad, Division Solan; 'Rajgarh (Siramur)' = Sub Post Office",
+      "query_used": "curl -s https://api.postalpincode.in/pincode/173101 | python3 -c \"...Counter(p['BranchType'] for p in pos)...\"",
+      "why": "Exact, down to the block and division names. The courier recommendation's factual base holds.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "Paytm/UPI is 56.3% of all tender lines and 42.9% of value in FY26-27",
+      "verdict": "QUALIFIED",
+      "original_number": "56.3% of tenders, 42.9% of value",
+      "live_number": "Tender share 56.3% CONFIRMED (103,070 of 182,995). Value share is 46.6% in FY26-27 and 47.5% over 12 months, not 42.9%",
+      "query_used": "SELECT m.MOPName, COUNT(*), SUM(sp.Amount), SUM(sp.TenderAmount), SUM(sp.ReturnAmount) FROM SalePayment sp JOIN SaleHeader h ... LEFT JOIN ModeOfPayment m ... GROUP BY m.MOPName, run for FY26-27 and for 2025-09-01..2026-09-01",
+      "why": "The tender-count half — the half that actually carries the 'residents are already digital, don't build recharge' recommendation — reproduces exactly. The value half is wrong in a way neither the lane nor the vault caught. Cash rows book the full amount tendered in both Amount and TenderAmount and the change handed back in ReturnAmount; non-cash rows use Amount only. So counting cash's Amount double-counts change. Netting cash and summing Paytm.Amount + Credit.Amount + Cash.(Tender-Return) gives ₹7,65,87,017 against ₹7,66,69,025 of 12-month gross sales — a 0.11% residual. On that basis Paytm is 47.5% of value. Worth flagging upstream: Data-Quality-Traps.md Trap 3 declares every amount column unusable and 'never quote a rupee split by payment mode'. That is too strong — the split is recoverable, and the vault should be corrected.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "~36,650 bills/month in FY26-27, with 54.4% of all bills between 17:00 and 20:00",
+      "verdict": "QUALIFIED",
+      "original_number": "~36,650 bills/month; 54.4% in four evening hours",
+      "live_number": "36,019 bills/month (Apr 37,085 / May 41,388 / Jun 38,563 / Jul 29,576 / Aug 33,484); hours 17-20 = 94,417 of 180,096 = 52.4%; hours 17:00-19:59 = 39.7%",
+      "query_used": "SELECT FORMAT(VoucherDate,'yyyy-MM'), COUNT(*) FROM SaleHeader WHERE VoucherDate>='2026-04-01' GROUP BY ...; SELECT DATEPART(hour, DateTimeIn), COUNT(*) FROM SaleHeader WHERE VoucherDate>='2026-04-01' GROUP BY ...",
+      "why": "Directionally right and the 09:00 secondary spike is real (15,607 bills). Two small overstatements: the monthly average is 36,019 not 36,650 once August completes, and '17:00-20:00' labels a window the lane actually computed to 20:59. Read literally as three hours the share is 39.7%, not 54.4%. Doesn't change the staffing recommendation.",
+      "materiality": "colour"
+    },
+    {
+      "claim": "7,709 bills touched Stationary in 4.7 months (~1,640/month, ₹5.35 L) — zero customer-acquisition cost for a print desk",
+      "verdict": "CONFIRMED",
+      "original_number": "7,709 bills / ₹5,35,316; ~1,640/month",
+      "live_number": "8,336 bills / ₹5,88,032 in FY26-27 to 30-Aug = 1,667 bills/month",
+      "query_used": "SELECT g.ProductGroupName, COUNT(DISTINCT d.SerialNumber), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ... JOIN ProductMaster p ... JOIN ProductGroupMaster g ... WHERE h.VoucherDate>='2026-04-01' AND p.ProductGroupID IN (148,181,124,183,165,161) GROUP BY g.ProductGroupName",
+      "why": "Reproduces and extends cleanly with the nine extra days. Note two of the six group IDs the lane cited (181 Academy Books, 165 Fabric) returned zero FY26-27 sales, so its labelling of results to IDs is loose, but no stated figure is affected.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "0C19 'Cabin Booking' billed 119 lines / ₹6,070 in FY23-24 and nothing since",
+      "verdict": "CONFIRMED",
+      "original_number": "119 lines, ₹6,070, then zero",
+      "live_number": "119 lines, ₹6,070, first 2023-04-03, last 2023-11-30, nothing after",
+      "query_used": "SELECT d.ProductID, COUNT(*), SUM(d.FinalSaleAmount), MIN(h.VoucherDate), MAX(h.VoucherDate) FROM SaleDetail d JOIN SaleHeader h ... WHERE d.ProductID IN ('0A32','0BVD','0C19','0BO0','07NL','07NM') GROUP BY d.ProductID",
+      "why": "Exact. Gift Packing 0BO0 also checks out (3,652 lines / ₹53,265 lifetime, still selling on 2026-08-30) as does 07NM 'Stiching Bom' at 1 line / ₹2. The 'ARY launches service SKUs and lets them die' pattern is real.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "Mobile repair is unserved and ARY's entire 'Mobile' product group is 8 SKUs, all chargers — no handsets, no accessories of substance",
+      "verdict": "REFUTED",
+      "original_number": "8 SKUs, all chargers",
+      "live_number": "ProductGroupID 139 'Mobile' = 8 charger SKUs selling ₹2,690 in 12 months. The real category is 15 SKUs in ProductGroupName 'Accessories' (sub-groups Mobile Accessories / Earphone / Mobile Set) selling ₹1,98,119 in 12 months — 74x more",
+      "query_used": "./ary assort probe mobile phone earphone headphone powerbank tempered \"screen guard\" usb cable adapter --months 12; then a UNION ALL comparing SUM(FinalSaleAmount) for ProductGroupID=139 against SubGroupName IN ('Mobile Accessories','Earphone','Mobile Set') over 2025-09-01..2026-09-01",
+      "why": "This is Trap 1 and the CLAUDE.md house rule verbatim: the burden of proof sits on 'missing', and probe is mandatory before any 'ARY does not carry X'. The lane read a group tag instead. Live 12-month sales: Mobile Adapter ₹49,796, Mobile Datacable ₹47,607, Bluetooth Buds ₹46,543, Mobile Ear Phone ₹39,983, Airpod ₹5,594, Bluetooth Headset ₹4,393, Bluetooth Speaker ₹1,395, plus a listed 'Mobile Handset' SKU, a 'Nokia Mobile Battery', and an 'Iphone 17 Pro Max 256Gb Silver' filed under Confectionery. The repair recommendation may still be right — repair is not the same as accessories, and I found no repair SKU anywhere — but its stated evidence is gone, and the ₹55,000/month estimate is 3.3x the entire existing mobile category's annual sales, a stretch the wrong evidence concealed.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "Only ~350 named customers transact monthly and 97% of bills go to walk-in account 00001, so there is no per-resident identity to run a billed service on",
+      "verdict": "QUALIFIED",
+      "original_number": "296-432 named customers/month; 97% of bills to 00001",
+      "live_number": "Counts reproduce (Apr 296 / May 345 / Jun 373 / Jul 432 / Aug 317; walk-in = 96.3% of bills). But named accounts carry ₹2,02,52,413 of ₹7,66,86,  — 26.5% of 12-month value at a ₹1,637 average bill, and 1,064 distinct residents transacted on a named account in 12 months",
+      "query_used": "SELECT CASE WHEN CustomerID='00001' THEN 'walk-in' ELSE 'named' END, COUNT(*), SUM(BillAmount), AVG(BillAmount) FROM SaleHeader WHERE VoucherDate>='2025-09-01' AND VoucherDate<'2026-09-01' GROUP BY ...; SELECT COUNT(DISTINCT CustomerID) ... WHERE CustomerID<>'00001'; SELECT ct.CustomerTypeName, COUNT(*) FROM CustomerMaster c LEFT JOIN CustomerTypeMaster ct ...",
+      "why": "The bill-count statistic is right; the conclusion drawn from it is not. By value a quarter of ARY's revenue already runs on named accounts, 1,064 distinct residents used one in the last year, and CustomerMaster's 3,514 customers are already typed (Student 3,273, Staff 107, Sponsored Students By Trust 36, Trust 20, B-Block 18). The identity rail is not a prerequisite to be built — it exists, is segmented, and carries ₹2.03 Cr/yr. That materially softens the stated blocker on both the delivery and the named-customer recommendations.",
+      "materiality": "load-bearing"
+    },
+    {
+      "claim": "The 3,604 'Akal Academy Cs' ledger accounts are the rail for a billed service",
+      "verdict": "CONFIRMED",
+      "original_number": "3,604 accounts",
+      "live_number": "GroupMaster 506 = 'Akal Academy Cs', 3,604 accounts in AccountMaster",
+      "query_used": "SELECT g.GroupID, g.GroupName, COUNT(*) FROM AccountMaster a JOIN GroupMaster g ON g.GroupID=a.GroupID GROUP BY g.GroupID, g.GroupName HAVING COUNT(*)>50",
+      "why": "Exact. Reporting a near-miss of my own: I first looked in CustomerMaster, found only 3 rows matching 'Akal Academy', and nearly wrote this up as a refutation. The accounts are ledger accounts, not customer records. Same class of error as the one I am auditing — check the right table before asserting absence.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "Ary Pos does 104,491 bills / ₹1.92 Cr while Ary Clothing does 4,623 bills / ₹53 L at a ₹1,146 average — so tailoring belongs at Ary Clothing",
+      "verdict": "QUALIFIED",
+      "original_number": "Ary Clothing avg bill ₹1,146 vs Ary Pos ₹183",
+      "live_number": "Ary Pos 111,506 bills / ₹2,04,32,244 (₹183 avg); Ary Clothing 4,745 / ₹53,96,677 (₹1,137 avg); Basement 9 bills / ₹51,38,246. But 99.8% of stitching revenue is ALREADY billed at Ary Clothing (₹5,89,418 of ₹5,90,468 over 12 months)",
+      "query_used": "SELECT w.WarehouseName, COUNT(DISTINCT d.SerialNumber), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ... LEFT JOIN WarehouseMaster w ON w.WarehouseID=d.WarehouseID WHERE h.VoucherDate>='2026-04-01' GROUP BY w.WarehouseName; then the same restricted to ProductID='07NL' and to ProductGroupID IN (183,124,165)",
+      "why": "Every figure reproduces, including the Basement wholesale anomaly. But the recommendation drawn from it — 'tailoring and alteration belong at Ary Clothing' — is already the status quo and therefore a no-op. The live finding the lane should have drawn from its own table is the inverse: fabric and unstitched suits split almost evenly between the two counters (Ary Clothing ₹21.6 L, Ary Pos ₹20.7 L over 12 months), yet Ary Pos books 4 stitching lines a year. Half of ARY's fabric is sold at a counter with no stitching desk.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "Tailors are settled up — net payable to all 18 is -₹3,388 — so the thin margin is not a timing artefact",
+      "verdict": "QUALIFIED",
+      "original_number": "-₹3,388",
+      "live_number": "-₹3,388 exactly (credits ₹17,02,929, debits ₹17,06,317). But the last stitching accrual is dated 31-Jul-2026 and August's ₹43,410 of stitching revenue has no cost booked against it",
+      "query_used": "SELECT SUM(c.CreditAmount)-SUM(c.DebitAmount) FROM TransactionChild c JOIN TransactionMaster m ON m.SerialNumber=c.SerialNumber JOIN AccountMaster a ON a.AccountID=c.AccountID WHERE a.GroupID=508 AND m.IsDeleted=0; plus the monthly expense series",
+      "why": "The number is exact to the rupee. The inference is not: the payable is flat precisely because the cost is accrued by a single month-end journal, so it is always near zero on the last accrual date and always understated after it. It removes the WIP objection for July and earlier and says nothing about August. This is the same cut-off that inflates the headline margin.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "The recommended service set contributes ~₹2.0-2.2 L/month, about 2.8% of ARY's ~₹8.96 Cr annualised revenue",
+      "verdict": "QUALIFIED",
+      "original_number": "₹2.0-2.2 L/month; 2.8% of ₹8.96 Cr",
+      "live_number": "The sizing table's contribution column sums to ₹2,24,000/month. Trailing 12-month gross sales are ₹7,66,69,025 and net of ₹17,08,858 of returns are ₹7,49,60,166 — so the share is ~3.0-3.6%, not 2.8%",
+      "query_used": "SELECT SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ... WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01'; SELECT SUM(r.FinalSaleAmount) FROM SaleReturnDetail r JOIN SaleReturnHeader rh ...; plus arithmetic on the lane's own table",
+      "why": "Three separate problems, none fatal but all in the same direction. (1) The table sums to ₹2.24 L, above the stated range. (2) ₹8.96 Cr annualises the Apr-Aug peak, which includes the school session start; the actual trailing year is ₹7.50 Cr net, so the denominator is ~19% too big. (3) More seriously, the portfolio's blended contribution margin is ₹2.24 L on ₹4.15 L of revenue = 54%, with no labour deducted in any row — even though the print row lists '1 operator' as a requirement and the lane's own recommendation is that the counter be staffed 17:00-20:00. One salary at Baru Sahib rates would consume a quarter of the whole portfolio's contribution. The lane's own honesty caveat ('services will not move ARY's top line much') is the right conclusion; the number reaching it is soft.",
+      "materiality": "supporting"
+    },
+    {
+      "claim": "India Post franchise commission rates and NPCI's AePS interchange could not be verified",
+      "verdict": "UNTESTABLE",
+      "original_number": "none stated",
+      "live_number": "n/a",
+      "query_used": "none — the lane states no figure to test",
+      "why": "Correctly marked NOT-CHECKED, with the failed URLs and the absent Wayback snapshots named. No number is asserted and no recommendation rests on one; the courier case is explicitly rebuilt on a private-carrier model instead. This is how an unverifiable external should be handled, and the same discipline shows in the CSC finding, where the lane flags that its own source pages date to 2016-17 and that HP is not a Digital Seva e-District state. Separately, I confirmed the Wikipedia figures the print sizing leans on (1,538 students, 24 programmes, 129 schools, ~60,000 students, 400 acres in 1956) are all present verbatim on that page — though a Wikipedia number carries no date and should not be treated as a current headcount.",
+      "materiality": "colour"
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

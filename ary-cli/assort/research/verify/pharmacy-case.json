@@ -1,0 +1,182 @@
+{
+  "lane": "pharmacy-case",
+  "claims_tested": 19,
+  "lane_confidence_after": "medium",
+  "single_biggest_error": "Finding 9 — \"ARY's ERP cannot track pharmaceutical batches or expiry dates at all\", which the lane itself calls \"the hidden blocker\". Every sub-fact it checked is true (ProductChildMaster.ExpDate/MfgDate = 0 of 111,225; no column literally named Batch on SaleDetail/PurchaseDetail) but the conclusion is wrong. FusionERP8's batch dimension is called ProductChildID, it is present on BOTH SaleDetail and PurchaseDetail, and it is in live use (Benadryl 150 ml carries 22 children, 8 of them sold; Strepsils 11 children, 9 sold). Stock (104,697 rows) and ProductChildDetail both carry ExpDate and MfgDate columns, and MatrixMaster.ActivateExpiry is set non-zero on all 5 matrices. So the ERP ships an expiry-dated batch model that is simply never populated — \"unconfigured\", not \"incapable\". That changes the fix from a ₹50,000 pharmacy-module capex line plus an open question to the ERP vendor, into \"switch it on and enforce data entry at goods-in\". It is also the exact failure mode the vault's Data-Quality-Traps page and JIVO correction C-0016 exist to prevent: a blank means the value lives somewhere else, under a different name.",
+  "verdicts": [
+    {
+      "claim": "ARY sold ₹41,023 of unambiguously allopathic drugs in the last 12 months across 613 bills",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "₹41,023 / 613 bills / 12 months",
+      "live_number": "₹41,385 / 621 bills over the lane's actual window; ₹39,250 / 604 bills over a true 12 months (lane-equivalent 15 SKUs)",
+      "query_used": "SELECT COUNT(DISTINCT sd.ProductID), COUNT(DISTINCT sd.SerialNumber), SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ON sh.SerialNumber=sd.SerialNumber WHERE sh.VoucherDate>='2025-08-01' AND sh.VoucherDate<'2026-08-22' AND sd.ProductID IN ('02DZ','02E0','0B1I','0EXC','0E5S','0FBH','0FBG','01N1','0BRE','03DR','0698','0A2S','0BL1','01NG','0BL8','0BL9','0BRF','0DDX') — then again with 2025-09-01..2026-09-01",
+      "why": "I rebuilt the SKU set from the schema without reusing the lane's query and landed within 0.9% of its figure, so the number is real and the finding stands. But the lane's \"last 12 months\" is 2025-08-01 to 2026-08-21 — twelve months and twenty-one days. On a true 12-month window the figure is ₹39,250 / 604 bills, 4.3% lower. The same 12.7-month-divided-by-12 error propagates into every per-month number in the file."
+    },
+    {
+      "claim": "essentially all at the Ary Pos counter, Baru Sahib; warehouse split Ary Pos 612 bills ₹40,967, Ary Clothing 1 bill ₹56",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "Ary Pos 612 bills / ₹40,967; Ary Clothing 1 bill / ₹56",
+      "live_number": "Ary Pos 611 bills / ₹39,588; Ary Clothing 1 bill / ₹56 — 100% under LocationID 15 (Ary Baru Sahib, GSTIN 02AACCJ4223F1Z8)",
+      "query_used": "... LEFT JOIN LocationMaster lm ON lm.LocationID=sh.LocationID LEFT JOIN WarehouseMaster wm ON wm.WarehouseID=sd.WarehouseID GROUP BY lm.LocationName, wm.WarehouseName",
+      "why": "Reproduces exactly, including the single ₹56 Ary Clothing bill. Both warehouses sit under the Baru Sahib registration, so the exposure is entirely at the HP premises — which is what the licensing argument needs."
+    },
+    {
+      "claim": "there is no evidence in the system that ARY holds a Form 20/21 retail drug licence",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "`ary locations` carries no drug-licence field",
+      "live_number": "LocationMaster carries PanNo, CSTNo, VATNo, ServiceTaxNo and 8 empty LMField slots across all 3 locations — no drug-licence column exists anywhere in the schema",
+      "query_used": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='LocationMaster'; SELECT LocationID,LocationName,PanNo,CSTNo,VATNo,ServiceTaxNo,Remarks,LMField1..8 FROM LocationMaster",
+      "why": "True but close to vacuous, and the headline promotes it into an assertion the data cannot support. FR8HODBNEW has no field in which a drug licence could ever be recorded, so its silence is not evidence of absence. The licence question has to be settled by asking ARY operations, not by this database."
+    },
+    {
+      "claim": "Lifetime ₹1,22,587 across 1,953 bills",
+      "verdict": "REFUTED",
+      "materiality": "colour",
+      "original_number": "₹1,22,587 / 1,953 bills lifetime",
+      "live_number": "₹1,01,134 / 1,819 bills for a strict 18-SKU superset of the lane's own set",
+      "query_used": "SELECT COUNT(DISTINCT SerialNumber), SUM(FinalSaleAmount) FROM SaleDetail WHERE ProductID IN (the 18 codes above)",
+      "why": "Arithmetically impossible as stated: my 18-SKU set is a superset of the lane's 15, so its lifetime total must be an upper bound — yet the lane's figure is 21% higher. It can only be reached by silently widening the net to discontinued variants (old Cipla Omni Gel ₹12,547, Benadryl 100 ml Dry Cough ₹7,074, Selsun 60 ml ₹7,245), and adding those overshoots to ₹1,40,428. Not reproducible in either direction."
+    },
+    {
+      "claim": "Roughly three-quarters of that allopathic slice is Schedule H prescription molecules — ≈₹31,200 of ₹41,023 (76%)",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "₹31,200 / 76%",
+      "live_number": "₹31,173.64 on the 10 named SKUs in the lane's own window = 76.0%",
+      "query_used": "Same shape restricted to ProductID IN ('02DZ','02E0','0B1I','0EXC','0E5S','0FBH','0FBG','01N1','0BRE','03DR')",
+      "why": "The rupee figure reproduces to four significant figures and the 76% arithmetic is sound. The Schedule H classification behind it is the lane's own and only half holds up: diphenhydramine (Benadryl) and diclofenac (Volini/Omnigel) are genuinely Schedule H, but Ring Guard is miconazole and not clotrimazole as the lane states, and selenium sulphide's Schedule H status is asserted from no source. The lane self-labels this ESTIMATED and says to check the packs — correct discipline, and it must actually be done before anyone leans on the severity claim."
+    },
+    {
+      "claim": "ARY's ERP cannot track pharmaceutical batches or expiry dates at all; SaleDetail and PurchaseDetail have no batch column",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "0 of 111,021 product-child rows carry an expiry date",
+      "live_number": "0 of 111,225 — but Stock (104,697 rows) and ProductChildDetail (111,225) BOTH carry ExpDate + MfgDate columns, MatrixMaster.ActivateExpiry=58 on all 5 matrices, and the batch dimension ProductChildID IS on SaleDetail and PurchaseDetail and is in live use (Benadryl 150 ml: 22 children, 8 sold)",
+      "query_used": "SELECT TABLE_NAME,COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE COLUMN_NAME LIKE '%Exp%' OR '%Mfg%' OR '%Batch%'; SELECT COUNT(*), SUM(CASE WHEN ExpDate>'1901-01-01' THEN 1 ELSE 0 END) FROM Stock / ProductChildDetail / ProductChildMaster; SELECT ProductID,(SELECT COUNT(*) FROM ProductChildMaster pc WHERE pc.ProductID=p.ProductID),(SELECT COUNT(DISTINCT sd.ProductChildID) FROM SaleDetail sd WHERE sd.ProductID=p.ProductID) FROM ProductMaster p",
+      "why": "Every count the lane ran is right; the conclusion drawn from them is not. The lane searched for a column called Batch, found none, and declared the capability absent — but FusionERP8 calls a batch a ProductChild, it is stamped on every sale and purchase line, and the expiry fields hang off it and off Stock. The system is unconfigured, not incapable, which is a completely different remediation (turn it on and enforce goods-in entry) and deletes both the ₹50,000 pharmacy-module capex line and the open question to the ERP vendor."
+    },
+    {
+      "claim": "Realised gross margin 26.83% on Medicare and 32.37% on the allopathic subset",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "26.83% Medicare / 32.37% allopathic",
+      "live_number": "26.77% Medicare (rev ₹3,20,127, cost ₹2,34,444) / 32.18% allopathic (rev ₹39,644, cost ₹26,885), live 12m",
+      "query_used": "SELECT SUM(sd.FinalSaleAmount), SUM(CASE WHEN pc.PurchaseCost>0 THEN sd.Quantity*pc.PurchaseCost END) FROM SaleDetail sd JOIN SaleHeader sh ... LEFT JOIN ProductChildMaster pc ON pc.ProductChildID=sd.ProductChildID AND pc.LocationCode=sd.LocationCode WHERE p.ProductGroupID=138 — cross-checked against SELECT SUM(pd.ItemValue), SUM(pd.Quantity*pd.SellingRate) FROM PurchaseDetail pd JOIN PurchaseHeader ph ...",
+      "why": "Re-derived independently and landed within 0.2 points. I also cross-checked against the purchase ledger, which the vault calls the only trustworthy cost source: Medicare 12m purchases ₹3,37,754 at cost against ₹4,63,465 at selling rate = 27.1% implied margin. So the Trap-4 warning that the price master is biased high does not bite this category, and every Medicare sale line has a costed child row (no coverage bias from the PurchaseCost>0 filter)."
+    },
+    {
+      "claim": "total ARY sales grew 62% year-on-year over the same period",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "+62% (May-2025 ₹58.89 L vs May-2026 ₹95.37 L)",
+      "live_number": "+18.96% rolling 12m-on-12m (₹6.44 Cr Sep-24..Aug-25 → ₹7.66 Cr Sep-25..Aug-26). Medicare on the same basis: +3.81%",
+      "query_used": "SELECT CONVERT(char(7),sh.VoucherDate,126), COUNT(DISTINCT sh.SerialNumber), SUM(sd.FinalSaleAmount), SUM(CASE WHEN p.ProductGroupID=138 THEN sd.FinalSaleAmount ELSE 0 END) FROM SaleHeader sh JOIN SaleDetail sd ... GROUP BY month, Apr-2024..Aug-2026",
+      "why": "The month pair is real (my series gives ₹58,89,347 and ₹95,43,411, +62.05%) but it is one cherry-picked pair from a series that swings 4x between January and March. On a proper rolling-year basis the business grew 19%, not 62%. The finding's whole rhetorical force is the contrast between flat Medicare and a booming shop; the true contrast is 3.8% against 19.0%, which is a third of the gap claimed."
+    },
+    {
+      "claim": "The Medicare group has been dead flat for 29 months at ₹22–30k/month with no growth; ₹28,303/month average, 0% growth",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹22–30k/month, ₹28,303/month, 0% growth over 29 months",
+      "live_number": "range ₹12,774 (Jan-25) to ₹36,362 (Aug-26); 29-month mean ₹25,599; Sep-25..Aug-26 = ₹3,20,127, +3.81% YoY",
+      "query_used": "Same monthly series query as above",
+      "why": "Three separate defects. The stated ₹22–30k band excludes six of the 29 months. The ₹28,303 average is ₹3,39,640 ÷ 12, where ₹3,39,640 is a 12.7-month total — the true 12-month mean is ₹26,677 and the 29-month mean is ₹25,599. Most importantly the lane's final data point (₹26,639) was a truncated August: the full month came in at ₹36,362, the highest Medicare month in the entire 29-month series. \"Dead flat, 0% growth\" is not what the completed series says."
+    },
+    {
+      "claim": "January 2026 did ₹32.45 lakh across 15,078 bills against ₹78.80 lakh / 31,040 in March — 41% of a normal month",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Jan-26 ₹32.45 L / 15,078 bills; Mar-26 ₹78.80 L / 31,040 bills; 41%",
+      "live_number": "Jan-26 ₹32,54,132 / 15,078 bills; Mar-26 ₹78,88,246 / 31,040 bills. Medicare Jan-26 ₹14,416 and Jan-25 ₹12,774 — exact",
+      "query_used": "Same monthly series query",
+      "why": "Bill counts match to the unit and the rupee figures to 0.3%; the Medicare January values match exactly. The only stretch is \"a normal month\": March is the second-highest month of the twelve. Measured against the 12-month mean of ₹63.8 L, January is 51%, not 41%. The operational point — a two-month trough carrying a fixed pharmacist salary — survives intact."
+    },
+    {
+      "claim": "246,356 Ary Pos bills / 20,530 a month footfall; 2.05% Medicare attach at a ₹67 basket; 420 Medicare bills/month",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "246,356 bills; 20,530/month; 2.05%; ₹67; 420/month",
+      "live_number": "246,782 bills in the lane's window (0.2% off) but only 231,106 in a true 12 months = 19,259/month. Attach 4,747/231,106 = 2.054%. Medicare basket ₹65.84 at Ary Pos. Medicare 4,808 bills = 401/month",
+      "query_used": "SELECT COUNT(DISTINCT sd.SerialNumber) FROM SaleDetail sd JOIN SaleHeader sh ... JOIN WarehouseMaster wm ON wm.WarehouseID=sd.WarehouseID WHERE wm.WarehouseName='Ary Pos' AND VoucherDate in each window; plus the Medicare bills/basket query",
+      "why": "The ratios all reproduce — 2.05% attach and the ₹67 basket are solid. The footfall denominator is not: 20,530/month is a 12.7-month count divided by 12, overstating monthly footfall by 6.6%. This is not cosmetic, because the headline hangs on it: at the true 19,259 bills/month a ₹150 basket needs a 3.72% attach to clear ₹1.08 lakh, not the 3.5% advertised."
+    },
+    {
+      "claim": "A licensed pharmacy breaks even at about ₹1.08 lakh/month; fixed base ₹21,500 of which a dedicated pharmacist is ₹18,000",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "₹1,07,500/month breakeven; ₹18,000 pharmacist = 84% of fixed cost",
+      "live_number": "Arithmetic checks (21,500 ÷ (0.22−0.02) = 107,500; 107,500 ÷ 20,530 = ₹5.24/bill; 0.035 × 20,530 × 150 = ₹107,775). Required attach on true footfall = 3.72%, and today's Medicare revenue is ₹26,677/month, so the ask is a 4.0x revenue step",
+      "query_used": "Model recomputation against the verified footfall/attach/basket figures above",
+      "why": "Internally consistent and honestly labelled ESTIMATED. Two things weaken it. The ₹18,000 is modelled as a wholly new FTE on the strength of Finding 4, but the HP affidavit I extracted forbids the qualified person holding a job ANYWHERE ELSE — it does not stop ARY employing one registered pharmacist who also works ARY's own counter, so the true incremental cost is a salary delta and real breakeven is likely below ₹1.08 lakh. Second, the model omits ESI/PF, electricity beyond the AC, and consumables. The errors point in opposite directions and roughly cancel; treat ₹1.08 lakh as a usable order of magnitude, not a computed figure."
+    },
+    {
+      "claim": "HP Form 19 under Rule 59(2), ₹3,000 challan with codes SOL05/0210/02/019/800/09, HP Pharmacy Council Shimla registration mandatory; Pradhan-stamped map in rural areas; Board resolution + MOA/AOA for a company; 3 months' notice to close and fresh licence within 3 months of any change",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "₹3,000 fee; 2 original site plans; 3 months each",
+      "live_number": "Verbatim match on every item",
+      "query_used": "curl https://dhsr.hp.gov.in/Files/Checklist%20Grant%20of%20Retail_0.pdf → pdftotext (9 pages, HTTP 200, 434,091 bytes)",
+      "why": "I downloaded and extracted the same PDF independently. Item 1 Form-19, item 2 the challan with exactly those six codes, item 4 \"Site and Layout plan (to the scale) ... 2 copies in original\", item 5 \"copy of the map duly stamped and signed by the Pradhan in rural area\", item 10 HP Pharmacy Council Shimla, items 15–17 the company documents, applicant affidavit paras 10 and 12 for the two three-month obligations. This is the strongest part of the file — findings 3, 5, 6 and 7 are quotable as they stand."
+    },
+    {
+      "claim": "The pharmacist must swear they are 'not engaged anywhere else in any kind of service or business' — they cannot be an existing ARY counter clerk wearing a second hat",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "1 dedicated FTE; 'this single clause is the entire business case'",
+      "live_number": "Quote confirmed verbatim in applicant affidavit para 6 and appointed-person affidavit paras 1 and 3",
+      "query_used": "pdftotext of the same HP checklist PDF, pages 5–9",
+      "why": "The quotation is exact — but the inference over-reads it. \"Not engaged anywhere else\" bars OUTSIDE employment; the companion clause is \"full time paid employee of the firm\", i.e. of ARY. Nothing in the document prevents ARY's registered pharmacist from also serving ARY's own counter. What the affidavit does require (para 4) is that sales happen under that person's personal supervision, so they must be present — a rostering constraint, not necessarily an extra ₹18,000 head. Calling this \"the entire business case\" is the file's second-largest over-claim."
+    },
+    {
+      "claim": "The DPCO 2013 retailer margin on scheduled formulations is 16%, unchanged by the 2026 Amendment Order",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "16%, confirmed current as at 30-Jun-2026",
+      "live_number": "16% confirmed; the paragraph citation and the 2026 amendment scope are not",
+      "query_used": "WebSearch on DPCO 2013 sixteen percent margin to retailer / NPPA",
+      "why": "The 16% number is right and is the operative figure. The citation is shakier than presented — public sources place the \"sixteen percent of the price to the retailer\" provision at para 7 of DPCO 2013, which feeds the para 4 ceiling-price formula the lane quotes. The claim that SO 3516(E) of 30-06-2026 amends only paras 11, 14, 15, 24 and 29 post-dates my knowledge and I could not verify it, so \"confirmed current as at 30-Jun-2026\" is not established."
+    },
+    {
+      "claim": "There is a free charitable hospital on the same campus — Akal Charitable Hospital, run by The Kalgidhar Trust",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "'state-of-the-art healthcare facilities', bed count not stated",
+      "live_number": "100-bed free charitable hospital, PLUS a separate 50-bed Akal De-addiction & Rehabilitation Centre on the same campus",
+      "query_used": "WebSearch: Akal Charitable Hospital Baru Sahib pharmacy drug licence dispensary",
+      "why": "Confirmed and materially strengthened. A 100-bed hospital with medicine, surgery, psychiatry, gynaecology, ENT and dental, plus a 50-bed de-addiction centre handling Schedule H/H1 psychotropics, almost certainly operates a licensed dispensary. That makes the lane's route E — ask the hospital what licence it holds — even more clearly the real P0, and makes the ₹4.9–5.9 lakh private-chemist build harder to justify before that conversation happens."
+    },
+    {
+      "claim": "Eternal University at Baru Sahib has no pharmacy programme, so the pharmacist cannot be sourced in-house",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "0 pharmacy programmes on campus",
+      "live_number": "0 pharmacy programmes across all 7 colleges — and the university is women-only",
+      "query_used": "WebFetch https://eternaluniversity.edu.in/ — full programme list",
+      "why": "Confirmed against the university's own programme list: Health & Allied Sciences offers B.Sc/M.Sc/PhD Nursing, MPH and a Geriatric Care Assistant certificate, no D.Pharm/B.Pharm/Pharm.D/M.Pharm anywhere. One fact the lane missed that bears on its own P1 recommendation: admission is restricted to women, which further narrows the 'sponsor a local candidate through a 2-year D.Pharm' fallback."
+    },
+    {
+      "claim": "the 15 allopathic SKUs [are the full extent of the exposure]",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "15 SKUs, ₹41,023",
+      "live_number": "Missed 5 oral-rehydration-salt SKUs — ₹8,161 across 177 bills in the live 12 months — filed under the Soft Drinks group, HSN 30049086",
+      "query_used": "Group-blind sweep: joined ProductMaster to HSNSACMaster for every SKU with HSNSACCode LIKE '30%' (pharma chapter) with 12m sales, then a ~110-string LIKE scan for drug brands and molecules across all 21,472 SKUs",
+      "why": "The lane name-matched 16 brand strings and never ran a group-blind sweep, so ORS — Cipla ORS 200 ml and four siblings, a modern-medicine NLEM formulation that ARY's own HSN coding tags as oral rehydration salts — was invisible because the category tree files it under Soft Drinks. This is precisely Trap 1 in the vault. Including it lifts the exposure about 21%. In the lane's defence, my wide sweep found no OTHER missed prescription line, so its net was otherwise sound; the contestable next tier (Dettol/Savlon antiseptic ₹29,394, Eno ₹17,191, Vicks Inhaler ₹9,718) is genuinely arguable and the lane was right to leave the ASU products alone."
+    },
+    {
+      "claim": "[the exposure is a historic 12-month total]",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "613 bills in the 12 months to 2026-08-22",
+      "live_number": "22 further allopathic bills between 2026-08-22 and 2026-08-30, the most recent at 13:24 today (Paracitamol 500 Mg)",
+      "query_used": "SELECT CONVERT(char(10),sh.VoucherDate,126), COUNT(DISTINCT sd.SerialNumber), SUM(sd.FinalSaleAmount) FROM SaleDetail sd JOIN SaleHeader sh ... WHERE sh.VoucherDate>='2026-08-22' AND sd.ProductID IN (the 18 codes) GROUP BY date",
+      "why": "The lane wrote against a feed frozen at 2026-08-21. Now that the stock audit is over and data runs to today, the exposure is demonstrably live and continuing at roughly 2.4 bills a day. This strengthens the lane's central point: the till block in recommendation 2 is not tidying up history, it stops something happening this afternoon."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

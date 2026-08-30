@@ -1,0 +1,200 @@
+{
+  "lane": "suppliers-hp",
+  "claims_tested": 21,
+  "lane_confidence_after": "medium",
+  "single_biggest_error": "Finding 7 — \"a LIKE scan for tablet / syrup / capsule / paracetamol / crocin / dolo across all 21,466 SKUs returns zero medicines (only rose syrup and Hershey's syrup)\" — is flatly false, and it is the entire evidentiary base for the lane's #1 P0 (₹2 L/month, ₹2.75 L one-off, \"months\" of effort). ARY's ProductMaster contains a sub-group literally named \"Paracitamol\"; Crocin 500 Mg sold 26 units / ₹502, Paracitamol 500 Mg 59 units / ₹590, Disprin Tablet 120 units / ₹907 with a last sale of 2026-08-23, alongside Crocin Advance, Crocin Pain Relief Tab, Stopache Paracitamol, Reckitt Disprin Tab, Avomine Tablet, Diclowin Plus, Wincold 10 Tab, D Cold Total, Cofsils, Strepsils (₹7,297) and three Otrivin nasal sprays. The lane committed the exact failure the vault's house rule exists to prevent — it asserted \"missing\" without the probe surviving — and it inverts the action. The lane frames the pharmacy as greenfield upside; the data says ARY is already retailing paracetamol and aspirin tablets over a counter with no drug licence on file, which makes this a compliance question first and a growth question second. (Which of those SKUs are Schedule H is my inference from the molecules, not a DB fact.) The widest error is different — Finding 23's 22% gross margin, applied to categories that run -5.5% to +1.5% on ARY's own book — but F7 is the one that is simply untrue.",
+  "verdicts": [
+    {
+      "claim": "Delhi HO (LocationID 1) has ONE purchase voucher in the entire book, ₹0, 2023-04-01; Baru Sahib has 7,711 bills / ₹19.03 Cr all-time and 2,966 bills / ₹6.36 Cr / 149 suppliers in 12m",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "1 voucher ₹0; 7,711 bills ₹19.03 Cr; 2,966 bills ₹6.36 Cr; 149 suppliers",
+      "live_number": "LocationID 1 = 1 voucher, ₹0, and it is an IsOpening row. LocationID 15 = 7,773 bills / ₹19.12 Cr all-time (live to 2026-08-30). Lane window: 2,963 bills / ₹6,35,94,154 / 149 suppliers. True 12m (2025-09-01..2026-08-31): 2,831 bills / ₹5.90 Cr / 148 suppliers. Bathinda (16) ₹41.2 L, last 2024-07-08.",
+      "query_used": "SELECT h.LocationID, COUNT(*), SUM(h.BillAmount), SUM(CASE WHEN h.IsOpening=1 THEN 1 ELSE 0 END), MIN/MAX(h.VoucherDate) FROM PurchaseHeader h WHERE h.IsDeleted=0 GROUP BY h.LocationID; same with VoucherDate windows",
+      "why": "Every figure reproduces to within 3 bills. But the inference — 'every plan that says Delhi HO will negotiate/buy this is fiction' — over-reaches: FR8HODBNEW only knows what ARY books. JIVO's Delhi HO buys in SAP, a different system entirely, so the absence of ARY purchase vouchers at the Delhi registration is silent on whether HO can negotiate national terms. The lane half-catches this itself in rec P2."
+    },
+    {
+      "claim": "17 principals mapped to 15 named distributors, ₹1.19 Cr of 12m purchases; category entry is 'a phone call to an existing vendor', onboarding cost effectively zero",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "₹1.19 Cr across 15 distributors; P&G/Nirman ₹4,14,611; HUL/Raja Ram ₹9,23,972; Amul/Leela ₹7,65,789",
+      "live_number": "Distributor identities hold. Nirman IS the Pampers vendor (41 purchase lines all-time, ₹68,314, last 2026-08-11). But the ₹ column understates every distributor because it reports only brand-keyword-matched lines under a header that says the distributor's 12m purchase: Raja Ram Jai Prakash ₹9.24 L stated vs ₹39,39,117 actual (4.3x); Himachal Wholesale Syndicate ₹9.62 L across its 5 rows vs ₹39,82,169; Sahni Trading ₹5.98 L vs ₹22,66,935; Leela ₹7.66 L vs ₹16,29,320; Gian Chand ₹5.77 L vs ₹16,64,947; Nirman ₹4.15 L vs ₹5,40,543.",
+      "query_used": "SELECT a.AccountName, COUNT(*), SUM(h.BillAmount) FROM PurchaseHeader h JOIN AccountMaster a ON a.AccountID=h.AccountID WHERE h.IsDeleted=0 AND h.VoucherDate BETWEEN '2025-08-01' AND '2026-08-21' AND a.AccountName IN (...) GROUP BY a.AccountName; plus PurchaseDetail x ProductMaster LIKE '%pamper%' grouped by supplier",
+      "why": "The map of who invoices Baru Sahib is real and useful. The rupee column is mislabelled, and the load-bearing inference behind the headline — a principal owning a category means its existing distributor can deliver that category — is untested. It is contradicted for the biggest case: ARY has bought ITC ambient goods for 3.5 years through Solan Agencies and has never once bought an ITC Master Chef line; there are zero Master Chef SKUs in the master."
+    },
+    {
+      "claim": "The deep-freeze cold chain already runs: McCain frozen arrives via Laxmi Narayan Suresh Kumar, Solan — 23 bills in 12m, one every 16 days, ₹14,660 average",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "23 McCain deliveries in 12m, one every 16 days",
+      "live_number": "Laxmi Narayan Suresh Kumar has 23 bills in the lane window (₹3,37,196, avg ₹14,660) but only 5 of them contain any McCain line (60 lines, ₹44,801). Its top purchase lines are Kinder Joy ₹36,383, Nutella ₹30,330, India Gate basmati ₹17,178, Foodcoast ketchup/mayonnaise, Dhampure sugar — an ambient general-trade wholesaler.",
+      "query_used": "SELECT a.AccountName, COUNT(DISTINCT h.SerialNumber), COUNT(*), SUM(d.ItemValue) FROM PurchaseDetail d JOIN PurchaseHeader h ... JOIN ProductMaster p ... WHERE p.ProductName LIKE '%mccain%' OR '%mccam%' ... GROUP BY a.AccountName; then the same vendor's full product mix",
+      "why": "The lane counted the vendor's whole delivery schedule as frozen deliveries. A McCain-carrying vehicle reaches Baru Sahib 5 times a year, not 23, and nothing in the book shows that vendor is refrigerated for its other 18 runs. The Vadilal half stands: Shiv Shakti, 15 bills / 179 lines / ₹3,66,218 (lane said 14 / 173 / ₹3,50,856)."
+    },
+    {
+      "claim": "P0: 'Fill the frozen vehicle that already runs — 23 deliveries a year currently carrying ₹44,801 of stock'; ARY runs a freezer route 23 times a year to sell ₹52k",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹52k of frozen sales; vehicle ~90% empty; ₹40,000/month impact",
+      "live_number": "ARY sells ₹4,88,580 of Vadilal a year (42 SKUs, 15,632 units, lane window) on that same cold chain. Group 128 Frozen = ₹6,06,635 in the lane window / ₹5,60,077 live 12m, of which ₹5,08,171 is paneer. The ₹52k is only the McCain+Pagro packaged-frozen subset. Separately, 30 Kwality Wall's SKUs exist in the master, have NEVER been purchased (0 PurchaseDetail lines all-time) and sold ₹0 in 12m.",
+      "query_used": "SELECT COUNT(DISTINCT d.ProductID), SUM(d.Quantity), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ... JOIN ProductMaster p ... WHERE p.ProductName LIKE '%vadilal%' AND window; SELECT ... WHERE p.ProductGroupID=128; SELECT COUNT(*) FROM PurchaseDetail d JOIN ProductMaster p ... WHERE p.ProductName LIKE '%kwality%'",
+      "why": "The 'empty vehicle' framing rests on a number that describes one brand's shelf, while the lane's own F3 says ARY buys ₹3.51 L of Vadilal — the two are never reconciled. And the specific fill proposed is weak: Kwality Wall's is already catalogued and has never been ordered once in 3.5 years, and ITC Master Chef has zero SKUs and zero purchase history through the vendor the lane names."
+    },
+    {
+      "claim": "Fresh F&V is single-sourced from ONE vendor 100+ km away with no GSTIN — Aeron, Naraingarh, 261 bills / ₹71.0 L / ₹27,192 average, >98% of both Fruits and Vegetable groups",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "261 bills, ₹71.0 L, ₹27,192 avg, >98% concentration",
+      "live_number": "Live 12m: 247 bills, ₹66,51,997, avg ₹26,931, min ₹987, GSTIN blank, CityName Naraingarh / StateName Haryana / pincode 134203. Concentration in groups 129+159: ₹59,79,360 of ₹61,13,201 = 97.8% of purchase value. F&V sales 12m ₹63,58,693 (lane said ₹62.7 L).",
+      "query_used": "SELECT a.AccountName, a.GSTINNo, COUNT(*), SUM(h.BillAmount), AVG(h.BillAmount), MIN(h.BillAmount) FROM PurchaseHeader h JOIN AccountMaster a ... GROUP BY ...; then PurchaseDetail x ProductMaster WHERE p.ProductGroupID IN (129,159) grouped by supplier",
+      "why": "Reproduces cleanly; the lane's window just runs 386 days rather than 365. One nuance the lane misses: by bill COUNT the concentration is 60%, not 98% — six other accounts (campus cold store, Local Purchase, Radha Seed House, Purambika, Hygienic Milk, Sehgal) already deliver 159 of 403 F&V bills. The continuity risk is real but it is a value concentration, not a sole supplier."
+    },
+    {
+      "claim": "P1: break the fresh single point of failure by growing Hanuman Trading Co. (Naraingarh, already 12 bills/yr) into a real second F&V source — 'the second vendor already exists in the ledger', ₹14,000/month",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "12 bills/yr, existing second F&V source, ₹14,000/month impact",
+      "live_number": "Hanuman Trading Co. (AccountID 4673, GSTIN 06AFKPV7240Q1ZL, Naraingarh) has 12 bills / ₹61,307 all-time (2025-10-19 to 2026-08-05) and supplies disposable plates, disposable glasses 150/200/300 ml, hinged boxes, packing paper pouch, tissue paper, toilet rolls and cling film. ZERO fruit or vegetable lines, ever. It does not appear in the groups 129/159 supplier list at all.",
+      "query_used": "SELECT p.ProductName, g.ProductGroupName, COUNT(*), SUM(d.ItemValue) FROM PurchaseDetail d JOIN PurchaseHeader h ... JOIN ProductMaster p ... WHERE h.AccountID=4673 GROUP BY p.ProductName, g.ProductGroupName",
+      "why": "The lane matched it on town name — Hanuman is in Naraingarh, the same town as Aeron — and concluded it was a fresh-produce second source. It sells paper plates. This is a costed P1 recommendation built entirely on a city-string coincidence, the same class of error as the diff.py false-missing incident recorded in Data-Quality-Traps §2."
+    },
+    {
+      "claim": "₹1.28 Cr — 20% of 12m purchases, 1,825 of 2,966 bills — from 16 GSTIN-less suppliers; at 18% blended, lost input credit worth up to ~₹23 L/yr (rec P1 = ₹1,00,000/month)",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹1.28 Cr / 16 suppliers / 1,825 bills; up to ₹23 L/yr ITC; ₹1,00,000/month",
+      "live_number": "Headcount confirmed: 16 suppliers, ₹1,27,50,601, 1,821 bills (lane window); ₹1,18,99,845 / 1,761 bills live 12m. But total TaxTotal booked on all 16 across the live 12m is ₹1,771 on ₹1.19 Cr. Composition: Aeron ₹66.5 L (fresh F&V), Hygienic Milk ₹21.7 L (loose milk), Purambika ₹13.1 L, Sehgal ₹7.2 L (local paneer) — all nil-rated goods — plus ₹8.99 L across six internal campus accounts (Akal Bakery/Dairy/Mess/Modi Khana, Cold Store Baru Sahib, Local Purchase).",
+      "query_used": "SELECT a.AccountName, COUNT(*), SUM(h.BillAmount), SUM(h.TaxTotal) FROM PurchaseHeader h JOIN AccountMaster a ON a.AccountID=h.AccountID WHERE h.IsDeleted=0 AND LTRIM(RTRIM(ISNULL(a.GSTINNo,'')))='' AND window GROUP BY a.AccountName",
+      "why": "The count is right; the money is not. The lane called it 'unresolved' between composition dealers and a missing-GSTIN master, but the tax columns on the bills settle it — essentially no GST was charged, so there is no input credit to recover, and roughly ₹1.09 Cr of the ₹1.19 Cr is nil-rated fresh produce, loose milk and paneer or internal inter-unit accounts that are not vendors at all. ₹12 L/year of recommended impact that cannot exist."
+    },
+    {
+      "claim": "Prescription medicine is genuinely absent — a LIKE scan for tablet/syrup/capsule/paracetamol/crocin/dolo across all 21,466 SKUs returns zero medicines (only rose syrup and Hershey's syrup); 0 Schedule-H SKUs",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "0 medicines matched; 0 Schedule-H SKUs",
+      "live_number": "ProductMaster has a sub-group named 'Paracitamol'. Sold in the live 12m: Disprin Tablet ₹907 / 120 units (last sale 2026-08-23), Paracitamol 500 Mg ₹590 / 59 units, Crocin 500 Mg ₹502 / 26 units, Strepsils 8 Tab ₹7,297, D Cold Total ₹558, Dabur Honitus syrup ₹16,452, Multani Kuka cough syrup ₹3,626, Johnson's Benadryl ₹12,372, Otrivin nasal spray ₹352. Listed but unsold: Crocin Advance, Crocin Pain Relief Tab, Stopache Paracitamol, Reckitt Benckiser Disprin Tab, Avomine Tablet, Diclowin Plus, Wincold 10 Tab, Cofsils, Revital capsules, Patanjali Drishti Eye Drop, plus Volini/Omnigel/Iodex diclofenac topicals.",
+      "query_used": "./ary assort probe tablet capsule syrup ointment 'eye drop' inhaler injection ; ./ary assort probe paracetamol crocin dolo combiflam disprin saridon cetirizine ; full dump of ProductGroupID=138 with 12m sales",
+      "why": "The lane reported the opposite of what the scan returns — 'crocin' and 'tablet' both match, by name, today. Directionally the category is still thin (₹3.20 L/yr), so the strategic conclusion survives, but the evidence field is false and the consequence inverts: ARY appears to be retailing paracetamol and aspirin tablets already, which makes the drug licence a compliance exposure before it is an opportunity. Whether Avomine and Diclowin are Schedule H is my inference from the molecules (promethazine theoclate, diclofenac), not a DB fact; FR8HODBNEW has no drug-licence field, so ARY's licence status is NOT-CHECKED here."
+    },
+    {
+      "claim": "The 'Medicare' group 138 has 272 active SKUs and is pure OTC, worth ₹3.15 L/yr",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "272 active SKUs, ₹3.15 L/yr",
+      "live_number": "272 SKUs, all flagged active — but only 66 carry any Stock.Quantity. Sales: ₹3,39,046 lane window / ₹3,20,127 live 12m, across 100 SKUs. 172 of 272 SKUs sold nothing in 12 months. Group 138 purchases ₹3,37,754 against ₹3,20,127 of sales in the same window.",
+      "query_used": "SELECT COUNT(DISTINCT p.ProductID), COUNT(DISTINCT CASE WHEN s.q>0 ...), COUNT(DISTINCT CASE WHEN x.val>0 ...) FROM ProductMaster p LEFT JOIN (SELECT ProductID, SUM(Quantity) q FROM Stock GROUP BY ProductID) s ... WHERE p.ProductGroupID=138",
+      "why": "'272 active SKUs' overstates the live shelf by about 4x — IsActive is a catalogue flag, not stock. The real health shelf is ~66 SKUs, it turns ₹3.2 L, and it bought slightly more than it sold last year with two-thirds of the range dead. That is a counter-signal to the P0's ₹2 L/month, not support for it."
+    },
+    {
+      "claim": "P0 pharmacy is worth ₹2,00,000/month on ₹2,75,000 of one-off cost",
+      "verdict": "UNTESTABLE",
+      "materiality": "load-bearing",
+      "original_number": "₹2,00,000/month = ₹24 L/yr",
+      "live_number": "No comparable exists in the book. For scale: the entire Medicare shelf turns ₹3.20 L/yr (₹68 per resident), so ₹24 L/yr is a 7.5x step, and Medicare's own purchase-to-sale spread over the live 12m is -5.5%.",
+      "query_used": "group 138 purchase vs sale, live 12m (see above)",
+      "why": "The lane labels it ESTIMATED and flags the campus-hospital question honestly — that discipline is right. It cannot be tested from FR8HODBNEW. But it is the largest rupee figure in the lane, it sits on a refuted evidence base (F7), and the one adjacent shelf that does exist is overstocked and shrinking. Treat as unsized, not as ₹24 L."
+    },
+    {
+      "claim": "Baby care is not absent: 69 SKUs sold ₹1.89 L in 12m, against sanitary ₹4.54 L on 18 SKUs — 2.4x",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "₹1,89,456 / 69 SKUs; sanitary ₹4,54,017 / 18 SKUs",
+      "live_number": "Lane window, lane's own terms: ₹1,89,184 across exactly 69 SKUs sold — reproduces to 0.1%. Sanitary (sofy/stayfree/whisper/sanitary/napkin) ₹4,60,777 across 23 SKUs sold. Live 12m: baby ₹1,81,632; sanitary ₹4,23,807.",
+      "query_used": "SELECT COUNT(DISTINCT CASE WHEN x.val>0 THEN p.ProductID END), SUM(x.val) FROM ProductMaster p LEFT JOIN (12m SaleDetail x SaleHeader aggregate) x WHERE p.ProductName LIKE '%baby%' OR '%diaper%' OR '%pamper%' OR '%mamy%' OR '%cerelac%' OR '%lactogen%' OR '%johnson%'",
+      "why": "The best-reproduced number in the lane. One contamination: ₹11,815 of the ₹1.89 L is Johnson's Benadryl cough syrup, not baby care — strip it and baby is ₹1,77,369, and the ratio widens to 2.6x. The conclusion (mis-taxonomised, not missing) stands."
+    },
+    {
+      "claim": "Pampers pants in 3 sizes sold 223 packs / ₹21,790; MamyPoko bought once via Himachal Wholesale Syndicate, Dec-2023, then dropped",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "3 sizes, 223 packs, ₹21,790; MamyPoko once, Dec-2023",
+      "live_number": "Pampers: 11 SKUs sold in the lane window, ₹34,026 (live 12m: 11 SKUs, 392 packs, ₹32,351) across S/M/L in five pack configurations. MamyPoko: 7 purchase lines, ₹6,869, spanning 2023-09-14 to 2024-03-31 — last bought March 2024, not December 2023.",
+      "query_used": "SELECT p.ProductID, p.ProductName, SUM(d.Quantity), SUM(d.FinalSaleAmount), MAX(h.VoucherDate) FROM SaleDetail d JOIN SaleHeader h ... WHERE p.ProductName LIKE '%pamper%' GROUP BY ...; and PurchaseDetail WHERE p.ProductName LIKE '%mamy%' grouped by supplier with MIN/MAX VoucherDate",
+      "why": "Pampers is understated by 56% and by size count; MamyPoko's drop date is four months late and it was bought repeatedly, not once. Neither breaks the P0 baby recommendation — it arguably strengthens it, since Pampers is moving better than reported — but both are wrong in a finding stamped VERIFIED."
+    },
+    {
+      "claim": "Rec P2: add Nestle Lactogen / NAN / Cerelac via Parhlad Chand Batra & Sons — ₹20,000/month",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹20,000/month = ₹2.4 L/yr new category",
+      "live_number": "ARY already stocks it and it does not sell. Infant cereal/formula sales: 6 SKUs, 13 units, ₹3,878 in the live 12m; ₹33,732 across 22 SKUs all-time. Purchased from TWO vendors already — Parhlad Chand Batra (last 2025-10-03) and Rachna Enterprises (last 2025-12-24) — total Cerelac+Lactogen procurement ever ≈ ₹27,000.",
+      "query_used": "SELECT COUNT(DISTINCT d.ProductID), SUM(d.Quantity), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ... WHERE p.ProductName LIKE '%cerelac%' OR '%lactogen%' OR '%nestum%' OR '%amulspray%'; plus the same over PurchaseDetail grouped by supplier",
+      "why": "This is not a new category — it is an existing dead one. ₹2.4 L/yr is 62x the current run rate on a shelf that moved 13 units in a year, and the lane's own baby-headcount open question (nobody knows how many under-5s are on campus) is the reason. The IMS Act caution the lane attaches is sound; the sizing is not."
+    },
+    {
+      "claim": "12m purchases ₹6.36 Cr against gross billed sales ₹8.18 Cr, implying ~22% gross margin — use ~22% to convert every revenue estimate below into gross profit",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "₹6.36 Cr / ₹8.18 Cr, ~22% GM applied to all recommendations",
+      "live_number": "Raw totals confirm: ₹6,35,94,154 purchases and ₹8,17,46,340 sales in the lane window. But (a) that window is 386 days, not 365 — a true 12m is ₹5.90 Cr / ₹7.65 Cr; (b) it is gross of ₹17.2 L of sale returns and ₹7.0 L of purchase returns; (c) category-level purchase-vs-sale spreads run from -33.5% to +71.7%: Edible Oil & Ghee -33.5%, Fabrics -8.3%, Atta -7.9%, Vegetable -7.1%, Rice +5.8%, Fruits +12.1%, Personal Care +17.7%, Confectionery +18.0%, against Academy Dress +71.7% and Winter Wear +55.2%. Excluding apparel/fabric the aggregate is 21.0%. Critically, the recommended categories are the thinnest on the book: Medicare -5.5%, Frozen +1.5%, Fruits +12.1%, Vegetable -7.1%.",
+      "query_used": "CTE pur = SUM(d.ItemValue) by ProductGroupID from PurchaseDetail x PurchaseHeader; CTE sal = SUM(d.FinalSaleAmount) by ProductGroupID from SaleDetail x SaleHeader; joined, 2025-09-01..2026-08-31; plus SaleReturnHeader / PurchaseReturnHeader totals and SubTotal/TaxTotal composition on both sides",
+      "why": "Purchases are not COGS and the swing proves it — the negatives are stock builds and the +72% on Academy Dress is fabric bought as one SKU and sold as another (405 stock journals in the window confirm in-house conversion). The 22% is a netting artefact, and it is then applied to exactly the categories that do not earn it. Every rupee of the '₹4.2 L/month → ₹90k-95k of gross margin' conversion is unsafe."
+    },
+    {
+      "claim": "12m purchases by supplier GST state: HP (02) ₹2.71 Cr / 31 suppliers; Delhi (07) ₹1.01 Cr / 68; Haryana (06) ₹62.0 L / 16; Chandigarh (04) ₹59.8 L / 6; Punjab (03) ₹9.3 L / 9; Maharashtra (27) ₹3.4 L",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "HP ₹2.71 Cr/31, Delhi ₹1.01 Cr/68, Haryana ₹62.0 L/16, Chandigarh ₹59.8 L/6, Punjab ₹9.3 L/9, Maharashtra ₹3.4 L",
+      "live_number": "02: ₹2,71,23,409 / 31 · NONE: ₹1,27,50,601 / 16 · 07: ₹1,01,23,948 / 68 · 06: ₹62,01,644 / 16 · 04: ₹59,84,236 / 6 · 03: ₹9,27,790 / 9 · 27: ₹3,40,070 / 1 · 09: ₹1,35,620 / 1 · 29: ₹6,836 / 1",
+      "query_used": "SELECT CASE WHEN GSTINNo blank THEN 'NONE' ELSE LEFT(LTRIM(a.GSTINNo),2) END, COUNT(DISTINCT a.AccountID), SUM(h.BillAmount) FROM PurchaseHeader h JOIN AccountMaster a ... WHERE window GROUP BY ...",
+      "why": "Every figure matches to the rupee, including supplier counts. The four-legged supply-spine framing (Parwanoo-Solan FMCG, Naraingarh fresh, Chandni Chowk garments, Chandigarh household) is the strongest part of the lane."
+    },
+    {
+      "claim": "JIVO group companies are already ARY suppliers (₹50.2 L all-time) but the Delhi leg is dormant since 2024-09-03",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "Haryana Branch 67 bills ₹32.2 L; Vend-06 18 bills ₹8.5 L; Delhi 19 bills ₹9.4 L last 2024-09-03; Jivo Mart Punjab 6 bills ₹8.1 L last 2024-03-31",
+      "live_number": "Haryana Branch (06AACCJ4223F1Z0) 67 bills ₹32,16,028, last 2026-03-31 · Vend-06 (same GSTIN) 18 bills ₹8,52,943 since 2026-04-22 · Delhi (07AACCJ4223F1ZY) 19 bills ₹9,41,745, last 2024-09-03 · Jivo Mart Punjab (03AAFCJ4102J1Z0) 6 bills ₹8,08,306, last 2024-03-31",
+      "query_used": "SELECT a.AccountID, a.AccountName, a.GSTINNo, COUNT(*), SUM(h.BillAmount), MIN/MAX(h.VoucherDate) FROM PurchaseHeader h JOIN AccountMaster a ... WHERE a.AccountName LIKE '%Jivo%' GROUP BY ...",
+      "why": "Every bill count, value and terminal date matches exactly. Note the ₹50.2 L headline excludes Vend-06; the true all-time intercompany figure is ₹58.2 L."
+    },
+    {
+      "claim": "Hardware/electricals/kitchen already ride existing vendors: Harminder Singh & Bros — Appliances ₹126,279 + Kitchen ₹119,003 + Household ₹57,534 + Cookware ₹37,210 over 24m",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "₹13.2 L of 24m hardware-adjacent purchases across 5 vendors",
+      "live_number": "All four Harminder figures reproduce exactly (₹126,279 / ₹119,003 / ₹57,534 / ₹37,210). R.K. Sales Household ₹345,328 and Kitchen ₹77,216 on my 2024-09-01..2026-08-31 window vs the lane's ₹370,475 / ₹80,535 — window drift only. Bansal Brothers and Cm Trading Co. both confirmed on Electricals.",
+      "query_used": "SELECT a.AccountName, g.ProductGroupName, COUNT(DISTINCT h.SerialNumber), SUM(d.ItemValue) FROM PurchaseDetail d JOIN PurchaseHeader h ... JOIN ProductMaster p ... WHERE p.ProductGroupID IN (123,109,116,136,134) AND 24m GROUP BY ...",
+      "why": "Clean. One omission: Himachal Wholesale Syndicate already supplies ₹50,655 of Electricals over 13 bills — a bigger electrical line than Bansal Brothers, and on a 10-day cadence rather than a monthly Chandigarh run. That is a better route for the proposed electrical rack than the one recommended."
+    },
+    {
+      "claim": "Optical/eyewear is absent — a reading-glasses and sunglasses rack is the highest-margin, lowest-risk new SKU family",
+      "verdict": "CONFIRMED",
+      "materiality": "load-bearing",
+      "original_number": "0 optical SKUs",
+      "live_number": "Probing spectacle / sunglass / goggle / 'reading glass' / frame returns 33 SKUs, all of them photo frames in Decoratives (₹6,217 of 12m sales). No eyewear SKU exists.",
+      "query_used": "./ary assort probe spectacle sunglass goggle 'reading glass' frame",
+      "why": "A genuine gap that survives the probe. The wholesale price band (₹110-350) comes from IndiaMART and is unverified, and the margin claim inherits the F23 problem, but the absence itself is real."
+    },
+    {
+      "claim": "Mobile accessories: 8 active SKUs, ₹2,690 of 12m sales",
+      "verdict": "QUALIFIED",
+      "materiality": "colour",
+      "original_number": "8 SKUs, ₹2,690",
+      "live_number": "The 'Mobile / Charger' sub-group is exactly 8 SKUs / ₹2,690 — reproduces precisely. But three more earphone/headphone SKUs sit in the 'Accessories' group and sold ₹2,323, so the real accessory line is 11 SKUs / ₹5,013.",
+      "query_used": "./ary assort probe charger earphone powerbank 'data cable' headphone 'mobile cover'",
+      "why": "The quoted figure is right for the group it came from and wrong for the category, because the category is split across two groups — the same taxonomy trap the lane correctly identifies elsewhere and then falls into here. Does not change the recommendation (defer), which is sound."
+    },
+    {
+      "claim": "Drug licence: 10 sq m retail / 15 sq m retail+wholesale, Form 19 → Form 20 + 21, fees ₹500-1,500, 5-year validity — 'VERIFIED (both sources agree)'",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "10 sq m / 15 sq m, ₹500-1,500, 5 years",
+      "live_number": "Fetched cleartax.in/s/drug-license: fees 'vary from Rs.1,500 to 500' and 'valid for five years' are verbatim — both CONFIRMED. But the page says 'the area of the pharmacy/unit should be 15 square meters. In the case of a retail and medical shop, it should be 10 square meters' — it does not make the retail-vs-retail+wholesale distinction the lane attributes to it. Forms 20, 21, 20-B and 21-B do not appear on that page at all.",
+      "query_used": "WebFetch https://cleartax.in/s/drug-license",
+      "why": "Two of four numbers are supported verbatim; the premises mapping and the form numbers are not in the cited source, so the 'both sources agree' stamp is unearned. The lane's statement happens to match Rule 64 of the Drugs & Cosmetics Rules as I understand it — but that is my knowledge, not the citation's, and the lane's own open questions admit HP's actual fee schedule was never reached."
+    },
+    {
+      "claim": "HPMC has an 18,000 MT apple processing plant at Parwanoo and ~11,500 MT of cold storage across Delhi, Mumbai, Chennai and Parwanoo",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "18,000 MT apple at Parwanoo; ~11,500 MT total cold storage",
+      "live_number": "hpmc.in states verbatim: 'Fruit processing plants with installed capacity to process 18000 MTs apple at Parwanoo' and 'Cold storage facilities with total storage capacity of about 11,500 Mts have been created in terminal markets like Delhi, Mumbai, Chennai and Parwanoo.'",
+      "query_used": "WebFetch https://www.hpmc.in/",
+      "why": "The citation contains both numbers exactly as stated. The best-sourced external claim in the lane. Whether HPMC will actually backhaul to 173101 is a phone call nobody has made — but the facts asserted are true."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

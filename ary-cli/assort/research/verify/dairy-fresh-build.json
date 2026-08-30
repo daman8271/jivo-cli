@@ -1,0 +1,200 @@
+{
+  "lane": "dairy-fresh-build",
+  "claims_tested": 21,
+  "lane_confidence_after": "low",
+  "single_biggest_error": "The lane never asked WHO buys the milk. One join to SaleHeader.CustomerID collapses a whole cluster of its findings: every litre of \"Loose Milk\", \"Milk_Z\", \"Dahi_Z\", \"Paneer_Z\" and \"Desi Ghee 1 Ltr\" in the last 12 months went to ONE institutional account — customer 002CM \"Hunger Heroes\" — on 5-12 bulk invoices a year out of the Basement warehouse. There is zero counter-level loose-milk retail. From that single miss the lane derives: (a) a \"Rs 4.98/litre price-master leak\" that is actually a B2B supply contract; (b) a P0 \"reprice in the FusionERP price master\" worth Rs 7,300/month that is worth ~Rs 182/month live, because 91% of the loss sits on a SKU retired on 2026-05-11; (c) a Rs 95,000 milk-ATM P2 to \"fix the measure and the leak\" for a customer who takes 2,500 L on one invoice; (d) an FSSAI/Legal-Metrology exposure premised on \"the shop sells loose milk by volume\"; (e) a finding that a \"Rs 12 L line quietly died three months ago and nobody noticed\" — it did not die, it was recoded from ProductID 07M9 to 0GDA on 2026-06 and is still billing monthly to 2026-08-03, now at a POSITIVE Rs 0.98/L; and (f) two of its eight open questions (\"why did Hygienic Milk stop\", \"does a Trust dairy exist\"), both answerable in one query — Hygienic Milk was replaced by supplier account 4619 \"Akal Dairy - Baru Sahib\", which is still delivering as of 2026-08-30. Runner-up, and the bigger error of ACTION: the lane's flagship P0 \"add UHT / tetra milk, Rs 6.4 L/yr target\" was never checked against ARY's own history — Amul Taaza Milk 1 Ltr has been catalogued and stocked since 2023-04-01 and sold 93 units in 2.5 years, last sale 2025-09-01. UHT was tried at ARY and died; the lane recommends it as the zero-risk starting move.",
+  "verdicts": [
+    {
+      "claim": "ARY's whole cold/dairy estate is Rs 45.1 lakh of 12-month sales — 6.0% of the Rs 7.55 Cr turnover",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 45,10,521 = 5.97% of turnover",
+      "live_number": "Rs 41,69,339 = 5.44% of gross Rs 7,66,75,729 (5.57% of net Rs 7,48,76,014)",
+      "query_used": "SELECT SUM(CASE WHEN p.SubGroupID IN (408,917,327,850,1074,517,934,467,673,745,491,851,1043,1075) THEN d.FinalSaleAmount END), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01'",
+      "why": "The lane windowed its numerator from 2025-08-01 — 12.7 months of data — and divided it by a 12-month turnover figure, inflating the estate ~8%. Composition is also mixed: Rs 14.7 L of the numerator is B2B bulk billed at the Basement counter, while the denominator includes Rs 1.34 Cr of clothing and a Rs 0.54 Cr canteen, so neither side is a grocery-store comparable."
+    },
+    {
+      "claim": "A grocery store with a working chiller normally runs 12-18% of turnover in dairy+frozen+ice cream. ARY is at 6%. The gap is not demand, it is equipment.",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "12-18% benchmark",
+      "live_number": "no source exists; ARY is 22% apparel by turnover",
+      "query_used": "grep -rn '12-18' assort/ ; SELECT pg.ProductGroupName, SUM(d.FinalSaleAmount) ... GROUP BY pg.ProductGroupName ORDER BY 2 DESC",
+      "why": "This number sits in a soWhat field with no evidence field, and appears nowhere else in the 20-file corpus — it is an unsourced assertion, and it is the sole basis for claiming ARY has a gap at all. It is also the wrong benchmark: Academy Dress Rs 45.6 L + Winter Wear Rs 43.0 L + Footwear Rs 22.8 L + Fabrics Rs 22.0 L + Unstiched Suits Rs 20.3 L + Womens Wear Rs 13.7 L = Rs 1.67 Cr (21.9%) of ARY's turnover is apparel, plus a restaurant — a grocery-store dairy share cannot be applied to that base."
+    },
+    {
+      "claim": "Ice cream is Rs 14.64 L of the Rs 45.1 L and Rs 4.09 L of the Rs 4.78 L gross profit",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 14.64 L sales, Rs 4.09 L GP of Rs 4.78 L (86%)",
+      "live_number": "Rs 13.66 L sales; verified GP Rs 3.11 L of Rs 3.94 L costed cold GP (79%); blended ice-cream margin 27.1%",
+      "query_used": "WITH pu AS (SELECT ProductID, SUM(Quantity) pq, SUM(ItemValue) pv FROM PurchaseDetail d JOIN PurchaseHeader h ... GROUP BY ProductID), sl AS (...) SELECT sg.SubGroupName, SUM(sl.sv), SUM(sl.sq*(pu.pv/pu.pq)) ... GROUP BY sg.SubGroupName",
+      "why": "Direction is right and it is the lane's best finding — ice cream is genuinely ARY's most profitable cold category at 27.1% realised. But the GP is overstated 32%, and subgroup 934 'Ice Creams' (Rs 1.97 L) is 98% one SKU, 'Softy Ice Cream', made in-house with no purchase cost at all — the lane's '~28% margin, ~Rs 55,000 GP' for that row is invented, not derived."
+    },
+    {
+      "claim": "Loose milk is sold BELOW COST — Rs 51.98 landed vs Rs 47.00 realized, Rs 4.98/L loss; Rs 87,922 a year of verified loss on four dairy lines; reprice for Rs 7,300/month",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 87,922/yr; Loose Milk -4.98/L, Dahi_Z -3.14/kg, Paneer_Z -0.60/kg, Desi Ghee -56.38/pc; P0 worth Rs 7,300/mo",
+      "live_number": "Rs 73,694/yr; Loose Milk -4.93/L, Dahi_Z -0.70/kg, Paneer_Z +1.19/kg, Desi Ghee -31.75/pc. Live recoverable ≈ Rs 182/month",
+      "query_used": "WITH sl AS (SELECT ProductID, SUM(Quantity) q, SUM(FinalSaleAmount) amt, MAX(h.VoucherDate) FROM SaleDetail d JOIN SaleHeader h ...), pu AS (SELECT ProductID, SUM(Quantity) q, SUM(ItemValue) v ... FROM PurchaseDetail) SELECT sale_rate, cost_rate, sale_rate-cost_rate FROM ... WHERE ProductID IN ('07M9','0EUY','0F49','0ETN','0GDA')",
+      "why": "Three of the four line-level figures are wrong and one has the sign inverted — Paneer_Z is PROFITABLE at +Rs 1.19/kg, not -Rs 0.60. Worse, 91% of the remaining loss (Rs 67,074) is Loose Milk, which has not sold since 2026-05-11, and Desi Ghee 1 Ltr also stopped that day — you cannot reprice your way to a gain on lines with no sales. The only live leak is Dahi_Z at -Rs 0.70/kg = Rs 2,180/yr. The lane's #1 P0 action is overstated ~40x."
+    },
+    {
+      "claim": "The institutional/bulk dairy line has stopped — last loose-milk sale 2026-05-11, 'Hygienic Milk' has raised almost nothing since 2026-06-02. A Rs 12 L line quietly died three months ago and nobody noticed.",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 12.29 L/yr line, last billed 2026-05-11, dead",
+      "live_number": "Alive and billing monthly to 2026-08-03: Jun Rs 2.37 L, Jul Rs 0.74 L, Aug Rs 0.71 L of Milk_Z, plus Dahi_Z and Paneer_Z every month. Milk supply purchased to 2026-08-30.",
+      "query_used": "SELECT LEFT(CONVERT(varchar,h.VoucherDate,120),7), d.ProductID, COUNT(*), SUM(d.Quantity), SUM(d.FinalSaleAmount) FROM SaleDetail d JOIN SaleHeader h ... WHERE d.ProductID IN ('0GDA','0EUY','0F49','07M9','0ETN') GROUP BY 1,2 ORDER BY 1,2  — and  SELECT h.AccountID, a.AccountName, MAX(h.VoucherDate) FROM PurchaseDetail d JOIN PurchaseHeader h ... WHERE d.ProductID='07M9' GROUP BY 1,2",
+      "why": "The line was recoded, not killed: ProductID 07M9 'Loose Milk' was replaced by 0GDA 'Milk_Z' from 2026-06-23, same customer, same Rs 47.00 rate, same Basement warehouse. On the supply side, Hygienic Milk (2287) was replaced by 'Akal Dairy - Baru Sahib' (4619), which delivered on 2026-08-30. And the recoded line is now at a POSITIVE Rs 0.98/L (cost Rs 46.02 vs Rs 47.00), so the loss the lane wants fixed has already gone."
+    },
+    {
+      "claim": "Fruits & Vegetables turns stock 172 times a year — proof that a daily perishable run into Baru Sahib already exists, so dairy should ride the same vehicle",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "172.05 turns/yr on Rs 29,136 stock; 'near-daily' F&V vehicle",
+      "live_number": "316.91 turns/yr on Rs 16,197 stock; F&V inbound lands on 228 days/yr = 4.4 days a week, not daily",
+      "query_used": "./ary assort headroom  — and  SELECT COUNT(DISTINCT CAST(h.VoucherDate AS date)) FROM PurchaseDetail d JOIN PurchaseHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID WHERE p.ProductGroupID IN (129,159) AND h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01'",
+      "why": "The 172 figure moved to 317 in nine days because turns_yr is sales divided by a point-in-time stock snapshot of Rs 16k — a near-zero denominator, not an inventory ratio (Ary Lite reads 123 turns, Basement is undefined on Rs 0 stock). And the vehicle it names runs 4.4 days a week against curd's existing 3.0, so 'move Sehgal from 3-per-week to daily' cannot be delivered by putting boxes on it. The 6x sales-per-SKU comparison is also a composition artefact — 133 focused F&V SKUs against 9,886 long-tail Ary Pos SKUs."
+    },
+    {
+      "claim": "UHT / tetra-pack milk is completely absent from the catalogue; add it as the P0, Rs 6.4 L/yr target",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 1,771 of tetra milk sold in 12 months; 'no UHT SKU exists'",
+      "live_number": "Amul Taaza Milk 1 Ltr: 3 units / Rs 231 in my 12m window; 93 units / Rs 6,796 LIFETIME since 2023-04-01, last sale 2025-09-01. Six long-life SKUs are catalogued and active, incl. 'Verka Milk 6 Kg'.",
+      "query_used": "SELECT p.ProductID, p.ProductName, sl.q, sl.v, sl.last_ FROM ProductMaster p LEFT JOIN (12m sales) sl WHERE p.SubGroupID IN (408,1074)  — and lifetime SELECT ... FROM SaleDetail/PurchaseDetail WHERE d.ProductID IN ('0017','06VO','0A09','08OX','0AE6','0ARI','0CQ6')",
+      "why": "Not absent — catalogued, purchased and dead. Amul Taaza 1L, Amul Taaza 200ml, Ccd Toned 1L, Verka Toned 1L/500ml, Today Double Toned 500ml, Mother Dairy Low Fat 500ml and Verka Milk 6 Kg are all active SKUs at zero or near-zero. Ccd Toned 1L was bought in once in Apr-2023 and never sold a unit. The lane's own evidence field says these are 'listed with zero sales' yet the claim headline says absent, and no recommendation explains why a re-listed SKU would now do 20 L/day — a ~2,400x lift on a product ARY already abandoned."
+    },
+    {
+      "claim": "Nothing in ARY's system can control dairy expiry: packed milk shows negative stock of -8,560 units and curd -368",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "-8,560 packed milk, -368 curd; FEFO and shrink measurement impossible",
+      "live_number": "-8,845 packed milk / -432 curd in aggregate, but -10,665 of that is at Talwandi Sabo (WarehouseMaster.IsActive = false). Every active Baru Sahib warehouse is net POSITIVE: Ary Pos +71, G Canteen +76, Ary Lite +11, Ary Warehouse +1,230.",
+      "query_used": "SELECT w.WarehouseName, w.IsActive, SUM(s.Quantity), COUNT(*) FROM Stock s JOIN ProductMaster p ON p.ProductID=s.ProductID LEFT JOIN WarehouseMaster w ON w.WarehouseID=s.WarehouseID WHERE p.SubGroupID IN (408,917) GROUP BY w.WarehouseName, w.IsActive ORDER BY 3",
+      "why": "The whole negative balance is one row — Verka Milk 500 Ml at Talwandi Sabo with a lifetime Sho (shortage) of 14,833 against 3,638 purchased — in a dormant Punjab warehouse that booked no sales at all in the window. It is a historic write-off at a closed site, not evidence about Baru Sahib's dairy receipting. Stock is also a lifetime cumulative table, so it cannot describe current expiry control either way."
+    },
+    {
+      "claim": "Only 15.7% of ARY's bills touch a cold item today",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "15.7% (57,159 cold lines / 365,087 bills)",
+      "live_number": "12.20% — 45,411 bills with a cold line out of 372,257",
+      "query_used": "SELECT (SELECT COUNT(*) FROM SaleHeader WHERE VoucherDate>='2025-09-01' AND VoucherDate<'2026-09-01') AS total_bills, (SELECT COUNT(DISTINCT d.SerialNumber) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' AND p.SubGroupID IN (...)) AS bills_with_cold",
+      "why": "The lane divided bill LINES by BILLS, which double-counts any basket holding two cold items — an upper bound, not a penetration rate. The correct distinct-bill count is 12.2%. This one cuts in the lane's favour (87.8% of baskets have nothing cold, not 84.3%), but the stated number is wrong and the method invalid."
+    },
+    {
+      "claim": "ARY owns almost no cold equipment: two chest freezers and one refrigerator, Rs 72,106 of book value",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Rs 72,106 total cold assets",
+      "live_number": "Rs 72,106.10 exactly (Freezer Cf 311 36,913.08 + Freezer Cf-202 18,778.28 + Refrigerator 18,750.74 − Freezer 2,336) — but the register also carries 'Softy Machine' at Rs 1,47,768, twice the lane's whole cold estate",
+      "query_used": "SELECT a.AccountID, a.AccountName, a.DebitAmount - a.CreditAmount + ISNULL(t.dr,0) - ISNULL(t.cr,0) AS balance FROM AccountMaster a JOIN GroupMaster g ON g.GroupID=a.GroupID LEFT JOIN (SELECT AccountID, SUM(DebitAmount) dr, SUM(CreditAmount) cr FROM TransactionChild GROUP BY AccountID) t ON t.AccountID=a.AccountID WHERE g.GroupName='Fixed Assets' ORDER BY balance DESC",
+      "why": "The rupee figure reproduces exactly — good work. But it was found by name-matching freezer/refrigerator words and so missed the Softy Machine, which is refrigeration and which produces Rs 1.94 L of the ice-cream sales the lane is citing. These are also written-down book values, not capacity or count, so 'ARY owns almost no cold equipment' over-reads a depreciation schedule — as the lane's own open question #3 half-concedes."
+    },
+    {
+      "claim": "The dairy inbound is a wholesale drop: curd ~3 times a week, packed milk once or twice a month, ice cream monthly",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "151 curd deliveries/yr = 2.9/week; 24 packed-milk deliveries/yr",
+      "live_number": "Curd 158 distinct inbound days/yr (3.0/wk) on 175 bills; Packed Milk 35 days/yr (~3/month); Ice Cream 22 days/yr (~2/month); Butter & Cheese 97 days",
+      "query_used": "SELECT sg.SubGroupName, COUNT(DISTINCT CAST(h.VoucherDate AS date)) FROM PurchaseDetail d JOIN PurchaseHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID JOIN SubGroupMaster sg ON sg.SubGroupID=p.SubGroupID WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-09-01' AND (d.IsDeleted IS NULL OR d.IsDeleted=0) GROUP BY 1 ORDER BY 2 DESC",
+      "why": "Curd at 3.0 deliveries a week reproduces almost exactly, and the named suppliers are real (Sehgal Trading Co. Rs 212,990 on 140 curd bills to 2026-08-29). Packed milk is understated — 35 delivery days, not 24. Worth noting the lane missed that subgroup 851 Milk already receives on 223 days a year from the on-campus dairy: a near-daily milk inbound already exists."
+    },
+    {
+      "claim": "Frozen food has effectively failed: Rs 51,677 in 12 months on 507 lines, while the Chinese counter sells Rs 8.02 L of momos",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "Frozen Rs 51,677; momos Rs 8.02 L; 'ary assort coverage grp 128 Frozen: 57 SKUs, Rs 49,244'",
+      "live_number": "Frozen subgroups 467+673+745 = Rs 51,904 on 481 lines; momo probe Rs 8,21,670; Chinese Items group Rs 25.5 L",
+      "query_used": "./ary assort probe momo  — and  SELECT sg.SubGroupID, sg.SubGroupName, COUNT(DISTINCT p.ProductID), SUM(sl.v) FROM ProductMaster p JOIN SubGroupMaster sg ... WHERE p.ProductGroupID=128 GROUP BY 1,2",
+      "why": "The core contrast holds and it is the lane's most persuasive argument. One caveat: the cited command output is not reproducible — ProductGroupID 128 'Frozen' actually totals Rs 5,60,560 because it contains subgroup 1075 'Loose Paneer' (Rs 5.09 L), which the lane counts separately as 'Paneer'. No double-count in the totals, but the evidence string does not match the database."
+    },
+    {
+      "claim": "ARY earns MORE than the published Indian retail benchmark on every dairy line; blended ARY dairy margin ~13%",
+      "verdict": "CONFIRMED",
+      "materiality": "supporting",
+      "original_number": "blended ~13%, ice cream ~28%",
+      "live_number": "Packed Milk 11.2%, Curd 10.1%, Flavoured Milk 21.8%, Butter & Cheese 19.0%, Packed Lassi 15.9%, Frozen 21.7%, Ice Cream 27.1%; blended ex-ice-cream, ex-institutional = 13.7%",
+      "query_used": "WITH pu AS (SELECT ProductID, SUM(Quantity) pq, SUM(ItemValue) pv FROM PurchaseDetail ... GROUP BY ProductID), sl AS (SELECT ProductID, SUM(Quantity) sq, SUM(FinalSaleAmount) sv FROM SaleDetail ... GROUP BY ProductID) SELECT sg.SubGroupName, 100.0*(SUM(sl.sv)-SUM(sl.sq*(pu.pv/pu.pq)))/SUM(sl.sv) ... GROUP BY sg.SubGroupName",
+      "why": "Independently reproduced from the purchase ledger rather than the price master, which is the right source per Trap 4. The margin structure is real and it is the soundest quantitative work in the lane."
+    },
+    {
+      "claim": "National per-capita milk availability is 471 g/day; ARY currently moves about 106 L/day, or 4.5% of it",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "~106 L/day through ARY (94 L loose + 12 L packed)",
+      "live_number": "~74.8 L/day total (loose+bulk 21,732 L/yr = 59.5 L/day; packed 12,311 units ≈ 5,583 L/yr = 15.3 L/day). Retail-only is ~15 L/day — 80% of ARY's milk is the one Hunger Heroes contract.",
+      "query_used": "SELECT SUM(d.Quantity) FROM SaleDetail d JOIN SaleHeader h ... WHERE d.ProductID IN ('07M9','0GDA')  — and  WHERE p.SubGroupID=408; litres from pack sizes parsed off SKU names (ESTIMATED)",
+      "why": "The ARY side is labelled VERIFIED but is 42% high: the loose figure comes from the lane's 12.7-month window, and the packed figure assumes one bill LINE equals one pouch when the average line carries 1.45 units. The material point the lane misses is that once the institutional contract is stripped out, residents buy about 15 litres of milk a day between them — which is the number any demand target should be built on."
+    },
+    {
+      "claim": "ARY's FSSAI position is not a formality: the shop sells loose milk by volume and makes Home Made Paneer — that is manufacturing, not retail of prepacked food",
+      "verdict": "QUALIFIED",
+      "materiality": "load-bearing",
+      "original_number": "26,105 L loose milk sold by volume + Rs 59,478 Home Made Paneer",
+      "live_number": "Loose milk: 13,605 L on 7 invoices, ALL to customer 002CM 'Hunger Heroes', Basement warehouse — zero counter sales. Home Made Paneer: Rs 60,280 across 369 retail lines at Rs 550/kg, avg 0.34 kg, live to 2026-08-30.",
+      "query_used": "SELECT d.ProductID, h.CustomerID, c.CustomerName, w.WarehouseName, COUNT(*), SUM(d.Quantity) FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber LEFT JOIN CustomerMaster c ON c.CustomerID=h.CustomerID LEFT JOIN WarehouseMaster w ON w.WarehouseID=d.WarehouseID WHERE d.ProductID IN ('07M9','0GDA','0EUY','0F49','0ETN','0FJL') GROUP BY 1,2,3,4",
+      "why": "The paneer half stands and is a genuine flag — ARY manufactures and retails a milk product in loose weight. The loose-milk half is refuted: there is no over-the-counter vending, so the Legal Metrology 'verified measure at the counter' concern, and the Rs 95,000 milk-ATM recommended to solve it, both address a transaction that does not happen."
+    },
+    {
+      "claim": "Verka Milkfed's revised prices took effect 29 August 2026, +Rs 6 per 6-litre tray, with explicitly NO revision in trade margins",
+      "verdict": "REFUTED",
+      "materiality": "supporting",
+      "original_number": "+Rs 6 per tray, margin unchanged, status VERIFIED",
+      "live_number": "not testable in ARY data; the lane's own evidence says the source page 404'd",
+      "query_used": "read of the lane's evidence field (no ARY-side test possible)",
+      "why": "The evidence field states the agrimoon.com article 'itself 404'd on direct fetch' — the number comes from a search-result snippet, not a retrieved document. Per the audit rule that a citation which does not contain the number is not a confirmation, a status of VERIFIED is wrong here; it is at best UNVERIFIED. It also drives a soWhat ('negotiate the trade margin or the volume growth is all revenue and no profit') that the lane treats as established."
+    },
+    {
+      "claim": "Do NOT plan on a free brand cooler — FMCG moved off free assets; GCMMF supplies freezers on deposit to appointed distributors, not retailers",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "Amul cabinets sold at Rs 20,000 against Rs 35,000 cost; deposit Rs 25,000-50,000",
+      "live_number": "untestable in ARY data; Business Standard source returned 403, remaining source is a distributorship marketing blog",
+      "query_used": "read of the lane's evidence field; ARY-side check of the named distributors below",
+      "why": "The conclusion (buy a neutral chiller rather than wait for a branded one) is sensible and cheap to act on, but one of the two sources 403'd and the other is not an authority on GCMMF asset policy. The ARY-side detail is also transposed: Shiv Shakti is the LARGER ice-cream supplier (Rs 478,294 on 16 bills) and Leela Associates the smaller (Rs 355,054 on 11) — the reverse of the lane — and Leela also supplies curd and packed milk, which weakens the 'a branded cabinet holds only that brand' argument for that vendor specifically."
+    },
+    {
+      "claim": "Real 2026 Indian prices for the equipment ARY needs — Blue Star VC400A Rs 43,500, CF3-500MPW Rs 31,500, Voltas GT440GA5 Rs 24,500, PU cool boxes Rs 26,000",
+      "verdict": "UNTESTABLE",
+      "materiality": "supporting",
+      "original_number": "core 4-unit package Rs 1,34,400; total spend Rs 2.1 L",
+      "live_number": "no ARY-side test exists",
+      "query_used": "none — external vendor pricing, outside FR8HODBNEW",
+      "why": "Model numbers, capacities and prices are specific and internally consistent, and this is the most reusable part of the lane. I cannot confirm or refute them from the database and did not treat unverifiability as confirmation; a buyer should re-quote before committing."
+    },
+    {
+      "claim": "Incremental power for four new cold units is roughly Rs 4,000-5,300 a month",
+      "verdict": "UNTESTABLE",
+      "materiality": "colour",
+      "original_number": "550-660 kWh/month ≈ Rs 4,000-5,300",
+      "live_number": "not testable; tariff not retrieved by the lane either",
+      "query_used": "none",
+      "why": "Honestly self-labelled ESTIMATED, with the duty cycle and the Rs 7-8/kWh tariff both flagged as assumptions and pushed into an open question. This is the lane behaving correctly and I have no quarrel with it."
+    },
+    {
+      "claim": "Wastage economics decide the build order: at 10.6% margin on pouch milk, a 3% shrink eats 28% of gross profit",
+      "verdict": "QUALIFIED",
+      "materiality": "supporting",
+      "original_number": "3% shrink on a 10.6% line = 28% of GP gone",
+      "live_number": "arithmetic checks (3/10.6 = 28.3%); pouch-milk margin is 11.2% live, so 26.8%. The 1.5-3% shrink band is unsourced by the lane's own admission.",
+      "query_used": "margin re-derivation above (PurchaseDetail vs SaleDetail, subgroup 408)",
+      "why": "The margins feeding it are real and the arithmetic is sound, but the shrink band that makes it bite is explicitly 'an industry norm I did not source', and the negative-stock claim it leans on for 'ARY cannot even measure shrink' is refuted above. The build-order logic survives as reasoning, not as evidence."
+    },
+    {
+      "claim": "ARY can add Rs 44-50 lakh of sales and Rs 63,000 a month of net profit, paying back in about 3.5 months",
+      "verdict": "REFUTED",
+      "materiality": "load-bearing",
+      "original_number": "Rs 63,000/month net profit; Rs 2.1 L capex; 3.5-month payback",
+      "live_number": "The lane's own 14 recommendations sum to Rs 94,200/month, not Rs 63,000. Rs 49 L of added sales at its own ~13% blended margin = Rs 53,300/month GROSS, before power, shrink, labour and working capital.",
+      "query_used": "arithmetic over the lane's recommendations[].monthlyImpactInr and tables[1] target column; margin from the PurchaseDetail re-derivation above",
+      "why": "The headline is internally inconsistent with its own recommendation list by 50%, and the figure it does quote as NET exceeds the GROSS profit its own verified margins would generate on its own sales target. Seasonality makes it worse: ice cream runs Rs 13,637 in January against Rs 267,458 in May, with 36% of the year landing in May-June, so a flat Rs 14,000/month for the ice-cream cabinet annualises a two-month category. Two of the three P0 actions feeding the number are separately refuted above (repricing Rs 7,300/mo -> ~Rs 182/mo; UHT already tried and dead)."
+    }
+  ],
+  "_stage": "verify",
+  "_ran": "2026-08-30",
+  "_run": "wf_b45e4f60-a14"
+}

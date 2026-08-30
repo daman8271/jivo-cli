@@ -106,13 +106,21 @@ residents.** Any earlier framing of it as a charitable subsidy is wrong.
 
 ## 🔧 Tool defects that produced wrong findings (fix before trusting output)
 
-- **`ary assort probe` is NON-DETERMINISTIC** — different results for identical terms in
-  one session — and **silently returns zero when any term contains a hyphen**. Probe is
-  the mandated anti-false-gap guard. **Every "probe returned zero" verdict is unsafe,
-  including the ones used to CONFIRM the two real gaps.** Fix first.
-- `internal/cli/assort.go:103` values stock as `SUM(Quantity) x MAX(PurchaseCost)`.
-  Negative book stock reads **-Rs 1.82 Cr** that way vs **-Rs 14.13 L row-wise**. That one
-  line produced the "-Rs 1.56 Cr sales posted without receipts" P0.
+- **~~`ary assort probe` is non-deterministic / zeroes on hyphens~~ — NOT REPRODUCIBLE.
+  The critic and two sizers reported this; I tested it and it is FALSE.** Five identical
+  runs of `probe lassi` returned byte-identical results (104/104/33/15/Rs 473,057), and
+  `probe anti-dandruff` returns 1 SKU, `probe glucose-d` returns 5 — hyphens match fine
+  (a hyphen is not a LIKE wildcard). The real cause is in the agents' own shell: the
+  beverages-cold sizer said it plainly — *"probe under zsh does NOT word-split an
+  unquoted variable — my first probe batch returned 0 for everything including lassi."*
+  **That is an agent scripting error, not a CLI defect. Probe-zero verdicts are SAFE,
+  and the two real gaps stand.** Pass each term as its own argument.
+- **✅ FIXED 2026-08-30 — `internal/cli/assort.go` stock valuation.** It read
+  `SUM(Quantity) * MAX(PurchaseCost)`, pricing every unit at the dearest warehouse row's
+  cost and applying it to a netted quantity. Measured: the book read **Rs 30.78 L against
+  a true Rs 96.90 L**, and negative book stock read **-Rs 182.16 L against a true
+  -Rs 13.97 L (13x)** — the source of the bogus "-Rs 1.56 Cr posted without receipts" P0.
+  Now `SUM(Quantity * PurchaseCost)`. `go vet` clean, rebuilt, re-verified.
 - `ary audit uncounted` is a filtered exception list read as a census — produced
   "8 months since last count" when 6 of 8 warehouses were counted within 10 days.
 - `assort/research/coverage/*.json` substring matching is garbage in both directions:
