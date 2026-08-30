@@ -1,0 +1,42 @@
+{
+  "netAssessment": "mostly-solid",
+  "refuted": [
+    {
+      "claim": "'this b CTE is the base for every figure in this note' (line 35)",
+      "refuted": true,
+      "why": "Demonstrably false, and it is the note's own provenance guarantee. The entire natural-experiment section runs on a DIFFERENT base. I reproduced 372,378 bills / 354 days only with window >='2025-09-01' (not the declared 2025-08-31, which gives 373,461 bills / 355 days), NO warehouse restriction, and NO 002CM exclusion. Snack sales Rs 41,47,393 reproduces only on the same unfiltered base (declared base wh 9/11/15 excl 002CM gives Rs 40,54,018). WarehouseMaster shows w/h 12 = 'Ary G Canteen', contributing Rs 1,08,220 of the snack total — a canteen, which the note's design explicitly excludes via RestMenuChild. 94,041 of 373,461 bills (25.2%) contain no retail-counter line at all yet sit in the Rs/bill denominator. A reader re-deriving from the printed CTE cannot reproduce a single figure in that section.",
+      "correctedNumber": "Natural-experiment base = VoucherDate >= '2025-09-01' AND < '2026-08-31', ALL warehouses, ALL customers. Re-run on the declared retail base: n=8 band 42 days/Rs 15.52 per bill/dev 0.00; n<=4 band 57 days/Rs 13.56/dev -0.84; season-adjusted gap Rs 0.84/bill, not Rs 0.98"
+    },
+    {
+      "claim": "'31 of the 42 best days sit in the four richest snack months'",
+      "refuted": true,
+      "why": "Not reproducible under any reading. The monthly table itself verifies cell-for-cell, so I tested every definition of 'richest' against it. By snack Rs/bill the four richest are 2025-09 (14.12), 2026-02 (13.05), 2025-10 (12.88), 2025-12 (12.13), holding 6+6+8+5 = 25 of the 42 n=8 days. By total snack rupees the four richest are 2025-09, 2026-05, 2025-10, 2026-04 = 19 days. Reaching 31 requires the set {Mar-26, Oct-25, Sep-25, Dec-25}, and Mar-26 is the SEVENTH richest month by Rs/bill (11.03). The confounding argument still stands directionally at 25 of 42 (60%), but the published number overstates it.",
+      "correctedNumber": "25 of the 42 best days (not 31). The companion clause verifies exactly: 23 of the 45 worst days are in Dec-25 (11) and Jul-26 (12)."
+    },
+    {
+      "claim": "'The honest sentence is a handful of top-100 lines, and one that matters: Lays Magic Masala 55 Gm'",
+      "refuted": true,
+      "why": "The counts verify exactly (16 of the top 100 read zero company-wide, 8 also quiet >=21 days, 3 of those sold on only 3-4 days: Sardar Blazer 30 Cm, Sardar Blazer 48 Cm, Nursing Purple Uniform). But 'one that matters' is wrong on the note's own criteria. Five of the eight clear the note's own >=20-selling-day bar, and FOUR of them carry more trailing value than the Lays line: White Suit 40 Cm (Rs 2,94,800 / 110 days), Campus Sports Shoes 06 Art-677 (Rs 2,53,710 / 98 days), Pranav Unstiched Suits 5208511 (Rs 1,41,979 / 50 days), Sunil Badam 250 Gm (Rs 98,560 / 118 days) against Lays Magic Masala's Rs 1,39,840. The note contradicts itself: three of those four appear in its own named-lines table two sections earlier.",
+      "correctedNumber": "5 of the 8 are genuine regular sellers, carrying Rs 9,28,889 between them; Lays Magic Masala ranks fifth of the five by value"
+    },
+    {
+      "claim": "Whole-bill average is higher on bare-shelf days (Rs 246.69) than full-shelf days (Rs 238.65)",
+      "refuted": true,
+      "why": "Both numbers verify to the paisa, but the inference drawn from them is unsupported by the row the note omits. The 267-day middle band (n=5-7, ~273k bills — 73% of the year) averages Rs 192.68 per bill, 22% BELOW both cited extremes. The relationship is not monotone and not even ordered; the two quoted bands are the two smallest and the note reports only them. Presenting this as 'the opposite of what the brief implies' treats a non-relationship as a directional finding. The conservative conclusion it supports (don't extrapolate to the till) is right, but this evidence does not support it.",
+      "correctedNumber": "Rs 246.69 (n<=4, 45 days) / Rs 192.68 (n=5-7, 267 days) / Rs 238.65 (n=8, 42 days) — no monotone relationship"
+    }
+  ],
+  "survivingClaimsRemoved": [
+    "None inside Availability.md itself. Every brief-era figure (Rs 1.51 Cr, 27 of top 100, 629 SKUs / Rs 50.13 L, '998 vs 997', 25% less spend, Rs 5.26 L uplift, 10.65% GM) appears only in the explicit 'Claims deleted from the brief' table, each paired with the correct value. That is a deletion log, not a survival.",
+    "Self-contradiction to fix: the note says the deleted claims 'survive only in [[Corrections-Log]] and [[Verify-Pass-2026-08-30]]' while restating all seven in its own table on the same page.",
+    "SERIOUS, and not the note's own text but its doing: the note directs readers to [[Verify-Pass-2026-08-30]] as authoritative ('read it before quoting any other figure in this vault'), and that note's headline section STILL asserts 5,953 / 3,049 / 51.2% / Rs 1.51 Cr / 27-of-top-100 / '629 SKUs carrying Rs 50.13 lakh' / 'Footfall was IDENTICAL - 998 vs 997' as live VERIFIED findings. Availability.md refutes six of those and then points the reader at them without a warning."
+  ],
+  "missing": [
+    "The natural-experiment base is never stated anywhere, and it is not the base the note declares. Print it: VoucherDate >= '2025-09-01' AND < '2026-08-31', all warehouses, all customers. Without it no figure from Rs 41,47,393 through Rs 44,000 can be reproduced.",
+    "That base includes Ary G Canteen (warehouse 12, Rs 1,08,220 of snacks), Ary Warehouse, Basement and Talwandi Sabo, and includes Hunger Heroes. A note whose central design decision is 'exclude the canteen and 002CM' then measures its causal claim on a base that includes both, and never says so.",
+    "DIRECT CONFLICT with the verify pass, unreconciled: Rs 12,04,142 — 16.5% of the Rs 73.02 L prize — sits in apparel/seasonal groups (Academy Dress Rs 3.79 L, Footwear Rs 3.42 L, Unstiched Suits Rs 1.92 L, Winter Wear Rs 1.58 L, Under Garment, Accessories, Bag & Purses, Home Furnishing, Life Style). Verify-pass action A2 is 'Stop buying winter wear; mark down the rack, Rs 16.41 L at cost.' The note's A1 tells a buyer to reorder lines A2 tells him to liquidate. The two largest named lines (White Suit 40 Cm, Campus Sports Shoes) are school uniform and school footwear, out 23 and 40 days at the START of an academic year — seasonal timing, not necessarily a reorder failure.",
+    "Cross-note number conflict, unflagged: Ten-Moves.md line 44 states 'Rs 18.84 L of gross profit' for the same 864-SKU move where this note states Rs 17.84 L. I recomputed: Rs 69,15,436 x 25.80% = Rs 17,84,182. Availability.md is right and Ten-Moves is wrong by Rs 1 lakh; a reader holding both notes has no way to tell which.",
+    "The WAC window is load-bearing and unstated. All-history WAC gives 27.61%, a 2025-08-31-onward window gives the published 25.80%. Same for the snack 19.92%. State the window or the margin is unreproducible.",
+    "No as-of time on the Stock read. `ary doctor` shows SaleHeader live to 2026-08-30 21:15 and stock transfers to 19:49 on the same day. Every headline is one instantaneous snapshot of a table that moved hours later; the note gives a date but no time and no re-read."
+  ]
+}

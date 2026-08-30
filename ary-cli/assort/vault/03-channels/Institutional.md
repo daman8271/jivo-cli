@@ -6,13 +6,14 @@ confidence: high
 system: ARY / FusionERP8
 ---
 
-# Institutional — the channel that earns nothing, and should not be grown
+# Institutional — one NGO earns nothing; the campus accounts out-earn the counter
 
-ARY's institutional business is **Rs 69.81 lakh of revenue producing Rs 0.72 lakh of gross
-profit**. Every campus body ARY bills buys uniform cloth, winter wear and tuck-shop snacks,
-not provisions — and the campus's own dairy, bakery and langar store are ARY's **creditors**,
-not its customers. This note replaces the version dated 2026-08-29 in full; see
-[[Verify-Pass-2026-08-30]] for why, and [[Availability]] for what the shop should do instead.
+"Institutional" is not one channel. **Hunger Heroes, a Delhi NGO, turns Rs 63.90 lakh at
+1.22% gross margin. The ten campus institution accounts turn Rs 51.25 lakh, and the
+Rs 36.77 lakh of that which can be costed earns 28.23% — above the retail counter's
+24.53%.** The earlier versions of this note collapsed the two and told
+the reader to drop both; that was wrong. This replaces the 2026-08-29 note and the first
+2026-08-30 rewrite in full. See [[Verify-Pass-2026-08-30]], [[Duplicate-Bill]].
 
 ## The finding, in one table
 
@@ -20,126 +21,165 @@ not its customers. This note replaces the version dated 2026-08-29 in full; see
 quantity-weighted per SKU over the same window) — not from `ProductChildMaster`, which is
 stale and biased high ([[Data-Quality-Traps]]).
 
-| Channel | Bills | Revenue | COGS | Gross profit | GM% | Status |
-|---|---|---|---|---|---|---|
-| Walk-in retail (`00001`) | 361,017 | Rs 479.24 L | Rs 361.66 L | **Rs 117.58 L** | **24.53%** | VERIFIED |
-| Other named accounts | — | Rs 87.70 L | Rs 62.19 L | Rs 25.51 L | 29.09% | VERIFIED |
-| **Hunger Heroes (`002CM`)** | **12** | **Rs 69.81 L** | **Rs 69.10 L** | **Rs 0.72 L** | **1.03%** | VERIFIED |
-| Katebaa Rural Services (`00240`) | 4 | Rs 8.00 L | Rs 8.04 L | **−Rs 0.04 L** | **−0.53%** | VERIFIED |
+A margin can only be struck on revenue that has a purchase-ledger cost. **That "costable"
+share differs by channel, so the two revenue columns are not the same thing and must not be
+added across rows.**
 
-> `WITH pur AS (SELECT pd.ProductID, SUM(pd.Quantity*pd.PurchaseCost)/NULLIF(SUM(pd.Quantity),0) wac FROM PurchaseDetail pd JOIN PurchaseHeader ph ON ph.SerialNumber=pd.SerialNumber WHERE ph.VoucherDate>='2025-08-31' AND ph.VoucherDate<'2026-08-31' AND ISNULL(ph.IsDeleted,0)=0 GROUP BY pd.ProductID HAVING SUM(pd.Quantity)>0) SELECT <channel>, SUM(d.Quantity*d.SaleRate), SUM(d.Quantity*pur.wac) FROM SaleHeader h JOIN SaleDetail d ON d.SerialNumber=h.SerialNumber JOIN pur ON pur.ProductID=d.ProductID WHERE h.VoucherDate>='2025-08-31' AND h.VoucherDate<'2026-08-31' GROUP BY <channel>`
+| Channel | Bills (costable) | Billed | Costable rev | Cover | COGS | Gross profit | GM% | Status |
+|---|---|---|---|---|---|---|---|---|
+| Walk-in retail (`00001`) | 361,017 (315,119) | Rs 566.06 L | Rs 479.24 L | 84.7% | Rs 361.66 L | **Rs 117.58 L** | **24.53%** | VERIFIED |
+| Other named accounts | 12,428 (11,411) | Rs 124.33 L | Rs 87.70 L | 70.5% | Rs 62.19 L | Rs 25.51 L | 29.09% | VERIFIED |
+| *— of which 10 campus institutions* | *4,207* | *Rs 51.25 L* | *Rs 36.77 L* | *71.7%* | *Rs 26.39 L* | ***Rs 10.38 L*** | ***28.23%*** | VERIFIED |
+| **Hunger Heroes (`002CM`)** | **11 real + 1 duplicate** | **Rs 63.90 L** | **Rs 63.90 L** | 100% | **Rs 63.12 L** | **Rs 0.78 L** | **1.22%** | VERIFIED |
+| Katebaa Rural Services (`00240`) | 4 | Rs 8.00 L | Rs 8.00 L | 100% | Rs 8.04 L | **−Rs 0.04 L** | **−0.53%** | VERIFIED |
 
-**Hunger Heroes is 14.6% of costable retail revenue and 0.61% of its gross profit.**
-Every rupee moved from the retail counter to this channel destroys about 23 paise of margin.
+> `WITH pur AS (SELECT pd.ProductID, SUM(pd.Quantity*pd.PurchaseCost)/NULLIF(SUM(pd.Quantity),0) wac FROM PurchaseDetail pd JOIN PurchaseHeader ph ON ph.SerialNumber=pd.SerialNumber WHERE ph.VoucherDate>='2025-08-31' AND ph.VoucherDate<'2026-08-31' GROUP BY pd.ProductID HAVING SUM(pd.Quantity)>0) SELECT <channel>, COUNT(DISTINCT h.SerialNumber), COUNT(DISTINCT CASE WHEN pur.wac IS NOT NULL THEN h.SerialNumber END), SUM(d.Quantity*d.SaleRate), SUM(CASE WHEN pur.wac IS NOT NULL THEN d.Quantity*d.SaleRate END), SUM(d.Quantity*pur.wac) FROM SaleHeader h JOIN SaleDetail d ON d.SerialNumber=h.SerialNumber LEFT JOIN pur ON pur.ProductID=d.ProductID WHERE h.VoucherDate>='2025-08-31' AND h.VoucherDate<'2026-08-31' GROUP BY <channel>`
 
-### On a like-for-like tax basis it is worse
+**The reconciliation.** The four rows are the whole shop: 373,461 bills, Rs 7,68,20,330
+billed including the duplicate, Rs 762.29 L excluding it. Costable revenue is Rs 638.84 L.
+**Rs 123.45 L — 16.2% of what the shop billed — has no purchase-ledger cost and carries no
+margin in this note** (VERIFIED; Rs 86.82 L of it retail, Rs 36.63 L other-named). Hunger
+Heroes and Katebaa are costed on 100% of theirs, which makes the row-to-row comparison
+generous to them, not harsh.
+
+### On a like-for-like tax basis
 
 Retail `SaleRate` is tax-**inclusive** on 86% of its value (`IncludeInRate=1`); Hunger
-Heroes' is tax-**exclusive** on 94% of its value; `PurchaseCost` is tax-exclusive on 95%.
-The table above therefore flatters retail and is fair to Hunger Heroes. Net all revenue of
-the GST inside it and both fall:
+Heroes' is tax-**exclusive** on 94%; `PurchaseCost` is tax-exclusive on 95%. Net the GST out
+of revenue and the ranking does not change:
 
 | Channel | Revenue net of GST | GM% ex-tax | Status |
 |---|---|---|---|
 | Walk-in retail | Rs 420.44 L | **13.98%** | VERIFIED |
 | Other named accounts | Rs 77.23 L | 19.48% | VERIFIED |
-| Hunger Heroes | Rs 69.40 L | **0.43%** | VERIFIED |
+| — of which 10 campus institutions | Rs 32.12 L | **17.84%** | VERIFIED |
+| Hunger Heroes | Rs 63.48 L | **0.57%** | VERIFIED |
 | Katebaa | Rs 8.00 L | −0.53% | VERIFIED |
 
-The margin-truth re-test puts Hunger Heroes at −0.39% and Katebaa at −5.8% on its own tax
-normalisation; its working was not recoverable, so the figures above are mine. **Both
-derivations agree on the only thing that matters: this channel earns zero.**
+> same query, revenue as `SUM(d.Quantity*d.SaleRate - CASE WHEN d.IncludeInRate=1 THEN ISNULL(d.TaxAmount,0)+d.TaxAmount1+d.TaxAmount2+d.TaxAmount3+d.TaxAmount4 ELSE 0 END)`
 
-## What Hunger Heroes actually is
+Both bases agree on the two things that matter: **the NGO earns ~zero, and the campus
+institution accounts earn more than the counter** (28.23% vs 24.53% gross; 17.84% vs 13.98%
+ex-tax).
 
-A **Delhi NGO**, ledger group *Zomato Debtors* — not a campus body, not the langar, not a
-boarding kitchen. It buys in **twelve bills a year averaging Rs 5.82 lakh**, all at the
-Basement counter (warehouse 16).
+## Hunger Heroes: a Delhi NGO, and one of its twelve bills is a duplicate
+
+Ledger group *Zomato Debtors* — not a campus body, not the langar, not a boarding kitchen.
+It buys at the Basement counter (warehouse 16).
+
+**Twelve bills are on file for the 12 months; only eleven are real.** Serials
+`2002751.0001` and `2002752.0001` are identical to the paisa on the same 59 lines, keyed one
+minute apart on 2026-05-11 (18:54, 18:56), with no offsetting sale return — see
+[[Duplicate-Bill]]. **Every figure in this note excludes `2002752.0001`.** With it the
+customer reads Rs 69.81 L / Rs 0.72 L GP / 1.03%; without it Rs 63.90 L / Rs 0.78 L / 1.22%,
+eleven bills averaging **Rs 5.81 lakh** (VERIFIED — the query above plus
+`AND h.SerialNumber<>2002752.0001`).
 
 | Line | Revenue | COGS | Gross profit | GM% | Status |
 |---|---|---|---|---|---|
-| Rice 1 Kg | Rs 6,61,864 | Rs 6,51,700 | Rs 10,164 | +1.54% | VERIFIED |
-| **Loose Milk** | Rs 6,39,444 | Rs 7,07,597 | **−Rs 68,153** | **−10.66%** | VERIFIED |
-| Atta 1 Kg | Rs 4,83,850 | Rs 4,81,250 | Rs 2,600 | +0.54% | VERIFIED |
+| Rice 1 Kg | Rs 5,66,664 | Rs 5,58,600 | Rs 8,064 | +1.42% | VERIFIED |
+| **Loose Milk** | Rs 5,44,016 | Rs 6,01,998 | **−Rs 57,982** | **−10.66%** | VERIFIED |
 | Rice_L | Rs 4,48,800 | Rs 4,42,200 | Rs 6,600 | +1.47% | VERIFIED |
+| Atta 1 Kg | Rs 4,26,700 | Rs 4,23,500 | Rs 3,200 | +0.75% | VERIFIED |
 | Milk_Z | Rs 3,81,969 | Rs 3,74,037 | Rs 7,932 | +2.08% | VERIFIED |
-| Atta_L | Rs 3,39,100 | Rs 3,31,120 | Rs 7,980 | +2.35% | VERIFIED |
-| Paneer_Z | Rs 2,21,009 | Rs 2,21,572 | −Rs 563 | −0.25% | VERIFIED |
-| Dahi_Z | Rs 2,17,964 | Rs 2,27,756 | −Rs 9,792 | −4.49% | VERIFIED |
 
-**15 of the 96 SKUs are sold below cost** — Rs 15.10 L of revenue losing Rs 1.08 L, against
-Rs 54.71 L earning Rs 1.80 L. Full costable coverage: all 96 SKUs price off the purchase
-ledger. See [[Below-Cost-Leak]].
+### The below-cost block is mostly already closed
 
-### The loose-milk loss is not charity to anyone on campus
+15 of the 96 SKUs sold below cost over the year — **Rs 13.17 L of revenue losing Rs 92,387**
+(ex-duplicate, VERIFIED). But **eight of the fifteen, carrying Rs 74,923 of that loss — 81% —
+last transacted on 2026-05-11 and have not sold since**: Loose Milk, Desi Ghee 1 Ltr, Rajdhani
+Daliya, Tata Salt, Elaichi Black, Black Pepper Sabat, Nutri 1 Kg, Amchur Powder. Only seven
+still appear on current bills — Dahi_Z −7,971, Pumpkin_Z −4,632, Mausambi_Z −2,439, Ginger_Z
+−1,620, Paneer_Z −439, Golden Apple_Z −324, Mix Dal_L −40 — **Rs 17,464 of live bleed**
+(VERIFIED: per-SKU rev/COGS/`MAX(h.VoucherDate)` off the WAC query, `WHERE cogs>rev`, split
+on `lastsale>='2026-06-01'`).
 
-| | Value | Status |
-|---|---|---|
-| Loose Milk bought, 12m | 17,739.1 L @ Rs 52.01/L | VERIFIED |
-| Loose Milk sold, 12m | 13,605.2 L @ **Rs 47.00 flat** | VERIFIED |
-| Litres to campus residents | **0** | VERIFIED |
-| Litres to Hunger Heroes | **13,605.2 (100%)** | VERIFIED |
-| Loss on the sold litres | **−Rs 68,153** | VERIFIED |
+**The prize from repricing is ~Rs 0.17 lakh a year, not Rs 1.08 lakh.** See
+[[Below-Cost-Leak]].
+
+### The loose-milk loss stopped on its own
+
+Loose Milk bought 17,739.1 L @ Rs 52.01/L; sold 11,574.8 L @ **Rs 47.00 flat**, of which
+**100% went to Hunger Heroes and nought to campus residents**, losing Rs 57,982 (VERIFIED).
 
 > `SELECT c.CustomerName, SUM(d.Quantity), SUM(d.Quantity*d.SaleRate) FROM SaleHeader h JOIN SaleDetail d ON d.SerialNumber=h.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID LEFT JOIN CustomerMaster c ON c.CustomerID=h.CustomerID WHERE p.ProductName='Loose Milk' AND h.VoucherDate>='2025-08-31' AND h.VoucherDate<'2026-08-31' GROUP BY c.CustomerName` → **one row**.
 
-**One thing did improve on its own.** From June 2026 the milk line moved to `Milk_Z`, bought
-at Rs 46.02/L against the same Rs 47.00 sale price — **+2.08%** (8,127 L, VERIFIED). Loose
-Milk has had no sale since May 2026 while still being bought at Rs 54–55/L for the shelf.
-The bleed on this customer stopped; nobody recorded that it had.
+From June 2026 the milk line moved to `Milk_Z`, bought at Rs 46.02/L against the same
+Rs 47.00 sale price — **+2.08%** (8,127 L, VERIFIED). Loose Milk has had no sale since May
+2026 while still being bought for the shelf. Nobody recorded that the bleed had stopped.
 
-## The campus bodies do not buy food from ARY
+### The customer is growing, not stopping
 
-Ten named campus institution accounts (Akal Academy, Kalgidhar Trust, University Students,
-Akal Catering Services (Mess), De-Addiction Ward, Eternal University, Akal Hospital, Akal
-Nursing College, Gurmat Camp, Apple A Day), 12 months:
+Five bills between 2026-06-23 and 2026-08-03 billed **Rs 28.19 L** against Rs 63.90 L for the
+whole trailing year (VERIFIED:
+`SELECT COUNT(DISTINCT h.SerialNumber), SUM(d.Quantity*d.SaleRate) FROM SaleHeader h JOIN SaleDetail d ON d.SerialNumber=h.SerialNumber WHERE h.CustomerID='002CM' AND h.VoucherDate>='2026-06-01'`).
+A quarter at that rate annualises to **~Rs 113 L** (ESTIMATED — straight-line off five
+bills). This is a live, accelerating account priced at cost.
 
-| What they bought | Value | Share | Status |
-|---|---|---|---|
-| Apparel, fabric, uniform, home furnishing | **Rs 25.52 L** | **49.8%** | VERIFIED |
-| Everything else (snacks, soft drinks, canteen food, electricals, crockery) | Rs 19.56 L | 38.2% | VERIFIED |
-| **Mess provisions** (grain, flour, pulses, dairy, veg, oil, tea, spices, sugar) | **Rs 6.17 L** | **12.0%** | VERIFIED |
-| **Total** | **Rs 51.25 L** | 100% | VERIFIED |
+## The campus institution accounts
 
-**Rs 19.95 lakh of it — 38.9% — rings at the Ary Clothing counter** (warehouse 11), and only
-Rs 2.14 L at Fruits & Vegetables. The verify pass reported Rs 15.06 L on a narrower account
-set; on the ten accounts above it is Rs 19.95 L.
+Ten named campus accounts, 12 months. **Every one earns a real margin — 21% to 56%.**
 
-Read at account level the same thing appears:
-
-| Account | Bills | 12m | Avg bill | Top groups | Provisions | Status |
+| Account | Bills | Billed | Cover | GM% | Provisions | Status |
 |---|---|---|---|---|---|---|
-| Akal Academy | 1,934 | Rs 25.97 L | Rs 1,343 | Winter Wear 5.27 L, Fabrics 3.36 L, Confectionery 2.06 L, Academy Dress 1.59 L | Rs 2.12 L | VERIFIED |
-| Kalgidhar Trust (enquiry) | 982 | Rs 9.58 L | Rs 976 | — | Rs 0.52 L | VERIFIED |
-| **Akal Catering Services (Mess)** | 152 | **Rs 4.26 L** | Rs 2,802 | wheatgrass juice 0.68 L, maroon fabric 0.38 L, stitching charges 0.27 L, aprons 0.23 L, softy ice cream 0.21 L | **Rs 0.26 L** | VERIFIED |
-| Eternal University | 41 | Rs 0.99 L | Rs 2,426 | Winter Wear 0.21 L, Womens Wear 0.12 L, Home Furnishing 0.11 L, Mens Wear 0.10 L | Rs 0.10 L | VERIFIED |
-| Akal Hospital | 60 | Rs 0.78 L | Rs 1,304 | bed sheets, curtains, a room heater | Rs 0.03 L | VERIFIED |
+| Akal Academy | 1,934 | Rs 25.97 L | 80.3% | 29.01% | Rs 2.12 L | VERIFIED |
+| Kalgidhar Trust (enquiry) | 982 | Rs 9.58 L | 69.2% | 27.15% | Rs 0.52 L | VERIFIED |
+| University Students | 220 | Rs 5.16 L | **7.5%** | 41.18% | Rs 0 | VERIFIED |
+| Akal Catering Services (Mess) | 152 | Rs 4.26 L | 81.6% | 23.12% | Rs 0.26 L | VERIFIED |
+| Akal De-Addiction Ward | 634 | Rs 2.32 L | 92.8% | 24.85% | Rs 0.04 L | VERIFIED |
+| Eternal University | 41 | Rs 0.99 L | 91.6% | 28.47% | Rs 0.10 L | VERIFIED |
+| Akal Hospital | 60 | Rs 0.78 L | 79.0% | 31.01% | Rs 0.03 L | VERIFIED |
+| Akal Nursing College | 41 | Rs 0.77 L | 78.0% | 24.13% | Rs 0.06 L | VERIFIED |
+| Gurmat Camp | 28 | Rs 0.73 L | 75.0% | 56.29% | Rs 0 | VERIFIED |
+| Apple A Day | 115 | Rs 0.68 L | 86.2% | 21.08% | Rs 0.28 L | VERIFIED |
+| **Total** | **4,207** | **Rs 51.25 L** | **71.7%** | **28.23%** | **Rs 3.41 L** | VERIFIED |
 
-**The campus mess buys Rs 25,845 of staples from ARY in a year — Rs 2,154 a month.** It is
-not a provisions customer that could be grown; it is a customer for aprons and cold drinks.
+**Read the cover column before the GM column.** University Students' 41.18% rests on
+Rs 0.39 L of Rs 5.16 L — 7.5% of its revenue — and is the one margin here that is not
+reliable. The other nine are costed on 69–93%.
 
-**Katebaa Rural Services' Rs 8.00 L is 100% turban fabric** — Fabric Spun White Rs 4.67 L and
-Fabric Spun Navy Blue Rs 3.33 L, both at the Ary Clothing counter (VERIFIED). It is not a
-second bulk food buyer. See [[Institution-Range]].
+### What they buy — and the classification behind it
+
+| Bucket | `ProductGroupMaster.ProductGroupName` in | Value | Share | Status |
+|---|---|---|---|---|
+| Apparel, fabric, uniform, home furnishing | Fabrics, Academy Dress, Winter Wear, Unstiched Suits, Womens Wear, Ladies Ethnic Wear, Mens Wear, Night Wear, Under Garment, Kakars, Thermals, Kids Wear, Footwear, Bag & Purses, Accessories, Home Furnishing | **Rs 26.17 L** | **51.1%** | VERIFIED |
+| Everything else (snacks, soft drinks, canteen food, fruit, dry fruit, electricals, crockery) | the remaining 50 groups | Rs 21.67 L | 42.3% | VERIFIED |
+| **Mess provisions** | Rice & Other Grains, Atta & Other Flours, Pulses, Dairy Products, Vegetable, Oil & Ghee, Edible Oil & Ghee, Tea & Coffee, Spices, Salt & Sugar | **Rs 3.41 L** | **6.6%** | VERIFIED |
+| **Total** | | **Rs 51.25 L** | 100% | VERIFIED |
+
+> `SELECT g.ProductGroupName, SUM(d.Quantity*d.SaleRate) FROM SaleHeader h JOIN SaleDetail d ON d.SerialNumber=h.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID LEFT JOIN ProductGroupMaster g ON g.ProductGroupID=p.ProductGroupID WHERE h.CustomerID IN ('00003','00004','0029M','0000A','001JH','00007','00009','0006D','0016L','002BE') AND h.VoucherDate>='2025-08-31' AND h.VoucherDate<'2026-08-31' GROUP BY g.ProductGroupName` — the buckets are that result classified by hand. The previous version published Rs 25.52 L / Rs 19.56 L / Rs 6.17 L on a basket it never printed and that does not reproduce.
+
+**Provisions are a small share, not nil — 6.6%, unevenly spread.** Akal Academy alone buys
+Rs 2.12 L of them, plus Rs 1.30 L of Fruits and Rs 1.16 L of Oil & Ghee (VERIFIED).
+University Students and Gurmat Camp buy none.
+
+**Rs 19.95 lakh — 38.9% — rings at the Ary Clothing counter** (warehouse 11) and Rs 2.14 L at
+Fruits & Vegetables (warehouse 18), VERIFIED. The verify pass reported Rs 15.06 L on a
+narrower account set.
+
+**The campus mess (`0000A`) buys Rs 25,845 of staples in a year — Rs 2,154 a month**
+(VERIFIED, the ten groups above: Spices 11,810 + Dairy Products 4,450 + Tea & Coffee 4,199 +
+Salt & Sugar 3,100 + Atta 1,310 + Vegetable 586 + Pulses 280 + Rice 70 + Oil & Ghee 40).
+
+**Katebaa Rural Services' Rs 8.00 L is 100% turban fabric** — Fabric Spun White Rs 4,66,609
+and Fabric Spun Navy Blue Rs 3,33,459, both at the Ary Clothing counter (VERIFIED). It is
+not a second bulk food buyer. See [[Institution-Range]].
 
 ## Eternal University's "Rs 2.51 Cr" is not a food wallet ARY can bid for
 
-From EU's 17th Annual Report 2024-25 (an external document, **NOT-CHECKED against
-FR8HODBNEW**), read correctly:
+EU's 17th Annual Report 2024-25 (external, **NOT-CHECKED against FR8HODBNEW**) books
+Rs 196.00 L of "mess meal charges" — a transfer charge for **cooked meals**, "consumable
+items" being booked separately — and Rs 55.00 L of faculty boarding exactly offset by staff
+collections. **Both sides of the old ratio were the wrong thing.** ARY's own EU account is
+Rs 99,483.50 in 12 months, of which **Rs 5,809 is edible fats** (3 × Jivo Mustard Oil 5 Ltr
+Rs 2,759 + Loose Desi Ghee Rs 2,000 + 1 × Jivo Canola Oil 5 Ltr Cold Press Rs 950 + Minchy's
+Kachi Ghani 500 Ml Rs 100) against Rs 19,888 of stoles (K Mark 12,847 + Ss 7,041), Rs 12,250
+of kurtis, Rs 10,575 of curtains and Rs 9,584 of trousers and shirts — VERIFIED, per-SKU
+`SUM(d.Quantity*d.SaleRate)` for `CustomerID='00007'`.
 
-| Line | Amount | What it actually is |
-|---|---|---|
-| "Mess meal charges" | Rs 196.00 L | a **transfer charge for cooked meals** — the statement books "consumable items" separately, so this is not a provisions spend |
-| "Boarding & lodging for EU faculty/staff" | Rs 55.00 L | an expenditure **exactly offset by staff collections** on the income side |
+## The campus sells to ARY as well as buying from it
 
-**Both sides of the old ratio were the wrong thing.** And ARY's own EU account is not food
-either: Rs 99,483.50 in 12 months, of which **Rs 3,709 is edible oil** (VERIFIED — two Jivo
-5-litre packs) against Rs 20,987 of stoles, Rs 12,250 of kurtis, Rs 10,575 of curtains and
-Rs 9,584 of trousers and shirts.
-
-## The campus sells to ARY, not the other way round
-
-The four in-house units are in **Local Creditors – Baru Sahib**. ARY buys from them.
+The four in-house units sit in **Local Creditors – Baru Sahib**. ARY buys from them.
 
 | Unit | Ledger lines | ARY owes (credit) | First | Last | Status |
 |---|---|---|---|---|---|
@@ -149,70 +189,82 @@ The four in-house units are in **Local Creditors – Baru Sahib**. ARY buys from
 | Akal Bakery – Baru Sahib | 126 | Rs 67,689 | 2026-06-03 | 2026-08-30 | VERIFIED |
 | **Total** | **282** | **Rs 4,72,474** | 2026-06-03 | current | VERIFIED |
 
-The campus operates its own dairy, bakery, provision store and catering mess, and ARY became
-their *customer* three months ago. There is no unserved institutional food market here.
+The campus runs its own dairy, bakery, provision store and catering mess, and ARY became
+their *customer* three months ago. **This says nothing about the size of campus food demand
+or who serves it** — the ledger records only what ARY bought.
 
-## The bulk pricing tier already exists and serves exactly one customer
+## The bulk pricing tier serves exactly one customer
 
-61 SKUs carry `_Z` / `_L` bulk suffixes and turned **Rs 38.34 lakh in 12 months at 2.26%
-gross margin**. Every rupee of it went to Hunger Heroes — **zero to walk-in retail, zero to
-any campus body** (VERIFIED). The machinery for institutional supply is built, tested, and
-producing Rs 86,791 of gross profit a year.
+61 SKUs carry `_Z` / `_L` bulk suffixes and turned **Rs 36.81 lakh at 2.45% gross margin —
+Rs 90,152 of gross profit** (ex-duplicate). Every rupee went to Hunger Heroes: **zero to
+walk-in retail, zero to any campus body** (VERIFIED — `GROUP BY h.CustomerID` over
+`ProductName LIKE '%\_Z' ESCAPE '\' OR LIKE '%\_L' ESCAPE '\'` returns one row, `002CM`).
 
 ## What this note no longer claims
 
-Deleted outright, not softened — each was refuted, and each survives only in
-[[Corrections-Log]] and [[Verify-Pass-2026-08-30]]:
+Deleted, not softened; each survives only in [[Corrections-Log]] and
+[[Verify-Pass-2026-08-30]].
 
-- **"Rs 2.51 Cr of EU food spend, ARY has 1.1% of it."** The number is cooked-meal transfer
-  charges plus an offset staff-boarding line.
-- **"Rs 4–5 crore institutional gap, larger than the whole shop."** Both methods that
-  produced it measured the wrong thing.
-- **"Institutional first — Rs 29–36 L of gross profit for a purchase-order conversation."**
-  At the measured 1.03% GM, Rs 4 Cr of this revenue would earn Rs 4.1 L, not Rs 29–36 L.
-- **"Institutional 7.2% GM vs retail 31.0%."** Both were `ProductChildMaster` artefacts.
-  The purchase-ledger figures are 1.03% and 24.53%.
-- **"Retail is ~77% saturated with Rs 2.3 Cr of headroom."** Rests on the population split
-  that [[Population]] refutes.
-- **"At 7.2% ARY is not profiteering on the langar."** ARY does not supply the langar at all.
-  For the fairness question the right evidence is [[Pricing-Fairness]].
-- **"Hunger Heroes feeds ~300–330 people on campus."** It is a Delhi NGO.
-- **"Katebaa is a second bulk food buyer."** It buys turban fabric.
-- **"The basket needs zero new SKUs to win the mess."** There is no mess business to win.
+- **"Institutional earns nothing and should not be grown."** Only the NGO earns nothing; the
+  ten campus accounts earn 28.23%, above retail.
+- **"Every campus body buys uniform cloth and tuck-shop snacks, not provisions."** Provisions
+  are 6.6% of the ten accounts and Rs 2.12 L at Akal Academy alone.
+- **"There is no unserved institutional food market here."** The creditor ledger cannot carry
+  that; it measures ARY's purchases and nothing else.
+- **"Every rupee moved from the counter to this channel destroys about 23 paise."** The
+  spread is 23 pp gross / 13 pp ex-tax, and nothing in this database shows the two channels
+  compete for the same rupee or the same stock.
+- **"It consumes the buying, the counter and the working capital of a Rs 7.68 Cr shop."**
+  Never sized: 11 documents against 373,461 bills, with no picking, counter or credit cost
+  measured anywhere.
+- **"Repricing the 15 below-cost lines recovers Rs 1.08 lakh."** Rs 0.92 L on the
+  ex-duplicate year, of which only Rs 0.17 L is still being lost.
+- Also gone, from the 2026-08-29 version: **"Rs 2.51 Cr of EU food spend, ARY has 1.1% of
+  it"**; **"a Rs 4–5 crore institutional gap"**; **"institutional 7.2% GM vs retail 31.0%"**
+  (both `ProductChildMaster` artefacts); **"retail is ~77% saturated with Rs 2.3 Cr of
+  headroom"** (rests on the split [[Population]] refutes); **"Hunger Heroes feeds ~300–330
+  people on campus"** (it is a Delhi NGO); **"Katebaa is a second bulk food buyer"** (turban
+  fabric).
 
 ## What this does NOT show
 
 - **Why the NGO is priced at cost.** Nothing in FR8HODBNEW records an agreement, a subsidy
   policy or a Trust instruction. A deliberate charitable price and an unmanaged one look
-  identical in this database. **That is a question for a human**, and it decides whether the
-  right action is to reprice or to stop — see [[Open-Questions]].
+  identical here. **That is a question for a human** — [[Open-Questions]].
 - **Whether the Trust would pay a normal margin.** Never tested; ARY has never quoted one.
-- **Any measure of campus food spend.** ARY's ledger sees only what ARY billed.
+- **Any measure of campus food spend, or who else serves it.** ARY's ledger sees only what
+  ARY billed and bought.
+- **What the Rs 123.45 L of non-costable revenue earns.** 16.2% of what the shop billed has
+  no purchase-ledger cost in this window; its margin is unknown, not zero.
 - **Costs below the gross line.** No rent account exists (ARY occupies Trust premises free),
-  so even the 1.03% is before every cost of serving the channel — picking, the Basement
-  counter, credit and the working capital tied up in Rs 5.8 lakh bills.
-- **Whether the 12 bills are the whole relationship.** They are 12 documents; a stopped
-  customer and a lumpy one look the same at this cadence.
+  so 1.22% and 28.23% are both before every cost of serving.
+- **Whether the duplicate bill was ever corrected.** ARY has no cancellation document and no
+  offsetting sale return exists ([[Duplicate-Bill]]).
 
 ## The conclusion
 
-**Do not grow this channel. Reprice it or let it go.** The Rs 69.81 lakh it turns is the
-most expensive revenue in the business: it consumes the buying, the counter and the working
-capital of a Rs 7.68 Cr shop to produce Rs 0.72 lakh. The same effort spent on the
-**3,051 retail SKUs that are out of stock today** ([[Availability]]) works on a 24.53% base.
+**Split the two.** The ten campus institution accounts are Rs 51.25 L at 28.23% gross
+(17.84% ex-tax), better than the counter's 24.53% (13.98%). Nothing here argues for dropping
+them.
 
-The one defensible institutional action is narrow and costs nothing: **the 15 below-cost
-lines to Hunger Heroes** — Rs 15.10 L of revenue losing Rs 1.08 L. Repricing those to zero
-margin recovers Rs 1.08 lakh with no new SKU, no capital and no conversation about volume.
+**Hunger Heroes is the problem, and it is growing.** Rs 63.90 L at 1.22% earned Rs 0.78 L
+last year and is running at ~Rs 113 L annualised. The decision is a price, and the price is a
+human question this database cannot answer. The narrow, costless piece inside it is the
+**seven still-live below-cost SKUs — Rs 0.17 lakh a year**; repricing a named credit customer
+is a conversation, not a system change.
+
+The alternative use of the same effort — 3,051 out-of-stock retail SKUs ([[Availability]])
+— works on a 24.53% gross / 13.98% ex-tax base.
 
 ## See also
 
-- [[Availability]] — where the same effort earns 24.53% instead of 1.03%
-- [[Below-Cost-Leak]] — the 15 lines to reprice, and the loose-milk history behind them
-- [[Verify-Pass-2026-08-30]] — the 106 refutations that made this rewrite necessary
+- [[Duplicate-Bill]] — the Rs 5.91 L double-key on this customer, excluded from every figure here
+- [[Availability]] — the alternative use of the same effort
+- [[Below-Cost-Leak]] — the seven lines still worth repricing, and the loose-milk history
+- [[Verify-Pass-2026-08-30]] — the refutations that made this rewrite necessary
 - [[Population]] — why the "Rs 2.3 Cr retail headroom" built on a headcount split is void
 - [[Institution-Range]] — where the campus bodies' money actually goes: dastar, patka, uniform
 - [[Pricing-Fairness]] — the right answer to "is a Trust shop exploiting a captive market"
 - [[Open-Questions]] — question 1 for the Trust: is the NGO price a policy or an oversight
-- [[Ten-Moves]] — move 1 has been rewritten; institutional supply is no longer on the list
+- [[Ten-Moves]] — move 1 has been rewritten
 - [[00-ARY-Atlas]] — the index

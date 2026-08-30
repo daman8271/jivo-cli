@@ -1,0 +1,103 @@
+{
+  "netAssessment": "shaky",
+  "refuted": [
+    {
+      "claim": "27 rows carry a batch/mfg/exp TRIPLE in the free-text Field1/2/3",
+      "refuted": true,
+      "why": "27 rows carry AT LEAST ONE of Field1/2/3; only 24 carry all three. GROUP BY MatrixID: MatrixID 3 has f1=24, f2=26, f3=26, all-three=24. The three stragglers (064K0003002 has only Field3; 06JT0001002 has Field2+Field3; 07ZD0006002 has only Field2) are not triples. Also worth knowing before anyone calls this a working feature: 05LA0001002 carries exp 11-May-2017 BEFORE its mfg 12-Aug-2017 — free text with no validation.",
+      "correctedNumber": "24 rows carry a full triple; 27 rows carry any of the three (0.024%)"
+    },
+    {
+      "claim": "Benadryl 150 ml (02DZ) = 22 price revisions, 2017-04-01 → 2026-07-06, cost 69.17 → 124.21, MRP 90 → 170, every batch field blank",
+      "refuted": true,
+      "why": "22 rows ✓, span ✓, all Field1/2/3 blank ✓. But the arrows are wrong as a trajectory: the FIRST row is cost 73.05 / MRP 90, and the LATEST (2026-07-06) is cost 104.292 / MRP 159. 69.17 and 124.21 are the min and max cost; 170 is the max MRP, reached 2024-11-05 and since cut. A reader takes '→ 170' as today's shelf price and is Rs 11 out.",
+      "correctedNumber": "first→last: cost 73.05 → 104.29, MRP 90 → 159 (min/max: cost 69.17–124.21, MRP 90–170)"
+    },
+    {
+      "claim": "Chronic-molecule stem sweep over all 21,479 names returned 0 SKUs on every one of 63 stems",
+      "refuted": true,
+      "why": "The 45 stems the note actually names: I re-ran all 45 against LOWER(REPLACE(...)) over ProductMaster and every one returned 0 — that half holds exactly. But '+18 more' are unnamed, so two-fifths of the test cannot be audited, and the claim is stated as if all 63 were shown. It is not a safe framing: 'thermomet' is a plausible member of that list and returns 3 live SKUs (02BA Hicks Thermometer, 01J4/01J5 Cipla Thermometer1 4797/4798). List all 63 or drop the number.",
+      "correctedNumber": "45 named stems verified 0; 18 unnamed and unauditable"
+    },
+    {
+      "claim": "Medicare group turnover Rs 3,23,327 in 12m",
+      "refuted": true,
+      "why": "Reproduces on no window. SUM(Quantity*SaleRate) over the Medicare group: Rs 3,22,194.46 on the note's own window (2025-08-31 → 2026-08-31, the one every §2 figure lands on exactly), Rs 3,22,314.46 on 2025-08-30→2026-08-30, Rs 3,20,534.46 on the vault's canonical 2025-09-01→2026-08-31. FinalSaleRate gives the same as SaleRate. Rs 3,23,327 is Rs 1,133 above the closest.",
+      "correctedNumber": "Rs 3,22,194.46 (on the note's own 12m window)"
+    },
+    {
+      "claim": "= 0.42% of Rs 7.71 Cr turnover",
+      "refuted": true,
+      "why": "The 0.42% ratio holds on any window, but Rs 7.71 Cr does not exist. SUM(BillAmount) over SaleHeader: Rs 7,68,89,330 on the note's window; Rs 7,66,19,249 on 2025-09-01→2026-08-31 — and that second figure is exactly the SUM(BillAmount) the verify pass reconciles the payment modes against, so it is the vault's canonical turnover. The note quotes a turnover that contradicts the pass it says it is built on.",
+      "correctedNumber": "Rs 7.66 Cr canonical (Rs 7,66,19,249); Rs 7.69 Cr on the note's own window"
+    },
+    {
+      "claim": "BROAD cut — 42 SKUs listed",
+      "refuted": true,
+      "why": "The note's own stated definition enumerates to 61, not 42: strict 21 + Volini 9 + Moov 12 + Omnigel 3 + Iodex 7 + Diclowin gel 1 + Ortivin 3 + ORS 5. All 61 are active. And the sold/units/sales/bills figures reproduce EXACTLY off that 61-SKU set, which proves 61 is the set actually queried. This is the precise fault the note charges the verify pass with — a number whose stated definition does not produce it.",
+      "correctedNumber": "61 SKUs listed"
+    },
+    {
+      "claim": "Share of bills carrying any oral/systemic drug: 498 of 374,448 = 0.13%",
+      "refuted": true,
+      "why": "498 ✓, 0.13% ✓, but 374,448 reproduces on no 12-month window. SaleHeader bills: 373,461 (2025-08-31→2026-08-31, the note's own window), 373,053, 372,925, 372,378 (canonical). A 13-month window gives 403,450. The denominator is ~1,000 bills too high and is not sourced.",
+      "correctedNumber": "498 of 373,461 = 0.133% (or 498 of 372,378 = 0.134% canonical)"
+    },
+    {
+      "claim": "Rs 4.46 of allopathic medicine per resident per year",
+      "refuted": true,
+      "why": "The arithmetic is right (22,324.06 / 5,000) and the note tags it ESTIMATED, but it attributes the 5,000 to [[Population]] — and Population.md's own result is '~4,550-4,800', with 5,000 named only as the outside brief figure. Worse, [[Verify-Pass-2026-08-30]] correction 4 REFUTED the population estimate outright ('converts a rupee ratio into a headcount ratio') and specifically warned it was 'consumed by every sizing lane anyway'. This note consumes it again. On 4,550 the figure is Rs 4.91. It is also the strict cut with no label: the broad cut on the same 5,000 is Rs 11.30.",
+      "correctedNumber": "Rs 4.46–4.91 strict; Rs 11.30–12.42 broad"
+    },
+    {
+      "claim": "Avomine (promethazine, Schedule H) is the ONLY prescription-only medicine in the catalogue",
+      "refuted": true,
+      "why": "Not defensible, and it is load-bearing — it is the sole basis for deleting the old '~76% Schedule H' figure and for reporting Schedule H exposure as Rs 0. At least three other listed products carry Schedule H molecules: Diclowin Plus (01SY, oral diclofenac combination), Diclowin Pain Relief Gel 30 Gm (0762, topical diclofenac) and GSK Ortivin Nasal Spray (0BL8/0BL9, xylometazoline). Ortivin is not merely listed, it SOLD inside the note's own broad cut: Rs 246 / 6 bills + Rs 106 / 1 bill = Rs 352 in 12m, Rs 3,764 all time. So the 12m Schedule H trade is not zero. This is a legal classification FR8HODBNEW cannot settle — which is exactly why the note should not have asserted it as a fact.",
+      "correctedNumber": "Schedule H items listed: at least 4 (Avomine, Diclowin Plus, Diclowin gel, Ortivin ×2). Schedule H sold in 12m: Rs 352, not Rs 0"
+    },
+    {
+      "claim": "Akal Hospital: Rs 5,52,686 debit balance over 177 vouchers",
+      "refuted": true,
+      "why": "Exactly double. TransactionChild joined to TransactionMaster (IsDeleted=0) on AccountID 244: 177 vouchers ✓, but SUM(DebitAmount)=Rs 2,78,469.00, SUM(CreditAmount)=Rs 2,126.00, net debit Rs 2,76,343.00. 2,76,343 × 2 = 5,52,686 to the rupee. AccountMaster.DebitAmount/CreditAmount hold the same running totals as the transaction sum, so adding the two sources doubles the balance — that is almost certainly what happened. There are no deleted vouchers on this account to explain it.",
+      "correctedNumber": "Rs 2,76,343 net debit (Dr 2,78,469 − Cr 2,126), 177 vouchers"
+    },
+    {
+      "claim": "What Akal Hospital buys is bed sheets (Rs 17,940), more bed sheets, curtains and a Havells room heater",
+      "refuted": true,
+      "why": "Each named item is real (Bed Sheet Rs 17,940 ✓, Curtain 4X7 Rs 5,985 ✓, Havells Room Heater Rs 5,199 ✓) but the list omits the two LARGEST lines by a wide margin: 'Stiching Charges From Customer' Rs 69,035 and 'Fabric Spun Sky Blue' Rs 50,260 (plus Purple Rs 13,775, Navy Rs 9,000). The hospital's actual top spend at ARY is tailoring and fabric — roughly half its all-time Rs 2.71 L. The conclusion (nothing medical) survives; the evidence as presented would mislead anyone sizing the relationship.",
+      "correctedNumber": "Top lines: Stitching Charges Rs 69,035; Fabric Spun Sky Blue Rs 50,260; Bed Sheet Rs 17,940"
+    },
+    {
+      "claim": "All-time medical purchases across five clinical accounts total Rs 1,801",
+      "refuted": true,
+      "why": "NOT REPRODUCED, and the definition of 'medical' is not stated — the exact sin the note charges the verify pass with two sections earlier. Across the five clinical accounts (244 Akal Hospital, 492 Akal Nursing College, 417 Dr. Neelam Madam, 2973 Dr Sheetal Bedi, 3327 Akal De-Adiction Ward) the all-time Medicare-group spend is Rs 13,187.85 over 34 SKUs (Jivo Pain Relief Oil Rs 2,880, Pudin Hara Rs 1,319, Sugar Free Gold Rs 1,240, Chyawanprash Rs 790…). Strict-21 drug purchases by those accounts: Rs 0, zero rows. Rs 1,801 is some undisclosed subset and cannot be checked.",
+      "correctedNumber": "Rs 13,187.85 Medicare-group all-time; Rs 0 of the strict-21 drugs"
+    },
+    {
+      "claim": "Gross margin a pharmacy would earn: Rs 2.66 L/yr",
+      "refuted": true,
+      "why": "Unfalsifiable as published, and it is the number the entire verdict turns on. No revenue base, no margin %, no SKU count and no demand proxy is given here or in [[Verify-Pass-2026-08-30]], which carries the identical figure with no derivation either — so 'the sizer's figure, carried forward' resolves to nothing. The note's own §'What this does NOT show' says demand 'is not measured and cannot be' in FR8HODBNEW, which means the vault cannot support Rs 2.66 L any more than it can refute it. The ESTIMATED tag is honest but insufficient: an unsourced number in a table of otherwise rupee-exact VERIFIED rows reads as measured.",
+      "correctedNumber": ""
+    },
+    {
+      "claim": "Contribution -Rs 0.34 L to +Rs 0.50 L",
+      "refuted": true,
+      "why": "The arithmetic is correct (2.66 − 3.00 and 2.66 − 2.16), but it is arithmetic on two outside estimates, one of which (above) has no derivation at all. If Rs 2.66 L is out by a factor of two in either direction the sign of the contribution flips and the recommendation inverts, so the band carries no more information than the estimate under it. Inherits the refutation above.",
+      "correctedNumber": ""
+    }
+  ],
+  "survivingClaimsRemoved": [
+    "'It almost certainly already holds a drug licence and runs a dispensary' — reported as 'downgraded from near-assertion to an open question'. IT IS STILL IN THE NOTE, §4, verbatim as a near-assertion: 'Akal Charitable Hospital is on the same campus and almost certainly already holds both.' Unsourced, nothing in FR8HODBNEW supports it, and it is the pivot of the only recommendation the note leaves standing ('the one thing that changes the answer').",
+    "'Akal CHARITABLE Hospital' — the 100-beds/11-doctors/120-OPD framing was deleted as unsourced, but the name it came from survives in §4 twice. The ledger knows it as 'Akal Hospital' (AccountID 244 / CustomerID 00009). Use the ledger name or nothing.",
+    "The verify pass's refuted population input. [[Verify-Pass-2026-08-30]] correction 4 REFUTED the 4,600-4,800 population estimate and warned it was 'consumed by every sizing lane anyway'. §2 consumes it again for the Rs 4.46 headline, attributing 5,000 to [[Population]] — whose own stated result is ~4,550-4,800.",
+    "The verify pass's 'Rs 39,672 / 613 bills' is re-printed inside the §2 comparison table. Keeping it as a labelled NOT REPRODUCED row is defensible reporting, but it sits in a table of otherwise-quotable rupee figures and will be lifted out of context. Move it to prose, or to the corrections log where the rule says it belongs."
+  ],
+  "missing": [
+    "No derivation for Rs 2.66 L — the one number the whole verdict turns on. Give the assumed revenue, the assumed GM%, the SKU count and whose estimate it is, or delete the economics table and say the standalone case cannot be sized from this database. As it stands the reader cannot test it, and neither can the next reviewer.",
+    "No 12-month window is stated anywhere in the note. Every §2 figure reproduces exactly on 2025-08-31 → 2026-08-31, but the vault's canonical window (the one behind the verify pass's Rs 7,66,19,249) is 2025-09-01 → 2026-08-31, and the two disagree by Rs 1.66 lakh on Medicare alone. State the window on every table.",
+    "The strict/broad boundary is the author's own pharmacological judgement and it moves the compliance exposure 2.5x (Rs 22,324 → Rs 56,520). The note says so in the hand-back but not in the note. Say in §2 that no pharmacist has drawn either line, and name who must.",
+    "The Rs 4.46 headline is the STRICT cut and is not labelled as such in the opening paragraph. The broad cut on the same 5,000 residents is Rs 11.30. Whichever is quoted, quote it with its definition — the note demands exactly this of the verify pass one section later.",
+    "The 18 unnamed stems of the '63-stem sweep'. Two-fifths of the note's strongest proof cannot be audited, and a plausible member — 'thermomet' — returns 3 live SKUs (Hicks, Cipla ×2). Print all 63.",
+    "Purchase-ledger scope. PurchaseHeader starts 2023-04-01; 02DZ's price history starts 2017-04-01. 'Never bought one in the whole life of its purchase ledger' covers 3.4 years of a 9-year shop. Put that in the headline sentence, not only in a table cell."
+  ]
+}

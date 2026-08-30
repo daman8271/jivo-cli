@@ -1,0 +1,83 @@
+{
+  "netAssessment": "mostly-solid",
+  "refuted": [
+    {
+      "claim": "'97% of the dead tail is empty catalogue rows holding zero stock' / '14,853 (97.4%) lines holding literally nothing'",
+      "refuted": true,
+      "why": "207 of those 14,853 lines hold NEGATIVE stock, not nothing — they are not empty rows, they are lines the books say were issued without a receipt. Exactly-zero lines are 14,646 = 96.0%, which is also what the verify pass says ('96%'). The note rounds 96.0% up to 97% and mislabels 207 real data-integrity cases as 'holding literally nothing'.",
+      "correctedNumber": "14,646 lines (96.0%) hold exactly zero; a further 207 hold negative stock worth -Rs 8.26 L"
+    },
+    {
+      "claim": "Button 08M2: old valuation SUM(Qty) x MAX(Cost) = Rs 40,45,530",
+      "refuted": true,
+      "why": "SUM(Quantity)=21,287 and MAX(PurchaseCost)=190.00 — both confirmed live — and 21,287 x 190 = 4,044,530. The SQL returns oldval = 4,044,530.00. The note's figure is Rs 1,000 too high, in the one table whose entire point is that a wrong arithmetic operator produced a wrong number.",
+      "correctedNumber": "Rs 40,44,530"
+    },
+    {
+      "claim": "SQL comment: '18 rows; the Rs 190 and Rs 170 rows all carry Quantity = 0'",
+      "refuted": true,
+      "why": "SELECT ... FROM Stock WHERE ProductID='08M2' returns 24 rows, not 18 (COUNT(*) also = 24). The Rs 190/Rs 170 half of the statement is correct — all seven of those rows carry Quantity 0.",
+      "correctedNumber": "24 rows"
+    },
+    {
+      "claim": "'Cost of the buttons actually on hand: Rs 0.32 – Rs 1.60'",
+      "refuted": true,
+      "why": "The three rows with positive quantity are 285 @ Rs 1.60, 1,000 @ Rs 0.40 and 20,002 @ Rs 0.22. The Rs 0.32 rows all carry Quantity 0. The cheap end of the stated range is wrong, and it is the row that carries 94% of the units.",
+      "correctedNumber": "Rs 0.22 – Rs 1.60"
+    },
+    {
+      "claim": "Fruits & Vegetables is 'a narrow range that is genuinely in stock'",
+      "refuted": true,
+      "why": "On the note's own company-wide SUM(Stock.Quantity)<=0 measure, 66 of the 106 Fruits & Veg SKUs (62.3%) are out of stock today — a WORSE rate than the 51.3% retail base and worse than every revenue band except D. Either the measure applies, in which case the counter is emptier than the shop it is being held up against, or it does not apply to perishables (which is why the vault excludes them from the base), in which case the note has no evidence at all for 'genuinely in stock'. Both readings kill the sentence.",
+      "correctedNumber": "66 of 106 (62.3%) out of stock on the note's own measure"
+    },
+    {
+      "claim": "'Fruits & Vegetables earns six times more per listed line than the main shop'",
+      "refuted": true,
+      "why": "The table's column is 'SKUs sold', not listed lines — Rs 48,226 is sales divided by the 106 SKUs that actually rang a sale at that counter. ARY LISTS 1,608 lines in the Fruits and Vegetable groups (275 + 1,333), of which only 167 are active. Per listed line the counter earns Rs 3,179, which is LESS than Ary Pos's Rs 7,935 — the comparison reverses. Per active listed line it is Rs 30,610, i.e. 3.9x on mismatched denominators, not 6x.",
+      "correctedNumber": "Rs 3,179 per listed line (1,608 lines) or Rs 30,610 per active line (167) — not Rs 48,226"
+    },
+    {
+      "claim": "'The largest indirect expenses all-time are Depreciation Rs 44.06 L, Stitching Charges Rs 12.98 L and Electricity Rs 8.39 L' (VERIFIED)",
+      "refuted": true,
+      "why": "'Stiching Charges' (Rs 12,98,219) sits in the DIRECT Expenses group, not Indirect — confirmed by joining AccountMaster to GroupMaster. The top three Indirect Expenses are Depreciation Rs 44.06 L, Electricity Rs 8.39 L, Interest On Loan Rs 7.62 L. Separately, the ledger's largest expense of any kind is Salary Exp at Rs 1.45 Cr, which the sentence's framing hides. The surrounding claim it supports — no occupancy cost anywhere — does survive.",
+      "correctedNumber": "Depreciation Rs 44.06 L, Electricity Rs 8.39 L, Interest On Loan Rs 7.62 L"
+    },
+    {
+      "claim": "'70 diaper SKUs listed, 23 ever purchased, 11 sold in 12m, Rs 32,456'",
+      "refuted": true,
+      "why": "SubGroupID 260 'Baby Diaper' (under ProductGroupID 141 Personal Care) holds 73 products, all 73 flagged active — not 70. The other three figures reproduce exactly (23 / 11 / Rs 32,456) on that same subgroup, so the definition is right and the count is simply wrong.",
+      "correctedNumber": "73 diaper SKUs listed"
+    },
+    {
+      "claim": "'4 of those 8 [top-100 OOS survivors] are seasonal apparel with three or four selling days all year'",
+      "refuted": true,
+      "why": "Listed the 8 myself: only THREE have 3-4 selling days — Sardar Blazer 30 Cm (4), Sardar Blazer 48 Cm (4), Nursing Purple Uniform (3). The 4th apparel line, Pranav Unstiched Suits, sold on 50 days. The sibling note the claim is drawn from ([[Availability]] line 285) itself says '3 of those sold on 3–4 days all year'. The note contradicts its own source. The 16-raw / 8-surviving halves both reproduce exactly.",
+      "correctedNumber": "3 of 8"
+    },
+    {
+      "claim": "'[[Availability]] carries the substitution evidence, and it is large: on an independent availability measure other SKUs recover about 47% of what the missing ones lose'",
+      "refuted": true,
+      "why": "Availability.md does not say 47%. It says the top-10 gain Rs 2.42/bill while the rest of the snack shelf loses Rs 1.45/bill — 'About 60% of the lost rupees are recovered elsewhere', with raw (unadjusted) reading 24%. 47% comes from Ten-Moves.md. Three notes now carry three different figures for one measurement and Catalogue-Shape cites the one that disagrees with it. Second error in the same sentence: the measure is not 'independent' — Availability states plainly that the classifier is CIRCULAR ('in stock' was defined as 'the SKU rang a sale that day'), and that it is measured on the snack shelf only.",
+      "correctedNumber": "~60% season-adjusted (24% raw), per [[Availability]]; measured on one category with an admittedly circular classifier"
+    },
+    {
+      "claim": "Benchmark: 8,000 benchmark lines, 14,358 ARY active SKUs in scope (VERIFIED), 4,745 selling (VERIFIED), 1.79x listed, 0.59x selling",
+      "refuted": true,
+      "why": "The five numbers are the tool's live output (confirmed: `ary assort benchmark` TOTAL row = 8000 / 14358 / 4745 / 59.3% / 1.79x), but the VERIFIED labels are not defensible and the total is contaminated. Those totals are the column sums of eleven category rows, and the note itself says two paragraphs later that the mapping behind those rows is unreliable and that the Baby-care row ('323 benchmark lines, 0 ARY SKUs, NO ARY GROUP EXISTS') is a mapping artefact — yet that row's 323 and 0 are still inside the 8,000 and the 14,358 that produce the headline 1.79x/0.59x. A note cannot mark a figure VERIFIED and then disown its inputs.",
+      "correctedNumber": "Tool output reproduces; status should be ESTIMATED on both, and the total restated without the Baby-care row"
+    }
+  ],
+  "survivingClaimsRemoved": [
+    "The Baby-care benchmark row the note explicitly calls 'a mapping artefact' is still load-bearing inside the note's own headline: its 323 benchmark lines and 0 ARY SKUs remain inside the 8,000 / 14,358 totals from which '1.79x listed, 0.59x selling' is computed and stated as 'the whole finding'. The row is disowned in prose and quoted in arithmetic.",
+    "No literal survivor of the verify pass's refuted claims. Rs 1.51 Cr, '27 of the top 100', '629 SKUs / Rs 50.13 L', 'add ~1,500 lines', Basement-as-a-counter, the coverage-corpus table, the LED/battery claim, the frozen depth gap and the medical-devices depth gap are all gone or correctly framed as deleted. Checked each one."
+  ],
+  "missing": [
+    "The Fruits & Veg vs Ary Pos comparison carries NO caveat in the note. The author privately flagged it as 'illustration, not proof — I did not control for category mix, price point or perishability' and then published the sentence 'A narrow range that is genuinely in stock outsells a broad one that is half empty — on the same campus, the same day, the same customers' with no qualifier and no entry in 'What this does NOT show'. A reader will take it as the proof of the thesis.",
+    "Over half of band A's Rs 39.09 L is seasonal apparel, and the note does not say so. Split live: 20 apparel/textile SKUs carry Rs 20.77 L and average 34 selling days a year; 23 everyday-goods SKUs carry Rs 18.32 L and average 154 selling days. This is the same seasonal-apparel trap that deflated the top-100 claim two paragraphs earlier, uncorrected in the table an operator will actually act on.",
+    "Every sales figure in the note is GROSS of returns and this is never stated. SaleReturnHeader/SaleReturnDetail are separate tables: 12m returns are Rs 16,57,748 across 959 SKUs and 1,029 documents — roughly 2.8% of the Rs 5.83 Cr base. The Rs 1.44 Cr, the four band rows and the Rs 73.02 L are all pre-returns.",
+    "[[Corrections-Log]] does not record any of the three deletions the note points there for. The log's sections are baby-care/per-resident, the category tree, the 81 false 'missing' verdicts, and the institutional headline. There is no entry for the Rs 40 lakh valuation bug, the 'add ~1,500 lines' prescription, or the coverage-corpus table. The vault's own rule is that a refuted claim survives only in the corrections log — for these three, it survives nowhere.",
+    "No gross-margin anchor anywhere in the note. Rs 1.44 Cr and Rs 39.09 L are revenue exposed; an operator reads them as recoverable rupees. Availability's answer (25.80% GM on the 809 costable lines, Rs 5–9 L realistic after substitution) is not carried over, and the note's one substitution figure is the wrong one (47% against Availability's 60%).",
+    "207 dead-tail lines hold NEGATIVE stock worth -Rs 8.26 L — inventory the books say left without a receipt — sitting inside the very table used to argue 'there is no liquidation to run and no cash to release'. Not mentioned."
+  ]
+}

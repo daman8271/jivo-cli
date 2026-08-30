@@ -1,0 +1,89 @@
+{
+  "netAssessment": "shaky",
+  "refuted": [
+    {
+      "claim": "Gross profit those 809 carried: Rs 18,84,464 on Rs 69.15 L revenue at 25.80% GM",
+      "refuted": true,
+      "why": "HARD ERROR, and it is the headline prize of the whole playbook. Live: 809 SKUs, revenue Rs 69,15,436, COGS Rs 51,30,972, GM 25.80%, GP Rs 17,84,464. The note's own two inputs multiply to Rs 17.84 L (0.2580 x 69,15,436 = 17,84,182); Rs 18,84,464 is a 17->18 digit slip that overstates by exactly Rs 1,00,000. The companion note Availability.md in the same vault says Rs 17.84 L, so the vault now publishes two different prizes. It appears three times in Ten-Moves: the move subtitle, the table, and the 'Why Rs 4-9 L and not Rs 18.84 L' paragraph.",
+      "correctedNumber": "Rs 17,84,464"
+    },
+    {
+      "claim": "'Average days since the last purchase order 210' — 'ARY was actively buying these lines, on average seven months ago'",
+      "refuted": true,
+      "why": "Population switch inside one table. 210 is the mean over all 862 SKUs that were ever purchased, and it is dragged up by the 53 lines last bought 516 days ago. The 809 the sentence is about average 190.1 days (6.2 months), which is what Availability.md publishes. The prose attaches the wider mean to the narrower 94% claim.",
+      "correctedNumber": "190 days for the 809; 210 only across all 862"
+    },
+    {
+      "claim": "Move 2 premise: 'on 30-Aug-2026 ARY holds more winter stock than it can sell in a season'",
+      "refuted": true,
+      "why": "Contradicted by the note's own table. Stock on hand at SELLING value is Rs 21,39,299 (verified live); the Oct-Dec 2025 sell-through was Rs 23,87,856 (verified live). That is 0.90 of one season's cover, i.e. LESS than a season, before any pre-season buy. At cost the gap is wider still (Rs 16.41 L on hand vs roughly Rs 18 L of cost-of-sales in one season at the 24% retail margin). The whole 'over-carry' diagnosis fails on the two numbers printed four lines apart.",
+      "correctedNumber": "0.90 season of cover, not more than one season"
+    },
+    {
+      "claim": "'Rs 10,07,840 — 61% of the pile — has not sold in three months or more', with Boys Long Coat (last sold 4-Dec-2025) and Sm Jacket (14-Dec-2025) as the mark-down examples",
+      "refuted": true,
+      "why": "This is a seasonality artefact measured on 30 August. Winter Wear's selling window is Oct-Dec; anything that sold through last season lands in '3-6 months' or '6+ months' by arithmetic, whatever its health. Both named lines last sold in the FIRST WEEKS OF DECEMBER — peak season, not death. Re-cut season-aware: Rs 11,76,102 of the pile last sold since Mar-2026, Rs 3,09,206 last sold inside the Oct-25-to-Feb-26 season, and only Rs 93,930 (last sold before Oct-2025) plus Rs 62,129 (never sold) is genuinely stale = Rs 1,56,059, or 9.5%, not 61%. The note warns 'mark down by last sale date, never by group name' and then walks into the bigger trap: marking down by a calendar clock that does not know the category is seasonal, one month before the season opens. Its own three bucket figures also sum to Rs 10,08,040, not Rs 10,07,840.",
+      "correctedNumber": "Rs 1,56,059 (9.5%) stale on a season-aware test; the stated sum is Rs 10,08,040"
+    },
+    {
+      "claim": "Winter Wear ageing SKU counts: 43 / 75 / 162 / 33",
+      "refuted": true,
+      "why": "Mixed grain inside one table row. The units and cost columns are product-level and exact (1,157 / Rs 6,33,327; 1,188 / Rs 5,38,565; 1,162 / Rs 4,07,346; 275 / Rs 62,129), but the SKU column counts every Winter Wear SKU with a Stock ROW including zero-stock ones. Products actually holding stock are 41 / 61 / 70 / 16. A reader told to mark down '162 SKUs' worth Rs 4,07,346 will find 70.",
+      "correctedNumber": "41 / 61 / 70 / 16 hold stock"
+    },
+    {
+      "claim": "'ARY has bought wound care: 17 SKUs, 142 purchase lines, Rs 2,02,880 at cost, last band-aid order 6-Jul-2026'",
+      "refuted": true,
+      "why": "NEW ERROR INTRODUCED BY THIS REWRITE, and it is exactly the contamination class the vault exists to prevent. The whole medical wound-care purchase ledger is 5 Medicare SKUs — Dettol Bandaid (13 lines, Rs 9,749), Tulip Cotton Ball (4, Rs 3,204), Cotton 10 Gm (3, Rs 2,111), Usha Cotton Rolls (2, Rs 1,688), Trutip Cotton Ball (2, Rs 1,452) = 24 lines, Rs 18,204. Nothing reaches Rs 2 L without sweeping in Fabric Cotton White (Agra) Rs 2,10,582 (TAILORING CLOTH), Stayfree pads Rs 1,06,408, Cotton Buds Rs 15,412, Cotton Bath Mat Rs 15,106, Cream Bell Cotton Candy Rs 15,843 and cottonseed oil Rs 7,855 — my widest defensible sweep is 38 SKUs / 148 lines / Rs 5,09,344, and no subset lands on 17/142/Rs 2,02,880. Only 'last band-aid order 2026-07-06' is confirmed. The agent deleted 'never bought a medical device' as flatly false and replaced it with a fabric-and-sanitary-pad number.",
+      "correctedNumber": "5 SKUs / 24 lines / Rs 18,204"
+    },
+    {
+      "claim": "ProductChildMaster = 111,253 rows of which 26 carry a batch/expiry value (0.023%), all dated 2017-2018; 'the schema CAN hold batch and expiry'",
+      "refuted": true,
+      "why": "Two-thirds right, one-third wrong, and the wrong third is the part that reverses the verify pass. Row count 111,253 exact; 26 rows carry Field2/Field3 (27 carry any field) = 0.023% exact. But the TYPED columns MfgDate and ExpDate are 1900-01-01 in all 111,253 rows — zero real values, exactly as the verify pass said. The 26 are batch code plus dates typed into three generic free-text columns (Field1/2/3), which is not the same as the schema holding batch/expiry. And they are not all 2017-2018: ProductID 07ZD carries 08-Sep-2019. The pharmacy blocker verdict survives either way.",
+      "correctedNumber": "0 of 111,253 typed MfgDate/ExpDate values; 26 free-text rows, one dated 2019"
+    },
+    {
+      "claim": "'probe ors -> 29 SKUs / Rs 28,069 (VERIFIED)' offered as what the multi-word zero misses",
+      "refuted": true,
+      "why": "The tool output reproduces, but publishing it as the answer is the note contradicting itself two bullets after warning 'never read the verdict row without reading the SKUs beneath it'. Of the 29, only 5 are ORS: Cipla Ors 200 Ml Rs 3,233, Ors 200 Ml Orange Rs 2,496, Cipla Ors Jeera Rs 1,152, Cipla Ors Nimbu Rs 640, Ors 200 Ml Apple Rs 640 = Rs 8,161. The largest line in the Rs 28,069 is Raja Masoor Sabat 500Gm at Rs 11,875 (matched via 'masOORSabat'), followed by Si Doctor Set, Camel Color Set, Kores Modelling Clay, Anchor Switch and five Campus SpORSts Shoes. 71% of the figure is dal, crayons and shoes.",
+      "correctedNumber": "5 real ORS SKUs / Rs 8,161"
+    },
+    {
+      "claim": "'Do not add' list: Mamaearth 16 SKUs / Rs 38,668; Korean noodles 5 SKUs / Rs 44,640; intimate wash 2 SKUs / Rs 10,048; the Rs 99-199 sunscreen rung 14 SKUs / Rs 19,829; 28 mosquito SKUs, 4 selling",
+      "refuted": true,
+      "why": "Mixed. Mamaearth 16 / Rs 38,668 exact (and it correctly overrides the verify pass's stale Rs 36,983). Korean noodles exact: five Geki/Nissin SKUs summing to Rs 44,640. Intimate wash is Rs 10,001 not Rs 10,048 (V Wash 100Ml Rs 7,720 + V Wash 20Ml Rs 2,281). The sunscreen rung does NOT reproduce under either available price source — by realised price it is 4 SKUs / Rs 16,916, all sunscreen SKUs are 48 / Rs 88,861, and MaxRetailPrice is 0 on the lot; the note gives no definition. Mosquito: the three named amounts are exact (Rs 4,515 / Rs 1,530 / Rs 1,510) but a brand-term cut gives 25 catalogued and 5 selling, a wider one 33 and 9 — never 28 and 4.",
+      "correctedNumber": "intimate wash Rs 10,001; sunscreen rung not reproducible"
+    },
+    {
+      "claim": "'47% of every rupee lost on an out-of-stock top-10 snack came back on another snack' — the discount that produces the Rs 4-9 L range",
+      "refuted": true,
+      "why": "Appears nowhere in the evidence it cites and contradicts the vault's own live note. Availability.md measures substitution at ~60% season-adjusted (top-10 gain Rs 2.42/bill vs Rs 1.45/bill lost elsewhere) and 24% raw, and its recoverable range on the same base is Rs 5-9 L, not Rs 4-9 L. 47% is not derivable from any published band pair. Worse, the substitution split is computed from the SAME circular classifier ('in stock' = 'rang a sale that day') that got the natural experiment deleted from this playbook — Ten-Moves carries the number forward as 'measured' and drops the circularity caveat with it.",
+      "correctedNumber": "~60% season-adjusted / 24% raw, per the vault's own note"
+    },
+    {
+      "claim": "'It does consume working capital — Rs 51.31 L of goods a year on these lines (VERIFIED)'",
+      "refuted": true,
+      "why": "The figure is verified (COGS Rs 51,30,972) but the label is wrong, and it overstates the ask. Rs 51.31 L is twelve months of cost-of-goods for those 809 lines — annual purchase spend. Working capital is the stock standing at any one moment, i.e. that divided by inventory turns; on confectionery and personal care turning even six times a year it is under Rs 9 L. Move 1 tells a decision-maker the cheap move needs Rs 51 L of capital when it needs a fraction of that.",
+      "correctedNumber": "Rs 51.31 L is annual COGS; working capital is COGS / turns"
+    },
+    {
+      "claim": "'Warehouses 14 and 17 are inactive, 400 km away, and still hold live stock that distorts every store-wide availability statistic'",
+      "refuted": true,
+      "why": "Stated as fact in 'still needs a human' and it is not. Warehouse 17 holds ZERO non-zero stock rows. Warehouse 14 (Talwandi Sabo) holds 806 non-zero rows at a NET NEGATIVE Rs -8,23,199 — it can only push SKUs toward reading out-of-stock, never away. Re-running the headline with WarehouseID NOT IN (14,17): out-of-stock stays 3,051 of 5,950 and the value moves Rs 3,753. It distorts the availability statistic by nothing.",
+      "correctedNumber": "0 SKUs change; Rs 3,753 of value"
+    }
+  ],
+  "survivingClaimsRemoved": [
+    "The 47% substitution rate in Move 1 is the deleted snack natural experiment coming back through the side door. Its classifier ('in stock' = 'the SKU rang a sale that day') is the same circular one the note says produced a refuted finding, and the note presents the output as 'measured' with no caveat. The vault's own live note measures ~60% adjusted / 24% raw and neither is 47%.",
+    "'The schema CAN hold batch and expiry; it has been unused for eight years' softens rather than deletes the reversed correction. The typed MfgDate/ExpDate columns are 1900-01-01 sentinel in all 111,253 rows — the verify pass's 'zero real expiry dates' is live-true today. What 26 rows carry is batch text typed into three generic free-text fields, which is not the schema holding batch/expiry."
+  ],
+  "missing": [
+    "Move 2 is scheduled against itself and the note never notices. It is dated 30-Aug-2026 and tells ARY to mark down winter stock ONE MONTH before the Oct-Dec window in which the same note says the category sells Rs 23.87 L. Nowhere does it say 'do this in February, not September', and nowhere does it say a winter line reading '6+ months quiet' in August is reading the calendar, not the shelf.",
+    "No as-of date on the Move 1 cut. Re-run the identical SQL on 31-Aug and 864 becomes 872 and Rs 73.02 L becomes Rs 73.69 L. Anyone checking the note a day later concludes it is wrong.",
+    "The 'Average days off shelf 128 days | VERIFIED' row reads as a measurement and is not one. There is no stock history in FR8HODBNEW; it is days-since-last-sale. Availability.md says so plainly under 'What this does NOT show'; Ten-Moves, which is the note an operator will read alone, carries no such caveat anywhere.",
+    "Move 1 and Move 2 contradict each other and neither says so. The 864 includes 7 Winter Wear SKUs carrying Rs 1,58,439 — Move 1 says put reorder points on them, Move 2 says stop buying winter wear. It also includes 2 Academy Dress SKUs at Rs 3,79,860 quiet only 40 days, which is a uniform buying cycle, not a replenishment failure.",
+    "No operational path for the one move that matters. The note proves ReorderLevel exists and has been used once in 21,479 SKUs, but never says whether FusionERP8 produces a reorder report anyone can act on, that the `ary` CLI is read-only so a human must key this in the ERP, or which 100 SKUs go first. 'Confectionery and Personal Care, 463 SKUs' is the whole of the sequencing.",
+    "Two forward-looking figures carry no status label, breaking the note's own VERIFIED/ESTIMATED/NOT-CHECKED rule: the pharmacy's '~Rs 2.66 L of GM' and first aid's 'roughly Rs 2.20 L revenue / Rs 65k GM'."
+  ]
+}

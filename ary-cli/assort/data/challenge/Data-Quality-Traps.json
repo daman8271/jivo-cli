@@ -1,0 +1,81 @@
+{
+  "netAssessment": "mostly-solid",
+  "refuted": [
+    {
+      "claim": "'When an aggregate is 119x reality, look for one row before you condemn a column'",
+      "refuted": true,
+      "why": "The 119x does not reproduce under any denominator I tested. Cash SUM(Amount) 8,942,232,362 against the shop's 12m total 76,619,249 is 116.71x; against the net payment total 76,619,575 it is 116.71x; against cash net 20,993,351 it is 425.96x. 119 is unsourced and appears in a sentence carrying no VERIFIED/ESTIMATED tag in a note whose whole thesis is that untagged numbers are how this vault got burned.",
+      "correctedNumber": "116.7x (vs the shop's 12m sales), or 426x (vs cash net)"
+    },
+    {
+      "claim": "'A cashier keyed a nine-digit number into the tendered box'",
+      "refuted": true,
+      "why": "8,909,081,003 is a ten-digit number. Trivial in isolation, but it is the one narrative detail the reader uses to picture the defect, and it sits three lines from the corrected figures.",
+      "correctedNumber": "ten-digit"
+    },
+    {
+      "claim": "DELETED: '99.7% of bills have no salesperson, SalesPersonID [NONE] on 1,085,051 bills' — deleted because 'SaleHeader has no SalesPersonID column at all... The limit is real; the cited field is not'",
+      "refuted": true,
+      "why": "This is the note's worst error and it is the note's own Trap 5 failure mode repeated: a test that could not expose the truth. SalesPersonID DOES exist — on SaleDetail, column 14 (`ary schema columns SaleDetail`). It is populated on 100% of lines (990,329 lines in 12m, ZERO with value 0) across 7 distinct IDs. And '[NONE]' is not a CLI-side label: SalesPersonMaster row 1 is literally named '[NONE]', and it carries 988,910 of 990,329 lines (99.86%). All-time, 1,096,388 of 1,099,966 bills touch SalesPersonID 1 = 99.67%. So the deleted claim was TRUE, its percentage was right, and the note replaced a correct finding with a false one — then published 'no salesperson on a bill' as a permanent limit under 'What cannot be answered at all'. Salesperson IS answerable; the author checked only the header table.",
+      "correctedNumber": "SaleDetail.SalesPersonID, 100% populated, 7 IDs; ID 1 = '[NONE]' on 99.7% (1,096,388 of 1,099,966 bills all-time)"
+    },
+    {
+      "claim": "Trap 6: 'bandaid returns 1 SKU with 142 purchase lines and Rs 2.02 lakh of purchases behind it (VERIFIED)'",
+      "refuted": true,
+      "why": "Live PurchaseDetail JOIN ProductMaster on the single matching SKU (01S8 Dettol Bandaid, the only band-aid name in the catalogue under any spelling): 13 purchase lines, 7,408 units, Rs 9,749.45 all-time. Not 142 lines, not Rs 2.02 lakh — wrong by 11x on lines and 21x on value. I could not source 142/Rs 2.02 L to any neighbouring term either (antisept = 87 lines / Rs 1,14,768; dettol = 179 lines / Rs 4,17,149). This number is load-bearing: it is the rebuttal to the device lane's 'never bought a medical device'. At Rs 9,749 of lifetime purchases that rebuttal is far weaker than the note makes it look. The 12m SALE side is 301 lines / 1,824 units / Rs 4,457 — the 1,824 matches the verify pass, so the author may have crossed the sale and purchase ledgers.",
+      "correctedNumber": "13 purchase lines, Rs 9,749 (not 142 lines / Rs 2.02 lakh)"
+    },
+    {
+      "claim": "Trap 11 presents the Rs 82.67 cr / 10.8x figure as the headline measure that the coverage files are 'substring garbage'",
+      "refuted": true,
+      "why": "The number is exact but the inference is a category error, as the author itself conceded in its residual-risk note and then published anyway without the caveat in the note. arySales12m is a per-line match total over overlapping SKU sets; ANY per-line name matcher over-sums, however accurate, because two lines legitimately matching the same SKU each book its full sales. Quantifying it: de-duping only the exact within-file (sales, SKU) pairs drops the sum from Rs 82.67 cr to Rs 45.50 cr — 45% of the 'inflation' is bookkeeping duplication, not mismatch. The remaining 5.9x is still overlap, not proven garbage. The defensible evidence is the structural count plus the five worked examples; the 10.8x row should not sit in a VERIFIED column as proof of garbage.",
+      "correctedNumber": "Rs 45.50 cr (5.9x) after removing exact within-file duplicate pairs; the residual is overlap, not demonstrated mismatch"
+    },
+    {
+      "claim": "Trap 11 table: '…marked covered 2,322 (90.3%) / …on a broad single-word match 1,607 / …on a specific match 673'",
+      "refuted": true,
+      "why": "The leading ellipses make 1,607 and 673 read as subsets of the 2,322 covered lines. They are not — they are counts across all 2,572 lines including dormant and missing. Within the covered set the real figures are broad 1,512 and specific 656. The prose ('62% of all lines') uses the all-lines denominator and is right, so this is a table-construction defect rather than a bad number, but a reader quoting '1,607 of the covered lines' would be wrong.",
+      "correctedNumber": "Of the 2,322 covered lines: 1,512 broad, 656 specific"
+    },
+    {
+      "claim": "Trap 11: the 170-SKU / Rs 2,57,546 figure is booked 'the same figure twice' (denture brush + replacement electric brush heads)",
+      "refuted": true,
+      "why": "It appears FOUR times in oralcare.json, not twice: 'Toothbrush — baby first brush / silicone finger brush', 'Interdental brush / proxa brush', 'Replacement electric brush heads' and 'Denture brush / denture box / appliance case', all at 170 SKUs / Rs 2,57,546. The error understates the author's own case, but it is a VERIFIED-marked specific that is wrong.",
+      "correctedNumber": "four times, not twice"
+    },
+    {
+      "claim": "Trap 11: the identical 18 SKUs / Rs 3,62,073 banana figure is 'booked against four different lines in three files'",
+      "refuted": true,
+      "why": "It is FIVE lines across three files: fruits.json x3 (Robusta/Grand Naine, Elaichi/Yelakki, raw/green cooking), snacks.json x1 (banana chips sweet), vegetables.json x1 (fasting/vrat vegetables). Value is 362,073.25. Again the miscount understates the author's case — but it also hides the sharper point (see 'missing'): two of those five are matchQuality 'specific', so the note's implied remedy of trusting 'specific' over 'broad' is not supported by its own evidence.",
+      "correctedNumber": "five lines in three files"
+    },
+    {
+      "claim": "Trap 12: base 5,950 retail SKUs sold in 12m; company-wide out of stock 3,051 (51.3%) carrying Rs 1,44,32,593; retail counters only 3,211; difference 160",
+      "refuted": true,
+      "why": "Not reproducible and it silently contradicts the vault's own headline. This is the ONLY trap section with a live-figures table and NO query printed, so the reader cannot rebuild it. My straightforward reconstruction (SKUs sold 12m at WH 9/11/15, stock netted company-wide excluding WH 14/17) gives base 5,974, OOS 3,054, Rs 1,49,45,185, counters-only 3,222 — near but matching none of the four published cells. Meanwhile the verify pass this note cites as its authority says 5,953 / 3,049 (51.2%) / Rs 1.51 Cr. Three different sets of numbers now exist for the vault's single most important finding and the note reconciles none of them. Internally the note is consistent (3,211-3,051=160), which is exactly what makes it publishable and wrong.",
+      "correctedNumber": "Unresolved. Note says Rs 1.44 Cr, verify pass Rs 1.51 Cr, my reconstruction Rs 1.49 Cr — the note must print its query"
+    },
+    {
+      "claim": "Trap 12: Talwandi Sabo carries -127,849 units / -Rs 8,23,199 of negative book stock = '48% of the entire company's negative position'",
+      "refuted": true,
+      "why": "The two halves of the ratio use different definitions — the exact sin Trap 9 exists to warn about. The numerator -127,849 / -Rs 8,23,199 is WH14's NET position (all its rows, positives netted against negatives) — I reproduced it exactly that way. The denominator (the company's -Rs 17,18,208) is negative-rows-only. Measured consistently, WH14's negative rows alone are -145,518.63 units / -Rs 9,83,935 = 57.3% of the company's negative position; on a net basis the company total is POSITIVE Rs 96.90 lakh, so the percentage is undefined. The note nets on one side of a ratio and not the other, three sections after telling the reader never to do that.",
+      "correctedNumber": "57.3% (negative rows both sides), on -Rs 9,83,935 not -Rs 8,23,199"
+    }
+  ],
+  "survivingClaimsRemoved": [
+    "'No salesperson on a bill — SaleHeader has no SalesPersonID column' in the 'What cannot be answered at all' table. This is a FALSE limit and it must come out of the note entirely. SaleDetail.SalesPersonID exists and is 100% populated (990,329 of 990,329 lines non-zero, 7 distinct IDs), and SalesPersonMaster row 1 is literally named '[NONE]' carrying 99.7% of bills. The note deleted a true claim on the strength of checking only the header table.",
+    "Trap 6: 'bandaid returns 1 SKU with 142 purchase lines and Rs 2.02 lakh of purchases behind it (VERIFIED)'. Live figure is 13 purchase lines / Rs 9,749 on the single SKU 01S8 Dettol Bandaid. Wrong by 11x on lines, 21x on value, and it is the evidence the whole Trap 6 device-lane rebuttal rests on.",
+    "Trap 12's four headline cells (5,950 base / 3,051 OOS / Rs 1,44,32,593 / 3,211 counters-only) are marked VERIFIED with no query and reproduce to none of the three competing figures now in circulation. Either print the SQL or drop the table to the Availability note that owns the number.",
+    "Trap 12's 'Talwandi Sabo = 48% of the entire company's negative position' mixes a netted numerator with a row-wise-negative denominator. Consistently measured it is 57.3% on -Rs 9,83,935.",
+    "Trap 11's 'Inflation 10.8x the entire shop' as a VERIFIED row proving substring garbage. Keep the number, move it out of the evidence column, and state that arySales12m is non-additive by construction.",
+    "The 'same figure twice' (actually four times) and 'four different lines in three files' (actually five) specifics in Trap 11, and the '119x reality' and 'nine-digit number' details in the deleted-Trap-3 section."
+  ],
+  "missing": [
+    "THE QUERY FOR TRAP 12. It is the only trap with a live-figures table and no SQL, and it is the one whose numbers disagree with the vault headline. Every other trap prints its query; this one asks to be trusted.",
+    "A reconciliation of the three competing availability numbers now in the vault: this note's Rs 1,44,32,593 / 3,051 / 5,950, the verify pass's Rs 1.51 Cr / 3,049 / 5,953, and a plain reconstruction's Rs 1,49,45,185 / 3,054 / 5,974. A reader will quote whichever they open first and two of them will be wrong.",
+    "Trap 4 omits the third bucket: 1,808 of the 5,012 comparable SKUs (36.1%) have master cost EXACTLY EQUAL to ledger WAC. 'Stale and biased HIGH' is true of the tail, not of the plurality, and the note never says so. It also never says 5,012 is only 26% of the 19,494 active SKUs, so 63.4% describes actively-bought SKUs, not the catalogue — the author knew this and left it out of the note.",
+    "Trap 11 attacks 'broad' and implies 'specific' is safe. Its own data refutes that: of the five lines carrying the identical banana 18-SKU/Rs 3,62,073 figure, two are matchQuality 'specific' ('raw/green cooking banana' and 'fasting/vrat vegetables'). A reader told to prefer specific matches is still reading garbage. Say that the tier label carries no information at all.",
+    "No trap for the mistake the note itself made: in this schema the same concept lives on the header in some tables and the line in others (SalesPersonID is on SaleDetail, WarehouseID is on SaleDetail not SaleHeader, LocationID is on SaleHeader). 'Column not found on the header' is not evidence of absence. This is the single most reusable lesson available from this review and it is absent.",
+    "Trap 6 never checks its own strongest counter-example. ProductMaster holds 3 real thermometers (Hicks, Cipla x2, all in Medicare) and the correctly-spelled subgroup 'Thermometer' (785) sits beside the typo 'Thrermometer' (789). I checked: all 3 thermometers have ZERO purchase lines, so 'never bought a medical device' survives on thermometers and falls only on Rs 9,749 of Dettol Bandaid. The note should state that outcome rather than leaving the reader to assume the device lane was comprehensively wrong."
+  ]
+}

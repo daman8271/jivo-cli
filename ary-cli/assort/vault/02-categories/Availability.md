@@ -12,16 +12,19 @@ system: ARY / FusionERP8
 note replaces the assortment brief: it measures what is off the shelf, proves the cause is
 a failure to reorder rather than a decision to delist, and rebuilds the snack "natural
 experiment" that was the brief's causal evidence — which does not survive contact with
-seasonality. Read [[Verify-Pass-2026-08-30]] for what else was refuted, [[Catalogue-Shape]]
-for why adding SKUs makes this worse, and [[Ten-Moves]] for what to do.
+seasonality. [[Catalogue-Shape]] is why adding SKUs makes this worse; [[Ten-Moves]] is what
+to do. **[[Verify-Pass-2026-08-30]] still prints the brief's refuted headline figures — the
+deletion table at the foot of this note is what replaces them.**
 
 ## The headline
 
 **Definition, stated out loud because it is load-bearing: "out of stock" means
-company-wide `SUM(Stock.Quantity) <= 0` read on 2026-08-30.** Retail base = sold between
-2025-08-31 and 2026-08-31 at warehouses 9 (Ary Pos), 11 (Ary Clothing), 15 (Ary Lite),
-excluding customer `002CM` (Hunger Heroes wholesale), `ItemType` 165/567 (raw material and
-service charges), every `RestMenuChild` canteen menu line, and the Vegetable/Fruits groups.
+company-wide `SUM(Stock.Quantity) <= 0`, read 2026-08-30 23:39 IST** (re-read at that time,
+identical to the first read; DB clock and `SaleHeader` were live to 21:15 the same day).
+Retail base = sold between 2025-08-31 and 2026-08-31 at warehouses 9 (Ary Pos), 11 (Ary
+Clothing), 15 (Ary Lite), excluding customer `002CM` (Hunger Heroes wholesale), `ItemType`
+165/567 (raw material and service charges), every `RestMenuChild` canteen menu line, and the
+Vegetable/Fruits groups.
 
 | | | Status |
 |---|---|---|
@@ -32,7 +35,9 @@ service charges), every `RestMenuChild` canteen menu line, and the Vegetable/Fru
 | Share of the retail base sitting behind an empty shelf | **24.8%** | VERIFIED |
 
 > `WITH b AS (SELECT d.ProductID, SUM(d.Quantity*d.SaleRate) val, COUNT(DISTINCT CAST(h.VoucherDate AS date)) days_sold, MAX(CAST(h.VoucherDate AS date)) last_sale FROM SaleDetail d JOIN SaleHeader h ON h.SerialNumber=d.SerialNumber JOIN ProductMaster p ON p.ProductID=d.ProductID LEFT JOIN ProductGroupMaster g ON g.ProductGroupID=p.ProductGroupID WHERE h.VoucherDate>='2025-08-31' AND h.VoucherDate<'2026-08-31' AND d.WarehouseID IN (9,11,15) AND h.CustomerID<>'002CM' AND p.ItemType=164 AND d.ProductID NOT IN (SELECT ProductID FROM RestMenuChild) AND g.ProductGroupName NOT IN ('Vegetable','Fruits') GROUP BY d.ProductID), st AS (SELECT ProductID, SUM(Quantity) q FROM Stock GROUP BY ProductID) SELECT COUNT(*), SUM(CASE WHEN ISNULL(st.q,0)<=0 THEN 1 ELSE 0 END), CAST(SUM(CASE WHEN ISNULL(st.q,0)<=0 THEN b.val ELSE 0 END) AS decimal(18,0)) FROM b LEFT JOIN st ON st.ProductID=b.ProductID`
-> — this `b` CTE is the base for every figure in this note.
+> — this `b` CTE is the base for every SKU-level figure down to the end of "What the whole
+> prize is worth". **It is NOT the base of the natural-experiment section, which runs on a
+> broader one printed there.**
 
 **The read is not an artefact of a stale `Stock` table.** Out-of-stock rate rises
 monotonically with time since last sale, which is what a live stock table must do:
@@ -142,10 +147,26 @@ The brief's causal evidence was: *"on the 42 best days 8 of the top-10 snack SKU
 shelf and the shop sold Rs 12.55 of snacks per bill; on the 45 worst days 0-4 were available
 and it sold Rs 9.47. Footfall IDENTICAL — 998 vs 997 bills/day."*
 
-The arithmetic reproduces. The claim does not. Top-10 snacks by 12m value in
-`ProductGroupID=113, SubGroupID IN (746,547)` are `00BF, 00BD, 00BM, 00BS, 00BC, 00BN, 00BE,
-0FYL, 00BJ, 0FYJ` (VERIFIED). Banding the 354 trading days by how many of those ten rang a
-sale that day:
+**This section runs on a broader base than the rest of the note, and reproduces only on it:**
+
+> `WHERE h.VoucherDate>='2025-09-01' AND h.VoucherDate<'2026-08-31'` — **every warehouse,
+> every customer, no `ItemType` / `RestMenuChild` / group filter.** Snack lines are
+> `ProductGroupID=113 AND SubGroupID IN (746,547)`; the per-bill denominator is every bill
+> in `SaleHeader` in that window.
+
+That base contradicts the note's own design in three measurable ways, all VERIFIED:
+
+- It includes warehouse 12, **Ary G Canteen — Rs 1,08,100 of the Rs 41,47,393 snack total** —
+  and customer `002CM`, both of which the retail base excludes.
+- **93,910 of the 372,378 denominator bills (25.2%) carry no line at warehouses 9/11/15 at
+  all.** They sit in the Rs/bill denominator anyway.
+- On the declared retail base the same 12m snack total is **Rs 40,54,018**, 2.3% lower. The
+  band, month, deviation and substitution tables below have **not** been re-derived on that
+  base — read them as measuring the whole shop, not the retail counter.
+
+The arithmetic reproduces. The claim does not. Top-10 snacks by 12m value are `00BF, 00BD,
+00BM, 00BS, 00BC, 00BN, 00BE, 0FYL, 00BJ, 0FYJ` (VERIFIED). Banding the 354 trading days by
+how many of those ten rang a sale that day:
 
 | Top-10 selling that day | Days | Bills/day | Snack Rs/bill | Status |
 |---|---|---|---|---|
@@ -191,15 +212,18 @@ correction is available from a single `Stock` snapshot.
 | 2026-08 | 33,628 | 10.55 | 0 | 4 | VERIFIED |
 
 Monthly snack spend swings Rs 8.33 → Rs 14.12 per bill, a Rs 5.79 range against a Rs 3.08
-claimed effect. **31 of the 42 best days sit in the four richest snack months; 23 of the 45
-worst days sit in Dec-25 and Jul-26.** See [[Seasonality]].
+claimed effect. **25 of the 42 best days (60%) sit in the four richest snack months by
+Rs/bill — Sep-25, Feb-26, Oct-25, Dec-25 (6+6+8+5); 23 of the 45 worst days sit in Dec-25
+(11) and Jul-26 (12).** VERIFIED, both read straight off the table above. (By total snack
+rupees instead the four richest months hold 19 of the 42 — the confound is real either way.)
+See [[Seasonality]].
 
 Removing month effects (bill-weighted deviation of each band from its own month's rate):
 
 | Band | Days | Bills | Raw Rs/bill | Within-month deviation | Status |
 |---|---|---|---|---|---|
 | n=8 (published "best") | 42 | 53,164 | 12.55 | **−0.02** | VERIFIED |
-| n=5–7 | 267 | 274,304 | 11.10 | +0.17 | VERIFIED |
+| middle (n=5–7 plus the 2 days at n=9) | 267 | 274,304 | 11.10 | +0.17 | VERIFIED |
 | n≤4 (published "worst") | 45 | 44,910 | 9.70 | **−1.00** | VERIFIED |
 
 **Season-adjusted, the gap is Rs 0.98/bill, not Rs 3.08 — and the good days are not above
@@ -212,7 +236,7 @@ top-10 and the rest of the snack shelf, after removing month effects:
 | Band | Top-10 deviation | Other snack SKUs' deviation | Status |
 |---|---|---|---|
 | n=8 | **+0.94** | **−0.97** | VERIFIED |
-| n=5–7 | +0.06 | +0.11 | VERIFIED |
+| middle (267 days) | +0.06 | +0.11 | VERIFIED |
 | n≤4 | **−1.48** | **+0.48** | VERIFIED |
 
 Between the worst and best bands the top-10 gain Rs 2.42/bill while the rest of the snack
@@ -220,18 +244,28 @@ shelf loses Rs 1.45/bill. **About 60% of the "lost" rupees are recovered elsewhe
 same category.** Raw (unadjusted) the substitution reads 24%. Either way the shopper mostly
 buys a different packet, not nothing. VERIFIED.
 
-And the whole-bill average is *higher* on bare-shelf days (Rs 246.69) than on full-shelf
-days (Rs 238.65) — VERIFIED, unadjusted. That is mostly seasonal mix, but it is the opposite
-of what the brief implies, and it is the reason the snack effect cannot be extrapolated to
-the till.
+**Whole-bill spend is not ordered by snack availability at all.** All three bands, same base:
+
+| Band | Days | Bills | Rs per bill | Status |
+|---|---|---|---|---|
+| n≤4 | 45 | 44,910 | **246.69** | VERIFIED |
+| middle (n=5–7 plus n=9) | 267 | 274,304 | **192.68** | VERIFIED |
+| n=8 | 42 | 53,164 | **238.65** | VERIFIED |
+
+> `SUM(SaleHeader.BillAmount)/COUNT(DISTINCT SerialNumber)` per band, same day-banding as above.
+
+The middle band is 73% of the year and runs 22% below **both** extremes. There is no
+monotone relationship and no ordering here, so this supports no directional claim in either
+direction — it is simply the reason the snack effect cannot be extrapolated to the till.
 
 ### What the snack shelf is actually worth
 
 | | Value | Status |
 |---|---|---|
-| 12m bills / trading days | 372,378 / 354 | VERIFIED |
+| 12m bills / trading days (broad base) | 372,378 / 354 | VERIFIED |
 | 12m snack sales (group 113, subgroups 746+547) | Rs 41,47,393 | VERIFIED |
-| Snack gross margin, purchase-ledger WAC | **19.92%** (Rs 41.43 L rev, Rs 33.18 L COGS) | VERIFIED |
+| Snack gross margin, purchase-ledger WAC from `PurchaseHeader.VoucherDate >= '2025-09-01'` | **19.92%** (Rs 41.43 L rev, Rs 33.18 L COGS) | VERIFIED |
+| …same on all-history WAC | 22.12% | VERIFIED — the window is load-bearing; state it or the margin is unreproducible |
 | **Published uplift** | Rs 5.26 L gross / Rs 56,014 GM | REFUTED |
 | **Corrected uplift** — 44,910 bare-shelf bills × Rs 0.98 | **~Rs 44,000 gross / ~Rs 8,800 GM** | ESTIMATED (assumes the bare days would have run at their own month's norm) |
 
@@ -245,8 +279,9 @@ carry the replenishment case on its own. The case rests on the 864 SKUs and the 
 |---|---|---|
 | Trailing sales exposed by the 864 empty regular sellers | Rs 73,02,272 | VERIFIED |
 | …of which costable against the purchase ledger (809 SKUs) | Rs 69,15,436 | VERIFIED |
-| Gross margin on those 809 lines | **25.80%** | VERIFIED |
-| Gross profit at stake if every rupee returned | Rs 17.84 L | VERIFIED (arithmetic on the two rows above) |
+| Gross margin on those 809, WAC from `PurchaseHeader.VoucherDate >= '2025-08-31'` | **25.80%** | VERIFIED |
+| …same 809 on all-history WAC | 27.61% | VERIFIED — again, the window is load-bearing |
+| Gross profit at stake if every rupee returned | Rs 17.84 L | VERIFIED (Rs 69,15,436 × 25.80%) |
 | Realistic recovery after ~60% substitution | **Rs 5–9 L of gross profit** | ESTIMATED — substitution measured only on the snack shelf, applied here by assumption |
 
 **No capital is required.** These are lines ARY already lists, already knows how to buy, and
@@ -260,40 +295,55 @@ was buying six months ago.
   neither establishes intent, and neither is stock history.
 - **Rs 1.44 Cr and Rs 73.02 L are demand *exposed*, not revenue *lost*.** The one place
   substitution could be measured, it ate ~60% of the effect.
+- **Rs 12,04,142 of the Rs 73.02 L — 16.5% — is apparel and seasonal stock** (Academy Dress,
+  Footwear, Unstiched Suits, Winter Wear, Under Garment, Accessories, Bag & Purses, Home
+  Furnishing, Life Style). VERIFIED, group split of the 864. Verify-pass action A2 says to
+  mark the winter-wear rack down; "reorder the 864" buys it back. And the two largest named
+  lines are school uniform and school footwear, out 23 and 40 days at the start of an
+  academic year — seasonal timing, not proof of a reorder failure. **Unresolved.**
+- **Cross-note conflict, unresolved:** [[Ten-Moves]] states Rs 18,84,464 on the same Rs 69.15
+  L. That implies a 27.25% margin, which matches neither WAC window computed above; Rs 17.84
+  L = Rs 69,15,436 × 25.80% does. One of the two is wrong.
 - **Do not measure this at the retail warehouses alone.** Shelf-only stock reads 3,211 out
   of stock and 25 of the top 100 — an unposted-transfer artefact, not an empty shelf.
   VERIFIED: Maggi Noodles 48 Gm Masala reads −45 at Ary Pos and −107 at Ary Lite while 2,052
   units sit in Ary Warehouse. Company-wide `SUM(Stock.Quantity)` is the only defensible
   read. See [[Data-Quality-Traps]].
-- **The top-100 claim is gone.** On company-wide stock, 16 of the top 100 read zero, and only
-  8 have also been quiet ≥21 days — of which Sardar Blazer 30 Cm, Sardar Blazer 48 Cm and
-  Nursing Purple Uniform sold on 3–4 days in the entire year. The honest sentence is "a
-  handful of top-100 lines, and one that matters: Lays Magic Masala 55 Gm, 177 selling days,
-  109 days empty." VERIFIED.
+- **The top-100 claim is gone, and the replacement is not one line.** On company-wide stock,
+  16 of the top 100 read zero and 8 have also been quiet ≥21 days. **Five of those eight
+  clear this note's own ≥20-selling-day bar and carry Rs 9,28,889 between them:** White Suit
+  40 Cm (Rs 2,94,800 / 110 days), Campus Sports Shoes 06 Art-677 (Rs 2,53,710 / 98),
+  Pranav Unstiched Suits 5208511 (Rs 1,41,979 / 50), Lays Magic Masala 55 Gm (Rs 1,39,840 /
+  177), Sunil Badam 250 Gm (Rs 98,560 / 118). Three of the five are already in the named-lines
+  table above. The other three — Sardar Blazer 30 Cm, Sardar Blazer 48 Cm, Nursing Purple
+  Uniform — sold on 3–4 days in the entire year and are not a replenishment problem. VERIFIED.
 - **Nothing here measures what a shopper bought instead, or walked out without.** No basket
   counterfactual exists in this database — see [[Basket-And-Footfall]] for the only basket
   structure that does.
 
 ## Claims deleted from the brief
 
-Each was tested against live data on 2026-08-30 and failed. They survive only in
-[[Corrections-Log]] and [[Verify-Pass-2026-08-30]].
+Each was tested against live data on 2026-08-30 and failed. Each is restated here **with its
+correct value**; [[Verify-Pass-2026-08-30]] and [[Corrections-Log]] still carry the wrong
+ones as written.
 
 | Deleted claim | What is true | Status |
 |---|---|---|
 | Rs 1.51 Cr behind an empty shelf | Rs 1.44 Cr (4.6% high) | VERIFIED |
-| 27 of the top 100 sellers out of stock | 16 raw; 8 genuinely quiet; 3 of those sold on 3–4 days all year | VERIFIED |
+| 27 of the top 100 sellers out of stock | 16 raw; 8 quiet ≥21 days; 5 of those are real regular sellers worth Rs 9.29 L; 3 sold on 3–4 days all year | VERIFIED |
 | 629 SKUs / Rs 50.13 L of repeat demand | 864 SKUs / Rs 73.02 L — the error runs the *other* way; no threshold yields the published pair | VERIFIED |
 | "Footfall IDENTICAL — 998 vs 997 bills/day" | 1,265.8 on the best days vs 987.5 on the compared worst days | VERIFIED |
 | "Same traffic, different shelf, 25% less spend" | Three different day-sets, seasonally confounded; season-adjusted gap Rs 0.98/bill | VERIFIED |
 | Snack uplift Rs 5.26 L gross / Rs 56,014 GM | ~Rs 44,000 gross / ~Rs 8,800 GM | ESTIMATED |
-| Snack gross margin 10.65% | 19.92% on purchase-ledger WAC | VERIFIED |
+| Snack gross margin 10.65% | 19.92% on purchase-ledger WAC from 2025-09-01 | VERIFIED |
 
 ## See also
 
-- [[Verify-Pass-2026-08-30]] — the corrections log this note is built on; read it before quoting any other figure in this vault
+- [[Verify-Pass-2026-08-30]] — the corrections log this note was built from. **Its headline
+  section still asserts Rs 1.51 Cr, 5,953 / 3,049 / 51.2%, "27 of top 100", "629 SKUs /
+  Rs 50.13 L" and "998 vs 997" as live findings. The table above supersedes all six.**
 - [[Catalogue-Shape]] — why adding SKUs to a catalogue with 51% of its working range empty makes this worse, not better
-- [[Ten-Moves]] — reorder points on the 864 is move A1, and every category-add stays invalid until it holds a quarter
+- [[Ten-Moves]] — reorder points on the 864 is move A1; its Rs 18.84 L conflicts with this note's Rs 17.84 L
 - [[Data-Quality-Traps]] — the unposted-transfer artefact that inflates any warehouse-level stock read, and the category tree that cannot answer "do we carry this"
 - [[Seasonality]] — the Rs 8.33–14.12 monthly snack swing that swamped the natural experiment
 - [[Basket-And-Footfall]] — the fresh basket breaks as a set; the same logic applies to a bare snack shelf

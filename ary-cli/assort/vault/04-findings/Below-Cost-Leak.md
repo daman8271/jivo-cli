@@ -2,265 +2,264 @@
 type: finding
 source: FR8HODBNEW (live)
 mined: 2026-08-30
-confidence: high
+confidence: medium
 system: ARY / FusionERP8
 ---
 
-# Below-cost leak — Rs 2.40 lakh a year, and three quarters of it never touches the campus
+# Below-cost leak — Rs 1.34 lakh a year net of returns, and nine tenths of it is sold off-campus
 
-`ary assort leak` still finds real below-cost selling, but the story in the previous version
-of this note was wrong in its most quoted line. **Rs 1.79 lakh of the Rs 2.40 lakh goes to two
-buyers who are not on the campus at all** — the Delhi NGO of [[Institutional]] and ARY's own
-Delhi parent. The campus residue is Rs 0.61 lakh and **every rupee of it is a costing
-artefact**, which is the same class of defect [[Data-Quality-Traps]] catalogues and which
-[[Verify-Pass-2026-08-30]] found running through this whole vault.
+`ary assort leak` finds real below-cost selling, but its headline is gross: it nets no sale
+returns and counts a bill [[Duplicate-Bill]] flags as double-keyed. Net of both the leak is
+**Rs 1.34 lakh, not Rs 2.40 lakh**, and it goes almost entirely to the Delhi NGO of
+[[Institutional]] and ARY's own Delhi parent. What reaches a campus buyer is **-Rs 12,465**,
+a catalogue defect of the kind [[Data-Quality-Traps]] lists, not a price. The milk-subsidy
+reading is deleted (§3).
 
-**The milk subsidy reading is deleted.** All 13,605 litres go to the NGO; none reach a
-boarding child. See §3.
+## 1. What the tool reports, and the two things it leaves out
 
-## 1. What the tool reports today
+`ary assort leak`, live 2026-08-30 (12-month window, min 20 units, purchase-ledger cost):
+24 SKUs, **-Rs 2,40,010.68** — 21 "plausible" (-Rs 2,10,835.41) and 3 under half cost
+(-Rs 29,175.27). VERIFIED · `ary assort leak`.
 
-`ary assort leak`, run live 2026-08-30 on the rebuilt binary (12-month window, min 20 units,
-purchase-ledger cost — never the price master):
+That is gross. On the tool's own definition (revenue − purchase WAC × units):
 
-| Bucket | SKUs | Window loss | Status |
+| Basis | SKUs | Window loss | Status |
 |---|---|---|---|
-| Plausible real below-cost selling | 21 | **-Rs 2,10,835.41** | VERIFIED · `ary assort leak` |
-| Sale under HALF cost — pricing / pack error | 3 | -Rs 29,175.27 | VERIFIED · same run |
-| **Total** | **24** | **-Rs 2,40,010.68** | VERIFIED |
+| As the tool prints it | 24 | -Rs 2,40,010.68 | VERIFIED |
+| Net of sale returns | 24 | **-Rs 1,49,315.89** | VERIFIED |
+| Net of returns **and** the bill [[Duplicate-Bill]] flags (`2002752.0001`) | 24 | **-Rs 1,33,702.40** | VERIFIED, conditional on that bill being a duplicate |
 
-The ten largest lines:
+> Query: the tool's own `pur`/`sal` CTEs with sale movement re-expressed as `SaleDetail UNION ALL
+> -SaleReturnDetail`, joined to their headers over the same 12-month window, optionally
+> `AND d.SerialNumber <> 2002752.0001`. The same 24 SKUs qualify on every basis.
 
-| Product | Group | Units 12m | Purchase cost | Sale rate | Window loss | Status |
+Returns matter because of one SKU: `SaleReturnDetail` gives back **837 Am Lower units — 831 of
+them from the parent `0000L`** — plus 5 units across four other lines, and nothing else.
+
+| Product | Units 12m (net) | Cost | Sale rate | Gross loss | Net loss | Status |
 |---|---|---|---|---|---|---|
-| Am Lower | Mens Wear | 1,510 | Rs 173.26 | Rs 107.60 | **-Rs 99,141.85** | VERIFIED |
-| Loose Milk | Mini Meals | 13,605.20 | Rs 52.01 | Rs 47.00 | **-Rs 68,153.05** | VERIFIED |
-| Red Label Tea 22 Gm | Tea & Coffee | 75 | Rs 206.44 | Rs 17.33 | -Rs 14,182.67 | VERIFIED |
-| Girlish Woolen Pajami | Winter Wear | 46 | Rs 414.29 | Rs 138.43 | -Rs 12,689.52 | VERIFIED |
-| Desi Ghee 1 Ltr | Oil & Ghee | 175 | Rs 471.18 | Rs 414.80 | -Rs 9,867.04 | VERIFIED |
-| Dahi_Z | Others | 3,114.70 | Rs 73.12 | Rs 69.98 | -Rs 9,792.00 | VERIFIED |
-| Rajdhani Daliya 1 Kg | Rice & Other Grains | 3,450 | Rs 37.33 | Rs 35.14 | -Rs 7,576.00 | VERIFIED |
-| Pumpkin_Z | Vegetable | 2,400 | Rs 13.56 | Rs 11.33 | -Rs 5,344.00 | VERIFIED |
-| Mausambi_Z | Fruits | 894 | Rs 66.29 | Rs 63.20 | -Rs 2,760.30 | VERIFIED |
-| Shubh Diwali Diya | Decoratives | 72 | Rs 61.15 | Rs 29.17 | -Rs 2,303.08 | VERIFIED |
+| **Am Lower** | 1,510 → **673** | Rs 173.26 | Rs 107.60 → **Rs 161.21** | -Rs 99,141.85 | **-Rs 8,107.17** | VERIFIED |
+| Loose Milk | 13,605.20 | Rs 52.01 | Rs 47.00 | -Rs 68,153.05 | -Rs 68,153.05 | VERIFIED |
+| The other 22 SKUs (largest, Red Label Tea 22 Gm, -Rs 14,182.67) | | | | -Rs 72,715.78 | -Rs 73,055.67 | VERIFIED |
 
-Every one of the 24 carries `ConversionFactor 1.000` with matching primary and alternate
-units, so none of this is a litres-versus-kilos artefact.
+Ex-duplicate, Loose Milk falls to 11,574.80 L and **-Rs 57,982.09** (VERIFIED — the figure
+[[Institutional]] already carries), the whole Rs 15,613 gap between the last two basis rows.
+All 24 carry `ConversionFactor 1.000`, but **22 of 24 — not all 24 — have `UnitID =
+AlternateUnitID`**: **Loose Milk is Ltr / Kgs**, **Mix Dal_L is Kgs / Pcs** (VERIFIED ·
+`ProductMaster` joined twice to `UnitMaster`). Milk is the largest line here, so the unit
+disclaimer cannot rule out a litres-versus-kilos artefact on it. NOT-CHECKED whether one exists.
 
-## 2. Who the loss actually goes to — the question nobody had asked
+## 2. Who the loss actually goes to
 
-Splitting the same 24 SKUs' units by the customer on the bill:
+The 24 SKUs split by the customer on the bill, on real margin — revenue less the 12-month
+purchase WAC on the units taken, net of returns, ex the flagged duplicate:
 
-| Buyer | SKUs | Units | Share of the loss | Status |
-|---|---|---|---|---|
-| **Hunger Heroes NGO, Delhi (`002CM`)** | 11 | 26,342.80 | **-Rs 1,06,380.08 (44.3%)** | VERIFIED |
-| **Jivo Wellness Pvt Ltd - Delhi, the parent (`0000L`)** | 1 | 1,108 | **-Rs 72,747.79 (30.3%)** | VERIFIED |
-| Walk-in campus retail (`00001`) | 13 | 1,195.50 | -Rs 56,877.80 (23.7%) | VERIFIED |
-| Other named accounts — all on-campus (ARY and canteen staff, Kalgidhar Trust, Akal Academy, Akal Hospital, Eternal University) | 10 | 116 | -Rs 4,005.02 (1.7%) | VERIFIED |
+| Buyer | SKUs | Net units | Net margin | Share | Status |
+|---|---|---|---|---|---|
+| **Hunger Heroes NGO, Delhi (`002CM`)** | 11 | 22,912.40 | **-Rs 90,766.58** | 67.9% | VERIFIED |
+| **Jivo Wellness Pvt Ltd - Delhi, the parent (`0000L`)** | 1 | 277 | **-Rs 30,470.71** | 22.8% | VERIFIED |
+| Walk-in campus retail (`00001`) | 13 | 1,186.50 | -Rs 9,830.48 | 7.4% | VERIFIED |
+| Other named accounts — all on-campus | 10 | 114 | -Rs 2,634.63 | 2.0% | VERIFIED |
+| **Total** | | | **-Rs 1,33,702.40** | | VERIFIED |
 
-> Query: the `leak` CTE re-run with `SaleDetail` joined to `SaleHeader.CustomerID`; the four
-> rows sum to -Rs 2,40,010.69 against the tool's -Rs 2,40,010.68.
+> Query: the §1 movement CTE grouped by `SaleHeader.CustomerID` / `SaleReturnHeader.CustomerID`.
+> Keeping the duplicate bill moves only the NGO row, to -Rs 1,06,380.07 and -Rs 1,49,315.89.
 
-**74.6% of the leak is sold off-campus.** That is the headline, and it lines up exactly with
-[[Institutional]]: on 12-month purchase-ledger cost the NGO channel turns **Rs 69.81 lakh at
-1.03% gross margin** against walk-in campus retail's **24.55%** (VERIFIED; costable revenue
-Rs 480.62 L of Rs 567.56 L, 84.7%). Priced on Basement-counter cost alone — the right basis
-for that channel, and 100% costable — the NGO earns **Rs 84,582 of gross profit in a year**,
-and **the 11 below-cost lines give back Rs 81,562 of it**. The wholesale channel is a
-break-even channel because of the lines in this note.
+**90.7% of the leak is sold off-campus** (91.7% with the duplicate bill left in). The previous
+version apportioned each SKU's *average* per-unit gap to every buyer's units; that is not a
+margin and is deleted — it billed walk-in retail -Rs 56,878 for Am Lower units that sold at
+Rs 229, and billed the parent for 831 units it had returned.
+
+On Basement-counter cost — the right basis here, 100% costable — the NGO's **11 leak SKUs lose
+Rs 81,562.11 on Rs 14.75 L of revenue while its other 85 SKUs earn +Rs 1,66,144.11 on
+Rs 55.06 L (3.02%)**; the channel as a whole earns **+Rs 84,582.00 on Rs 69.81 L = 1.21%**
+(VERIFIED · NGO sales costed at each SKU's 12m warehouse-16 WAC, split by leak-list
+membership). Removing these lines does **not** rescue the channel — it moves it from 1.21% to
+3.02%, against the counter's ~24.5% ([[Institutional]], NOT-CHECKED here). "The wholesale
+channel is break-even because of these lines" is deleted.
 
 ## 3. 🔴 REVERSED — the milk is not a subsidy for boarding children
 
-The previous version of this note said the Rs 47.00 milk price "may well be deliberate…
-milk at a subsidised price to a captive population of boarding children." **That is wrong and
-it is deleted.**
+The previous version said the Rs 47.00 price "may well be deliberate… milk at a subsidised
+price to a captive population of boarding children." **Wrong, and deleted.**
 
 | Fact | Value | Status |
 |---|---|---|
-| Loose Milk sold 12m | 13,605.20 L over **7 bills**, all `002CM`, all at the Basement counter | VERIFIED |
-| Loose Milk sold to walk-in campus retail, 12m | **0 litres, 0 bills** | VERIFIED |
-| Loose Milk sold to walk-in campus retail, **ever** | **0 litres** | VERIFIED |
-| The only non-NGO milk bill in the whole database | 5 L to one named individual, 2023-06-17, Rs 45.00 | VERIFIED |
+| Loose Milk sold 12m | 13,605.20 L over **7 bills**, all `002CM`, all at the Basement counter — of which `2002752.0001` (2,030.40 L) is the flagged duplicate, leaving 11,574.80 L over 6 | VERIFIED · [[Duplicate-Bill]] |
+| Sold to walk-in campus retail, 12m and **ever** | **0 litres, 0 bills** | VERIFIED |
+| The only non-NGO milk bill in the database | 5 L to one named individual, 2023-06-17, Rs 45.00 | VERIFIED |
 | Milk_Z (the bulk twin) sold 12m | 8,127 L over 5 bills, 100% `002CM` | VERIFIED |
 
 > Query: `SaleDetail` × `SaleHeader` on ProductIDs `07M9` / `0GDA`, grouped by CustomerID,
-> both windowed and all-time.
+> windowed and all-time.
 
-### And the Rs 52.01 cost is itself a two-streams-one-SKU error
+**The Rs 52.01 cost is a two-streams-one-SKU error.** `07M9` is bought on two streams that
+never meet: the **NGO stream** into Basement (WH 16) — 10,800 L in the window at Rs 45 → Rs 65,
+12m WAC **Rs 50.19**, all sold to `002CM`; and the **campus stream** into Ary Warehouse
+(WH 10) — 6,939.05 L at Rs 54.20 – 55.00 bought every month, transferred to G Canteen / Apple
+A Day / Ary Pos and consumed as a kitchen input, **0 L ever sold**. On the Basement stream
+alone the milk loss is **-Rs 43,335.08**, and **-Rs 36,867.88** ex-duplicate (VERIFIED ·
+`PurchaseDetail` × `PurchaseHeader` on `07M9`, split by `WarehouseID`).
 
-`07M9 Loose Milk` is bought on **two separate streams that never meet**:
+Month-matching the NGO's milk against that month's Basement price, **12-month window only**
+(the previous version's table was all-time, summed to 22,105 L against §1's 13,605.20 L, and
+omitted two sale months):
 
-| Stream | Bought into | 12m volume | Cost | Where it goes | Status |
+| Month | Litres sold | Basement cost that month | Sold at | Gross profit | Status |
 |---|---|---|---|---|---|
-| NGO stream | Basement (WH 16) | 10,800 L | Rs 45.00 → Rs 65.00 | Sold to `002CM` | VERIFIED |
-| Campus stream | Ary Warehouse | 6,939.05 L | **Rs 54.20 - Rs 55.00, bought every single month** | Transferred to G Canteen / Apple A Day / Ary Pos and **consumed as a kitchen input - 0 litres ever sold** | VERIFIED |
+| 2025-09 | 2,500 | Rs 45.00 | Rs 47.00 | **+Rs 5,000** | VERIFIED |
+| 2025-10 | 2,500 | Rs 45.00 | Rs 47.00 | **+Rs 5,000** | VERIFIED |
+| 2025-12 | 1,500 | **no Basement purchase that month** | Rs 47.00 | **not matchable** | VERIFIED |
+| **2026-05** | **7,105.20** (5,074.80 ex-duplicate) | **Rs 61.97** | Rs 47.00 | **-Rs 1,06,362.68** (-Rs 75,968.21 ex-dup) | VERIFIED |
 
-The tool blends the two into Rs 52.01. The Rs 55 milk is never sold to anybody, so it cannot
-lose money on a sale. Costed on the Basement stream alone the milk loss is **-Rs 43,335**, not
--Rs 68,153 (VERIFIED).
-
-### The loss is one transaction, and ARY had already fixed it
-
-Month-matching the NGO's milk against that month's Basement purchase price:
-
-| Month | Litres | Cost that month | Sold at | Gross profit | Status |
-|---|---|---|---|---|---|
-| 2025-04 | 2,500 | Rs 47.00 | Rs 48.00 | **+Rs 2,500** | VERIFIED |
-| 2025-05 · 06 · 08 · 09 · 10 | 2,500 each | Rs 45.00 | Rs 47.00 | **+Rs 5,000 each** | VERIFIED |
-| **2026-05** | **7,105.20** | **Rs 61.97** | Rs 47.00 | **-Rs 1,06,362.68** | VERIFIED |
-
-On 2026-05-07 ARY bought 2,800 L at **Rs 65.00**; on 2026-05-11 it invoiced 7,105.20 L to the
-NGO at Rs 47.00 across four bills. That single week is the whole milk leak. **It has not
-recurred**: Loose Milk has not been sold since 2026-05-11, and from 2026-06-23 the NGO has
-been supplied on `0GDA Milk_Z` — 8,127 L bought at Rs 46.02 and sold at Rs 47.00, **+2.08%**
+On 2026-05-07 ARY bought 2,800 L at Rs 65.00 into Basement; on 2026-05-11 it invoiced 7,105.20 L
+to the NGO at Rs 47.00 across four bills, two of which are the identical pair [[Duplicate-Bill]]
+flags. **It has not recurred**: Loose Milk has not sold since 2026-05-11, and from 2026-06-23 the
+NGO is supplied on `0GDA Milk_Z` — 8,127 L bought at Rs 46.02, sold at Rs 47.00, **+2.08%**
 (VERIFIED). Nine months of Rs 8-below-cost milk never happened.
 
 ## 4. Which SKUs survive every cost basis
 
-A 12-month purchase WAC prices units sold from old stock at whatever was bought in the
-window. An all-time WAC blends three years of price history against a 12-month sale rate.
-Neither is right on its own, so all three tests were run and only the intersection kept
-(min 20 units):
+A 12-month WAC prices old stock at what was bought in the window; an all-time WAC blends three
+years against a 12-month sale rate; month-matching prices each month's sales at that month's
+purchases — **but only units sold in a month that also had a purchase**. Only SKUs negative on
+all three are kept (min 20 units sold):
 
-| Product | Units | Off-campus | 12m WAC | All-time WAC | Month-matched | Status |
-|---|---|---|---|---|---|---|
-| Loose Milk | 13,605.20 | **100%** | -Rs 68,153 | -Rs 29,773 | -Rs 1,00,920 | VERIFIED |
-| Dahi_Z | 3,114.70 | **100%** | -Rs 9,792 | -Rs 4,924 | -Rs 24,977 | VERIFIED |
-| Desi Ghee 1 Ltr | 175 | **100%** | -Rs 9,867 | -Rs 6,493 | -Rs 10,112 | VERIFIED |
-| Pumpkin_Z | 2,400 | **100%** | -Rs 5,344 | -Rs 1,844 | -Rs 6,560 | VERIFIED |
-| Rajdhani Daliya 1 Kg | 3,450 | **100%** | -Rs 7,576 | -Rs 4,701 | -Rs 6,234 | VERIFIED |
-| Golden Apple_Z | 630 | **100%** | -Rs 391 | -Rs 6,026 | -Rs 2,516 | VERIFIED |
-| Ginger_Z | 480 | **100%** | -Rs 1,796 | -Rs 907 | -Rs 1,916 | VERIFIED |
-| Mix Dal_L | 236 | **100%** | -Rs 40 | -Rs 40 | -Rs 89 | VERIFIED |
-| Red Label Tea 22 Gm | 75 | 0% | -Rs 14,183 | -Rs 14,183 | -Rs 6,286 | VERIFIED |
-| Shubh Diwali Diya | 72 | 0% | -Rs 2,303 | -Rs 2,438 | -Rs 138 | VERIFIED |
-| **10 SKUs** | | **8 of 10** | **-Rs 1,19,445** | **-Rs 71,329** | **-Rs 1,59,748** | VERIFIED |
+| Product | Units 12m | Off-campus | 12m WAC | All-time WAC | Month-matched | Matched units | Status |
+|---|---|---|---|---|---|---|---|
+| Loose Milk | 13,605.20 | 100% | -Rs 68,153 | -Rs 29,773 | -Rs 1,00,920 | 13,605.20 (100%) | VERIFIED |
+| Dahi_Z | 3,114.70 | 100% | -Rs 9,792 | -Rs 4,924 | -Rs 24,977 | 2,694.70 (87%) | VERIFIED |
+| Desi Ghee 1 Ltr | 175 | 100% | -Rs 9,867 | -Rs 6,493 | -Rs 10,112 | 150 (86%) | VERIFIED |
+| Rajdhani Daliya 1 Kg | 3,450 | 100% | -Rs 7,576 | -Rs 4,701 | -Rs 6,234 | 3,000 (87%) | VERIFIED |
+| Pumpkin_Z | 2,400 | 100% | -Rs 5,344 | -Rs 1,844 | -Rs 6,560 | 2,000 (83%) | VERIFIED |
+| Golden Apple_Z | 630 | 100% | -Rs 391 | -Rs 6,026 | -Rs 2,516 | 535 (85%) | VERIFIED |
+| Ginger_Z | 480 | 100% | -Rs 1,796 | -Rs 907 | -Rs 1,916 | 400 (83%) | VERIFIED |
+| Mix Dal_L | 236 | 100% | -Rs 40 | -Rs 40 | -Rs 89 | 187 (79%) | VERIFIED |
+| Red Label Tea 22 Gm | 75 | 0% | -Rs 14,183 | -Rs 14,183 | -Rs 6,286 | **32 (43%)** | VERIFIED |
+| Shubh Diwali Diya | 72 | 0% | -Rs 2,303 | -Rs 2,438 | -Rs 138 | **3 (4%)** | VERIFIED |
+| **10 SKUs** | | **8 of 10** | **-Rs 1,19,445** | **-Rs 71,329** | **-Rs 1,59,748** | | VERIFIED |
 
-All three columns cost Loose Milk on the blended two-stream price of §3, so all three
-overstate it; on the Basement stream alone its month-matched figure is **-Rs 78,863**
-(VERIFIED). Every other row is single-stream — the ten `_Z` bulk SKUs are bought into
-Basement and nowhere else — so no other line carries that error.
+> Query: three P&L passes over the same 12-month `SaleDetail` × `SaleHeader` rows — cost from the
+> 12m `PurchaseDetail` WAC, the all-time WAC, and a per-`ProductID`×month join to that month's
+> purchase WAC. Off-campus = `002CM` + `0000L` units over total units.
 
-**The defensible size of the leak is Rs 0.71-1.60 lakh a year, not Rs 2.75 lakh, and eight of
-the ten SKUs sell only to the Delhi NGO.** The two that reach campus are both proven
-pack-mixing errors (§5).
+**These columns are not an error bar, and the previous version's "Rs 0.71–1.60 lakh" range is
+deleted.** The denominators differ: month-matching prices 100% of the milk but only 3 of Shubh
+Diwali Diya's 72 units, so that SKU's place on the list is decided by 3 units — the
+min-20-units rule is applied to the 12-month sale quantity, never to the matched quantity.
+All three also cost Loose Milk on the blended two-stream price of §3; on the Basement stream
+alone and **on this note's own 12-month basis the month-matched milk figure is -Rs 96,362.68
+on 12,105.20 matched litres** (VERIFIED; -Rs 65,968.21 ex-duplicate). The previous version's
+-Rs 78,863 is the *all-time* figure, importing +Rs 17,500 earned on 10,000 L before the window
+began. Every other row is single-stream.
 
-The reverse test matters as much. Costing everything on an all-time WAC throws up 55 SKUs and
--Rs 2.16 lakh, led by fresh produce — Potato -Rs 34,319, Onion -Rs 14,037, Garlic -Rs 5,666,
-Cherry -Rs 4,923. **Every one of those is positive when the month is matched**: Potato
-**+Rs 25,839**, Onion **+Rs 32,466**, Garlic +Rs 5,156, Cherry +Rs 1,828 (VERIFIED). A
-commodity whose price moves cannot be tested against a three-year average. Do not open a
-produce investigation on that list.
+The reverse test matters as much. All-time WAC alone throws up **55 SKUs and -Rs 2,16,064.74**,
+led by produce — Potato -Rs 34,318.75, Onion -Rs 14,036.53, Garlic -Rs 5,666.02, Cherry
+-Rs 4,922.73 — and **every one is positive month-matched**: +Rs 25,839.16, +Rs 32,466.15,
++Rs 5,155.81, +Rs 1,828.03 (VERIFIED, same passes). A commodity whose price moves cannot be
+tested against a three-year average. Do not open a produce investigation.
 
 ## 5. The campus residue is a catalogue problem, not a pricing one
 
-All 13 campus lines, ranked. "Campus loss" apportions the tool's own SKU-level per-unit gap
-to the units that went to a campus buyer — it is **not** the margin those buyers were actually
-charged, which is the point of the Am Lower worked example below. The last two columns show
-how many distinct cost/MRP pairs the price master holds under that one ProductID:
+The 13 leak SKUs that reach a campus buyer, on the margin those buyers were **actually** charged
+(revenue less cost, net of returns) — not an apportioned SKU average. The last column counts the
+distinct cost/MRP pairs the price master holds under that one ProductID:
 
-| Product | Campus loss | Price-master children | Their cost range | Status |
-|---|---|---|---|---|
-| Am Lower | -Rs 26,394 | **52** | Rs 56.17 – Rs 340.00 | VERIFIED |
-| Red Label Tea 22 Gm | -Rs 14,183 | 4 | Rs 8.14 – Rs 454.92 | VERIFIED |
-| Girlish Woolen Pajami | -Rs 12,690 | 21 | Rs 48.00 – Rs 414.29 | VERIFIED |
-| Shubh Diwali Diya | -Rs 2,303 | 14 | Rs 7.50 – Rs 600.00 | VERIFIED |
-| At Fabric Kurta Pajama | -Rs 2,130 | 16 | Rs 55.00 – Rs 300.00 | VERIFIED |
-| Harish Hand Towel 14 X 21 | -Rs 1,260 | 4 | Rs 22.00 – Rs 110.00 | VERIFIED |
-| Sz Candles | -Rs 755 | 47 | Rs 9.00 – Rs 250.00 | VERIFIED |
-| Knife 12 | -Rs 535 | 22 | Rs 5.00 – Rs 60.00 | VERIFIED |
-| Scissor 5604 | -Rs 187 | 29 | Rs 7.68 – Rs 170.00 | VERIFIED |
-| Shakkar 500 Gm | -Rs 170 | 8 | Rs 22.00 – Rs 60.00 | VERIFIED |
-| Rk Container | -Rs 126 | **95** | Rs 1.20 – Rs 350.00 | VERIFIED |
-| Shyam Crown. | -Rs 85 | 7 | Rs 6.00 – Rs 45.72 | VERIFIED |
-| Sbe Party Popper | -Rs 64 | 13 | Rs 18.00 – Rs 57.14 | VERIFIED |
-| **Total** | **-Rs 60,883** | | | VERIFIED |
+| Product | Campus units | 12m WAC | All-time WAC | Price-master children (cost range) | Status |
+|---|---|---|---|---|---|
+| **Am Lower** | 396 | **+Rs 22,364** | **+Rs 50,328** | **52** (Rs 56.17 – 340.00) | VERIFIED |
+| Red Label Tea 22 Gm | 75 | -Rs 14,183 | -Rs 14,183 | 4 (Rs 8.14 – 454.92) | VERIFIED |
+| Girlish Woolen Pajami | 46 | -Rs 12,690 | +Rs 1,038 | 21 (Rs 48.00 – 414.29) | VERIFIED |
+| Shubh Diwali Diya | 72 | -Rs 2,303 | -Rs 2,438 | 14 (Rs 7.50 – 600.00) | VERIFIED |
+| At Fabric Kurta Pajama | 65.50 | -Rs 2,130 | -Rs 1,962 | 16 (Rs 55.00 – 300.00) | VERIFIED |
+| Harish Hand Towel 14 X 21 | 36 | -Rs 1,260 | +Rs 972 | 4 (Rs 22.00 – 110.00) | VERIFIED |
+| Sz Candles | 199 | -Rs 879 | +Rs 5,426 | 47 (Rs 9.00 – 250.00) | VERIFIED |
+| Knife 12, Scissor, Shyam Crown., Shakkar, Rk Container, Sbe Party Popper | 411 | -Rs 1,384 | +Rs 13,860 | 22 / 29 / 7 / 8 / 95 / 13 | VERIFIED |
+| **Total** | | **-Rs 12,465** | **+Rs 53,041** | | VERIFIED |
 
-**13 of 13 are a single ProductID standing in for many physically different goods.** Two
-worked examples, from the purchase ledger:
+> Query: the §1 movement CTE restricted to `CustomerID NOT IN ('002CM','0000L')`, costed at the
+> 12m and all-time `PurchaseDetail` WAC; children as `COUNT(*) FROM ProductChildMaster GROUP BY ProductID`.
 
-- **Red Label Tea 22 Gm** was bought 30 units at **Rs 8.14** (Sep-2025, the real sachet) and
-  24 units at **Rs 453.69 / Rs 454.92** (Sep-2025, a case keyed as pieces). It sells between
-  **Rs 10 and Rs 560**. One SKU, two pack sizes, and the "average" is neither. VERIFIED.
-- **Shubh Diwali Diya** was bought on one voucher, 2025-09-19, at **Rs 600.00, Rs 60.00 and
-  Rs 7.50** simultaneously. VERIFIED.
+**On an all-time cost basis 9 of the 13 are outright profitable** and campus-wide these lines
+are **+Rs 53,041**, not a loss. The four still negative total **-Rs 18,668**; the two largest
+are pack-mixers, from the purchase ledger:
+
+- **Red Label Tea 22 Gm** — 30 units at **Rs 8.14** (2025-09-04, the real sachet), then 12 at
+  **Rs 453.69** and 12 at **Rs 454.92** (a case keyed as pieces); it sells between Rs 10 and
+  Rs 560. One SKU, two pack sizes; the "average" is neither. VERIFIED.
+- **Shubh Diwali Diya** — one voucher, 2025-09-19 19:04, at **Rs 600.00, Rs 60.00 and Rs 7.50**
+  simultaneously. VERIFIED.
 
 **Am Lower is not the biggest leak in the business, and there is no price to correct.**
-Three independent facts kill it:
 
-1. **1,108 of its 1,510 units (73%) went to `0000L Jivo Wellness Pvt Ltd - Delhi`** — ARY's own
-   parent — on 4 bills at **Rs 63.25** each. Strip that intra-group clearance and the 402
-   units sold on campus went out at **Rs 229.83** against a Rs 173.26 cost, a **+24.6%**
-   margin, right on the retail norm. VERIFIED.
-2. **The window is wrong.** 295 units were bought in the 12 months; 1,510 were sold, mostly
-   from 2023 lots that cost Rs 65-128. On the all-time purchase WAC of **Rs 102.64** the SKU
-   makes **+Rs 7,491**. VERIFIED.
-3. **The SKU is 52 different garments.** Its price-master children run Rs 56.17/MRP 80 to
-   Rs 340/MRP 499, and a single 2025-08-29 voucher bought at Rs 340, Rs 290 and Rs 220 at
-   once. VERIFIED.
+1. **1,108 of its 1,510 gross units went to `0000L Jivo Wellness Pvt Ltd - Delhi`** on four
+   identical 277-unit invoices (2025-09-21, 2025-11-08, 2025-12-25, 2026-03-02; four lines
+   each, rates Rs 56.17–122.22) — and **three were reversed in full** by matching 277-unit
+   returns at the same rates (2025-09-21 17:16, 36 min after the invoice; 2025-12-24;
+   2026-03-02 13:05, 32 min *before* that day's invoice). The parent net kept **277 units** —
+   a recurring bill-and-reverse cycle, possibly a stock movement booked as a sale rather than
+   four sales. VERIFIED · `SaleDetail`/`SaleReturnDetail`, `0BPC`, `CustomerID='0000L'`.
+   **NOT-CHECKED: what the cycle is for.**
+2. **The window is wrong.** 295 units were bought in the 12 months; 1,510 sold, mostly from
+   2023 lots. On the all-time WAC of **Rs 102.64** the campus units make **+Rs 50,328**
+   (VERIFIED). The previous version's "+Rs 7,491" is the SKU total *including the parent's
+   units*, printed under a "campus lines" heading.
+3. **The SKU is 52 different garments** — one voucher (`14530.0015`, 2025-08-29 13:24) bought
+   ChildIDs `001A`/`001C`/`001B` at Rs 340, Rs 290 and Rs 220 in the same minute. VERIFIED.
 
-**9 of the 13 campus lines are outright profitable on an all-time cost basis** — Am Lower
-+Rs 7,491, Rk Container +Rs 8,955, Sz Candles +Rs 5,581, Scissor 5604 +Rs 1,674, Knife 12
-+Rs 1,659, Sbe Party Popper +Rs 1,648, Girlish Woolen Pajami +Rs 1,038, Harish Hand Towel
-+Rs 972, Shakkar 500 Gm +Rs 317 (VERIFIED). The four that stay negative total **-Rs 18,668**,
-and their two largest lines are the two pack-mixers just shown. **There is no evidence that ARY
-sells anything to a campus resident below cost**, which is the conclusion [[Pricing-Fairness]]
-reaches from the MRP side, by a completely different route.
+**There is no evidence that ARY sells anything to a campus resident below cost** — the conclusion [[Pricing-Fairness]] reaches from the MRP side, by a different route.
 
-## 6. Why no report at ARY could ever have caught this — this part survives
-
-`ary assort leak` puts the price master's cost beside the real purchase cost. The master is
-wrong in one direction, systematically:
+## 6. Why no report at ARY could ever have caught this
 
 | Test | Result | Status |
 |---|---|---|
-| SKUs with both a purchase ledger and a price-master row | 10,641 | VERIFIED |
-| …master cost more than 5% **ABOVE** the real all-time WAC | **4,644 (43.6%)** | VERIFIED |
+| SKUs with both a purchase ledger and a price-master row | **10,696** | VERIFIED |
+| …master cost more than 5% **ABOVE** the real all-time WAC | **4,678 (43.7%)** | VERIFIED |
 | …master cost more than 5% **BELOW** it | **33 (0.3%)** | VERIFIED |
 | `ProductMaster.StandardCostPrice` populated | **41 of 21,479 SKUs** | VERIFIED |
 
 > Query: `MAX(ProductChildMaster.PurchaseCost)` per ProductID against
-> `SUM(Quantity*PurchaseCost)/SUM(Quantity)` over the whole `PurchaseDetail` ledger.
+> `SUM(Quantity*PurchaseCost)/SUM(Quantity)` over the whole `PurchaseDetail` ledger. The previous
+> version's 10,641 and 4,644 reproduce on neither this query nor five variants of it.
 
-The mechanism is now known, and it is not corruption: **`ProductChildMaster` holds one row per
-price revision**, so `MAX(PurchaseCost)` returns the dearest cost ever recorded for that code
-— Loose Milk 20 children from Rs 0.01 to Rs 65.00, Am Lower 52 from Rs 56.17 to Rs 340.00. Any
-margin report built on it compares today's selling price against the worst cost in the SKU's
-history. **The purchase ledger is the only trustworthy cost source.** That conclusion, and the
-instruction to re-derive every category margin from `PurchaseDetail`, both stand — see
-[[Data-Quality-Traps]].
+The mechanism is **not** a price-revision history. `ProductChildMaster` children are
+**concurrent variants of one code**: one Am Lower voucher bought three ChildIDs at
+Rs 340 / 290 / 220 in the same minute, and nine distinct Am Lower ChildIDs sold in 2026-04 alone
+(VERIFIED). `MAX(PurchaseCost)` therefore returns the dearest *variant*, not the dearest
+historical price — Loose Milk 20 children from Rs 0.01 to Rs 65.00, Am Lower 52 from Rs 56.17 to
+Rs 340.00 (VERIFIED). Either way, a margin report built on the master compares today's price
+against the worst cost under that code. **The purchase ledger is the only trustworthy cost
+source** — see [[Data-Quality-Traps]].
 
 ## What this does NOT show
 
-- **It does not show money leaving the campus shop.** The three-basis survivors are Rs 0.71-1.60
-  lakh, 8 of 10 sell only to the Delhi NGO, and the campus residue dissolves under §5. This is
-  a **wholesale pricing** finding, not a retail one.
+- **It does not show money leaving the campus shop.** On real margin the 13 campus-selling
+  lines are -Rs 12,465 on a 12-month WAC and **+Rs 53,041** on an all-time WAC — a wholesale
+  finding, not a retail one.
+- **The Rs 1.34 lakh rests on a judgement this CLI cannot make:** it excludes `2002752.0001`
+  because [[Duplicate-Bill]] flags it. If Accounts rules it real, the leak is Rs 1.49 lakh.
 - **Neither cost basis is the accounting truth.** `ClosingStock` has 0 rows — no year has ever
-  been closed at ARY — so there is no valuation to reconcile against. Everything here is
-  ledger arithmetic, and the spread between the three bases (Rs 0.71 L to Rs 1.60 L on the same
-  ten SKUs) is the honest error bar.
-- **Multi-pack SKUs make per-unit costing unmeasurable, not necessarily loss-making.** Red Label
-  Tea and Shubh Diwali Diya may be perfectly priced; nothing in FR8HODBNEW can separate the
-  sachet from the case, because they share a ProductID.
-- **The NGO's margin is quoted before tax.** A parallel lane reports Hunger Heroes at **-0.39%**
-  on a like-for-like tax basis rather than the +1.03% here. NOT-CHECKED — not re-derived in this
-  note. If it holds, the wholesale channel is loss-making before these SKUs are counted.
-- **The Delhi-parent channel has no measurable margin.** Only 9.8% of its Rs 11.42 lakh of
-  12-month revenue is costable from a 12-month purchase; the -Rs 72,748 above is Am Lower alone,
-  and even that is contested by §5. Do not quote a gross margin for `0000L`.
-- **`ary assort leak` is unchanged and still points at the right rows** — but its single
-  12-month WAC is not a verdict. Read the channel and the price-master children before acting
-  on any line it prints.
+  been closed at ARY. And nothing separates a sachet from a case sharing a ProductID, so
+  multi-pack SKUs are unmeasurable per unit, not necessarily loss-making.
+- **Two figures carried over, not re-derived here (NOT-CHECKED):** the tax-basis reading of
+  Hunger Heroes at **-0.39%** against [[Institutional]]'s +1.03%, and that only 9.8% of the
+  parent's Rs 11.42 lakh is costable — so do not quote a margin for `0000L`.
+- **`ary assort leak`'s own `--help` still prints the refuted version.** `internal/cli/assort.go`
+  lines 486–494 still say milk cost "rose from Rs 45 to Rs 55… across all 16,105 litres", that
+  "the price master still carried the old Rs 38.83 cost", that "27 SKUs were leaking about
+  Rs 3.06 lakh a year", and that "a subsidised price to a captive population may be deliberate."
+  The query is sound; the help text is not.
+- **The question that decides the milk is not in the database.** Is the NGO's Rs 47.00
+  contractual? Every milk line from 2025-05-23 to 2026-05-11 is Rs 47.00 — unchanged for twelve
+  months while Basement cost went Rs 45 → Rs 65 (VERIFIED · `SaleDetail` grouped by `SaleRate`
+  on `07M9`). Equally consistent with a fixed-price agreement and with nobody repricing;
+  FR8HODBNEW holds no contract. Ask whoever owns the Hunger Heroes account.
 
 ## See also
 
-- [[Institutional]] — the NGO channel that owns 44% of this leak, at 1.03% gross margin
-- [[Pricing-Fairness]] — reaches "ARY does not overcharge campus residents" from the MRP side;
-  §5 here is the cost-side half of the same answer, and it deletes the milk-subsidy corollary
-- [[Data-Quality-Traps]] — the price master is high on 4,644 SKUs and low on 33; one ProductID
-  holding 52 garments belongs on that list
-- [[Verify-Pass-2026-08-30]] — why the milk framing, the Rs 2.75 lakh figure and the "largest
-  single leak" claim all had to be re-tested
-- [[Availability]] — the far larger money question: half the working range is empty, and a
-  price on an empty shelf earns nothing either way
-- [[Corrections-Log]] — where the deleted claims are kept
+- [[Duplicate-Bill]] — `2002752.0001`: 2,030.40 L of the milk in §3 and Rs 15,613 of the §1 total
+- [[Institutional]] — the NGO channel that owns 68% of this leak; already excludes the duplicate
+- [[Pricing-Fairness]] — "ARY does not overcharge campus residents", from the MRP side
+- [[Data-Quality-Traps]] — the master is high on 4,678 SKUs, low on 33; one ProductID holding 52 garments belongs on that list
+- [[Verify-Pass-2026-08-30]] and [[Corrections-Log]] — why these claims were re-tested, and where the deleted ones are kept
+- [[Availability]] — the larger money question: a price on an empty shelf earns nothing either way
