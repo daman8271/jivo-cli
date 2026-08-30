@@ -4,7 +4,7 @@ date: 2026-08-29
 author: Daman
 area: all
 severity: high
-status: active
+status: superseded
 supersedes: 
 tags: [units, stock]
 ---

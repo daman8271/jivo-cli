@@ -20,9 +20,9 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0033]** Effective Month = SAP Dimension 2, JDT1.OcrCode2, MM-YYYY codes. It is the month a cost belongs to. Never substitute TaxDate or RefDate. Dim1=Variety Dim2=EffMonth Dim3=Budget Dim4=SubBudget Dim5=State.
 - **[C-0043]** Never spell a Dim5 state code from the state name — Bihar=BH (not BR), Odisha=OR, Uttarakhand=UK, Kerala=KE. Read it: SELECT OcrCode,OcrName FROM OOCR WHERE DimCode=5 AND Active='Y'.
 - **[C-0050]** JIVO tonnes: sale/planning side 1 T = 1000 L (volume); purchase side 1 T = 1000 kg. Oil = 910 g/L, so 1 purchase-MT = 1098.9 L. Never carry a tonne across sides without converting.
-- **[C-0051]** Oil quantity, tank capacity and utilisation ALWAYS come from EXIM (exim/exim tank get-summary), never SAP. EXIM and SAP share no oil item code - never net or cross-check them.
 - **[C-0054]** SAP OITW.OnHand is post-invoice, NOT physical. Goods invoiced but not yet trucked still occupy the godown. For storage space use OnHand + invoiced-not-dispatched (gate-out event in ji.jivo.in), never OnHand alone.
 - **[C-0055]** Before any seasonal figure, check WHERE the festival fell that year (dates move ~3 weeks) and strip event days from the baseline. Festival + platform-sale dates are public - look them up, never call them unknowable.
+- **[C-0056]** EXIM is the ONLY source for oil quantity, tanks and grades. SAP is MISSING oil items entirely (no 2B grades exist there) - it is never a fallback and never a cross-check. EXIM down = say so, do not quote SAP.
 ## accounts
 - **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
 - **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.
