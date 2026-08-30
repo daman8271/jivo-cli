@@ -622,7 +622,12 @@ func assortProbeCmd(app *App) *cobra.Command {
 				// Always add the normalised clause: the term may be clean while the
 				// COLUMN is not ("mamaearth" vs the stored "Mama Earth"), so gating
 				// this on the term changing misses exactly half the cases.
-				if n := assortSquash(t); n != "" {
+				//
+				// But guard it by length. Stripping punctuation makes SHORT terms
+				// promiscuous: "pan-d" squashes to "pand" and matches "Meiji Hello
+				// Panda Biscuits" and "Pandol", a vegetable. Five characters is the
+				// floor at which the normalised match stops inventing hits.
+				if n := assortSquash(t); len(n) >= 5 {
 					likes = append(likes, "LOWER("+assortSquashSQL("p.ProductName")+") LIKE "+db.Lit("%"+n+"%"))
 				}
 			}
