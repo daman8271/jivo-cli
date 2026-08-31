@@ -90,9 +90,10 @@ section{padding:56px 0 30px}
 .dl{list-style:none}
 .dl li{padding:4px 0;font-size:13.5px;border-bottom:1px solid #f0eee7;display:flex;gap:8px;align-items:baseline}
 .dl li:last-child{border-bottom:0}
-.ess{flex:none;width:8px;height:8px;border-radius:50%;background:#cbd0da;position:relative;top:-1px}
-.ess.must{background:var(--gap)}
-.ess.should{background:var(--dead)}
+.tg{flex:none;font-family:var(--mono);font-size:9px;letter-spacing:.06em;border-radius:4px;padding:1px 6px;position:relative;top:-1px}
+.tg.must{background:var(--navy);color:#fff;font-weight:600}
+.tg.should{border:1px solid #b6bece;color:var(--navy)}
+.tg.nice{border:1px dashed #d7dae1;color:#a8adb8}
 .dl li small{color:var(--mute);font-size:11.5px}
 .morelink{font-family:var(--mono);font-size:11.5px;color:var(--navy);cursor:pointer;background:none;border:none;padding:4px 0;text-decoration:underline}
 
@@ -173,7 +174,7 @@ table.ptable{width:100%;border-collapse:collapse;min-width:820px}
 
 <section id="shelf" style="padding-top:12px"><div class="wrap">
   <div class="sec-head"><span class="qno">Q2</span><h2>What do we have — and how much is missing?</h2></div>
-  <p class="sec-sub">Every researched line was matched against the catalogue <b>by product name</b> (ARY's category tree misfiles things), then every “missing” call was re-attacked with alternate spellings before it was allowed to stand. Click a category for its exact missing and dead lines.</p>
+  <p class="sec-sub">Every researched line was matched against the catalogue <b>by product name</b> (ARY's category tree misfiles things), then every “missing” call was re-attacked with alternate spellings before it was allowed to stand. Click a category for its exact missing and dead lines. Inside, every line carries how essential the research judged it: <span class="tg must">MUST</span> the campus can’t do without it · <span class="tg should">SHOULD</span> expected in a full shop · <span class="tg nice">NICE</span> optional.</p>
   <div class="controls">
     <span>sort:</span>
     <button data-sort="gap" class="on">most missing</button>
@@ -242,6 +243,7 @@ document.getElementById('srcline').textContent = M.srcline;
 document.getElementById('needsub').innerHTML = `Blind research (no sight of ARY's catalogue) listed <b>${fmt(M.lines_total)} product lines</b> a closed hill campus of students, staff and families needs — <b>${fmt(M.must_total)} of them must-haves</b> — across ${M.categories} categories of daily life: food, personal care, pharmacy, clothing, school, home. The full list is the ledger below; scope exclusions (meat, tobacco, alcohol, LPG) were never counted.`;
 
 /* shelf map */
+const tag = e => e==='must-have'?'<span class="tg must">MUST</span>':e==='should-have'?'<span class="tg should">SHOULD</span>':'<span class="tg nice">NICE</span>';
 const shelf = document.getElementById('shelfmap');
 let sortKey = 'gap';
 function renderShelf(){
@@ -253,7 +255,7 @@ function renderShelf(){
     : b.missing-a.missing);
   shelf.innerHTML = cats.map((c,i)=>{
     const t=total(c), pctOk=c.have/t*100, pctDead=c.dead/t*100, pctGap=c.missing/t*100;
-    const li = (l,cls)=>`<li><span class="ess ${l.ess==='must-have'?'must':l.ess==='should-have'?'should':''}"></span><span>${esc(l.line)}${l.extra?` <small>${esc(l.extra)}</small>`:''}</span></li>`;
+    const li = (l,cls)=>`<li>${tag(l.ess)}<span>${esc(l.line)}${l.extra?` <small>${esc(l.extra)}</small>`:''}</span></li>`;
     const cut=14;
     const mlist=c.missing_lines, dlist=c.dead_lines;
     return `<div class="shelfrow" data-cat="${c.cat}">
@@ -282,7 +284,7 @@ shelf.addEventListener('click',e=>{
     const row=more.closest('.shelfrow'); const c=D.categories.find(x=>x.cat===row.dataset.cat);
     const list=more.dataset.more==='m'?c.missing_lines:c.dead_lines;
     const ul=more.previousElementSibling;
-    ul.innerHTML=list.map(l=>`<li><span class="ess ${l.ess==='must-have'?'must':l.ess==='should-have'?'should':''}"></span><span>${esc(l.line)}${l.extra?` <small>${esc(l.extra)}</small>`:''}</span></li>`).join('');
+    ul.innerHTML=list.map(l=>`<li>${tag(l.ess)}<span>${esc(l.line)}${l.extra?` <small>${esc(l.extra)}</small>`:''}</span></li>`).join('');
     more.remove(); return;
   }
   const main=e.target.closest('.rowmain');
