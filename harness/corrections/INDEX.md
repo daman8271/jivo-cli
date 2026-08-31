@@ -55,6 +55,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0061]** Transporter bill: look up EVERY invoice number to find its company; a bilty whose sale invoice lives in another book is keyed in THAT book against that transporter's CardCode there. Never merge two companies into one GRPO.
 - **[C-0062]** Freight GRPO line total = the bilty's freight PLUS its labour/loading. GRPOs foot to the bill's G. TOTAL gross; TDS comes off at the A/P invoice, never on the GRPO.
 - **[C-0063]** Freight GRPO: U_Sub_Account = BST when the line's sale invoice is billed to JIVO WELLNESS or JIVO MART; SALES for any outside customer. Decide per line from U_ARNO, never per document.
+- **[C-0064]** MART freight GRPO only: read OUR bill-to address on the transporter's bill. Delhi -> BPLId 1 + LocationCode 1 + CostingCode4 SC-WARH; Haryana -> BPLId 2 + LocationCode 2 + CostingCode4 SC-BHKR. Never clone these from the last GRPO.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
 - **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
@@ -64,6 +65,5 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
-- **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.
 
-<!-- 1 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0053 -->
+<!-- 2 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0006, C-0053 -->
