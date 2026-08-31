@@ -4,7 +4,7 @@ date: 2026-08-27
 author: Daman / Gurcharan
 area: accounts
 severity: high
-status: active
+status: superseded
 supersedes: C-0046
 tags: [grpo]
 ---
