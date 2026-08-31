@@ -56,6 +56,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0062]** Freight GRPO line total = the bilty's freight PLUS its labour/loading. GRPOs foot to the bill's G. TOTAL gross; TDS comes off at the A/P invoice, never on the GRPO.
 - **[C-0063]** Freight GRPO: U_Sub_Account = BST when the line's sale invoice is billed to JIVO WELLNESS or JIVO MART; SALES for any outside customer. Decide per line from U_ARNO, never per document.
 - **[C-0064]** MART freight GRPO only: read OUR bill-to address on the transporter's bill. Delhi -> BPLId 1 + LocationCode 1 + CostingCode4 SC-WARH; Haryana -> BPLId 2 + LocationCode 2 + CostingCode4 SC-BHKR. Never clone these from the last GRPO.
+- **[C-0065]** MART freight GRPO tax code: transporter's GSTIN state (off the paper — LicTradNum is NULL) vs the BRANCH state chosen by C-0064, never the destination and never cloned. inter+fwd IGST@18 · intra+fwd CG+SG@18 · inter+rev RIGST@5 · intra+rev GST05R.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
 - **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
@@ -63,7 +64,5 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0040]** A GRPO's attachment is the BILTY/LR page, filenamed by bilty number (135/135 in Oil) — never the vendor's tax invoice. That belongs on the A/P invoice that copies the GRPO.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
-## sales
-- **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
 
-<!-- 2 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0006, C-0053 -->
+<!-- 3 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0003, C-0006, C-0053 -->
