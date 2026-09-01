@@ -64,6 +64,7 @@ One home for all JIVO business-system CLIs, their credentials, and the knowledge
 | CLI | System | Surface | Run |
 |---|---|---|---|
 | `sap-b1/` | SAP B1 Service Layer — the books, 3 company DBs | 307 readable entities + 498-note Obsidian vault | `cd sap-b1/cli && ./sapb1 doctor` |
+| `sap-history-cli/` | **OLD SAP B1 books, 2014-11 → Oct-2024** (SQL Server `138.252.101.118`) — the three closed company DBs the live HANA system does not carry; routes a date range to the right book, reads both across the Aug-2019 changeover | 40+ read cmds, SELECT-only | `./sap-history-cli/saphist doctor` |
 | `ecom-cli/` | ecom.jivo.in — marketplace sell-through | 138 cmds (+ MCP binary) | `./ecom-cli/jivo-ecom-pp-cli doctor` |
 | `exim/` | exim.jivo.in — imports, RM, tanks, contracts | 65 cmds | `./exim/exim doctor` |
 | `factory-cli/` | factory.jivo.in — gate/QC/production/dispatch, 3 companies | 183 cmds | `./factory-cli/jivo-factory-pp-cli doctor` |

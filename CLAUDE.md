@@ -112,8 +112,21 @@ A folder of command-line tools ("CLIs"), each a window into one JIVO system. SAP
 | `ecom-cli/` `exim/` `factory-cli/` `oms-cli/` `jsap-cli/` | ecom / imports / factory / orders / ops | channel sales, POs, production, approvals (Go/Python CLIs) |
 | `postsql/` | raw Postgres (16 DBs) | direct SQL reads under the apps |
 | `portals/` | Blinkit/Zepto seller portals | studied; read-only CLIs built |
+| `sap-history-cli/` | **OLD SAP B1 books, 2014 → Oct-2024** (SQL Server) | anything before the HANA move: old turnover, old ledgers, old parties |
+| `ary-cli/` | ARY FusionERP8 retail/distribution (same SQL Server) | ARY bills, stock, counters |
 
 **SAP is the main one for Accounts.** Start there unless asked otherwise.
+
+**Before October 2024, SAP lives somewhere else.** The live HANA system only
+carries the books from the Oct-2024 migration onward. Everything earlier —
+2014-11-01 to 2024-10-01 — is in three closed SAP company databases on the SQL
+Server `138.252.101.118`, read with **`sap-history-cli/saphist`**. If an operator
+asks about FY2016, FY2020 or "last five years", `sapb1` will return nothing and
+that emptiness is NOT the answer: route it to `saphist`. It takes `--fy`/`--year`
+or `--from/--to`, picks the right book itself, and reads both when a range
+crosses the August-2019 changeover. `saphist` cannot write (SELECT-only guard +
+always-rolled-back transaction). See `sap-history-cli/CLAUDE.md` for its traps —
+the sharp one is that **the same CardCode is a different party in each book**.
 
 ## How to answer SAP questions
 
