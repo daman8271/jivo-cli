@@ -1,6 +1,6 @@
 ---
 name: jivo-ap-service-draft
-description: Use when an operator hands over a vendor bill that has NO goods receipt (GRPO) behind it and wants it entered in SAP B1 as an A/P invoice draft — fuel / petrol pump / diesel bills, transporter / freight / bilty / lorry bills, courier, electricity, water, rent, AMC, repair, professional or any service / expense bill — "book this bill", "enter this expense", "fuel bill entry", "transport bill draft". Also use when jivo-ap-draft's precheck exits 3 with "no GRPO". Not for item purchases with a GRPO (jivo-ap-draft) or vendor credit notes (jivo-ap-credit-memo).
+description: Use when an operator hands over a vendor bill that has NO goods receipt (GRPO) behind it and wants it entered in SAP B1 as an A/P invoice draft — fuel / petrol pump / diesel bills, courier, electricity, water, rent, AMC, repair, professional or any service / expense bill — "book this bill", "enter this expense", "fuel bill entry". Also use when jivo-ap-draft's precheck exits 3 with "no GRPO". NOT for transporter / freight / bilty / lorry bills — those are 98% GRPO-copy jobs, see sap-b1/entry-vault/04-playbooks/Transport-Bill-Playbook.md. Not for item purchases with a GRPO (jivo-ap-draft) or vendor credit notes (jivo-ap-credit-memo).
 ---
 
 # A/P draft for a service / expense bill — no GRPO (JIVO, SAP B1)
@@ -102,9 +102,22 @@ Series 3324 HR_B0826 + bod_None, branch 2, BillOfSupply, TDS none, DocDate 18-08
 G.No 181), TaxDate 15-08. Judgment call to surface: DL7SCH5064's petrol → CONVEYANCE, the
 companion-line pattern in every precedent doc (~85%; a two-field edit if Accounts differs).
 
-## Transport / freight bills — first one through here extends this file
+## Transport / freight bills — NOT this skill
 
-Not yet exercised. Expect: one line per bilty/LR with the bilty no. in the dimension or
-`Comments`, freight accounts under 5650xxx, weight/km in `U_Recvd_Qty`, and **TDS 194C is
-likely** — the precedent check in step 4 decides, never the assumption. Add the worked
-example here after the first live draft.
+**Measured 2026-08-27 and the earlier note here was wrong.** Transport bills at JIVO are
+**not** no-GRPO bills: the factory raises one **service GRPO per bilty** and the bill is a
+copy of N of them — 1,073 of 1,093 Oil transport A/P lines (98.2 %) carry `BaseType 20`.
+There were 433 such bills across the three books in the first five months of FY26-27.
+
+**Use the GRPO-copy path with `"DocType": "dDocument_Service"`, and follow
+`sap-b1/entry-vault/04-playbooks/Transport-Bill-Playbook.md`.** In one line: find the
+GRPOs by matching the bill's bilty numbers to `OPDN.NumAtCard`, copy them, then set the
+only two things the copy cannot give you — **TDS** (`WithholdingTaxDataCollection`,
+`1024` 2 % company/firm or `1023` 1 % individual/HUF, per the vendor card) and the
+**attachment** — and `add-draft` it.
+
+Three ways this class differs from the fuel bill above: the posting date is the **bill**
+date not the gate date; **all five dimensions** come across from a service GRPO (C-0035 is
+the item-GRPO rule); and `U_Recvd_Qty` stays **empty** — it is 0 on all 1,093 lines.
+Omitting `DocType` returns `[SAP -5002] Base document type and target document type do
+not match`.

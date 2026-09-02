@@ -49,9 +49,16 @@ Rename the file first (`VENDOR-REF-DATE.pdf`) — it lands on
 `\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments` under exactly that name.
 
 ```bash
-curl -sk -b "$S/ck" -X POST "$H/b1s/v1/Attachments2" -F "files=@$S/VENDOR-REF-DATE.pdf;type=application/pdf"
+curl -sk --http1.1 -H "Expect:" -b "$S/ck" -X POST "$H/b1s/v1/Attachments2" -F "files=@$S/VENDOR-REF-DATE.pdf;type=application/pdf"
 # → HTTP 201, {"AbsoluteEntry": N, "Attachments2_Lines": [{"LineNum": 1, "FileSize": <KB>, ...}]}
 ```
+
+**`-H "Expect:"` is load-bearing** (proven 2026-09-01, draft 55786 direct to
+138.252.101.222:50000): for a multi-MB file curl sends `Expect: 100-continue`
+and the SL answers `400 {"code": 206, "message": "Bad Post content."}`. Same
+command with the header suppressed → 201. (Expect the same on the line-2 PATCH
+in step 3 — same multipart path, though only the POST was tested.) Small files squeak under curl's 1 KB threshold, which is why
+the tiny test files always "worked".
 
 ## 3. The base document's file(s) → extra lines on the same row
 
@@ -63,11 +70,28 @@ curl -sk -b "$S/ck" -X PATCH "$H/b1s/v1/Attachments2(N)" -F "files=@$S/GRPO-<Doc
 # → HTTP 204; the row now has LineNum 2
 ```
 
-Rename before re-uploading so it cannot collide with the original file name on the
-share. A base row with several lines needs one `$value` call per file (the SL takes a
-file-name selector for that — not exercised yet; verify on the first multi-file row).
+**The file-name selector is now proven** (2026-08-27, Mart row 56828, first multi-file
+row done by API). Plain `$value` returns **line 1** only; to reach any other line the
+name must be **quoted**:
+
+```bash
+curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(N)/\$value?filename='332.pdf'" -o "$S/rb.pdf"   # 200
+# unquoted, or with &fileextension=, returns 404 — and the 404 body is what lands in the
+# output file, so a following `cmp` "fails" for the wrong reason. Always check `file`.
+```
+
+**You do not need to rename to dodge a collision — SAP does it for you.** Re-uploading
+`3229.pdf` when that name already sat on the share came back as
+`322927082026125933812262.pdf` (name + ddmmyyyy + time), HTTP 201, original untouched.
+That is the same auto-rename visible on hand-keyed rows (Mart NCR-330 line 2). A name
+that is free keeps its clean form (`332.pdf`).
 
 ## 4. Stamp every line — JIVO guard 1120025 "Select OK in Approve Column"
+
+**Oil only.** `ATC1` carries the `U_CHK` / `U_CHK2` UDFs in `JIVO_OIL_HANADB` and
+**not in Mart** (measured 2026-08-27: Oil has both, Mart has neither). In Mart skip this
+step — the PATCH would fail on an unknown field. Verify the same for Beverages before
+assuming.
 
 `SBO_SP_TransactionNotification` refuses a draft that points at an attachment line
 whose `U_CHK2` is null. Human-keyed rows carry `U_CHK = <size KB>`, `U_CHK2 = 'OK'`.
@@ -97,7 +121,18 @@ curl -sk -b "$S/ck" -X POST "$H/b1s/v1/Logout" -o /dev/null; rm -f "$S/ck" "$S/l
 
 - `sapb1 delete draft` on a draft with `AttachmentEntry` set needs `--with-attachment`.
   Setting the pointer back to `null` first (PATCH, 204) is the cleaner route.
-- The physical files stay on the share even if the draft is deleted (the SL has no
-  DELETE for `Attachments2`) — harmless orphans.
+- **An attachment row can never be removed — orphans are permanent, and harmless.**
+  Delete the draft and its `Attachments2` row survives, with the file still on the
+  share. The catalog *lists* `DELETE Attachments2(id)`, so it looks available; the
+  live server refuses every one (measured 2026-09-01 on Oil rows 173732/173733/173740,
+  all `manager`, all unreferenced):
+
+  ```
+  DELETE /b1s/v1/Attachments2(173733) → 400 {"code": 220, "value": "Attachments2 is not allowed to remove."}
+  ```
+
+  Do not go delete the file off the CIFS share to "finish the job" either: the SAP row
+  stays and would then point at a missing file, which is worse than the orphan. An
+  unreferenced row costs nothing but disk.
 - For a bill with no base document (fuel, expenses, services) the draft simply gets
   the scan alone — there is nothing to copy.
