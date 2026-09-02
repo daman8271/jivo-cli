@@ -49,6 +49,8 @@ type Client struct {
 	mu    sync.Mutex
 	state string
 	since time.Time
+
+	lidSeen map[string]bool // LIDs already checked against the names table
 }
 
 // Open builds the client but does not connect.
@@ -232,6 +234,36 @@ func (c *Client) record(evt *events.Message) {
 	c.attachMedia(&m, evt.Message)
 	if err := c.DB.Put(m); err != nil {
 		c.Log("! could not store %s: %v", m.ID, err)
+	}
+	c.learnLID(evt.Info.Chat)
+	c.learnLID(evt.Info.Sender)
+}
+
+// learnLID completes a label that was given by phone number only. WhatsApp
+// addresses people by LID, and the LID for a phone is unknown until the first
+// message from it arrives — this is that moment, so the label is copied across.
+func (c *Client) learnLID(j types.JID) {
+	if j.Server != types.HiddenUserServer {
+		return
+	}
+	c.mu.Lock()
+	seen := c.lidSeen[j.User]
+	if !seen {
+		if c.lidSeen == nil {
+			c.lidSeen = map[string]bool{}
+		}
+		c.lidSeen[j.User] = true
+	}
+	c.mu.Unlock()
+	if seen {
+		return
+	}
+	pn, err := c.WA.Store.LIDs.GetPNForLID(context.Background(), j.ToNonAD())
+	if err != nil || pn.IsEmpty() {
+		return
+	}
+	if err := c.DB.CopyName(pn.User, j.User); err != nil {
+		c.Log("! could not carry the name of %s to %s: %v", pn.User, j.User, err)
 	}
 }
 

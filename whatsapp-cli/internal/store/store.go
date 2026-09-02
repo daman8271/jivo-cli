@@ -285,6 +285,15 @@ func (d *DB) SetName(users []string, name, phone string) error {
 	return tx.Commit()
 }
 
+// CopyName gives `to` whatever label `from` has, if `to` has none — how a
+// label given by phone number reaches the LID WhatsApp later shows for it.
+func (d *DB) CopyName(from, to string) error {
+	_, err := d.sql.Exec(`
+        INSERT OR IGNORE INTO names (jid_user, name, phone, set_at)
+        SELECT ?, name, phone, set_at FROM names WHERE jid_user = ?`, to, from)
+	return err
+}
+
 // Names lists every label given, newest first.
 func (d *DB) Names() ([]Name, error) {
 	rows, err := d.sql.Query(`SELECT jid_user, name, phone, set_at FROM names ORDER BY set_at DESC, name`)
