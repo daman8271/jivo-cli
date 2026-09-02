@@ -8,11 +8,14 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -39,6 +42,7 @@ const usage = `jwa — JIVO's WhatsApp reader. Reads only; it can never send.
   jwa pull   <message-id> [--to DIR]
   jwa name   <number|jid> <label>  remember who a number is (chats/search show the label)
   jwa names  [--vcf FILE] [--qr]   every label given; --vcf = card file, --qr = scan-to-save codes
+  jwa send   <number|jid> <text>   send a text through the running daemon (the only way out)
 
 Everything lives under ~/.jwa — session.db (device keys), archive.db (messages),
 media/YYYY-MM-DD/ (the files). Override the lot with JWA_HOME.
@@ -71,6 +75,8 @@ func main() {
 		err = cmdName(args)
 	case "names":
 		err = cmdNames(args)
+	case "send":
+		err = cmdSend(args)
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 		return
@@ -161,6 +167,7 @@ func cmdLogin(args []string) error {
 func cmdRun(args []string) error {
 	fs := flag.NewFlagSet("run", flag.ExitOnError)
 	verbose := fs.Bool("v", false, "log whatsmeow's own chatter")
+	api := fs.String("api", apiAddr(), "loopback host:port for the daemon's API ($JWA_API)")
 	_ = fs.Parse(args)
 
 	session, archive, media := paths()
@@ -190,6 +197,12 @@ func cmdRun(args []string) error {
 	fmt.Printf("%s  linked as %s, archiving to %s\n",
 		time.Now().Format("2006-01-02 15:04:05"), c.WA.Store.ID.String(), archive)
 	go c.Heartbeat(ctx)
+	go func() {
+		if err := c.Serve(ctx, *api); err != nil {
+			c.Note("disconnected", "api: "+err.Error())
+			c.Fatal <- wa.Fatal{Err: fmt.Errorf("api: %w", err)}
+		}
+	}()
 
 	select {
 	case <-ctx.Done():
@@ -701,4 +714,31 @@ func cmdNames(args []string) error {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.name, nameOr(p.phone, "?"), strings.Join(p.ids, " "), p.at.Format("2006-01-02"))
 	}
 	return w.Flush()
+}
+
+func apiAddr() string {
+	if a := os.Getenv("JWA_API"); a != "" {
+		return a
+	}
+	return "127.0.0.1:3012"
+}
+
+// jwa send <number|jid> <text…>  — through the daemon, never directly.
+func cmdSend(args []string) error {
+	if len(args) < 2 {
+		return errors.New("usage: jwa send <number|jid> <text>")
+	}
+	body, _ := json.Marshal(map[string]string{"to": args[0], "text": strings.Join(args[1:], " ")})
+	resp, err := http.Post("http://"+apiAddr()+"/send", "application/json", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("the daemon is not answering on %s — is it running? (systemctl --user status jwa): %w", apiAddr(), err)
+	}
+	defer resp.Body.Close()
+	var out map[string]any
+	_ = json.NewDecoder(resp.Body).Decode(&out)
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("not sent: %v", out["error"])
+	}
+	fmt.Printf("sent %v to %v\n", out["id"], out["to"])
+	return nil
 }

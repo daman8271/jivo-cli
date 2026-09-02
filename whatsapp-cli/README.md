@@ -32,6 +32,7 @@ jwa bills  [--since 30d]      only messages carrying a PDF or an image
 jwa pull   <message-id> [--to DIR]
 jwa name   <number|jid> <label>  remember who a number is — chats/search show it
 jwa names  [--vcf FILE]          every label given; --vcf = card file for the phone
+jwa send   <number|jid> <text>   send a text — only through the running daemon
 ```
 
 Names: WhatsApp hides most senders behind a LID (`185414426054881@lid`), not
@@ -69,6 +70,17 @@ you log out — that failure looks exactly like "WhatsApp keeps unlinking itself
 3. **`~/.jwa/session.db` is as good as the account.** Anyone holding it is that
    linked device. It is 0700, the service runs unprivileged, and it must never
    be committed — this repo is public.
+
+## Sending (since 2026-09-02 evening)
+
+jwa was built never to send: it was for a person's own number. That evening it
+was linked to a SIM bought to be JIVO's bot number ("Jivo AI") and Daman asked
+for sending, so the rule changed to **one door**: `internal/wa/send.go` is the
+only file allowed a send verb (the guard test still fails the build for any
+other), and it is reachable only through the daemon's loopback API on
+`127.0.0.1:3012` (`POST /send {"to","text"}`, `GET /health`). `jwa send` is a
+thin client of that API. Reading commands still never touch the network. Every
+send is archived as ours and logged. No read receipts, presence or typing.
 
 ## Staying linked
 

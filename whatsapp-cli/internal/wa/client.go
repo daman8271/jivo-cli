@@ -1,13 +1,10 @@
 // Package wa wraps whatsmeow for jwa.
 //
-// READ ONLY, enforced here in one place. This package builds a whatsmeow client
-// that receives, and there is deliberately no function anywhere in jwa that
-// calls SendMessage, MarkRead, SetPresence, or any other verb that would put
-// something back on the wire. The guard test in client_guard_test.go walks this
-// package's syntax tree and fails the build if one appears.
-//
-// The contact never sees "typing…", never sees a blue tick, and never sees the
-// number come online in a way it would not have anyway by being linked.
+// Sending is confined to ONE file, send.go, and reachable only through the
+// running daemon's loopback API (api.go). Every other file — and every reading
+// command — must never put anything on the wire; the guard test in
+// client_guard_test.go walks the module's syntax tree and fails the build if a
+// send verb appears anywhere else. No read receipts, no presence, no typing.
 package wa
 
 import (
