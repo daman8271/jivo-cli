@@ -1,0 +1,24 @@
+{
+  "_doc": "Which skill folders a box must NOT carry. Every box pulls all of main; harness/bin/desk.py apply (run by the SessionStart hook) hides the listed folders on the boxes whose identity matches, via git sparse-checkout, so a pull can never bring them back. Identity = hostname / COMPUTERNAME / local username / harness/.operator slug, matched case-insensitively as a substring. Edit, commit, push - the box applies it on its next session.",
+  "skill_sets": {
+    "accounts-desk": [
+      ".claude/skills/jivo-banking",
+      ".claude/skills/jivo-outgoing-payment",
+      ".claude/skills/jivo-rent-invoice",
+      ".claude/skills/jivo-service-vehicle-expense",
+      ".claude/skills/jivo-loading-unloading-ap",
+      ".claude/skills/jivo-oil-freight-grpo",
+      ".claude/skills/jivo-mart-freight-grpo",
+      ".claude/skills/jivo-bev-freight-grpo",
+      ".claude/skills/cli-hub",
+      ".claude/skills/press-desktop"
+    ]
+  },
+  "exclude": [
+    {"who": ["DESKTOP-TTMJNEG", "sarabjeet"], "sets": ["accounts-desk"], "note": "Sarabjeet - HR desk. Daman 2026-09-02"},
+    {"who": ["karanpreet"], "sets": ["accounts-desk"], "note": "Karanpreet - MacBook, manager creds. Daman 2026-09-02"},
+    {"who": ["DIVYA", "dolly"], "sets": ["accounts-desk"], "note": "Divya / Dolly (USER04) - tax desk. Daman 2026-09-02"},
+    {"who": ["DILPREETSINGH", "param"], "sets": ["accounts-desk"], "note": "Param - old DILPREETSINGH box. Daman 2026-09-02"},
+    {"who": ["HO-IT-PC1", "preshit"], "sets": ["accounts-desk"], "note": "Preshit - IT. Daman 2026-09-02"}
+  ]
+}

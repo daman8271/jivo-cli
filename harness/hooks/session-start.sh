@@ -47,6 +47,11 @@ if [ -f "$HARNESS_DIR/bin/sync.py" ] && [ "${JIVO_NO_AUTOSYNC:-}" != "1" ]; then
   JIVO_SYNC_TIMEOUT=6 "$PY" "$HARNESS_DIR/bin/sync.py" pull --quiet 2>&1 || true
 fi
 
+# Some desks must not carry some skills (harness/desks.json — HR, tax, IT boxes
+# do not get the Accounts entry skills). The pull above brings everything on
+# main; this hides what this box is not meant to have, and keeps it hidden.
+[ -f "$HARNESS_DIR/bin/desk.py" ] && "$PY" "$HARNESS_DIR/bin/desk.py" apply --quiet 2>&1 || true
+
 # Capture instead of streaming, so a crash can be reported rather than
 # silently producing an empty digest.
 _ctx="$("$PY" "$HARNESS_DIR/bin/harness.py" context 2>/tmp/jivo-harness-err.$$)"
