@@ -96,18 +96,67 @@ $MANAGER_KEYS = @(
 
 # ssh.exe lives in System32\OpenSSH for the inbox capability, but in
 # Program Files\OpenSSH when installed from the MSI. Resolve, do not assume.
+# A directory whose exes EXIST but will not LAUNCH is skipped (see the
+# 'openssh-launches' step): on HO-COMP-PC4 (2026-09-02) every inbox binary died
+# with "Invalid access to memory location", and "first path that exists" kept
+# handing the same dead ssh-keygen.exe to every later step.
+$script:BrokenSshDirs = @()
+$arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'Win64' }
 function Find-Exe($name) {
   foreach ($d in @("$env:WINDIR\System32\OpenSSH", "$env:ProgramFiles\OpenSSH",
                    "$env:ProgramFiles\OpenSSH-Win64", "$env:ProgramFiles\OpenSSH-ARM64",
                    "${env:ProgramFiles(x86)}\OpenSSH")) {
+    if ($d -and ($script:BrokenSshDirs -contains $d)) { continue }
     if ($d -and (Test-Path (Join-Path $d $name))) { return (Join-Path $d $name) }
   }
   $c = Get-Command $name -ErrorAction SilentlyContinue
-  if ($c) { return $c.Source }
+  if ($c -and ($script:BrokenSshDirs -notcontains (Split-Path $c.Source))) { return $c.Source }
   return "$env:WINDIR\System32\OpenSSH\$name"
 }
 $SSH    = Find-Exe 'ssh.exe'
 $KEYGEN = Find-Exe 'ssh-keygen.exe'
+# Does this exe actually START? "Program 'ssh-keygen.exe' failed to run: Invalid
+# access to memory location" is thrown by PowerShell BEFORE the program runs --
+# Test-Path is true, the file is fine, the process never begins. ssh-keygen with
+# '-?' prints usage and exits 1 (NO argument would start an interactive key
+# generation and wait for a keypress); the exit code is irrelevant, only whether
+# PowerShell could launch it. The reason is kept for the summary block.
+$script:launchErr = ''
+function Test-Launches($exe) {
+  if (-not ($exe -and (Test-Path $exe))) { $script:launchErr = "not found: $exe"; return $false }
+  try { $null = & $exe '-?' 2>&1; $script:launchErr = ''; return $true }
+  catch { $script:launchErr = $_.Exception.Message; return $false }
+}
+# The ZIP route as a function: the openssh-server step and the openssh-launches
+# step both need it. install-sshd.ps1 deletes and recreates the sshd service, so
+# it is safe to run over an existing (broken) inbox OpenSSH -- afterwards the
+# service points at Program Files\OpenSSH-<arch>\sshd.exe.
+function Install-OpenSshZip {
+  [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+  $zurl = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/OpenSSH-$arch.zip"
+  try {
+    $rel2 = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest' `
+              -UseBasicParsing -TimeoutSec 30 -Headers @{ 'User-Agent' = 'jivo-fleet' }
+    $z = ($rel2.assets | Where-Object { $_.name -eq "OpenSSH-$arch.zip" } | Select-Object -First 1).browser_download_url
+    if ($z) { $zurl = $z }
+  } catch { }
+  $zip = "$env:TEMP\openssh-$arch.zip"
+  Write-Host "  downloading $zurl" -ForegroundColor DarkGray
+  Get-Validated $zurl $zip @(0x50,0x4B,0x03,0x04) 2000000     # 50 4B 03 04 = PK.., a real zip
+  try { Stop-Service sshd -Force -ErrorAction SilentlyContinue } catch { }
+  Expand-Archive -LiteralPath $zip -DestinationPath $env:ProgramFiles -Force -ErrorAction Stop
+  Remove-Item $zip -Force -ErrorAction SilentlyContinue
+  $inst = Join-Path $env:ProgramFiles "OpenSSH-$arch\install-sshd.ps1"
+  if (-not (Test-Path $inst)) { throw "install-sshd.ps1 missing at $inst" }
+  # -Confirm:$false: install-sshd.ps1 is ConfirmImpact=High and, when it decides
+  # %ProgramData%\ssh permissions need fixing, stops to ASK. Unattended, that is
+  # a hang with no output -- exactly what this step must never do.
+  $ir = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& '$inst' -Confirm:`$false" 2>&1
+  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw "install-sshd.ps1 said: $($ir -join ' ')" }
+  # Re-resolve. The inbox dir may now be marked broken, so this lands on the fresh copy.
+  $script:SSH    = Find-Exe 'ssh.exe'
+  $script:KEYGEN = Find-Exe 'ssh-keygen.exe'
+}
 # The name this box registers under. The VERIFY call at the end MUST use the
 # identical string or the VPS looks up a different machine's port.
 $HOSTTAG = $env:COMPUTERNAME
@@ -213,6 +262,48 @@ Step 'openssh-client' {
   }
   if (-not (Test-Path $SSH)) { throw "ssh.exe not found at $SSH" }
 }
+# ---- 2b. do the OpenSSH exes actually LAUNCH? ----
+# HO-COMP-PC4, 2026-09-02, v9: ssh-keygen.exe was present and every `&` of it
+# threw "Program 'ssh-keygen.exe' failed to run: Invalid access to memory
+# location". That one fault took out tunnel-key, register-with-vps,
+# install-dialer, openssh-server (its `ssh-keygen -A` threw before the repair
+# ladder could run) and verify-reachable -- five red lines, all one cause, and
+# no rung for "the file is there but Windows will not start it". Known causes,
+# in the order they are tried here:
+#   1. Exploit Protection "Mandatory ASLR" forced on system-wide (a security
+#      baseline / AV does this) -- the inbox OpenSSH libcrypto is not built for
+#      it. A per-image exemption fixes the exes in place.
+#   2. The inbox capability is half-installed (staged files, reboot pending) or
+#      otherwise damaged -- a fresh OpenSSH from the ZIP into Program Files
+#      sidesteps System32\OpenSSH entirely, and install-sshd.ps1 re-points sshd.
+#   3. Anti-virus blocking the process -- nothing here can lift that; the block
+#      says so in words instead of five stack traces.
+Step 'openssh-launches' {
+  if (Test-Launches $KEYGEN) { $script:sshRoutes += "launch: ok ($KEYGEN)" }
+  else {
+    $why = $script:launchErr
+    $script:sshRoutes += "launch: ssh-keygen.exe will not start - $why"
+    Write-Host "  OpenSSH's ssh-keygen.exe will not start ($why) - repairing..." -ForegroundColor Yellow
+    # rung 1: exempt the OpenSSH images from forced ASLR / bottom-up randomisation
+    try {
+      foreach ($n in @('ssh.exe','ssh-keygen.exe','sshd.exe','ssh-agent.exe','sftp-server.exe','scp.exe','sftp.exe','ssh-keyscan.exe','ssh-add.exe')) {
+        Set-ProcessMitigation -Name $n -Disable ForceRelocateImages,BottomUp,HighEntropy -ErrorAction Stop
+      }
+      $script:sshRoutes += 'exploit-protection: exempted the OpenSSH exes from mandatory ASLR'
+    } catch { $script:sshRoutes += "exploit-protection: $($_.Exception.Message)" }
+    if (Test-Launches $KEYGEN) { $script:sshRoutes += 'launch: ok after the exploit-protection exemption' }
+    else {
+      # rung 2: stop trusting that directory; install a fresh OpenSSH beside it
+      $script:BrokenSshDirs += (Split-Path $KEYGEN)
+      $script:sshRoutes += ("launch: still dead after the exemption ({0}) - installing a fresh OpenSSH from the ZIP into Program Files" -f $script:launchErr)
+      Install-OpenSshZip
+      if (Test-Launches $script:KEYGEN) { $script:sshRoutes += "launch: ok from the fresh copy ($script:KEYGEN)"; $script:sshRoutes += 'zip: ok (replaced the inbox OpenSSH that would not launch)' }
+      else {
+        throw ("NO OpenSSH binary on this PC will start (inbox: " + $why + "; fresh ZIP copy: " + $script:launchErr + "). This is outside OpenSSH -- an anti-virus or an Exploit Protection policy is blocking the process. Ask IT what security software runs here, or reboot and re-run this file once.")
+      }
+    }
+  }
+}
 # ---- 3. manager key, so Daman can actually log in once the tunnel is up ----
 Step 'manager-key' {
   $admins = (Get-LocalGroupMember -Group 'Administrators' -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
@@ -244,15 +335,18 @@ Step 'tunnel-key' {
   # exactly what you need when a step fails.
   Set-Content -Path "$DIR\version.txt" -Value ("{0}  installed {1}  by {2}" -f $TUNNEL_VER, (Get-Date -Format s), $env:USERNAME) -Encoding ascii -ErrorAction SilentlyContinue
   if (-not (Test-Path $TUNKEY)) {
-    & $KEYGEN -t ed25519 -N '""' -f $TUNKEY -C "revtun-$env:COMPUTERNAME" -q 2>&1 | Out-Null
+    # $script:KEYGEN, not $KEYGEN: the openssh-launches step may have moved it.
+    try { & $script:KEYGEN -t ed25519 -N '""' -f $TUNKEY -C "revtun-$env:COMPUTERNAME" -q 2>&1 | Out-Null }
+    catch { throw "ssh-keygen.exe could not run ($script:KEYGEN): $($_.Exception.Message) -- see the SSHD ROUTES 'launch:' lines" }
   }
-  if (-not (Test-Path $TUNKEY)) { throw "key generation failed" }
+  if (-not (Test-Path $TUNKEY)) { throw "key generation failed ($script:KEYGEN ran but wrote no $TUNKEY)" }
   Lock-KeyFile $TUNKEY
 }
 
 # ---- 5. register with the VPS -> get this box a permanent private port ----
 $PORT = $null
 Step 'register-with-vps' {
+  if (-not (Test-Path "$TUNKEY.pub")) { throw 'no tunnel key to register - the tunnel-key step failed (see above)' }
   $pub  = (Get-Content "$TUNKEY.pub" -Raw).Trim()
   $pubB = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes($pub))
   # The registrar only accepts [A-Za-z0-9._-] in USER, and Windows usernames can
@@ -505,7 +599,7 @@ function Start-Sshd(`$why) {
       icacls.exe `$kd /inheritance:r /grant 'SYSTEM:(OI)(CI)F' /grant 'BUILTIN\Administrators:(OI)(CI)F' | Out-Null
     }
     L "running '`$kg -A' (missing host keys) and retrying the start"
-    & `$kg -A 2>&1 | Out-Null
+    try { & `$kg -A 2>&1 | Out-Null } catch { L "ssh-keygen.exe would not launch (`$kg): `$(`$_.Exception.Message)" }
     `$e = `$null
     Start-Service sshd -ErrorAction SilentlyContinue -ErrorVariable e
     if ((Get-Service sshd).Status -eq 'Running') { L 'started after ssh-keygen -A'; return }
@@ -805,7 +899,11 @@ if (-not $svc) {
     if ($alt) { $script:exe = $alt }
   }
   $exeOk = [bool]($script:exe -and (Test-Path -LiteralPath $script:exe))
-  Trail ("service: status={0} startmode={1} account={2} exe={3} exists={4}" -f $svc.Status, $(if ($ci) { $ci.StartMode } else { '?' }),
+  if ($exeOk) {
+    # exists is not launches: `sshd -t` (below) will throw, not exit, if Windows refuses to start the image
+    try { $null = & $script:exe '-?' 2>&1 } catch { $exeOk = $false; Trail "service: $script:exe exists but WILL NOT LAUNCH: $(Short $_.Exception.Message) - treating the binary as missing" }
+  }
+  Trail ("service: status={0} startmode={1} account={2} exe={3} usable={4}" -f $svc.Status, $(if ($ci) { $ci.StartMode } else { '?' }),
          $(if ($ci) { $ci.StartName } else { '?' }), $(if ($script:exe) { $script:exe } else { 'none found anywhere' }), $exeOk)
   # Only a binary that exists NOWHERE means reinstall; a failed WMI read does not.
   if (-not $exeOk) { $needInstall = $true }
@@ -857,7 +955,12 @@ if ($zeroKeys.Count) {
   Trail ("removed {0} empty host key(s) and their .pub: {1}" -f $zeroKeys.Count, (($zeroKeys | ForEach-Object { $_.Name }) -join ' '))
 }
 $kg = Find-Keygen
-if ($kg) { $null = & $kg -A 2>&1; Trail "ssh-keygen -A done ($kg, exit $LASTEXITCODE)" } else { Trail 'ssh-keygen.exe not found in any OpenSSH directory - cannot generate host keys' }
+if ($kg) {
+  # "failed to run: Invalid access to memory location" is thrown by PowerShell before the exe starts
+  # (HO-COMP-PC4, 2026-09-02). Treat a keygen that will not launch like a missing one: rung 6 reinstalls.
+  try { $null = & $kg -A 2>&1; Trail "ssh-keygen -A done ($kg, exit $LASTEXITCODE)" }
+  catch { Trail "ssh-keygen.exe WILL NOT LAUNCH ($kg): $(Short $_.Exception.Message) - the OpenSSH binaries here are unusable, forcing the reinstall rung"; $kg = $null; $needInstall = $true; $exeOk = $false }
+} else { Trail 'ssh-keygen.exe not found in any OpenSSH directory - cannot generate host keys' }
 if ($kg) {
   # a 0-byte .pub beside a healthy private key: -A leaves it; derive it again
   Get-ChildItem "$kd\ssh_host_*_key.pub" -EA SilentlyContinue | Where-Object { $_.Length -eq 0 } | ForEach-Object {
@@ -947,8 +1050,9 @@ if ($dead) {
     $exe = $script:exe
     Trail "reinstalled - the service now points at $exe"
     Set-Service -Name sshd -StartupType Automatic -EA SilentlyContinue
-    $kg = Find-Keygen
-    if ($kg) { $null = & $kg -A 2>&1 }
+    # the fresh copy first: the inbox one may be exactly what could not launch
+    $kg = @("$env:ProgramFiles\OpenSSH-$arch\ssh-keygen.exe", (Find-Keygen)) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+    if ($kg) { try { $null = & $kg -A 2>&1 } catch { Trail "ssh-keygen -A after reinstall: $(Short $_.Exception.Message)" } }
     Get-ChildItem "$kd\ssh_host_*_key" -EA SilentlyContinue | ForEach-Object { try { Lock-File $_.FullName } catch { } }
     if (-not (Test-Path $cfg)) { $d2 = "$env:ProgramFiles\OpenSSH-$arch\sshd_config_default"; if (Test-Path $d2) { Copy-Item $d2 $cfg -Force; Trail 'sshd_config: installed the shipped default' } }
     if ((Test-Path $cfg) -and -not (Select-String -Path $cfg -Pattern '^\s*[^#].*administrators_authorized_keys' -Quiet)) {
@@ -989,7 +1093,7 @@ Step 'openssh-server' {
   # and the Desktop log is a Start-Transcript so neither ever reached it. An hour
   # went into re-deriving what the box already knew. Every reason now survives
   # into the summary block the operator photographs.
-  $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'ARM64' } else { 'Win64' }
+  # ($arch is resolved once at the top, next to Find-Exe.)
 
   # ---- route 1: Windows Update / the component store ----
   if ($sshJob) {
@@ -1069,29 +1173,8 @@ Step 'openssh-server' {
   # policy -- just files plus the bundled install-sshd.ps1. This is the route
   # that still works on a locked-down office box where the other two are shut. ----
   if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
-    try {
-      $zurl = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/OpenSSH-$arch.zip"
-      try {
-        $rel2 = Invoke-RestMethod -Uri 'https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest' `
-                  -UseBasicParsing -TimeoutSec 30 -Headers @{ 'User-Agent' = 'jivo-fleet' }
-        $z = ($rel2.assets | Where-Object { $_.name -eq "OpenSSH-$arch.zip" } | Select-Object -First 1).browser_download_url
-        if ($z) { $zurl = $z }
-      } catch { }
-      $zip = "$env:TEMP\openssh-$arch.zip"
-      Write-Host "  downloading $zurl" -ForegroundColor DarkGray
-      Get-Validated $zurl $zip @(0x50,0x4B,0x03,0x04) 2000000     # 50 4B 03 04 = PK.., a real zip
-      Expand-Archive -LiteralPath $zip -DestinationPath $env:ProgramFiles -Force -ErrorAction Stop
-      Remove-Item $zip -Force -ErrorAction SilentlyContinue
-      $inst = Join-Path $env:ProgramFiles "OpenSSH-$arch\install-sshd.ps1"
-      if (-not (Test-Path $inst)) { throw "install-sshd.ps1 missing at $inst" }
-      # -Confirm:$false: install-sshd.ps1 is ConfirmImpact=High and, when it decides
-      # %ProgramData%\ssh permissions need fixing, stops to ASK. Unattended, that is
-      # a hang with no output -- exactly what this step must never do.
-      $ir = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& '$inst' -Confirm:`$false" 2>&1
-      if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw "install-sshd.ps1 said: $($ir -join ' ')" }
-      $script:KEYGEN = Find-Exe 'ssh-keygen.exe'     # the zip route moved it
-      $script:sshRoutes += 'zip: ok'
-    } catch { $script:sshRoutes += "zip: $($_.Exception.Message)" }
+    try { Install-OpenSshZip; $script:sshRoutes += 'zip: ok' }
+    catch { $script:sshRoutes += "zip: $($_.Exception.Message)" }
   }
 
   if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
@@ -1134,7 +1217,9 @@ Step 'openssh-server' {
     # Commonest cause on a box where OpenSSH was ALREADY present: host keys were
     # never generated, and sshd refuses to start without them. -A creates only
     # the missing ones and leaves an existing, working set alone.
-    if (Test-Path $script:KEYGEN) { & $script:KEYGEN -A 2>&1 | Out-Null }
+    # In a try: a keygen that will not LAUNCH threw here on HO-COMP-PC4 and ended
+    # the step before the repair ladder below ever ran. The ladder must always get its turn.
+    if (Test-Path $script:KEYGEN) { try { & $script:KEYGEN -A 2>&1 | Out-Null } catch { $script:sshRoutes += "ssh-keygen -A: $($_.Exception.Message)" } }
     Start-Service sshd -ErrorAction SilentlyContinue
   }
   # Running is STILL not proof. Ask port 22 for a banner -- the same bar the VPS
