@@ -472,6 +472,18 @@ func preflightAddDrafts(cmd *cobra.Command, c *client.Client, cfg *config.Config
 	bases := map[int64]map[string]interface{}{}
 	vendors := map[string]map[string]interface{}{}
 
+	// GUARD 0 — CAN THIS COMPANY ROUTE AN API ADD TO APPROVAL AT ALL? Read once
+	// for the batch. SAP consults approval templates for a Service Layer Add
+	// only when General Settings → BP → "Enable Approval Procedures in DI" is
+	// on; with it off, SaveDraftToDocument on a dasWithout draft posts LIVE, no
+	// matter what OWTM holds. Every guard below assumes the answer; a batch that
+	// cannot read it cannot be judged, so a failed read stops here with nothing
+	// sent.
+	admin, err := c.GetAdminInfo(cmd.Context())
+	if err != nil {
+		return nil, fmt.Errorf("reading %s's General Settings (CompanyService_GetAdminInfo) failed: %w.\n  add-draft needs to know whether this company routes an API Add to approval before it can say what an Add would do, so nothing was attempted", cfg.CompanyDB, err)
+	}
+
 	for _, docEntry := range entries {
 		pf := addPreflight{DocEntry: docEntry, Type: addDocType{Kind: kindAddDraft}}
 
@@ -530,6 +542,7 @@ func preflightAddDrafts(cmd *cobra.Command, c *client.Client, cfg *config.Config
 
 		checkAddOpen(&pf, cfg)
 		checkAddApproval(&pf, cfg)
+		checkAddDIApproval(&pf, cfg, admin)
 		checkAddLineIntegrity(&pf, cfg)
 		if err := checkAddBaseLines(cmd, c, cfg, &pf, bases); err != nil {
 			return nil, err
@@ -786,6 +799,38 @@ func checkAddApproval(pf *addPreflight, cfg *config.Config) {
 				"  %s\n"+
 				"  add-draft acts on two states and no others: dasWithout (submits it for approval) and dasApproved (posts it, because the approval has already been given). There is no flag for the rest, by design.",
 			kindAddDraft.EntitySet, pf.DocEntry, cfg.CompanyDB, pf.Approval, approvalRefusalReason(pf.Approval)),
+	})
+}
+
+// checkAddDIApproval is GUARD 5b, and it exists because of one afternoon.
+//
+// On 2026-09-02 Mart draft 40128 (DPTC bill 122, Rs 88,951) was previewed as
+// "will be SUBMITTED FOR APPROVAL" — template 48 was there, Always terms,
+// originator matched, approver USER03 — and SAP posted it live as A/P invoice
+// 12210 / JE 85639 anyway. The template was never consulted: Mart's General
+// Settings have "Enable Approval Procedures in DI" switched off, and SAP skips
+// every template for a DI-API / Service Layer document when that flag is off.
+// Oil has it on, which is why the same flow had been proven there and nowhere
+// else (C-0074).
+//
+// So: for the SUBMIT click, the flag decides what the Add does, and it is read
+// from SAP, not assumed. dasApproved is untouched — click two posts by design
+// and the flag has nothing to say about it. No override, same reasoning as the
+// rest: this is a fact about the company, and an operator cannot assert past it.
+func checkAddDIApproval(pf *addPreflight, cfg *config.Config, admin *client.AdminInfo) {
+	if pf.Action != actionSubmit || admin == nil {
+		return
+	}
+	if admin.EnableApprovalProcedureInDI == "tYES" {
+		return
+	}
+	pf.Problems = append(pf.Problems, draftProblem{
+		Guard: "di-approval",
+		Msg: fmt.Sprintf(
+			"refusing to add %s(%d) in %s: this company has \"Enable Approval Procedures in DI\" switched OFF (CompanyService_GetAdminInfo.EnableApprovalProcedureInDI = %s).\n"+
+				"  SAP consults approval templates for a Service Layer / DI-API Add only when that flag is on. Here it is not, so no template can intercept this draft and the Add would post it LIVE, unapproved — which is what happened to Mart draft 40128 → A/P invoice 12210 on 2026-09-02 (C-0074).\n"+
+				"  Leave the draft where it is and have a person press Add in the SAP B1 client (Purchasing → Document Drafts), or have an admin turn the flag on under Administration → System Initialization → General Settings → BP tab and re-run. There is no flag here, by design.",
+			kindAddDraft.EntitySet, pf.DocEntry, cfg.CompanyDB, blankAs(admin.EnableApprovalProcedureInDI, "(absent)")),
 	})
 }
 

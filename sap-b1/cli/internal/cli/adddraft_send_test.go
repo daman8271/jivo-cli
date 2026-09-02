@@ -43,6 +43,12 @@ type fakeAddSAP struct {
 	beforeGet func(f *fakeAddSAP, key string)
 	became    []map[string]interface{} // rows the PurchaseInvoices lookup returns
 	added     int
+	// diApproval is what CompanyService_GetAdminInfo answers for
+	// EnableApprovalProcedureInDI. Empty means tYES (Oil's setting, the one
+	// every older test was written against); a test sets tNO to be Mart.
+	diApproval string
+	// adminStatus lets a test make the settings read itself fail.
+	adminStatus int
 }
 
 func newFakeAddSAP(t *testing.T) *fakeAddSAP {
@@ -60,6 +66,24 @@ func newFakeAddSAP(t *testing.T) *fakeAddSAP {
 		f.requests = append(f.requests, r.Method+" "+r.URL.Path)
 		hook, after := f.beforeGet, f.afterAdd
 		f.mu.Unlock()
+
+		if r.Method == http.MethodPost && path == "CompanyService_GetAdminInfo" {
+			f.mu.Lock()
+			di, st := f.diApproval, f.adminStatus
+			f.mu.Unlock()
+			if di == "" {
+				di = "tYES"
+			}
+			if st != 0 && st != http.StatusOK {
+				w.WriteHeader(st)
+				_, _ = w.Write([]byte(`{"error":{"code":-1,"message":{"lang":"en-us","value":"General Settings unavailable"}}}`))
+				return
+			}
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"EnableApprovalProcedureInDI": di, "EnableUpdateDocAfterApproval": "tYES",
+			})
+			return
+		}
 
 		if r.Method == http.MethodPost && path == "DraftsService_SaveDraftToDocument" {
 			f.mu.Lock()

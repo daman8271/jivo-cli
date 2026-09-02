@@ -39,7 +39,27 @@ document comes from the Service Layer or the DI API. All of JIVO's original A/P 
 | `JIVO_MART_HANADB` | **48** | 4 | 53 |
 | `JIVO_BEVERAGES_HANADB` | **68** | 12 | **50** |
 
-**So this flow works for A/P invoices in all three companies, created by USER39.**
+**So this flow works for A/P invoices created by USER39 — in Oil ONLY (measured 2026-09-02).**
+
+**🔴 In Mart and Beverages `add-draft` POSTS LIVE.** The template exists in all three
+books, but the company switch that lets an API submit reach *any* template —
+*Enable Approval Procedures in DI* (`OADM.EnbApprDI`) — is **`Y` in Oil and `N` in Mart
+and Beverages**. With it off, `DraftsService_SaveDraftToDocument` skips template 48 / 68
+exactly as it skips the query templates, and the invoice lands in the ledger unapproved.
+Caught on Mart draft 40127 (ARNAV ATS:395, ₹22,000) before the Add was sent: the draft was
+left at `WddStatus '-'`, attached, and a person presses Add in the client — client-side
+approvals in Mart are alive (136 A/P requests in the 30 days to 2026-09-02). Template 48
+has raised **zero** requests, ever; that silence was the tell. **Check before every
+add-draft outside Oil:**
+
+```sql
+SELECT "EnbApprDI" FROM "<COMPANY>".OADM;   -- must be 'Y', or add-draft posts live
+```
+
+The fix is a person ticking *Enable Approval Procedures in DI* in that company's General
+Settings (Administration → System Initialization → General Settings, BP tab — verify the
+tab on the first pass) and then re-measuring with the query. Until then, in Mart and
+Beverages the CLI's job ends at the attached draft, and say so plainly.
 
 **It does NOT cover anything else** — a credit memo, an outgoing payment, any other
 document type, or any other login. Those have **no matching template**, so `add-draft`
@@ -105,6 +125,17 @@ sitting unposted, ₹87.55 lakh**, `dasGenerated` zero. Never tell an operator t
 "done" at submission — it is *with the approver*, which is what they asked for.
 
 ## Hard stops
+
+- **🔴 Never run `add-draft` in a company whose `EnableApprovalProcedureInDI` is `tNO`
+  — Mart and Beverages as of 2026-09-02 (C-0074).** SAP consults approval templates for a
+  DI-API / Service Layer Add only when General Settings → BP → *Enable Approval Procedures
+  in DI* is on. Oil `tYES`, Mart `tNO`, Beverages `tNO` (CompanyService_GetAdminInfo,
+  2026-09-02). Template 48 / 68 exist there and are never consulted: Mart draft 40128
+  (DPTC bill 122, ₹88,951) posted LIVE as A/P invoice 12210 / JE 85639 with the preview
+  saying "will be submitted for approval". `sapb1` built after 2026-09-02 refuses this
+  itself (guard 5b, exit 9); older binaries on operator boxes do not. In Mart/Bev stop at
+  the draft and tell the operator a person presses Add in the client — or an admin turns
+  the flag on and the flow works as in Oil.
 
 - **Never `sapb1 post` a document** to "just get it in". That is the 49987 mistake:
   ₹5,664 in the Oil ledger, unapproved, and no CLI can undo it — only SAP can Cancel it.

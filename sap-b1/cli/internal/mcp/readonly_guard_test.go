@@ -45,6 +45,7 @@ var knownReadOnlyMethods = map[string]bool{
 	"Query":              true,
 	"QueryAll":           true,
 	"GetEntity":          true, // a keyed GET; 404 is an answer, not a write
+	"GetAdminInfo":       true, // General Settings; a body-less POST to a function import that changes nothing (client/admininfo.go)
 	"Login":              true,
 	"Logout":             true,
 	"HasSession":         true,
