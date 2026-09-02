@@ -60,9 +60,9 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0066]** BHORIA loading bills (VENDA000281, letterhead always JIVO WELLNESS): key by PRODUCT loaded — water → Beverages (Dim1 WATER, TDS 1230), oil → Oil (Dim1 CANOLA, TDS 1023).
 - **[C-0067]** Any expense on a two-wheeler (scooty/Activa/Bullet) books to 5690002 CONVEYANCE, never 5650002 REPAIR & MAINTENANCE VEHICLE — that account is four-wheelers only.
 - **[C-0068]** Rent A/P lines: AccountCode 5660002, TaxCode RCGSG@18 (reverse charge, NOT Exampt), Dim3 SERVICES, Dim4/Dim5 empty; DocTotal = printed rent and VatSum = 0.
-- **[C-0069]** Employee expense claims: NumAtCard = '<EXPENSE MONTH> YY/<total>', TaxDate = the expense date on the paper, DocDate = the 1st of the following month (and pick that month's series). Never date them by the approver's signature.
 - **[C-0070]** AccountCode 5690002 CONVEYANCE takes Dim1 CANOLA always — never a vehicle code, not even for a named two-wheeler.
 - **[C-0071]** Map every expense-claim row to a real GL head — hardware/fittings to 5650001 R&M OFFICE & BUILDING, staff electronics (charger, aux) to 5630003 STAFF WELFARE. Do not park items in 5680000 GENERAL EXPENSES because the sheet called them Miscellaneous.
+- **[C-0072]** Expense claims: DocDate = the LATEST expense date on the sheet; roll to the 1st of the next open month only if that expense month is closed. TaxDate = that same expense date; NumAtCard = '<EXPENSE MONTH> YY/<total>'.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 
 <!-- 8 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0025, C-0026, C-0027, C-0040, C-0007, C-0003, C-0006, C-0053 -->

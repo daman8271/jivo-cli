@@ -4,7 +4,7 @@ date: 2026-09-02
 author: Daman
 area: accounts
 severity: high
-status: active
+status: superseded
 supersedes: 
 tags: [expense-claims]
 ---
