@@ -30,7 +30,8 @@ MAX_REPLY = 3500
 
 SYSTEM = """You are Jivo AI, JIVO's assistant on WhatsApp. You are replying to {name}.
 You are inside JIVO's September production planner (the folder you are in). Read CLAUDE.md there before answering anything about the plan, and take every figure from the files — never from memory.
-Write like a WhatsApp message: plain language, short, the number first and one line on where it came from. No markdown, no headers, no tables, no code blocks, no bullet symbols, no asterisks. Indian number grouping, litres as L, big money in crores.
+Write like a WhatsApp message: plain language, short, the number first and one line on where it came from. No markdown, no headers, no tables, no code blocks, no bullet symbols, no asterisks. Indian number grouping, litres as L, big money in crores. Answer in the language they wrote in — Hindi or Punjabi in Roman letters is normal here; keep it that way.
+The recent messages of this chat are given to you, including ones Jivo AI sent (the daily build list and exception notes come from the planner). A short reply like "ok", "done" or "line band hai" is about the last thing we sent — answer it in that light, and if it reports a problem, acknowledge it plainly and say Daman will see it.
 If you did not read a figure from a file, say you do not have it rather than guessing. If asked to change, re-run or deploy anything, say that only reading is switched on today and Daman can switch on more."""
 
 SORRY = "Sorry, I could not work that out just now. Daman has been told."
@@ -79,13 +80,26 @@ def new_messages(con, since, seen):
     return [r for r in rows if r[0] not in seen]
 
 
-def ask(name, text, media, session_id):
+def recent(con, chat_jid, limit=8):
+    rows = con.execute(
+        """SELECT from_me, body, media_type, ts FROM messages
+           WHERE chat_jid = ? AND body <> '' ORDER BY ts DESC LIMIT ?""", (chat_jid, limit)).fetchall()
+    out = []
+    for from_me, body, mtype, ts in reversed(rows):
+        who = "Jivo AI" if from_me else "them"
+        out.append(f"[{time.strftime('%d %b %H:%M', time.localtime(ts))}] {who}: {body.strip()[:600]}")
+    return "\n".join(out)
+
+
+def ask(name, text, media, session_id, context=""):
     prompt = text.strip()
     if media:
         mtype, mpath, mname = media
         prompt += f"\n\n[{name} attached a {mtype}: {mpath} ({mname}). Read it if it matters to the question.]"
     if not prompt:
         prompt = "[empty message]"
+    if context:
+        prompt = f"Recent messages in this WhatsApp chat (oldest first):\n{context}\n\nNew message from {name}:\n{prompt}"
     cmd = [CLAUDE, "-p", prompt, "--output-format", "json",
            "--append-system-prompt", SYSTEM.format(name=name),
            "--allowedTools", TOOLS]
@@ -94,7 +108,7 @@ def ask(name, text, media, session_id):
     r = subprocess.run(cmd, cwd=WORKDIR, capture_output=True, text=True, timeout=CLAUDE_TIMEOUT_S)
     if r.returncode != 0 and session_id:
         log(f"resume of {session_id} failed ({r.stderr.strip()[:120]}); starting a fresh conversation")
-        return ask(name, text, media, None)
+        return ask(name, text, media, None, context)
     if r.returncode != 0:
         raise RuntimeError(r.stderr.strip()[:300] or f"claude exited {r.returncode}")
     d = json.loads(r.stdout)
@@ -122,7 +136,7 @@ def handle(con, st, row):
     log(f"{name}: {body[:80]!r}{' +' + mtype if mtype else ''}")
     to = phone or chat_jid
     try:
-        reply, sid = ask(name, body or "", media, st["sessions"].get(who))
+        reply, sid = ask(name, body or "", media, st["sessions"].get(who), recent(con, chat_jid))
         if sid:
             st["sessions"][who] = sid
         if not reply:
