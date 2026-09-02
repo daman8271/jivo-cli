@@ -38,7 +38,7 @@ const usage = `jwa — JIVO's WhatsApp reader. Reads only; it can never send.
   jwa bills  [--since 30d] [--chat X] [--limit N]
   jwa pull   <message-id> [--to DIR]
   jwa name   <number|jid> <label>  remember who a number is (chats/search show the label)
-  jwa names  [--vcf FILE]          every label given; --vcf writes a card file to import on a phone
+  jwa names  [--vcf FILE] [--qr]   every label given; --vcf = card file, --qr = scan-to-save codes
 
 Everything lives under ~/.jwa — session.db (device keys), archive.db (messages),
 media/YYYY-MM-DD/ (the files). Override the lot with JWA_HOME.
@@ -627,6 +627,7 @@ func cmdName(args []string) error {
 func cmdNames(args []string) error {
 	fs := flag.NewFlagSet("names", flag.ExitOnError)
 	vcf := fs.String("vcf", "", "write a vCard file of these names, to import on a phone")
+	qr := fs.Bool("qr", false, "print a contact QR per name — the phone's camera offers Add Contact")
 	_ = fs.Parse(args)
 
 	db, err := openArchive()
@@ -664,19 +665,34 @@ func cmdNames(args []string) error {
 		p.ids = append(p.ids, n.User)
 	}
 
+	card := func(name, phone string) string {
+		return fmt.Sprintf("BEGIN:VCARD\r\nVERSION:3.0\r\nFN:%s\r\nN:%s;;;;\r\nTEL;TYPE=CELL:%s\r\nEND:VCARD\r\n",
+			name, name, phone)
+	}
 	if *vcf != "" {
 		var b strings.Builder
 		for _, p := range people {
-			if p.phone == "" {
-				continue
+			if p.phone != "" {
+				b.WriteString(card(p.name, p.phone))
 			}
-			fmt.Fprintf(&b, "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:%s\r\nN:%s;;;;\r\nTEL;TYPE=CELL:%s\r\nEND:VCARD\r\n",
-				p.name, p.name, p.phone)
 		}
 		if err := os.WriteFile(*vcf, []byte(b.String()), 0o644); err != nil {
 			return err
 		}
 		fmt.Printf("wrote %s — open it on the phone and tap Add to save them all\n", *vcf)
+	}
+	if *qr {
+		// One QR per person: the phone's camera reads a vCard QR and offers
+		// Add Contact, which is the only way a name reaches WhatsApp itself —
+		// it shows names from the phone's address book and nothing else.
+		for _, p := range people {
+			if p.phone == "" {
+				continue
+			}
+			fmt.Printf("\n%s  %s  — scan with the phone that holds the number\n", p.name, p.phone)
+			qrterminal.GenerateHalfBlock(card(p.name, p.phone), qrterminal.L, os.Stdout)
+		}
+		fmt.Println()
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
