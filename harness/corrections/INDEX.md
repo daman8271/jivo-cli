@@ -61,6 +61,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0067]** Any expense on a two-wheeler (scooty/Activa/Bullet) books to 5690002 CONVEYANCE, never 5650002 REPAIR & MAINTENANCE VEHICLE — that account is four-wheelers only.
 - **[C-0068]** Rent A/P lines: AccountCode 5660002, TaxCode RCGSG@18 (reverse charge, NOT Exampt), Dim3 SERVICES, Dim4/Dim5 empty; DocTotal = printed rent and VatSum = 0.
 - **[C-0069]** Employee expense claims: NumAtCard = '<EXPENSE MONTH> YY/<total>', TaxDate = the expense date on the paper, DocDate = the 1st of the following month (and pick that month's series). Never date them by the approver's signature.
+- **[C-0070]** AccountCode 5690002 CONVEYANCE takes Dim1 CANOLA always — never a vehicle code, not even for a named two-wheeler.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
 
