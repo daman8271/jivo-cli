@@ -231,6 +231,12 @@ def sap_stock(codes, schema, whs, all_whs):
     where = "T1.\"ItemCode\" IN (%s)" % sql_list(codes)
     rows = query(
         'SELECT T1."ItemCode" AS CODE, T0."ItemName" AS NAME, T0."InvntryUom" AS UOM,'
+        # OITM's two UDFs are labelled the wrong way round in CUFD: U_Variety is
+        # described "SUBGROUP" and U_Sub_Group is described "VARIETY". The VALUES
+        # say which is which - U_Variety holds POMACE / COLD PRESS / REFINED /
+        # MUSTARD KACCHI GHANI (the variety), U_Sub_Group holds OLIVE / CANOLA /
+        # SUNFLOWER / MUSTARD (the oil). Go by the values, not the description.
+        ' T0."U_Variety" AS VARIETY, T0."U_Sub_Group" AS SUBGROUP,'
         ' T1."WhsCode" AS WHS,'
         ' CAST(T1."OnHand" AS DOUBLE) AS ONHAND,'
         ' CAST(T1."IsCommited" AS DOUBLE) AS COMMITTED,'
@@ -245,6 +251,8 @@ def sap_stock(codes, schema, whs, all_whs):
             code,
             {
                 "sap_name": r["NAME"],
+                "variety": (r["VARIETY"] or "").strip(),
+                "subgroup": (r["SUBGROUP"] or "").strip(),
                 "uom": r["UOM"] or "",
                 "onhand": 0.0,
                 "committed": 0.0,
@@ -291,6 +299,8 @@ def build(lines, stock, args):
                 "code": code,
                 "sheet_names": sorted({ln["name"] for ln in lines if ln["code"] == code and ln["name"]}),
                 "sap_name": s["sap_name"] if s else "NOT IN SAP",
+                "variety": s["variety"] if s else "",
+                "subgroup": s["subgroup"] if s else "",
                 "uom": s["uom"] if s else "",
                 "lines": sum(1 for ln in lines if ln["code"] == code),
                 "req": req,
@@ -510,9 +520,9 @@ def write_xlsx(path, lines, codes, args, when):
         if title:
             ws.cell(row=r, column=1, value=title).font = Font(bold=True, size=12, color="C00000")
             r += 1
-        hdr = ["Item No.", "Description", "Cumulative Qty", "Fac Req", "LO req"]
+        hdr = ["Item No.", "Description", "Variety", "Cumulative Qty", "Fac Req", "LO req"]
         if title:  # the short block names the stock column the way he reads it
-            hdr[2] = "Stock in hand"
+            hdr[3] = "Stock in hand"
         for c, v in enumerate(hdr, 1):
             cell = ws.cell(row=r, column=c, value=v)
             cell.font = head
@@ -521,19 +531,20 @@ def write_xlsx(path, lines, codes, args, when):
         for item in rows:
             ws.cell(row=r, column=1, value=item["code"])
             ws.cell(row=r, column=2, value=item["sap_name"])
-            ws.cell(row=r, column=3, value=item["onhand"] if item["in_sap"] else None)
-            ws.cell(row=r, column=4, value=item["req"])
-            ws.cell(row=r, column=5, value=item["lo_req"] if item["in_sap"] else None)
-            for c in (3, 4, 5):
+            ws.cell(row=r, column=3, value=item["variety"])
+            ws.cell(row=r, column=4, value=item["onhand"] if item["in_sap"] else None)
+            ws.cell(row=r, column=5, value=item["req"])
+            ws.cell(row=r, column=6, value=item["lo_req"] if item["in_sap"] else None)
+            for c in (4, 5, 6):
                 ws.cell(row=r, column=c).number_format = money
-            for c in range(1, 6):
+            for c in range(1, 7):
                 ws.cell(row=r, column=c).border = thin
             if not item["in_sap"]:
                 ws.cell(row=r, column=2).fill = warn_fill
-                ws.cell(row=r, column=5, value="NOT IN SAP")
+                ws.cell(row=r, column=6, value="NOT IN SAP")
             elif item["short"]:
-                ws.cell(row=r, column=5).fill = short_fill
-                ws.cell(row=r, column=5).font = Font(bold=True)
+                ws.cell(row=r, column=6).fill = short_fill
+                ws.cell(row=r, column=6).font = Font(bold=True)
             r += 1
         return r
 
@@ -545,10 +556,10 @@ def write_xlsx(path, lines, codes, args, when):
         row = block("Ye arrange karna hai (LO req)", shorts, row)
         ws.cell(row=row, column=2, value="Total short")
         ws.cell(row=row, column=2).font = Font(bold=True)
-        ws.cell(row=row, column=5, value=-sum(c["short"] for c in shorts))
-        ws.cell(row=row, column=5).number_format = money
-        ws.cell(row=row, column=5).font = Font(bold=True)
-        ws.cell(row=row, column=5).fill = short_fill
+        ws.cell(row=row, column=6, value=-sum(c["short"] for c in shorts))
+        ws.cell(row=row, column=6).number_format = money
+        ws.cell(row=row, column=6).font = Font(bold=True)
+        ws.cell(row=row, column=6).fill = short_fill
     else:
         ws.cell(row=row, column=1, value="Kuch kam nahi - poori sheet stock ke andar hai.").fill = ok_fill
 
@@ -558,6 +569,7 @@ def write_xlsx(path, lines, codes, args, when):
     cols3 = ["Date", "Shift", "RM code", "Item name (as keyed)", "Fac Req"]
     cols3 += ["Other qty %d (as given)" % (i + 1) for i in range(extra_n)]
     cols3 += ["SAP item", "Stock in hand (code)", "Fac Req (code total)", "LO req (code)", "UOM"]
+    cols3 += ["Variety", "Oil (sub group)"]
     ws3.append(cols3)
     for c in range(1, len(cols3) + 1):
         ws3.cell(row=1, column=c).font = head
@@ -569,6 +581,7 @@ def write_xlsx(path, lines, codes, args, when):
         row3 = [ln["date"], ln["shift"], ln["code"], ln["name"], ln["req"]]
         row3 += list(ln["extra"]) + [None] * (extra_n - len(ln["extra"]))
         row3 += [c["sap_name"], c["onhand"], c["req"], c["lo_req"], c["uom"]]
+        row3 += [c["variety"], c["subgroup"]]
         ws3.append(row3)
         r = ws3.max_row
         ws3.cell(row=r, column=req_col).fill = yellow
@@ -581,8 +594,8 @@ def write_xlsx(path, lines, codes, args, when):
 
     # ---- sheet 3: BY GODOWN - where the stock actually sits
     ws4 = wb.create_sheet("BY GODOWN")
-    ws4.append(["RM code", "SAP item", "Godown", "Stock", "Committed", "On order", "UOM"])
-    for c in range(1, 8):
+    ws4.append(["RM code", "SAP item", "Variety", "Godown", "Stock", "Committed", "On order", "UOM"])
+    for c in range(1, 9):
         ws4.cell(row=1, column=c).font = head
         ws4.cell(row=1, column=c).fill = head_fill
     for c in codes:
@@ -592,6 +605,7 @@ def write_xlsx(path, lines, codes, args, when):
                 [
                     c["code"],
                     c["sap_name"],
+                    c["variety"],
                     whs,
                     qty,
                     c["committed"] if here else None,
@@ -600,10 +614,10 @@ def write_xlsx(path, lines, codes, args, when):
                 ]
             )
             r = ws4.max_row
-            for col in (4, 5, 6):
+            for col in (5, 6, 7):
                 ws4.cell(row=r, column=col).number_format = money
             if here:
-                ws4.cell(row=r, column=3).font = Font(bold=True)
+                ws4.cell(row=r, column=4).font = Font(bold=True)
 
     ws.freeze_panes = "A5"
     ws3.freeze_panes = "A2"
@@ -703,27 +717,33 @@ def main():
         % (COMPANY_NAME[args.company], day, where, len(lines), len(result), when)
     )
     print()
-    hdr = "  %-11s %-34s %14s %14s %14s" % ("Item No.", "Description", "Stock in hand", "Fac Req", "LO req")
+    hdr = "  %-11s %-30s %-22s %14s %14s %14s" % (
+        "Item No.", "Description", "Variety", "Stock in hand", "Fac Req", "LO req"
+    )
     shorts = [c for c in result if c["short"] > 0 or not c["in_sap"]]
     if shorts:
         print("YE ARRANGE KARNA HAI:")
         print(hdr)
         for c in shorts:
             if not c["in_sap"]:
-                print("  %-11s %-34s %14s" % (c["code"], " + ".join(c["sheet_names"])[:34], "NOT IN SAP"))
+                print("  %-11s %-30s %-22s %14s" % (c["code"], " + ".join(c["sheet_names"])[:30], "", "NOT IN SAP"))
                 continue
             print(
-                "  %-11s %-34s %14s %14s %14s %s"
+                "  %-11s %-30s %-22s %14s %14s %14s %s"
                 % (
                     c["code"],
-                    c["sap_name"][:34],
+                    c["sap_name"][:30],
+                    c["variety"][:22],
                     fmt(c["onhand"]),
                     fmt(c["req"]),
                     fmt(c["lo_req"]),
                     c["uom"],
                 )
             )
-        print("  %-11s %-34s %14s %14s %14s" % ("", "Total short", "", "", fmt(-sum(c["short"] for c in shorts))))
+        print(
+            "  %-11s %-30s %-22s %14s %14s %14s"
+            % ("", "Total short", "", "", "", fmt(-sum(c["short"] for c in shorts)))
+        )
     else:
         print("Kuch kam nahi - poori sheet stock ke andar hai.")
     ok = [c for c in result if c["in_sap"] and not c["short"]]
@@ -733,8 +753,16 @@ def main():
         print(hdr)
         for c in ok:
             print(
-                "  %-11s %-34s %14s %14s %14s %s"
-                % (c["code"], c["sap_name"][:34], fmt(c["onhand"]), fmt(c["req"]), fmt(c["lo_req"]), c["uom"])
+                "  %-11s %-30s %-22s %14s %14s %14s %s"
+                % (
+                    c["code"],
+                    c["sap_name"][:30],
+                    c["variety"][:22],
+                    fmt(c["onhand"]),
+                    fmt(c["req"]),
+                    fmt(c["lo_req"]),
+                    c["uom"],
+                )
             )
     multi = [c for c in result if c["lines"] > 1]
     if multi:
@@ -777,7 +805,10 @@ def itr_step(lines, result, args, day, out_path):
     print("  Lines       : %d" % len(itr_lines))
     for ln in itr_lines:
         c = next(x for x in result if x["code"] == ln["ItemCode"])
-        print("    %-11s %-34s %14s %s" % (ln["ItemCode"], c["sap_name"][:34], fmt(ln["Quantity"]), c["uom"]))
+        print(
+            "    %-11s %-30s %-22s %14s %s"
+            % (ln["ItemCode"], c["sap_name"][:30], c["variety"][:22], fmt(ln["Quantity"]), c["uom"])
+        )
     skipped = [c for c in result if not c["in_sap"]]
     for c in skipped:
         print("    %-11s NOT IN SAP - left off the request" % c["code"])
