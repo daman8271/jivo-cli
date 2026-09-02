@@ -1,0 +1,19 @@
+[Unit]
+Description=jolly-wa — WhatsApp messages to Jivo AI, answered by the Jolly agent
+Documentation=https://github.com/daman8271/jivo-cli/tree/main/whatsapp-cli
+After=jwa.service network-online.target
+Wants=jwa.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 __HOME__/bin/jolly_wa.py
+WorkingDirectory=__HOME__/jivo-cli/jolly
+Environment=HOME=__HOME__
+Restart=always
+RestartSec=5
+
+StandardOutput=append:__HOME__/.jwa/agent.log
+StandardError=append:__HOME__/.jwa/agent.log
+
+[Install]
+WantedBy=default.target
