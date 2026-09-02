@@ -159,6 +159,7 @@ sapb1 query <Entity> --all --json                # every matching row (paginated
 ## How to behave
 - Answer the actual question with the number, then a one-line "how I got it." Offer the drill-down.
 - Name the company if it's not Oil. Give date ranges for sales questions.
+- **A half-search is not an answer (C-0073).** SAP is three books. Before you tell an operator anything is "not found" — a GRPO, an invoice, a draft, a PO, a vendor — you have searched Oil, Mart *and* Beverages. If it is still missing, say exactly what you checked and by which key, then try the next key (vendor, date, amount) yourself. The accountants using this are not AI users: "not found" sounds final to them, they conclude the tool cannot do it, and they stop. Never leave them there.
 - Don't wander, never write unprompted (RULE 0), don't expose the SAP password in output.
 - More example questions: `sap-b1/accounts-kit/ASK-EXAMPLES.md`. Setup: `sap-b1/accounts-kit/SETUP.md`. Full map: `README.md`. Our work log: `chats/`.
 

@@ -24,7 +24,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0055]** Before any seasonal figure, check WHERE the festival fell that year (dates move ~3 weeks) and strip event days from the baseline. Festival + platform-sale dates are public - look them up, never call them unknowable.
 - **[C-0056]** EXIM is the ONLY source for oil quantity, tanks and grades. SAP is MISSING oil items entirely (no 2B grades exist there) - it is never a fallback and never a cross-check. EXIM down = say so, do not quote SAP.
 - **[C-0057]** Kundli electricity is ONE plant bill shared Oil+Beverages, and water production is the heavy user - Bev books ~Rs 15.8L/mth, Oil ~Rs 11.7L/mth. Charge each company its own power only; never load the whole bill on Oil.
-- **[C-0073]** Never say 'not found' for a GRPO/invoice/draft/PO/vendor until ALL THREE companies (Oil, Mart, Beverages) are searched; then state exactly what was searched and offer a next step — never leave the operator thinking SAP or their paper is broken.
+- **[C-0073]** A half-search is not an answer: never say a GRPO/invoice/draft/PO/vendor is 'not found' until ALL THREE companies (Oil, Mart, Beverages) are searched. Then say exactly what was checked and try the next key yourself — an operator who hears 'not found' concludes the tool cannot do it and stops.
 ## accounts
 - **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
 - **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.
@@ -63,6 +63,15 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0068]** Rent A/P lines: AccountCode 5660002, TaxCode RCGSG@18 (reverse charge, NOT Exampt), Dim3 SERVICES, Dim4/Dim5 empty; DocTotal = printed rent and VatSum = 0.
 - **[C-0070]** AccountCode 5690002 CONVEYANCE takes Dim1 CANOLA always — never a vehicle code, not even for a named two-wheeler.
 - **[C-0071]** Map every expense-claim row to a real GL head — hardware/fittings to 5650001 R&M OFFICE & BUILDING, staff electronics (charger, aux) to 5630003 STAFF WELFARE. Do not park items in 5680000 GENERAL EXPENSES because the sheet called them Miscellaneous.
+- **[C-0072]** Expense claims: DocDate = the LATEST expense date on the sheet; roll to the 1st of the next open month only if that expense month is closed. TaxDate = that same expense date; NumAtCard = '<EXPENSE MONTH> YY/<total>'.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
-
-<!-- 9 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0072, C-0025, C-0026, C-0027, C-0040, C-0007, C-0003, C-0006, C-0053 -->
+- **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
+- **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
+- **[C-0027]** A/P draft line CostingCode3 (Budget): if the bill says 'Common' set FACT_COM (FACTORY COMMON), never inherit the GRPO's 'Factory'. Read the handwritten allocation note on every factory bill.
+- **[C-0040]** A GRPO's attachment is the BILTY/LR page, filenamed by bilty number (135/135 in Oil) — never the vendor's tax invoice. That belongs on the A/P invoice that copies the GRPO.
+## factory
+- **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
+## sales
+- **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
+- **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.
+- **[C-0053]** POs by ARRIVAL CHANNEL, not company: q-commerce + Amazon + Flipkart into Mart = ecom.jivo.in (ecom CLI); MT and GT = OMS. Jivo Mart exists in both - the channel decides, never the company.

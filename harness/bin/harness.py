@@ -68,7 +68,7 @@ QLOG = QUESTIONS / "log.jsonl"
 # smaller than the active rule set. The drop is by iteration order, not severity,
 # so the rule an operator needs most is as likely to go as any other, and the only
 # signal is an HTML comment nobody reads. 35 active rules fit in ~7.7k.
-DIGEST_CHAR_BUDGET = int(os.environ.get("JIVO_DIGEST_BUDGET", "12000"))
+DIGEST_CHAR_BUDGET = int(os.environ.get("JIVO_DIGEST_BUDGET", "16000"))
 
 # How many times a question shape must recur before we propose a skill.
 MINT_THRESHOLD = int(os.environ.get("JIVO_MINT_THRESHOLD", "5"))
