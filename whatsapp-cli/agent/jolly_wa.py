@@ -16,6 +16,7 @@ import subprocess
 import sys
 import time
 import urllib.request
+from datetime import datetime, timedelta, timezone
 
 HOME = os.environ.get("JWA_HOME", os.path.expanduser("~/.jwa"))
 ARCHIVE = os.path.join(HOME, "archive.db")
@@ -24,6 +25,10 @@ API = os.environ.get("JWA_API", "127.0.0.1:3012")
 WORKDIR = os.environ.get("JOLLY_DIR", os.path.expanduser("~/jivo-cli/jolly"))
 CLAUDE = os.environ.get("CLAUDE_BIN", "claude")
 TOOLS = os.environ.get("JOLLY_TOOLS", "Read,Glob,Grep")
+# Answer EVERYONE (not just named people) through this IST date, e.g. 2026-09-02.
+# Empty = named people only. Daman opens it by the day.
+OPEN_UNTIL = os.environ.get("JOLLY_OPEN_UNTIL", "").strip()
+IST = timezone(timedelta(hours=5, minutes=30))
 POLL_S = 2.0
 CLAUDE_TIMEOUT_S = 300
 MAX_REPLY = 3500
@@ -39,6 +44,10 @@ SORRY = "Sorry, I could not work that out just now. Daman has been told."
 
 def log(msg):
     print(time.strftime("%Y-%m-%d %H:%M:%S"), msg, flush=True)
+
+
+def open_today():
+    return bool(OPEN_UNTIL) and datetime.now(IST).strftime("%Y-%m-%d") <= OPEN_UNTIL
 
 
 def user_of(jid):
@@ -74,7 +83,7 @@ def me(con):
 
 def new_messages(con, since, seen):
     rows = con.execute(
-        """SELECT id, chat_jid, sender_jid, ts, body, media_type, media_path, media_name
+        """SELECT id, chat_jid, sender_jid, ts, body, media_type, media_path, media_name, sender_name
            FROM messages WHERE from_me = 0 AND is_group = 0 AND ts >= ? ORDER BY ts, rowid""",
         (since,))
     return [r for r in rows if r[0] not in seen]
@@ -125,13 +134,19 @@ def send(to, text):
 
 
 def handle(con, st, row):
-    mid, chat_jid, sender_jid, ts, body, mtype, mpath, mname = row
+    mid, chat_jid, sender_jid, ts, body, mtype, mpath, mname, pushname = row
     who = user_of(sender_jid)
     people = names(con)
-    if who not in people:
-        log(f"ignored {mid} from {who}: not named (jwa name <number> <label> to allow)")
+    if who in people:
+        name, phone = people[who]
+    elif open_today():
+        # Open day: anyone gets the conversation. Address them by the name their
+        # phone announces, or their id; the daemon turns a LID into a phone.
+        name, phone = (pushname or who), ""
+        log(f"open-policy (through {OPEN_UNTIL}): answering unnamed {who} as {name!r}")
+    else:
+        log(f"ignored {mid} from {who}: not named (jwa name <number> <label> to allow, or JOLLY_OPEN_UNTIL=<date>)")
         return
-    name, phone = people[who]
     media = (mtype, mpath, mname) if mtype else None
     log(f"{name}: {body[:80]!r}{' +' + mtype if mtype else ''}")
     to = phone or chat_jid
@@ -150,7 +165,8 @@ def handle(con, st, row):
 
 def loop():
     st = load_state()
-    log(f"jolly-wa up: answering people in jwa's names table, planner at {WORKDIR}, tools {TOOLS}")
+    log(f"jolly-wa up: answering people in jwa's names table"
+        f"{' and EVERYONE through ' + OPEN_UNTIL if OPEN_UNTIL else ''}, planner at {WORKDIR}, tools {TOOLS}")
     while True:
         try:
             con = sqlite3.connect(f"file:{ARCHIVE}?mode=ro", uri=True, timeout=10)

@@ -14,6 +14,8 @@ import (
 	"net"
 	"net/http"
 	"time"
+
+	"go.mau.fi/whatsmeow/types"
 )
 
 type sendReq struct {
@@ -44,6 +46,13 @@ func (c *Client) Serve(ctx context.Context, addr string) error {
 		if err != nil {
 			writeJSON(w, 400, map[string]any{"error": err.Error()})
 			return
+		}
+		// A chat keyed by a privacy LID is delivered to the phone behind it
+		// when the session store knows the mapping; otherwise send to the LID.
+		if to.Server == types.HiddenUserServer {
+			if pn, perr := c.WA.Store.LIDs.GetPNForLID(r.Context(), to.ToNonAD()); perr == nil && !pn.IsEmpty() {
+				to = pn
+			}
 		}
 		sctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
