@@ -27,6 +27,16 @@ the same people write the same things on every bill.
 | `OK` / tick in the top corner | stores checked it | nothing — do not treat as approval | Ashok Diwan 1256 |
 | `Disc @ 0.50` on a fuel bill | ₹0.50 **per litre on diesel only** — decode from the arithmetic | net onto the diesel lines | Om Sai 2495 |
 | `Original invoice no. & date` box on a CN | statutory reference | `OriginalRefNo` + `OriginalRefDate` (C-0024) | Royal Prime CN 56 |
+| `* Recomanded by Tiwari ji` in green, with a green signature and date `1/9/26` below the table | the recommender/approver's note; the asterisk is keyed to a `★` on ONE row of the bill (here GR 13008, the only row with a party name) | `Comments`, verbatim with the date, on the draft that carries THAT row — not on every draft the bill splits into | Delhi Punjab Transport bill 119 → Bev 15837 |
+| `GRPO OK` / `A/R OK` (pencil, next to the transporter's invoice number) | the transport desk has checked that the freight GRPO exists and that the sale-invoice (A/R) numbers printed on the bill match it | nothing to set — corroboration that `OPDN.NumAtCard` = the bilty will hit; find that GRPO and copy it, never hand-key. Ticks on the Package / Weight / Rate / Freight cells are the same check | PICK & SHIP NCR-358 → 55902 |
+| signature with a date (`31/08/26`) at the foot of a transporter bill, beside a `For` | the approver signed the bill on that date | `Comments`: `APPROVED 31/08/26`; it is NOT the posting date (transport `DocDate` = the bill date) | PICK & SHIP NCR-358 → 55902 |
+| `★` / `*` beside a single row and beside its amount | that row is the one the footnote is about | pair it with the footnote; check whether the row is a different company (it was — Beverages) | Delhi Punjab 119, GR 13008 |
+| pencil `GRPO OK` / `A/R OK` (or `AIR OK`) in the top corner | the desk checked GRPO exists and A/R (sale invoice) matches | nothing — a checker's tick, not authority | Delhi Punjab 119 |
+| `Rec'd 31/08/26` with a signature beside the vendor's stamp | date the bill reached JIVO | nothing on the document (the A/P `DocDate` on a transport bill is the BILL date) | Delhi Punjab 119 |
+| `Kg` in the Weight column with `Point` in the Rate column and a flat amount (`1000`) | a per-delivery *point* charge, not tonnage | it is a freight line like any other — the GRPO for that bilty already carries it (13032+13033 split 15,249+1,000 on paper vs 9,876+6,373 in SAP; both sum to 16,249). Tie on the SUM per vehicle, not per row | Delhi Punjab 119, GR 13033 |
+| green-ink `Debit ₹ 3600.03 Incl. GST`, initialled and dated `31/8/26`, with `Sunflower Oil 1 c/s short (Debit 3600.03)` beside the freight row | the approver's **shortage debit** on the transporter — one carton short at delivery, valued at JIVO's sale price incl. its 5 % GST (20 pcs × ₹171.43 × 1.05 = ₹3,600.03, exact, off sale invoice 626070769) | **not a field on the A/P invoice.** Book the bill at full value; carry the note verbatim in `Comments`; the debit is a separate **A/P Credit Memo drawn from the POSTED invoice** (Oil precedent ORPC NCR-240/249/307/314: `RPC1.BaseType 18`, same `NumAtCard`, dated the 1st of the next month). Name it as a follow-up — it cannot be raised until the invoice is Added | PICK & SHIP NCR-356 → 55903 |
+| a second rate written under the printed one (`12.50` under `15.00`, the printed rate circled) | somebody queried the rate; the freight on the paper still uses the printed rate (1280 × 15 = 19,200) and the approver's note does not mention it | nothing on the document unless the approver's note says so — `Comments` + raise it with the operator (here ₹3,200 + GST would be at stake) | PICK & SHIP NCR-356 |
+| faint pencil word top-centre near the e-mail print stamp (`Result` / `Debit`?) | unreadable at 600 dpi; it sits with the print header, not with any figure | nothing — say it is unread rather than guess | PICK & SHIP NCR-356 |
 
 ## How to actually read it — tiles, not a full page
 
@@ -82,3 +92,24 @@ a corner nobody thought to look at. 900 dpi on a single doubtful digit is cheap.
 `Sales`, `HO`, `Delhi` → a non-factory branch / cost centre — check `ProfitCenters`
 dim 3 and the vendor's precedent before setting anything ·
 `Urgent`, `Pay`, `Cash` → payment instructions, not accounting fields — `Comments` only.
+
+## Transporter bills — marks met on Delhi Punjab bill 118 (2026-09-02, → Oil draft 55904)
+
+The vendor's own hand fills the grid (Date · Vehicle · Station in Devanagari · G.R. No ·
+Weight · Rate · Amount); JIVO's hands sit around it. Rows that are **not bilties** are
+charges folded into the bilty above them — `ONE PARTY HOLD 2000`, `DAY WALMART HOLD 2000`,
+`— POINT 2000` (a second delivery point). Gurcharan keys them **inside that bilty's GRPO**
+(13091's GRPO = 17,340 + 2,000 hold; 13004's = 13,000 + 2,000), and where one truck carried
+two bilties (13084/13085, same HR67E1536) she re-splits the pair on litres — the two GRPOs
+differ from the two paper rows but their **sum ties**. Match on the bill total, not row by row.
+
+| Mark (hand) | Means | Field |
+|---|---|---|
+| `Debit ₹2000/- Bilty no 13091` (green, the approver's hand, beside `Recd OK 29/8/26`) | JIVO will not pay that charge — a **debit note** is owed | **Not a line edit.** Precedent CN 5744/5170/5345/5346: an A/P credit memo drawn from the *posted* invoice (`BaseType 18`, acct 5670001, GST05R). So: draft the invoice at the full GRPO value, note it in `Comments`, raise the credit memo after posting |
+| `one party hold` / `Delivery-2000/` (pencil, circled with the green) | the checker's identification of which paper row the debit is | corroboration only |
+| `GRPO OK` / `A/R OK` (pencil, top right) | the transport desk has verified the GRPOs and the AR invoices behind them | none — a checker's tick |
+| `Debit` (pencil, underlined, top corner) | routing note: this bill carries a debit | `Comments` |
+| `Recd OK <date>` + signature (green) / signature + `20/08/26` (blue) | received at HO / approved for entry | none; the dates are NOT `DocDate` — `DocDate` = the bill date for this class (Transport-Bill-Playbook §2) |
+
+Digit traps on this vendor: `13081` vs `13082` — the GRPO's `NumAtCard` said 13081 while
+its Comments said 13082; the paper's row and the amount (6,577) settle it.
