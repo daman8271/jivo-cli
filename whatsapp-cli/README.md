@@ -30,7 +30,16 @@ jwa chats  [--limit N]        conversations, most recent first
 jwa search [--chat X] [--from X] [--text X] [--since 30d] [--media]
 jwa bills  [--since 30d]      only messages carrying a PDF or an image
 jwa pull   <message-id> [--to DIR]
+jwa name   <number|jid> <label>  remember who a number is — chats/search show it
+jwa names  [--vcf FILE]          every label given; --vcf = card file for the phone
 ```
+
+Names: WhatsApp hides most senders behind a LID (`185414426054881@lid`), not
+their phone number, and a companion device never reliably gets the phone's
+contacts. `jwa name` stores one label against every id whatsmeow's LID↔phone
+map knows for that person, so the archive reads "master daman" instead of a
+number. `contacts/jivo-contacts.vcf` is the export — open it on the phone or
+iPad that holds the number and tap Add, and WhatsApp there shows the names too.
 
 Everything lives under `~/.jwa` — `session.db` (the device keys),
 `archive.db` (the messages), `media/YYYY-MM-DD/` (the files).

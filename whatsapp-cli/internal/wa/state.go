@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"go.mau.fi/whatsmeow/types"
 )
 
 // The daemon's own account of itself, for `jwa doctor` and the health cron —
@@ -142,4 +144,58 @@ func writeAtomic(path, body string) {
 		return
 	}
 	_ = os.Rename(tmp, path)
+}
+
+// Identify turns whatever an operator typed — "+91 88990 11758", "918899011758",
+// "185414426054881@lid" — into every bare user id WhatsApp uses for that person,
+// via the LID↔phone map whatsmeow keeps in the session store. It reads the
+// store; it does not connect. phone is "+<digits>" when the number is known.
+func (c *Client) Identify(who string) (users []string, phone string, err error) {
+	ctx := context.Background()
+	who = strings.TrimSpace(who)
+	var pn, lid types.JID
+	if strings.Contains(who, "@") {
+		j, perr := types.ParseJID(who)
+		if perr != nil {
+			return nil, "", fmt.Errorf("not a WhatsApp id: %q", who)
+		}
+		j.Device = 0
+		if j.Server == types.HiddenUserServer {
+			lid = j
+		} else {
+			pn = j
+		}
+	} else {
+		digits := strings.Map(func(r rune) rune {
+			if r >= '0' && r <= '9' {
+				return r
+			}
+			return -1
+		}, who)
+		if len(digits) == 10 {
+			digits = "91" + digits // an Indian mobile typed without the country code
+		}
+		if len(digits) < 8 {
+			return nil, "", fmt.Errorf("not a phone number: %q", who)
+		}
+		pn = types.NewJID(digits, types.DefaultUserServer)
+	}
+	if !pn.IsEmpty() && lid.IsEmpty() {
+		if l, lerr := c.WA.Store.LIDs.GetLIDForPN(ctx, pn); lerr == nil && !l.IsEmpty() {
+			lid = l
+		}
+	}
+	if !lid.IsEmpty() && pn.IsEmpty() {
+		if p, perr := c.WA.Store.LIDs.GetPNForLID(ctx, lid); perr == nil && !p.IsEmpty() {
+			pn = p
+		}
+	}
+	if !pn.IsEmpty() {
+		users = append(users, pn.User)
+		phone = "+" + pn.User
+	}
+	if !lid.IsEmpty() {
+		users = append(users, lid.User)
+	}
+	return users, phone, nil
 }

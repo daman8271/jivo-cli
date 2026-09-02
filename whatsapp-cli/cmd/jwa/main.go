@@ -37,6 +37,8 @@ const usage = `jwa — JIVO's WhatsApp reader. Reads only; it can never send.
   jwa search [--chat X] [--from X] [--text X] [--since 30d] [--media] [--limit N]
   jwa bills  [--since 30d] [--chat X] [--limit N]
   jwa pull   <message-id> [--to DIR]
+  jwa name   <number|jid> <label>  remember who a number is (chats/search show the label)
+  jwa names  [--vcf FILE]          every label given; --vcf writes a card file to import on a phone
 
 Everything lives under ~/.jwa — session.db (device keys), archive.db (messages),
 media/YYYY-MM-DD/ (the files). Override the lot with JWA_HOME.
@@ -65,6 +67,10 @@ func main() {
 		err = cmdSearch(args, true)
 	case "pull":
 		err = cmdPull(args)
+	case "name":
+		err = cmdName(args)
+	case "names":
+		err = cmdNames(args)
 	case "help", "-h", "--help":
 		fmt.Print(usage)
 		return
@@ -581,4 +587,102 @@ func dirSize(dir string) (files int, bytes int64) {
 		return nil
 	})
 	return
+}
+
+// jwa name <number|jid> <label…>
+func cmdName(args []string) error {
+	if len(args) < 2 {
+		return errors.New("usage: jwa name <number|jid> <label>   e.g. jwa name +919876543210 \"Ramesh, Delhi Punjab\"")
+	}
+	who, label := args[0], strings.TrimSpace(strings.Join(args[1:], " "))
+	if label == "" {
+		return errors.New("the label is empty")
+	}
+
+	session, archive, media := paths()
+	c, err := wa.Open(session, archive, media, false)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+
+	users, phone, err := c.Identify(who)
+	if err != nil {
+		return err
+	}
+	if err := c.DB.SetName(users, label, phone); err != nil {
+		return err
+	}
+	fmt.Printf("%s = %s", label, nameOr(phone, who))
+	if len(users) > 1 {
+		fmt.Printf("  (also LID %s)", users[len(users)-1])
+	} else if phone != "" {
+		fmt.Printf("  (no LID for it yet — that arrives with the first message)")
+	}
+	fmt.Println()
+	return nil
+}
+
+// jwa names [--vcf FILE]
+func cmdNames(args []string) error {
+	fs := flag.NewFlagSet("names", flag.ExitOnError)
+	vcf := fs.String("vcf", "", "write a vCard file of these names, to import on a phone")
+	_ = fs.Parse(args)
+
+	db, err := openArchive()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	names, err := db.Names()
+	if err != nil {
+		return err
+	}
+	if len(names) == 0 {
+		fmt.Println("No names given yet:  jwa name <number> <label>")
+		return nil
+	}
+
+	// One person, several ids: fold them by label.
+	type person struct {
+		name, phone string
+		ids         []string
+		at          time.Time
+	}
+	var people []*person
+	byName := map[string]*person{}
+	for _, n := range names {
+		p := byName[n.Name]
+		if p == nil {
+			p = &person{name: n.Name, at: n.SetAt}
+			byName[n.Name] = p
+			people = append(people, p)
+		}
+		if n.Phone != "" {
+			p.phone = n.Phone
+		}
+		p.ids = append(p.ids, n.User)
+	}
+
+	if *vcf != "" {
+		var b strings.Builder
+		for _, p := range people {
+			if p.phone == "" {
+				continue
+			}
+			fmt.Fprintf(&b, "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:%s\r\nN:%s;;;;\r\nTEL;TYPE=CELL:%s\r\nEND:VCARD\r\n",
+				p.name, p.name, p.phone)
+		}
+		if err := os.WriteFile(*vcf, []byte(b.String()), 0o644); err != nil {
+			return err
+		}
+		fmt.Printf("wrote %s — open it on the phone and tap Add to save them all\n", *vcf)
+	}
+
+	w := tabwriter.NewWriter(os.Stdout, 0, 8, 2, ' ', 0)
+	fmt.Fprintln(w, "NAME\tPHONE\tIDS\tGIVEN")
+	for _, p := range people {
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", p.name, nameOr(p.phone, "?"), strings.Join(p.ids, " "), p.at.Format("2006-01-02"))
+	}
+	return w.Flush()
 }

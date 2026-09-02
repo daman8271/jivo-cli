@@ -34,7 +34,31 @@ CREATE TABLE IF NOT EXISTS messages (
 CREATE INDEX IF NOT EXISTS idx_messages_chat ON messages(chat_jid, ts DESC);
 CREATE INDEX IF NOT EXISTS idx_messages_ts   ON messages(ts DESC);
 CREATE INDEX IF NOT EXISTS idx_messages_med  ON messages(media_type) WHERE media_type <> '';
+CREATE TABLE IF NOT EXISTS names (
+    jid_user TEXT PRIMARY KEY,
+    name     TEXT NOT NULL,
+    phone    TEXT NOT NULL DEFAULT '',
+    set_at   INTEGER NOT NULL
+);
 `
+
+// Name is a label an operator gave a number — jwa's own address book. The
+// phone's contacts do not reach a companion device reliably, and WhatsApp hides
+// most senders behind a LID (185414426054881@lid) rather than a phone JID, so
+// one label is stored against every user id that means the same person.
+type Name struct {
+	User  string // bare JID user: 918899011758, or a LID like 185414426054881
+	Name  string
+	Phone string // +918899011758 when known
+	SetAt time.Time
+}
+
+// userOf is the SQL for the bare user of a JID column: device suffix and server
+// stripped, so 185414426054881:9@lid and 185414426054881@lid name the same person.
+func userOf(col string) string {
+	return `CASE WHEN instr(` + col + `, ':') > 0 THEN substr(` + col + `, 1, instr(` + col + `, ':') - 1)
+	             ELSE substr(` + col + `, 1, instr(` + col + `, '@') - 1) END`
+}
 
 // Message is one WhatsApp message as jwa keeps it.
 type Message struct {
@@ -116,13 +140,14 @@ func (d *DB) Counts() (messages, media, chats int, oldest, newest time.Time, err
 
 func (d *DB) Chats(limit int) ([]Chat, error) {
 	rows, err := d.sql.Query(`
-        SELECT chat_jid,
-               COALESCE(NULLIF(MAX(chat_name), ''), chat_jid),
-               MAX(is_group), COUNT(*),
-               COALESCE(SUM(media_type <> ''), 0), MAX(ts)
-        FROM messages
-        GROUP BY chat_jid
-        ORDER BY MAX(ts) DESC
+        SELECT m.chat_jid,
+               COALESCE(n.name, NULLIF(MAX(m.chat_name), ''), m.chat_jid),
+               MAX(m.is_group), COUNT(*),
+               COALESCE(SUM(m.media_type <> ''), 0), MAX(m.ts)
+        FROM messages m
+        LEFT JOIN names n ON n.jid_user = `+userOf("m.chat_jid")+`
+        GROUP BY m.chat_jid
+        ORDER BY MAX(m.ts) DESC
         LIMIT ?`, limit)
 	if err != nil {
 		return nil, err
@@ -147,10 +172,7 @@ func (d *DB) Get(id string) (Message, error) {
 	var m Message
 	var fromMe, grp int
 	var ts int64
-	err := d.sql.QueryRow(`
-        SELECT id, chat_jid, chat_name, sender_jid, sender_name, from_me,
-               is_group, ts, body, media_type, media_name, media_path, media_size
-        FROM messages WHERE id = ?`, id).
+	err := d.sql.QueryRow(selectMessage+` WHERE m.id = ?`, id).
 		Scan(&m.ID, &m.ChatJID, &m.ChatName, &m.SenderJID, &m.SenderName,
 			&fromMe, &grp, &ts, &m.Body, &m.MediaType, &m.MediaName, &m.MediaPath,
 			&m.MediaSize)
@@ -176,36 +198,34 @@ type Query struct {
 }
 
 func (d *DB) Search(q Query) ([]Message, error) {
-	sqlStr := `SELECT id, chat_jid, chat_name, sender_jid, sender_name, from_me,
-                      is_group, ts, body, media_type, media_name, media_path, media_size
-               FROM messages WHERE 1=1`
+	sqlStr := selectMessage + ` WHERE 1=1`
 	var args []any
 	if q.Chat != "" {
-		sqlStr += ` AND (LOWER(chat_name) LIKE ? OR LOWER(chat_jid) LIKE ?)`
-		args = append(args, like(q.Chat), like(q.Chat))
+		sqlStr += ` AND (LOWER(COALESCE(nc.name, '')) LIKE ? OR LOWER(m.chat_name) LIKE ? OR LOWER(m.chat_jid) LIKE ?)`
+		args = append(args, like(q.Chat), like(q.Chat), like(q.Chat))
 	}
 	if q.Sender != "" {
-		sqlStr += ` AND (LOWER(sender_name) LIKE ? OR LOWER(sender_jid) LIKE ?)`
-		args = append(args, like(q.Sender), like(q.Sender))
+		sqlStr += ` AND (LOWER(COALESCE(ns.name, '')) LIKE ? OR LOWER(m.sender_name) LIKE ? OR LOWER(m.sender_jid) LIKE ?)`
+		args = append(args, like(q.Sender), like(q.Sender), like(q.Sender))
 	}
 	if q.Text != "" {
 		sqlStr += ` AND LOWER(body) LIKE ?`
 		args = append(args, like(q.Text))
 	}
 	if !q.Since.IsZero() {
-		sqlStr += ` AND ts >= ?`
+		sqlStr += ` AND m.ts >= ?`
 		args = append(args, q.Since.Unix())
 	}
 	if q.OnlyMedia {
-		sqlStr += ` AND media_type <> ''`
+		sqlStr += ` AND m.media_type <> ''`
 	}
 	if len(q.Kinds) > 0 {
-		sqlStr += ` AND media_type IN (` + placeholders(len(q.Kinds)) + `)`
+		sqlStr += ` AND m.media_type IN (` + placeholders(len(q.Kinds)) + `)`
 		for _, k := range q.Kinds {
 			args = append(args, k)
 		}
 	}
-	sqlStr += ` ORDER BY ts DESC LIMIT ?`
+	sqlStr += ` ORDER BY m.ts DESC LIMIT ?`
 	if q.Limit <= 0 {
 		q.Limit = 50
 	}
@@ -228,6 +248,59 @@ func (d *DB) Search(q Query) ([]Message, error) {
 		}
 		m.FromMe, m.IsGroup, m.Timestamp = fromMe == 1, grp == 1, time.Unix(ts, 0)
 		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
+// selectMessage is the one SELECT every read uses: chat and sender names come
+// back with any operator-given label already applied.
+var selectMessage = `
+        SELECT m.id, m.chat_jid, COALESCE(nc.name, m.chat_name),
+               m.sender_jid, COALESCE(ns.name, m.sender_name), m.from_me,
+               m.is_group, m.ts, m.body, m.media_type, m.media_name, m.media_path, m.media_size
+        FROM messages m
+        LEFT JOIN names nc ON nc.jid_user = ` + userOf("m.chat_jid") + `
+        LEFT JOIN names ns ON ns.jid_user = ` + userOf("m.sender_jid")
+
+// SetName labels every user id in users with the same name.
+func (d *DB) SetName(users []string, name, phone string) error {
+	tx, err := d.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	now := time.Now().Unix()
+	for _, u := range users {
+		if u == "" {
+			continue
+		}
+		if _, err := tx.Exec(`
+            INSERT INTO names (jid_user, name, phone, set_at) VALUES (?, ?, ?, ?)
+            ON CONFLICT(jid_user) DO UPDATE SET name = excluded.name,
+                phone = CASE WHEN excluded.phone <> '' THEN excluded.phone ELSE names.phone END,
+                set_at = excluded.set_at`, u, name, phone, now); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// Names lists every label given, newest first.
+func (d *DB) Names() ([]Name, error) {
+	rows, err := d.sql.Query(`SELECT jid_user, name, phone, set_at FROM names ORDER BY set_at DESC, name`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []Name
+	for rows.Next() {
+		var n Name
+		var ts int64
+		if err := rows.Scan(&n.User, &n.Name, &n.Phone, &ts); err != nil {
+			return nil, err
+		}
+		n.SetAt = time.Unix(ts, 0)
+		out = append(out, n)
 	}
 	return out, rows.Err()
 }
