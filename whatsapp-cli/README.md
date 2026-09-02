@@ -82,6 +82,21 @@ other), and it is reachable only through the daemon's loopback API on
 thin client of that API. Reading commands still never touch the network. Every
 send is archived as ours and logged. No read receipts, presence or typing.
 
+## The live loop — Jivo AI answers on WhatsApp
+
+`agent/jolly_wa.py` (installed as `~/bin/jolly_wa.py`, unit `jolly-wa`) polls
+the archive every 2 s. A message from anyone in the `names` table — **naming
+someone with `jwa name` is what allows them** — is handed to Claude Code
+headless in `jolly/` (read-only tools: Read, Glob, Grep; one conversation per
+person, resumed across messages) and the answer goes back through `/send`.
+Attachments are passed by path so a bill or a photo can be read. People not
+named are ignored and logged. Old messages from before the loop first started
+are never answered. `jolly_wa.py --dry "question"` answers on stdout without
+sending. Log: `~/.jwa/agent.log`; state: `~/.jwa/agent-state.json`.
+
+Switching on more (writes, re-running the plan, other folders) is a change to
+`JOLLY_TOOLS` / `JOLLY_DIR` in the unit — Daman's call, not the loop's.
+
 ## Staying linked
 
 "It keeps logging out" has three causes, and only one of them is WhatsApp.

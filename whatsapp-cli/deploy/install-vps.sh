@@ -43,6 +43,13 @@ install -m 0755 deploy/jwa-health.sh "$HOME/bin/jwa-health.sh"
 line="*/10 * * * * $HOME/bin/jwa-health.sh >> $HOME/.jwa/health.log 2>&1   # jwa: WhatsApp link/connect watch -> Telegram"
 ( crontab -l 2>/dev/null | grep -v 'jwa-health.sh'; echo "$line" ) | crontab -
 
+echo "==> installing the live loop (jolly-wa: WhatsApp → Jolly agent → reply)"
+install -m 0755 agent/jolly_wa.py "$HOME/bin/jolly_wa.py"
+sed "s|__HOME__|$HOME|g" deploy/jolly-wa.service > "$HOME/.config/systemd/user/jolly-wa.service" 2>/dev/null || {
+    mkdir -p "$HOME/.config/systemd/user"
+    sed "s|__HOME__|$HOME|g" deploy/jolly-wa.service > "$HOME/.config/systemd/user/jolly-wa.service"
+}
+
 echo "==> installing the user service"
 mkdir -p "$HOME/.config/systemd/user"
 sed "s|__HOME__|$HOME|g" deploy/jwa.service > "$HOME/.config/systemd/user/jwa.service"
