@@ -148,6 +148,10 @@ def handle(con, st, row):
         log(f"ignored {mid} from {who}: not named (jwa name <number> <label> to allow, or JOLLY_OPEN_UNTIL=<date>)")
         return
     media = (mtype, mpath, mname) if mtype else None
+    if not (body or "").strip() and not media:
+        # a reaction, a sticker, a deleted message: nothing to answer
+        log(f"{name}: empty message {mid} — no reply")
+        return
     log(f"{name}: {body[:80]!r}{' +' + mtype if mtype else ''}")
     to = phone or chat_jid
     try:
