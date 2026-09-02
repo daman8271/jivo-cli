@@ -245,7 +245,12 @@ tags: [{", ".join(args.tag or [])}]
                 print(f"  superseded {c['id']} ({c['path'].name})")
 
     print(f"recorded {cid} -> {path.relative_to(HARNESS.parent)}")
-    cmd_build(argparse.Namespace(quiet=True))
+    if cmd_build(argparse.Namespace(quiet=True)) != 0:
+        # The digest is what operators actually receive. A rule that fell out
+        # of it was recorded and "sent" and reaches nobody — say so, loudly.
+        print("\n  !! DIGEST OVER BUDGET — some corrections are NOT in INDEX.md and "
+              "will NOT reach operators. Raise JIVO_DIGEST_BUDGET (harness.py) or "
+              "consolidate. Dropped ids are listed at the bottom of INDEX.md.")
 
     # Send it. A correction that stays on one laptop helps nobody, and the
     # operators this is built for do not use git — telling them to run three
@@ -284,6 +289,12 @@ tags: [{", ".join(args.tag or [])}]
 
 # ── build ────────────────────────────────────────────────────────────────────
 
+def _id_num(cid: object) -> int:
+    """C-0073 -> 73; anything unparseable sorts as 0 (oldest)."""
+    m = re.search(r"(\d+)", str(cid))
+    return int(m.group(1)) if m else 0
+
+
 def cmd_build(args: argparse.Namespace) -> int:
     """Regenerate the bounded digest that gets injected into every session."""
     CORRECTIONS.mkdir(parents=True, exist_ok=True)
@@ -309,22 +320,39 @@ def cmd_build(args: argparse.Namespace) -> int:
     dropped: list[dict] = []
     used = len("\n".join(lines))
 
-    for area in sorted(by_area, key=lambda a: (a != "all", a)):
-        header = f"\n## {area}\n"
-        block: list[str] = []
-        for c in by_area[area]:
-            if not c["rule"]:
-                continue
-            entry = f"- **[{c['id']}]** {c['rule']}"
-            if used + len(entry) + len(header) > DIGEST_CHAR_BUDGET:
-                dropped.append(c)
-                continue
-            block.append(entry)
-            used += len(entry) + 1
+    # Decide what fits by SEVERITY first (high > medium > low, then newest id
+    # first within a tier), across all areas — never by area order. Before
+    # 2026-09-02 the loop walked area by area, so a high-severity sales or
+    # factory rule was dropped while a low accounts rule survived (10 rules
+    # were silently missing, 6 of them high).
+    kept: set[str] = set()
+    area_order = sorted(by_area, key=lambda a: (a != "all", a))
+    headers = {a: f"\n## {a}\n" for a in area_order}
+    headers_used: set[str] = set()
+    for c in sorted(
+        (c for c in corrections if c["rule"]),
+        key=lambda c: (sev_rank.get(c["severity"], 1), -_id_num(c["id"])),
+    ):
+        entry = f"- **[{c['id']}]** {c['rule']}"
+        extra = 0 if c["area"] in headers_used else len(headers[c["area"]])
+        # Once one rule does not fit, nothing ranked below it is admitted
+        # either — otherwise a short low rule squeezes in past a long high one.
+        if dropped or used + len(entry) + 1 + extra > DIGEST_CHAR_BUDGET:
+            dropped.append(c)
+            continue
+        kept.add(str(c["id"]))
+        headers_used.add(c["area"])
+        used += len(entry) + 1 + extra
+
+    for area in area_order:
+        block = [
+            f"- **[{c['id']}]** {c['rule']}"
+            for c in by_area[area]
+            if c["rule"] and str(c["id"]) in kept
+        ]
         if block:
-            lines.append(header.strip())
+            lines.append(headers[area].strip())
             lines.extend(block)
-            used += len(header)
 
     if dropped:
         lines.append("")
@@ -340,9 +368,11 @@ def cmd_build(args: argparse.Namespace) -> int:
     if not getattr(args, "quiet", False):
         print(f"built {INDEX.relative_to(HARNESS.parent)}")
         print(f"  {len(corrections)} active correction(s), {used}/{DIGEST_CHAR_BUDGET} chars")
-        if dropped:
-            print(f"  WARNING: {len(dropped)} dropped for budget — consolidate them")
     if dropped:
+        # Never silent, quiet or not: a dropped rule reaches no operator.
+        print(f"  WARNING: {len(dropped)} correction(s) dropped for budget "
+              f"({', '.join(str(c['id']) for c in dropped)}) — they are NOT in the "
+              f"digest operators receive", file=sys.stderr)
         return 1
     return 0
 
