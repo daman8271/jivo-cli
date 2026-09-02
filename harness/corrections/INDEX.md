@@ -24,6 +24,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0055]** Before any seasonal figure, check WHERE the festival fell that year (dates move ~3 weeks) and strip event days from the baseline. Festival + platform-sale dates are public - look them up, never call them unknowable.
 - **[C-0056]** EXIM is the ONLY source for oil quantity, tanks and grades. SAP is MISSING oil items entirely (no 2B grades exist there) - it is never a fallback and never a cross-check. EXIM down = say so, do not quote SAP.
 - **[C-0057]** Kundli electricity is ONE plant bill shared Oil+Beverages, and water production is the heavy user - Bev books ~Rs 15.8L/mth, Oil ~Rs 11.7L/mth. Charge each company its own power only; never load the whole bill on Oil.
+- **[C-0073]** Never say 'not found' for a GRPO/invoice/draft/PO/vendor until ALL THREE companies (Oil, Mart, Beverages) are searched; then state exactly what was searched and offer a next step — never leave the operator thinking SAP or their paper is broken.
 ## accounts
 - **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
 - **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.
@@ -62,7 +63,6 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0068]** Rent A/P lines: AccountCode 5660002, TaxCode RCGSG@18 (reverse charge, NOT Exampt), Dim3 SERVICES, Dim4/Dim5 empty; DocTotal = printed rent and VatSum = 0.
 - **[C-0070]** AccountCode 5690002 CONVEYANCE takes Dim1 CANOLA always — never a vehicle code, not even for a named two-wheeler.
 - **[C-0071]** Map every expense-claim row to a real GL head — hardware/fittings to 5650001 R&M OFFICE & BUILDING, staff electronics (charger, aux) to 5630003 STAFF WELFARE. Do not park items in 5680000 GENERAL EXPENSES because the sheet called them Miscellaneous.
-- **[C-0072]** Expense claims: DocDate = the LATEST expense date on the sheet; roll to the 1st of the next open month only if that expense month is closed. TaxDate = that same expense date; NumAtCard = '<EXPENSE MONTH> YY/<total>'.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 
-<!-- 8 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0025, C-0026, C-0027, C-0040, C-0007, C-0003, C-0006, C-0053 -->
+<!-- 9 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0072, C-0025, C-0026, C-0027, C-0040, C-0007, C-0003, C-0006, C-0053 -->
