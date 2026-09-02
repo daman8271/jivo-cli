@@ -37,6 +37,12 @@ mkdir -p "$HOME/go/bin"
 go build -trimpath -buildvcs=false -o "$HOME/go/bin/jwa" ./cmd/jwa
 echo "    installed: $HOME/go/bin/jwa"
 
+echo "==> installing the health watch (cron, every 10 min, alerts Telegram on a change)"
+mkdir -p "$HOME/bin" "$HOME/.jwa"
+install -m 0755 deploy/jwa-health.sh "$HOME/bin/jwa-health.sh"
+line="*/10 * * * * $HOME/bin/jwa-health.sh >> $HOME/.jwa/health.log 2>&1   # jwa: WhatsApp link/connect watch -> Telegram"
+( crontab -l 2>/dev/null | grep -v 'jwa-health.sh'; echo "$line" ) | crontab -
+
 echo "==> installing the user service"
 mkdir -p "$HOME/.config/systemd/user"
 sed "s|__HOME__|$HOME|g" deploy/jwa.service > "$HOME/.config/systemd/user/jwa.service"

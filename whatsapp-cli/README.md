@@ -61,6 +61,35 @@ you log out — that failure looks exactly like "WhatsApp keeps unlinking itself
    linked device. It is 0700, the service runs unprivileged, and it must never
    be committed — this repo is public.
 
+## Staying linked
+
+"It keeps logging out" has three causes, and only one of them is WhatsApp.
+
+1. **The phone went dark.** WhatsApp unlinks every companion when the primary
+   phone has been off the network for 14 days. Nothing on the VPS can help;
+   the SIM has to sit in a phone that stays charged and on data.
+2. **The daemon stopped and nobody noticed.** `jwa run` is a user service with
+   `Restart=always` and lingering on, so a crash or a reboot brings it back.
+   It also writes two files under `~/.jwa`: `state` (connected, disconnected,
+   or a fatal verdict — `logged_out`, `replaced`, `banned`, `outdated`,
+   `unlinked`) and `heartbeat`, rewritten every minute while the socket is up.
+   `jwa doctor` prints the verdict on its `daemon` line. On a fatal event the
+   daemon exits non-zero (after waiting out a ban) so systemd shows it.
+3. **Nobody was told.** `deploy/jwa-health.sh` runs from cron every 10 minutes,
+   reads those two files and systemd — never `session.db` — and messages the
+   Telegram channel once when the link goes down and once when it is back.
+   `install-vps.sh` installs the cron line.
+
+The session store opens with WAL and a 10 s busy timeout: whatsmeow writes
+keys from several goroutines and `doctor` opens the same file, and without
+those the log filled with `SQLITE_BUSY` on the first evening.
+
+## Status, 2026-09-02
+
+Linked on the VPS to a spare number bought for the purpose and archiving as a
+`systemd --user` service (root, lingering) with the health cron installed.
+The 2026-08-27 notes below describe the state before that.
+
 ## Status, 2026-08-27
 
 Written on the Mac Air, **not yet compiled** — that box has no Go toolchain.

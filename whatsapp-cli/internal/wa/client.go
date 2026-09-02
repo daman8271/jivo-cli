@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"go.mau.fi/whatsmeow"
@@ -41,7 +42,13 @@ type Client struct {
 	WA      *whatsmeow.Client
 	DB      *store.DB
 	MediaTo string
+	Home    string     // ~/.jwa — where state and heartbeat are written
+	Fatal   chan Fatal // the daemon exits when something lands here
 	Log     func(string, ...any)
+
+	mu    sync.Mutex
+	state string
+	since time.Time
 }
 
 // Open builds the client but does not connect.
@@ -63,7 +70,11 @@ func Open(sessionPath, archivePath, mediaDir string, verbose bool) (*Client, err
 	dbLog := waLog.Stdout("session", level, true)
 
 	container, err := sqlstore.New(context.Background(), "sqlite",
-		"file:"+sessionPath+"?_pragma=foreign_keys(1)", dbLog)
+		// WAL + a busy timeout: whatsmeow writes keys from several goroutines
+		// at once and `jwa doctor` opens the same file while the daemon runs.
+		// Without these the log fills with SQLITE_BUSY and a key write can be
+		// lost — which is how a "random" logout starts.
+		"file:"+sessionPath+"?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)", dbLog)
 	if err != nil {
 		return nil, fmt.Errorf("open session store: %w", err)
 	}
@@ -90,6 +101,8 @@ func Open(sessionPath, archivePath, mediaDir string, verbose bool) (*Client, err
 		WA:      whatsmeow.NewClient(device, waLog.Stdout("client", level, true)),
 		DB:      archive,
 		MediaTo: mediaDir,
+		Home:    filepath.Dir(sessionPath),
+		Fatal:   make(chan Fatal, 1),
 		Log:     func(f string, a ...any) { fmt.Printf(f+"\n", a...) },
 	}
 	c.WA.AddEventHandler(c.handle)
@@ -161,6 +174,46 @@ func (c *Client) handle(raw any) {
 				}
 			}
 		}
+	case *events.OfflineSyncCompleted:
+		c.Log("%s  offline sync done, %d messages caught up", stamp(), evt.Count)
+
+	// Connection state. Everything below is what "it just logged out" looks
+	// like from the inside; each case leaves a verdict in ~/.jwa/state.
+	case *events.Connected:
+		c.Note("connected", "")
+		c.beat()
+	case *events.KeepAliveRestored:
+		c.Note("connected", "keepalive restored")
+		c.beat()
+	case *events.Disconnected:
+		// whatsmeow reconnects on its own (EnableAutoReconnect is on by
+		// default); this only marks the gap so doctor and the health cron see it.
+		c.Note("disconnected", "socket closed; whatsmeow is reconnecting")
+	case *events.KeepAliveTimeout:
+		c.Note("disconnected", fmt.Sprintf("keepalive timed out %d× (last ok %s)",
+			evt.ErrorCount, evt.LastSuccess.Format("15:04:05")))
+	case *events.StreamError:
+		c.Note("disconnected", "stream error "+evt.Code)
+	case *events.ConnectFailure:
+		c.Note("disconnected", fmt.Sprintf("connect failure %s: %s", evt.Reason, evt.Message))
+
+	// Fatal: the daemon exits on these. whatsmeow has already given up
+	// reconnecting, and only a phone or a rebuild gets the link back.
+	case *events.LoggedOut:
+		c.fatal("logged_out", fmt.Sprintf("WhatsApp removed this device (%s) — a phone must scan a new QR: jwa login", evt.Reason), 0)
+	case *events.StreamReplaced:
+		c.fatal("replaced", "another client connected with this session — a second `jwa run`, or a copied session.db?", time.Minute)
+	case *events.TemporaryBan:
+		wait := evt.Expire
+		if wait <= 0 {
+			wait = time.Hour
+		}
+		if wait > 24*time.Hour {
+			wait = 24 * time.Hour
+		}
+		c.fatal("banned", evt.String(), wait)
+	case *events.ClientOutdated:
+		c.fatal("outdated", "WhatsApp rejects this whatsmeow build as too old — bump go.mod, rebuild, restart", time.Hour)
 	}
 }
 

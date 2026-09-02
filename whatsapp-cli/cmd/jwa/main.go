@@ -146,6 +146,7 @@ func cmdLogin(args []string) error {
 	if id == nil {
 		return errors.New("WhatsApp reported success but no device id was stored — nothing is linked; run `jwa login` again")
 	}
+	c.Note("linked", "QR scanned; the daemon has not started yet")
 	fmt.Printf("\nLinked as %s.\n", id.String())
 	fmt.Println("Now start the daemon so it actually archives:  systemctl --user start jwa")
 	return nil
@@ -164,21 +165,45 @@ func cmdRun(args []string) error {
 	defer c.Close()
 
 	if !c.LoggedIn() {
+		// Keep a logged_out / banned verdict on disk rather than blurring it
+		// into "unlinked" on every 15-second restart.
+		if s := wa.ReadStatus(home()); !wa.IsFatalState(s.State) {
+			c.Note("unlinked", "no device keys in session.db — a phone must scan a QR: jwa login")
+		}
 		return fmt.Errorf("this box is not linked to a number yet — run `jwa login` with a phone in hand")
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	c.Note("starting", "")
 	if err := c.Pair(ctx, func(string) {}); err != nil {
+		c.Note("disconnected", "connect: "+err.Error())
 		return err
 	}
 	fmt.Printf("%s  linked as %s, archiving to %s\n",
 		time.Now().Format("2006-01-02 15:04:05"), c.WA.Store.ID.String(), archive)
+	go c.Heartbeat(ctx)
 
-	<-ctx.Done()
-	fmt.Printf("%s  stopping\n", time.Now().Format("2006-01-02 15:04:05"))
-	return nil
+	select {
+	case <-ctx.Done():
+		c.Note("stopped", "asked to stop")
+		return nil
+	case f := <-c.Fatal:
+		// ~/.jwa/state already says why. Exit non-zero so systemd restarts
+		// us (15 s) and the health cron sees a daemon that is not connected —
+		// but only after a ban or an outdated build has had its wait, so the
+		// restart loop does not hammer WhatsApp.
+		if f.Wait > 0 {
+			fmt.Printf("%s  waiting %s before exiting\n",
+				time.Now().Format("2006-01-02 15:04:05"), f.Wait.Round(time.Second))
+			select {
+			case <-ctx.Done():
+			case <-time.After(f.Wait):
+			}
+		}
+		return f.Err
+	}
 }
 
 // ---------------------------------------------------------------- doctor
@@ -209,6 +234,26 @@ func cmdDoctor(args []string) error {
 	}
 	if st, err := os.Stat(session); err == nil {
 		fmt.Fprintf(w, "session.db\t%s  (mode %s)\n", human(st.Size()), st.Mode().Perm())
+	}
+
+	// The daemon's own verdict — the files it writes, not a guess from the DB.
+	if s := wa.ReadStatus(home()); s.State == "" {
+		fmt.Fprintf(w, "daemon\tno state yet — `jwa run` has not started since this build\n")
+	} else {
+		line := s.State
+		if wa.IsFatalState(s.State) {
+			line = strings.ToUpper(s.State)
+		}
+		if !s.Since.IsZero() {
+			line += " since " + s.Since.Format("2006-01-02 15:04")
+		}
+		if !s.Heartbeat.IsZero() {
+			line += fmt.Sprintf(" (heartbeat %s ago)", ago(s.Heartbeat))
+		}
+		if s.Detail != "" {
+			line += " — " + s.Detail
+		}
+		fmt.Fprintf(w, "daemon\t%s\n", line)
 	}
 
 	msgs, mediaN, chats, oldest, newest, err := c.DB.Counts()
