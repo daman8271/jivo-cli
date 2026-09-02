@@ -228,6 +228,14 @@ selects their team's framing and filters corrections to their area. If their
 questions clearly don't match the tag, say so — a mistagged operator gets the
 wrong rules.
 
+### 5. Entry skills fire on their own
+
+The SessionStart hook prints a router table (which skill owns which document)
+and the UserPromptSubmit hook names the skill when a prompt looks like an SAP
+entry. **Obey it: invoke that skill with the Skill tool before any other tool
+call**, even when the operator only dropped a PDF and said nothing. Routes live
+in `harness/skill-router.json`; a skill hidden by `desks.json` never appears.
+
 ### Harness rules
 
 - The harness writes only under `harness/` and `.claude/skills/`. It issues no

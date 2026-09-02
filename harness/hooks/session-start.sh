@@ -64,6 +64,15 @@ fi
 rm -f /tmp/jivo-harness-err.$$
 printf '%s' "$_ctx"
 
+# Entry skills fire on their own: print which skill owns which document, so the
+# session knows before the first prompt arrives (harness/skill-router.json).
+# Only the skills present on this checkout are listed, so the desk exclusions
+# applied just above carry through without a second list.
+if [ -f "$HARNESS_DIR/bin/skill_router.py" ]; then
+  printf '\n\n'
+  "$PY" "$HARNESS_DIR/bin/skill_router.py" table 2>/dev/null || true
+fi
+
 # Integrity check. `-q` stays silent when everything matches, so this costs
 # nothing on a normal session; when a protected file HAS changed it prints to
 # stderr, which lands in the agent's context at session start — the earliest

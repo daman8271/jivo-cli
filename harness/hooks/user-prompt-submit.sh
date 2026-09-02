@@ -7,7 +7,9 @@
 # gitignored and never pushed); see harness/README.md
 # for what is captured and how to turn it off.
 #
-# Emits nothing to stdout, so it adds zero tokens to the turn.
+# Emits nothing to stdout for an ordinary question. When the prompt looks like
+# an SAP entry it prints the skill-router nudge (harness/bin/skill_router.py),
+# which is what makes the entry skills fire on their own.
 
 set -u
 HARNESS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -28,5 +30,13 @@ for c in python3 python py; do
 done
 [ -z "$PY" ] && exit 0
 
-"$PY" "$HARNESS_DIR/bin/harness.py" ask >/dev/null 2>&1 || true
+_in="$(cat 2>/dev/null)"
+printf '%s' "$_in" | "$PY" "$HARNESS_DIR/bin/harness.py" ask >/dev/null 2>&1 || true
+
+# Skill router: when the prompt looks like an SAP entry, name the skill to
+# invoke first (stdout of this hook is added to the turn's context). It prints
+# nothing for an ordinary question, so those still cost zero tokens.
+if [ -f "$HARNESS_DIR/bin/skill_router.py" ]; then
+  printf '%s' "$_in" | "$PY" "$HARNESS_DIR/bin/skill_router.py" match 2>/dev/null || true
+fi
 exit 0
