@@ -60,9 +60,8 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0066]** BHORIA loading bills (VENDA000281, letterhead always JIVO WELLNESS): key by PRODUCT loaded — water → Beverages (Dim1 WATER, TDS 1230), oil → Oil (Dim1 CANOLA, TDS 1023).
 - **[C-0067]** Any expense on a two-wheeler (scooty/Activa/Bullet) books to 5690002 CONVEYANCE, never 5650002 REPAIR & MAINTENANCE VEHICLE — that account is four-wheelers only.
 - **[C-0068]** Rent A/P lines: AccountCode 5660002, TaxCode RCGSG@18 (reverse charge, NOT Exampt), Dim3 SERVICES, Dim4/Dim5 empty; DocTotal = printed rent and VatSum = 0.
+- **[C-0069]** Employee expense claims: NumAtCard = '<EXPENSE MONTH> YY/<total>', TaxDate = the expense date on the paper, DocDate = the 1st of the following month (and pick that month's series). Never date them by the approver's signature.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
-- **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
-- **[C-0040]** A GRPO's attachment is the BILTY/LR page, filenamed by bilty number (135/135 in Oil) — never the vendor's tax invoice. That belongs on the A/P invoice that copies the GRPO.
 
-<!-- 5 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0027, C-0007, C-0003, C-0006, C-0053 -->
+<!-- 7 correction(s) omitted: digest hit the 12000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0026, C-0027, C-0040, C-0007, C-0003, C-0006, C-0053 -->
