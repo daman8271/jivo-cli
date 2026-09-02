@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcoe=self.webpackChunkcoe||[]).push([[965],{52965:(e,s,t)=>{t.r(s),t.d(s,{default:()=>c});t(60954);var n=t(74848);const c=function(){return(0,n.jsx)("img",{src:"https://img1a.flixcart.com/fk-sp-static/images/TrendingDownRed.svg",alt:"trending-down"})}}}]);

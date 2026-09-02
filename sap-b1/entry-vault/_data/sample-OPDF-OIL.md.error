@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/sample.py", line 122, in <module>
+    main()
+    ~~~~^^
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/sample.py", line 81, in main
+    lb, ltypes = dump(sch, lt, [k], key, lt, L)
+                 ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/sample.py", line 38, in dump
+    rows = q(f'SELECT {names} FROM "{sch}"."{table}" WHERE "{key_col}" IN ({inlist}) ORDER BY "{key_col}"')
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/common.py", line 52, in q
+    raise RuntimeError(f"hana-sql failed: {last}\nSQL: {sql[:400]}")
+RuntimeError: hana-sql failed: QUERY ERROR: SQL Error 260 - invalid column name: DocEntry: line 1 col 326 (at pos 325) (statement no: 0)
+SQL: SELECT "DocNum", "LineID", "DueDate", "CheckNum", "BankCode", "Branch", "AcctNum", "Details", "Trnsfrable", "CheckSum", "Currency", "Flags", "ObjType", "CountryCod", "CheckAct", "CheckAbs", "BnkActKey", "ManualChk", "FiscalID", "OrigIssdBy", "Endorse", "EndorsChNo", "EncryptIV", "ECheck" FROM "JIVO_OIL_HANADB"."PDF1" WHERE "DocEntry" IN (2152) ORDER BY "DocEntry"

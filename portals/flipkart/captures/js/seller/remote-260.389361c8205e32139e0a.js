@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcoe=self.webpackChunkcoe||[]).push([[260],{83260:(s,t,c)=>{c.r(t),c.d(t,{default:()=>i});c(60954);var e=c(74848);const i=function(){return(0,e.jsx)("img",{src:"https://img1a.flixcart.com/fk-sp-static/images/lightbulb-outline.svg"})}}}]);

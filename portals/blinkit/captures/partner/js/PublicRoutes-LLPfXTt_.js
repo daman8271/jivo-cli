@@ -1,0 +1,1 @@
+import{j as s,L as e,P as o}from"./index-ULXAYjNj.js";import{r,i as a,j as t}from"./react-vendor-Cbv77eG4.js";import"./antd-vendor-ByQIh4ES.js";import"./redux-vendor-Dlstln7L.js";const n=()=>s.jsx(r.Fragment,{children:s.jsxs(a,{children:[s.jsx(t,{path:"/",element:s.jsx(e,{})}),s.jsx(t,{element:s.jsx(o,{})})]})});export{n as default};

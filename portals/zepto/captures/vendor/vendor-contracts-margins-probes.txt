@@ -1,0 +1,32 @@
+# Vendor Contracts, Margins & Incentives — read-only probe transcript
+# date: 2026-07-24  token: JWT for ecom1@jivo.in (exp 1783967399 = 2026-07-13 18:29:59 UTC = EXPIRED at probe time)
+# JWT redacted as <JWT>. Header: authorization: <JWT> (no Bearer). accept: application/json.
+# Host: fcc.zepto.co.in. Method: GET only. Cap 8; ~1 req/s. Stop on first 401/403/429.
+======================================================
+
+## PROBE 1: GET https://fcc.zepto.co.in/contractservice/api/v1/vendor-contract/listing-summary
+HTTP_STATUS: 401
+BODY (first 40 lines):
+{"code":401,"message":"Token expired"}
+
+======================================================
+HALT: received 401 {"code":401,"message":"Token expired"} on first probe.
+Per READ-ONLY guardrails, stopped immediately (stop on any 401/403/429).
+Token iat/exp show it lapsed 2026-07-13, 11 days before this run — same expired
+token as the sibling RTV / Release-Orders probes. No 2xx, nothing upgraded to PROVEN.
+
+Remaining READ GET endpoints left DOCUMENTED (not probed):
+  - GET /contractservice/api/v1/vendor-contract/get-filtered-contracts
+  - GET /contractservice/api/v1/vendor-contract/pending-on-approver
+  - GET /contractservice/api/v1/vendor-contract/static-config      (roles + static config)
+  - GET /contractservice/api/v1/vendor-contract/users
+  - GET /contractservice/api/v1/vendor-contract/activity-log
+  - GET /contractservice/api/v1/vendor-contract/{id}               (needs valid contract id)
+  - GET /contractservice/api/v1/vendor-contract/{id}/activity-log  (needs valid contract id)
+  - GET /contractservice/api/v1/vendor-contract/{id}/state-timeline(needs valid contract id)
+  - GET /contractservice/api/v1/margin-incentive/list-item-margin-details
+  - GET /api/v1/vendor-pv-margin/status-config
+  - GET /api/v1/vendor-pv-margin/vendor/filter
+  - GET /api/v1/vendor-pv-margin/upload-request-list
+  - ... (all other READ rows in the note)
+Probes fired: 1. 2xx PROVEN: 0. Re-run with a fresh token to lock down response shapes.

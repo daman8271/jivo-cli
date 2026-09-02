@@ -1,0 +1,657 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="vTMXjWw1aYRdnKpybGDlbje7DVjZ9RSidpLRiVr3wtVp45hX5QwwAI58k8xlSQDx">
+  <title>User Management — Jivo Group</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300,0,0" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Raleway', sans-serif; background: #f3f4f6; color: #1f2937; }
+
+    /* ── Light & subtle report theme tokens ───────────────────────────────────
+       Shared palette for the Realise/report pages so they all read like the Home
+       dashboard: white cards, thin colour accents, soft shadows, dark-on-light text.
+       Tweak here to re-tone every page at once. */
+    :root {
+      --rz-bg:        #f4f6fb;   /* page background                       */
+      --rz-card:      #ffffff;   /* card / panel surface                  */
+      --rz-card-brd:  #ecebf5;   /* subtle card border                    */
+      --rz-shadow:    0 4px 14px rgba(15,23,42,.05);   /* soft card shadow */
+      --rz-shadow-lg: 0 8px 24px rgba(15,23,42,.07);   /* hero / raised    */
+      --rz-ink:       #0f172a;   /* primary heading / value text          */
+      --rz-body:      #334155;   /* body text                             */
+      --rz-muted:     #64748b;   /* muted labels                          */
+      --rz-faint:     #94a3b8;   /* faint / placeholder                   */
+      --rz-line:      #e5e7eb;   /* hairline / divider                    */
+      --rz-indigo:    #6366f1;   /* primary accent                        */
+      --rz-indigo-deep:#4338ca;  /* accent text on soft bg                */
+      --rz-soft:      #eef2ff;   /* soft accent fill (active chips)       */
+      --rz-soft-brd:  #e0e7ff;   /* soft accent border                    */
+      --rz-head-bg:   #f8fafc;   /* table header background (light)       */
+      --rz-head-ink:  #475569;   /* table header text                     */
+      --rz-total-bg:  #f1f5f9;   /* grand-total row background            */
+      --rz-total-brd: #e2e8f0;   /* grand-total row top border            */
+      --rz-pos:       #16a34a;   /* positive / green                      */
+      --rz-neg:       #e11d48;   /* negative / red                        */
+      --rz-amber:     #d97706;   /* amber accent                          */
+      --rz-teal:      #0d9488;   /* teal accent                           */
+      /* Numeric font: plain upright figures for money / metric values. Raleway's numerals
+         read as slanted / "cursive"; a neutral system sans keeps numbers legible & subtle.
+         Applied to numeric cells & KPI values app-wide via the rule below.               */
+      --rz-num: system-ui, "Segoe UI", Roboto, -apple-system, "Helvetica Neue", Arial, sans-serif;
+      /* KPI accent bars (thin top strip on white stat cards) */
+      --rz-acc-indigo: linear-gradient(90deg,#6366f1,#7c3aed);
+      --rz-acc-green:  linear-gradient(90deg,#059669,#16a34a);
+      --rz-acc-red:    linear-gradient(90deg,#e11d48,#f43f5e);
+      --rz-acc-amber:  linear-gradient(90deg,#d97706,#f59e0b);
+      --rz-acc-teal:   linear-gradient(90deg,#0d9488,#14b8a6);
+    }
+
+    /* ── Numeric values: subtle, upright figures across every report ───────────
+       Numbers in these pages were inheriting Raleway, whose numerals look slanted /
+       "cursive". Force a neutral tabular sans + normal style on the numeric containers
+       used app-wide: KPI stat values (*-kpi-v), the shared .num table cell, and the
+       common per-report money/qty cell classes. Selectors only hit number-only elements,
+       so prose (party names, headings) keeps Raleway. Edit --rz-num to re-tone at once. */
+    [class$="kpi-v"], [class*="kpi-v "], .kpi-value,
+    .num, td.num, .op-hi, .dd-mono,
+    .sv, .sp-amt, .sa-qty, .doc, .doc-bal, .cmp-big, .cmp-chg, .cm-gst,
+    .rc-so-one, .pf-prow-qty, .sc2-state-val, .sc2-drillval {
+      font-family: var(--rz-num);
+      font-variant-numeric: tabular-nums;
+      font-style: normal;
+      letter-spacing: 0;
+    }
+
+    /* ── Topbar ── */
+    .cp-topbar { display: flex; align-items: center; gap: 24px; padding: 0 20px; background: #ffffff; border-bottom: 1px solid #e5e7eb; height: 56px; position: sticky; top: 0; z-index: 100; }
+    .cp-topbar-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .cp-topbar-logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .cp-topbar-title { font-size: 14px; font-weight: 700; line-height: 1.1; color: #111827; }
+    .cp-topbar-subtitle { font-size: 11px; color: #6b7280; }
+    .cp-topbar-ticker { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
+    .cp-live-pill { background: #d1fae5; color: #047857; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .cp-live-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: cp-pulse 2s infinite; }
+    @keyframes cp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .cp-ticker-item { padding: 4px 10px; background: #f3f4f6; border-radius: 20px; font-size: 11px; white-space: nowrap; flex-shrink: 0; color: #374151; }
+    .cp-ticker-item b { color: #4338ca; margin-right: 4px; }
+
+    /* ── Shell ── */
+    .cp-shell { display: flex; min-height: calc(100vh - 56px); position: relative; }
+
+    /* ── Sidebar ── */
+    /* Frozen in place: sticky just below the 56px topbar and exactly viewport-tall, so the
+       sidebar stays put while only .cp-main scrolls. align-self:flex-start stops the flex
+       row from stretching it (which would break sticky); overflow-y lets a tall sidebar
+       scroll on its own. */
+    .cp-sidebar { width: 240px; background: #f8fafc; color: #334155; padding: 20px 14px; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; border-right: 1px solid #e5e7eb; transition: width .22s ease, padding .22s ease; position: sticky; top: 56px; height: calc(100vh - 56px); align-self: flex-start; }
+    /* Modern outlined icon set in the sidebar (Material Symbols) — lighter & cleaner than filled. */
+    .cp-sidebar .material-icons, .cp-sidebar-open .material-icons { font-family: 'Material Symbols Outlined'; font-weight: normal; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+    /* Collapsed = a slim icon rail (not empty space): keep the nav icons,
+       hide all text/labels, and let the floating menu button expand it. */
+    /* Smart hover sidebar: collapsed = a slim icon rail that expands on hover and PUSHES
+       the content (everything adjusts smoothly — nothing is hidden). 'cp-sb-peek' is
+       toggled by JS on mouse enter/leave (with a small close-delay); :focus-within keeps
+       keyboard navigation working. */
+    body.cp-sidebar-collapsed .cp-sidebar {
+      width: 64px; padding: 16px 8px;
+      transition: width .2s ease, padding .2s ease;
+    }
+    body.cp-sidebar-collapsed .cp-sidebar.cp-sb-peek,
+    body.cp-sidebar-collapsed .cp-sidebar:focus-within {
+      width: 240px; padding: 20px 14px;
+    }
+    /* Icon-only look only while the rail is NOT peeking/focused */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-brand,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-section-label,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-user-badge,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-logout-form { display: none; }
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav:first-of-type { margin-top: 56px; }  /* clear the floating menu button */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-item { justify-content: center; gap: 0; padding: 11px 0; font-size: 0; }
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-item .material-icons { font-size: 22px; }
+    /* On the slim rail, collapse the group to just its icon (no chevron, no sub-items). */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-sub,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-group-chev { display: none; }
+    /* The floating "pin" button shows on the slim rail; it hides while peeking (the
+       in-rail close/pin button takes over once the rail is expanded). */
+    body.cp-sidebar-collapsed .cp-sidebar-open { top: 14px; left: 14px; }
+    body.cp-sidebar-collapsed .cp-sidebar.cp-sb-peek ~ .cp-sidebar-open { opacity: 0; pointer-events: none; }
+    .cp-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px 18px 6px; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px; }
+    .cp-brand-copy { min-width: 0; flex: 1; }
+    .cp-brand-logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(99,102,241,0.45); }
+    .cp-brand-title { font-size: 13px; font-weight: 700; color: #0f172a; }
+    .cp-brand-subtitle { font-size: 10px; color: #94a3b8; }
+    .cp-sidebar-close, .cp-sidebar-open { border: 0; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; transition: background .15s, color .15s, opacity .15s, transform .15s; }
+    .cp-sidebar-close { width: 30px; height: 30px; border-radius: 8px; background: #f1f5f9; color: #64748b; flex-shrink: 0; }
+    .cp-sidebar-close:hover { background: #e2e8f0; color: #334155; }
+    .cp-sidebar-close .material-icons { font-size: 18px; }
+    .cp-sidebar-open { position: absolute; top: 12px; left: 12px; z-index: 20; width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; box-shadow: 0 8px 20px rgba(79,70,229,.4); opacity: 0; pointer-events: none; transform: translateX(-8px); }
+    body.cp-sidebar-collapsed .cp-sidebar-open { opacity: 1; pointer-events: auto; transform: translateX(0); }
+    .cp-sidebar-open:hover { background: linear-gradient(135deg, #818cf8, #6366f1); }
+    .cp-sidebar-open .material-icons { font-size: 21px; }
+    .cp-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.9px; color: #64748b; margin: 16px 6px 6px 6px; text-transform: uppercase; }
+    .cp-nav { display: flex; flex-direction: column; gap: 3px; }
+    .cp-nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; color: #334155; text-decoration: none; font-size: 13px; font-weight: 600; transition: background .15s, color .15s, box-shadow .15s; }
+    .cp-nav-item:hover { background: #eef2ff; color: #1e293b; }
+    .cp-nav-item.active { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; box-shadow: 0 6px 18px rgba(79,70,229,0.5); }
+    .cp-nav-item.active .material-icons { color: #fff; font-variation-settings: 'FILL' 1, 'wght' 400; }
+    .cp-nav-item .material-icons { font-size: 20px; }
+
+    /* ── Collapsible nav group (e.g. Analytical Reports) ── */
+    .cp-nav-group { display: flex; flex-direction: column; }
+    .cp-nav-group-btn { width: 100%; border: 0; background: none; font-family: inherit; cursor: pointer; justify-content: space-between; }
+    .cp-nav-group-lead { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .cp-nav-group-chev { font-size: 18px !important; color: #94a3b8; transition: transform .18s ease; }
+    .cp-nav-group.open > .cp-nav-group-btn { color: #1e293b; }
+    .cp-nav-group.open > .cp-nav-group-btn .cp-nav-group-chev { transform: rotate(180deg); }
+    .cp-nav-sub { display: none; flex-direction: column; gap: 3px; margin: 3px 0 2px 17px; padding-left: 12px; border-left: 2px solid #e2e8f0; }
+    .cp-nav-group.open > .cp-nav-sub { display: flex; }
+    .cp-nav-sub .cp-nav-item { font-size: 12.5px; padding: 8px 11px; }
+
+    /* ── User badge ── */
+    .cp-user-badge { margin-top: auto; padding: 10px; background: #f1f5f9; border: 1px solid #e5e7eb; border-radius: 11px; display: flex; align-items: center; gap: 10px; }
+    .cp-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; box-shadow: 0 3px 9px rgba(99,102,241,0.4); }
+    .cp-user-name { font-size: 12px; font-weight: 700; color: #0f172a; }
+    .cp-user-role { font-size: 10px; color: #64748b; text-transform: capitalize; }
+    .cp-logout-form { margin-top: 8px; }
+    .cp-logout-btn { width: 100%; padding: 9px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; transition: background .15s, color .15s, border-color .15s; }
+    .cp-logout-btn:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+
+    /* ── Main content ── */
+    .cp-main { flex: 1; padding: 28px 32px; overflow: auto; min-width: 0; }
+    /* (push mode) content sits flush after the flex sidebar — no extra left padding. */
+    /* Dashboard pages auto-size to the available width at any screen size / zoom: drop the
+       per-page fixed max-width caps on the content root (the single ".<name>-wrap" div that
+       each page renders directly inside .cp-main). Higher specificity than the page's own
+       ".x-wrap{max-width:…}" rule, so this wins without !important. */
+    .cp-main > div[class*="-wrap"] { max-width: none; }
+  </style>
+  
+<style>
+  .cp-main{background:#f4f6fb !important}
+  .um-wrap{max-width:1100px;margin:0 auto}
+  .um-hero{border-radius:18px;padding:20px 24px;margin-bottom:18px;color:#fff;
+    background:linear-gradient(120deg,#4f46e5,#6366f1 55%,#7c3aed);box-shadow:0 14px 34px rgba(79,70,229,.3)}
+  .um-h1{font-size:23px;font-weight:900;margin:0;display:flex;align-items:center;gap:10px}
+  .um-sub{margin:6px 0 0;font-size:12.5px;color:#e0e7ff}
+
+  .um-card{background:#fff;border:1px solid #e8edf6;border-radius:14px;padding:16px 18px;margin-bottom:14px;box-shadow:0 6px 18px rgba(15,23,42,.06)}
+  .um-card.new{border:1px dashed #c7d2fe;background:#fbfcff}
+  .um-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .um-title{font-size:15px;font-weight:800;color:#0f172a;display:flex;align-items:center;gap:8px}
+  .um-badge{font-size:10px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+  .um-badge.super{background:#fee2e2;color:#b91c1c}
+  .um-badge.staff{background:#e0e7ff;color:#4338ca}
+  .um-badge.off{background:#f1f5f9;color:#64748b}
+  .um-badge.you{background:#dcfce7;color:#15803d}
+  .um-spacer{flex:1}
+
+  .um-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 16px;margin-top:12px}
+  .um-fld{display:flex;flex-direction:column;gap:4px}
+  .um-lbl{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#64748b}
+  .um-in,.um-sel{border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;font-family:inherit;font-size:13px;color:#0f172a;outline:none;background:#fff;width:100%;box-sizing:border-box}
+  .um-in:focus,.um-sel:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.14)}
+
+  .um-perm-h{font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:#475569;margin:14px 0 6px}
+  .um-perms{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:6px 14px}
+  .um-chk{display:flex;align-items:center;gap:8px;font-size:13px;color:#1f2937;cursor:pointer;padding:4px 0}
+  .um-chk input{width:16px;height:16px;cursor:pointer}
+  .um-flags{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid #eef2f6}
+
+  .um-actions{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid #eef2f6}
+  .um-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #e2e8f0;background:#fff;color:#334155;font-family:inherit;font-size:13px;font-weight:700;padding:9px 16px;border-radius:10px;cursor:pointer}
+  .um-btn:hover{background:#f8fafc}
+  .um-btn.primary{background:#4338ca;color:#fff;border-color:#4338ca}
+  .um-btn.primary:hover{background:#3730a3}
+  .um-btn.danger{color:#dc2626;border-color:#fecaca}
+  .um-btn.danger:hover{background:#fef2f2}
+  .um-btn:disabled{opacity:.5;cursor:default}
+  .um-status{font-size:12px;font-weight:700}
+  .um-status.ok{color:#16a34a}.um-status.err{color:#dc2626}
+  .um-ro{font-size:12px;color:#94a3b8;font-style:italic;margin-top:10px}
+  .um-material{font-size:18px}
+</style>
+
+</head>
+<body>
+
+  
+  <div class="cp-topbar">
+    <div class="cp-topbar-brand">
+      <div class="cp-topbar-logo">JG</div>
+      <div>
+        <div class="cp-topbar-title">Jivo Group</div>
+        <div class="cp-topbar-subtitle">Control Panel</div>
+      </div>
+    </div>
+    <div class="cp-topbar-ticker">
+      <span class="cp-live-pill"><span class="cp-live-dot"></span>LIVE</span>
+      
+        <span class="cp-ticker-item"><b>REALISE</b>₹171.07/L</span>
+      
+    </div>
+  </div>
+
+  
+  <div class="cp-shell">
+    <aside class="cp-sidebar">
+
+      <div class="cp-brand">
+        <div class="cp-brand-logo">JG</div>
+        <div class="cp-brand-copy">
+          <div class="cp-brand-title">Jivo Group</div>
+          <div class="cp-brand-subtitle">Control Panel</div>
+        </div>
+        <button class="cp-sidebar-close" type="button" onclick="toggleControlPanelSidebar()" title="Pin / unpin sidebar" aria-label="Pin or unpin control panel sidebar">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      
+        <div class="cp-section-label">Main Menu</div>
+        <nav class="cp-nav">
+          <a class="cp-nav-item " href="/" title="Control Panel">
+            <span class="material-icons">space_dashboard</span>Control Panel
+          </a>
+          
+          <a class="cp-nav-item " href="/realise/" title="Sales">
+            <span class="material-icons">bolt</span>Sales
+          </a>
+          
+        </nav>
+
+        
+        <div class="cp-section-label">Reports</div>
+        <nav class="cp-nav">
+          
+          
+          
+          <div class="cp-nav-group" data-group="reports-sales">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Sales" aria-label="Toggle Sales reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">trending_up</span>Sales</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/compare-sales/" title="Compare Sales">
+                <span class="material-icons">bar_chart</span>Compare Sales
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/sales-cn/" title="Sales vs Credit Notes">
+                <span class="material-icons">receipt_long</span>Sales vs CN
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/hidden-sales/" title="Hidden Customer Sales">
+                <span class="material-icons">visibility_off</span>Hidden Sales
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/sales-flow/" title="Sales Document Flow">
+                <span class="material-icons">account_tree</span>Sales Doc Flow
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/dispatch-details/" title="Dispatch Details">
+                <span class="material-icons">local_shipping</span>Dispatch Details
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/realise-calculator/" title="Realise Calculator">
+                <span class="material-icons">calculate</span>Realise Calculator
+              </a>
+              <a class="cp-nav-item " href="/realise/rate-list/" title="Rate List">
+                <span class="material-icons">sell</span>Rate List
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group" data-group="reports-accounts">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Accounts" aria-label="Toggle Accounts reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">account_balance</span>Accounts</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/customer-aging/" title="Customer Aging">
+                <span class="material-icons">account_balance_wallet</span>Customer Aging
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/required-credit-limit/" title="Required Credit Limit">
+                <span class="material-icons">credit_score</span>Required Credit Limit
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/open-payments/" title="Open Payments">
+                <span class="material-icons">account_balance</span>Open Payments
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/claims/" title="Claims">
+                <span class="material-icons">gavel</span>Claims
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/reconciliation/" title="Wellness–Mart Reconciliation">
+                <span class="material-icons">account_tree</span>Wellness–Mart Recon
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group" data-group="reports-inventory">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Inventory & Production" aria-label="Toggle Inventory & Production reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">inventory</span>Inventory &amp; Production</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/inventory/stock-available/" title="Stock Available">
+                <span class="material-icons">warehouse</span>Stock Available
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/non-inventory/" title="Finished Goods — Non Moving Stock">
+                <span class="material-icons">inventory_2</span>Non Moving Stock
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/oih-vs-stock/" title="OIH vs Stock">
+                <span class="material-icons">compare_arrows</span>OIH vs Stock
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/production/" title="Production Plan">
+                <span class="material-icons">precision_manufacturing</span>Production Plan
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/daily-production/" title="Daily Production Transaction">
+                <span class="material-icons">factory</span>Daily Production
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group" data-group="reports-master">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Master Data" aria-label="Toggle Master Data">
+              <span class="cp-nav-group-lead"><span class="material-icons">dataset</span>Master Data</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/customer-master/" title="Customer Master">
+                <span class="material-icons">contacts</span>Customer Master
+              </a>
+              
+            </div>
+          </div>
+          
+          
+          
+        </nav>
+        
+
+        
+        <div class="cp-section-label">Admin</div>
+        <nav class="cp-nav">
+          <a class="cp-nav-item active" href="/users/" title="User Management">
+            <span class="material-icons">manage_accounts</span>Users
+          </a>
+        </nav>
+        
+
+        <div class="cp-user-badge">
+          <div class="cp-avatar">PR</div>
+          <div>
+            <div class="cp-user-name">preshit</div>
+            <div class="cp-user-role">admin</div>
+          </div>
+        </div>
+        <form class="cp-logout-form" method="post" action="/accounts/logout/">
+          <input type="hidden" name="csrfmiddlewaretoken" value="vTMXjWw1aYRdnKpybGDlbje7DVjZ9RSidpLRiVr3wtVp45hX5QwwAI58k8xlSQDx">
+          <button type="submit" class="cp-logout-btn">Sign out</button>
+        </form>
+      
+
+    </aside>
+
+    <button class="cp-sidebar-open" type="button" onclick="setControlPanelSidebar(true)" title="Open sidebar" aria-label="Open control panel sidebar">
+      <span class="material-icons">menu</span>
+    </button>
+
+    <main class="cp-main">
+      
+<div class="um-wrap">
+  <div class="um-hero">
+    <h1 class="um-h1"><span class="material-icons">manage_accounts</span>User Management</h1>
+    <p class="um-sub">Create users and grant access per report — no Django admin needed. Changes apply on the user's next page load.</p>
+  </div>
+
+  <div id="umCreate"></div>
+  <div id="umList"></div>
+</div>
+
+    </main>
+  </div>
+
+  <script>
+    window.loginUser = {"id": 12, "username": "preshit", "display_name": "preshit", "email": "", "is_staff": true, "is_superuser": false, "groups": ["claims_viewer", "compare_sales_viewer", "customer_aging_viewer", "customer_master_viewer", "daily_production_viewer", "dispatch_details_viewer", "hidden_sales_viewer", "oih_vs_stock_viewer", "open_payments_viewer", "production_viewer", "realise_admin", "realise_calculator_viewer", "reconciliation_viewer", "required_credit_viewer", "sales_cn_viewer", "sales_flow_viewer", "stock_viewer"], "group_permission_codenames": ["inventory.view_stock_available"], "permission_codenames": ["inventory.view_stock_available", "realise.add_cityowner", "realise.add_maingroupmaster", "realise.add_monthlytarget", "realise.add_segmenttarget", "realise.add_statemaster", "realise.add_targetmaster", "realise.add_targetnode", "realise.add_territorymapping", "realise.add_territoryproducttarget", "realise.change_cityowner", "realise.change_maingroupmaster", "realise.change_monthlytarget", "realise.change_segmenttarget", "realise.change_statemaster", "realise.change_targetmaster", "realise.change_targetnode", "realise.change_territorymapping", "realise.change_territoryproducttarget", "realise.delete_cityowner", "realise.delete_maingroupmaster", "realise.delete_monthlytarget", "realise.delete_segmenttarget", "realise.delete_statemaster", "realise.delete_targetmaster", "realise.delete_targetnode", "realise.delete_territorymapping", "realise.delete_territoryproducttarget", "realise.view_cityowner", "realise.view_maingroupmaster", "realise.view_monthlytarget", "realise.view_segmenttarget", "realise.view_statemaster", "realise.view_targetmaster", "realise.view_targetnode", "realise.view_territorymapping", "realise.view_territoryproducttarget"], "role": "admin", "type_filter": "", "permissions": {"can_edit": true, "can_realise": true, "can_inventory": false, "inventory_can_edit": false, "can_stock_available": true, "can_non_inventory": true, "can_reconciliation": true, "can_production": true, "can_daily_production": true, "can_oih_vs_stock": true, "can_compare_sales": true, "can_sales_cn": true, "can_hidden_sales": true, "can_customer_master": true, "can_open_payments": true, "can_dispatch_details": true, "can_realise_calculator": true, "can_sales_flow": true, "can_claims": true, "can_customer_aging": true, "can_required_credit_limit": true, "can_sales": false, "can_expenses": false, "can_salaries": false, "can_cogs": false}, "can_edit": true, "can_realise": true, "can_inventory": false, "inventory_can_edit": false, "can_stock_available": true, "can_non_inventory": true, "can_reconciliation": true, "can_production": true, "can_daily_production": true, "can_oih_vs_stock": true, "can_compare_sales": true, "can_sales_cn": true, "can_hidden_sales": true, "can_customer_master": true, "can_open_payments": true, "can_dispatch_details": true, "can_realise_calculator": true, "can_sales_flow": true, "can_claims": true, "can_customer_aging": true, "can_required_credit_limit": true, "can_sales": false, "can_expenses": false, "can_salaries": false, "can_cogs": false};
+
+    function setControlPanelSidebar(open) {
+      document.body.classList.toggle('cp-sidebar-collapsed', !open);
+      var sb = document.querySelector('.cp-sidebar');
+      if (sb) sb.classList.remove('cp-sb-peek');   // pinning/unpinning clears any hover-peek
+      try { localStorage.setItem('cpSidebarOpen', open ? '1' : '0'); } catch (err) {}
+    }
+    // Pin (expand & lock) when collapsed; unpin (back to hover-rail) when expanded.
+    function toggleControlPanelSidebar() {
+      setControlPanelSidebar(document.body.classList.contains('cp-sidebar-collapsed'));
+    }
+
+    // Expand/collapse a sidebar nav group (e.g. Analytical Reports); remember the choice.
+    function toggleNavGroup(btn) {
+      var g = btn.closest('.cp-nav-group');
+      if (!g) return;
+      var open = g.classList.toggle('open');
+      try { localStorage.setItem('cpNavGroup_' + (g.dataset.group || 'g'), open ? '1' : '0'); } catch (err) {}
+    }
+    // Restore each group's last state — unless the server already opened it (active child).
+    (function () {
+      document.querySelectorAll('.cp-nav-group').forEach(function (g) {
+        if (g.classList.contains('open')) return;
+        try { if (localStorage.getItem('cpNavGroup_' + (g.dataset.group || 'g')) === '1') g.classList.add('open'); } catch (err) {}
+      });
+    })();
+
+    (function () {
+      try {
+        if (localStorage.getItem('cpSidebarOpen') === '0') {
+          document.body.classList.add('cp-sidebar-collapsed');
+        }
+      } catch (err) {}
+    })();
+
+    // Smart hover: while collapsed, hovering the rail expands it (overlay); a short delay
+    // before collapse prevents flicker if the cursor briefly leaves the edge.
+    (function () {
+      var sb = document.querySelector('.cp-sidebar');
+      if (!sb) return;
+      var timer = null;
+      sb.addEventListener('mouseenter', function () {
+        if (timer) { clearTimeout(timer); timer = null; }
+        if (document.body.classList.contains('cp-sidebar-collapsed')) sb.classList.add('cp-sb-peek');
+      });
+      sb.addEventListener('mouseleave', function () {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function () { sb.classList.remove('cp-sb-peek'); }, 180);
+      });
+    })();
+
+  </script>
+  
+<script id="um-users" type="application/json">[{"id": 12, "username": "preshit", "first_name": "", "email": "", "is_active": true, "is_staff": true, "is_superuser": false, "realise_role": "realise_admin", "groups": ["claims_viewer", "compare_sales_viewer", "customer_aging_viewer", "customer_master_viewer", "daily_production_viewer", "dispatch_details_viewer", "hidden_sales_viewer", "oih_vs_stock_viewer", "open_payments_viewer", "production_viewer", "realise_calculator_viewer", "reconciliation_viewer", "required_credit_viewer", "sales_cn_viewer", "sales_flow_viewer", "stock_viewer"]}, {"id": 15, "username": "karanpreet", "first_name": "", "email": "", "is_active": true, "is_staff": false, "is_superuser": false, "realise_role": "realise_admin", "groups": ["compare_sales_viewer", "customer_aging_viewer", "stock_viewer"]}]</script>
+<script id="um-catalog" type="application/json">{"realise_roles": [{"value": "", "label": "No Realise access"}, {"value": "realise_premium", "label": "Realise \u2014 Premium (viewer)"}, {"value": "realise_commodity", "label": "Realise \u2014 Commodity (viewer)"}, {"value": "realise_admin", "label": "Realise \u2014 Admin (full + can edit targets)"}], "page_perms": [{"group": "customer_aging_viewer", "label": "Customer Aging"}, {"group": "oih_vs_stock_viewer", "label": "OIH vs Stock"}, {"group": "compare_sales_viewer", "label": "Compare Sales"}, {"group": "sales_cn_viewer", "label": "Sales vs Credit Notes"}, {"group": "hidden_sales_viewer", "label": "Hidden Customer Sales"}, {"group": "customer_master_viewer", "label": "Customer Master"}, {"group": "sales_flow_viewer", "label": "Sales Document Flow"}, {"group": "claims_viewer", "label": "Claims"}, {"group": "required_credit_viewer", "label": "Required Credit Limit"}, {"group": "open_payments_viewer", "label": "Open Payments"}, {"group": "dispatch_details_viewer", "label": "Dispatch Details"}, {"group": "realise_calculator_viewer", "label": "Realise Calculator"}, {"group": "reconciliation_viewer", "label": "Wellness\u2013Mart Reconciliation"}, {"group": "stock_viewer", "label": "Stock Available"}, {"group": "production_viewer", "label": "Production Plan"}, {"group": "daily_production_viewer", "label": "Daily Production Transaction"}], "module_perms": [{"group": "inventory_viewer", "label": "Inventory"}, {"group": "sales_viewer", "label": "Sales"}, {"group": "expenses_viewer", "label": "Expenses"}, {"group": "salaries_viewer", "label": "Salaries"}, {"group": "cogs_viewer", "label": "COGS"}]}</script>
+<script>
+(function(){
+  var USERS   = JSON.parse(document.getElementById('um-users').textContent || '[]');
+  var CATALOG = JSON.parse(document.getElementById('um-catalog').textContent || '{}');
+  var IS_SUPER = false;
+  var SELF_ID  = 12;
+  var SAVE_URL = "/api/users/save/";
+  var DEL_URL  = "/api/users/delete/";
+  function csrf(){var m=document.querySelector('meta[name=csrf-token]');return m?m.content:'';}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+  function roleOptions(sel){
+    return (CATALOG.realise_roles||[]).map(function(r){
+      return '<option value="'+esc(r.value)+'"'+(r.value===sel?' selected':'')+'>'+esc(r.label)+'</option>';
+    }).join('');
+  }
+  function permGrid(list, selected){
+    var set = {}; (selected||[]).forEach(function(g){set[g]=1;});
+    return list.map(function(p){
+      return '<label class="um-chk"><input type="checkbox" data-group="'+esc(p.group)+'"'+(set[p.group]?' checked':'')+'>'+esc(p.label)+'</label>';
+    }).join('');
+  }
+  // Render the editable body shared by the create form and each user card.
+  function bodyHTML(u, isNew){
+    u = u || {};
+    var canEdit = isNew || IS_SUPER || !u.is_superuser;       // staff can't edit superusers
+    var flags = '';
+    if(IS_SUPER){
+      flags = '<div class="um-flags">'+
+        '<label class="um-chk"><input type="checkbox" data-k="is_staff"'+(u.is_staff?' checked':'')+'>Staff (can manage users)</label>'+
+        '<label class="um-chk"><input type="checkbox" data-k="is_superuser"'+(u.is_superuser?' checked':'')+'>Superuser (full access)</label>'+
+      '</div>';
+    }
+    var pwLabel = isNew ? 'Password' : 'New password (blank = keep)';
+    return '<div class="um-grid">'+
+        (isNew ? '<div class="um-fld"><span class="um-lbl">Username</span><input class="um-in" data-k="username" autocomplete="off" placeholder="e.g. ravi"></div>'
+               : '') +
+        '<div class="um-fld"><span class="um-lbl">Full name</span><input class="um-in" data-k="first_name" autocomplete="off" value="'+esc(u.first_name)+'"></div>'+
+        '<div class="um-fld"><span class="um-lbl">Email</span><input class="um-in" data-k="email" type="email" autocomplete="off" value="'+esc(u.email)+'"></div>'+
+        '<div class="um-fld"><span class="um-lbl">'+pwLabel+'</span><input class="um-in" data-k="password" type="password" autocomplete="new-password" placeholder="'+(isNew?'set a password':'••••••')+'"></div>'+
+        '<div class="um-fld"><span class="um-lbl">Realise role</span><select class="um-sel" data-k="realise_role">'+roleOptions(u.realise_role||'')+'</select></div>'+
+        '<div class="um-fld"><span class="um-lbl">Account</span><label class="um-chk"><input type="checkbox" data-k="is_active"'+(isNew||u.is_active?' checked':'')+'>Active (can log in)</label></div>'+
+      '</div>'+
+      flags+
+      '<div class="um-perm-h">Report pages</div><div class="um-perms" data-perms="page">'+permGrid(CATALOG.page_perms||[], u.groups)+'</div>'+
+      '<div class="um-perm-h">Modules</div><div class="um-perms" data-perms="module">'+permGrid(CATALOG.module_perms||[], u.groups)+'</div>'+
+      (canEdit ? '' : '<div class="um-ro">Read-only — only a superuser can edit a superuser account.</div>');
+  }
+
+  function collect(card){
+    var data = {};
+    card.querySelectorAll('[data-k]').forEach(function(el){
+      var k = el.getAttribute('data-k');
+      data[k] = (el.type==='checkbox') ? el.checked : el.value;
+    });
+    var groups = [];
+    card.querySelectorAll('[data-perms] input[type=checkbox]').forEach(function(c){ if(c.checked) groups.push(c.getAttribute('data-group')); });
+    data.groups = groups;
+    return data;
+  }
+  function post(url, data){
+    return fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},body:JSON.stringify(data)})
+      .then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); });
+  }
+  function setStatus(card, msg, ok){
+    var s = card.querySelector('.um-status'); if(!s) return;
+    s.textContent = msg; s.className = 'um-status '+(ok?'ok':'err');
+  }
+
+  function renderCreate(){
+    var box = document.getElementById('umCreate');
+    box.innerHTML = '<div class="um-card new" id="umNew">'+
+      '<div class="um-title"><span class="material-icons um-material">person_add</span>Create new user</div>'+
+      bodyHTML({}, true)+
+      '<div class="um-actions"><button type="button" class="um-btn primary" data-act="create"><span class="material-icons um-material">check</span>Create user</button>'+
+      '<span class="um-status"></span></div>'+
+    '</div>';
+  }
+  function renderList(){
+    var box = document.getElementById('umList');
+    box.innerHTML = USERS.map(function(u){
+      var canEdit = IS_SUPER || !u.is_superuser;
+      var badges = '';
+      if(u.is_superuser) badges += '<span class="um-badge super">Superuser</span>';
+      else if(u.is_staff) badges += '<span class="um-badge staff">Staff</span>';
+      if(!u.is_active) badges += '<span class="um-badge off">Inactive</span>';
+      if(u.id===SELF_ID) badges += '<span class="um-badge you">You</span>';
+      var actions = canEdit
+        ? '<button type="button" class="um-btn primary" data-act="save"><span class="material-icons um-material">save</span>Save</button>'+
+          (u.id!==SELF_ID ? '<button type="button" class="um-btn danger" data-act="delete"><span class="material-icons um-material">delete</span>Delete</button>' : '')+
+          '<span class="um-status"></span>'
+        : '';
+      return '<div class="um-card" data-id="'+u.id+'">'+
+        '<div class="um-row"><div class="um-title"><span class="material-icons um-material">person</span>'+esc(u.username)+
+          (u.first_name?' <span style="font-weight:600;color:#64748b">· '+esc(u.first_name)+'</span>':'')+'</div>'+
+          '<div class="um-spacer"></div>'+badges+'</div>'+
+        (canEdit ? bodyHTML(u, false) : '')+
+        (actions ? '<div class="um-actions">'+actions+'</div>' : (canEdit?'':'<div class="um-ro">Read-only — only a superuser can edit a superuser account.</div>'))+
+      '</div>';
+    }).join('') || '<div class="um-card">No users.</div>';
+  }
+
+  document.getElementById('umCreate').addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('[data-act="create"]'); if(!b) return;
+    var card = document.getElementById('umNew'); var data = collect(card);
+    if(!data.username || !data.username.trim()){ setStatus(card,'Username is required',false); return; }
+    if(!data.password){ setStatus(card,'A password is required',false); return; }
+    b.disabled = true; setStatus(card,'Creating…',true);
+    post(SAVE_URL, data).then(function(res){
+      if(res.ok && res.j.status==='ok'){ location.reload(); }
+      else { setStatus(card, res.j.error||'Failed', false); b.disabled=false; }
+    }).catch(function(){ setStatus(card,'Failed',false); b.disabled=false; });
+  });
+
+  document.getElementById('umList').addEventListener('click', function(e){
+    var card = e.target.closest && e.target.closest('.um-card[data-id]'); if(!card) return;
+    var id = +card.getAttribute('data-id');
+    var save = e.target.closest('[data-act="save"]');
+    var del  = e.target.closest('[data-act="delete"]');
+    if(save){
+      var data = collect(card); data.id = id;
+      save.disabled = true; setStatus(card,'Saving…',true);
+      post(SAVE_URL, data).then(function(res){
+        if(res.ok && res.j.status==='ok'){ setStatus(card,'Saved ✓',true); }
+        else { setStatus(card, res.j.error||'Failed', false); }
+        save.disabled = false;
+      }).catch(function(){ setStatus(card,'Failed',false); save.disabled=false; });
+    } else if(del){
+      if(!confirm('Delete this user? This cannot be undone.')) return;
+      del.disabled = true; setStatus(card,'Deleting…',true);
+      post(DEL_URL, {id:id}).then(function(res){
+        if(res.ok && res.j.status==='ok'){ location.reload(); }
+        else { setStatus(card, res.j.error||'Failed', false); del.disabled=false; }
+      }).catch(function(){ setStatus(card,'Failed',false); del.disabled=false; });
+    }
+  });
+
+  renderCreate();
+  renderList();
+})();
+</script>
+
+
+</body>
+</html>

@@ -123,7 +123,7 @@ Every value below is **205 of 205** on Oil PICK & SHIP service-GRPO lines unless
 | `TaxCode` | `IGST@18` (198) · `RIGST@5` (4) · `IGST@5` (3) | §6 |
 | `LocationCode` | **`2`** | **(C-0025)** |
 | `SACEntry` | **`2`** = `9967` Freight | Bev uses `3`; **Mart wrongly uses `-426` freight *insurance*** |
-| `SalesPersonCode` | `115` | |
+| `SalesPersonCode` | **not a constant** — 55 · 11 · 43 · 115 all in live use | the *Buyer* box. Clone it from that transporter's last GRPO: ARNAV is `11` GINNI VG on 309/309 lines FY26-27, PICK & SHIP is `115` |
 | `U_BilltyNumber` | the bilty / LR number | |
 | `U_BiltyDate` | the bilty date | filled on 63 of 205 — but where filled it **sets `DocDate`** |
 | **`U_ARNO`** | **JIVO's own sale invoice number** | off the bilty's "Invoice No." / "Party Inv. No." |
@@ -135,27 +135,168 @@ Every value below is **205 of 205** on Oil PICK & SHIP service-GRPO lines unless
 | `U_Recvd_Qty` | **0 — never used on transport** | C-0025's "put the qty here" is the *fuel*-bill rule |
 | `Quantity` | 0 | service lines have none |
 
-### `U_UNE_LTS` — litres, and the one thing this sheet cannot yet source
+### `U_UNE_LTS` — litres. **Answered 2026-08-27: read it, do not compute it.**
 
-`U_UNE_LTS` is **litres of oil on that invoice's consignment**, and it is **not** the
-bilty's "Actual Kgs" — that is gross weight including packaging (6,720 L shipped as
-6,500 kg).
+`U_UNE_LTS` is **litres of oil on that sale invoice**, and the operator does not work it
+out. **JIVO's own AR invoice PDF prints it.** At the foot of every tax invoice, beside the
+terms, there is a **Product Category** block:
 
-What the figure *is* arithmetically is settled: on GRPO `25886` it is `1,277` =
-400 × 1 L + 800 × 1 L + 77 × 1 L, the pack maths of the consignment. Reproducing that
-sum from JIVO's own invoice lines lands **2,384 of 3,267 Oil freight lines (73 %)**
-exactly or within 2 % (pack size parsed from the item name — `OITM.SVolume` is 0 on
-every finished good; kg packs convert at 0.91 kg/L, and 95 lines were keyed 1 : 1
-without the density step). *Measured 2026-08-27.*
+```
+Category      Litre     Gross Wt
+OLIVE       400.0000    407.8580
+OLIVE       320.0000    318.6100
+CANOLA      300.0000    297.6810
+SOYABEAN    600.0000    574.7800
+Total        1620.00    1598.93     <- this is U_UNE_LTS
+```
 
-**Where the operator reads it off the paper is an open question — ask before keying.**
-Until it is answered, take litres from the bilty or from the operator, and never
-silently compute it out of SAP. → [[GRPO-Playbook#Open questions]]
+Invoice `626080289` prints `Total 1620.00`; GRPO `26081` line 3 carries `U_UNE_LTS =
+1620`. Exact, no arithmetic. **Take the "Total" figure from the Product Category block —
+never the Gross Wt column** (that is packaging-inclusive: 1,620 L shipped as 1,598.93 kg).
 
-**Reconcile against the bilty, not against SAP.** The bilty's printed "VALUE Rs." is
-the consignment value the line is costing; on `NCR-4137` that was ₹17,47,066. Check
-the paper against itself — invoice numbers, packages, value, freight — and let the
-read-back in §10 confirm what SAP stored.
+**Where the PDF comes from: the `logistics@jivo.in` mailbox.** PPC (`ppc.ho@jivo.in`)
+mails each invoice as `<DocNum> <party>.pdf` to logistics on the dispatch day. Find it
+with the invoice number the *bilty* gave you:
+
+```bash
+mail-cli/jmail search --text "626080289" --since 2026-08-01
+mail-cli/jmail pull <uid> --out ./bills
+```
+
+This is **not** a contradiction of C-0038. C-0038 forbids *hunting SAP for an AR invoice
+that might match a bilty* — that join is 43.8 % reliable and must never be used. Here the
+bilty **hands you the invoice number in writing**; you then open that exact invoice's PDF.
+The bilty stays the sole key. The invoice is looked up, never searched for.
+
+<details><summary>If the PDF is genuinely unavailable — the fallback, and its error rate</summary>
+
+litres = Σ (pack litres × pieces), with weight packs converted at **0.91 kg/L**
+(measured: median 1.09890 L/kg over 1,068 purely weight-packed invoices = 1 ÷ 0.91 exactly;
+831 of them land on 1.099 to three places). `OITM.U_UNE_TOTL`, `U_UNE_TOTB` and `SVolume`
+are **NULL on every finished good** — the figure is computed by the invoice print layout,
+not stored, which is why it cannot be queried out of SAP.
+
+Reproduces the keyed `U_UNE_LTS` on **4,174 of 6,229 Oil freight lines exactly (67.0 %),
+4,649 within 2 % (74.6 %)**. *Measured 2026-08-27.* A quarter wrong is why this is a
+fallback and not the method.
+</details>
+
+### Dim1 (Variety) — the biggest single PRODUCT by litres **(C-0048, confirmed by the desk)**
+
+**Gurcharan, via Daman, 2026-08-27:** *"When there is multiple products in a single invoice,
+then the product with the maximum litre is selected."*
+
+**The word that matters is *product*.** It is **not** the oil type added up across pack
+sizes. Invoice `626080289` prints:
+
+```
+OLIVE      400.0000     <- 5 LTR tins
+OLIVE      320.0000     <- 1 LTR
+CANOLA     300.0000
+SOYABEAN   600.0000     <- biggest single product  ==> Dim1 = SOYABEAN
+Total     1620.00
+```
+
+Olive *totals* 720 L, but no single olive product beats soyabean's 600, so the line is
+**SOYABEAN**. Reading it as "the oil type with the most litres" gives OLIVE and is wrong —
+that error is what made this document look like an operator exception for half a day.
+
+> **Still open — ask before keying, it is the only ambiguity left.** When one oil appears
+> **twice at two pack sizes**, are the two rows added or kept separate? `26081` keeps them
+> separate. But on **75 of the 131** past Oil lines where the two readings diverge, the
+> keyed value matches the *added* total instead. It only bites on split-pack invoices —
+> everywhere else both readings agree. → Open question 1a
+
+## 4A · Worked example — bilty `7339`, the whole chain end to end
+
+The one fully-traced real GRPO. Oil, **DocEntry `26081`** / DocNum `2026086780`, keyed by
+**GURCHARAN (USER19)** on 2026-08-26 for a bilty dated 2026-08-13. Everything below was
+read back out of `OPDN`/`PDN1`.
+
+**Three papers, three different jobs — and none of them is optional:**
+
+| Paper | Where it comes from | What only it can tell you |
+|---|---|---|
+| **The bilty** (`7339.pdf`) | the transporter, scanned | bilty no · bilty date · vehicle · **the sale-invoice numbers** · consignee · total boxes |
+| **The AR invoice PDFs** | `logistics@jivo.in`, mailed by `ppc.ho@jivo.in` | **litres** (Product Category → Total) · **category/variety** · box count · destination state |
+| **The transporter's invoice book** (`.xlsx`) | mailed by the transporter from his own address | **the freight amount**, split Freight + Labour · the weight |
+
+> **The freight figure is not on the bilty.** `7339`'s bilty has an empty "Total Freight"
+> box. The number came from ARNAV's own mailed workbook, sheet `401` (bill ATS:401,
+> 2026-08-24), row: `7339 | 626080290/289 | 3200 kg | DELHI | LEBOUR 820 | Freight 4500 |
+> **TOTAL 5320**`. `DocTotal` = 5,320. **Freight + Labour go in as one figure** — there is
+> no separate labour line.
+>
+> ```bash
+> mail-cli/jmail search --sender <transporter> --since 2026-08-01 --with-attachments
+> ```
+
+**The bilty under-reports the invoices — cross-check on box count.** `7339` writes
+`Bill No. 626080290, 289`, but the GRPO has **three** lines. The bilty's description says
+**"205 Box Edible Oil"**, and the invoices print their box counts: `626080296` = 50 Box,
+`626080290` = 50 Box, `626080289` = 105 Box → **205**. Two invoices only add to 155.
+**Always add the invoices' "Total … Box" up to the bilty's package count before keying** —
+that is what catches a missing invoice, and there is nothing in SAP that will.
+
+**The keyed document:**
+
+| Header | |
+|---|---|
+| `CardCode` | `VENDA000956` ARNAV TRANSPORT SERVICE |
+| `NumAtCard` | `7339` — the G.R. No, and nothing else |
+| `DocDate` = `TaxDate` = `DocDueDate` | `2026-08-13` — **the bilty date**, not the keying date |
+| `Series` `2477` (`GRPO0826`) · `BPLId` `2` FACTORY · `DocType` `S` | service, Aug-26, factory branch |
+| `DocTotal` | `5,320` · `VatSum 0` (reverse charge) · `WTSum 0` |
+
+| # | `U_ARNO` | `OcrCode` Dim1 | `U_UNE_LTS` | `Price` |
+|---|---|---|---|---|
+| 1 | `626080296` | SUNFLOWR | 1,000 | 1,652 |
+| 2 | `626080290` | CANOLA | 600 | 991 |
+| 3 | `626080289` | SOYABEAN | 1,620 | **2,677** |
+| | | | **3,220** | **5,320** |
+
+Common to all three lines: `AcctCode 5670001` · `Dscription EDIBLE OIL` · `TaxCode
+RIGST@5` · `LocCode 2` · `SacEntry 2` (9967) · `OcrCode2 08-2026` · `OcrCode3 Del Bkhp` ·
+`OcrCode5 DL` · `U_Remarks BILTY NO 7339` · `U_BilltyNumber 7339` · `U_BiltyDate
+2026-08-13` · `U_CardCode CUSTA000178` · `U_Sub_Account SALES` · `U_UNE_CALI/CUNT Y`.
+
+### How the freight splits — pro-rata on litres, last line absorbs the rounding
+
+₹5,320 ÷ 3,220 L = **₹1.65217/L**, applied to each invoice's litres:
+
+| | litres | exact | keyed |
+|---|---|---|---|
+| 1 | 1,000 | 1,652.17 | 1,652 |
+| 2 | 600 | 991.30 | 991 |
+| 3 | 1,620 | 2,676.52 | **2,677** |
+| | | 5,319.99 | **5,320** |
+
+Round each line to whole rupees, then **set the last line to `total − Σ(the others)`** so
+the document ties to the bilty exactly. Never leave a 1-rupee gap and never adjust the
+total. **Confirmed by the desk (C-0048): "divide the total amount litre-wise provided in each
+invoice no."** Holds on **1,120 of 1,253 multi-line Oil freight GRPOs (89.4 %)** with every
+line inside the rounding tolerance. Where it does not, check the transporter's own workbook
+first — if that sheet apportions per invoice itself, its figures win.
+
+### What the handwriting on the bilty is — and is not
+
+`7339` carries a Gurmukhi note across the description box, next to the consignee's stamp
+and the printed *"We are not responsible for Leakage & Breakage"* clause. Best reading
+(**low confidence — verify with the operator, the hand is poor**):
+
+> `3 — ਪੇਟੀ ਸੋਇਆ ਪਾਊਚ …` — 3 boxes soya pouch
+> `1 — " ਸਨਫਲਾਵਰ …` — 1 box sunflower ("`"`" = ditto)
+
+It reads as a **delivery-side damage/shortage note written by the consignee**, not an
+entry instruction: the counts (3, 1) match no invoice, box or litre figure on the
+document. **Nothing from it was keyed** — `U_Remarks` is `BILTY NO 7339` and nothing more.
+The two numbers written in the printed boxes *are* keyed-relevant, and both are easy to
+misread: the **"Rate" box holds `3200/KG`, which is the weight**, and the vehicle number
+`DL1LAK7060` is written *above* a struck-out one.
+
+**Standing rule from this document: a handwritten mark on a bilty is either a damage note
+(ignore, but tell the operator) or a correction to a printed box (use the correction).
+If you cannot tell which, ask — do not key it into `U_Remarks`.**
 
 ## 5 · The five dimensions
 
@@ -332,7 +473,9 @@ and pressing **Add**.
 
 | # | Question | Why it is open | Who answers |
 |---|---|---|---|
-| 1 | **Where does the operator read `U_UNE_LTS` off the bilty?** | It is not the "Actual Kgs" column (gross weight, packaging included). The arithmetic matches the consignment's pack maths on 73 % of lines, but the *paper source* has never been confirmed — and after C-0038 it cannot be quietly computed out of SAP | Daman / Gurcharan |
+| 1 | ~~Where does the operator read `U_UNE_LTS` off the bilty?~~ | **ANSWERED 2026-08-27 — he does not read it off the bilty.** It is printed on JIVO's own AR invoice PDF, in the Product Category block, as `Total … Litre`; the PDFs sit in `logistics@jivo.in`. §4 | closed |
+| 1a | **On a mixed-category invoice, which category becomes Dim1?** | No rule reproduces the operator: best is top-by-litres at 84.5 % over 2,164 mixed lines, and the one fully-traced document is an exception to it | Gurcharan |
+| 1b | **When the freight does not split pro-rata on litres (17 % of multi-line GRPOs), what is the basis?** | Weight and box count both fail to explain them; the transporter's own workbook may already apportion | Gurcharan |
 | 2 | Should GRPO get an Active *Always* approval template like A/P's `103`? | §11 — every GRPO from this CLI lands at `WddStatus '-'` and reaches no approver | Accounts |
 
 ---

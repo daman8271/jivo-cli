@@ -1,0 +1,49 @@
+ASN (Advance Shipping Notices) read-only probes — Thu Jul 23 20:27:45 UTC 2026
+JWT exp 2026-07-24 18:29:59 UTC (VALID at run time). Token REDACTED.
+Host: fcc.zepto.co.in  Header: authorization: <jwt> (no Bearer)
+======================================================
+
+### PROBE 1: GET_ASN_SUMMARY_LIST
+GET https://fcc.zepto.co.in/api/v1/asn/list
+HTTP 404
+{"success":false,"timestamp":"2026-07-23T20:27:45.696891998Z","error":{"message":"No ASN found for asn number: list"}}
+----
+
+### PROBE 2: GET_ASN_LISTING
+GET https://fcc.zepto.co.in/api/v1/asn/filter
+HTTP 404
+{"success":false,"timestamp":"2026-07-23T20:27:46.791341455Z","error":{"message":"No ASN found for asn number: filter"}}
+----
+
+### PROBE 3: EXTERNAL_LOCATION_FILTER_LIST
+GET https://fcc.zepto.co.in/api/v1/asn/user/mh-list
+HTTP 404
+404 page not found
+
+----
+
+### PROBE 4: EXTERNAL_VENDOR_FILTER_LIST
+GET https://fcc.zepto.co.in/api/v1/asn/user/vendor-list
+HTTP 404
+404 page not found
+
+----
+
+======================================================
+SUMMARY
+- 4 read-only GET probes fired (~1/s), then stopped. Cap 8; halted at 4 (no
+  further pure-GET reads possible without a valid ASN id, and no 401/403/429/WAF hit).
+- KEY EVIDENCE: token is VALID (no 401) — the ASN service answered with structured
+  JSON. GET /api/v1/asn/list and /api/v1/asn/filter both returned
+  {"success":false,...,"error":{"message":"No ASN found for asn number: <list|filter>"}}
+  => the server routes GET /api/v1/asn/{anything} to the by-id handler
+  (getAsnDetailsById). So GET_ASN_LISTING ("api/v1/asn/filter") and
+  GET_ASN_SUMMARY_LIST ("api/v1/asn/list") are almost certainly invoked as POST
+  with a {filters}/paging body in the app (the "GET_" prefix is a naming
+  convention, not the HTTP verb) — method to confirm.
+- /api/v1/asn/user/mh-list and /user/vendor-list => "404 page not found" (plain,
+  not the ASN-service JSON) — those filter paths need the app's x-proxy-target
+  routing (the proven Sales flow sends x-proxy-target: brand-analytics); the ASN
+  filter-list proxy target was not guessed (no blind POST/target fuzzing).
+- 2xx PROVEN: 0. All ASN endpoints remain DOCUMENTED (not proven). Re-run once a
+  valid ASN id + the correct method/x-proxy-target are captured from a live grid.

@@ -28,13 +28,15 @@ jivo-ecom-pp-cli dashboard top-skus --platform blinkit --json
 jivo-ecom-pp-cli --help                        # full command tree
 ```
 
-A login token is already stored (valid ~24h). When it expires, refresh it:
+A login token is already stored. **It is valid for 1 HOUR, not 24** (verified
+2026-08-29 by decoding the token's own `exp` claim). When it expires, renew it
+from the refresh token — see "Renewing the token" below — or log in again:
 
 ```bash
 # Recommended (password not visible in `ps`/history):
-JIVO_ECOM_EMAIL='ecom4@jivo.in' JIVO_ECOM_PASSWORD='********' jivo-ecom-pp-cli auth login
+JIVO_ECOM_EMAIL='<your-account>@jivo.in' JIVO_ECOM_PASSWORD='********' jivo-ecom-pp-cli auth login
 # or pipe it:
-printf '%s' '********' | jivo-ecom-pp-cli auth login --email ecom4@jivo.in --password-stdin
+printf '%s' '********' | jivo-ecom-pp-cli auth login --email <your-account>@jivo.in --password-stdin
 ```
 
 ---
@@ -50,10 +52,50 @@ Swiggy Instamart, Zepto, Zomato**.
 - **NOT cookies.** The `.jivo.in` cookies are analytics only (`_ga`, `_fbp`, …) and
   do not authenticate.
 - Auth is a **JWT bearer token**: `POST /api/auth/login` with `{email, password}`
-  returns a ~24h `access` token, sent as `Authorization: Bearer <token>` on every call.
+  returns an `access` token **valid 1 hour**, sent as `Authorization: Bearer <token>`
+  on every call, plus a `refresh` token **valid 30 days**.
 - The CLI's `auth login` does this exchange and stores the token at
   `~/.config/jivo-ecom-pp-cli/config.toml` (mode 0600). The password is never stored.
 - You can also bypass login by exporting `JIVO_ECOM_TOKEN=<jwt>` (env wins over config).
+
+### Renewing the token without a password (added 2026-08-29)
+
+`POST /api/auth/refresh` with `{"refresh": "<refresh-token>"}` returns a fresh
+`access` **and a fresh `refresh`** — the endpoint **rotates**: the refresh token
+you sent is invalidated on use, so the new one must be written back or the chain
+breaks permanently and you need the browser again.
+
+Endpoint discovery note: it is `/api/auth/refresh` with **no trailing slash**.
+`/api/auth/refresh/`, `/api/token/refresh` and `/api/token/refresh/` all 404.
+
+Helper scripts (Mac Air, not in this repo — they sit next to the config and are
+0600/0700 because the refresh token is a 30-day credential):
+
+```
+~/.config/jivo-ecom-pp-cli/refresh.token         # the 30-day token, 0600
+~/.config/jivo-ecom-pp-cli/renew.sh              # refresh -> prints new access, rotates+saves
+~/.config/jivo-ecom-pp-cli/renew-and-store.sh    # the above + 'auth set-token'
+~/.local/bin/ecom                                # wrapper: auto-renews under 5 min left
+```
+
+`ecom <any cli args>` decodes the stored token's `exp`, renews if it is nearly
+dead, then forwards to the CLI — so the 1-hour expiry stops mattering:
+
+```bash
+ecom doctor
+ecom platform stats --platform blinkit --json
+ecom --renew        # force a renewal, run nothing
+```
+
+If a refresh returns `token_not_valid`, the 30-day window is over. Re-grab both
+tokens from Chrome DevTools -> Console on ecom.jivo.in:
+
+```js
+copy(localStorage.token + "\n" + localStorage.refreshToken)
+```
+
+The CLI has **no `auth refresh` command** — `auth` is only
+`login / logout / set-token / setup / status`. That is why these scripts exist.
 
 ---
 
@@ -71,7 +113,7 @@ warning may go to **stderr** (parse with `... --json 2>/dev/null | jq .`).
 | `tables` | dynamic warehouse table browser (41 tables) | `tables counts`, `tables columns <table>`, `tables data <table>`, `tables distinct <table> <column>` |
 | `master` | product & FC master data (paginated) | `master products --search oil --page-size 20`, `master fcs` |
 | `notifications` | notifications + unread count | `notifications list` |
-| `platform <slug> ...` | per-platform dashboards | `platform stats blinkit`, `platform primary amazon`, `platform secondary zepto`, `platform ads amazon`, `platform price amazon`, `platform pos amazon`, `platform soh-doh amazon`, … (19 leaves) |
+| `platform <slug> ...` | per-platform dashboards | `platform stats --platform blinkit`, `platform primary --platform amazon`, `platform ads --platform amazon`, `platform price --platform amazon`, `platform soh-doh --platform amazon`, … (19 leaves). **The slug is a `--platform` flag, not a positional argument.** |
 
 Platform slugs: `amazon bigbasket blinkit citymall flipkart flipkart_grocery jiomart swiggy zepto zomato`.
 
@@ -132,7 +174,7 @@ go build -buildvcs=false -o ~/go/bin/jivo-ecom-pp-cli ./cmd/jivo-ecom-pp-cli
 A session named **`app`** is running. Attach with `tmux attach -t app`.
 
 ## Security notes
-- The stored JWT is owner-readable only (0600) and expires in ~24h.
+- The stored JWT is owner-readable only (0600) and expires in **1 hour**.
 - `auth login` posts only over HTTPS (refuses a non-https base URL).
 - Never paste the password into shell history — use the env-var or `--password-stdin` forms above.
 - `auth logout` clears the stored token.

@@ -1,0 +1,19 @@
+# Brand Analytics (Sales, Live & Landing) read-only probe transcript
+# date: 2026-07-24
+# token: ecom1@jivo.in / vendor JWT reused from captures/vendor/23-sales-list.txt
+#        (sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, exp 2026-07-13 18:29:59 UTC) — EXPIRED at probe time (now 2026-07-24)
+# method: curl -s -X GET, authorization: <jwt redacted, NO Bearer prefix>, accept: application/json, normal UA
+# host: fcc.zepto.co.in (brand-analytics-web / brand-analytics-mobile / ads landing-page)
+###########################################################
+
+## PROBE 1: GET https://fcc.zepto.co.in/brand-analytics-web/api/v1/access-management/user
+#  (chosen: unambiguous pure-read GET — name contains "user"; const GET_ENTITY_DATA_FOR_MOBILE_APP peer)
+HTTP_STATUS: 401
+BODY (first 40 lines):
+{"message":"Token expired","code":401}
+
+###########################################################
+Result: HTTP 401 "Token expired". Per guardrail (stop immediately on any 401/403/429), probing halted
+after probe 1. No endpoint upgraded to PROVEN; all 25 endpoints remain documented (not probed).
+A fresh ecom1@jivo.in JWT is required to upgrade any of these to PROVEN and to capture response shapes.
+Probe budget for this section: 1 of 8 used, then halted.

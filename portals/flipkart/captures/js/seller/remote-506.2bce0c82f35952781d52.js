@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcoe=self.webpackChunkcoe||[]).push([[506],{50506:(t,i,a)=>{a.r(i),a.d(i,{default:()=>s});a(60954);var c=a(74848);const s=function(){return(0,c.jsx)("img",{src:"https://img1a.flixcart.com/fk-sp-static/images/data-highlight-widget-icon.svg",alt:"data-highlight-widget-icon"})}}}]);

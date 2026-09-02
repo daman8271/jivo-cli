@@ -1,0 +1,35 @@
+# Market, Geo & Consumer Insights — read-only probe transcript
+# Section slug: market-geo-consumer | lane: ads | host: fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token payload: sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, emailId ecom1@jivo.in,
+#   roleName "External Super Ads Admin", exp 1783967399 = Mon Jul 13 2026 18:29:59 UTC
+#   = EXPIRED at probe time (run 2026-07-24, ~11 days lapsed).
+# Rules: curl -s -X GET only, read-only allowlist, cap 8 probes, ~1 req/s, STOP on any 401/403/429/WAF.
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/brand-analytics-web/api/v1/market-share/get-new-users-percentage
+# const MARKET_SHARE_GET_NEW_USERS_PERCENTAGE — new-users-% market-share read.
+# Chosen because it is a clean unambiguous pure-GET read: matches "get"/"user" allowlist words,
+#   no download/export/generate/report-request/create/update/delete/otp/sign-out keyword, no body.
+# Headers: authorization: <jwt-REDACTED>, accept: application/json, origin/referer https://brands.zepto.co.in,
+#   normal desktop Chrome User-Agent.
+HTTP 401
+{"message":"Token expired","code":401}
+
+======================================================
+HALT: received 401 {"message":"Token expired","code":401} on the first probe.
+Per READ-ONLY guardrails, stopped immediately after the first 401.
+Probes fired: 1.  2xx PROVEN: 0.  All Market/Geo/Consumer endpoints remain DOCUMENTED (not probed).
+
+Remaining pure-GET reads left as DOCUMENTED (not probed) — would probe with a fresh token
+(allowlist-eligible: path contains get/list/search/analytics/config/user, none excluded):
+  - GET brand-analytics-web/api/v1/market-share/top-of-search        (MARKET_SHARE_GET_TOP_OF_SEARCH — "search")
+  - GET brand-analytics-web/api/v1/persona/list                      (persona list — "list")
+  - GET brand-analytics-web/api/v1/persona/graph-configs             (persona graph config — "config")
+  - GET api/v1/geo-analytics/slider-data                             (GI_GET_SLIDER_DATA — "analytics")
+  - GET api/v1/geo-analytics/store-locations                         (GI_GET_..._STORE_LOCATIONS — "analytics")
+  - GET api/v1/geo-analytics/store-metrics                           (GI_GET_..._STORE_METRICS — "analytics")
+  - GET api/v1/geo-analytics/sales-scorecard                         (GI_GET_..._SALES_SCORECARD — "analytics")
+# All 39 endpoints in this section are pure reads (analytics/geo/persona/market-share data fetches);
+# there are no write/export endpoints in this section. Most require date-range + brand/manufacturer
+# query params to return a 2xx body, so a fresh-token re-run should pass those.

@@ -1,0 +1,25 @@
+# Creative Management read-only probe transcript
+# date: 2026-07-24T00:00:00Z (probe fired 2026-07-23/24 local)
+# token: ecom1@jivo.in JWT (exp 2026-07-13 18:29:59 UTC) — EXPIRED at probe time (now > 2026-07-23)
+# method: curl -s -X GET, authorization: <jwt redacted> (no Bearer prefix), accept: application/json, normal UA
+# guardrail: stop immediately on any 401/403/429 or WAF/challenge; cap 8 probes @ ~1 req/s
+###########################################################
+
+## PROBE 1: GET https://fcc.zepto.co.in/ads-bff/api/v1/creative-management/inventory/details?brand_id=b3550d5d-fc71-47b0-af4f-f221f909b936
+# (const GET_INVENTORY_AD_UNITS — pure read; allowlist match: inventory/details)
+HTTP_STATUS: 429
+BODY (first 40 lines):
+<empty body>
+
+###########################################################
+Result: HTTP 429 (rate-limited / token expired). Per guardrail (any 401/403/429 halts probing),
+probing STOPPED after probe 1. No endpoint upgraded to PROVEN. All Creative Management endpoints
+remain DOCUMENTED (not probed) — extracted from the ads code-split chunk
+captures/js/ads/1183.8940422c8268d8dc.js (CREATIVE_MANAGEMENT + CAMPAIGN_CONFIG constant maps).
+
+Endpoints that WOULD have been probe-eligible (pure GET, allowlist-matched, no deny word) on a
+fresh token: inventory/details (GET_INVENTORY_AD_UNITS), bundle-config (GET_CAMPAIGN_ASSETS_FORMATS
+/ GET_USER_TARGETING_AUDIENCE_REACH). NOT probe-eligible: banners, metadata, bundles (v1/v2 — same
+path also serves a POST upload), banner-generation & banner-generation/{id} (name contains
+"generation" -> excluded by the read-only allowlist). banner (CREATE_BANNERS, POST) and the
+banner-generation POST are writes/side-effects held out of scope entirely.

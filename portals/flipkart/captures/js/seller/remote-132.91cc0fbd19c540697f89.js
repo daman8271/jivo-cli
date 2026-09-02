@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcoe=self.webpackChunkcoe||[]).push([[132],{84132:(e,s,t)=>{t.r(s),t.d(s,{default:()=>a});t(60954);var c=t(74848);const a=function(){return(0,c.jsx)("img",{src:"https://static-assets-web.flixcart.com/fk-p-fk-sellerhub/images/ChatIcon1698343295.svg",alt:"customer-feedback-widget-icon"})}}}]);

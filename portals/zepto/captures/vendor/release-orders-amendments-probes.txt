@@ -1,0 +1,9 @@
+# Release Orders & Amendment Requests — read-only probe transcript
+# date: 2026-07-24  token: JWT for ecom1@jivo.in (exp 1783967399 = EXPIRED at probe time)
+# JWT redacted as <JWT>. Header: authorization: <JWT> (no Bearer)
+
+## PROBE 1: GET https://fcc.zepto.co.in/contractservice/api/v1/amendment-requests/list
+HTTP_STATUS: 401
+BODY (first 40 lines):
+{"code":401,"message":"Token expired"}
+## RESULT: token expired -> auth failure expected; remaining endpoints marked documented (not probed).

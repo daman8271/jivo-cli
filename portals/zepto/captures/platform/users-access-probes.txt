@@ -1,0 +1,26 @@
+# Users & Access Management — read-only probe transcript
+# Section slug: users-access | lane: platform | hosts: auth-backend.zepto.co.in, fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token payload: sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, emailId ecom1@jivo.in,
+#   roleName "External Super Ads Admin", iat 1783887610, exp 1783967399
+#   = exp Mon Jul 13 2026 18:29:59 UTC (23:59:59 IST) -> EXPIRED at probe time (run 2026-07-24).
+# Rules: curl -s -X GET only, read-only allowlist, cap 8 probes, ~1 req/s, STOP on any 401/403/429/WAF.
+======================================================
+
+### PROBE 1: GET https://auth-backend.zepto.co.in/api/v1/access-management/roles
+# const GET_ROLES_LIST — access-management roles list.
+# Chosen because it is an unambiguous pure-GET read: matches "roles"/"list" allowlist, no path param,
+#   no body, no download/export/generate/mutate keyword. Static role-list lookup.
+# Headers: authorization: <jwt-REDACTED>, accept: application/json, origin/referer brands.zepto.co.in,
+#   normal User-Agent.
+HTTP 401
+{"code":401,"message":"Token expired"}
+
+======================================================
+HALT: received 401 {"code":401,"message":"Token expired"} on first probe.
+Per READ-ONLY guardrails, stopped immediately after the first 401.
+Probes fired: 1.  2xx PROVEN: 0.  All Users & Access endpoints remain DOCUMENTED (not probed).
+# The captured JWT lapsed ~11 days before this run; re-run with a fresh token to upgrade
+# documented -> PROVEN and capture response shapes. Auth/base confirmed live by the proven sibling
+# flows on fcc.zepto.co.in (SALES/INVENTORY api/v1/reports*, ads /ads-bff/api/v1) using the identical
+# authorization: <jwt> header (no Bearer prefix).

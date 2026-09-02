@@ -1,0 +1,2 @@
+(()=>{"use strict";let t=!1;t||(function(t,e,o){console.log("Vibes Host Script is loading");const c=o.createElement("script");c.setAttribute("type","module"),c.setAttribute("src","".concat(t,"/").concat(e)),o.getElementsByTagName("head")[0].appendChild(c)}("https://d2xz78i0uf24on.cloudfront.net","vibes_host.7afc1aff.js",document),t=!0)})();
+//# sourceMappingURL=vibes_loader.latest.js.map

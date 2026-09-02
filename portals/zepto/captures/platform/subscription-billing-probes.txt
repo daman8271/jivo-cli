@@ -1,0 +1,31 @@
+# Subscription & Billing — read-only probe transcript
+# Section slug: subscription-billing | lane: platform | host: fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token payload: sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, iat 1783887610, exp 1783967399
+#   = exp Mon Jul 13 2026 18:29:59 UTC (23:59:59 IST) -> EXPIRED at probe time (run 2026-07-24).
+# Rules: curl -s -X GET only, read-only allowlist, cap 8 probes, ~1 req/s, STOP on any 401/403/429/WAF.
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/brand-analytics-web/api/v1/subscription/pricing-details
+# const GET_PRICING_DETAILS_WEB — subscription plan pricing details (static plan/price lookup).
+# Chosen because it is an unambiguous pure-GET read: matches "details"/"get" allowlist, no path param,
+#   no body, no download/export/generate/subscribe/mutate keyword. Read-only plan-catalog lookup.
+# Headers: authorization: <jwt-REDACTED>, accept: application/json, normal User-Agent.
+HTTP 401
+{"code":401,"message":"Token expired"}
+
+======================================================
+HALT: received 401 {"code":401,"message":"Token expired"} on first probe.
+Per READ-ONLY guardrails, stopped immediately after the first 401.
+Probes fired: 1.  2xx PROVEN: 0.  All Subscription & Billing endpoints remain DOCUMENTED (not probed).
+
+Remaining pure-GET reads left as DOCUMENTED (not probed) — would probe with a fresh token:
+  - GET /brand-analytics-web/api/v1/subscription/user-details        (GET_SUBSCRIPTION_DETAILS_WEB)
+  - GET /brand-analytics-web/api/v1/subscription/visibility-details  (GET_PLAN_VISIBILITY_DETAILS_WEB)
+  - GET /api/v1/subscription/pricing-details      (bare enum-suffix variant of pricing-details)
+  - GET /api/v1/subscription/user-details          (bare enum-suffix variant of user-details)
+  - GET /api/v1/subscription/visibility-details    (bare enum-suffix variant of visibility-details)
+Never probed (WRITES, held out of scope): all subscribe/free-tier + subscribe/on-credit POSTs
+  (web + mobile + bare) — these CREATE / change a subscription and must never be fired.
+Auth/base confirmed live by proven sibling flows on the same host (SALES/INVENTORY fcc /api/v1/reports*,
+ads fcc /ads-bff/api/v1) with identical `authorization: <jwt>` (no Bearer). Re-run with a fresh token.

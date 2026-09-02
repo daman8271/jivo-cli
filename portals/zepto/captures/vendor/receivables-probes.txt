@@ -1,0 +1,30 @@
+Receivables & Non-Trade Vendor read-only probes — Fri Jul 24 2026
+JWT read from captures/vendor/23-sales-list.txt (single authorization token, no Bearer prefix).
+JWT exp 2026-07-13 18:29:59 UTC (EXPIRED; today 2026-07-24). Token REDACTED below.
+Host: fcc.zepto.co.in (bifrost gateway). Header x-proxy-target: brand-analytics
+(the VMS receivable/non-trade-vendor service sits behind the brand-analytics proxy target).
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/vms/api/v1/non-trade-vendor/filter  (GET_NON_TRADE_VENDORS)
+HTTP 404
+{"message":"Provided api path is not found in bifrost - Api path not found: /vms/api/v1/non-trade-vendor/filter","code":404}
+-> bifrost has no GET route for this path. The sibling receivable-vendor/filter is wired in the
+   client as l.Kp.post({path:"/vms/api/v1/receivable-vendor/filter"}) — i.e. these "filter" list
+   endpoints are POST-with-{filters}-body reads, so a bare GET does not resolve. Not PROVEN.
+======================================================
+
+### PROBE 2: GET https://fcc.zepto.co.in/vms/api/v1/non-trade-vendor/kyc  (GET_KYC_DETAILS)
+HTTP 401
+{"errors":[{"code":401,"error":"Error in getting claims from token signature is invalid"}],"data":null}
+-> Token signature invalid (expired/rotated JWT). STOP per READ-ONLY guardrails (401).
+======================================================
+
+HALT: received 401 on probe 2. Per READ-ONLY guardrails, stopped immediately.
+Probes fired: 2. 2xx PROVEN: 0. Same expired/rotated-token state as invoicing /
+purchase-orders / rtv / release-orders-amendments / vendor-reports probes.
+
+All remaining Receivables READ endpoints left as DOCUMENTED (not probed):
+  - POST /vms/api/v1/receivable-vendor/filter   (GET_RECEIVABLE_VENDORS; getReceivablesVendorsList, POST-body read)
+  - POST /vms/api/v1/non-trade-vendor/filter    (GET_NON_TRADE_VENDORS; POST-body read — GET 404'd above)
+  - GET  /vms/api/v1/non-trade-vendor/kyc        (GET_KYC_DETAILS; needs vendor code + valid token)
+Re-run with a fresh token (authorization header, no Bearer prefix) to upgrade these to PROVEN.

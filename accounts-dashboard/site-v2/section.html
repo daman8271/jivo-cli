@@ -1,0 +1,178 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Section · JIVO Accounts</title>
+<script>(function(){var t;try{t=localStorage.getItem('jivo-theme')}catch(e){}
+ document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark')})();</script>
+<link rel="icon" href="favicon.svg"><link rel="stylesheet" href="assets/board.css">
+</head><body>
+<div id="shell"></div>
+<main class="wrap" id="main"><div class="empty" id="boot">Loading SAP data…</div></main>
+<div class="wrap"><footer id="foot"></footer></div>
+
+<script type="module">
+/* section.html — the generic section renderer.
+ *
+ * Eleven sections have a hand-built page that knows their traps. This one
+ * renders ANY section from its slice alone, which matters for two reasons:
+ * the pipeline is section-agnostic and already carries sections nobody has
+ * written a page for (budget-heads, factory-indirect arrived on 2026-08-22),
+ * and a new section should appear on the board rather than fall off it.
+ *
+ * It makes NO claim to understand a section's traps. It says so on the page,
+ * because a generic table that looks like a curated one is the more dangerous
+ * of the two.
+ */
+import {
+  manifest, slice, company, onRefresh, money, num, scale, esc,
+  shell, crumb, kpiRow, table, note, empty, hrefSection, hrefParty, hrefDerivation
+} from './assets/core.js';
+import { hbars, stackedBars } from './assets/charts.js';
+
+const qs  = new URLSearchParams(location.search);
+const SEC = qs.get('sec') || '';
+const main = document.getElementById('main');
+
+const MONEY = /(_INR|_L|_CR|_GROSS|_NET|_AMT|_OPEN|_BAL|_COST|_VAL|_SPEND)$/i;
+const COUNT = /(_N|_CNT|_COUNT|_DOCS|_LINES|_ROWS)$/i;
+const LABELISH = /(NAME|LABEL|KEY|CODE|CATEGORY|SCOPE|KIND|TYPE|GROUP|MONTH|STATUS)/i;
+/* A roll-up row stacked with its own components: summing the column would count
+ * the section twice. Every faceted section here uses one of these markers. */
+const ROLLUP = new Set(['ZZ_TOTAL', 'TOTAL', 'ALL', 'GRAND TOTAL']);
+
+function card(title, src, body, blurb){
+  const c = document.createElement('section');
+  c.className = 'card';
+  const h = document.createElement('div');
+  h.className = 'card-head';
+  h.innerHTML = '<h2>' + esc(title) + '</h2>' + (src ? '<span class="src">' + esc(src) + '</span>' : '');
+  c.appendChild(h);
+  if (blurb){ const p = document.createElement('p'); p.className = 'lede'; p.textContent = blurb; c.appendChild(p); }
+  if (body) c.appendChild(body);
+  return c;
+}
+
+async function render(){
+  const co = company();
+  const m  = await manifest();
+  main.textContent = '';
+
+  const meta = (m.sections || {})[SEC];
+  if (!SEC || !meta){
+    main.appendChild(crumb([{label:'Overview', href:'index.html?co=' + co}, {label:'Section'}]));
+    main.appendChild(empty({
+      what: SEC ? ('There is no section called “' + SEC + '” in this build.')
+                : 'No section was named.',
+      why:  'Add ?sec=<id> to the address. This build carries: ' +
+            Object.keys(m.sections || {}).sort().join(', ') + '.',
+      href: 'index.html?co=' + co, hrefLabel: 'Back to the overview'
+    }));
+    return;
+  }
+
+  shell({ title: SEC, subtitle: 'Rendered generically from the section slice', section: SEC });
+  main.appendChild(crumb([
+    {label:'Overview', href:'index.html?co=' + co},
+    {label: SEC}
+  ]));
+
+  if (meta.status !== 'ok'){
+    main.appendChild(empty({
+      what: 'This section did not produce data in this build (' + meta.status + ').',
+      why:  meta.error || 'No reason was recorded by the pipeline.',
+      hint: 'The figures below, if any, are from whatever the section did return — they are not a zero.'
+    }));
+  }
+
+  const s = await slice(SEC, co);
+  const rows = (s && s.summary) || [];
+
+  /* KPIs, if any section spec has been written for this section yet. */
+  const kp = (m.kpis || {})[co] || {};
+  const mine = Object.keys(kp).filter(k => kp[k] && kp[k].section === SEC);
+  if (mine.length){
+    main.appendChild(card('Headline figures', mine.length + ' measured',
+      kpiRow(mine.slice(0, 12).map(id => ({
+        id, label: kp[id].label, value: kp[id].value, unit: kp[id].unit
+      })))));
+  } else {
+    main.appendChild(card('Headline figures', null, empty({
+      what: 'No headline figures have been defined for this section yet.',
+      why:  'Headline figures come from a section spec, which records each number’s formula, ' +
+            'its terms, what it excludes and how to check it. This section has no spec, so the ' +
+            'board will not invent one — the table below is the raw result, unabridged.'
+    })));
+  }
+
+  if (!rows.length){
+    main.appendChild(card('Rows', null, empty({
+      what: 'The section returned no rows for ' + co + '.',
+      why:  'That is not a zero. It means the query matched nothing for this company in this build.'
+    })));
+    return;
+  }
+
+  /* Pick a label column and the widest money columns, and chart the top of it.
+   * Deliberately conservative: only chart a facet whose rows are components,
+   * never a set that mixes a roll-up row with the parts it rolls up. */
+  const keys  = Object.keys(rows[0]);
+  const facet = keys.find(k => /^(SCOPE|KIND|ROW_TYPE|SECTION)$/i.test(k));
+  const label = keys.find(k => LABELISH.test(k) && k !== facet) || keys[0];
+  const monies = keys.filter(k => MONEY.test(k));
+
+  let charted = rows;
+  let scopeNote = '';
+  if (facet){
+    const groups = {};
+    rows.forEach(r => { const v = String(r[facet]).toUpperCase();
+                        if (!ROLLUP.has(v)) (groups[v] = groups[v] || []).push(r); });
+    const biggest = Object.keys(groups).sort((a,b) => groups[b].length - groups[a].length)[0];
+    if (biggest){
+      charted = groups[biggest];
+      scopeNote = 'Charting the “' + biggest + '” facet only. This section stacks a roll-up row ' +
+                  'and several independent facets in one result set, so charting every row at ' +
+                  'once would count the section more than once.';
+    }
+  }
+
+  if (monies.length && charted.length > 1){
+    const col = monies[0];
+    const items = charted
+      .map(r => ({ label: String(r[label] ?? '—'), value: scale(r[col], col) || 0 }))
+      .filter(x => x.value)
+      .sort((a,b) => Math.abs(b.value) - Math.abs(a.value))
+      .slice(0, 15);
+    if (items.length){
+      main.appendChild(card('Largest by ' + col, col,
+        hbars(items, { table: true, value: v => money(v) }), scopeNote));
+    }
+  }
+
+  const units = {}; keys.forEach(k => { units[k] = MONEY.test(k) ? 'INR' : (COUNT.test(k) ? 'count' : undefined); });
+  const links = {};
+  keys.forEach(k => { if (/^CARD_CODE$/i.test(k)) links[k] = v => hrefParty(v, co); });
+
+  main.appendChild(card('Every row', meta.rows ? (meta.rows[co] + ' rows') : null,
+    table(rows, { cols: keys, units, links, co, facets: facet ? [facet] : [] }),
+    'Column names are SAP’s own. A section with its own page explains what each one means; ' +
+    'this generic view deliberately does not guess.'));
+
+  const n = note(SEC);
+  if (n) main.appendChild(card('What the pipeline records about this section', 'pipeline/notes/' + SEC + '.md', n));
+
+  main.appendChild(card('Why this page is generic', null, empty({
+    what: 'This section has no hand-built page.',
+    why:  'The eleven curated sections each carry the traps that make a naive reading of them ' +
+          'wrong — which rows are roll-ups, which columns are lakhs, which flags do not mean ' +
+          'what their names say. None of that is known here. Read the figures above as the raw ' +
+          'query result, not as a settled measure.'
+  })));
+}
+
+shell({ title: SEC || 'Section', section: SEC });
+render().catch(e => {
+  main.textContent = '';
+  main.appendChild(empty({ what: 'This page failed to render.', why: String(e && e.message || e) }));
+});
+onRefresh(() => render().catch(() => {}));
+</script>
+</body></html>

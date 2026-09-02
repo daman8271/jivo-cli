@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkimsampling=self.webpackChunkimsampling||[]).push([["376"],{8411(e,s,l){l.r(s),l.d(s,{component:()=>t});var n=l(3849),p=l(7235);let t=()=>(0,n.jsx)(p.Outlet,{})}}]);

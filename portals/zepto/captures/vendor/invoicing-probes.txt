@@ -1,0 +1,46 @@
+# Invoicing (Self-Invoice & Off-Invoice) — read-only probe transcript
+# Section slug: invoicing | lane: vendor | host: fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, no Bearer prefix). Token REDACTED below.
+# Token exp = epoch 1783967399 = Mon Jul 13 23:59:59 IST 2026; probe run 2026-07-24 -> EXPIRED.
+# Rules: curl -s -X GET only, read-only allowlist, cap 8, ~1 req/s, STOP on any 401/403/429/WAF.
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/invoice/api/v1/self-invoice/non-trade/summary
+# const GET_INVOICE_SUMMARY — self-invoice (NTV) summary (pure read; matches "summary" allowlist)
+# Headers: authorization: <jwt-REDACTED>, accept: application/json, normal User-Agent
+HTTP 404
+{"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/self-invoice/non-trade/summary","code":404}
+# Bifrost gateway routed the `invoice/` service prefix but the upstream had no such path at probe time.
+# 404 is not a stop condition; not a 2xx -> NOT promoted to PROVEN. Continue.
+
+======================================================
+
+### PROBE 2: GET https://fcc.zepto.co.in/invoice/api/v1/self-invoice/non-trade/list
+# const GET_INVOICE_LIST — self-invoice (NTV) list (pure read; matches "list" allowlist)
+HTTP 404
+{"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/self-invoice/non-trade/list","code":404}
+# Same bifrost routing shape as probe 1. Not a stop condition; not 2xx. Continue.
+
+======================================================
+
+### PROBE 3: GET https://fcc.zepto.co.in/contractservice/api/v1/off-invoice/off-invoice-rules/get-config
+# const GET_OFF_INVOICE_CONFIG — off-invoice rules config (pure read; matches "config" allowlist)
+HTTP 401
+{"code":401,"message":"Token expired"}
+# STOP CONDITION HIT (401 Token expired) on the contractservice host — confirms the shared JWT is expired.
+
+======================================================
+HALT: 401 on probe 3. Per READ-ONLY guardrails, stopped immediately.
+Probes fired: 3 (2x 404 bifrost/no-route, 1x 401 expired). 2xx PROVEN: 0.
+
+Remaining allowlisted GET reads left as DOCUMENTED (not probed):
+  - GET /invoice/api/v1/self-invoice/non-trade/entity-names   (GET_ENTITY_NAMES)
+  - GET /invoice/api/v1/self-invoice/non-trade/gstin-state     (GET_GSTIN_STATE)
+  - GET /invoice/api/v1/self-invoice/non-trade/{id}/details    (getInvoiceDetails; needs invoice id)
+  - GET /invoice/api/v1/self-invoice/non-trade/{id}/documents  (getSelfInvoiceS3Url; needs invoice id)
+  - GET /contractservice/api/v1/off-invoice/off-invoice-rules/{contractId}/tracking (getTracking; needs contract id)
+  - GET /contractservice/api/v1/off-invoice/off-invoice-rules/template   (DOWNLOAD_TEMPLATE; READ file)
+  - GET /contractservice/api/v1/margin-and-incentive/{id}/off-invoice-details-template (READ file)
+
+All endpoints in this section remain: documented (not probed). No response shapes captured.
+Re-run with a fresh (non-expired) JWT to upgrade the summary/list/config/entity-names/gstin-state reads to PROVEN.

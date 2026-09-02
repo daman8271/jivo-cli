@@ -1,0 +1,15 @@
+export type Run = { line: string; code: string; sku: string; head: string; oil: string | null; pieces: number; litres: number; hours: number; flush_min: number; realise: number; rs_per_hour: number; po_backed: boolean; value: number };
+export type Blocked = { code: string; sku: string; want: number; binder: string; binder_name: string };
+export type NewOrder = { docnum: string; customer: string; channel: string; code: string; sku: string; pieces: number; value: number };
+export type Dispatch = { docnum: string; customer: string; channel: string; sku: string; pieces: number; litres: number };
+export type Buy = { code: string; name: string; qty: number; uom: string; lands: string };
+export type Decision = { kind: string; text: string; headroom_l?: number };
+export type Storage = { physical_l: number; ceiling_l: number; pct: number; fg_in_godown_l: number; invoiced_not_trucked_l: number; headroom_l: number };
+export type Day = { date: string; weekday: string; working: boolean; received: { code: string; name: string; qty: number }[]; new_orders: NewOrder[]; runs: Run[]; blocked: Blocked[]; dispatched: Dispatch[]; bought: Buy[]; decisions: Decision[]; flushes: number; made_litres: number; made_value: number; shipped_litres: number; line_util: number; line_hours: Record<string, number>; storage: Storage; book: { plan_left_l: number; po_open_l: number; po_open_value: number }; oil_on_hand_l: number; honesty: { measured: string[]; assumed: string[] } };
+export type Msg = { day: string; dir: "in" | "out"; text: string; tag: string; assumed?: boolean };
+export type Thread = { name: string; whatsapp: string; display: string; title: string; messages: Msg[]; count: number };
+export type Summary = { days: { date: string; working: boolean; made_l: number; value: number; shipped_l: number; util: number; storage_pct: number; runs: number; blocked: number; new_orders: number; bought: number }[]; totals: { made_l: number; value: number; shipped_l: number; orders: number; bought_lines: number; events: number } };
+export type Actuals = { made_l: number; made_pieces: number; skus: number; plan_pct: number; line_utilisation_pct: number; production_days: number; note: string };
+export type Opening = { fg_litres: number; fg_pieces: number; standing_l: number; standing_31jul_l: number; standing_docs: number; oil_l: number; packaging_pieces: number; storage_book_pct: number; storage_physical_l: number; storage_physical_pct: number; backlog_pieces: number; backlog_value: number; at_zero: { code: string; name: string; kind: string }[] };
+export type Inputs = { meta: any; provenance: Record<string, string>; rules: any; lines: Record<string, Record<string, number>>; people: any[]; plan_total_l: number; plan_skus: number; actuals_for_scoring: Actuals; opening: Opening };
+export const LINES = ["JP Machine", "Clear Pack", "10 Head", "6 Head", "Pouch Machine", "Tin Head"];

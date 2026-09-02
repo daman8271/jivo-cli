@@ -1,0 +1,33 @@
+# Payments & Settlements — read-only probe transcript
+# Section slug: payments | lane: vendor | host: fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token payload: sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, iat 1783887610, exp 1783967399
+#   = exp Mon Jul 13 2026 18:29:59 UTC (23:59:59 IST) -> EXPIRED at probe time (run 2026-07-24).
+# Rules: curl -s -X GET only, read-only allowlist, cap 8 probes, ~1 req/s, STOP on any 401/403/429/WAF.
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/api/v1/payment/settlement/sub-type-list
+# const TYPE_FILTER_LIST — settlement (debit/credit note) sub-type filter list.
+# Chosen because it is an unambiguous pure-GET read: matches "list" allowlist, no path param, no body,
+#   no download/export/generate/mutate keyword. Static filter-value lookup.
+# Headers: authorization: <jwt-REDACTED>, accept: application/json, normal User-Agent.
+HTTP 401
+{"message":"Token expired","code":401}
+
+======================================================
+HALT: received 401 {"message":"Token expired","code":401} on first probe.
+Per READ-ONLY guardrails, stopped immediately after the first 401.
+Probes fired: 1.  2xx PROVEN: 0.  All Payments endpoints remain DOCUMENTED (not probed).
+
+Remaining pure-GET reads left as DOCUMENTED (not probed) — would probe with a fresh token:
+  - GET /api/v1/payment/invoice/listing-stat        (GET_INVOICE_SUMMARY)
+  - GET /api/v1/payment/ntv-invoice/listing-stat    (GET_INVOICE_CN_SUMMARY)
+  - GET /api/v1/payment/rv-invoice/listing-stat      (GET_INVOICE_LISTING_STAT)
+  - GET /api/v1/payment/ledger/summary               (const O)
+  - GET /api/v1/payment/payment-advice/reference     (PAYMENT_ADVICE_DETAILS)
+  - GET /vendor/api/v1/payment/ledger/zepto          (GET_ZEPTO_LEDGER_LISTING)
+  - GET /api/v1/payment/payment-doc/{id}             (getPaymentDocById; needs a valid doc id)
+Note: several *filter* endpoints (invoice/ledger/settlement/rv-*) are list reads that in the Zepto
+vendor stack are wired as filtered listings; not probed here (token expired + would need filter params).
+Auth/base confirmed live by proven sibling flows on the same host (SALES/INVENTORY fcc /api/v1/reports*,
+ads fcc /ads-bff/api/v1) with identical `authorization: <jwt>` (no Bearer). Re-run with a fresh token.

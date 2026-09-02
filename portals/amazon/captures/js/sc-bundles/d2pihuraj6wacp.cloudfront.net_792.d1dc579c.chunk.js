@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_amzn_meld_ui=self.webpackChunk_amzn_meld_ui||[]).push([[792],{46605:(e,l,u)=>{u.r(l),u.d(l,{FullPageRoutes:()=>r});var n=u(67294),t=u(89250),a=u(79976);function r(){return n.createElement(a.Z,null,n.createElement(t.j3,null))}l.default=r}}]);

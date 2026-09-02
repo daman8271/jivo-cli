@@ -1,0 +1,1167 @@
+{
+  "section": "vendor-ageing",
+  "title": "Vendor Ageing",
+  "tables": "OPCH OVPM ORPC OCRD",
+  "blurb": "What JIVO really owes each supplier right now, aged on the bill due date, after the money the ledger says was already paid has been netted off the oldest bills first.",
+  "grain": "ONE SUMMARY ROW = ONE VENDOR CARD (OCRD.CardType='S') that has at least one open A/P bill, or a non-zero ledger balance, or an unapplied vendor payment, or an open A/P credit note. Ageing buckets are COLUMNS on that row (B0_NOTDUE..B6_365PLUS), not extra rows, so there is exactly one row per CARD_CODE and no duplicates (verified: 0 duplicate CARD_CODE in all three books). THERE IS NO DETAIL SLICE: vendor-ageing-detail.sql does not exist and data.json's detail object is empty {} for this section — bill-level drill-down has to come from the open-item-list section (DOCTYPE='AP_INV'), which is capped per document type and therefore only partially covers this section's cards. THE COLUMN-LEVEL FACET TRAP: the eleven CO_* columns are company-wide totals computed with SQL window functions and physically repeated, identical, on every single row (verified identical across all 644/88/164 rows). Read a CO_* value off ANY ONE ROW; summing a CO_* column down the table multiplies the company total by the row count (644x in Oil).",
+  "faceted": false,
+  "kpis": [
+    {
+      "id": "ap-trade-open",
+      "label": "JIVO owes external suppliers (credit-adjusted)",
+      "unit": "INR",
+      "column": "ADJ_OPEN",
+      "row_filter": "r.get('ACCT_KIND') == 'TRADE'",
+      "agg": "sum",
+      "formula": "SUM over TRADE cards of ADJ_OPEN, where per card ADJ_OPEN = B0_NOTDUE+B1_1_30+B2_31_60+B3_61_90+B4_91_180+B5_181_365+B6_365PLUS = RAW_OPEN - CREDIT_APPLIED = PAYABLE - UNBACKED_CREDIT. Identical to the broadcast column CO_ADJ_OPEN_TRADE read off any single row.",
+      "terms": [
+        {
+          "label": "Open A/P bills SAP still shows (trade only)",
+          "col": "RAW_OPEN",
+          "op": "+",
+          "source": "OPCH",
+          "note": "SUM(DocTotal - PaidToDate) over DocStatus='O', CANCELED='N', DocDate <= as-of, open amount > 0. This is the naive figure and it is ~9.9x too big on Oil's trade book."
+        },
+        {
+          "label": "Settlements the ledger proves but no bill was matched to",
+          "col": "CREDIT_APPLIED",
+          "op": "-",
+          "source": "JDT1 vs OPCH",
+          "note": "GREATEST(0, SUM(open bills) - GREATEST(0, -ledger balance)). Consumed oldest-due-bill-first with a running window sum before bucketing."
+        },
+        {
+          "label": "Credit-adjusted payable",
+          "col": "ADJ_OPEN",
+          "op": "=",
+          "source": "derived",
+          "note": "The number the board shows. Equals the sum of the seven bucket columns to the paise."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Branch (JIVO's own state GST registrations)",
+          "row_filter": "r.get('ACCT_KIND') == 'BRANCH'",
+          "why": "C-0020"
+        },
+        {
+          "label": "Intercompany (JIVO / Akal group entities outside a BRANCH group)",
+          "row_filter": "r.get('ACCT_KIND') == 'INTERCO'",
+          "why": "C-0005, C-0020"
+        }
+      ],
+      "sql_lines": [
+        246,
+        292
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0020",
+        "C-0021",
+        "C-0023",
+        "C-0005"
+      ],
+      "check": {
+        "method": "Re-implement the whole credit-adjusted ageing from the OTHER section's per-document rows. open-item-list.sql is a separate query with separate joins that emits one row per open document (DOCTYPE='AP_INV') carrying DUE_DATE, DOC_ENTRY, OPEN_AMT and its own independently-derived CARD_BALANCE. For every vendor card where open-item-list carries ALL of that card's bills (len(AP_INV rows) == vendor-ageing N_OPEN_BILLS), redo the FIFO credit consumption and the bucketing in Python and compare bucket-by-bucket. This shares no SQL and no code with the primary route. Measured 2026-08-22: reproduced EXACTLY (every bucket within Re 1) on 21/21 fully-covered Oil cards worth Rs 12.5615 Cr of the Rs 22.6784 Cr headline (55.4% coverage), 1/1 Mart card (Rs 0.00 - Mart's AP_INV rows are dominated by the truncated interco card, so this route is weak for Mart), 56/56 Bev cards worth Rs 1.0931 Cr of Rs 1.3735 Cr (79.6%). Coverage must be reported alongside the delta, never hidden. FULL-COVERAGE COMPLEMENT (state as a second, structural check): sum(PAYABLE) - sum(UNBACKED_CREDIT) over TRADE cards, which reaches the same number through the general ledger (JDT1) and never touches the OPCH bucket sum - verified to 0.00 on all three books.",
+        "recipe": "import datetime; asof=datetime.date.fromisoformat(manifest['as_of']); va={r['CARD_CODE']:r for r in slice('vendor-ageing',co)['summary']}; bills={}; [bills.setdefault(r['CARD_CODE'],[]).append(r) for r in slice('open-item-list',co)['summary'] if r['DOCTYPE']=='AP_INV']; alt=0.0; cov=0.0\nfor cc,bl in bills.items():\n    v=va.get(cc)\n    if not v or v['ACCT_KIND']!='TRADE' or len(bl)!=v['N_OPEN_BILLS']: continue\n    bl.sort(key=lambda r:(r['DUE_DATE'],r['DOC_ENTRY'])); raw=sum(r['OPEN_AMT'] for r in bl)\n    credit=max(0.0, raw-max(0.0,-v['OCRD_BALANCE'])); cum=0.0\n    for r in bl:\n        cum+=r['OPEN_AMT']; alt+=max(0.0, min(r['OPEN_AMT'], cum-credit))\n    cov+=v['ADJ_OPEN']\n# assert abs(alt-cov) < 1.0 ; report coverage = cov / kpi('ap-trade-open')\n# complement (full coverage): sum(max(0,-r['OCRD_BALANCE'])-r['UNBACKED_CREDIT'] for r in va.values() if r['ACCT_KIND']=='TRADE') == kpi('ap-trade-open')",
+        "check_note": "Do NOT 'verify' this by summing ADJ_OPEN a second time, and do NOT compare it to CO_ADJ_OPEN_TRADE and call that independent - CO_ADJ_OPEN_TRADE is the same arithmetic done by a window function in the same query."
+      },
+      "drill": {
+        "page": "payables.html",
+        "params": {
+          "kind": "TRADE",
+          "sort": "ADJ_OPEN",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 226783972.18,
+        "mart": 15939190.16,
+        "bev": 13735491.99
+      }
+    },
+    {
+      "id": "ap-trade-overdue-61p",
+      "label": "Overdue to pay, 61 days and over",
+      "unit": "INR",
+      "column": "ADJ_OVERDUE_60PLUS",
+      "row_filter": "r.get('ACCT_KIND') == 'TRADE'",
+      "agg": "sum",
+      "formula": "SUM over TRADE cards of ADJ_OVERDUE_60PLUS = B3_61_90 + B4_91_180 + B5_181_365 + B6_365PLUS. The column name says 60 but the boundary is DAYS_BETWEEN(DocDueDate, as-of) >= 61 - label it '61 d +'.",
+      "terms": [
+        {
+          "label": "61-90 days past due",
+          "col": "B3_61_90",
+          "op": "+",
+          "source": "OPCH",
+          "note": "credit-adjusted effective open amount, bucketed on DocDueDate"
+        },
+        {
+          "label": "91-180 days past due",
+          "col": "B4_91_180",
+          "op": "+",
+          "source": "OPCH",
+          "note": ""
+        },
+        {
+          "label": "181-365 days past due",
+          "col": "B5_181_365",
+          "op": "+",
+          "source": "OPCH",
+          "note": ""
+        },
+        {
+          "label": "over 365 days past due",
+          "col": "B6_365PLUS",
+          "op": "+",
+          "source": "OPCH",
+          "note": ""
+        },
+        {
+          "label": "Overdue 61 d +",
+          "col": "ADJ_OVERDUE_60PLUS",
+          "op": "=",
+          "source": "derived",
+          "note": ""
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Branch and intercompany",
+          "row_filter": "r.get('ACCT_KIND') != 'TRADE'",
+          "why": "C-0020"
+        }
+      ],
+      "sql_lines": [
+        206,
+        218
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0020",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Same open-item-list FIFO re-implementation as ap-trade-open, but summing only the recomputed 61-90 / 91-180 / 181-365 / 365+ buckets, using DUE_DATE from the per-document rows and the manifest as_of. Verified bucket-exact on every fully-covered card (0 mismatches over Re 1 across Oil 21, Mart 1, Bev 56 cards). This is a real second implementation of the bucketing, not a re-read: it re-derives DAYS_BETWEEN from DUE_DATE in Python.",
+        "recipe": "Run the ap-trade-open recipe, but accumulate into buckets: days=(asof-datetime.date.fromisoformat(r['DUE_DATE'])).days; and add eff to alt61 only when days>=61. Compare alt61 against SUM(ADJ_OVERDUE_60PLUS) restricted to the same covered cards. Second, cheaper invariant that has full coverage: for every row ADJ_OVERDUE_60PLUS must equal B3_61_90+B4_91_180+B5_181_365+B6_365PLUS and ADJ_OPEN-(B0_NOTDUE+B1_1_30+B2_31_60) - both verified with 0 violations on 896 rows."
+      },
+      "drill": {
+        "page": "payables.html",
+        "params": {
+          "kind": "TRADE",
+          "bucket": "61plus"
+        }
+      },
+      "live": {
+        "oil": 200583776.96,
+        "mart": 4559490.4,
+        "bev": 4680842.0
+      }
+    },
+    {
+      "id": "ap-trade-overdue-share",
+      "label": "Share of the trade payable that is 61 d + overdue",
+      "unit": "pct",
+      "column": "ADJ_OVERDUE_60PLUS",
+      "row_filter": "r.get('ACCT_KIND') == 'TRADE'",
+      "agg": "sum",
+      "formula": "100 x SUM(ADJ_OVERDUE_60PLUS | TRADE) / SUM(ADJ_OPEN | TRADE). Rendered as the subtitle under the overdue card in v1.",
+      "terms": [
+        {
+          "label": "Overdue 61 d +",
+          "col": "ADJ_OVERDUE_60PLUS",
+          "op": "+",
+          "source": "derived",
+          "note": "numerator"
+        },
+        {
+          "label": "Trade payable",
+          "col": "ADJ_OPEN",
+          "op": "=",
+          "source": "derived",
+          "note": "denominator - must be the TRADE-filtered total, not CO_ADJ_OPEN"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Branch and intercompany",
+          "row_filter": "r.get('ACCT_KIND') != 'TRADE'",
+          "why": "C-0020"
+        }
+      ],
+      "sql_lines": [
+        272,
+        272
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0020"
+      ],
+      "check": {
+        "method": "Recompute from the complementary side: 100 x (1 - (SUM(B0_NOTDUE)+SUM(B1_1_30)+SUM(B2_31_60)) / SUM(ADJ_OPEN)) over TRADE. This uses three different columns from the ones in the primary route and will disagree if any bucket column has drifted from ADJ_OPEN.",
+        "recipe": "tr=[r for r in slice('vendor-ageing',co)['summary'] if r['ACCT_KIND']=='TRADE']; num=sum(r['B0_NOTDUE']+r['B1_1_30']+r['B2_31_60'] for r in tr); den=sum(r['ADJ_OPEN'] for r in tr); alt=100*(1-num/den)  # oil 88.4471, mart 28.6055, bev 34.0784"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "ap-trade-overdue-share"
+        }
+      },
+      "live": {
+        "oil": 88.4471,
+        "mart": 28.6055,
+        "bev": 34.0784
+      }
+    },
+    {
+      "id": "ap-trade-raw-open",
+      "label": "What SAP calls open, on trade suppliers",
+      "unit": "INR",
+      "column": "RAW_OPEN",
+      "row_filter": "r.get('ACCT_KIND') == 'TRADE'",
+      "agg": "sum",
+      "formula": "SUM over TRADE cards of RAW_OPEN = SUM(OPCH.DocTotal - OPCH.PaidToDate) for DocStatus='O', CANCELED='N', DocDate <= as-of. This is the WRONG number - it is shown only struck through, beside the credit-adjusted one.",
+      "terms": [
+        {
+          "label": "Open A/P bills as SAP reports them",
+          "col": "RAW_OPEN",
+          "op": "=",
+          "source": "OPCH",
+          "note": "Ratio to the truth: Oil 9.87x, Mart 5.02x, Bev 1.98x on the TRADE book. The '~3x' quoted in README.md and the SQL header is the WHOLE-BOOK ratio (Oil 3.03x) and understates the trade distortion by a factor of three."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Branch and intercompany",
+          "row_filter": "r.get('ACCT_KIND') != 'TRADE'",
+          "why": "C-0020"
+        }
+      ],
+      "sql_lines": [
+        114,
+        125
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0021"
+      ],
+      "check": {
+        "method": "Sum OPEN_AMT over open-item-list DOCTYPE='AP_INV' rows for the same trade cards, restricted to cards open-item-list covers completely (len(rows)==N_OPEN_BILLS). Different SQL file, per-document grain, its own CANCELED/DocStatus filters. Complement with the full-coverage row identity RAW_OPEN = CREDIT_APPLIED + ADJ_OPEN, verified with 0 violations on all 896 rows in all three books.",
+        "recipe": "per_card = {}; [per_card.setdefault(r['CARD_CODE'],[]).append(r['OPEN_AMT']) for r in slice('open-item-list',co)['summary'] if r['DOCTYPE']=='AP_INV']; alt=sum(sum(v) for cc,v in per_card.items() if va.get(cc,{}).get('ACCT_KIND')=='TRADE' and len(v)==va[cc]['N_OPEN_BILLS']); compare against sum(RAW_OPEN) over the same cards. Full-coverage identity: all(abs(r['RAW_OPEN']-r['CREDIT_APPLIED']-r['ADJ_OPEN'])<0.011 for r in rows)"
+      },
+      "drill": {
+        "page": "open-items.html",
+        "params": {
+          "doctype": "AP_INV",
+          "kind": "TRADE"
+        }
+      },
+      "live": {
+        "oil": 2239229124.07,
+        "mart": 80028739.39,
+        "bev": 27239984.38
+      }
+    },
+    {
+      "id": "ap-trade-credit-applied",
+      "label": "Settled in the ledger, never matched to a bill",
+      "unit": "INR",
+      "column": "CREDIT_APPLIED",
+      "row_filter": "r.get('ACCT_KIND') == 'TRADE'",
+      "agg": "sum",
+      "formula": "SUM over TRADE cards of CREDIT_APPLIED = GREATEST(0, RAW_OPEN - PAYABLE) per card. The gap between what SAP's document statuses claim is unpaid and what the general ledger says is actually owed.",
+      "terms": [
+        {
+          "label": "Open A/P bills (trade)",
+          "col": "RAW_OPEN",
+          "op": "+",
+          "source": "OPCH",
+          "note": ""
+        },
+        {
+          "label": "Ledger payable (trade)",
+          "col": "PAYABLE",
+          "op": "-",
+          "source": "JDT1",
+          "note": "GREATEST(0, -SUM(Debit-Credit)) per ShortName up to as-of"
+        },
+        {
+          "label": "Credit applied oldest-bill-first",
+          "col": "CREDIT_APPLIED",
+          "op": "=",
+          "source": "derived",
+          "note": "floored at 0 per card, so it cannot be negative and cannot be netted across cards"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Branch and intercompany",
+          "row_filter": "r.get('ACCT_KIND') != 'TRADE'",
+          "why": "C-0020"
+        }
+      ],
+      "sql_lines": [
+        187,
+        193
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Recompute from the ledger side only: SUM over TRADE of GREATEST(0, RAW_OPEN - max(0, -OCRD_BALANCE)). OCRD_BALANCE is the JDT1-derived as-of ledger balance, whose per-card value is independently reproduced by open-item-list.CARD_BALANCE (verified 0 mismatches over Re 1 on all 191 Oil / 29 Mart / 86 Bev cards the two sections share). So the check is genuinely a general-ledger route, and its input has itself been cross-validated against a different query.",
+        "recipe": "alt=sum(max(0.0, r['RAW_OPEN']-max(0.0,-r['OCRD_BALANCE'])) for r in rows if r['ACCT_KIND']=='TRADE'); and separately assert every shared card's open-item-list CARD_BALANCE equals vendor-ageing OCRD_BALANCE within Re 1"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "ap-trade-credit-applied"
+        }
+      },
+      "live": {
+        "oil": 2012445151.89,
+        "mart": 64089549.23,
+        "bev": 13504492.39
+      }
+    },
+    {
+      "id": "ap-group-open",
+      "label": "Owed to JIVO's own branches and group companies",
+      "unit": "INR",
+      "column": "ADJ_OPEN",
+      "row_filter": "r.get('ACCT_KIND') != 'TRADE'",
+      "agg": "sum",
+      "formula": "SUM(ADJ_OPEN) over cards where ACCT_KIND is BRANCH or INTERCO (equivalently IS_EXCLUDED = 1). Flagged and kept, never dropped and never silently included. Equals CO_ADJ_OPEN - CO_ADJ_OPEN_TRADE.",
+      "terms": [
+        {
+          "label": "Branch cards (OCRG.GroupName LIKE '%BRANCH%')",
+          "col": "ADJ_OPEN",
+          "op": "+",
+          "source": "OCRD + OCRG",
+          "note": "Oil Rs 77.58 Cr on 6 cards, Mart Rs 6.66 Cr on 4, Bev Rs 0.79 Cr on 3"
+        },
+        {
+          "label": "Intercompany cards caught by name, outside any branch group",
+          "col": "ADJ_OPEN",
+          "op": "+",
+          "source": "OCRD.CardName",
+          "note": "Oil Rs 2.25 Cr on 3 cards (VENDA000483 JIVO MART, group 103 E-COMMERCE), Mart Rs 20.94 Cr on 2 (VENDA000001 JIVO WELLNESS, group 106 PURCHASE - Mart's largest payable), Bev 0 cards"
+        },
+        {
+          "label": "Branch + intercompany payable",
+          "col": "ADJ_OPEN",
+          "op": "=",
+          "source": "derived",
+          "note": "78% of Oil's aged book, 95% of Mart's, 36% of Bev's"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        153,
+        172
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0020"
+      ],
+      "check": {
+        "method": "Re-classify from scratch in Python off CARD_NAME and VENDOR_GROUP without reading ACCT_KIND at all, then sum. Independent because it re-executes the heuristic rather than trusting the SQL's CASE. Cross-validate the classification itself against open-item-list.ACCT_KIND on the cards both sections carry - that section runs its own classifier and adds a STAFF class this one does not have, so every disagreement is a finding, not noise (18 Oil / 6 Mart / 5 Bev disagreements today, all of them ORGV imprest cards this section calls TRADE).",
+        "recipe": "def kind(r):\n    g=(r['VENDOR_GROUP'] or '').upper(); n=(r['CARD_NAME'] or '').upper()\n    if 'BRANCH' in g: return 'BRANCH'\n    if 'JIVO' in n or 'AKAL ROZGAR' in n or 'AKAL INFO' in n: return 'INTERCO'\n    return 'TRADE'\nalt=sum(r['ADJ_OPEN'] for r in rows if kind(r)!='TRADE'); assert all(kind(r)==r['ACCT_KIND'] for r in rows)\n# then: oil_kind = {r['CARD_CODE']:r['ACCT_KIND'] for r in slice('open-item-list',co)['summary'] if r['CARD_TYPE']=='S'}; list every card where oil_kind[cc] != r['ACCT_KIND']"
+      },
+      "drill": {
+        "page": "payables.html",
+        "params": {
+          "kind": "GROUP"
+        }
+      },
+      "live": {
+        "oil": 798306959.8,
+        "mart": 275992335.76,
+        "bev": 7858127.0
+      }
+    },
+    {
+      "id": "ap-book-open",
+      "label": "Whole-book credit-adjusted payable (trade + group)",
+      "unit": "INR",
+      "column": "CO_ADJ_OPEN",
+      "row_filter": "True",
+      "agg": "first",
+      "formula": "CO_ADJ_OPEN, read off any single row. Broadcast company total = SUM(B0..B6) OVER (). Equals CO_RAW_OPEN - SUM(CREDIT_APPLIED) and equals ap-trade-open + ap-group-open.",
+      "terms": [
+        {
+          "label": "Open A/P bills, whole book",
+          "col": "CO_RAW_OPEN",
+          "op": "+",
+          "source": "OPCH",
+          "note": "Oil Rs 310.71 Cr"
+        },
+        {
+          "label": "Credit applied, whole book",
+          "col": "CREDIT_APPLIED",
+          "op": "-",
+          "source": "JDT1 vs OPCH",
+          "note": "Oil Rs 208.20 Cr - there is no CO_CREDIT_APPLIED column, this term must be summed down the CREDIT_APPLIED column"
+        },
+        {
+          "label": "Credit-adjusted payable, whole book",
+          "col": "CO_ADJ_OPEN",
+          "op": "=",
+          "source": "derived",
+          "note": "READ OFF ONE ROW. Summing CO_ADJ_OPEN down the table gives Rs 65,975 Cr in Oil."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        277,
+        287
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Two routes that must both land on the same number and neither of which reads CO_ADJ_OPEN: (a) sum the per-row ADJ_OPEN column over every row; (b) CO_RAW_OPEN (broadcast) minus the summed CREDIT_APPLIED column. Route (b) crosses a window-function total with a client-side column sum, so a drift in either the window frame or the row filter shows up. Verified to the paise on all three books 2026-08-22.",
+        "recipe": "a=sum(r['ADJ_OPEN'] for r in rows); b=rows[0]['CO_RAW_OPEN']-sum(r['CREDIT_APPLIED'] for r in rows); assert abs(a-rows[0]['CO_ADJ_OPEN'])<0.02 and abs(b-rows[0]['CO_ADJ_OPEN'])<0.02"
+      },
+      "drill": {
+        "page": "payables.html",
+        "params": {
+          "kind": "ALL"
+        }
+      },
+      "live": {
+        "oil": 1025090931.98,
+        "mart": 291931525.92,
+        "bev": 21593618.99
+      }
+    },
+    {
+      "id": "ap-book-payable",
+      "label": "Ledger payable, whole book",
+      "unit": "INR",
+      "column": "CO_PAYABLE",
+      "row_filter": "True",
+      "agg": "first",
+      "formula": "CO_PAYABLE = SUM over every vendor card of GREATEST(0, -ledger balance), where the ledger balance is SUM(JDT1.Debit - JDT1.Credit) per ShortName with RefDate <= as-of, rounded to paise. This is the ground truth the whole section is built on; ADJ_OPEN is this number minus the part no open bill can explain.",
+      "terms": [
+        {
+          "label": "Ledger payable per card, floored at zero",
+          "col": "PAYABLE",
+          "op": "+",
+          "source": "JDT1",
+          "note": "positive cards (vendor advances) are held out into VENDOR_ADVANCE, not netted"
+        },
+        {
+          "label": "Whole-book ledger payable",
+          "col": "CO_PAYABLE",
+          "op": "=",
+          "source": "derived",
+          "note": "= CO_ADJ_OPEN + CO_UNBACKED_CREDIT, exactly"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        139,
+        145
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Rebuild the ledger position from a different query's output: for every vendor card that open-item-list also carries, take that section's independently-derived CARD_BALANCE and compute max(0, -CARD_BALANCE); it must equal this section's PAYABLE card by card. Measured 2026-08-22: 0 mismatches over Re 1 on all 191 Oil / 29 Mart / 86 Bev shared cards. Coverage of the total is partial (open-item-list only lists cards with a shown open document): Oil Rs 21.17 Cr of the Rs 23.37 Cr trade payable, Mart Rs 1.41 of 1.63, Bev Rs 1.33 of 1.43. Report the covered fraction with the delta - the uncovered residual is cards with a ledger balance and no open document, which is exactly what UNBACKED_CREDIT measures.",
+        "recipe": "oil_bal={}; [oil_bal.setdefault(r['CARD_CODE'], r['CARD_BALANCE']) for r in slice('open-item-list',co)['summary'] if r['CARD_TYPE']=='S']; bad=[cc for cc,b in oil_bal.items() if cc in va and abs(b-va[cc]['OCRD_BALANCE'])>1]; alt=sum(max(0.0,-b) for b in oil_bal.values()); coverage=alt/rows[0]['CO_PAYABLE']"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "ap-book-payable"
+        }
+      },
+      "live": {
+        "oil": 1032034358.72,
+        "mart": 292243162.27,
+        "bev": 22194726.49
+      }
+    },
+    {
+      "id": "ap-unbacked-credit",
+      "label": "Owed per the ledger with no open bill to explain it",
+      "unit": "INR",
+      "column": "CO_UNBACKED_CREDIT",
+      "row_filter": "True",
+      "agg": "first",
+      "formula": "CO_UNBACKED_CREDIT = SUM over cards of GREATEST(0, PAYABLE - RAW_OPEN). The residual that closes the section's structural identity SUM(buckets) + UNBACKED_CREDIT = PAYABLE. Small at as-of=today; it is the parking place for the error on any past as-of, because OPCH.PaidToDate cannot be rewound.",
+      "terms": [
+        {
+          "label": "Ledger payable",
+          "col": "PAYABLE",
+          "op": "+",
+          "source": "JDT1",
+          "note": ""
+        },
+        {
+          "label": "Open bills that could be aged",
+          "col": "RAW_OPEN",
+          "op": "-",
+          "source": "OPCH",
+          "note": ""
+        },
+        {
+          "label": "Un-bill-backed payable",
+          "col": "CO_UNBACKED_CREDIT",
+          "op": "=",
+          "source": "derived",
+          "note": "Oil today: 70 trade cards, the biggest being VENDA001219 EXPENSE PAYABLE at Rs 54.48 L with zero open bills"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        234,
+        234
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Recompute the residual per row from PAYABLE and RAW_OPEN and sum it, then assert the structural identity independently on every single row: SUM(B0..B6) + UNBACKED_CREDIT - PAYABLE == 0. Verified 2026-08-22 with 0 violations and a maximum absolute residual of 0.0000 across all 896 rows in all three books. This identity is the section's tripwire: if credit consumption, bucketing or the ledger join ever drifts, it breaks here first.",
+        "recipe": "B=['B0_NOTDUE','B1_1_30','B2_31_60','B3_61_90','B4_91_180','B5_181_365','B6_365PLUS']; alt=sum(max(0.0,r['PAYABLE']-r['RAW_OPEN']) for r in rows); viol=[r['CARD_CODE'] for r in rows if abs(sum(r[c] for c in B)+r['UNBACKED_CREDIT']-r['PAYABLE'])>0.011]; assert not viol"
+      },
+      "drill": {
+        "page": "payables.html",
+        "params": {
+          "filter": "UNBACKED_CREDIT>0"
+        }
+      },
+      "live": {
+        "oil": 6943426.74,
+        "mart": 311636.35,
+        "bev": 601107.5
+      }
+    },
+    {
+      "id": "ap-trade-advance",
+      "label": "Advances sitting with trade suppliers",
+      "unit": "INR",
+      "column": "VENDOR_ADVANCE",
+      "row_filter": "r.get('ACCT_KIND') == 'TRADE'",
+      "agg": "sum",
+      "formula": "SUM over TRADE cards of VENDOR_ADVANCE = GREATEST(0, OCRD_BALANCE), i.e. the cards whose as-of ledger balance is a DEBIT - JIVO's money already out of the door with nothing billed against it. Mutually exclusive with PAYABLE on the same card (verified: 0 cards carry both).",
+      "terms": [
+        {
+          "label": "As-of ledger balance, debit side only",
+          "col": "VENDOR_ADVANCE",
+          "op": "=",
+          "source": "JDT1",
+          "note": "Oil's largest is VENDA000224 AWL AGRI BUSINESS at Rs 423.99 L; Bev's is VENDA001347 HS FILLING AND PACKAGING at Rs 140.00 L"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Branch and intercompany",
+          "row_filter": "r.get('ACCT_KIND') != 'TRADE'",
+          "why": "C-0020"
+        }
+      ],
+      "sql_lines": [
+        233,
+        233
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Recompute directly from the sign of the ledger balance, which is a different column from the one being checked: SUM(max(0, OCRD_BALANCE)) over TRADE. Then cross-validate the underlying balance against open-item-list.CARD_BALANCE for shared cards (0 mismatches today). Verified 0 violations of VENDOR_ADVANCE == max(0, OCRD_BALANCE) on all 896 rows.",
+        "recipe": "alt=sum(max(0.0,r['OCRD_BALANCE']) for r in rows if r['ACCT_KIND']=='TRADE'); assert all(abs(r['VENDOR_ADVANCE']-max(0.0,r['OCRD_BALANCE']))<0.011 for r in rows) and not [r for r in rows if r['PAYABLE']>0 and r['VENDOR_ADVANCE']>0]"
+      },
+      "drill": {
+        "page": "payables.html",
+        "params": {
+          "kind": "TRADE",
+          "filter": "VENDOR_ADVANCE>0"
+        }
+      },
+      "live": {
+        "oil": 84171019.07,
+        "mart": 4387874.42,
+        "bev": 15367180.56
+      }
+    },
+    {
+      "id": "ap-trade-vendors-owed",
+      "label": "Trade suppliers actually owed money",
+      "unit": "count",
+      "column": "ADJ_OPEN",
+      "row_filter": "r.get('ACCT_KIND') == 'TRADE' and (r.get('ADJ_OPEN') or 0) > 0",
+      "agg": "count",
+      "formula": "COUNT of TRADE rows with ADJ_OPEN > 0. NOT the row count: Oil carries 635 trade cards but only 256 are owed anything, 170 hold an advance and 154 rows of the whole book are nil on both sides. v1's 'N parties' subtitle counts rows and overstates exposure by ~2.5x.",
+      "terms": [
+        {
+          "label": "Trade cards with a credit-adjusted balance owing",
+          "col": "ADJ_OPEN",
+          "op": "=",
+          "source": "derived",
+          "note": "Oil 256 of 635, Mart 31 of 82, Bev 75 of 161"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Branch and intercompany cards",
+          "row_filter": "r.get('ACCT_KIND') != 'TRADE'",
+          "why": "C-0020"
+        },
+        {
+          "label": "Nil-balance history cards",
+          "row_filter": "(r.get('ADJ_OPEN') or 0) == 0",
+          "why": "SQL header lines 11-13: count parties off ADJ_OPEN > 0, never off the row count"
+        }
+      ],
+      "sql_lines": [
+        219,
+        245
+      ],
+      "caveats": [
+        "C-0020"
+      ],
+      "check": {
+        "method": "Count from the bucket columns instead of ADJ_OPEN - a card counts if the sum of its seven bucket columns exceeds zero. Different columns, same answer. Cross-check the direction with open-item-list: every counted card must either appear there with an AP_INV row or be explained by UNBACKED_CREDIT > 0.",
+        "recipe": "B=['B0_NOTDUE','B1_1_30','B2_31_60','B3_61_90','B4_91_180','B5_181_365','B6_365PLUS']; alt=len([r for r in rows if r['ACCT_KIND']=='TRADE' and sum(r[c] for c in B)>0])"
+      },
+      "drill": {
+        "page": "payables.html",
+        "params": {
+          "kind": "TRADE",
+          "filter": "ADJ_OPEN>0"
+        }
+      },
+      "live": {
+        "oil": 256,
+        "mart": 31,
+        "bev": 75
+      }
+    },
+    {
+      "id": "ap-oldest-bill-days",
+      "label": "Oldest unpaid trade bill, by due date",
+      "unit": "days",
+      "column": "DAYS_OLDEST",
+      "row_filter": "r.get('ACCT_KIND') == 'TRADE' and (r.get('ADJ_OPEN') or 0) > 0",
+      "agg": "max",
+      "formula": "MAX(DAYS_OLDEST) over TRADE cards that still owe something, where DAYS_OLDEST = DAYS_BETWEEN(MIN(OPCH.DocDueDate over open bills), as-of). READ THE CAVEAT: this is the age of the card's oldest OPEN BILL BEFORE credit was applied, not the age of the money still owed. Oil's 3,189-day maximum is VENDA001047 BLESSING ADVERTISING, whose surviving Rs 26.26 L is bucketed in 61-90 and 91-180, not in 365+.",
+      "terms": [
+        {
+          "label": "Oldest open bill due date",
+          "col": "OLDEST_DUE",
+          "op": "=",
+          "source": "OPCH",
+          "note": "NULL on 155 Oil / 25 Mart / 31 Bev rows that have a ledger balance but no open bill"
+        },
+        {
+          "label": "Days since it fell due",
+          "col": "DAYS_OLDEST",
+          "op": "=",
+          "source": "derived",
+          "note": "computed against the as-of date, so it moves every build"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Cards owing nothing",
+          "row_filter": "(r.get('ADJ_OPEN') or 0) == 0",
+          "why": "226 Oil trade cards report a DAYS_OLDEST while owing Rs 0 - their bills were fully absorbed by credit"
+        }
+      ],
+      "sql_lines": [
+        263,
+        264
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Take the maximum DAYS_OVERDUE from open-item-list's AP_INV rows for the same set of owed trade cards - a per-document field computed by a different query. It is a LOWER BOUND, not an equality, because open-item-list truncates its AP_INV list (Oil shows 535 of the book's open bills), so the very oldest bill may not be present. Measured 2026-08-22: open-item-list route gives Oil 521 d, Mart 565 d, Bev 537 d against this section's 3,189 / 590 / 599. Alert only if the open-item-list maximum EXCEEDS this KPI, which would mean a bill is being missed here.",
+        "recipe": "owed={r['CARD_CODE'] for r in rows if r['ACCT_KIND']=='TRADE' and r['ADJ_OPEN']>0}; alt=max((r['DAYS_OVERDUE'] for r in slice('open-item-list',co)['summary'] if r['DOCTYPE']=='AP_INV' and r['CARD_CODE'] in owed), default=None); assert alt is None or alt <= kpi_value"
+      },
+      "drill": {
+        "page": "party.html",
+        "params": {
+          "card": "<CARD_CODE of the max row>"
+        }
+      },
+      "live": {
+        "oil": 3189,
+        "mart": 590,
+        "bev": 599
+      }
+    },
+    {
+      "id": "ap-migrated-open",
+      "label": "Go-live opening bills still unpaid",
+      "unit": "INR",
+      "column": "CO_MIGRATED_OPEN",
+      "row_filter": "True",
+      "agg": "first",
+      "formula": "CO_MIGRATED_OPEN = SUM of the credit-adjusted effective open amount on bills whose OPCH.DocDate is exactly 2024-09-30, Oil's go-live date. 949 bills / Rs 102.5 Cr were loaded that day and 268 still read open (Rs 57.0 Cr raw), but because credit is consumed oldest-first almost all of it is absorbed - only Rs 0.26 Cr survives.",
+      "terms": [
+        {
+          "label": "Effective open amount on 2024-09-30 bills",
+          "col": "MIGRATED_OPEN",
+          "op": "=",
+          "source": "OPCH",
+          "note": "hardcoded date, deliberately. 0 for Mart (OPCH starts 2025-01-01) and Bev (2024-10-01) is the TRUE answer, not a portability bug - neither book carried its A/P openings in as invoices."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        215,
+        215
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Bound it from open-item-list's IS_MIGRATED flag on AP_INV rows, which is that section's own independent identification of migrated documents. It gives the RAW migrated open amount (Oil: 19 rows, Rs 56.50 Cr; Mart and Bev: 0 rows, Rs 0.00), so the check is an ordering assertion plus an existence assertion, not an equality: CO_MIGRATED_OPEN must be greater than 0 and much less than the raw migrated open where open-item-list finds migrated rows, and must be exactly 0 where it finds none. The two books that return 0 are checked for a TRUE zero rather than a silent failure.",
+        "recipe": "mig=[r for r in slice('open-item-list',co)['summary'] if r['DOCTYPE']=='AP_INV' and r['IS_MIGRATED']]; raw_mig=sum(r['OPEN_AMT'] for r in mig); assert (raw_mig==0) == (rows[0]['CO_MIGRATED_OPEN']==0); assert raw_mig==0 or 0 < rows[0]['CO_MIGRATED_OPEN'] <= raw_mig"
+      },
+      "drill": {
+        "page": "open-items.html",
+        "params": {
+          "doctype": "AP_INV",
+          "migrated": "1"
+        }
+      },
+      "live": {
+        "oil": 2584492.58,
+        "mart": 0.0,
+        "bev": 0.0
+      }
+    },
+    {
+      "id": "ap-unapplied-pay-diag",
+      "label": "Vendor payments SAP never matched to a bill (diagnostic - NEVER subtract)",
+      "unit": "INR",
+      "column": "CO_UNAPPLIED_PAY",
+      "row_filter": "True",
+      "agg": "first",
+      "formula": "CO_UNAPPLIED_PAY = SUM(OVPM.OpenBal) over uncancelled DocType='S' supplier payments with a non-zero OpenBal. This is NOT money still unspent - SAP's internal reconciliation is simply not used at JIVO, so OpenBal means 'never matched'. Oil's Rs 2,017.71 Cr against a Rs 103.20 Cr real payable is the proof: subtracting it would be catastrophic. It is already inside the ledger balance.",
+      "terms": [
+        {
+          "label": "Unmatched supplier payments",
+          "col": "CO_UNAPPLIED_PAY",
+          "op": "=",
+          "source": "OVPM",
+          "note": "Oil: 802 payments across 277 cards; Rs 1,835.66 Cr of it sits on one card, VENDA000724 AL GHURAIR RESOURCES OILS, on 16 payments. Mart: Rs 181.32 Cr of Rs 185.61 Cr is on the interco card VENDA000001."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        173,
+        179
+      ],
+      "caveats": [
+        "C-0021"
+      ],
+      "check": {
+        "method": "Sum OPEN_AMT over open-item-list DOCTYPE='AP_PMT' rows - the same OVPM population selected by a different query with its own Canceled filter (C-0021's three-valued flag). It is a LOWER BOUND on the two large books because open-item-list caps AP_PMT at 400 rows per company. Measured 2026-08-22: Oil Rs 2,017.54 Cr vs Rs 2,017.71 Cr (99.99%, 400 rows shown), Mart Rs 185.54 vs Rs 185.61 Cr (99.96%, 400 rows shown), Bev Rs 2.74 vs Rs 2.75 Cr (72 rows, untruncated - the tightest of the three). Alert if the open-item-list total EXCEEDS this KPI.",
+        "recipe": "alt=sum(r['OPEN_AMT'] for r in slice('open-item-list',co)['summary'] if r['DOCTYPE']=='AP_PMT'); assert alt <= rows[0]['CO_UNAPPLIED_PAY']*1.001 and alt >= rows[0]['CO_UNAPPLIED_PAY']*0.70"
+      },
+      "drill": {
+        "page": "open-items.html",
+        "params": {
+          "doctype": "AP_PMT"
+        }
+      },
+      "live": {
+        "oil": 20177122474.13,
+        "mart": 1856127470.61,
+        "bev": 27451585.77
+      }
+    }
+  ],
+  "columns": [
+    {
+      "col": "CARD_CODE",
+      "label": "Card",
+      "unit": "text",
+      "meaning": "OCRD.CardCode, unique per row (0 duplicates in any book). VENDA* are supplier cards, ORGV* are employee imprest cards filed as vendors.",
+      "link": "party"
+    },
+    {
+      "col": "CARD_NAME",
+      "label": "Vendor",
+      "unit": "text",
+      "meaning": "OCRD.CardName. Load-bearing, not cosmetic: the intercompany test reads this field, because two of the largest group payables sit in ordinary trading groups.",
+      "link": "party"
+    },
+    {
+      "col": "VENDOR_GROUP",
+      "label": "Group",
+      "unit": "text",
+      "meaning": "OCRG.GroupName joined on BOTH GroupCode and GroupType (customer and vendor groups share the code space). 12 groups in Oil, 7 in Mart, 8 in Bev. 'STAFF VENDOR' holds employee imprest cards. '(no group)' where the join misses.",
+      "link": "none"
+    },
+    {
+      "col": "ACCT_KIND",
+      "label": "Kind",
+      "unit": "text",
+      "meaning": "TRADE / BRANCH / INTERCO only - THERE IS NO STAFF VALUE here, unlike open-item-list. A name-and-group heuristic, not a register: BRANCH if the group name contains BRANCH, INTERCO if the card name contains JIVO or AKAL ROZGAR or AKAL INFO, else TRADE.",
+      "link": "none"
+    },
+    {
+      "col": "IS_EXCLUDED",
+      "label": "Flagged",
+      "unit": "count",
+      "meaning": "0 for TRADE, 1 for BRANCH/INTERCO. Redundant with ACCT_KIND (verified 0 disagreements). 'Excluded' means excluded from the trade headline - the row is still present and still counted in every CO_* total.",
+      "link": "none"
+    },
+    {
+      "col": "OCRD_BALANCE",
+      "label": "Ledger balance",
+      "unit": "INR",
+      "meaning": "MISLEADING NAME: this is the as-of ledger balance rebuilt from JDT1 (SUM(Debit-Credit) per ShortName, RefDate <= as-of, rounded to paise), NOT OCRD.Balance. At as-of=today the two agree to the rupee on all 5,174 vendor cards. Sign is SAP's: NEGATIVE means JIVO owes.",
+      "link": "party"
+    },
+    {
+      "col": "PAYABLE",
+      "label": "Owed per the ledger",
+      "unit": "INR",
+      "meaning": "GREATEST(0, -OCRD_BALANCE). The ground truth for what JIVO owes this card. Mutually exclusive with VENDOR_ADVANCE.",
+      "link": "party"
+    },
+    {
+      "col": "VENDOR_ADVANCE",
+      "label": "Advance held by vendor",
+      "unit": "INR",
+      "meaning": "GREATEST(0, OCRD_BALANCE). Money JIVO has already paid out that no bill has landed against.",
+      "link": "party"
+    },
+    {
+      "col": "N_OPEN_BILLS",
+      "label": "Open bills",
+      "unit": "count",
+      "meaning": "Count of OPCH rows with DocStatus='O', CANCELED='N', DocDate <= as-of and DocTotal-PaidToDate > 0. Zero on 155 Oil / 25 Mart / 31 Bev rows that are in scope only because of a ledger balance, an unapplied payment or an open credit note.",
+      "link": "document"
+    },
+    {
+      "col": "RAW_OPEN",
+      "label": "Open per SAP",
+      "unit": "INR",
+      "meaning": "SUM(DocTotal - PaidToDate) over those bills. What a naive A/P ageing would report. On Oil's trade book it is 9.87x the truth.",
+      "link": "document"
+    },
+    {
+      "col": "CREDIT_APPLIED",
+      "label": "Credit netted off",
+      "unit": "INR",
+      "meaning": "GREATEST(0, RAW_OPEN - PAYABLE). Settlements the general ledger records that were never matched to a specific bill, consumed oldest-due-first.",
+      "link": "none"
+    },
+    {
+      "col": "ADJ_OPEN",
+      "label": "Really owed",
+      "unit": "INR",
+      "meaning": "The credit-adjusted payable = sum of the seven bucket columns = RAW_OPEN - CREDIT_APPLIED = PAYABLE - UNBACKED_CREDIT. THE headline column. 226 Oil trade cards have open bills yet ADJ_OPEN = 0.",
+      "link": "party"
+    },
+    {
+      "col": "UNBACKED_CREDIT",
+      "label": "Owed, no bill on file",
+      "unit": "INR",
+      "meaning": "GREATEST(0, PAYABLE - RAW_OPEN). The part of the ledger payable that no open bill explains, so it cannot be aged. Closes the identity SUM(buckets)+UNBACKED_CREDIT = PAYABLE exactly on every row.",
+      "link": "party"
+    },
+    {
+      "col": "MIGRATED_OPEN",
+      "label": "From the go-live load",
+      "unit": "INR",
+      "meaning": "Effective open amount on bills dated exactly 2024-09-30 (Oil's go-live). Structurally 0 for Mart and Bev - that is the true answer, not a bug.",
+      "link": "document"
+    },
+    {
+      "col": "BACKDATED_DUE_OPEN",
+      "label": "Due before it was dated",
+      "unit": "INR",
+      "meaning": "Effective open amount on bills where DocDueDate < DocDate - keyed-in-late or opening-balance documents. Rs 0.26 Cr Oil, 0 Mart, Rs 0.03 Cr Bev.",
+      "link": "document"
+    },
+    {
+      "col": "OLDEST_DUE",
+      "label": "Oldest bill due",
+      "unit": "date",
+      "meaning": "MIN(DocDueDate) over the card's OPEN bills, BEFORE credit is applied. NULL where there are no open bills. Not the date of the money still owed.",
+      "link": "document"
+    },
+    {
+      "col": "DAYS_OLDEST",
+      "label": "Days since oldest due",
+      "unit": "days",
+      "meaning": "DAYS_BETWEEN(OLDEST_DUE, as-of). NULL where OLDEST_DUE is NULL. Pre-credit: 226 Oil trade cards carry a value while owing nothing, and Oil's 3,189-day maximum sits on a card whose remaining balance is bucketed at 61-180 days.",
+      "link": "none"
+    },
+    {
+      "col": "B0_NOTDUE",
+      "label": "Not due",
+      "unit": "INR",
+      "meaning": "Credit-adjusted open amount on bills whose due date is on or after the as-of date. Rendered in brand green as a STATE, not as a step on the ageing ramp.",
+      "link": "none"
+    },
+    {
+      "col": "B1_1_30",
+      "label": "1-30 d",
+      "unit": "INR",
+      "meaning": "Credit-adjusted open amount 1-30 days past due.",
+      "link": "none"
+    },
+    {
+      "col": "B2_31_60",
+      "label": "31-60 d",
+      "unit": "INR",
+      "meaning": "Credit-adjusted open amount 31-60 days past due.",
+      "link": "none"
+    },
+    {
+      "col": "B3_61_90",
+      "label": "61-90 d",
+      "unit": "INR",
+      "meaning": "Credit-adjusted open amount 61-90 days past due. First bucket counted as 'overdue' by the headline.",
+      "link": "none"
+    },
+    {
+      "col": "B4_91_180",
+      "label": "91-180 d",
+      "unit": "INR",
+      "meaning": "Credit-adjusted open amount 91-180 days past due.",
+      "link": "none"
+    },
+    {
+      "col": "B5_181_365",
+      "label": "181-365 d",
+      "unit": "INR",
+      "meaning": "Credit-adjusted open amount 181-365 days past due. Oil's largest single trade bucket at Rs 8.95 Cr.",
+      "link": "none"
+    },
+    {
+      "col": "B6_365PLUS",
+      "label": "365 d +",
+      "unit": "INR",
+      "meaning": "Credit-adjusted open amount more than 365 days past due.",
+      "link": "none"
+    },
+    {
+      "col": "ADJ_OVERDUE_60PLUS",
+      "label": "Overdue 61 d +",
+      "unit": "INR",
+      "meaning": "MISLEADING NAME: B3+B4+B5+B6, i.e. 61 days and over, not 60. Deliberately not renamed because v1's hero reads this exact key.",
+      "link": "none"
+    },
+    {
+      "col": "N_UNAPPLIED_PAY",
+      "label": "Unmatched payments",
+      "unit": "count",
+      "meaning": "Count of uncancelled OVPM DocType='S' payments with a non-zero OpenBal. Diagnostic only.",
+      "link": "document"
+    },
+    {
+      "col": "UNAPPLIED_PAY",
+      "label": "Unmatched payment value",
+      "unit": "INR",
+      "meaning": "SUM(OVPM.OpenBal). NOT money still unspent - it means 'never internally reconciled'. Already inside the ledger balance. Never subtract it: Oil's total is Rs 2,017.71 Cr against a Rs 103.20 Cr real payable.",
+      "link": "document"
+    },
+    {
+      "col": "N_OPEN_CN",
+      "label": "Open A/P credit notes",
+      "unit": "count",
+      "meaning": "Count of ORPC rows with DocStatus='O' and CANCELED='N'. Diagnostic only.",
+      "link": "document"
+    },
+    {
+      "col": "OPEN_CN",
+      "label": "Open credit note value",
+      "unit": "INR",
+      "meaning": "SUM(ORPC.DocTotal - PaidToDate). Diagnostic only, already inside the ledger balance. Mart's Rs 15.52 Cr is Rs 15.41 Cr on the single interco card VENDA000001.",
+      "link": "document"
+    },
+    {
+      "col": "CO_RAW_OPEN",
+      "label": "Book: open per SAP",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL, identical on every row. SUM(RAW_OPEN) OVER (). Read off one row; summing it multiplies by the row count.",
+      "link": "none"
+    },
+    {
+      "col": "CO_PAYABLE",
+      "label": "Book: ledger payable",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL. SUM(PAYABLE) OVER (). Equals CO_ADJ_OPEN + CO_UNBACKED_CREDIT.",
+      "link": "none"
+    },
+    {
+      "col": "CO_ADJ_OPEN",
+      "label": "Book: really owed",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL of the credit-adjusted payable across trade AND group cards. This is NOT the board's headline - the headline is CO_ADJ_OPEN_TRADE, which is 22% of this in Oil.",
+      "link": "none"
+    },
+    {
+      "col": "CO_UNBACKED_CREDIT",
+      "label": "Book: no bill on file",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL. Read this before trusting any bucket split on an as-of that is not today.",
+      "link": "none"
+    },
+    {
+      "col": "CO_UNAPPLIED_PAY",
+      "label": "Book: unmatched payments",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL. Diagnostic. Oil Rs 2,017.71 Cr - the number that proves OVPM.OpenBal cannot be used as a subtrahend.",
+      "link": "none"
+    },
+    {
+      "col": "CO_OPEN_CN",
+      "label": "Book: open credit notes",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL. Diagnostic.",
+      "link": "none"
+    },
+    {
+      "col": "CO_VENDOR_ADVANCE",
+      "label": "Book: advances held",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL of GREATEST(0, ledger balance). Oil Rs 8.44 Cr, of which Rs 8.42 Cr is on trade cards.",
+      "link": "none"
+    },
+    {
+      "col": "CO_MIGRATED_OPEN",
+      "label": "Book: go-live openings",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL. Oil Rs 0.26 Cr; a true 0 for Mart and Bev.",
+      "link": "none"
+    },
+    {
+      "col": "CO_BACKDATED_DUE_OPEN",
+      "label": "Book: backdated due dates",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL.",
+      "link": "none"
+    },
+    {
+      "col": "CO_ADJ_OPEN_TRADE",
+      "label": "Book: external trade payable",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL restricted to ACCT_KIND='TRADE'. THE headline. Identical to summing ADJ_OPEN over TRADE rows (verified to the paise, all three books).",
+      "link": "none"
+    },
+    {
+      "col": "CO_ADJ_OVERDUE_60PLUS_TRADE",
+      "label": "Book: trade overdue 61 d +",
+      "unit": "INR",
+      "meaning": "BROADCAST COMPANY TOTAL of B3+B4+B5+B6 restricted to TRADE. The second headline.",
+      "link": "none"
+    }
+  ],
+  "drilldowns": [
+    "party.html",
+    "document.html",
+    "open-items.html",
+    "derivation.html",
+    "methodology.html"
+  ],
+  "charts": [
+    {
+      "type": "waterfall",
+      "title": "From what SAP calls open to what JIVO actually owes a supplier",
+      "x": "step",
+      "y": "value",
+      "series": "kind",
+      "why": "This chart IS the correction, drawn. Steps: CO_RAW_OPEN (+) -> SUM(CREDIT_APPLIED) (-) -> CO_ADJ_OPEN (total) -> branch ADJ_OPEN (-) -> intercompany ADJ_OPEN (-) -> CO_ADJ_OPEN_TRADE (total). Oil reads Rs 310.71 Cr -> -208.20 -> 102.51 -> -77.58 -> -2.25 -> Rs 22.68 Cr. A reader who has seen this once understands why every other figure on the page differs from what SAP's A/P ageing report prints, and can see that the two deductions are different in kind: one is money already paid, the other is JIVO owing itself."
+    },
+    {
+      "type": "pareto",
+      "title": "How few suppliers the payable is",
+      "x": "CARD_NAME",
+      "y": "ADJ_OPEN",
+      "series": "cumulative_pct",
+      "why": "Bars of ADJ_OPEN for TRADE cards descending, with the cumulative percentage line. Five vendors are 81.0% of Oil's Rs 22.68 Cr, three are 80.9% of Mart's, six are 78.3% of Bev's. A table sorted by size shows the same rows but not the shape - the reader has to add up in their head to learn that the entire payables problem is a five-name conversation. It also silently kills the 'we have 635 vendors to chase' framing."
+    },
+    {
+      "type": "stackedBars",
+      "title": "Where the trade payable sits, by age",
+      "x": "company",
+      "y": "amount",
+      "series": "bucket",
+      "why": "One bar per company (or per ACCT_KIND), segmented B0_NOTDUE..B6_365PLUS with a value label on every segment. It shows at a glance that Oil is 88% overdue past 61 days while Mart is 29% and Bev 34% - three completely different payment postures in one image. Uses --age-nd for not-due (a state, brand green) and --age1..--age6 for the ramp, resolved from CSS variables at render time because the ramp runs one way in daylight and the other way in dark. The extreme steps lose contrast against the page ground in one theme or the other, so every segment must carry its own visible value label and the chart must offer its table view."
+    },
+    {
+      "type": "heatmap",
+      "title": "Which kind of spend is going unpaid, and for how long",
+      "x": "bucket",
+      "y": "VENDOR_GROUP",
+      "series": "ADJ_OPEN",
+      "why": "VENDOR_GROUP down the side, the seven ageing buckets across, cell = summed ADJ_OPEN for TRADE cards. It separates 'we are slow with everyone' from 'we are slow with one category': in Oil, PURCHASE OIL (Rs 16.80 Cr over 46 cards) is almost entirely in 181-365 and 365+, while SERVICE (Rs 0.66 Cr over 261 cards) is spread young. Neither the pareto nor the ageing stack can show that interaction."
+    },
+    {
+      "type": "scatter",
+      "title": "Big and old - which balances to chase first",
+      "x": "DAYS_OLDEST",
+      "y": "ADJ_OPEN",
+      "series": "VENDOR_GROUP",
+      "why": "One point per TRADE card with ADJ_OPEN > 0 (256 Oil / 31 Mart / 75 Bev points), each linking to party.html. The top-right quadrant is the work queue. It must be filtered to ADJ_OPEN > 0 or 226 Oil cards plot on the x-axis at zero, and the axis must be labelled 'age of the oldest OPEN BILL, before credit' - DAYS_OLDEST is pre-credit, so a point at 3,189 days does not mean 3,189-day-old money."
+    },
+    {
+      "type": "treemap",
+      "title": "The trade payable by spend category, then by supplier",
+      "x": "VENDOR_GROUP",
+      "y": "ADJ_OPEN",
+      "series": "CARD_NAME",
+      "why": "Area = ADJ_OPEN, TRADE only, grouped by VENDOR_GROUP. It answers 'what is this money FOR' in one glance - Oil's payable is 74% raw-material purchase (PURCHASE OIL Rs 16.80 Cr) and only 3% services, whereas Bev's is 67% PURCHASE and 14% TRANSPORTER. A sorted table gives the vendors but never the category proportions."
+    },
+    {
+      "type": "donut",
+      "title": "How much of the aged book is JIVO owing itself",
+      "x": "ACCT_KIND",
+      "y": "ADJ_OPEN",
+      "series": "ACCT_KIND",
+      "why": "CO_ADJ_OPEN split TRADE / BRANCH / INTERCO, with the card count in each slice. Oil: 78% branch+intercompany on 9 accounts of 644. Mart: 95% on 6 accounts of 88. This is the single most material fact in the section and the one that a reader summing the table without a filter will get wrong by 4.5x. The donut makes the ratio unmissable and, unlike the number, it survives being glanced at on a phone in either theme."
+    },
+    {
+      "type": "hbars",
+      "title": "Money already out of the door: advances with no bill against them",
+      "x": "CARD_NAME",
+      "y": "VENDOR_ADVANCE",
+      "series": "VENDOR_GROUP",
+      "why": "Top 15 TRADE cards by VENDOR_ADVANCE - the mirror image of the payable, and invisible anywhere else on the board. Oil holds Rs 8.42 Cr of advances against a Rs 22.68 Cr payable (37%), Bev Rs 1.54 Cr against Rs 1.37 Cr, i.e. Beverages has MORE money sitting with suppliers than it owes them. Because PAYABLE and VENDOR_ADVANCE are mutually exclusive per card, these are 170/28/37 cards that appear nowhere in the payable charts at all."
+    }
+  ],
+  "traps": [
+    "CO_* columns are BROADCAST company totals repeated identically on every row (verified across all 644/88/164 rows). Summing CO_ADJ_OPEN_TRADE down Oil's table gives Rs 14,604 Cr instead of Rs 22.68 Cr. Read any CO_* off a single row; never aggregate it.",
+    "Summing ADJ_OPEN over ALL rows gives Oil Rs 102.51 Cr, not Rs 22.68 Cr. 78% of Oil's aged book, 95% of Mart's and 36% of Bev's is JIVO's own branch and intercompany cards. The filter ACCT_KIND == 'TRADE' (or IS_EXCLUDED == 0) is mandatory on every trade figure.",
+    "Row count is not party count. Oil has 635 TRADE cards but only 256 owe anything; 170 hold an advance and 154 rows of the whole book are nil on both sides. v1's KPI subtitle counts rows and overstates exposure ~2.5x - the SQL header says so at lines 11-13 and the renderer ignores it.",
+    "RAW_OPEN is not a payable. On Oil's trade book it is Rs 223.92 Cr against Rs 22.68 Cr = 9.87x. The '~3x' figure quoted in README.md and in the SQL header is the WHOLE-BOOK ratio (Oil 3.03x, Mart 7.52x, Bev 1.63x) and understates the distortion on the number the board actually shows.",
+    "UNAPPLIED_PAY (OVPM.OpenBal) and OPEN_CN (open ORPC) are diagnostics and are ALREADY inside the ledger balance. Subtracting either double-counts. Oil's CO_UNAPPLIED_PAY is Rs 2,017.71 Cr against a Rs 103.20 Cr real payable, and 8,355 of Oil's 9,038 uncancelled supplier payments carry a non-zero OpenBal - at JIVO 'OpenBal' means never internally reconciled, not money still unspent.",
+    "DAYS_OLDEST and OLDEST_DUE are PRE-CREDIT: the oldest open bill on the card, before the ledger credit was consumed against it. 226 Oil trade cards report a DAYS_OLDEST while owing Rs 0, and Oil's 3,189-day maximum (VENDA001047 BLESSING ADVERTISING) has its surviving Rs 26.26 L bucketed at 61-90 and 91-180 days, not 365+. 16 Oil cards worth Rs 0.31 Cr and 3 Mart cards worth Rs 1.05 Cr have DAYS_OLDEST over 365 with B6_365PLUS = 0.",
+    "ADJ_OVERDUE_60PLUS is B3+B4+B5+B6, i.e. 61 days and over - the name rounds to 60 and is wrong. Label it '61 d +'. It was deliberately not renamed because v1's hero hardcodes the key.",
+    "There is no STAFF class in this section, unlike open-item-list. 82 Oil / 24 Mart / 22 Bev employee imprest cards (VENDOR_GROUP = 'STAFF VENDOR', CARD_CODE prefix ORGV) are scored TRADE here and STAFF there - 18/6/5 direct disagreements on the cards both sections carry. The money is small (Oil Rs 0.011 Cr ADJ_OPEN and Rs 0.227 Cr of advances, Bev Rs 0.047 Cr) but two ORGV cards sit inside Bev's top 10 payables, so a 'top external suppliers' chart will print employee names unless it filters VENDOR_GROUP != 'STAFF VENDOR'. This matters beyond the charts: CONTRACT.md §2 defines data/parties.<company>.json with kind in TRADE|BRANCH|INTERCO|STAFF, so the party index must NOT take a vendor's kind from this section's ACCT_KIND - it would emit zero STAFF vendors. Take it from open-item-list.ACCT_KIND, or re-derive STAFF from VENDOR_GROUP == 'STAFF VENDOR'.",
+    "ACCT_KIND is a name-and-group heuristic, not a register: '%BRANCH%' in the group name, or JIVO / AKAL ROZGAR / AKAL INFO in the card name. A new group entity named otherwise scores TRADE. Groups 146/144 'COMPANY UNIT VENDOR' hold 0 cards today and would be caught by neither test. C-0005's 23 named intercompany CardCodes are all CUSTA (customer-side) codes and do NOT cover the vendor side, so this section cannot be validated against that list.",
+    "MIGRATED_OPEN is hardcoded to DocDate = 2024-09-30 (Oil's go-live). Returning 0 for Mart and Bev is the TRUE answer - Mart's OPCH starts 2025-01-01, Bev's 2024-10-01, and neither carried its A/P openings in as invoices. Generalising it to MIN(DocDate) per schema would relabel Bev's first ordinary trading day as a migration.",
+    "Oldest-due-bill-first is an assumption. The ledger proves the total credit; WHICH bills it settled is inferred. The total is right in every case; where a genuinely-unpaid old bill sits behind newer settled ones, the bucket split shifts newer than reality. Unfalsifiable without the OITR/ITR1 reconciliation history.",
+    "On any --as-of that is not today the bucket split is approximate: OPCH.PaidToDate is a right-now field and cannot be rewound, so the total is correct but the bill side is today's and the unexplained part lands in UNBACKED_CREDIT (Oil: Rs 0.48 Cr at as-of=today, Rs 6.51 Cr at 2026-06-30, Rs 23.83 Cr at 2025-12-31). Read UNBACKED_CREDIT before trusting any past-dated bucket chart.",
+    "PAYABLE and VENDOR_ADVANCE are mutually exclusive per card (0 cards carry both) and must never be netted into one 'position' across cards - that would let one supplier's advance cancel another's overdue bill.",
+    "OCRD_BALANCE does not come from OCRD.Balance. It is the JDT1-derived as-of ledger balance (they agree to the rupee at as-of = today, on all 5,174 vendor cards). Its sign is SAP's, so NEGATIVE means JIVO owes - rendering it raw without saying so reads exactly backwards.",
+    "This section has no detail slice: vendor-ageing-detail.sql does not exist and data.json's detail object is {} for all three companies. Bill-level drill-down must come from open-item-list DOCTYPE='AP_INV', which is capped per document type - only 21 of Oil's 256 owed trade cards, 1 of Mart's 31 and 56 of Bev's 75 have ALL their bills present there. A document list rendered from it without saying so implies a vendor has fewer bills than it does.",
+    "Group totals are not eliminated. Adding oil + mart + bev double counts JIVO's inter-book trading - Mart's Rs 20.93 Cr owed to VENDA000001 JIVO WELLNESS is the mirror of an Oil receivable. Per-company is the figure that means something.",
+    "A card can be in scope with zero open bills (155 Oil / 25 Mart / 31 Bev rows) purely because of a ledger balance, an unapplied payment or an open credit note. OLDEST_DUE and DAYS_OLDEST are NULL on exactly those rows - the only two nullable columns in the section. Sorting or charting on them must handle NULL, not coerce it to 0 (which would place them at 'due today')."
+  ],
+  "empty_states": [
+    "Section error or zero rows for a company: render empty('SAP returned no vendor cards for this book - the query failed, this is not a zero payable') with the error text. All three books have always returned rows and the section is correctly NOT in v1's MAY_BE_EMPTY list, so zero rows here means a broken build, never a clean slate.",
+    "manifest.stale is true, or generated_at is more than 30 minutes old in working hours: the payable panels keep their numbers but the page must say how old they are. Never present a stale ADJ_OPEN as live.",
+    "Migrated-openings panel for Mart and Bev: CO_MIGRATED_OPEN is a TRUE zero, so render empty('Mart never carried its A/P opening balances in as invoices - there is nothing to migrate') rather than 'Rs 0', which reads as 'all the go-live bills are settled'.",
+    "Intercompany panel for Beverages: there are 0 INTERCO cards in that book. Render empty('Beverages has no intercompany vendor card') rather than a Rs 0 slice, which reads as 'the intercompany balance is settled'.",
+    "Per-vendor bucket chart where ADJ_OPEN = 0 but N_OPEN_BILLS > 0 (226 Oil / 26 Mart / 55 Bev trade cards, Rs 185.12 Cr of raw open in Oil alone): render empty('SAP still shows N open bills on this card, but the ledger says nothing is owed - the credit absorbed them') rather than a zero-height stack, which reads as 'no bills'.",
+    "Per-vendor bill list on party.html when the card is not fully covered by the open-item-list slice: render empty('bill-level detail is not in this build - open-item-list caps its AP_INV rows per company') rather than an empty table, which reads as 'this vendor has no bills'.",
+    "Any KPI whose check could not run (the open-item-list slice is missing or errored): render the KPI with an amber check dot linking to the derivation, not a green one and not a hidden failure. A check that did not run is not a check that passed.",
+    "UNBACKED_CREDIT = 0 is a genuine, meaningful zero (the identity closed with nothing left over) and may be shown as Rs 0 with the words 'identity closes exactly' - it is the one zero in this section that is safe to print."
+  ]
+}

@@ -1,0 +1,1767 @@
+{
+  "section": "bank-reco",
+  "title": "Bank Reconciliation Status",
+  "tables": "OBNK JDT1 OACT (DSC1 for the house-bank marker) + BNK1 BNK2 RCT1 VPM1 OCHO ORCT OVPM OITR ITR1 read ONLY as zero-proof diagnostics in the `co` CTE (sql 353-364). No figure in this section comes from a payment document, a bank statement line or an internal reconciliation - those tables are read to prove they are empty or irrelevant, and their counts ship as the CO_* columns.",
+  "blurb": "Everything SAP itself knows about bank reconciliation, per bank / cash / bank-facility G/L account: whether the account has ever been reconciled, when it last was, how much of the book balance the bank has been recorded as agreeing, and the size and age of everything that has not been agreed. It is a reconciliation STATUS report, not a reconciliation - no bank statement has ever entered SAP (BNK1 = BNK2 = 0 rows in all three books), so this section can say WHETHER and WHEN a reconciliation happened and what has never been reconciled at all, and it can NEVER say whether a reconciliation was right.",
+  "grain": "SUMMARY: one row per postable balance-sheet G/L account in the bank / cash / bank-facility universe (ROW_TYPE='ACCOUNT'), plus exactly ONE roll-up row (ROW_TYPE='TOTAL', ACCT_CODE NULL, ACCT_NAME 'ALL BANK / CASH / BANK-FACILITY ACCOUNTS'). Live at as_of 2026-08-22: Oil 70+1 = 71, Mart 44+1 = 45, Beverages 18+1 = 19. The universe is the postable children of eight named chart-of-accounts drawers walked through OACT.FatherNum (BANK ACCOUNTS, PAYMENT BANK ONLINE, CASH IN HAND, BANK CASH CREDIT LOAN, FDR, TERM LOAN, VEHICLE LOAN, CREDIT CARD; sql 255-285), never a name or code-prefix match, unioned with any account carrying an OBNK row or a non-null OACT.ExtrMatch as a safety net (live that net catches nothing, which is itself the proof the drawer list is complete). DETAIL: one row per EXTERNAL RECONCILIATION EVENT (one OBNK row = one event; COUNT(*) = COUNT(DISTINCT BankMatch) on every account in every book). Live: Oil 201, Mart 7, Beverages 51 = 259 events in total, covering only 19 / 2 / 2 distinct accounts. The two grains do NOT stack: detail is an event log keyed on (ACCT_CODE, RECON_NO) and re-derives REC_LINES_N / REC_RECEIPTS_L / REC_PAYMENTS_L / RECONCILED_BAL_L exactly, which makes it the independent check route for most of the reconciled-side KPIs. There is no line-level grain anywhere: individual JDT1 bank lines are never published, so no page may offer a drill to a single uncleared transaction.",
+  "faceted": true,
+  "facet_note": "FACETED, by ROW_TYPE only - there is no CLASS/MONTH/BRANCH/VENDOR stacking. The roll-up row is identified by exactly one column and one value: **ROW_TYPE == 'TOTAL'**. It is unique (verified 1 row per company: 1/1/1) and it also carries ACCT_CODE = null, DRAWER_NAME = null, ACCT_KIND = null, IS_HOUSE_BANK = null and LAST_RECON_NO = null, and ACCT_NAME = 'ALL BANK / CASH / BANK-FACILITY ACCOUNTS'. Every per-account row is ROW_TYPE == 'ACCOUNT'. The TOTAL row is EXACTLY additive over the ACCOUNT rows on the summable columns, which is the whole danger: summing a column without filtering ROW_TYPE returns exactly 2.00x the truth (measured on UNREC_90PLUS_L: Oil 38,929.38 vs 19,464.68; Mart 14,947.40 vs 7,473.70; Bev 1,625.32 vs 812.66 - ratio 2.00 in all three). TWO columns break additivity in the other direction and must never be re-derived by summing account rows: (a) the four CO_* diagnostics are book-level constants repeated on every row and aggregated with MAX() on the TOTAL row - summing them gives 71x in Oil, 45x in Mart, 19x in Bev; (b) MOVEMENT_SINCE_RECON_L is NULL on every never-reconciled account row but the TOTAL row folds those accounts' whole GL_BAL in via IFNULL(BAL_AT_RECON,0) (sql 475), so sum(ACCOUNT rows) != TOTAL: Oil +2,297.11 vs -1,630.58, Mart -220.84 vs -125.33, Bev -45.75 vs -42.35. The gap is exactly the GL_BAL_L of the NULL rows (Oil -3,927.71 L over 51 rows, Mart +95.51 L over 42, Bev +3.40 L over 16) - verified to the paisa. CONVENTION USED BY EVERY check recipe BELOW: `rows` = the ROW_TYPE=='ACCOUNT' rows only, `total` = the single ROW_TYPE=='TOTAL' row, `detail` = the event-log rows.",
+  "kpis": [
+    {
+      "id": "reco-coverage-pct",
+      "label": "Bank / cash accounts ever reconciled",
+      "unit": "pct",
+      "column": "RECONS_DONE_N",
+      "row_filter": "r['ROW_TYPE']=='ACCOUNT'",
+      "agg": "count_ratio",
+      "formula": "100 x COUNT(ACCOUNT rows where RECONS_DONE_N > 0) / COUNT(ACCOUNT rows). Denominator is the WHOLE universe including dormant accounts - see reco-coverage-pct-active for the fairer denominator.",
+      "terms": [
+        {
+          "label": "Accounts with at least one reconciliation event",
+          "col": "RECONS_DONE_N",
+          "op": "=",
+          "source": "OBNK COUNT(DISTINCT BankMatch)",
+          "note": "sql 294, 376; live 19 Oil / 2 Mart / 2 Bev out of 70 / 44 / 18"
+        },
+        {
+          "label": "The account universe",
+          "col": "ROW_TYPE",
+          "op": "/",
+          "source": "OACT drawer walk",
+          "note": "sql 255-285; 70 / 44 / 18 postable children of the eight drawers"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "The roll-up row",
+          "row_filter": "r['ROW_TYPE']=='TOTAL'",
+          "why": "it would count as a 71st / 45th / 19th account and it carries SUM(RECONS_N) = 201 / 7 / 51, not a per-account count"
+        }
+      ],
+      "sql_lines": [
+        291,
+        376
+      ],
+      "caveats": [
+        "B-COVERAGE-DENOM",
+        "B-DORMANT",
+        "B-ROWTYPE"
+      ],
+      "check": {
+        "method": "Count from the DETAIL event log instead of the summary column: how many distinct ACCT_CODEs appear in bank-reco-detail at all. That route reads OBNK grouped by (AcctCode, BankMatch) in a separate query with a separate join, and never touches RECONS_DONE_N. A third, cheaper corroboration is COUNT(rows with a non-null LAST_RECON_DATE), which comes from MAX(DueDate) rather than COUNT(DISTINCT BankMatch).",
+        "recipe": "round(100*len({r['ACCT_CODE'] for r in detail})/len(rows),1)   # measured: oil 19/70 = 27.1 vs 27.1, mart 2/44 = 4.5 vs 4.5, bev 2/18 = 11.1 vs 11.1. Third route len([r for r in rows if r.get('LAST_RECON_DATE')]) = 19 / 2 / 2, identical."
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "sort": "RECONS_DONE_N",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 27.1,
+        "mart": 4.5,
+        "bev": 11.1
+      }
+    },
+    {
+      "id": "reco-coverage-pct-active",
+      "label": "Of the accounts that actually move, share ever reconciled",
+      "unit": "pct",
+      "column": "GL_LINES_N",
+      "row_filter": "r['ROW_TYPE']=='ACCOUNT' and float(r.get('GL_LINES_N') or 0) > 0",
+      "agg": "count_ratio",
+      "formula": "100 x COUNT(rows where RECONS_DONE_N > 0) / COUNT(rows where GL_LINES_N > 0). Excludes accounts with no ledger line at all, which cannot be reconciled and are not a failure.",
+      "terms": [
+        {
+          "label": "Accounts ever reconciled",
+          "col": "RECONS_DONE_N",
+          "op": "=",
+          "source": "OBNK",
+          "note": "19 / 2 / 2"
+        },
+        {
+          "label": "Accounts with at least one ledger line",
+          "col": "GL_LINES_N",
+          "op": "/",
+          "source": "JDT1",
+          "note": "66 Oil / 12 Mart / 6 Bev; the other 4 / 32 / 12 are dormant"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Dormant accounts (RECO_STATUS = DORMANT_NEVER_RECONCILED)",
+          "row_filter": "float(r.get('GL_LINES_N') or 0) == 0",
+          "why": "sql 371; 4 Oil / 32 Mart / 12 Bev. Mart's headline coverage of 4.5% is mostly 32 empty FDR and loan heads, not 32 neglected bank accounts. Both denominators must be published together or the reader picks whichever suits them."
+        }
+      ],
+      "sql_lines": [
+        310,
+        381
+      ],
+      "caveats": [
+        "B-COVERAGE-DENOM",
+        "B-DORMANT"
+      ],
+      "check": {
+        "method": "Rebuild the denominator from a different column than GL_LINES_N: an account has moved if and only if its THROUGHPUT_L is non-zero (a money sum, not a row count). If the two disagree the ledger join has lost or gained rows.",
+        "recipe": "round(100*len([r for r in rows if float(r.get('RECONS_DONE_N') or 0)>0])/len([r for r in rows if abs(float(r.get('THROUGHPUT_L') or 0))>0]),1)   # measured: oil 28.8 vs 28.8, mart 16.7 vs 16.7, bev 33.3 vs 33.3"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "filter": "GL_LINES_N>0"
+        }
+      },
+      "live": {
+        "oil": 28.8,
+        "mart": 16.7,
+        "bev": 33.3
+      }
+    },
+    {
+      "id": "reco-never-reconciled-n",
+      "label": "Live accounts never reconciled once",
+      "unit": "count",
+      "column": "RECO_STATUS",
+      "row_filter": "r['ROW_TYPE']=='ACCOUNT' and r.get('RECO_STATUS')=='NEVER_RECONCILED'",
+      "agg": "count",
+      "formula": "COUNT(rows where RECO_STATUS = 'NEVER_RECONCILED') - i.e. has ledger lines AND has never had a reconciliation event. Distinct from 'DORMANT_NEVER_RECONCILED', which is the empty accounts.",
+      "terms": [
+        {
+          "label": "Never reconciled, but the money moves",
+          "col": "RECO_STATUS",
+          "op": "=",
+          "source": "OBNK + JDT1",
+          "note": "sql 371-372; 47 Oil / 10 Mart / 4 Bev"
+        },
+        {
+          "label": "Never reconciled and never posted",
+          "col": "RECO_STATUS",
+          "op": "x",
+          "source": "OBNK + JDT1",
+          "note": "DORMANT_NEVER_RECONCILED: 4 Oil / 32 Mart / 12 Bev - deliberately NOT counted here"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Dormant accounts",
+          "row_filter": "r.get('RECO_STATUS')=='DORMANT_NEVER_RECONCILED'",
+          "why": "nothing to reconcile; counting them would make Mart read as 42 failures when it is 10"
+        }
+      ],
+      "sql_lines": [
+        371,
+        375
+      ],
+      "caveats": [
+        "B-DORMANT",
+        "B-STATUS-SUBSTRING"
+      ],
+      "check": {
+        "method": "Recompute the status from the two underlying numbers rather than trusting the derived pill: RECONS_DONE_N == 0 AND GL_LINES_N > 0. This tests the CASE expression against the columns it was built from.",
+        "recipe": "len([r for r in rows if float(r.get('RECONS_DONE_N') or 0)==0 and float(r.get('GL_LINES_N') or 0)>0])   # measured: oil 47 vs 47, mart 10 vs 10, bev 4 vs 4"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "filter": "RECO_STATUS=NEVER_RECONCILED"
+        }
+      },
+      "live": {
+        "oil": 47,
+        "mart": 10,
+        "bev": 4
+      }
+    },
+    {
+      "id": "reco-days-since-last",
+      "label": "Days since the most recent reconciliation anywhere in this book",
+      "unit": "days",
+      "column": "DAYS_SINCE_RECON_N",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "min",
+      "formula": "as_of MINUS MAX(OBNK.DueDate) over the whole book. On the TOTAL row this is emitted as MIN(DAYS_SINCE_RECON_N) (sql 456), which is the same thing.",
+      "terms": [
+        {
+          "label": "Latest statement date reconciled",
+          "col": "LAST_RECON_DATE",
+          "op": "=",
+          "source": "MAX(OBNK.DueDate)",
+          "note": "Oil 2026-06-30, Mart 2026-05-31, Bev 2026-05-31 - and Oil's 2026-06-30 is ONE account (2201101); every other Oil account stops at 2026-05-31"
+        },
+        {
+          "label": "As-of date",
+          "col": "AS_OF",
+          "op": "-",
+          "source": "pipeline {{ASOF}}",
+          "note": "2026-08-22 in the live slices"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Never-reconciled accounts",
+          "row_filter": "r.get('DAYS_SINCE_RECON_N') is None",
+          "why": "NULL, not 0 - 51 Oil / 42 Mart / 16 Bev rows. Coercing NULL to 0 would read as 'reconciled today' and would make the MIN meaningless."
+        }
+      ],
+      "sql_lines": [
+        379,
+        456
+      ],
+      "caveats": [
+        "B-NULL-RECON-COLS",
+        "B-BEST-ACCOUNT-NOT-BOOK"
+      ],
+      "check": {
+        "method": "Recompute client-side from the DETAIL event log: as_of minus the latest STMT_DATE across all events. Different table read (OBNK grouped per event, not per account), different aggregation, and it does not use HANA's DAYS_BETWEEN at all.",
+        "recipe": "from datetime import date; asof=date(*map(int, as_of.split('-'))); (asof - date(*map(int, max(r['STMT_DATE'] for r in detail).split('-')))).days   # measured: oil 53 vs 53, mart 83 vs 83, bev 83 vs 83"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "sort": "DAYS_SINCE_RECON_N",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 53,
+        "mart": 83,
+        "bev": 83
+      }
+    },
+    {
+      "id": "reco-days-since-worst",
+      "label": "Longest a once-reconciled account has been left",
+      "unit": "days",
+      "column": "DAYS_SINCE_RECON_N",
+      "row_filter": "r['ROW_TYPE']=='ACCOUNT' and r.get('DAYS_SINCE_RECON_N') is not None",
+      "agg": "max",
+      "formula": "MAX(DAYS_SINCE_RECON_N) over accounts that have ever been reconciled. The counterpart to reco-days-since-last, which is a MIN and therefore flatters the book.",
+      "terms": [
+        {
+          "label": "Most abandoned reconciled account",
+          "col": "DAYS_SINCE_RECON_N",
+          "op": "=",
+          "source": "OBNK",
+          "note": "Oil 2201103 INDIAN BANK ADHOC-OCC A/C 7939167102, last statement 2025-03-03 = 537 days; Mart 1104111 ICICI 629305042589, 2025-10-31 = 295 days; Bev's two reconciled accounts are both at 83 days"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Never-reconciled accounts",
+          "row_filter": "r.get('DAYS_SINCE_RECON_N') is None",
+          "why": "they have no last date at all. They are worse than 537 days, not better, and belong to reco-never-reconciled-n - do not let a MAX over non-nulls read as 'the worst case in the book'."
+        }
+      ],
+      "sql_lines": [
+        379,
+        379
+      ],
+      "caveats": [
+        "B-NULL-RECON-COLS",
+        "B-DORMANT"
+      ],
+      "check": {
+        "method": "Recompute the day count from the raw date string against AS_OF in the client instead of reading HANA's DAYS_BETWEEN, and derive the same maximum from the DETAIL event log by taking, per account, as_of minus its own latest STMT_DATE. Two independent routes to the same account and the same number.",
+        "recipe": "from datetime import date; asof=date(*map(int, as_of.split('-'))); max((asof-date(*map(int,r['LAST_RECON_DATE'].split('-')))).days for r in rows if r.get('LAST_RECON_DATE'))   # measured: oil 537 vs 537, mart 295 vs 295, bev 83 vs 83"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "filter": "RECO_STATUS=RECONCILED_STALE"
+        }
+      },
+      "live": {
+        "oil": 537,
+        "mart": 295,
+        "bev": 83
+      }
+    },
+    {
+      "id": "reco-events-n",
+      "label": "Reconciliations SAP has on record, ever",
+      "unit": "count",
+      "column": "RECONS_DONE_N",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "sum",
+      "formula": "SUM over accounts of COUNT(DISTINCT OBNK.BankMatch). NOT COUNT(*) of OBNK rows read naively and NOT OACT.ExtrMatch - see B-SEQUENCE.",
+      "terms": [
+        {
+          "label": "Distinct reconciliation numbers per account",
+          "col": "RECONS_DONE_N",
+          "op": "=",
+          "source": "OBNK.BankMatch",
+          "note": "sql 294; Oil 201 events over 19 accounts and 21 calendar months, Mart 7 events over 2 accounts in nearly two years, Bev 51 over 2"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "OBNK rows dated after as_of",
+          "row_filter": "OBNK.DueDate > {{ASOF}}",
+          "why": "sql 299-300; keeps a back-dated run honest"
+        },
+        {
+          "label": "OACT.ExtrMatch as a count",
+          "row_filter": "never use it",
+          "why": "it is the LAST reconciliation NUMBER used, not a count. On Oil 2201104 it reads 13 where there are 9 events."
+        }
+      ],
+      "sql_lines": [
+        291,
+        376
+      ],
+      "caveats": [
+        "B-SEQUENCE",
+        "B-ROWTYPE"
+      ],
+      "check": {
+        "method": "Count rows in the DETAIL event log - a separate query that groups OBNK by (AcctCode, BankMatch) and joins each event to its own ledger lines. It is a different statement against the same table, and it also proves every event actually cleared something (0 events with LINES_CLEARED_N = 0 in all three books).",
+        "recipe": "len(detail)   # measured: oil 201 vs 201, mart 7 vs 7, bev 51 vs 51. Per-account too: Counter(r['ACCT_CODE'] for r in detail) matches RECONS_DONE_N on every account, 0 mismatches in all three books."
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "view": "events"
+        }
+      },
+      "live": {
+        "oil": 201,
+        "mart": 7,
+        "bev": 51
+      }
+    },
+    {
+      "id": "reco-lines-agreed-pct",
+      "label": "Share of bank ledger lines externally reconciled",
+      "unit": "pct",
+      "column": "RECONCILED_LINES_PCT",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "ratio",
+      "formula": "100 x SUM(REC_LINES_N) / SUM(GL_LINES_N) on the TOTAL row (sql 462-463). A line is reconciled when its (Account, ExtrMatch) matches an OBNK reconciliation whose own DueDate is <= as_of (CTE reckey, sql 303-309).",
+      "terms": [
+        {
+          "label": "Lines carrying a live external reconciliation",
+          "col": "REC_LINES_N",
+          "op": "=",
+          "source": "JDT1.ExtrMatch joined to OBNK",
+          "note": "24,118 Oil / 6,084 Mart / 4,262 Bev"
+        },
+        {
+          "label": "All bank ledger lines to as_of",
+          "col": "GL_LINES_N",
+          "op": "/",
+          "source": "JDT1",
+          "note": "30,918 / 15,594 / 6,732"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "JDT1.IntrnMatch and JDT1.Closed",
+          "row_filter": "never read",
+          "why": "IntrnMatch is 0 and Closed is 'N' on 100% of lines in all three books - SAP 9.x/10 keeps internal reconciliation in OITR/ITR1. Using them would report 0% agreed."
+        },
+        {
+          "label": "Lines whose ExtrMatch has no OBNK row dated <= as_of",
+          "row_filter": "reckey miss",
+          "why": "sql 349; without this guard a back-dated run counts an item as cleared by a reconciliation that had not happened yet - it printed a -42.09 lakh tie-out at as_of 2025-12-31 before the fix"
+        }
+      ],
+      "sql_lines": [
+        316,
+        424
+      ],
+      "caveats": [
+        "B-INTRNMATCH",
+        "B-BACKDATED",
+        "B-LINES-NOT-MONEY"
+      ],
+      "check": {
+        "method": "Rebuild the numerator from the DETAIL event log: sum LINES_CLEARED_N over every reconciliation event and divide by GL_LINES_N. The detail query aggregates JDT1 by (Account, ExtrMatch) with no reckey join and no acct join, so a fan-out or a dropped account in the summary would show here.",
+        "recipe": "round(100*sum(float(r['LINES_CLEARED_N'] or 0) for r in detail)/float(total['GL_LINES_N']),1)   # measured: oil 78.0 vs 78.0, mart 39.0 vs 39.0, bev 63.3 vs 63.3"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "sort": "RECONCILED_LINES_PCT",
+          "dir": "asc"
+        }
+      },
+      "live": {
+        "oil": 78.0,
+        "mart": 39.0,
+        "bev": 63.3
+      }
+    },
+    {
+      "id": "reco-unagreed-balance",
+      "label": "Book balance no reconciliation has ever agreed",
+      "unit": "INR",
+      "column": "UNRECONCILED_DIFF_L",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "sum",
+      "formula": "(SUM(GL_BAL) - SUM(RECONCILED_BAL)) x 1e5. SIGNED, ledger convention: POSITIVE = debit (money the books say is in the bank), NEGATIVE = credit (overdraft / loan drawn).",
+      "terms": [
+        {
+          "label": "Book balance of the whole bank universe",
+          "col": "GL_BAL_L",
+          "op": "+",
+          "source": "JDT1 Debit-Credit",
+          "note": "Oil -5,994.98 L, Mart 95.23 L, Bev 45.91 L"
+        },
+        {
+          "label": "Less the part covered by a reconciliation",
+          "col": "RECONCILED_BAL_L",
+          "op": "-",
+          "source": "JDT1 lines with a live ExtrMatch",
+          "note": "Oil -4,364.41 L, Mart 220.55 L, Bev 88.26 L"
+        },
+        {
+          "label": "Never agreed by anybody",
+          "col": "UNRECONCILED_DIFF_L",
+          "op": "=",
+          "source": "JDT1",
+          "note": "sql 433; Oil -1,630.58 L = -Rs 16.31 Cr, Mart -125.33 L, Bev -42.35 L"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Nothing",
+          "row_filter": "-",
+          "why": "no cancellation filter exists on JDT1 (reversals are separate journals, both legs kept - see B-STORNO), no branch filter and no intercompany filter. Removing intercompany would break the tie to the bank."
+        }
+      ],
+      "sql_lines": [
+        313,
+        433
+      ],
+      "caveats": [
+        "B-LAKHS",
+        "B-SIGN",
+        "B-NO-STATEMENT",
+        "B-BRANCH-INTERCOMPANY"
+      ],
+      "check": {
+        "method": "Re-derive the agreed side from OBNK instead of JDT1: GL_BAL_L minus the sum of BANK_SIDE_L over every detail event. That figure comes from OBNK.DebAmount - CredAmnt - the bank-side column - not from the ledger at all, so it exercises a completely different table. NOTE the honesty limit: the two sides agree by SAP's own construction (B-TIEOUT-TAUTOLOGY), so this proves the join and the arithmetic, never the bank. Tolerance Rs 10,000: each _L column is rounded to 2 dp of a lakh = Rs 1,000 granularity and up to 260 rounded values are being combined.",
+        "recipe": "round((float(total['GL_BAL_L']) - sum(float(r['BANK_SIDE_L'] or 0) for r in detail))*1e5)   # measured: oil -163,052,000 vs -163,058,000 (delta Rs 6,000), mart -12,532,000 vs -12,533,000 (Rs 1,000), bev -4,237,000 vs -4,235,000 (Rs 2,000). Second route, per-account: round(sum(float(r['GL_BAL_L'] or 0)-float(r['RECONCILED_BAL_L'] or 0) for r in rows)*1e5) = -163,057,000 / -12,532,000 / -4,235,000."
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "sort": "UNRECONCILED_DIFF_L",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": -163058000,
+        "mart": -12533000,
+        "bev": -4235000
+      }
+    },
+    {
+      "id": "reco-unrec-lines-n",
+      "label": "Ledger items nobody has agreed",
+      "unit": "count",
+      "column": "UNREC_LINES_N",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "sum",
+      "formula": "COUNT(JDT1 lines on bank universe accounts, RefDate <= as_of, with no live external reconciliation). Counts LINES, so both legs of a storno pair count as two items.",
+      "terms": [
+        {
+          "label": "All bank ledger lines",
+          "col": "GL_LINES_N",
+          "op": "+",
+          "source": "JDT1",
+          "note": "30,918 / 15,594 / 6,732"
+        },
+        {
+          "label": "Less reconciled lines",
+          "col": "REC_LINES_N",
+          "op": "-",
+          "source": "JDT1.ExtrMatch",
+          "note": "24,118 / 6,084 / 4,262"
+        },
+        {
+          "label": "Unreconciled items",
+          "col": "UNREC_LINES_N",
+          "op": "=",
+          "source": "JDT1",
+          "note": "6,800 / 9,510 / 2,470. Mart has MORE unreconciled items than reconciled ones."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Nothing - including cash and wallet lines",
+          "row_filter": "r.get('ACCT_KIND') in ('CASH','WALLET')",
+          "why": "CASH and WALLET accounts are in the universe and are never externally reconcilable, so they inflate this count enormously: 3,570 of Oil's 3,986 90-day-plus items and 6,856 of Mart's 7,387 are cash / PAYTM / RAZORPAY micro-entries. Split by ACCT_KIND before quoting a count."
+        }
+      ],
+      "sql_lines": [
+        323,
+        430
+      ],
+      "caveats": [
+        "B-CASH-WALLET",
+        "B-STORNO",
+        "B-BLENDED-90PLUS"
+      ],
+      "check": {
+        "method": "Derive it as the residual using the detail slice for the reconciled half: GL_LINES_N minus SUM(LINES_CLEARED_N) over events. The event log counts JDT1 rows grouped by (Account, ExtrMatch) with no reckey CTE, so the two routes disagree the moment the reckey guard drops or duplicates a line.",
+        "recipe": "int(float(total['GL_LINES_N']) - sum(float(r['LINES_CLEARED_N'] or 0) for r in detail))   # measured: oil 6,800 vs 6,800, mart 9,510 vs 9,510, bev 2,470 vs 2,470 (exact, counts do not round)"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "sort": "UNREC_LINES_N",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 6800,
+        "mart": 9510,
+        "bev": 2470
+      }
+    },
+    {
+      "id": "reco-90plus-gross",
+      "label": "Unagreed items older than 90 days (gross movement)",
+      "unit": "INR",
+      "column": "UNREC_90PLUS_L",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "sum",
+      "formula": "SUM(Debit + Credit) x 1e5 over unreconciled lines whose RefDate is more than 90 days before as_of. GROSS MOVEMENT, not net exposure - a Dr/Cr pair that nets to zero contributes both legs.",
+      "terms": [
+        {
+          "label": "0-30 days",
+          "col": "UNREC_0_30_L",
+          "op": "+",
+          "source": "JDT1.RefDate",
+          "note": "Oil 24,957.36 L / 995 items"
+        },
+        {
+          "label": "31-60 days",
+          "col": "UNREC_31_60_L",
+          "op": "+",
+          "source": "JDT1.RefDate",
+          "note": "Oil 18,422.52 L / 1,190"
+        },
+        {
+          "label": "61-90 days",
+          "col": "UNREC_61_90_L",
+          "op": "+",
+          "source": "JDT1.RefDate",
+          "note": "Oil 6,669.58 L / 629"
+        },
+        {
+          "label": "90 days +",
+          "col": "UNREC_90PLUS_L",
+          "op": "+",
+          "source": "JDT1.RefDate",
+          "note": "Oil 19,464.68 L / 3,986. The four buckets sum EXACTLY to UNREC_RECEIPTS_L + UNREC_PAYMENTS_L and their counts to UNREC_LINES_N - verified on all 132 account rows and all 3 TOTAL rows."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Storno / reversal pairs",
+          "row_filter": "not removed",
+          "why": "measured inside this bucket 2026-08-21: Oil 209 lines / 2,881.31 L of 19,464 L = 14.8%, Mart 284 / 598.08 L = 8.1%, Bev 44 / 27.86 L = 3.4%. Each pair nets to zero so the NET figure is untouched; only this gross ageing is inflated. Kept because dropping one leg breaks the tie to OACT.CurrTotal."
+        },
+        {
+          "label": "Migrated go-live openings",
+          "row_filter": "RefDate = 2024-09-30",
+          "why": "23 items / 863.55 L of Oil's bucket (4.4%) are the SAP go-live opening entries - balance-sheet carry-forward, not a stale item. Mart and Bev have none."
+        }
+      ],
+      "sql_lines": [
+        342,
+        440
+      ],
+      "caveats": [
+        "B-GROSS-AGEING",
+        "B-BLENDED-90PLUS",
+        "B-CASH-WALLET",
+        "B-STORNO",
+        "B-MIGRATION",
+        "B-LAKHS"
+      ],
+      "check": {
+        "method": "Derive it as the leftover rather than reading the column: total unreconciled gross (UNREC_RECEIPTS_L + UNREC_PAYMENTS_L, which are built from separate SUM(Debit) / SUM(Credit) expressions) minus the three younger buckets. This fails loudly if the bucket boundaries ever overlap or leave a gap, which is exactly the failure a bucket chart hides. Do the same for the counts.",
+        "recipe": "round((float(total['UNREC_RECEIPTS_L'])+float(total['UNREC_PAYMENTS_L'])-float(total['UNREC_0_30_L'])-float(total['UNREC_31_60_L'])-float(total['UNREC_61_90_L']))*1e5)   # measured: oil 1,946,468,000 vs 1,946,468,000 (exact), mart 747,371,000 vs 747,370,000 (Rs 1,000), bev 81,266,000 vs 81,266,000 (exact). Counts: total UNREC_LINES_N minus the three younger _N = 3,986 / 7,387 / 1,340, exact. Per-account max bucket-vs-gross delta measured at 0.01 L = Rs 1,000."
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "sort": "UNREC_90PLUS_L",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 1946468000,
+        "mart": 747370000,
+        "bev": 81266000
+      }
+    },
+    {
+      "id": "reco-90plus-exceptions",
+      "label": "The real exception list: 90-day-plus items on accounts JIVO does reconcile",
+      "unit": "INR",
+      "column": "UNREC_90PLUS_L",
+      "row_filter": "r['ROW_TYPE']=='ACCOUNT' and (r.get('RECO_STATUS') or '').startswith('RECONCILED')",
+      "agg": "sum",
+      "formula": "SUM(UNREC_90PLUS_L where RECO_STATUS LIKE 'RECONCILED%') x 1e5. Item counts: 15 Oil / 142 Mart / 0 Bev, against blended totals of 3,986 / 7,387 / 1,340.",
+      "terms": [
+        {
+          "label": "Old items on accounts under reconciliation - an EXCEPTION to chase",
+          "col": "UNREC_90PLUS_L",
+          "op": "=",
+          "source": "JDT1 + RECO_STATUS",
+          "note": "Oil Rs 16.78 Cr / 15 items, Mart Rs 2.91 Cr / 142, Bev Rs 0 / 0"
+        },
+        {
+          "label": "Old items on accounts nobody has ever reconciled - a COVERAGE FAILURE",
+          "col": "UNREC_90PLUS_L",
+          "op": "x",
+          "source": "JDT1 + RECO_STATUS",
+          "note": "Oil Rs 177.87 Cr / 3,971 items (91.4% of the blend), Mart Rs 71.83 Cr / 7,245 (96.1%), Bev Rs 8.13 Cr / 1,340 (100%). Deliberately NOT added - a different problem with a different owner."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Never-reconciled and dormant accounts",
+          "row_filter": "'NEVER_RECONCILED' in (r.get('RECO_STATUS') or '')",
+          "why": "every line on an account nobody has ever attempted is 'unreconciled' by definition. Blending them invites someone to chase 3,986 transactions when Oil's actual exception list is 15."
+        }
+      ],
+      "sql_lines": [
+        371,
+        440
+      ],
+      "caveats": [
+        "B-BLENDED-90PLUS",
+        "B-STATUS-SUBSTRING",
+        "B-GROSS-AGEING"
+      ],
+      "check": {
+        "method": "Compute the complement instead: TOTAL row's UNREC_90PLUS_L minus the sum over never-reconciled account rows. Reaching the same number from the other side proves the RECO_STATUS partition is exhaustive (every account is either RECONCILED* or *NEVER_RECONCILED* - no third state, no row missed).",
+        "recipe": "round((float(total['UNREC_90PLUS_L']) - sum(float(r['UNREC_90PLUS_L'] or 0) for r in rows if 'NEVER_RECONCILED' in (r.get('RECO_STATUS') or '')))*1e5)   # measured: oil 167,816,000 vs 167,818,000 (delta Rs 2,000), mart 29,077,000 vs 29,077,000 (exact), bev 0 vs 0 (exact)"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "filter": "RECO_STATUS~RECONCILED&UNREC_90PLUS_N>0"
+        }
+      },
+      "live": {
+        "oil": 167818000,
+        "mart": 29077000,
+        "bev": 0
+      }
+    },
+    {
+      "id": "reco-90plus-bank-only",
+      "label": "90-day-plus unagreed, banks and facilities only (no cash, no wallets)",
+      "unit": "INR",
+      "column": "UNREC_90PLUS_L",
+      "row_filter": "r['ROW_TYPE']=='ACCOUNT' and r.get('ACCT_KIND') in ('BANK','CASH_CREDIT','DEPOSIT','BORROWING')",
+      "agg": "sum",
+      "formula": "SUM(UNREC_90PLUS_L where ACCT_KIND in BANK / CASH_CREDIT / DEPOSIT / BORROWING) x 1e5. Item counts 416 Oil / 531 Mart / 5 Bev, against blended 3,986 / 7,387 / 1,340.",
+      "terms": [
+        {
+          "label": "Bank, cash-credit, deposit and borrowing accounts",
+          "col": "ACCT_KIND",
+          "op": "=",
+          "source": "OACT drawer walk",
+          "note": "sql 266-275; these are the accounts a bank statement exists for"
+        },
+        {
+          "label": "Cash and wallet accounts",
+          "col": "ACCT_KIND",
+          "op": "x",
+          "source": "OACT drawer walk",
+          "note": "CASH + WALLET: Oil 3,570 items / 722.49 L, Mart 6,856 / 897.62 L, Bev 1,335 / 784.57 L. Huge counts, small money - PAYTM, RAZORPAY, CASH SALE, CASH SALE MAYAPURI, CASH IN HAND."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "CASH and WALLET accounts",
+          "row_filter": "r.get('ACCT_KIND') in ('CASH','WALLET')",
+          "why": "there is no bank statement to reconcile a till or a payment-gateway wallet against. They need a cash count or a gateway settlement report, which is not in SAP. Oil 1104201 PAYTM alone contributes 1,877 items worth 412.65 L; counting them as bank-reco failures is simply wrong."
+        }
+      ],
+      "sql_lines": [
+        266,
+        440
+      ],
+      "caveats": [
+        "B-CASH-WALLET",
+        "B-GROSS-AGEING",
+        "B-KIND-FROM-DRAWER"
+      ],
+      "check": {
+        "method": "Complement route again: TOTAL UNREC_90PLUS_L minus the CASH and WALLET rows. Also assert the partition is complete - the six ACCT_KIND values must cover every account row with no 'OTHER' (measured: 0 rows read OTHER in any book), otherwise the complement silently hides a drawer.",
+        "recipe": "round((float(total['UNREC_90PLUS_L']) - sum(float(r['UNREC_90PLUS_L'] or 0) for r in rows if r.get('ACCT_KIND') in ('CASH','WALLET')))*1e5); assert not [r for r in rows if r.get('ACCT_KIND')=='OTHER']   # measured: oil 1,874,219,000 vs 1,874,221,000 (Rs 2,000), mart 657,608,000 vs 657,608,000, bev 2,809,000 vs 2,809,000"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "filter": "ACCT_KIND!=CASH,WALLET&UNREC_90PLUS_L>0"
+        }
+      },
+      "live": {
+        "oil": 1874221000,
+        "mart": 657608000,
+        "bev": 2809000
+      }
+    },
+    {
+      "id": "reco-90plus-payments",
+      "label": "Money out, unagreed for more than 90 days",
+      "unit": "INR",
+      "column": "UNREC_90PLUS_PAYMENTS_L",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "sum",
+      "formula": "SUM(JDT1.Credit) x 1e5 over unreconciled lines aged more than 90 days. Credit on a bank account = money leaving the bank. This is the one-sided read of the 90-day-plus bucket and is the closest thing this section has to 'stale outgoing items'.",
+      "terms": [
+        {
+          "label": "Credits (money out) in the 90 d + bucket",
+          "col": "UNREC_90PLUS_PAYMENTS_L",
+          "op": "=",
+          "source": "JDT1.Credit",
+          "note": "sql 344; Oil 10,103.22 L = Rs 101.03 Cr, Mart 3,723.26 L, Bev 404.66 L"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Cheques - there are none",
+          "row_filter": "not applicable",
+          "why": "RCT1, VPM1, OCHO, OCHH, ODPS, DPS1 are 0 rows in all three books and no uncancelled receipt or payment carries a non-zero CheckSum. CO_CHEQUE_DOCS_N = 0 on every row. This figure must never be captioned 'stale cheques' - a previous version of the dashboard did exactly that."
+        }
+      ],
+      "sql_lines": [
+        344,
+        441
+      ],
+      "caveats": [
+        "B-NO-CHEQUES",
+        "B-GROSS-AGEING",
+        "B-WEAK-CHECK",
+        "B-BLENDED-90PLUS"
+      ],
+      "check": {
+        "method": "WEAK - say so on the page. No second column and no second query in this section splits the 90-day-plus bucket by direction, so there is no genuinely independent route to this number inside the data. What CAN be asserted, and is: two containment bounds per account, UNREC_90PLUS_PAYMENTS_L <= UNREC_90PLUS_L and UNREC_90PLUS_PAYMENTS_L <= UNREC_PAYMENTS_L (measured: 0 violations across all 132 account rows in all three books), plus the sanity band that it should sit near half of the gross bucket when Dr and Cr are balanced (live 51.9% Oil / 49.8% Mart / 49.8% Bev). The check dot must render amber with 'no independent route', never green on bounds alone.",
+        "recipe": "assert not [r['ACCT_CODE'] for r in rows if float(r['UNREC_90PLUS_PAYMENTS_L'] or 0) > float(r['UNREC_90PLUS_L'] or 0)+0.011 or float(r['UNREC_90PLUS_PAYMENTS_L'] or 0) > float(r['UNREC_PAYMENTS_L'] or 0)+0.011]   # 0 violations measured; then report the share of gross, do not report an equality"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "sort": "UNREC_90PLUS_PAYMENTS_L",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 1010322000,
+        "mart": 372326000,
+        "bev": 40466000
+      }
+    },
+    {
+      "id": "reco-never-throughput",
+      "label": "Money that has moved through accounts nobody has ever reconciled",
+      "unit": "INR",
+      "column": "THROUGHPUT_L",
+      "row_filter": "r['ROW_TYPE']=='ACCOUNT' and 'NEVER_RECONCILED' in (r.get('RECO_STATUS') or '')",
+      "agg": "sum",
+      "formula": "SUM(Debit + Credit) x 1e5 over accounts with no reconciliation event, ever. Gross two-way movement, so a rupee in and back out counts twice - it is a measure of EXPOSURE TO AN UNCHECKED ACCOUNT, not a balance and never a trade figure.",
+      "terms": [
+        {
+          "label": "Gross movement on never-reconciled accounts",
+          "col": "THROUGHPUT_L",
+          "op": "=",
+          "source": "JDT1 Debit+Credit",
+          "note": "Oil 28,549.66 L = Rs 285.50 Cr (6.8% of the book's bank throughput), Mart 14,530.74 L = Rs 145.31 Cr (18.9%), Bev 1,053.59 L = Rs 10.54 Cr (11.1%)"
+        },
+        {
+          "label": "The two that matter",
+          "col": "ACCT_NAME",
+          "op": "=",
+          "source": "OACT",
+          "note": "Oil 2201106 TRADEPAY HSBC-41001: Rs 130.37 Cr through it, sitting at -Rs 20.89 Cr, never reconciled once, 96 of its 176 items over 90 days old. Mart 1104112 HSBC BANK - 166800516001: Rs 127.21 Cr through 440 lines, never reconciled, 190 items over 90 days worth Rs 55.94 Cr."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Dormant accounts",
+          "row_filter": "float(r.get('GL_LINES_N') or 0)==0",
+          "why": "they contribute 0 by definition; the DORMANT_NEVER_RECONCILED substring still matches 'NEVER_RECONCILED' so they are inside the filter, but they add nothing"
+        }
+      ],
+      "sql_lines": [
+        314,
+        420
+      ],
+      "caveats": [
+        "B-THROUGHPUT-NOT-TRADE",
+        "B-STATUS-SUBSTRING",
+        "B-BRANCH-INTERCOMPANY",
+        "B-LAKHS"
+      ],
+      "check": {
+        "method": "Complement route: TOTAL THROUGHPUT_L minus the throughput of the accounts that HAVE been reconciled (RECO_STATUS starting 'RECONCILED'). Same partition-exhaustiveness argument as reco-90plus-exceptions, and it uses the TOTAL row's independently-aggregated SUM rather than re-summing the account rows.",
+        "recipe": "round((float(total['THROUGHPUT_L']) - sum(float(r['THROUGHPUT_L'] or 0) for r in rows if (r.get('RECO_STATUS') or '').startswith('RECONCILED')))*1e5)   # measured: oil 2,854,965,000 vs 2,854,966,000 (Rs 1,000), mart 1,453,075,000 vs 1,453,074,000 (Rs 1,000), bev 105,359,000 vs 105,359,000 (exact)"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "filter": "RECO_STATUS~NEVER",
+          "sort": "THROUGHPUT_L",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 2854966000,
+        "mart": 1453074000,
+        "bev": 105359000
+      }
+    },
+    {
+      "id": "reco-oldest-unrec-days",
+      "label": "Age of the oldest unagreed item",
+      "unit": "days",
+      "column": "OLDEST_UNREC_DATE",
+      "row_filter": "r['ROW_TYPE']=='ACCOUNT' and r.get('OLDEST_UNREC_DATE') is not None",
+      "agg": "max",
+      "formula": "as_of MINUS MIN(JDT1.RefDate over unreconciled lines). The TOTAL row publishes the DATE (MIN over accounts, sql 481), not the day count - the client must difference it.",
+      "terms": [
+        {
+          "label": "Oldest unreconciled ledger date",
+          "col": "OLDEST_UNREC_DATE",
+          "op": "=",
+          "source": "MIN(JDT1.RefDate) where unreconciled",
+          "note": "Oil 2024-09-30 = 691 days, Mart 2024-12-31 = 599, Bev 2024-10-04 = 687"
+        },
+        {
+          "label": "As-of",
+          "col": "AS_OF",
+          "op": "-",
+          "source": "pipeline {{ASOF}}",
+          "note": "2026-08-22"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Accounts with nothing unreconciled",
+          "row_filter": "r.get('OLDEST_UNREC_DATE') is None",
+          "why": "NULL, 5 Oil / 32 Mart / 12 Bev rows. Must not be coerced to an epoch date or to as_of."
+        }
+      ],
+      "sql_lines": [
+        345,
+        442
+      ],
+      "caveats": [
+        "B-MIGRATION",
+        "B-NULL-RECON-COLS",
+        "B-CASH-WALLET"
+      ],
+      "check": {
+        "method": "Two routes that disagree in a useful way. (a) Recompute client-side from the TOTAL row's OLDEST_UNREC_DATE against AS_OF instead of the account rows' MAX - they must give the same number because the TOTAL emits MIN(date). (b) Then attribute it: Oil's 691 days is the 2024-09-30 SAP go-live migration, not 691 days of neglect - assert that the account holding the oldest date has migrated opening lines before reporting it as an ageing failure.",
+        "recipe": "from datetime import date; asof=date(*map(int, as_of.split('-'))); max((asof-date(*map(int,r['OLDEST_UNREC_DATE'].split('-')))).days for r in rows if r.get('OLDEST_UNREC_DATE'))   # measured: oil 691 vs 691 (from total's 2024-09-30), mart 599 vs 599, bev 687 vs 687"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "sort": "OLDEST_UNREC_DATE",
+          "dir": "asc"
+        }
+      },
+      "live": {
+        "oil": 691,
+        "mart": 599,
+        "bev": 687
+      }
+    },
+    {
+      "id": "reco-stale-pre-recon-n",
+      "label": "Items that should already have cleared and did not",
+      "unit": "count",
+      "column": "STALE_PRE_RECON_N",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "sum",
+      "formula": "COUNT(unreconciled JDT1 lines whose RefDate is on or before their own account's LAST_RECON_DATE). Value counterpart STALE_PRE_RECON_L = Rs 1.40 Cr Oil / 0 / 0, which is GROSS (Debit + Credit).",
+      "terms": [
+        {
+          "label": "Unreconciled but dated before the last statement",
+          "col": "STALE_PRE_RECON_N",
+          "op": "=",
+          "source": "JDT1 + OBNK MAX(DueDate)",
+          "note": "sql 331-334; 2 Oil / 0 Mart / 0 Bev. Both Oil items are on 2201105 HSBC and are a Rs 70,00,000 journal and its exact reversal, dated 2026-04-07, TransType 30 - they NET TO ZERO."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Accounts never reconciled",
+          "row_filter": "r.get('LAST_RECON_DATE') is None",
+          "why": "sql 331 requires s.LAST_D IS NOT NULL. An account with no statement date has no 'should have cleared by now' line, so 0 here does not mean the account is clean - 61 of the 132 accounts are structurally incapable of registering a stale item."
+        }
+      ],
+      "sql_lines": [
+        331,
+        443
+      ],
+      "caveats": [
+        "B-STALE-DENOM",
+        "B-STORNO",
+        "B-GROSS-AGEING"
+      ],
+      "check": {
+        "method": "Cross-check against GAP_AT_LAST_RECON_L, which is arithmetically the NET of exactly these items: GAP = GL_BAL_AT_LAST_RECON - BANK_SIDE_BAL, and BANK_SIDE_BAL = RECONCILED_BAL by the tie-out, so GAP = (all lines dated <= LAST_D) - (reconciled lines) = the net of the stale items. Live that is 0 on every reconciled account, which is consistent with Oil's 2 items being a Rs 70 L pair that cancels. A non-zero GAP with STALE_PRE_RECON_N = 0, or vice versa, is a genuine defect. Independent of re-reading the count.",
+        "recipe": "assert round(sum(float(r['GL_BAL_AT_LAST_RECON_L'] or 0)-float(r['RECONCILED_BAL_L'] or 0) for r in rows if (r.get('RECO_STATUS') or '').startswith('RECONCILED')),2)==0 or [r['ACCT_CODE'] for r in rows if float(r['STALE_PRE_RECON_N'] or 0)>0]   # measured: gap 0 / 0 / 0 and the only stale account is oil 2201105 with GAP_AT_LAST_RECON_L = 0"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "filter": "STALE_PRE_RECON_N>0"
+        }
+      },
+      "live": {
+        "oil": 2,
+        "mart": 0,
+        "bev": 0
+      }
+    },
+    {
+      "id": "reco-tieout-internal",
+      "label": "Tie-out between the two sides SAP stores (internal, NOT bank vs books)",
+      "unit": "INR",
+      "column": "RECON_TIEOUT_DIFF_L",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "sum",
+      "formula": "(SUM(reconciled JDT1 net) - SUM(-(OBNK.DebAmount - OBNK.CredAmnt))) x 1e5. Zero is a STRUCTURAL INVARIANT: SAP refuses to close an external reconciliation whose two sides do not balance. This is a QUERY SELF-CHECK, not assurance.",
+      "terms": [
+        {
+          "label": "Ledger side of the reconciled lines",
+          "col": "RECONCILED_BAL_L",
+          "op": "+",
+          "source": "JDT1 with a live ExtrMatch",
+          "note": "Oil -4,364.41 L, Mart 220.55 L, Bev 88.26 L"
+        },
+        {
+          "label": "Bank side recorded in OBNK",
+          "col": "BANK_SIDE_BAL_L",
+          "op": "-",
+          "source": "OBNK DebAmount / CredAmnt",
+          "note": "identical figures - by construction, not by agreement"
+        },
+        {
+          "label": "Difference",
+          "col": "RECON_TIEOUT_DIFF_L",
+          "op": "=",
+          "source": "JDT1 + OBNK",
+          "note": "0.00 on all 132 summary rows and all 259 detail events. Never present this to an auditor as evidence the bank agreed."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        429,
+        468
+      ],
+      "caveats": [
+        "B-TIEOUT-TAUTOLOGY",
+        "B-NO-STATEMENT",
+        "B-BACKDATED"
+      ],
+      "check": {
+        "method": "Re-derive it at the EVENT grain from the detail slice (sum of TIEOUT_DIFF_L over all 201 / 7 / 51 events) rather than at the account grain. A per-account zero can hide two offsetting per-event errors; a per-event zero cannot. Second corroboration: RECONCILED_BAL_L - BANK_SIDE_BAL_L off the TOTAL row. AND the load-bearing part of this check is the BACK-DATED run: at as_of 2025-12-31 this figure printed -42.09 lakh in Oil before the reckey guard was added, so re-running the pipeline at a past as_of and getting 0 is the only version of this check that has ever caught anything.",
+        "recipe": "round(sum(float(r['TIEOUT_DIFF_L'] or 0) for r in detail)*1e5)   # measured: 0 / 0 / 0, and 0 non-zero events out of 259. Route 2: round((float(total['RECONCILED_BAL_L'])-float(total['BANK_SIDE_BAL_L']))*1e5) = 0 / 0 / 0."
+      },
+      "drill": {
+        "page": "methodology.html",
+        "params": {
+          "k": "reco-tieout-internal",
+          "co": "<company>"
+        }
+      },
+      "live": {
+        "oil": 0,
+        "mart": 0,
+        "bev": 0
+      }
+    },
+    {
+      "id": "reco-gap-at-last-recon-internal",
+      "label": "Gap at the last reconciliation - book balance vs BOOK-DERIVED agreed balance (NOT per bank statement)",
+      "unit": "INR",
+      "column": "GAP_AT_LAST_RECON_L",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "sum",
+      "formula": "(SUM(GL_BAL_AT_LAST_RECON) - SUM(BANK_SIDE_BAL)) x 1e5, i.e. every ledger line dated on or before the last statement date, less the bank-side figure OBNK stores for that account.",
+      "terms": [
+        {
+          "label": "Book balance at the last statement date",
+          "col": "GL_BAL_AT_LAST_RECON_L",
+          "op": "+",
+          "source": "JDT1 where RefDate <= MAX(OBNK.DueDate)",
+          "note": "sql 329-330, 434"
+        },
+        {
+          "label": "Less the agreed balance",
+          "col": "BANK_SIDE_BAL_L",
+          "op": "-",
+          "source": "OBNK",
+          "note": "sql 391, 428"
+        },
+        {
+          "label": "Gap",
+          "col": "GAP_AT_LAST_RECON_L",
+          "op": "=",
+          "source": "JDT1 + OBNK",
+          "note": "0 in all three books, and it equals the NET of the STALE_PRE_RECON items"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "The bank's own closing balance",
+          "row_filter": "does not exist",
+          "why": "THE CENTRAL HONESTY POINT OF THIS SECTION. OBNK.balance is 0.000000 on all 259 OBNK rows across all three books (verified exhaustively, not sampled), so SAP holds no bank-supplied closing balance anywhere. BANK_SIDE_BAL_L is derived from OBNK.DebAmount / CredAmnt, which SAP itself forces to equal the ledger side. This KPI is therefore an INTERNAL CONSISTENCY CHECK, not the classic 'balance per bank statement vs balance per books' line. Getting the real thing requires the bank statement files, which the operator has confirmed are not available."
+        }
+      ],
+      "sql_lines": [
+        435,
+        474
+      ],
+      "caveats": [
+        "B-GAP-BOOK-DERIVED",
+        "B-NO-STATEMENT",
+        "B-TIEOUT-TAUTOLOGY",
+        "B-NULL-RECON-COLS"
+      ],
+      "check": {
+        "method": "Rebuild it per account from the ledger side only: GL_BAL_AT_LAST_RECON_L - RECONCILED_BAL_L over accounts with RECO_STATUS LIKE 'RECONCILED%'. That substitutes the JDT1-derived reconciled balance for the OBNK-derived bank side, so the two routes agree only if the tie-out holds AND no account was dropped from the roll-up. It is genuinely a different arithmetic path, and it is still NOT a bank check - no route inside SAP can be, because the bank figure is not stored. State that alongside whatever the dot shows.",
+        "recipe": "round(sum(float(r['GL_BAL_AT_LAST_RECON_L'] or 0)-float(r['RECONCILED_BAL_L'] or 0) for r in rows if (r.get('RECO_STATUS') or '').startswith('RECONCILED'))*1e5)   # measured: 0 / 0 / 0 vs published 0 / 0 / 0"
+      },
+      "drill": {
+        "page": "methodology.html",
+        "params": {
+          "k": "reco-gap-at-last-recon-internal",
+          "co": "<company>"
+        }
+      },
+      "live": {
+        "oil": 0,
+        "mart": 0,
+        "bev": 0
+      }
+    },
+    {
+      "id": "reco-statement-lines-loaded",
+      "label": "Bank statement lines ever loaded into SAP",
+      "unit": "count",
+      "column": "CO_STMT_IMPORT_ROWS_N",
+      "row_filter": "r['ROW_TYPE']=='TOTAL'",
+      "agg": "max",
+      "formula": "COUNT(BNK1) + COUNT(BNK2) for the whole company (sql 354). A book-level CONSTANT repeated on every row and aggregated with MAX() on the TOTAL row - summing it gives 71x in Oil.",
+      "terms": [
+        {
+          "label": "Statement header + line rows in SAP",
+          "col": "CO_STMT_IMPORT_ROWS_N",
+          "op": "=",
+          "source": "BNK1 + BNK2",
+          "note": "0 in Oil, Mart and Beverages. This is the measured fact that caps everything this section can claim."
+        },
+        {
+          "label": "Cheque documents in SAP",
+          "col": "CO_CHEQUE_DOCS_N",
+          "op": "=",
+          "source": "RCT1 + VPM1 + OCHO + ORCT/OVPM CheckSum",
+          "note": "0 in all three books - JIVO banks 100% by transfer plus a little cash, so there is no such thing as an uncleared cheque here"
+        },
+        {
+          "label": "Internal reconciliations (a DIFFERENT thing)",
+          "col": "CO_INTERNAL_RECONS_N",
+          "op": "=",
+          "source": "OITR uncancelled",
+          "note": "29,093 Oil / 12,933 Mart / 6,127 Bev - heavily used, but on debtor/creditor control, WIP and GRNI accounts, not banks: CO_INTRECON_ON_BANK_N is 2 / 0 / 0"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        353,
+        447
+      ],
+      "caveats": [
+        "B-NO-STATEMENT",
+        "B-NO-CHEQUES",
+        "B-INTRNMATCH",
+        "B-CO-CONSTANTS"
+      ],
+      "check": {
+        "method": "Corroborate from three unrelated tables rather than re-reading one constant: (a) OBNK.Cleared / StatemNo / JDTID / PmntID / IdNumber are empty on all 259 OBNK rows, which is SAP's Bank Statement Processing feature being entirely unused; (b) CO_CHEQUE_DOCS_N = 0 independently confirms no payment instrument records exist; (c) OBNK.balance = 0.000000 on all 259 rows. Four separate emptiness facts pointing the same way is a stronger check than any arithmetic route, and if any one of them ever goes non-zero this section's whole framing has to change.",
+        "recipe": "assert int(total['CO_STMT_IMPORT_ROWS_N'])==0 and int(total['CO_CHEQUE_DOCS_N'])==0 and len({v for v in (r['CO_STMT_IMPORT_ROWS_N'] for r in rows)})==1   # measured 0 / 0 / 0, constant on all 70 / 44 / 18 account rows"
+      },
+      "drill": {
+        "page": "methodology.html",
+        "params": {
+          "k": "reco-statement-lines-loaded",
+          "co": "<company>"
+        }
+      },
+      "live": {
+        "oil": 0,
+        "mart": 0,
+        "bev": 0
+      }
+    },
+    {
+      "id": "reco-keying-lag-days",
+      "label": "Median days from statement date to the day it was keyed",
+      "unit": "days",
+      "column": "LAG_DAYS_N",
+      "row_filter": "detail row (event grain)",
+      "agg": "median",
+      "formula": "MEDIAN(OBNK.CreateDate - OBNK.DueDate) over every reconciliation event (bank-reco-detail.sql line 99). Mean for context: 10.0 Oil / 14.1 Mart / 6.6 Bev; max 53 / 32 / 31.",
+      "terms": [
+        {
+          "label": "Statement cut-off",
+          "col": "STMT_DATE",
+          "op": "-",
+          "source": "OBNK.DueDate",
+          "note": "always a month-end here"
+        },
+        {
+          "label": "Day the reconciliation was keyed into SAP",
+          "col": "PERFORMED_DATE",
+          "op": "=",
+          "source": "OBNK.CreateDate",
+          "note": "median lag 6 / 13 / 5 days. THE FINDING: when JIVO reconciles, it reconciles promptly. The gaps are MISSED MONTHS, not slow months."
+        },
+        {
+          "label": "How far back a batch reached",
+          "col": "MAX_ITEM_AGE_AT_STMT_N",
+          "op": "=",
+          "source": "STMT_DATE - MIN(RefDate)",
+          "note": "max 547 Oil / 360 Mart / 166 Bev days. 29 / 5 / 3 events reached back more than 60 days - those are catch-up sweeps, not clean month-on-month work."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Accounts with no event",
+          "row_filter": "not in detail",
+          "why": "the lag is only defined where a reconciliation exists. 19 / 2 / 2 accounts contribute; the other 51 / 42 / 16 have no lag because they have no reconciliation - a good lag on 2 Mart accounts says nothing about Mart."
+        }
+      ],
+      "sql_lines": [
+        291,
+        302
+      ],
+      "caveats": [
+        "B-LAG-SMALL-N",
+        "B-DETAIL-UNBOUNDED"
+      ],
+      "check": {
+        "method": "Recompute the lag client-side by differencing the two published date strings (PERFORMED_DATE minus STMT_DATE) instead of reading HANA's DAYS_BETWEEN output. This tests the date plumbing and the TO_VARCHAR round-trip, not just the statistic.",
+        "recipe": "from datetime import date; import statistics; d=lambda s: date(*map(int,s.split('-'))); statistics.median([(d(r['PERFORMED_DATE'])-d(r['STMT_DATE'])).days for r in detail])   # measured: oil 6 vs 6, mart 13 vs 13, bev 5 vs 5; means 10.0 / 14.1 / 6.6 both routes"
+      },
+      "drill": {
+        "page": "bank-reco.html",
+        "params": {
+          "co": "<company>",
+          "view": "events",
+          "sort": "LAG_DAYS_N",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 6,
+        "mart": 13,
+        "bev": 5
+      }
+    }
+  ],
+  "columns": [
+    {
+      "col": "ROW_TYPE",
+      "label": "Row kind",
+      "unit": "text",
+      "meaning": "'ACCOUNT' or 'TOTAL'. THE most important column in the slice: it is the ONLY thing separating the 70/44/18 per-account rows from the single roll-up. Filter on it before any aggregation \u2014 summing without it returns exactly 2.00x.",
+      "link": "none"
+    },
+    {
+      "col": "ACCT_CODE",
+      "label": "G/L account",
+      "unit": "text",
+      "meaning": "OACT.AcctCode. Unique within a company. NULL on the TOTAL row (which is how you can spot the roll-up even if ROW_TYPE were dropped). An identifier, never an amount.",
+      "link": "gl"
+    },
+    {
+      "col": "ACCT_NAME",
+      "label": "Account name",
+      "unit": "text",
+      "meaning": "OACT.AcctName. On the TOTAL row it reads 'ALL BANK / CASH / BANK-FACILITY ACCOUNTS'. Names carry the real bank account number (e.g. INDIAN BANK CC A/C 7007270527) \u2014 treat as sensitive when publishing.",
+      "link": "gl"
+    },
+    {
+      "col": "DRAWER_NAME",
+      "label": "Chart-of-accounts drawer",
+      "unit": "text",
+      "meaning": "Name of the OACT.FatherNum parent that put this account in the universe: one of BANK ACCOUNTS, PAYMENT BANK ONLINE, CASH IN HAND, BANK CASH CREDIT LOAN, FDR, TERM LOAN, VEHICLE LOAN, CREDIT CARD. All eight exist with identical spelling AND identical account codes in all three books. NULL on the TOTAL row.",
+      "link": "none"
+    },
+    {
+      "col": "ACCT_KIND",
+      "label": "Kind",
+      "unit": "text",
+      "meaning": "BANK / WALLET / CASH / CASH_CREDIT / DEPOSIT / BORROWING, derived ENTIRELY from DRAWER_NAME (sql 266-275) and never from the account name. Live counts Oil 6/2/3/9/32/18, Mart 13/2/3/2/17/7, Bev 8/2/3/0/1/4. The value 'OTHER' exists in the SQL but 0 rows carry it in any book. Because it follows the drawer, Oil 1103115 R & D WHEAT GRASS (Rs 134.05 L) is classified DEPOSIT.",
+      "link": "none"
+    },
+    {
+      "col": "IS_HOUSE_BANK",
+      "label": "House bank",
+      "unit": "text",
+      "meaning": "'Y' when the account appears as DSC1.GLAccount. DECORATIVE ONLY. DSC1 has 5 rows in Oil, 1 in Bev and effectively none usable in Mart: live flags are Oil 5 of 70, Mart 0 of 44, Bev 1 of 18 \u2014 and Bev's single flag sits on a DORMANT account. It defines nothing and must never be used to select bank accounts.",
+      "link": "none"
+    },
+    {
+      "col": "RECO_STATUS",
+      "label": "Reconciliation status",
+      "unit": "text",
+      "meaning": "DORMANT_NEVER_RECONCILED (no ledger lines at all) / NEVER_RECONCILED / RECONCILED_CURRENT (<= 45 days) / RECONCILED_LAGGING (<= 120) / RECONCILED_STALE. Live Oil 4/47/0/17/2, Mart 32/10/0/1/1, Bev 12/4/0/2/0. NOTE: no account in any book is CURRENT today. Must be matched by SUBSTRING, and note that 'NEVER_RECONCILED' is a substring of 'DORMANT_NEVER_RECONCILED'.",
+      "link": "none"
+    },
+    {
+      "col": "RECONS_DONE_N",
+      "label": "Reconciliations",
+      "unit": "count",
+      "meaning": "COUNT(DISTINCT OBNK.BankMatch) for the account, bounded by DueDate <= as_of. NOT COUNT(*) of OBNK rows read naively and NOT OACT.ExtrMatch. On the TOTAL row it is the SUM: 201 / 7 / 51 events.",
+      "link": "none"
+    },
+    {
+      "col": "FIRST_RECON_DATE",
+      "label": "First reconciliation",
+      "unit": "date",
+      "meaning": "MIN(OBNK.DueDate). NULL when never reconciled. Book-wide 2024-10-30 Oil / 2025-07-01 Mart / 2024-12-31 Bev.",
+      "link": "none"
+    },
+    {
+      "col": "LAST_RECON_DATE",
+      "label": "Last reconciliation",
+      "unit": "date",
+      "meaning": "MAX(OBNK.DueDate) \u2014 the statement CUT-OFF date, always a month-end, not the day the work was done (that is PERFORMED_DATE in the detail). NULL when never reconciled.",
+      "link": "none"
+    },
+    {
+      "col": "DAYS_SINCE_RECON_N",
+      "label": "Days since reconciled",
+      "unit": "days",
+      "meaning": "as_of minus LAST_RECON_DATE. NULL on 51 Oil / 42 Mart / 16 Bev rows \u2014 must not be coerced to 0. On the TOTAL row this is a MIN (sql 456), i.e. the BEST account in the book, not the book's position.",
+      "link": "none"
+    },
+    {
+      "col": "LAST_RECON_NO",
+      "label": "Last reconciliation number",
+      "unit": "text",
+      "meaning": "MAX(OBNK.BankMatch) for the account. AN IDENTIFIER, NOT A COUNT and not an amount, despite ending in _NO. It equals RECONS_DONE_N on 22 of the 23 reconciled accounts, which is what makes the exception dangerous: Oil 2201104 reads 13 against 9 actual events.",
+      "link": "none"
+    },
+    {
+      "col": "GL_LINES_N",
+      "label": "Ledger lines",
+      "unit": "count",
+      "meaning": "COUNT(JDT1 lines on the account with RefDate <= as_of). Counts BOTH legs of storno reversals, so it is posting volume, not transaction count. 0 marks a dormant account.",
+      "link": "none"
+    },
+    {
+      "col": "GL_BAL_L",
+      "label": "Book balance",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED, ledger convention: POSITIVE = DEBIT (money the books say is in the bank / a deposit held), NEGATIVE = CREDIT (overdraft drawn, loan outstanding). Oil's book total of -5,994.98 L is mostly borrowings and cash-credit facilities, NOT a missing Rs 60 Cr.",
+      "link": "none"
+    },
+    {
+      "col": "THROUGHPUT_L",
+      "label": "Gross movement",
+      "unit": "INR",
+      "meaning": "LAKHS. SUM(Debit + Credit) to as_of, so a rupee in and back out counts twice. It measures how much traffic an account carries and therefore how much is riding on it being checked. It is NOT turnover, NOT a trade figure and includes intercompany transfers.",
+      "link": "none"
+    },
+    {
+      "col": "CURRTOTAL_XCHECK_L",
+      "label": "SAP's own stored balance",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED. OACT.CurrTotal. LIFETIME-TO-TODAY, NOT bounded by as_of. It matched GL_BAL_L to 0.000000 lakh on all 132 accounts in the live run, which is the section's cleanest cross-check \u2014 but only because there are no future-dated bank lines. At any historical as_of it legitimately differs.",
+      "link": "gl"
+    },
+    {
+      "col": "REC_LINES_N",
+      "label": "Lines agreed",
+      "unit": "count",
+      "meaning": "Lines whose (Account, ExtrMatch) matches an OBNK reconciliation with DueDate <= as_of (CTE reckey). 24,118 / 6,084 / 4,262. REC_LINES_N + UNREC_LINES_N = GL_LINES_N on every row, verified 0 violations.",
+      "link": "none"
+    },
+    {
+      "col": "RECONCILED_LINES_PCT",
+      "label": "Lines agreed %",
+      "unit": "pct",
+      "meaning": "100 x REC_LINES_N / GL_LINES_N, one decimal. NULL when GL_LINES_N = 0 (4 Oil / 32 Mart / 12 Bev dormant rows) \u2014 an explicit divide-by-zero guard, not missing data. Beware: the name contains '_L' inside 'LINES', so a substring-based money test scales it by 1e5.",
+      "link": "none"
+    },
+    {
+      "col": "REC_RECEIPTS_N",
+      "label": "Agreed receipts",
+      "unit": "count",
+      "meaning": "Reconciled lines carrying a non-zero Debit. Receipts = ledger DEBITS = money in.",
+      "link": "none"
+    },
+    {
+      "col": "REC_RECEIPTS_L",
+      "label": "Agreed receipts",
+      "unit": "INR",
+      "meaning": "LAKHS, positive magnitude. SUM(Debit) over reconciled lines.",
+      "link": "none"
+    },
+    {
+      "col": "REC_PAYMENTS_N",
+      "label": "Agreed payments",
+      "unit": "count",
+      "meaning": "Reconciled lines carrying a non-zero Credit. Payments = ledger CREDITS = money out. A single line can be counted in both _RECEIPTS_N and _PAYMENTS_N only if it carried both a Debit and a Credit, which SAP does not do \u2014 but the two counts are computed independently, so do not assume they sum to REC_LINES_N.",
+      "link": "none"
+    },
+    {
+      "col": "REC_PAYMENTS_L",
+      "label": "Agreed payments",
+      "unit": "INR",
+      "meaning": "LAKHS, positive magnitude. SUM(Credit) over reconciled lines.",
+      "link": "none"
+    },
+    {
+      "col": "RECONCILED_BAL_L",
+      "label": "Agreed balance (ledger side)",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED. Net Debit-Credit of the reconciled lines. Oil -4,364.41 / Mart 220.55 / Bev 88.26.",
+      "link": "none"
+    },
+    {
+      "col": "BANK_SIDE_BAL_L",
+      "label": "Agreed balance (OBNK side)",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED. -(SUM(OBNK.DebAmount - OBNK.CredAmnt)). Identical to RECONCILED_BAL_L on every account BY SAP'S CONSTRUCTION, not by agreement with any bank. It is NOT the bank's closing balance: OBNK.balance is 0.000000 on all 259 OBNK rows in all three books.",
+      "link": "none"
+    },
+    {
+      "col": "RECON_TIEOUT_DIFF_L",
+      "label": "Tie-out diff (internal)",
+      "unit": "INR",
+      "meaning": "LAKHS. RECONCILED_BAL_L - BANK_SIDE_BAL_L. 0.00 on all 132 account rows and all 3 TOTAL rows because SAP refuses to close an unbalanced external reconciliation. A QUERY SELF-CHECK. Rendering it as a plain column with no caveat makes it read like a passed control \u2014 it is not.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_LINES_N",
+      "label": "Unagreed items",
+      "unit": "count",
+      "meaning": "GL_LINES_N - REC_LINES_N. 6,800 Oil / 9,510 Mart / 2,470 Bev. Mart has more unagreed items than agreed ones.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_RECEIPTS_N",
+      "label": "Unagreed receipts",
+      "unit": "count",
+      "meaning": "Unreconciled lines with a non-zero Debit.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_RECEIPTS_L",
+      "label": "Unagreed receipts",
+      "unit": "INR",
+      "meaning": "LAKHS, positive magnitude. SUM(Debit) over unreconciled lines.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_PAYMENTS_N",
+      "label": "Unagreed payments",
+      "unit": "count",
+      "meaning": "Unreconciled lines with a non-zero Credit.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_PAYMENTS_L",
+      "label": "Unagreed payments",
+      "unit": "INR",
+      "meaning": "LAKHS, positive magnitude. SUM(Credit) over unreconciled lines. UNREC_RECEIPTS_L + UNREC_PAYMENTS_L equals the four ageing buckets exactly \u2014 that is the ageing reconciliation check.",
+      "link": "none"
+    },
+    {
+      "col": "UNRECONCILED_DIFF_L",
+      "label": "Balance never agreed",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED. GL_BAL_L - RECONCILED_BAL_L. The net position no reconciliation covers: Oil -1,630.58 L, Mart -125.33 L, Bev -42.35 L. This is the NET figure to quote; the ageing buckets are gross.",
+      "link": "none"
+    },
+    {
+      "col": "GL_BAL_AT_LAST_RECON_L",
+      "label": "Book balance at the last statement date",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED. Every ledger line dated on or before LAST_RECON_DATE, reconciled or not. NULL when the account has never been reconciled (51 / 42 / 16 rows) \u2014 but the TOTAL row folds those in as 0 via IFNULL (sql 473).",
+      "link": "none"
+    },
+    {
+      "col": "GAP_AT_LAST_RECON_L",
+      "label": "Gap at last reconciliation (internal)",
+      "unit": "INR",
+      "meaning": "LAKHS. GL_BAL_AT_LAST_RECON_L - BANK_SIDE_BAL_L. THIS IS NOT 'balance per bank statement vs balance per books'. The bank's closing balance is not in SAP anywhere (OBNK.balance = 0.000000 on all 259 rows), so this compares the book balance against a BOOK-DERIVED agreed balance. It is arithmetically the NET of the STALE_PRE_RECON items, and it is 0 on every account in all three books. NULL where never reconciled.",
+      "link": "none"
+    },
+    {
+      "col": "MOVEMENT_SINCE_RECON_L",
+      "label": "Movement since the last reconciliation",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED. GL_BAL_L - GL_BAL_AT_LAST_RECON_L. NULL on every never-reconciled row, which is why this column does NOT re-total: sum(ACCOUNT rows) is Oil +2,297.11 / Mart -220.84 / Bev -45.75 against TOTAL -1,630.58 / -125.33 / -42.35. On reconciled accounts it equals UNRECONCILED_DIFF_L exactly (verified 0 divergences), because GAP_AT_LAST_RECON_L is 0.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_0_30_N",
+      "label": "0-30 d items",
+      "unit": "count",
+      "meaning": "Unreconciled lines whose RefDate is within 30 days of as_of.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_0_30_L",
+      "label": "0-30 d value",
+      "unit": "INR",
+      "meaning": "LAKHS. GROSS movement (Debit + Credit) of those lines, not net exposure.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_31_60_N",
+      "label": "31-60 d items",
+      "unit": "count",
+      "meaning": "Unreconciled lines aged 31-60 days.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_31_60_L",
+      "label": "31-60 d value",
+      "unit": "INR",
+      "meaning": "LAKHS, gross.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_61_90_N",
+      "label": "61-90 d items",
+      "unit": "count",
+      "meaning": "Unreconciled lines aged 61-90 days.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_61_90_L",
+      "label": "61-90 d value",
+      "unit": "INR",
+      "meaning": "LAKHS, gross.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_90PLUS_N",
+      "label": "90 d + items",
+      "unit": "count",
+      "meaning": "Unreconciled lines older than 90 days. Oil 3,986 / Mart 7,387 / Bev 1,340 \u2014 but 3,570 / 6,856 / 1,335 of those are CASH and WALLET micro-entries.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_90PLUS_L",
+      "label": "90 d + value",
+      "unit": "INR",
+      "meaning": "LAKHS, gross. The four bucket _L columns sum exactly to UNREC_RECEIPTS_L + UNREC_PAYMENTS_L and the four _N columns to UNREC_LINES_N \u2014 verified on all 132 account rows and all 3 TOTAL rows, max per-row delta 0.01 L.",
+      "link": "none"
+    },
+    {
+      "col": "UNREC_90PLUS_PAYMENTS_L",
+      "label": "90 d + money out",
+      "unit": "INR",
+      "meaning": "LAKHS. SUM(Credit) only, over the 90-day-plus unreconciled lines. The one-sided read of the bucket. NEVER caption it 'stale cheques' \u2014 there are no cheques in any JIVO book.",
+      "link": "none"
+    },
+    {
+      "col": "OLDEST_UNREC_DATE",
+      "label": "Oldest unagreed item",
+      "unit": "date",
+      "meaning": "MIN(JDT1.RefDate) over unreconciled lines. NULL on 5 Oil / 32 Mart / 12 Bev rows \u2014 4/32/12 of those are dormant and ONE (Oil 1104103, 100% reconciled) genuinely has nothing outstanding. Oil's book-wide 2024-09-30 is the SAP go-live migration date, not 691 days of neglect.",
+      "link": "none"
+    },
+    {
+      "col": "STALE_PRE_RECON_N",
+      "label": "Should have cleared",
+      "unit": "count",
+      "meaning": "Unreconciled lines dated on or before the account's own LAST_RECON_DATE. 2 Oil / 0 Mart / 0 Bev. Structurally impossible on the 61 accounts that have never been reconciled, so 0 is not a clean bill of health.",
+      "link": "none"
+    },
+    {
+      "col": "STALE_PRE_RECON_L",
+      "label": "Should have cleared, value",
+      "unit": "INR",
+      "meaning": "LAKHS, GROSS. Oil's 140.00 L is a single Rs 70,00,000 journal and its exact reversal on 2201105 (TransId 219567 / 220018, both TransType 30, both 2026-04-07). The NET is zero \u2014 which is why GAP_AT_LAST_RECON_L reads 0.",
+      "link": "none"
+    },
+    {
+      "col": "CO_STMT_IMPORT_ROWS_N",
+      "label": "Statement rows in SAP",
+      "unit": "count",
+      "meaning": "BOOK-LEVEL CONSTANT repeated on every row (MAX() on the TOTAL row). COUNT(BNK1) + COUNT(BNK2) = 0 in Oil, Mart and Beverages. Summing this column gives 71x / 45x / 19x. It is the fact that caps everything this section can claim.",
+      "link": "none"
+    },
+    {
+      "col": "CO_CHEQUE_DOCS_N",
+      "label": "Cheque documents in SAP",
+      "unit": "count",
+      "meaning": "BOOK-LEVEL CONSTANT. RCT1 + VPM1 + OCHO + uncancelled ORCT/OVPM with CheckSum <> 0 = 0 everywhere. JIVO banks 100% by transfer plus a little cash.",
+      "link": "none"
+    },
+    {
+      "col": "CO_INTERNAL_RECONS_N",
+      "label": "Internal reconciliations in the book",
+      "unit": "count",
+      "meaning": "BOOK-LEVEL CONSTANT. Uncancelled OITR headers: 29,093 Oil / 12,933 Mart / 6,127 Bev. Internal reconciliation IS heavily used at JIVO \u2014 it just does not touch bank accounts. Published so nobody repeats the wrong conclusion drawn from JDT1.IntrnMatch = 0.",
+      "link": "none"
+    },
+    {
+      "col": "CO_INTRECON_ON_BANK_N",
+      "label": "Internal reconciliations touching a bank account",
+      "unit": "count",
+      "meaning": "BOOK-LEVEL CONSTANT. ITR1 rows sitting on an account in this universe: 2 Oil / 0 Mart / 0 Bev, out of 122,801 Oil ITR1 rows. This is the number that proves OITR/ITR1 is the wrong table for bank reconciliation.",
+      "link": "none"
+    },
+    {
+      "col": "RECON_NO",
+      "label": "Reconciliation number",
+      "unit": "text",
+      "meaning": "DETAIL SLICE. OBNK.BankMatch \u2014 the value JDT1.ExtrMatch carries. A PER-ACCOUNT counter, not a global id: Oil has 201 events but only 30 distinct BankMatch values, and BankMatch = 1 appears on 18 different accounts with 10 different statement dates. (ACCT_CODE, RECON_NO) is unique on every row (201/201, 7/7, 51/51). Joining on BankMatch alone would be catastrophic.",
+      "link": "event"
+    },
+    {
+      "col": "STMT_DATE",
+      "label": "Statement date",
+      "unit": "date",
+      "meaning": "DETAIL SLICE. OBNK.DueDate \u2014 the statement cut-off, always a month-end. Range: Oil 2024-10-30..2026-06-30 over 21 months, Mart 2025-07-01..2026-05-31 over 5, Bev 2024-12-31..2026-05-31 over 14.",
+      "link": "none"
+    },
+    {
+      "col": "PERFORMED_DATE",
+      "label": "Keyed on",
+      "unit": "date",
+      "meaning": "DETAIL SLICE. OBNK.CreateDate \u2014 the day the reconciliation was actually entered into SAP.",
+      "link": "none"
+    },
+    {
+      "col": "LAG_DAYS_N",
+      "label": "Keying lag",
+      "unit": "days",
+      "meaning": "DETAIL SLICE. PERFORMED_DATE minus STMT_DATE. Median 6 Oil / 13 Mart / 5 Bev, mean 10.0 / 14.1 / 6.6, max 53 / 32 / 31. When JIVO reconciles it reconciles promptly; the problem is missed months, not slow months.",
+      "link": "none"
+    },
+    {
+      "col": "LINES_CLEARED_N",
+      "label": "Lines cleared by this event",
+      "unit": "count",
+      "meaning": "DETAIL SLICE. JDT1 lines with this (Account, ExtrMatch). Sums to REC_LINES_N exactly (24,118 / 6,084 / 4,262) and 0 events in any book cleared nothing.",
+      "link": "none"
+    },
+    {
+      "col": "CLEARED_RECEIPTS_N",
+      "label": "Receipts cleared",
+      "unit": "count",
+      "meaning": "DETAIL SLICE. Lines in the event with a non-zero Debit.",
+      "link": "none"
+    },
+    {
+      "col": "CLEARED_RECEIPTS_L",
+      "label": "Receipts cleared",
+      "unit": "INR",
+      "meaning": "DETAIL SLICE. LAKHS, positive magnitude.",
+      "link": "none"
+    },
+    {
+      "col": "CLEARED_PAYMENTS_N",
+      "label": "Payments cleared",
+      "unit": "count",
+      "meaning": "DETAIL SLICE. Lines in the event with a non-zero Credit.",
+      "link": "none"
+    },
+    {
+      "col": "CLEARED_PAYMENTS_L",
+      "label": "Payments cleared",
+      "unit": "INR",
+      "meaning": "DETAIL SLICE. LAKHS, positive magnitude.",
+      "link": "none"
+    },
+    {
+      "col": "CLEARED_NET_L",
+      "label": "Net cleared",
+      "unit": "INR",
+      "meaning": "DETAIL SLICE. LAKHS, SIGNED, ledger convention (positive = net debit). Sums to RECONCILED_BAL_L within rounding.",
+      "link": "none"
+    },
+    {
+      "col": "BANK_SIDE_L",
+      "label": "Bank side of this event",
+      "unit": "INR",
+      "meaning": "DETAIL SLICE. LAKHS, SIGNED. -(OBNK.DebAmount - OBNK.CredAmnt) for the event. Equal and opposite to CLEARED_NET_L by SAP's construction.",
+      "link": "none"
+    },
+    {
+      "col": "TIEOUT_DIFF_L",
+      "label": "Tie-out diff (internal)",
+      "unit": "INR",
+      "meaning": "DETAIL SLICE. LAKHS. CLEARED_NET_L + OBNK net. 0.00 on all 259 events in all three books. It is the ALARM for the detail query's deliberately unbounded `led` CTE: if a reconciled line ever gets dated after its own statement date, this goes non-zero first.",
+      "link": "none"
+    },
+    {
+      "col": "OLDEST_ITEM_DATE",
+      "label": "Oldest item in the batch",
+      "unit": "date",
+      "meaning": "DETAIL SLICE. MIN(JDT1.RefDate) among the lines the event cleared.",
+      "link": "none"
+    },
+    {
+      "col": "MAX_ITEM_AGE_AT_STMT_N",
+      "label": "How far back the batch reached",
+      "unit": "days",
+      "meaning": "DETAIL SLICE. STMT_DATE minus OLDEST_ITEM_DATE. Max 547 Oil / 360 Mart / 166 Bev days; 29 / 5 / 3 events reached back more than 60 days. A large value means a CATCH-UP SWEEP, not clean month-on-month work \u2014 and it is why 'everything before LAST_RECON_DATE is clear' is false.",
+      "link": "none"
+    }
+  ],
+  "drilldowns": [
+    "bank-reco.html",
+    "gl-account.html",
+    "banks.html",
+    "derivation.html",
+    "methodology.html"
+  ],
+  "charts": [
+    {
+      "type": "matrix",
+      "title": "Who is being reconciled, and who is not",
+      "x": "ACCT_KIND",
+      "y": "RECO_STATUS",
+      "series": "account count, cell shaded by SUM(THROUGHPUT_L)",
+      "why": "The single most useful view of this section, and one a KPI row cannot give: coverage is not thin evenly, it is thin exactly where the money is. Cells carry the account count and shade on gross movement, so Oil's 47 NEVER_RECONCILED cells light up on CASH_CREDIT (2201106 TRADEPAY, Rs 130.37 Cr through it) while its 17 RECONCILED_LAGGING cells sit on small vehicle loans. It also shows there is not one RECONCILED_CURRENT cell in any of the three books. Dormant rows must be drawn neutral, never red - an account with no ledger lines is not a control failure."
+    },
+    {
+      "type": "timeline",
+      "title": "Every reconciliation ever recorded, by account",
+      "x": "STMT_DATE",
+      "y": "ACCT_NAME",
+      "series": "RECON_NO (one dot per event, dot size = LINES_CLEARED_N)",
+      "why": "Built from the detail event log, 201 / 7 / 51 dots on 19 / 2 / 2 rows. It draws the cliff no table shows: every Oil account stops dead at 2026-05-31 except 2201101 which reached 2026-06-30, and two rows just stop - 1104103 at 2025-08-31 and 2201103 INDIAN BANK ADHOC-OCC at 2025-03-03 (537 days). Mart's whole reconciliation history is seven dots. Draw the as_of date as a right-hand rule so the gap since the last dot is a visible distance, not a number."
+    },
+    {
+      "type": "stackedBars",
+      "title": "The 90-day-plus number is two different problems",
+      "x": "company",
+      "y": "UNREC_90PLUS_L",
+      "series": "RECO_STATUS bucket: on reconciled accounts vs on never-reconciled accounts",
+      "why": "The section's most misreadable figure, drawn so it cannot be misread. Oil Rs 16.78 Cr exception list against Rs 177.87 Cr coverage failure (91.4%); Mart Rs 2.91 Cr against Rs 71.83 Cr (96.1%); Beverages Rs 0.00 against Rs 8.13 Cr (100%). The small segment is a list of items to chase; the large one is a list of accounts nobody has ever opened. Label the segments with those two words, not with 'reconciled/unreconciled'."
+    },
+    {
+      "type": "stackedBars",
+      "title": "Age of the unagreed items, banks and facilities only",
+      "x": "ACCT_NAME",
+      "y": "UNREC_0_30_L|UNREC_31_60_L|UNREC_61_90_L|UNREC_90PLUS_L",
+      "series": "bucket",
+      "why": "The only additive bucket set (the four sum exactly to UNREC_RECEIPTS_L + UNREC_PAYMENTS_L). One bar per account with ACCT_KIND in BANK / CASH_CREDIT / DEPOSIT / BORROWING, ordered by the 90-day-plus segment. Excluding CASH and WALLET is what makes it readable: with them in, Oil 1104201 PAYTM contributes 1,877 micro-items worth Rs 4.13 Cr and buries the Rs 76.39 Cr sitting on 2201106. The caption must say GROSS MOVEMENT, not exposure - a Dr/Cr pair that nets to zero is still two bars."
+    },
+    {
+      "type": "scatter",
+      "title": "How much rides on each account against how long since anyone checked it",
+      "x": "DAYS_SINCE_RECON_N",
+      "y": "THROUGHPUT_L",
+      "series": "ACCT_KIND, bubble = abs(GL_BAL_L)",
+      "why": "Finds what neither sort order finds alone: the account that is both busy and unchecked. Never-reconciled accounts have a NULL x, so they must be plotted in a separate right-hand 'never' band rather than at 0 or dropped - that band is where Oil 2201106 TRADEPAY (Rs 130.37 Cr, -Rs 20.89 Cr balance) and Mart 1104112 HSBC (Rs 127.21 Cr, 440 lines) live, and they are the whole point of the chart. Log the y axis; the range is Rs 0 to Rs 130 Cr. Each point links to gl-account.html."
+    },
+    {
+      "type": "hbars",
+      "title": "Money that has moved through accounts nobody has ever reconciled",
+      "x": "THROUGHPUT_L",
+      "y": "ACCT_NAME",
+      "series": "ACCT_KIND",
+      "why": "The ranked chase list behind reco-never-throughput. Oil: 2201106 TRADEPAY HSBC Rs 130.37 Cr, 1104108 HSBC BANK LAI Rs 39.86 Cr, 1104110 AXIS Rs 30.00 Cr, 2201211 LOAN TERM AXIS Rs 15.00 Cr, 1106116 FDR-INDIAN BANK Rs 11.00 Cr. Mart: 1104112 HSBC Rs 127.21 Cr then 1104113 HDFC Rs 8.19 Cr. Beverages: 1105001 CASH SALE Rs 10.24 Cr, which is a till and belongs to a cash count, not a bank reco - colour by ACCT_KIND so that reads at a glance."
+    },
+    {
+      "type": "histogram",
+      "title": "When they do reconcile, how fast is it keyed?",
+      "x": "LAG_DAYS_N",
+      "y": "event count",
+      "series": "company",
+      "why": "From the detail slice, 259 events. Median 6 / 13 / 5 days, mean 10.0 / 14.1 / 6.6, max 53 / 32 / 31, only 7 / 1 / 1 events over 30 days. This is the section's one genuinely good finding and it reframes everything else: the team is not slow, it is absent. Pair it with a second series on MAX_ITEM_AGE_AT_STMT_N to show the 29 / 5 / 3 catch-up sweeps that reached back more than 60 days (max 547 in Oil)."
+    },
+    {
+      "type": "waterfall",
+      "title": "What the book says, what SAP records as agreed, what nobody has ever agreed",
+      "x": "step",
+      "y": "INR",
+      "series": "kind",
+      "why": "Steps: Book balance (GL_BAL_L) -> less the balance a reconciliation covers (RECONCILED_BAL_L) -> Never agreed (UNRECONCILED_DIFF_L). Oil -Rs 59.95 Cr -> -Rs 43.64 Cr -> -Rs 16.31 Cr; Mart Rs 0.95 Cr -> Rs 2.21 Cr -> -Rs 1.25 Cr; Bev Rs 0.46 Cr -> Rs 0.88 Cr -> -Rs 0.42 Cr. THE CAPTION IS LOAD-BEARING: the middle step is what SAP records as agreed, and SAP forces it to equal the ledger, so it is not a bank confirmation. The chart must carry the 'no bank statement has ever entered SAP - BNK1 = BNK2 = 0 rows' line under it, or it reads as assurance. Signs are ledger-native, so negative bars are overdrafts and loans, not shortfalls."
+    }
+  ],
+  "traps": [
+    "THIS SECTION IS SAP-SIDE ONLY AND CANNOT SAY A RECONCILIATION WAS RIGHT. No bank statement has ever entered SAP: BNK1 = 0 rows and BNK2 = 0 rows in Oil, Mart and Beverages (shipped as CO_STMT_IMPORT_ROWS_N = 0 on every row). OBNK is not a statement table here, it is a reconciliation LOG - one row per event, carrying a single lump bank-side figure. So the section can say WHETHER and WHEN a reconciliation happened and what has never been reconciled at all. It can never say whether one was right. Any caption implying assurance is false.",
+    "OBNK.\"balance\" IS 0.000000 ON ALL 259 OBNK ROWS ACROSS ALL THREE BOOKS (verified exhaustively, not sampled). SAP holds no bank-supplied closing balance anywhere. Therefore GAP_AT_LAST_RECON_L compares the book balance at the statement date against a BOOK-DERIVED agreed balance (BANK_SIDE_BAL_L, from OBNK.DebAmount/CredAmnt). It is an INTERNAL CONSISTENCY CHECK, NOT the classic 'balance per bank statement vs balance per books' line. Getting the real thing needs the bank statement files, which are not available. Say this next to the number every single time it is shown.",
+    "RECON_TIEOUT_DIFF_L = 0.00 IS A TAUTOLOGY, NOT A PASSED CONTROL. SAP refuses to close an external reconciliation whose ledger side and bank side do not balance, so SUM(reconciled JDT1 net) = -SUM(OBNK Deb-Cred) is guaranteed by the software. It printed 0.00 on all 132 account rows and all 259 detail events - which proves the query joins correctly and proves nothing whatever about the bank. It currently sits on the account table as a plain 'tie-out diff' column with no caveat, which reads exactly like a control that passed. Never show it to an auditor as assurance.",
+    "ROW_TYPE = 'TOTAL' AND ROW_TYPE = 'ACCOUNT' SHARE ONE RESULT SET AND THE TOTAL IS EXACTLY ADDITIVE. Any consumer that sums a column without filtering ROW_TYPE gets exactly 2.00x the truth - measured on UNREC_90PLUS_L: Oil 38,929.38 vs 19,464.68, Mart 14,947.40 vs 7,473.70, Bev 1,625.32 vs 812.66. The roll-up is identified by ROW_TYPE == 'TOTAL' (also ACCT_CODE null, ACCT_NAME 'ALL BANK / CASH / BANK-FACILITY ACCOUNTS'), exactly one row per company.",
+    "THE CO_* COLUMNS ARE THE OPPOSITE HAZARD: book-level constants repeated on every row and aggregated with MAX() on the TOTAL row. Summing CO_INTERNAL_RECONS_N gives 2,065,603 against 29,093 in Oil (71x), 581,985 against 12,933 in Mart (45x) and 116,413 against 6,127 in Bev (19x). Read them off one row, or off TOTAL, never SUM them.",
+    "MOVEMENT_SINCE_RECON_L DOES NOT RE-TOTAL, AND IT IS THE ONLY MONEY COLUMN THAT DOES NOT. It is NULL on every never-reconciled account row (51 Oil / 42 Mart / 16 Bev) because GL_BAL_AT_LAST_RECON_L is NULL there, but the TOTAL row folds those accounts' whole GL_BAL in via IFNULL(BAL_AT_RECON,0) at sql 475. Measured: sum of ACCOUNT rows +2,297.11 / -220.84 / -45.75 against TOTAL -1,630.58 / -125.33 / -42.35, and the gap is exactly the GL_BAL_L of the NULL rows (-3,927.71 / +95.51 / +3.40 L). Rebuilding the book total from the account rows silently gives the wrong sign in Oil.",
+    "MONEY COLUMNS END IN _L AND ARE LAKHS (x 1e5). ANCHOR THE TEST ON THE END OF THE NAME, NEVER A SUBSTRING. A 'contains _L' test wrongly scales five columns by 100,000: GL_LINES_N, REC_LINES_N, UNREC_LINES_N, RECONCILED_LINES_PCT and (in the detail) LINES_CLEARED_N - the word LINES contains '_L'. RECONCILED_LINES_PCT 78.0 would render as Rs 78,00,000. Counts end _N; percentages end _PCT; LAST_RECON_NO ends _NO and is an IDENTIFIER, not a count and not an amount; ACCT_CODE and RECON_NO are identifiers too.",
+    "V1'S SQL HEADER CLAIMED BRANCH AND INTERCOMPANY 'DO NOT APPLY BECAUSE THESE ARE G/L ACCOUNTS'. THAT WAS FACTUALLY WRONG and it was a hand-wave, not a measurement. (a) JDT1.\"BPLId\" IS populated on every bank ledger line: Oil spreads over 7 branches (DELHI 16,582 lines / -6,169.25 L, FACTORY 13,459 / -4,402.98 L, PUNJAB 579 / +4,571.41 L, HARYANA SALES 215, DELHI ISD 11, DELHI INFO 9, HIMACHAL PRADESH 8), Mart over 7, Beverages over 5, and one physical bank account is shared by several branches. (b) Intercompany money DOES flow through these accounts and it is large: Oil 532 lines Rs 306.75 Cr gross / +Rs 271.10 Cr net, Mart 486 lines Rs 336.96 Cr gross / -Rs 247.31 Cr net, Beverages 3 lines Rs 0.40 Cr - the two large ones mirror each other, Oil receiving what Mart pays. Both are INCLUDED on purpose: a bank account is reconciled as one account against one statement, not per branch, and a reconciliation that netted intercompany out would stop tying to the bank. C-0005's 23 group CardCodes and the OCRG '%BRANCH%' test are BP-side tests and cannot be applied to a G/L row. Nothing is dropped on either ground - so flag it, and note that nothing in this section is a trade figure.",
+    "THE AGEING BUCKETS ARE GROSS MOVEMENT, NOT NET EXPOSURE. UNREC_0_30_L and friends sum Debit + Credit, so a busy current account shows a month of throughput rather than an amount at risk, and a Dr/Cr pair netting to zero still contributes both legs. Deliberate - an uncleared item has a size whichever way it points. Read UNRECONCILED_DIFF_L for the net position (Oil -1,630.58 L) and UNREC_90PLUS_PAYMENTS_L for stale money out. The four buckets sum EXACTLY to UNREC_RECEIPTS_L + UNREC_PAYMENTS_L and their counts to UNREC_LINES_N (verified on all 132 account rows and all 3 TOTAL rows, max per-row delta 0.01 L) - make that the check, and it will catch a bucket boundary that overlaps or leaves a gap.",
+    "UNREC_90PLUS_L ON THE TOTAL ROW BLENDS AN EXCEPTION LIST WITH A COVERAGE FAILURE, AND THE SMALLER HALF IS THE ONE WORTH ACTING ON. Items on accounts JIVO does reconcile: Oil 15 items / Rs 16.78 Cr, Mart 142 / Rs 2.91 Cr, Bev 0 / Rs 0. Items on accounts nobody has ever reconciled: Oil 3,971 / Rs 177.87 Cr (91.4%), Mart 7,245 / Rs 71.83 Cr (96.1%), Bev 1,340 / Rs 8.13 Cr (100%). Quoting the blend sends someone chasing 3,986 transactions when Oil's real exception list is 15. The split is one filter away: RECO_STATUS LIKE 'RECONCILED%'.",
+    "CASH AND WALLET ACCOUNTS ARE IN THE UNIVERSE AND ARE NOT BANK-RECONCILABLE. They dominate the item COUNTS and are trivial in money: of Oil's 3,986 90-day-plus items, 3,570 are CASH/WALLET worth only Rs 7.22 Cr (1104201 PAYTM alone is 1,877 items / Rs 4.13 Cr); of Mart's 7,387, 6,856 are CASH/WALLET worth Rs 8.98 Cr; of Bev's 1,340, 1,335 are worth Rs 7.85 Cr. Filtering to ACCT_KIND in BANK/CASH_CREDIT/DEPOSIT/BORROWING leaves 416 / 531 / 5 items worth Rs 187.42 Cr / Rs 65.76 Cr / Rs 0.28 Cr. A till or a payment-gateway wallet needs a cash count or a settlement report, which is not in SAP - treating them as bank-reco failures is simply wrong.",
+    "STORNO / REVERSAL PAIRS ARE NOT REMOVED AND THEY INFLATE THE GROSS AGEING. Measured inside the 90-day-plus bucket: Oil 209 lines / 2,881.31 L of 19,464 L (14.8%), Mart 284 / 598.08 L (8.1%), Beverages 44 / 27.86 L (3.4%). Each pair nets to zero so UNRECONCILED_DIFF_L is untouched; only the gross ageing and the line COUNTS are inflated. They are kept because both legs post to the ledger and dropping one would break the exact tie to OACT.CurrTotal. GL_LINES_N is therefore posting volume, not transaction count.",
+    "OBNK.\"Sequence\" IS NOT THE RECONCILIATION NUMBER AND OACT.\"ExtrMatch\" IS NOT A COUNT. They coincide on 22 of the 23 reconciled accounts, which is what makes this dangerous. Live today: Oil 2201104 LOAN TERM INDIAN BANK 8021303333 has 9 events but LAST_RECON_NO = 13 (Sequence runs 1..9, BankMatch runs 5..13, OACT.ExtrMatch = 13). The naive read reports 13 statements where there are 9 and attaches ledger line ExtrMatch=5 to the wrong statement date. The query counts COUNT(DISTINCT BankMatch) and joins on BankMatch.",
+    "OBNK.\"BankMatch\" IS A PER-ACCOUNT COUNTER, NOT A GLOBAL ID. Oil has 201 OBNK rows but only 30 distinct BankMatch values; BankMatch = 1 appears on 18 different accounts with 10 different DueDates spanning 2024-10-30 to 2026-03-31 - 18 unrelated first-reconciliations. The join key is (AcctCode, BankMatch), which is unique on every row (201/201, 7/7, 51/51). Joining on BankMatch alone would fan the ledger out by roughly 6.7x in Oil.",
+    "'JIVO DOES NO INTERNAL RECONCILIATION' IS A WRONG CONCLUSION DRAWN FROM A RIGHT FACT. JDT1.\"IntrnMatch\" is 0 and JDT1.\"Closed\" is 'N' on 100% of lines - verified over all 526,820 / 344,144 / 86,414 lines, not a sample. But SAP 9.x/10 keeps internal reconciliation in OITR/ITR1 and leaves the legacy JDT1 field at 0: there are 29,093 / 12,933 / 6,127 uncancelled OITR headers (Oil 122,801 ITR1 rows). It is simply the wrong table for bank reconciliation - only 2 of Oil's 122,801 ITR1 rows sit on an account OBNK reconciles, and 0 in Mart and Bev. Shipped as CO_INTERNAL_RECONS_N / CO_INTRECON_ON_BANK_N precisely so nobody repeats the wrong version.",
+    "THERE ARE NO CHEQUES ANYWHERE IN SAP, SO THERE IS NO 'UNCLEARED CHEQUE AGEING'. RCT1, VPM1, OCHO, OCHH, ODPS and DPS1 are 0 rows in all three books and \"CheckSum\" <> 0 on ZERO uncancelled receipts or payments (CO_CHEQUE_DOCS_N = 0 on every row). JIVO banks 100% by transfer plus a little cash. A previous version of this dashboard captioned UNREC_90PLUS_PAYMENTS_L 'cheques likely stale' under Rs 101 Cr - that caption was false on the section's own data. What is aged here is unreconciled bank LEDGER ITEMS, which is the correct equivalent.",
+    "DAYS_SINCE_RECON_N ON THE TOTAL ROW IS A MIN, SO IT REPORTS THE BOOK'S BEST ACCOUNT, NOT THE BOOK. Oil's headline 53 days comes from ONE account (2201101, statement 2026-06-30); every other Oil account stops at 2026-05-31 = 83 days, and two stopped long ago - 1104103 at 355 days and 2201103 INDIAN BANK ADHOC-OCC at 537 days. Mart's 1104111 is at 295 days. Always publish the MAX alongside it (537 / 295 / 83).",
+    "A RECONCILIATION IS NOT DATE-SEQUENTIAL, SO 'EVERYTHING BEFORE THE LAST STATEMENT DATE IS CLEAR' IS FALSE IN GENERAL. Batches reach backwards: Oil's furthest reached 547 days, Mart's 360, Bev's 166, and 29 / 5 / 3 events reached back more than 60 days. What IS true is measured separately as STALE_PRE_RECON_N/_L - items still unreconciled although dated on or before their own account's last statement. Live that is 2 items in Oil (a Rs 70,00,000 journal and its exact reversal on 2201105, netting to zero) and 0 in Mart and Bev. But 0 is not a clean bill of health: the metric is structurally impossible on the 61 of 132 accounts that have never been reconciled.",
+    "A BACK-DATED RUN WILL LIE UNLESS THE reckey GUARD IS INTACT. Because batches reach backwards, testing JDT1.\"ExtrMatch\" > 0 alone calls Oil 2201101's 2025-12-26 items 'reconciled' at an as_of of 2025-12-31 - five months before the batch that cleared them existed. It was caught by the tie-out going to -42.09 lakh at that date. The fix (sql 303-309, 349) requires the line's (Account, ExtrMatch) to match an OBNK reconciliation whose own DueDate is <= as_of. At as_of = today it changes nothing; on any historical run it is the difference between a true answer and a wrong one. Re-running at a past as_of and checking the tie-out is still 0 is the only version of this section's self-check that has ever caught a real defect.",
+    "CURRTOTAL_XCHECK_L IS LIFETIME-TO-TODAY AND IS NOT BOUNDED BY as_of. It matched GL_BAL_L to 0.000000 lakh on all 132 accounts in the live run, which is the strongest cross-check in the section - but that only holds because there are no future-dated bank lines. On any historical as_of it will legitimately differ, and the check dot must read 'not applicable at this as-of' rather than red.",
+    "SEVEN COLUMNS ARE NULL ON EVERY NEVER-RECONCILED ROW AND MUST NOT BE COERCED TO ZERO: LAST_RECON_DATE, FIRST_RECON_DATE, DAYS_SINCE_RECON_N, LAST_RECON_NO, GL_BAL_AT_LAST_RECON_L, GAP_AT_LAST_RECON_L, MOVEMENT_SINCE_RECON_L - 51 rows in Oil, 42 in Mart, 16 in Bev. DAYS_SINCE_RECON_N read as 0 means 'reconciled today', which is the exact opposite of the truth and would destroy both the MIN on the TOTAL row and any 'days since' chart. RECONCILED_LINES_PCT is separately NULL on the 4 / 32 / 12 dormant rows (explicit divide-by-zero guard), and OLDEST_UNREC_DATE is NULL on 5 / 32 / 12 - the extra Oil row is 1104103, which is 100% reconciled and genuinely has nothing outstanding.",
+    "PICKING BANK ACCOUNTS BY NAME OR CODE PREFIX IS WRONG AND THE UNIVERSE DELIBERATELY DOES NOT. '%BANK%' also catches BANK CHARGES and TDS RECOVERABLE FROM BANK; the code prefix lies (Oil 1104106/1104107 carry 1104* codes but hang under 2201100 BANK CASH CREDIT LOAN, and 1103114/1103116/1103117 carry 1103* codes but hang under FDR); and OACT.\"ActType\"/\"CashBox\" are useless selectors because every bank account here is ActType='N', CashBox='N'. The universe is the postable children of eight named drawers walked through OACT.FatherNum. The cost of doing it right: ACCT_KIND follows the drawer, so Oil 1103115 R & D WHEAT GRASS (Rs 134.05 L) is classified DEPOSIT. It is plainly not a bank account and is left in on purpose - filtering it by name would be exactly the trap. Worth an operator raising with whoever maintains the chart of accounts.",
+    "IS_HOUSE_BANK IS DECORATIVE AND MUST NEVER BE USED AS A SELECTOR. It comes from DSC1, which has 5 usable rows in Oil, effectively none in Mart and 1 in Bev against 13-30 live bank accounts per book. Live: Oil flags 5 of 70 (one of them, 1104102, has NEVER been reconciled), Mart flags 0 of 44 despite 13 BANK-kind accounts, and Bev's single flag sits on a DORMANT account. An empty house-bank panel in Mart is data, not a failure.",
+    "RECO_STATUS MUST BE MATCHED BY SUBSTRING, AND ONE SUBSTRING IS A SUBSET OF ANOTHER. The five literals are DORMANT_NEVER_RECONCILED / NEVER_RECONCILED / RECONCILED_CURRENT / RECONCILED_LAGGING / RECONCILED_STALE. A previous renderer compared against 'NEVER' and 'CURRENT', neither of which has ever been emitted, so all 132 accounts across the three books rendered amber - including the 61 never reconciled once. And 'NEVER_RECONCILED' is a substring of 'DORMANT_NEVER_RECONCILED', so a naive `in` test folds the 4 / 32 / 12 dormant accounts into the failure count. Live today NO account in any book is RECONCILED_CURRENT.",
+    "GL_BAL_L IS SIGNED IN THE LEDGER'S CONVENTION: POSITIVE = DEBIT (money in the bank), NEGATIVE = CREDIT (overdraft drawn, loan outstanding). Oil's book-wide -5,994.98 L is mostly borrowings and cash-credit facilities, NOT a missing Rs 60 Cr. Plotting it raw draws every term loan as a deficit. Same convention on RECONCILED_BAL_L, BANK_SIDE_BAL_L, UNRECONCILED_DIFF_L, GL_BAL_AT_LAST_RECON_L, MOVEMENT_SINCE_RECON_L, CURRTOTAL_XCHECK_L and the detail's CLEARED_NET_L / BANK_SIDE_L.",
+    "COVERAGE HAS TWO HONEST DENOMINATORS AND THEY DISAGREE BY A LOT. Against every account in the universe: 27.1% Oil / 4.5% Mart / 11.1% Bev. Against accounts that actually have ledger lines: 28.8% / 16.7% / 33.3%. Mart's 4.5% is mostly 32 empty FDR, loan and card heads, not 32 neglected bank accounts. Publish both or the reader picks whichever suits the argument. The failure count that matters is RECO_STATUS = 'NEVER_RECONCILED' exactly: 47 / 10 / 4.",
+    "THROUGHPUT_L IS NOT A TRADE FIGURE AND MUST NEVER BE READ AS TURNOVER. It is SUM(Debit + Credit) on bank accounts, so a rupee in and back out counts twice, and it includes the intercompany transfers above (Rs 306.75 Cr Oil / Rs 336.96 Cr Mart gross). Oil's 417,444.20 L is Rs 4,174 Cr of bank traffic, not sales. It is useful for exactly one thing: sizing how much rides on an account nobody has checked.",
+    "ROUNDING IS COARSE AND EXACT EQUALITY WILL FALSE-ALARM. Every _L column is ROUND(x/100000, 2) = Rs 1,000 granularity, and up to 260 rounded values get combined. Measured route-vs-route deltas on today's data: reco-unagreed-balance Rs 6,000 (Oil), reco-90plus-exceptions Rs 2,000 (Oil), reco-90plus-gross Rs 1,000 (Mart), reco-never-throughput Rs 1,000; per-account bucket-vs-gross up to Rs 1,000. Every check needs a tolerance of about Rs 1,000 x rows touched. Counts, by contrast, reconcile EXACTLY - a count mismatch is always a real defect.",
+    "THE DETAIL QUERY'S `led` CTE IS DELIBERATELY NOT BOUNDED BY as_of. That is safe today because ZERO of the 24,118 / 6,084 / 4,262 reconciled lines is dated after its own statement date (they reach backwards only, by up to 547 / 360 / 166 days), so RefDate <= DueDate <= as_of holds automatically. If that invariant ever breaks, TIEOUT_DIFF_L on the detail goes non-zero first - which is why it was left unbounded rather than silently clipped. Do not 'fix' it without also removing that alarm.",
+    "THERE IS NO LINE-LEVEL GRAIN. The section publishes 70/44/18 account rows and 201/7/51 event rows and nothing below that, so no page may offer a drill to an individual uncleared transaction, a journal memo, or a per-item ageing list. The most granular question this data can answer is 'which reconciliation event cleared how many lines on which account, and when was it keyed'."
+  ],
+  "empty_states": [
+    "data.json sections['bank-reco'].errors (or the per-company slice's `error` field) has an entry for the selected company: render the error text and the failing schema, never a zero. Today error is null for oil, mart and bev.",
+    "summary[company] is an empty array: render empty('No bank, cash or bank-facility account was found in this book.'). That would mean the eight-drawer walk resolved nothing, which has never happened - all eight drawer names exist with identical spelling AND identical account codes (1104100, 1104200, 1105000, 2201100, 1106100, 2201200, 2201400, 2201300) in all three books - so treat it as a build failure, not an empty panel.",
+    "detail[company] is an empty array (no reconciliation has EVER been recorded in the book): render empty('No bank reconciliation has ever been recorded in this book') across the event timeline, the keying-lag histogram and reco-keying-lag-days, and suppress reco-days-since-last entirely rather than printing a null. Mart is one account away from this state - its entire history is seven events.",
+    "reco-90plus-exceptions is zero for Beverages TODAY, and it is a MEASURED zero, not an unknown: both reconciled Bev accounts (1104106, 1104107) have UNREC_90PLUS_N = 0. Render it as an explicit 'nothing older than 90 days on the accounts we do reconcile - 0 items' with the never-reconciled figure beside it. Never an em dash, which reads identically to 'not computed'. Same rule for reco-stale-pre-recon-n in Mart and Bev (0, measured), reco-tieout-internal and reco-gap-at-last-recon-internal (0.00 everywhere, measured AND structural) and reco-statement-lines-loaded (0 everywhere, measured).",
+    "STALE_PRE_RECON_N is 0 for the company: do NOT render it as 'clean'. The metric is only defined where LAST_RECON_DATE is not null (sql 331), so it is structurally impossible on the 51 Oil / 42 Mart / 16 Bev never-reconciled rows. Caption it 'nothing overdue on the 19 / 2 / 2 accounts we do reconcile', with the account count in the sentence.",
+    "RECONCILED_LINES_PCT is NULL on an account (GL_LINES_N = 0; 4 Oil / 32 Mart / 12 Bev rows): render 'no ledger activity', exclude it from any average or percentile, and state how many accounts were excluded. It is an explicit divide-by-zero guard, not missing data.",
+    "OLDEST_UNREC_DATE is NULL (5 Oil / 32 Mart / 12 Bev): two different causes, and they must read differently. Dormant accounts (4 / 32 / 12) render 'never posted'. Oil 1104103, which is 100% reconciled, renders 'nothing outstanding' - a good state, and rendering it the same as 'never posted' loses the only fully-clean account in the three books.",
+    "LAST_RECON_DATE / FIRST_RECON_DATE / DAYS_SINCE_RECON_N / LAST_RECON_NO / GL_BAL_AT_LAST_RECON_L / GAP_AT_LAST_RECON_L / MOVEMENT_SINCE_RECON_L are NULL on every never-reconciled row (51 / 42 / 16): render the literal words 'never reconciled', never 0, never a blank cell, never an em dash. On the scatter chart these rows need a dedicated 'never' band, because they are the finding and dropping them removes Oil 2201106 and Mart 1104112 from the page.",
+    "CO_STMT_IMPORT_ROWS_N = 0 (true in all three books today): this MUST be rendered as an explicit standing banner on the section, not hidden as a zero KPI. The correct sentence is 'No bank statement has ever been loaded into SAP - this is a reconciliation STATUS report, not a reconciliation.' If it ever goes non-zero, the section's entire framing changes and the caveats above have to be rewritten before the number is trusted.",
+    "IS_HOUSE_BANK = 'Y' matches no account in the book (Mart, 0 of 44): omit the house-bank panel and footnote that DSC1 is not maintained in this book, rather than drawing an empty panel or an error. Bev's single 'Y' sits on a DORMANT account, so a house-bank panel there must not imply the account is in use.",
+    "ACCT_KIND = 'OTHER' appears on any row (0 rows in all three books today): that means the drawer walk hit a parent it does not map, and the account has silently escaped its category. Surface it as a data-quality warning naming the account and its DRAWER_NAME - do not bucket it quietly into 'other', because the CASH/WALLET exclusion filters depend on the six known values partitioning the universe.",
+    "as_of is not today (a historical run): the CURRTOTAL_XCHECK_L vs GL_BAL_L cross-check must render 'not applicable at this as-of', not a red delta, because OACT.CurrTotal is lifetime-to-today. The tie-out check stays live and stays the alarm - it is the one that caught the reckey defect at as_of 2025-12-31.",
+    "as_of is before the SAP go-live (tested at 2024-09-29, the day before): the query returns 71 / 45 / 19 rows of clean zeros with no error and no divide-by-zero. Render empty('No bank ledger activity existed at this as-of date') rather than a full row of Rs 0 KPIs, which would read as a reconciled book.",
+    "history.jsonl has fewer than two points for a KPI: sparklines render empty('no history yet'). Note that the most valuable trend here is reco-days-since-last, which should SAWTOOTH monthly - a straight rising line through a month end means a reconciliation was missed, and that is the finding, not a rendering gap."
+  ]
+}

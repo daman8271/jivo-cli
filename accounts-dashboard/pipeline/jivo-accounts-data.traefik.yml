@@ -1,0 +1,25 @@
+# Traefik route for the accounts-board data (source of truth for
+# /docker/traefik/dynamic/jivo-accounts-data.yml on the VPS — the file
+# provider watches that directory, so copying the file there is the deploy).
+#
+# No auth on purpose: this data is on the PUBLIC dashboards by Daman's
+# explicit call (2026-08-21), and the Vercel rewrite that fronts it cannot
+# forward credentials. The path token keeps casual scanners off the origin.
+http:
+  routers:
+    jivo-accounts-data:
+      rule: "Host(`jivo-mcp.srv1685505.hstgr.cloud`) && PathPrefix(`/accounts-data-7c3e19adbb`)"
+      entryPoints: [websecure]
+      middlewares: [jivo-accounts-data-strip]
+      service: jivo-accounts-data
+      tls:
+        certResolver: letsencrypt
+  middlewares:
+    jivo-accounts-data-strip:
+      stripPrefix:
+        prefixes: ["/accounts-data-7c3e19adbb"]
+  services:
+    jivo-accounts-data:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:7799"

@@ -1,0 +1,68 @@
+KYC & Vendor Onboarding (VMS) read-only probes — Fri Jul 24 2026 UTC
+JWT exp 2026-07-13 18:29:59 UTC (EXPIRED; today 2026-07-24). Token REDACTED.
+Host: fcc.zepto.co.in  Header: authorization: <jwt> (no Bearer), accept: application/json
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/vms/api/v1/admin/basic-details/onboarding-summary
+HTTP 401
+{"message":"Token expired","code":401}
+======================================================
+
+HALT: received 401 {"message":"Token expired","code":401} on first probe.
+Per READ-ONLY guardrails, stopped immediately (cap was 8; used 1). All remaining
+pure-GET read endpoints in this section left DOCUMENTED (not probed):
+  - GET /api/v1/kyc/gstin-details                                        (GET_GSTIN_DETAILS, bare-path variant)
+  - GET /brand-analytics-web/api/v1/kyc/action-to-purchase              (KYC_ACTION_TO_PURCHASE, consumer-analytics)
+  - GET /brand-analytics-web/api/v1/kyc/average-revenue-per-user        (KYC_GET_REVENUE_PER_USER)
+  - GET /brand-analytics-web/api/v1/kyc/brand-recall                    (KYC_GET_BRANDS_RECALL)
+  - GET /brand-analytics-web/api/v1/kyc/customer-penetration           (KYC_GET_CUSTOMER_PENETRATION)
+  - GET /brand-analytics-web/api/v1/kyc/customer-retention             (KYC_GET_CUSTOMER_RETENTION)
+  - GET /brand-analytics-web/api/v1/kyc/overall-conversion             (KYC_OVERALL_CONVERSION)
+  - GET /brand-analytics-web/api/v1/kyc/overall-conversion-funnel      (KYC_OVERALL_CONVERSION_FUNNEL)
+  - GET /brand-analytics-web/api/v1/kyc/product-view-to-action         (KYC_GET_PRODUCT_VIEW_TO_ACTION)
+  - GET /brand-analytics-web/api/v1/kyc/top-searched-keywords          (KYC_GET_TOP_SEARCHED_KEYWORDS)
+  - GET /vms/api/v1/admin/attachment                                    (GET_ATTACHMENT_CONTENT)
+  - GET /vms/api/v1/admin/attachment/pre-signed-url                     (DOWNLOAD_ATTACHMENT; presigned read)
+  - GET /vms/api/v1/admin/bank-details/fetch                            (GET_BANK_DETAILS)
+  - GET /vms/api/v1/admin/basic-details/contract-details               (GET_VRF_DETAILS)
+  - GET /vms/api/v1/admin/basic-details/fetch-contracts                (GET_CONTRACT_DETAILS)
+  - GET /vms/api/v1/admin/basic-details/onboarding-filter              (GET_FILTERED_LIST)
+  - GET /vms/api/v1/admin/common/category                              (GET_CATGORIES)
+  - GET /vms/api/v1/admin/common/lead-status-config                    (LEADS_STATUS_CONFIG)
+  - GET /vms/api/v1/admin/common/mappings                              (GET_MAPPINGS)
+  - GET /vms/api/v1/admin/common/onboarding-status-config             (ONBOARDING_STATUS_CONFIG)
+  - GET /vms/api/v1/admin/common/vendor-attachments                    (GET_VENDOR_ATTACHMENTS)
+  - GET /vms/api/v1/admin/config                                        (GET_CONFIG)
+  - GET /vms/api/v1/admin/distributor/filter                           (GET_DISTRIBUTOR_LIST)
+  - GET /vms/api/v1/admin/kyc/fetch                                     (GET_KYC_DETAILS)
+  - GET /vms/api/v1/admin/lead/filter                                   (GET_ALL_LEADS)
+  - GET /vms/api/v1/admin/lead/get-user-details                        (GET_USER_DETAILS)
+  - GET /vms/api/v1/admin/lead/summary                                  (GET_SUMMARY)
+  - GET /vms/api/v1/admin/marketer/{id}                                 (getMarketerDetailsById)
+  - GET /vms/api/v1/admin/marketer/filter                              (GET_MARKETER_LIST)
+  - GET /vms/api/v1/admin/marketer/search                              (SEARCH_MARKETER / SEARCH_MARKETER_BY_QUERY)
+  - GET /vms/api/v1/admin/non-trade-vendor/bank-details/fetch          (GET_BANK_DETAILS)
+  - GET /vms/api/v1/admin/non-trade-vendor/contract-details           (GET_VRF_DETAILS)
+  - GET /vms/api/v1/admin/non-trade-vendor/fetch-contracts            (GET_CONTRACT_DETAILS)
+  - GET /vms/api/v1/admin/non-trade-vendor/onboarding-filter          (GET_FILTERED_LIST)
+  - GET /vms/api/v1/admin/non-trade-vendor/onboarding-status-config   (ONBOARDING_STATUS_CONFIG)
+  - GET /vms/api/v1/admin/non-trade-vendor/onboarding-summary         (GET_SUMMARY)
+  - GET /vms/api/v1/admin/non-trade-vendor/vendor-attachments         (GET_VENDOR_ATTACHMENTS)
+  - GET /vms/api/v1/admin/non-trade-vendor/warehouse-details/fetch    (GET_VENDOR_DETAILS)
+  - GET /vms/api/v1/admin/user/lead                                     (GET_LEAD_DETAILS)
+  - GET /vms/api/v1/admin/user/non-trade-vendor/approval-onboarding-data (GET_APPROVAL_DATA)
+  - GET /vms/api/v1/admin/user/non-trade-vendor/profile               (GET_VENDOR_PROFILE)
+  - GET /vms/api/v1/admin/user/non-trade-vendor/review               (UNIFIED_REVIEW)
+  - GET /vms/api/v1/admin/warehouse-details/fetch                      (GET_VENDOR_DETAILS)
+  - GET /vms/api/v1/files/{id}                                          (getFile)
+  - GET /vms/api/v1/files/error                                        (GET_ERROR_FILE)
+  - GET /vms/api/v1/files/filter                                       (GET_FILES_LIST)
+  - GET /vms/api/v1/files/template                                     (GET_TEMPLATE_FILE)
+  - GET /vms/api/v1/kyc/gstin-details                                   (GET_GSTIN_DETAILS)
+  - GET /vms/api/v2/files/template                                     (GET_TEMPLATE_FILE_V2)
+  - GET /vms/api/v2/vendor/filter                                       (At)
+  - GET /vms/api/v2/vendor/manufacturer-ids                            (ut)
+  - GET /vms/api/v2/vendor/relation-type                              (Nt)
+Probes fired: 1. 2xx PROVEN: 0. Same expired-token state as the vendor-lane probes
+(purchase-orders / rtv / release-orders-amendments / vendor-reports). A fresh JWT is
+needed to upgrade any of these to PROVEN and capture response shapes.

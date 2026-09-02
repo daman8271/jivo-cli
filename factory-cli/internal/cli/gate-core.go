@@ -56,6 +56,7 @@ func newGateCoreCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newGateCoreJobWorkSapProductionOrdersCmd(flags))
 	cmd.AddCommand(newGateCoreMaintenanceGateEntryCmd(flags))
 	cmd.AddCommand(newGateCoreRawMaterialGateEntryCmd(flags))
+	cmd.AddCommand(newGateCoreRawMaterialGateEntryPoReceiptsCmd(flags))
 	cmd.AddCommand(newGateCoreRejectedQcReturnCmd(flags))
 	cmd.AddCommand(newGateCoreRejectedQcReturnsCmd(flags))
 	cmd.AddCommand(newGateCoreSalesDispatchByVehicleEntryCmd(flags))

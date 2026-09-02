@@ -1,0 +1,22 @@
+# Ads Billing & Wallet — read-only probe transcript
+# Section slug: ads-billing-wallet | lane: ads | host: fcc.zepto.co.in
+# date: 2026-07-24
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# token: ecom1@jivo.in JWT (Jivo Wellness Pvt. Ltd.) — iat 1783887610, exp 1783967399
+#   = exp Mon Jul 13 2026 18:29:59 UTC (23:59:59 IST) -> EXPIRED at probe time (run 2026-07-24, ~11 days lapsed).
+# method: curl -s -X GET, authorization: <jwt redacted>, accept: application/json, normal User-Agent
+# allowlist target: /ads-bff/api/v1/wallet/details (unambiguous pure-GET read: name contains "wallet"+"details",
+#   none of download|export|generate|upload|pay|create|update|delete|... )
+###########################################################
+
+## PROBE 1: GET https://fcc.zepto.co.in/ads-bff/api/v1/wallet/details
+HTTP_STATUS: 429
+BODY (first 40 lines):
+(empty body)
+
+###########################################################
+Result: HTTP 429 on the first probe. Per guardrail (stop immediately on any 401/403/429 or WAF/challenge),
+probing HALTED after 1 request. The captured JWT is expired (exp 2026-07-13, run 2026-07-24), matching every
+prior Zepto section probe this run (all 429/401). No 2xx returned -> NOTHING upgraded to PROVEN.
+All 26 endpoints in this section remain DOCUMENTED (not probed) — read out of the bundle only.
+Re-run with a fresh ecom1@jivo.in token to lock down response shapes for the pure-GET wallet/billing reads.

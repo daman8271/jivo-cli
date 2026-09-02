@@ -1,0 +1,419 @@
+{
+  "_comment": [
+    "Roster of record for the JIVO summon agent.",
+    "",
+    "Every kit_path / os / operator below was READ OFF THE BOX by the inventory run",
+    "on 2026-08-22, not assumed. Boxes that were unreachable that day carry",
+    "needs_inventory:true \u2014 the agent must NOT treat their fields as verified, and a",
+    "grant on one of those will discover the real values and correct this file.",
+    "",
+    "A device not listed here is not refused: grantctl auto-enrols it by probing the",
+    "box, because the device already proved it holds a token Daman minted. See",
+    "_authorization_model."
+  ],
+  "auto_approve_everything": true,
+  "roster_verified": "2026-08-22",
+  "grants": {
+    "sync": {
+      "script": "sync",
+      "summary": "Pull the box's jivo-cli up to origin/main, preserving local work.",
+      "requires_owner_approval": false
+    },
+    "accounts-write": {
+      "script": "accounts-write",
+      "summary": "Make the box able to create documents in SAP: sync, register the operator, verify a write-capable SAP user, prove the path with a --dry-run.",
+      "requires_owner_approval": false
+    },
+    "claude-auth": {
+      "script": "claude-auth",
+      "summary": "Relay Claude Code OAuth to a box whose claude says 'Not logged in'.",
+      "requires_owner_approval": false
+    },
+    "gst-portal": {
+      "script": "feature",
+      "summary": "Enable the read-only GST portal CLI on the box.",
+      "requires_owner_approval": false
+    },
+    "ary": {
+      "script": "feature",
+      "summary": "Enable the read-only ARY / FR8HODBNEW distributor-DB CLI on the box.",
+      "requires_owner_approval": false
+    },
+    "hana": {
+      "script": "feature",
+      "summary": "Direct read-only SQL into the SAP HANA core DB (port 30015).",
+      "requires_owner_approval": false
+    },
+    "full-access": {
+      "script": "full-access",
+      "summary": "Everything: sync, operator registration, SAP draft/write, HANA SQL, GST + ARY, Claude login. The default answer to 'give me access'.",
+      "requires_owner_approval": false
+    },
+    "sap-credentials": {
+      "script": "sap-credentials",
+      "summary": "Place a named SAP login on the box so it can actually write. Moves the credential, never prints it.",
+      "requires_owner_approval": false
+    }
+  },
+  "boxes": {
+    "param": {
+      "ssh_alias": "param",
+      "hostname": "DILPREETSINGH",
+      "os": "windows",
+      "tunnel_port": 23009,
+      "kit_path": "C:\\Users\\Administrator1\\Documents\\jivo-cli",
+      "working_profile": "C:\\Users\\Administrator1",
+      "operator": "param",
+      "operator_name": "Param",
+      "persona": "accounts",
+      "sap_user": "",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "notes": "sshd default shell is PowerShell \u2014 wrap as cmd /c. **WRONG SAP USER**: this box's .env is configured as USER01, which is AVTAR SINGH's account, so Param's writes are being logged under Avtar's name. He needs his own SAP user (a 'PARAM BILLING' account, USER17, was seen in the roster) \u2014 Daman assigns it, then the sap-credentials grant places it. Left blank here on purpose so nothing is placed until that is decided. Box also cannot reach SAP from its non-office IP; needs the bridge.",
+      "ssh_user": "Administrator1"
+    },
+    "lovepreet": {
+      "ssh_alias": "lovepreet",
+      "hostname": "HO-IPEXP-PC2",
+      "os": "windows",
+      "tunnel_port": 23015,
+      "kit_path": "C:\\Users\\Jivo108\\Documents\\jivo-cli",
+      "working_profile": "C:\\Users\\Jivo108",
+      "operator": "lovepreet-daman",
+      "operator_name": "Lovepreet Daman",
+      "persona": "accounts",
+      "sap_user": "USER06",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "notes": "SSH user is Administrator whose profile is EMPTY \u2014 the kit and the box-local CLAUDE.md live under C:\\Users\\Jivo108. SAP user USER06 = LOVPREET SINGH, his own account, verified logging in 2026-08-22 (an earlier note calling that password stale is out of date). MISTAGGED: .operator says department=exim while .persona says accounts \u2014 a human must resolve which is right.",
+      "ssh_user": "Administrator"
+    },
+    "navdeep": {
+      "ssh_alias": "navdeep",
+      "hostname": "83USER",
+      "os": "windows",
+      "tunnel_port": 23014,
+      "kit_path": "C:\\Users\\USER011\\Documents\\jivo-cli",
+      "working_profile": "C:\\Users\\USER011",
+      "operator": "navdeep",
+      "operator_name": "Navdeep",
+      "persona": "accounts",
+      "sap_user": "USER36",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "notes": "NO REAL PYTHON: python.exe/python3.exe on PATH are Microsoft Store execution-alias stubs that print 'Python was not found' and exit 0. So harness/bin/setup.py cannot run here and the .operator record must be written directly. Laptop sleeps after 3 min on battery by design \u2014 keep it plugged in. Default SAP env is 'manager' (read-only); USER36 is the write-capable one.",
+      "ssh_user": "USER011"
+    },
+    "avtar": {
+      "ssh_alias": "avtar",
+      "hostname": "JIVO201",
+      "os": "windows",
+      "tunnel_port": 23010,
+      "kit_path": "C:\\Users\\avtar\\Downloads\\jivo-cli-20260728T092944Z-1-001\\jivo-cli",
+      "working_profile": "C:\\Users\\avtar",
+      "operator": "avtar",
+      "operator_name": "Avtar",
+      "persona": "accounts",
+      "sap_user": "USER01",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "notes": "Kit sits INSIDE an unzipped Google-Drive export folder but IS a real git checkout, so it syncs fine \u2014 do not mistake the path for the Drive-zip trap. History: a 0-byte .git/index.lock stranded his work for two days, twice, and an automated `git stash -u` took his two unpushed reco dashboards off disk (restored). SAP user USER01 = AVTAR SINGH, his own account, verified logging in 2026-08-22.",
+      "ssh_user": "avtar"
+    },
+    "manav": {
+      "ssh_alias": "manav",
+      "hostname": "DESKTOP-5VCMOAS",
+      "os": "windows",
+      "tunnel_port": 23005,
+      "kit_path": "C:\\Users\\DELL\\Documents\\jivo-cli",
+      "working_profile": "C:\\Users\\DELL",
+      "operator": "",
+      "operator_name": "",
+      "persona": "dev",
+      "sap_user": "",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "notes": "Dev/BI box (SAP HANA Studio, SSMS, Postman) rather than an Accounts terminal \u2014 so it has no operator registered and no write-capable SAP user; the default env is 'manager', which is read-only. Grants are not gated for it, but accounts-write will report that a named SAP user is still a human step. claude.exe is at C:\\Users\\DELL\\.local\\bin\\claude.exe, which is NOT on the PATH sshd hands out \u2014 call it by absolute path. A staged deletion of 'sap-b1/vault/services/Entities:.md' sits in its index permanently (the colon is illegal on NTFS so git can never restore it); harmless, but the tree looks dirty forever and a bare `git add` would sweep it into a push.",
+      "ssh_user": "DELL"
+    },
+    "vps": {
+      "ssh_alias": "vps",
+      "hostname": "srv1685505",
+      "os": "linux",
+      "kit_path": "/root/jivo-cli",
+      "working_profile": "/root",
+      "operator": "",
+      "operator_name": "",
+      "persona": "dev",
+      "sap_user": "manager",
+      "preapproved_grants": [
+        "sync"
+      ],
+      "notes": "This is the box the summon agent itself runs on. It is infrastructure, not an operator machine: there is nobody sitting at it to write to SAP as, so writes from here would land in the shared log unattributed. That is why it keeps only 'sync' \u2014 not a permission judgement, just an absence of an operator."
+    },
+    "dev": {
+      "ssh_alias": "dev",
+      "hostname": "HO-IT-PC10",
+      "os": "windows",
+      "tunnel_port": 23007,
+      "kit_path": "",
+      "persona": "dev",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "notes": "REACHABLE BUT HAS NO KIT: a recursive search of C: found no jivo-cli, no harness, no sapb1. Nothing can be granted until somebody clones the repo here.",
+      "ssh_user": "khushwinder"
+    },
+    "victus": {
+      "ssh_alias": "victus",
+      "hostname": "VICTUS",
+      "os": "windows",
+      "tunnel_port": 23001,
+      "kit_path": "",
+      "persona": "",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "needs_inventory": true,
+      "notes": "Tunnel port 23001 refusing connections as of 2026-08-22 \u2014 never inventoried. All fields below unverified.",
+      "ssh_user": "prabh"
+    },
+    "diljeet": {
+      "ssh_alias": "diljeet",
+      "hostname": "JIVO-B1",
+      "os": "windows",
+      "tunnel_port": 23002,
+      "kit_path": "",
+      "persona": "",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "needs_inventory": true,
+      "notes": "Tunnel 23002 refusing as of 2026-08-22 \u2014 never inventoried.",
+      "ssh_user": "Ecom"
+    },
+    "macpro": {
+      "ssh_alias": "macpro",
+      "hostname": "dannys-Mac-Pro",
+      "os": "macos",
+      "tunnel_port": 23003,
+      "kit_path": "",
+      "persona": "dev",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "needs_inventory": true,
+      "notes": "Down on every fleet path as of 2026-08-22 (Tailscale.app is gone from the Mac, LAN and reverse-tunnel both dead). SSH user has a trailing dot: 'danny.'",
+      "ssh_user": "danny."
+    },
+    "gur": {
+      "ssh_alias": "gur",
+      "hostname": "JIVO202",
+      "os": "windows",
+      "tunnel_port": 23006,
+      "kit_path": "",
+      "persona": "",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "needs_inventory": true,
+      "notes": "Tunnel 23006 refusing as of 2026-08-22 \u2014 never inventoried. SSH user jeetg.",
+      "ssh_user": "jeetg"
+    },
+    "navjot": {
+      "ssh_alias": "navjot",
+      "hostname": "JIVO",
+      "os": "windows",
+      "tunnel_port": 23008,
+      "kit_path": "",
+      "persona": "",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "needs_inventory": true,
+      "notes": "Tunnel 23008 has no listener as of 2026-08-22 \u2014 never inventoried.",
+      "ssh_user": "Administrator1"
+    },
+    "ziyaul": {
+      "ssh_alias": "ziyaul",
+      "hostname": "DESKTOP-73N6JE8",
+      "os": "windows",
+      "tunnel_port": 23011,
+      "kit_path": "",
+      "persona": "",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "needs_inventory": true,
+      "notes": "Tunnel 23011 not listening as of 2026-08-22 \u2014 never inventoried. Owns the Mart BSU/TPT branch work.",
+      "ssh_user": "Ziyaul"
+    },
+    "karanpreet": {
+      "ssh_alias": "karanpreet",
+      "hostname": "Karanpreets-MacBook-Air",
+      "os": "macos",
+      "tunnel_port": 23012,
+      "kit_path": "",
+      "persona": "",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "needs_inventory": true,
+      "notes": "Tunnel 23012 not listening as of 2026-08-22. His ~/jivo-cli was deleted once and restored from backup; a standing auto-restore cron on the VPS is waiting for this box.",
+      "ssh_user": "karanpreetsingh"
+    },
+    "preshit": {
+      "ssh_alias": "preshit",
+      "hostname": "HO-IT-PC1",
+      "os": "windows",
+      "tunnel_port": 23013,
+      "kit_path": "",
+      "persona": "it",
+      "preapproved_grants": [
+        "accounts-write",
+        "ary",
+        "claude-auth",
+        "full-access",
+        "gst-portal",
+        "hana",
+        "sync"
+      ],
+      "needs_inventory": true,
+      "notes": "Tunnel 23013 refusing as of 2026-08-22. Its sshd was MARKED FOR DELETION once; a JivoSshdReviver ONSTART task exists to bring it back.",
+      "ssh_user": "Administrator"
+    }
+  },
+  "_authorization_model": [
+    "PERMISSIVE BY DESIGN \u2014 Daman's decision, 2026-08-22, stated twice.",
+    "",
+    "The gate is at token-mint time, not at request time. Only Daman can mint a",
+    "device token (tokens.json is 0600 on the VPS and the daemon has no",
+    "self-enrolment path), so a box holding a valid token is a box he already",
+    "trusted. From there the agent grants what is asked \u2014 SAP draft/write access",
+    "included \u2014 without parking anything for him.",
+    "",
+    "What that means in practice: revocation is done by deleting a token, not by",
+    "arguing with the agent. If a machine should lose access, remove its entry from",
+    "tokens.json and restart jivo-summond.",
+    "",
+    "The audit log stays regardless. Every grant is appended to audit.jsonl with",
+    "the device, operator, grant and outcome, fsync'd before the reply goes back.",
+    "That is not a gate \u2014 it is the record of what a permissive system did."
+  ],
+  "_reachability": [
+    "How the VPS reaches a box: NOT the same way the Mac does.",
+    "",
+    "From the Mac, a fleet alias is 127.0.0.1:<tunnel_port> via ProxyJump vps \u2014",
+    "the Mac hops THROUGH the VPS. But the VPS is the tunnel endpoint itself, so",
+    "from here each box is on 127.0.0.1:<tunnel_port> directly, with no jump.",
+    "",
+    "install-vps.sh generates /opt/jivo-summon/ssh_config from ssh_user +",
+    "tunnel_port below, and the grants pass `ssh -F` that file. Root's own",
+    "~/.ssh/config is left alone deliberately: the fleet-health and auto-repair",
+    "scripts depend on it, and a generated file clobbering it would take out more",
+    "than this agent."
+  ],
+  "sap_user_owners": {
+    "USER01": "avtar",
+    "USER06": "lovepreet",
+    "USER07": "neetu",
+    "USER36": "navdeep",
+    "manager": ""
+  },
+  "_sap_user_note": [
+    "sap_user_owners maps a SAP UserCode to the OPERATOR SLUG who owns it, read",
+    "live from SAP's Users entity on 2026-08-22.",
+    "",
+    "Why it exists: every SAP write is logged under the SAP user's name, so a box",
+    "configured with someone else's account silently files its operator's work",
+    "under that other person \u2014 and it is invisible afterwards. The",
+    "sap-credentials grant refuses a mismatch unless the box sets",
+    "shared_sap_user_ok.",
+    "",
+    "Verified live 2026-08-22: USER01, USER06, USER36 and manager all log in.",
+    "USER07 (Neetu) does NOT \u2014 its stored password is stale."
+  ]
+}

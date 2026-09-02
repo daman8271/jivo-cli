@@ -9,6 +9,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -141,6 +142,28 @@ func (d *DB) Chats(limit int) ([]Chat, error) {
 	return out, rows.Err()
 }
 
+// Get returns one message by its WhatsApp id — what `jwa pull` is handed.
+func (d *DB) Get(id string) (Message, error) {
+	var m Message
+	var fromMe, grp int
+	var ts int64
+	err := d.sql.QueryRow(`
+        SELECT id, chat_jid, chat_name, sender_jid, sender_name, from_me,
+               is_group, ts, body, media_type, media_name, media_path, media_size
+        FROM messages WHERE id = ?`, id).
+		Scan(&m.ID, &m.ChatJID, &m.ChatName, &m.SenderJID, &m.SenderName,
+			&fromMe, &grp, &ts, &m.Body, &m.MediaType, &m.MediaName, &m.MediaPath,
+			&m.MediaSize)
+	if err == sql.ErrNoRows {
+		return m, fmt.Errorf("no message %q in the archive", id)
+	}
+	if err != nil {
+		return m, err
+	}
+	m.FromMe, m.IsGroup, m.Timestamp = fromMe == 1, grp == 1, time.Unix(ts, 0)
+	return m, nil
+}
+
 // Query is the one filter type the reading commands share.
 type Query struct {
 	Chat      string // substring of chat name or JID
@@ -148,6 +171,7 @@ type Query struct {
 	Text      string // substring of the message body
 	Since     time.Time
 	OnlyMedia bool
+	Kinds     []string // media_type whitelist, e.g. image+document for a bill
 	Limit     int
 }
 
@@ -175,6 +199,12 @@ func (d *DB) Search(q Query) ([]Message, error) {
 	if q.OnlyMedia {
 		sqlStr += ` AND media_type <> ''`
 	}
+	if len(q.Kinds) > 0 {
+		sqlStr += ` AND media_type IN (` + placeholders(len(q.Kinds)) + `)`
+		for _, k := range q.Kinds {
+			args = append(args, k)
+		}
+	}
 	sqlStr += ` ORDER BY ts DESC LIMIT ?`
 	if q.Limit <= 0 {
 		q.Limit = 50
@@ -200,6 +230,13 @@ func (d *DB) Search(q Query) ([]Message, error) {
 		out = append(out, m)
 	}
 	return out, rows.Err()
+}
+
+func placeholders(n int) string {
+	if n <= 0 {
+		return "NULL"
+	}
+	return "?" + strings.Repeat(",?", n-1)
 }
 
 func like(s string) string { return "%" + lower(s) + "%" }

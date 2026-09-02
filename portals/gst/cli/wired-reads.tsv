@@ -1,0 +1,41 @@
+# gst-portal — the read-only guard's coverage truth.
+# One row per allowlisted endpoint (endpoints.go). guardrail_coverage_test.go
+# checks this file and the table match 1:1, so an endpoint can never be added in
+# code without appearing here, in review, on one line.
+# The command column names the CLI verb that uses the row. Every row here was
+# observed live and is written up in ../API.md.
+# method	host	path	command
+GET	services.gst.gov.in	/services/login	auth login, auth captcha
+GET	services.gst.gov.in	/services/captcha	auth login, auth captcha
+POST	services.gst.gov.in	/services/authenticate	auth login
+GET	services.gst.gov.in	/services/api/ustatus	doctor, auth whoami
+GET	payment.gst.gov.in	/payment/auth/api/keepalive	auth keepalive
+POST	services.gst.gov.in	/services/auth/profile/detail	profile
+GET	services.gst.gov.in	/returns/auth/api/filingsnapshot	returns calendar
+GET	return.gst.gov.in	/returns/auth/api/dropdown	returns periods
+GET	return.gst.gov.in	/returns/auth/api/rolestatus	returns status
+GET	return.gst.gov.in	/returns/auth/api/formdetails	returns status --form, gstr3b status, gstr2a status
+POST	return.gst.gov.in	/returns/auth/api/efiledReturns	returns filed
+GET	return.gst.gov.in	/returns/auth/api/gstr3b/summary	gstr3b summary
+GET	return.gst.gov.in	/returns/auth/api/gstr3b/getr1r3bliab	gstr3b autopop
+GET	gstr2b.gst.gov.in	/gstr2b/auth/api/gstr2b/getdata	gstr2b summary
+GET	gstr2b.gst.gov.in	/gstr2b/auth/api/gstr2b/getuserdtls	gstr2b summary
+GET	payment.gst.gov.in	/payment/auth/api/cashbalance	ledger cash
+GET	payment.gst.gov.in	/payment/auth/api/cashdetls	ledger cash --from/--to
+GET	return.gst.gov.in	/returns/auth/api/itcbalance	ledger credit
+GET	return.gst.gov.in	/returns/auth/api/itcdtls	ledger credit --from/--to
+GET	payment.gst.gov.in	/payment/auth/api/searcharnusngdate	ledger challans
+GET	return.gst.gov.in	/master/gstrs/A	masters forms
+GET	return.gst.gov.in	/master/fy	masters fy
+GET	return.gst.gov.in	/master/fy/{fy}	masters months
+GET	return.gst.gov.in	/master/qtrs/{fy}	masters quarters
+GET	return.gst.gov.in	/master/hy/{fy}	masters halfyears
+GET	return.gst.gov.in	/master/allstates	masters states
+GET	return.gst.gov.in	/returns/auth/api/retdtl	ledger liability
+GET	payment.gst.gov.in	/payment/auth/api/liabdetails	ledger liability-other
+GET	return.gst.gov.in	/returns/auth/api/gstr1/totalsummarycount	gstr1 summary, gstr1 section
+GET	return.gst.gov.in	/returns/auth/api/gstr1/invoice	gstr1 docs
+GET	return.gst.gov.in	/returns/auth/api/gstr2a/ctin	gstr2a suppliers
+GET	return.gst.gov.in	/returns/auth/api/gstr2a/b2b	gstr2a docs
+GET	return.gst.gov.in	/returns/auth/api/gstr3bvs1/getuserdetail	compare
+GET	return.gst.gov.in	/returns/auth/api/gstr3bvs1/getdata	compare

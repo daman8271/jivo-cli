@@ -72,6 +72,15 @@ func Open(sessionPath, archivePath, mediaDir string, verbose bool) (*Client, err
 		return nil, fmt.Errorf("read device: %w", err)
 	}
 
+	// The device store is as good as the account: anyone holding this file IS
+	// the linked device. whatsmeow creates it 0644; the enclosing directory is
+	// 0700 but on a shared box the file itself should not be world-readable.
+	for _, f := range []string{sessionPath, sessionPath + "-wal", sessionPath + "-shm"} {
+		if _, err := os.Stat(f); err == nil {
+			_ = os.Chmod(f, 0o600)
+		}
+	}
+
 	archive, err := store.Open(archivePath)
 	if err != nil {
 		return nil, fmt.Errorf("open archive: %w", err)
@@ -117,7 +126,22 @@ func (c *Client) Pair(ctx context.Context, showQR func(string)) error {
 			return nil
 		case "timeout":
 			return fmt.Errorf("QR expired before it was scanned — run `jwa login` again")
+		default:
+			// whatsmeow reports every other outcome as err-*: an outdated
+			// client, a scan from a phone that is not on multi-device, a lost
+			// socket. None of them linked anything.
+			if strings.HasPrefix(evt.Event, "err") {
+				return fmt.Errorf("pairing failed: %s", evt.Event)
+			}
 		}
+	}
+
+	// The channel closed without ever saying "success" — the process was
+	// killed, the socket dropped, or the context was cancelled. Nothing is
+	// linked, and saying nothing here would let the caller print a cheerful
+	// "Linked." over a number that is not.
+	if !c.LoggedIn() {
+		return fmt.Errorf("pairing ended without linking — the QR window closed before a phone scanned it; run `jwa login` again")
 	}
 	return nil
 }
@@ -133,7 +157,7 @@ func (c *Client) handle(raw any) {
 		for _, conv := range evt.Data.GetConversations() {
 			for _, h := range conv.GetMessages() {
 				if m := h.GetMessage(); m != nil {
-					c.recordHistory(conv.GetId(), m)
+					c.recordHistory(conv.GetID(), m)
 				}
 			}
 		}
@@ -161,7 +185,7 @@ func (c *Client) record(evt *events.Message) {
 func (c *Client) recordHistory(chatJID string, msg *waProto.WebMessageInfo) {
 	ts := time.Unix(int64(msg.GetMessageTimestamp()), 0)
 	m := store.Message{
-		ID:        msg.GetKey().GetId(),
+		ID:        msg.GetKey().GetID(),
 		ChatJID:   chatJID,
 		FromMe:    msg.GetKey().GetFromMe(),
 		IsGroup:   strings.Contains(chatJID, "@g.us"),
@@ -229,7 +253,7 @@ func (c *Client) chatName(jid types.JID) string {
 			return contact.PushName
 		}
 	}
-	if info, err := c.WA.GetGroupInfo(jid); err == nil && info.Name != "" {
+	if info, err := c.WA.GetGroupInfo(context.Background(), jid); err == nil && info.Name != "" {
 		return info.Name
 	}
 	return jid.User

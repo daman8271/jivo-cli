@@ -1,0 +1,863 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="ILMpc2W8rzUjEePWuufEViLfZWIyQF1OqhLjb1RaN4YvlzHloE8PkHCgG9WUzEM3">
+  <title>Hidden Customer Sales — Jivo Group</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300,0,0" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Raleway', sans-serif; background: #f3f4f6; color: #1f2937; }
+
+    /* ── Light & subtle report theme tokens ───────────────────────────────────
+       Shared palette for the Realise/report pages so they all read like the Home
+       dashboard: white cards, thin colour accents, soft shadows, dark-on-light text.
+       Tweak here to re-tone every page at once. */
+    :root {
+      --rz-bg:        #f4f6fb;   /* page background                       */
+      --rz-card:      #ffffff;   /* card / panel surface                  */
+      --rz-card-brd:  #ecebf5;   /* subtle card border                    */
+      --rz-shadow:    0 4px 14px rgba(15,23,42,.05);   /* soft card shadow */
+      --rz-shadow-lg: 0 8px 24px rgba(15,23,42,.07);   /* hero / raised    */
+      --rz-ink:       #0f172a;   /* primary heading / value text          */
+      --rz-body:      #334155;   /* body text                             */
+      --rz-muted:     #64748b;   /* muted labels                          */
+      --rz-faint:     #94a3b8;   /* faint / placeholder                   */
+      --rz-line:      #e5e7eb;   /* hairline / divider                    */
+      --rz-indigo:    #6366f1;   /* primary accent                        */
+      --rz-indigo-deep:#4338ca;  /* accent text on soft bg                */
+      --rz-soft:      #eef2ff;   /* soft accent fill (active chips)       */
+      --rz-soft-brd:  #e0e7ff;   /* soft accent border                    */
+      --rz-head-bg:   #f8fafc;   /* table header background (light)       */
+      --rz-head-ink:  #475569;   /* table header text                     */
+      --rz-total-bg:  #f1f5f9;   /* grand-total row background            */
+      --rz-total-brd: #e2e8f0;   /* grand-total row top border            */
+      --rz-pos:       #16a34a;   /* positive / green                      */
+      --rz-neg:       #e11d48;   /* negative / red                        */
+      --rz-amber:     #d97706;   /* amber accent                          */
+      --rz-teal:      #0d9488;   /* teal accent                           */
+      /* Numeric font: plain upright figures for money / metric values. Raleway's numerals
+         read as slanted / "cursive"; a neutral system sans keeps numbers legible & subtle.
+         Applied to numeric cells & KPI values app-wide via the rule below.               */
+      --rz-num: system-ui, "Segoe UI", Roboto, -apple-system, "Helvetica Neue", Arial, sans-serif;
+      /* KPI accent bars (thin top strip on white stat cards) */
+      --rz-acc-indigo: linear-gradient(90deg,#6366f1,#7c3aed);
+      --rz-acc-green:  linear-gradient(90deg,#059669,#16a34a);
+      --rz-acc-red:    linear-gradient(90deg,#e11d48,#f43f5e);
+      --rz-acc-amber:  linear-gradient(90deg,#d97706,#f59e0b);
+      --rz-acc-teal:   linear-gradient(90deg,#0d9488,#14b8a6);
+    }
+
+    /* ── Numeric values: subtle, upright figures across every report ───────────
+       Numbers in these pages were inheriting Raleway, whose numerals look slanted /
+       "cursive". Force a neutral tabular sans + normal style on the numeric containers
+       used app-wide: KPI stat values (*-kpi-v), the shared .num table cell, and the
+       common per-report money/qty cell classes. Selectors only hit number-only elements,
+       so prose (party names, headings) keeps Raleway. Edit --rz-num to re-tone at once. */
+    [class$="kpi-v"], [class*="kpi-v "], .kpi-value,
+    .num, td.num, .op-hi, .dd-mono,
+    .sv, .sp-amt, .sa-qty, .doc, .doc-bal, .cmp-big, .cmp-chg, .cm-gst,
+    .rc-so-one, .pf-prow-qty, .sc2-state-val, .sc2-drillval {
+      font-family: var(--rz-num);
+      font-variant-numeric: tabular-nums;
+      font-style: normal;
+      letter-spacing: 0;
+    }
+
+    /* ── Topbar ── */
+    .cp-topbar { display: flex; align-items: center; gap: 24px; padding: 0 20px; background: #ffffff; border-bottom: 1px solid #e5e7eb; height: 56px; position: sticky; top: 0; z-index: 100; }
+    .cp-topbar-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .cp-topbar-logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .cp-topbar-title { font-size: 14px; font-weight: 700; line-height: 1.1; color: #111827; }
+    .cp-topbar-subtitle { font-size: 11px; color: #6b7280; }
+    .cp-topbar-ticker { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
+    .cp-live-pill { background: #d1fae5; color: #047857; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .cp-live-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: cp-pulse 2s infinite; }
+    @keyframes cp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .cp-ticker-item { padding: 4px 10px; background: #f3f4f6; border-radius: 20px; font-size: 11px; white-space: nowrap; flex-shrink: 0; color: #374151; }
+    .cp-ticker-item b { color: #4338ca; margin-right: 4px; }
+
+    /* ── Shell ── */
+    .cp-shell { display: flex; min-height: calc(100vh - 56px); position: relative; }
+
+    /* ── Sidebar ── */
+    /* Frozen in place: sticky just below the 56px topbar and exactly viewport-tall, so the
+       sidebar stays put while only .cp-main scrolls. align-self:flex-start stops the flex
+       row from stretching it (which would break sticky); overflow-y lets a tall sidebar
+       scroll on its own. */
+    .cp-sidebar { width: 240px; background: #f8fafc; color: #334155; padding: 20px 14px; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; border-right: 1px solid #e5e7eb; transition: width .22s ease, padding .22s ease; position: sticky; top: 56px; height: calc(100vh - 56px); align-self: flex-start; }
+    /* Modern outlined icon set in the sidebar (Material Symbols) — lighter & cleaner than filled. */
+    .cp-sidebar .material-icons, .cp-sidebar-open .material-icons { font-family: 'Material Symbols Outlined'; font-weight: normal; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+    /* Collapsed = a slim icon rail (not empty space): keep the nav icons,
+       hide all text/labels, and let the floating menu button expand it. */
+    /* Smart hover sidebar: collapsed = a slim icon rail that expands on hover and PUSHES
+       the content (everything adjusts smoothly — nothing is hidden). 'cp-sb-peek' is
+       toggled by JS on mouse enter/leave (with a small close-delay); :focus-within keeps
+       keyboard navigation working. */
+    body.cp-sidebar-collapsed .cp-sidebar {
+      width: 64px; padding: 16px 8px;
+      transition: width .2s ease, padding .2s ease;
+    }
+    body.cp-sidebar-collapsed .cp-sidebar.cp-sb-peek,
+    body.cp-sidebar-collapsed .cp-sidebar:focus-within {
+      width: 240px; padding: 20px 14px;
+    }
+    /* Icon-only look only while the rail is NOT peeking/focused */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-brand,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-section-label,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-user-badge,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-logout-form { display: none; }
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav:first-of-type { margin-top: 56px; }  /* clear the floating menu button */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-item { justify-content: center; gap: 0; padding: 11px 0; font-size: 0; }
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-item .material-icons { font-size: 22px; }
+    /* On the slim rail, collapse the group to just its icon (no chevron, no sub-items). */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-sub,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-group-chev { display: none; }
+    /* The floating "pin" button shows on the slim rail; it hides while peeking (the
+       in-rail close/pin button takes over once the rail is expanded). */
+    body.cp-sidebar-collapsed .cp-sidebar-open { top: 14px; left: 14px; }
+    body.cp-sidebar-collapsed .cp-sidebar.cp-sb-peek ~ .cp-sidebar-open { opacity: 0; pointer-events: none; }
+    .cp-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px 18px 6px; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px; }
+    .cp-brand-copy { min-width: 0; flex: 1; }
+    .cp-brand-logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(99,102,241,0.45); }
+    .cp-brand-title { font-size: 13px; font-weight: 700; color: #0f172a; }
+    .cp-brand-subtitle { font-size: 10px; color: #94a3b8; }
+    .cp-sidebar-close, .cp-sidebar-open { border: 0; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; transition: background .15s, color .15s, opacity .15s, transform .15s; }
+    .cp-sidebar-close { width: 30px; height: 30px; border-radius: 8px; background: #f1f5f9; color: #64748b; flex-shrink: 0; }
+    .cp-sidebar-close:hover { background: #e2e8f0; color: #334155; }
+    .cp-sidebar-close .material-icons { font-size: 18px; }
+    .cp-sidebar-open { position: absolute; top: 12px; left: 12px; z-index: 20; width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; box-shadow: 0 8px 20px rgba(79,70,229,.4); opacity: 0; pointer-events: none; transform: translateX(-8px); }
+    body.cp-sidebar-collapsed .cp-sidebar-open { opacity: 1; pointer-events: auto; transform: translateX(0); }
+    .cp-sidebar-open:hover { background: linear-gradient(135deg, #818cf8, #6366f1); }
+    .cp-sidebar-open .material-icons { font-size: 21px; }
+    .cp-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.9px; color: #64748b; margin: 16px 6px 6px 6px; text-transform: uppercase; }
+    .cp-nav { display: flex; flex-direction: column; gap: 3px; }
+    .cp-nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; color: #334155; text-decoration: none; font-size: 13px; font-weight: 600; transition: background .15s, color .15s, box-shadow .15s; }
+    .cp-nav-item:hover { background: #eef2ff; color: #1e293b; }
+    .cp-nav-item.active { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; box-shadow: 0 6px 18px rgba(79,70,229,0.5); }
+    .cp-nav-item.active .material-icons { color: #fff; font-variation-settings: 'FILL' 1, 'wght' 400; }
+    .cp-nav-item .material-icons { font-size: 20px; }
+
+    /* ── Collapsible nav group (e.g. Analytical Reports) ── */
+    .cp-nav-group { display: flex; flex-direction: column; }
+    .cp-nav-group-btn { width: 100%; border: 0; background: none; font-family: inherit; cursor: pointer; justify-content: space-between; }
+    .cp-nav-group-lead { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .cp-nav-group-chev { font-size: 18px !important; color: #94a3b8; transition: transform .18s ease; }
+    .cp-nav-group.open > .cp-nav-group-btn { color: #1e293b; }
+    .cp-nav-group.open > .cp-nav-group-btn .cp-nav-group-chev { transform: rotate(180deg); }
+    .cp-nav-sub { display: none; flex-direction: column; gap: 3px; margin: 3px 0 2px 17px; padding-left: 12px; border-left: 2px solid #e2e8f0; }
+    .cp-nav-group.open > .cp-nav-sub { display: flex; }
+    .cp-nav-sub .cp-nav-item { font-size: 12.5px; padding: 8px 11px; }
+
+    /* ── User badge ── */
+    .cp-user-badge { margin-top: auto; padding: 10px; background: #f1f5f9; border: 1px solid #e5e7eb; border-radius: 11px; display: flex; align-items: center; gap: 10px; }
+    .cp-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; box-shadow: 0 3px 9px rgba(99,102,241,0.4); }
+    .cp-user-name { font-size: 12px; font-weight: 700; color: #0f172a; }
+    .cp-user-role { font-size: 10px; color: #64748b; text-transform: capitalize; }
+    .cp-logout-form { margin-top: 8px; }
+    .cp-logout-btn { width: 100%; padding: 9px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; transition: background .15s, color .15s, border-color .15s; }
+    .cp-logout-btn:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+
+    /* ── Main content ── */
+    .cp-main { flex: 1; padding: 28px 32px; overflow: auto; min-width: 0; }
+    /* (push mode) content sits flush after the flex sidebar — no extra left padding. */
+    /* Dashboard pages auto-size to the available width at any screen size / zoom: drop the
+       per-page fixed max-width caps on the content root (the single ".<name>-wrap" div that
+       each page renders directly inside .cp-main). Higher specificity than the page's own
+       ".x-wrap{max-width:…}" rule, so this wins without !important. */
+    .cp-main > div[class*="-wrap"] { max-width: none; }
+  </style>
+  
+<style>
+  .cp-main{background:var(--rz-bg) !important}
+  .hs-wrap{max-width:1500px;margin:0 auto}
+  .hs-h1{font-size:30px;font-weight:800;color:var(--rz-ink);margin:0;letter-spacing:-.5px}
+  .hs-psub{margin:6px 0 0;font-size:13px;color:var(--rz-muted)}
+
+  /* ── KPI cards (white + thin colour accent) ── */
+  .hs-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0}
+  .hs-kpi{position:relative;overflow:hidden;border-radius:16px;padding:18px 20px;color:var(--rz-ink);
+          background:var(--rz-card);border:1px solid var(--rz-card-brd);box-shadow:var(--rz-shadow)}
+  .hs-kpi::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--kpi-acc,var(--rz-acc-indigo))}
+  .hs-kpi .hs-kpi-l{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--rz-muted);display:flex;align-items:center;gap:7px}
+  .hs-kpi .hs-kpi-l .material-icons{color:var(--kpi-ic,#6366f1)}
+  .hs-kpi .hs-kpi-v{font-size:29px;font-weight:900;margin-top:8px;letter-spacing:-.5px;line-height:1;color:var(--rz-ink);font-variant-numeric:tabular-nums}
+  .hs-kpi .hs-kpi-m{font-size:12px;font-weight:600;color:var(--rz-muted);margin-top:6px}
+  .hs-kpi .material-icons.hs-kpi-bg{position:absolute;right:-8px;bottom:-14px;font-size:96px;color:var(--kpi-ic,#6366f1);opacity:.08}
+  .k-val{--kpi-acc:var(--rz-acc-indigo);--kpi-ic:#6366f1}
+  .k-ltr{--kpi-acc:var(--rz-acc-teal);--kpi-ic:#0d9488}
+  .k-inv{--kpi-acc:var(--rz-acc-red);--kpi-ic:#e11d48}
+  .k-cust{--kpi-acc:var(--rz-acc-teal);--kpi-ic:#0891b2}
+  .k-prem{--kpi-acc:var(--rz-acc-indigo);--kpi-ic:#2563eb}
+  .k-comm{--kpi-acc:var(--rz-acc-amber);--kpi-ic:#d97706}
+
+  .hs-bar{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 14px;background:var(--rz-card);border:1px solid var(--rz-card-brd);border-radius:14px;padding:14px 16px;box-shadow:var(--rz-shadow)}
+  .hs-fld{display:flex;flex-direction:column;gap:5px}
+  .hs-lbl{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--rz-muted)}
+  .hs-bar input[type=date],.hs-bar input[type=search],.hs-bar select{font-family:inherit;font-size:13px;font-weight:600;color:var(--rz-ink);border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;background:#fff;outline:none}
+  .hs-bar input[type=search]{min-width:200px}
+  .hs-bar input[type=search]::placeholder{color:var(--rz-faint)}
+  .hs-bar input[type=search]:focus,.hs-bar input[type=date]:focus,.hs-bar select:focus{border-color:var(--rz-indigo);box-shadow:0 0 0 3px rgba(99,102,241,.14)}
+  .hs-fetch{background:var(--rz-indigo);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .hs-fetch:hover{background:var(--rz-indigo-deep)}
+  .hs-export{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #e2e8f0;border-radius:9px;padding:9px 14px;font-size:12px;font-weight:700;color:#047857;cursor:pointer;font-family:inherit}
+  .hs-export:hover{background:#ecfdf5;border-color:#a7f3d0}
+
+  .com-drill-box{position:relative}
+  .com-drill-btn{display:inline-flex;align-items:center;gap:10px;min-width:170px;justify-content:space-between;background:#fff;border:1px solid #e2e8f0;color:var(--rz-indigo-deep);font-weight:700;font-size:12px;padding:8px 10px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .com-drill-btn .com-caret{color:var(--rz-muted);font-size:10px}
+  .com-drill-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:40;width:250px;max-height:320px;overflow:auto;background:#fff;border:1px solid var(--rz-card-brd);border-radius:12px;box-shadow:var(--rz-shadow-lg)}
+  .com-drill-panel.open{display:block}
+  .hs-m{line-height:1.35;font-variant-numeric:tabular-nums}
+  .hs-m ~ .hs-m{font-size:11px}                 /* stacked extra metrics slightly smaller */
+  .hs-m.hs-m-lit{color:#0d9488}
+  .hs-m.hs-m-qty{color:#475569}
+  .hs-m.hs-m-rlz{color:#7c3aed}
+  .com-dp-head{display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--rz-line);position:sticky;top:0;background:#fff}
+  .com-dp-head a{color:var(--rz-indigo-deep);font-size:12px;font-weight:700;cursor:pointer}
+  .com-dp-list{padding:4px 0}
+  .com-dp-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;font-size:13px}
+  .com-dp-item:hover{background:var(--rz-soft)}
+  .com-dp-item input{width:16px;height:16px;cursor:pointer;flex:0 0 auto}
+  .com-dp-item .com-dp-name{flex:1 1 auto;font-weight:600;color:var(--rz-ink)}
+  .com-dp-item .com-dp-sub{font-size:10px;color:var(--rz-faint);font-weight:600}
+  .com-dp-item .com-pos{flex:0 0 auto;width:19px;height:19px;border-radius:50%;background:var(--rz-indigo);color:#fff;font-size:11px;font-weight:800;display:none;align-items:center;justify-content:center}
+  .com-dp-item.checked .com-pos{display:inline-flex}
+  .com-dp-foot{padding:9px 12px;border-top:1px solid var(--rz-line);position:sticky;bottom:0;background:#fff}
+  .com-dp-foot button{width:100%;background:var(--rz-indigo);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+
+  .hs-table-card{background:var(--rz-card);border:1px solid var(--rz-card-brd);border-radius:16px;overflow:hidden;box-shadow:var(--rz-shadow)}
+  .hs-table-wrap{overflow:auto;max-height:72vh}
+  table.hs-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:13px}
+  table.hs-table thead th{position:sticky;top:0;z-index:2;background:var(--rz-head-bg);color:var(--rz-head-ink);text-align:right;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:12px 16px;white-space:nowrap;border-bottom:1px solid var(--rz-line)}
+  table.hs-table thead th.gc-name{text-align:left;left:0;z-index:3}
+  table.hs-table tbody td{padding:9px 16px;border-bottom:1px solid #eef2f6;color:var(--rz-body);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.hs-table tbody td.gc-name{text-align:left;color:var(--rz-ink);font-weight:600;position:sticky;left:0;background:#fff;z-index:1}
+  table.hs-table tbody tr:nth-child(even) td.gc-name{background:#fafcff}
+  table.hs-table tbody tr:hover td{background:#f1f5ff}
+  table.hs-table tbody tr:hover td.gc-name{background:#eef3ff}
+  td.hs-hi{font-weight:800;color:var(--rz-ink)}
+  .hs-v0{color:#cbd5e1}
+  table.hs-table tbody tr.hs-total td{background:var(--rz-total-bg);color:var(--rz-ink);font-weight:800;position:sticky;bottom:0;border-top:2px solid var(--rz-total-brd)}
+  table.hs-table tbody tr.hs-total td.gc-name{background:var(--rz-total-bg);color:var(--rz-ink)}
+  .hs-tw{display:inline-block;width:13px;font-size:9px;color:var(--rz-muted);margin-right:7px;cursor:pointer;transition:transform .12s;vertical-align:middle}
+  .hs-tw.open{transform:rotate(90deg)}
+  .hs-tw-empty{display:inline-block;width:13px;margin-right:7px}
+  .hs-tag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:var(--rz-soft);color:var(--rz-indigo-deep);margin-right:8px;vertical-align:middle}
+  .hs-empty{padding:40px;text-align:center;color:var(--rz-muted)}
+</style>
+
+</head>
+<body>
+
+  
+  <div class="cp-topbar">
+    <div class="cp-topbar-brand">
+      <div class="cp-topbar-logo">JG</div>
+      <div>
+        <div class="cp-topbar-title">Jivo Group</div>
+        <div class="cp-topbar-subtitle">Control Panel</div>
+      </div>
+    </div>
+    <div class="cp-topbar-ticker">
+      <span class="cp-live-pill"><span class="cp-live-dot"></span>LIVE</span>
+      
+        <span class="cp-ticker-item"><b>REALISE</b>₹171.07/L</span>
+      
+    </div>
+  </div>
+
+  
+  <div class="cp-shell">
+    <aside class="cp-sidebar">
+
+      <div class="cp-brand">
+        <div class="cp-brand-logo">JG</div>
+        <div class="cp-brand-copy">
+          <div class="cp-brand-title">Jivo Group</div>
+          <div class="cp-brand-subtitle">Control Panel</div>
+        </div>
+        <button class="cp-sidebar-close" type="button" onclick="toggleControlPanelSidebar()" title="Pin / unpin sidebar" aria-label="Pin or unpin control panel sidebar">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      
+        <div class="cp-section-label">Main Menu</div>
+        <nav class="cp-nav">
+          <a class="cp-nav-item " href="/" title="Control Panel">
+            <span class="material-icons">space_dashboard</span>Control Panel
+          </a>
+          
+          <a class="cp-nav-item " href="/realise/" title="Sales">
+            <span class="material-icons">bolt</span>Sales
+          </a>
+          
+        </nav>
+
+        
+        <div class="cp-section-label">Reports</div>
+        <nav class="cp-nav">
+          
+          
+          
+          <div class="cp-nav-group open" data-group="reports-sales">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Sales" aria-label="Toggle Sales reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">trending_up</span>Sales</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/compare-sales/" title="Compare Sales">
+                <span class="material-icons">bar_chart</span>Compare Sales
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/sales-cn/" title="Sales vs Credit Notes">
+                <span class="material-icons">receipt_long</span>Sales vs CN
+              </a>
+              
+              
+              <a class="cp-nav-item active" href="/realise/hidden-sales/" title="Hidden Customer Sales">
+                <span class="material-icons">visibility_off</span>Hidden Sales
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/sales-flow/" title="Sales Document Flow">
+                <span class="material-icons">account_tree</span>Sales Doc Flow
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/dispatch-details/" title="Dispatch Details">
+                <span class="material-icons">local_shipping</span>Dispatch Details
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/realise-calculator/" title="Realise Calculator">
+                <span class="material-icons">calculate</span>Realise Calculator
+              </a>
+              <a class="cp-nav-item " href="/realise/rate-list/" title="Rate List">
+                <span class="material-icons">sell</span>Rate List
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group" data-group="reports-accounts">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Accounts" aria-label="Toggle Accounts reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">account_balance</span>Accounts</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/customer-aging/" title="Customer Aging">
+                <span class="material-icons">account_balance_wallet</span>Customer Aging
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/required-credit-limit/" title="Required Credit Limit">
+                <span class="material-icons">credit_score</span>Required Credit Limit
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/open-payments/" title="Open Payments">
+                <span class="material-icons">account_balance</span>Open Payments
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/claims/" title="Claims">
+                <span class="material-icons">gavel</span>Claims
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/reconciliation/" title="Wellness–Mart Reconciliation">
+                <span class="material-icons">account_tree</span>Wellness–Mart Recon
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group" data-group="reports-inventory">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Inventory & Production" aria-label="Toggle Inventory & Production reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">inventory</span>Inventory &amp; Production</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/inventory/stock-available/" title="Stock Available">
+                <span class="material-icons">warehouse</span>Stock Available
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/non-inventory/" title="Finished Goods — Non Moving Stock">
+                <span class="material-icons">inventory_2</span>Non Moving Stock
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/oih-vs-stock/" title="OIH vs Stock">
+                <span class="material-icons">compare_arrows</span>OIH vs Stock
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/production/" title="Production Plan">
+                <span class="material-icons">precision_manufacturing</span>Production Plan
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/daily-production/" title="Daily Production Transaction">
+                <span class="material-icons">factory</span>Daily Production
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group" data-group="reports-master">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Master Data" aria-label="Toggle Master Data">
+              <span class="cp-nav-group-lead"><span class="material-icons">dataset</span>Master Data</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/customer-master/" title="Customer Master">
+                <span class="material-icons">contacts</span>Customer Master
+              </a>
+              
+            </div>
+          </div>
+          
+          
+          
+        </nav>
+        
+
+        
+        <div class="cp-section-label">Admin</div>
+        <nav class="cp-nav">
+          <a class="cp-nav-item " href="/users/" title="User Management">
+            <span class="material-icons">manage_accounts</span>Users
+          </a>
+        </nav>
+        
+
+        <div class="cp-user-badge">
+          <div class="cp-avatar">PR</div>
+          <div>
+            <div class="cp-user-name">preshit</div>
+            <div class="cp-user-role">admin</div>
+          </div>
+        </div>
+        <form class="cp-logout-form" method="post" action="/accounts/logout/">
+          <input type="hidden" name="csrfmiddlewaretoken" value="ILMpc2W8rzUjEePWuufEViLfZWIyQF1OqhLjb1RaN4YvlzHloE8PkHCgG9WUzEM3">
+          <button type="submit" class="cp-logout-btn">Sign out</button>
+        </form>
+      
+
+    </aside>
+
+    <button class="cp-sidebar-open" type="button" onclick="setControlPanelSidebar(true)" title="Open sidebar" aria-label="Open control panel sidebar">
+      <span class="material-icons">menu</span>
+    </button>
+
+    <main class="cp-main">
+      
+<div class="hs-wrap">
+  <div>
+    <h1 class="hs-h1">Hidden Customer Sales</h1>
+    <p class="hs-psub">Sales invoices flagged hidden in SAP (U_ARNO = 'H') — excluded from the dashboard's Done. Drill by customer, item, cost center, date or status; quantity, litres &amp; value shown.</p>
+  </div>
+
+  <div class="hs-kpis" id="hsKpis"></div>
+
+  <div class="hs-bar">
+    <div class="hs-fld"><span class="hs-lbl">From</span><input type="date" id="hsStart"></div>
+    <div class="hs-fld"><span class="hs-lbl">To</span><input type="date" id="hsEnd"></div>
+    <div class="hs-fld"><span class="hs-lbl">Last (months)</span><input type="number" id="hsMonths" min="1" max="120" step="1" placeholder="e.g. 6" style="width:96px" title="Fetch the last N months (overrides From/To); drill by Month to see it month-wise"></div>
+    <button class="hs-fetch" id="hsFetch">&#9654; Fetch</button>
+    <div class="hs-fld"><span class="hs-lbl">Type</span>
+      <select id="hsType"><option value="">All</option><option value="PREMIUM">Premium</option><option value="COMMODITY">Commodity</option></select>
+    </div>
+    <div class="hs-fld"><span class="hs-lbl">State</span>
+      <select id="hsState"><option value="">All states</option></select>
+    </div>
+    <div class="hs-fld"><span class="hs-lbl">Main Group</span>
+      <select id="hsGroup"><option value="">All groups</option></select>
+    </div>
+    <div class="hs-fld"><span class="hs-lbl">Search</span>
+      <input type="search" id="hsSearch" placeholder="Customer / item / cost center / doc…" autocomplete="off">
+    </div>
+    <div class="hs-fld"><span class="hs-lbl">Metric</span>
+      <div class="com-drill-box">
+        <button type="button" class="com-drill-btn" id="hsMetricBtn"><span id="hsMetricLabel">Value ₹</span><span class="com-caret">&#9662;</span></button>
+        <div class="com-drill-panel" id="hsMetricPanel"><div class="com-dp-list" id="hsMetricList"></div></div>
+      </div>
+    </div>
+    <div class="hs-fld"><span class="hs-lbl">Drill By</span>
+      <div class="com-drill-box">
+        <button type="button" class="com-drill-btn" id="hsDrillBtn"><span id="hsDrillLabel">Customer › Item</span><span class="com-caret">&#9662;</span></button>
+        <div class="com-drill-panel" id="hsDrillPanel">
+          <div class="com-dp-head"><a id="hsDrillAll">Select All</a><a id="hsDrillClr">Clear All</a></div>
+          <div class="com-dp-list" id="hsDrillList"></div>
+          <div class="com-dp-foot"><button type="button" id="hsDrillApply">Apply</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="hs-fld"><span class="hs-lbl">&nbsp;</span>
+      <button class="hs-export" id="hsExport" title="Export the current view to Excel"><span class="material-icons" style="font-size:16px">download</span>Export Excel</button>
+    </div>
+  </div>
+
+  <div class="hs-table-card">
+    <div class="hs-table-wrap">
+      <table class="hs-table">
+        <thead id="hsHead"></thead>
+        <tbody id="hsBody"><tr><td class="hs-empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+    </main>
+  </div>
+
+  <script>
+    window.loginUser = {"id": 12, "username": "preshit", "display_name": "preshit", "email": "", "is_staff": true, "is_superuser": false, "groups": ["claims_viewer", "compare_sales_viewer", "customer_aging_viewer", "customer_master_viewer", "daily_production_viewer", "dispatch_details_viewer", "hidden_sales_viewer", "oih_vs_stock_viewer", "open_payments_viewer", "production_viewer", "realise_admin", "realise_calculator_viewer", "reconciliation_viewer", "required_credit_viewer", "sales_cn_viewer", "sales_flow_viewer", "stock_viewer"], "group_permission_codenames": ["inventory.view_stock_available"], "permission_codenames": ["inventory.view_stock_available", "realise.add_cityowner", "realise.add_maingroupmaster", "realise.add_monthlytarget", "realise.add_segmenttarget", "realise.add_statemaster", "realise.add_targetmaster", "realise.add_targetnode", "realise.add_territorymapping", "realise.add_territoryproducttarget", "realise.change_cityowner", "realise.change_maingroupmaster", "realise.change_monthlytarget", "realise.change_segmenttarget", "realise.change_statemaster", "realise.change_targetmaster", "realise.change_targetnode", "realise.change_territorymapping", "realise.change_territoryproducttarget", "realise.delete_cityowner", "realise.delete_maingroupmaster", "realise.delete_monthlytarget", "realise.delete_segmenttarget", "realise.delete_statemaster", "realise.delete_targetmaster", "realise.delete_targetnode", "realise.delete_territorymapping", "realise.delete_territoryproducttarget", "realise.view_cityowner", "realise.view_maingroupmaster", "realise.view_monthlytarget", "realise.view_segmenttarget", "realise.view_statemaster", "realise.view_targetmaster", "realise.view_targetnode", "realise.view_territorymapping", "realise.view_territoryproducttarget"], "role": "admin", "type_filter": "", "permissions": {"can_edit": true, "can_realise": true, "can_inventory": false, "inventory_can_edit": false, "can_stock_available": true, "can_non_inventory": true, "can_reconciliation": true, "can_production": true, "can_daily_production": true, "can_oih_vs_stock": true, "can_compare_sales": true, "can_sales_cn": true, "can_hidden_sales": true, "can_customer_master": true, "can_open_payments": true, "can_dispatch_details": true, "can_realise_calculator": true, "can_sales_flow": true, "can_claims": true, "can_customer_aging": true, "can_required_credit_limit": true, "can_sales": false, "can_expenses": false, "can_salaries": false, "can_cogs": false}, "can_edit": true, "can_realise": true, "can_inventory": false, "inventory_can_edit": false, "can_stock_available": true, "can_non_inventory": true, "can_reconciliation": true, "can_production": true, "can_daily_production": true, "can_oih_vs_stock": true, "can_compare_sales": true, "can_sales_cn": true, "can_hidden_sales": true, "can_customer_master": true, "can_open_payments": true, "can_dispatch_details": true, "can_realise_calculator": true, "can_sales_flow": true, "can_claims": true, "can_customer_aging": true, "can_required_credit_limit": true, "can_sales": false, "can_expenses": false, "can_salaries": false, "can_cogs": false};
+
+    function setControlPanelSidebar(open) {
+      document.body.classList.toggle('cp-sidebar-collapsed', !open);
+      var sb = document.querySelector('.cp-sidebar');
+      if (sb) sb.classList.remove('cp-sb-peek');   // pinning/unpinning clears any hover-peek
+      try { localStorage.setItem('cpSidebarOpen', open ? '1' : '0'); } catch (err) {}
+    }
+    // Pin (expand & lock) when collapsed; unpin (back to hover-rail) when expanded.
+    function toggleControlPanelSidebar() {
+      setControlPanelSidebar(document.body.classList.contains('cp-sidebar-collapsed'));
+    }
+
+    // Expand/collapse a sidebar nav group (e.g. Analytical Reports); remember the choice.
+    function toggleNavGroup(btn) {
+      var g = btn.closest('.cp-nav-group');
+      if (!g) return;
+      var open = g.classList.toggle('open');
+      try { localStorage.setItem('cpNavGroup_' + (g.dataset.group || 'g'), open ? '1' : '0'); } catch (err) {}
+    }
+    // Restore each group's last state — unless the server already opened it (active child).
+    (function () {
+      document.querySelectorAll('.cp-nav-group').forEach(function (g) {
+        if (g.classList.contains('open')) return;
+        try { if (localStorage.getItem('cpNavGroup_' + (g.dataset.group || 'g')) === '1') g.classList.add('open'); } catch (err) {}
+      });
+    })();
+
+    (function () {
+      try {
+        if (localStorage.getItem('cpSidebarOpen') === '0') {
+          document.body.classList.add('cp-sidebar-collapsed');
+        }
+      } catch (err) {}
+    })();
+
+    // Smart hover: while collapsed, hovering the rail expands it (overlay); a short delay
+    // before collapse prevents flicker if the cursor briefly leaves the edge.
+    (function () {
+      var sb = document.querySelector('.cp-sidebar');
+      if (!sb) return;
+      var timer = null;
+      sb.addEventListener('mouseenter', function () {
+        if (timer) { clearTimeout(timer); timer = null; }
+        if (document.body.classList.contains('cp-sidebar-collapsed')) sb.classList.add('cp-sb-peek');
+      });
+      sb.addEventListener('mouseleave', function () {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function () { sb.classList.remove('cp-sb-peek'); }, 180);
+      });
+    })();
+
+  </script>
+  
+<script>
+(function(){
+  function csrf(){var m=document.querySelector('meta[name=csrf-token]');return m?m.content:'';}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function fRz(x){x=Number(x)||0;return '₹'+x.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function fN(n){n=Number(n)||0;if(Math.abs(n)<0.5)return '<span class="hs-v0">—</span>';return Math.round(n).toLocaleString('en-IN');}
+  function money(n){n=Number(n)||0;if(Math.abs(n)<0.5)return '<span class="hs-v0">—</span>';return '₹'+Math.round(n).toLocaleString('en-IN');}
+  function abbr(n){n=Number(n)||0;var a=Math.abs(n),sg=n<0?'-':'';if(a>=1e7)return sg+'₹'+(a/1e7).toFixed(2)+' Cr';if(a>=1e5)return sg+'₹'+(a/1e5).toFixed(2)+' L';if(a>=1e3)return sg+'₹'+(a/1e3).toFixed(1)+' K';return sg+'₹'+Math.round(a);}
+  function abbrQ(n){n=Number(n)||0;var a=Math.abs(n),sg=n<0?'-':'';if(a>=1e5)return sg+(a/1e5).toFixed(2)+' L';if(a>=1e3)return sg+(a/1e3).toFixed(1)+' K';return sg+Math.round(a).toLocaleString('en-IN');}
+  function debounce(fn,ms){var t;return function(){clearTimeout(t);t=setTimeout(fn,ms);};}
+
+  var DIMS=[
+    {key:'customer',label:'Customer',sub:'CardName / buyer'},
+    {key:'item_name',label:'Item Name',sub:'SAP item name'},
+    {key:'state',label:'State',sub:'Ship-to state'},
+    {key:'main_group',label:'Main Group',sub:'Channel'},
+    {key:'u_type',label:'Prem/Comm',sub:'Premium / Commodity'},
+    {key:'cost_center',label:'Cost Center',sub:'OcrCode (variety)'},
+    {key:'date',label:'Date',sub:'Invoice date'},
+    {key:'status',label:'Status',sub:'Open / Closed'},
+  ];
+  var DIM_LABEL={}; DIMS.forEach(function(d){DIM_LABEL[d.key]=d.label;});
+  var rows=[], loaded=false, err=null, expanded={};
+  var order=['customer','item_name'], chosen=['customer','item_name'];
+  var searchF='', typeF='', stateF='', groupF='';
+  var METRIC_DEFS=[{k:'val',l:'Value ₹'},{k:'lit',l:'Litres'},{k:'qty',l:'Quantity'},{k:'rlz',l:'Realise ₹/L'}];
+  var METRIC_LBL={}; METRIC_DEFS.forEach(function(d){METRIC_LBL[d.k]=d.l;});
+  var metrics=['val'];   // multi-select: any of val / lit / qty / rlz, shown stacked in each cell
+
+  function blank(){return {docs:{},qty:0,lit:0,val:0,byM:{}};}
+  function addRow(n,r){
+    if(r.doc)n.docs[r.doc]=1;n.qty+=Number(r.qty)||0;n.lit+=Number(r.litres)||0;n.val+=Number(r.value)||0;
+    var ym=r.ym||'—', b=n.byM[ym]; if(!b)b=n.byM[ym]={qty:0,lit:0,val:0};   // per-month bucket for the pivot
+    b.qty+=Number(r.qty)||0;b.lit+=Number(r.litres)||0;b.val+=Number(r.value)||0;
+  }
+  function vals(n){return {inv:Object.keys(n.docs).length,qty:n.qty,lit:n.lit,val:n.val};}
+  function metricRaw(o,k){o=o||{};if(k==='lit')return o.lit||0;if(k==='qty')return o.qty||0;if(k==='rlz')return (o.lit>0)?(o.val/o.lit):0;return o.val||0;}
+  function fmtMetricV(k,x){if(k==='rlz')return x?fRz(x):'';if(!x)return '';return k==='val'?money(Math.round(x)):fN(Math.round(x));}
+  // Stacked cell of the selected metrics (grand-style: realise = value/litres of the bucket).
+  function metricCell(o){return metrics.map(function(k){return '<div class="hs-m hs-m-'+k+'">'+fmtMetricV(k,metricRaw(o,k))+'</div>';}).join('');}
+  // Avg cell: rate metrics (realise) don't divide by #months; counts do.
+  function metricCellAvg(o,nM){return metrics.map(function(k){var g=metricRaw(o,k),a=(k==='rlz')?g:(g/nM);return '<div class="hs-m hs-m-'+k+'">'+fmtMetricV(k,a)+'</div>';}).join('');}
+  function activeMonths(a){var m={};a.forEach(function(r){if(r.ym)m[r.ym]={ym:r.ym,label:r.month||r.ym};});return Object.keys(m).sort().map(function(k){return m[k];});}
+
+  function rowMatches(r){
+    if(typeF && String(r.u_type||'').toUpperCase()!==typeF)return false;
+    if(stateF && String(r.state||'')!==stateF)return false;
+    if(groupF && String(r.main_group||'')!==groupF)return false;
+    if(!searchF)return true;
+    var hay=(r.customer+' '+r.item_name+' '+r.state+' '+r.main_group+' '+r.cost_center+' '+r.doc+' '+r.status+' '+r.item_code).toLowerCase();
+    return hay.indexOf(searchF)!==-1;
+  }
+  function fillFilter(id,key,cur){
+    var s={}; rows.forEach(function(r){var v=r[key];if(v&&v!=='—')s[v]=1;});
+    var el=document.getElementById(id), first=el.querySelector('option').outerHTML;
+    el.innerHTML=first+Object.keys(s).sort().map(function(v){
+      return '<option value="'+esc(v)+'"'+(v===cur?' selected':'')+'>'+esc(v)+'</option>';}).join('');
+  }
+  function buildFilters(){ fillFilter('hsState','state',stateF); fillFilter('hsGroup','main_group',groupF); }
+  function activeRows(){var out=[];for(var i=0;i<rows.length;i++){if(rowMatches(rows[i]))out.push(rows[i]);}return out;}
+
+  function buildTree(subset,dims,depth,prefix){
+    if(depth>=dims.length)return [];
+    var dim=dims[depth], map={}, ord=[];
+    for(var i=0;i<subset.length;i++){var r=subset[i],k=String(r[dim]||'—')||'—';
+      var n=map[k]; if(!n){n=map[k]=blank();n.label=k;n.dim=dim;n._rows=[];ord.push(k);}
+      addRow(n,r); n._rows.push(r);
+    }
+    return ord.map(function(k){var n=map[k]; n.path=prefix+'>'+dim+':'+k;
+      n.kids=buildTree(n._rows,dims,depth+1,n.path); n.leaf=!n.kids.length; delete n._rows; return n;
+    }).sort(function(a,b){
+      if(dim==='date')return String(b.label).localeCompare(String(a.label));   // newest first
+      return (b.val-a.val)||(b.lit-a.lit)||String(a.label).localeCompare(String(b.label));
+    });
+  }
+
+  // Month-wise pivot rows: name + one cell per month (selected metric) + Grand Total + Avg.
+  function monthRows(nodes,months,depth){
+    var html='', nM=months.length||1;
+    nodes.forEach(function(n){
+      var hasKids=!n.leaf, open=!!expanded[n.path], pad='padding-left:'+(12+depth*18)+'px';
+      var tw=hasKids?'<span class="hs-tw'+(open?' open':'')+'" data-hspath="'+esc(n.path)+'">&#9654;</span>':'<span class="hs-tw-empty"></span>';
+      var tag='<span class="hs-tag">'+esc(DIM_LABEL[n.dim]||n.dim)+'</span>';
+      var name='<td class="gc-name" style="'+pad+(hasKids?';cursor:pointer':'')+'" '+(hasKids?'data-hstoggle="'+esc(n.path)+'"':'')+'>'+tw+tag+esc(n.label)+'</td>';
+      var mc=months.map(function(mo){return '<td>'+metricCell(n.byM[mo.ym]||{})+'</td>';}).join('');
+      html+='<tr>'+name+mc+'<td class="hs-hi">'+metricCell(n)+'</td><td>'+metricCellAvg(n,nM)+'</td></tr>';
+      if(hasKids&&open)html+=monthRows(n.kids,months,depth+1);
+    });
+    return html;
+  }
+
+  function renderKpis(){
+    var a=activeRows(), docs={}, custs={}, lit=0, val=0, prem=0, comm=0;
+    a.forEach(function(r){
+      if(r.doc)docs[r.doc]=1;if(r.card_code)custs[r.card_code]=1;
+      lit+=Number(r.litres)||0;val+=Number(r.value)||0;
+      var t=String(r.u_type||'').toUpperCase();
+      if(t==='PREMIUM')prem+=Number(r.value)||0; else if(t==='COMMODITY')comm+=Number(r.value)||0;
+    });
+    var cards=[
+      {c:'k-val',ic:'payments',l:'Hidden Value',v:abbr(val),m:'Σ invoice line value (₹)'},
+      {c:'k-prem',ic:'workspace_premium',l:'Premium',v:abbr(prem),m:'Hidden premium value (₹)'},
+      {c:'k-comm',ic:'inventory_2',l:'Commodity',v:abbr(comm),m:'Hidden commodity value (₹)'},
+      {c:'k-ltr',ic:'water_drop',l:'Hidden Litres',v:abbrQ(lit),m:'Quantity × pack size'},
+      {c:'k-inv',ic:'visibility_off',l:'Invoices',v:fN(Object.keys(docs).length),m:'Hidden invoices'},
+      {c:'k-cust',ic:'storefront',l:'Customers',v:fN(Object.keys(custs).length),m:'With hidden sales'}
+    ];
+    document.getElementById('hsKpis').innerHTML=cards.map(function(k){
+      return '<div class="hs-kpi '+k.c+'"><div class="hs-kpi-l"><span class="material-icons" style="font-size:15px">'+k.ic+'</span>'+k.l+'</div>'
+        +'<div class="hs-kpi-v">'+k.v+'</div><div class="hs-kpi-m">'+esc(k.m)+'</div>'
+        +'<span class="material-icons hs-kpi-bg">'+k.ic+'</span></div>';
+    }).join('');
+  }
+
+  function render(){
+    document.getElementById('hsDrillLabel').textContent=order.length?order.map(function(k){return DIM_LABEL[k];}).join(' › '):'— none —';
+    var head=document.getElementById('hsHead'), body=document.getElementById('hsBody');
+    if(err){head.innerHTML='';body.innerHTML='<tr><td class="hs-empty">Could not load ('+esc(err)+').</td></tr>';document.getElementById('hsKpis').innerHTML='';return;}
+    if(!loaded){head.innerHTML='';body.innerHTML='<tr><td class="hs-empty">Loading…</td></tr>';return;}
+    renderKpis();
+    var dims=order.length?order:['customer'];
+    var a=activeRows();
+    if(!a.length){head.innerHTML='';body.innerHTML='<tr><td class="hs-empty">No hidden invoices in this selection.</td></tr>';return;}
+    var months=activeMonths(a), nM=months.length||1;
+    head.innerHTML='<tr><th class="gc-name">'+esc(dims.map(function(k){return DIM_LABEL[k];}).join(' › '))+'</th>'
+      +months.map(function(mo){return '<th>'+esc(mo.label)+'</th>';}).join('')
+      +'<th>Grand Total</th><th>Avg</th></tr>';
+    var html=monthRows(buildTree(a,dims,0,''),months,0);
+    var t=blank(); a.forEach(function(r){addRow(t,r);});
+    html+='<tr class="hs-total"><td class="gc-name">TOTAL</td>'
+      +months.map(function(mo){return '<td>'+metricCell(t.byM[mo.ym]||{})+'</td>';}).join('')
+      +'<td class="hs-hi">'+metricCell(t)+'</td><td>'+metricCellAvg(t,nM)+'</td></tr>';
+    body.innerHTML=html;
+  }
+
+  function renderDrillList(){
+    var list=document.getElementById('hsDrillList'); list.innerHTML='';
+    DIMS.forEach(function(d){
+      var pos=chosen.indexOf(d.key);
+      var item=document.createElement('label'); item.className='com-dp-item'+(pos!==-1?' checked':'');
+      item.innerHTML='<input type="checkbox" '+(pos!==-1?'checked':'')+'><span class="com-dp-name">'+esc(d.label)+'<div class="com-dp-sub">'+esc(d.sub)+'</div></span><span class="com-pos">'+(pos!==-1?pos+1:'')+'</span>';
+      item.querySelector('input').addEventListener('change',function(){
+        var i=chosen.indexOf(d.key); if(this.checked){if(i===-1)chosen.push(d.key);}else if(i!==-1)chosen.splice(i,1);
+        renderDrillList();
+      });
+      list.appendChild(item);
+    });
+  }
+
+  function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  var HS_MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtMonth(d){d=String(d||'');if(d.length>=7){var y=d.slice(0,4),m=parseInt(d.slice(5,7),10);if(m>=1&&m<=12)return HS_MON[m-1]+' '+y;}return '—';}
+  function load(){
+    // 'Last (months)' overrides From/To when set (like Compare Sales): end=today,
+    // start=1st of the (N-1) months-ago month. Otherwise use the explicit From/To.
+    var sd, ed, m=parseInt(document.getElementById('hsMonths').value,10);
+    if(m&&m>=1){ if(m>120)m=120; var now=new Date(); ed=ymd(now); sd=ymd(new Date(now.getFullYear(), now.getMonth()-(m-1), 1));
+      document.getElementById('hsStart').value=sd; document.getElementById('hsEnd').value=ed; }
+    else { sd=document.getElementById('hsStart').value; ed=document.getElementById('hsEnd').value; }
+    if(!sd||!ed)return;
+    var btn=document.getElementById('hsFetch'); btn.disabled=true; btn.textContent='Loading…';
+    loaded=false; render();
+    fetch('/realise/api/hidden-sales/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+      body:JSON.stringify({start_date:sd,end_date:ed})})
+      .then(function(r){return r.ok?r.json():{status:'error',error:'HTTP '+r.status};})
+      .then(function(p){ rows=p.rows||[]; rows.forEach(function(r){r.ym=String(r.date||'').slice(0,7); r.month=fmtMonth(r.date);}); err=p.status==='error'?(p.error||'error'):null; loaded=true; expanded={}; buildFilters(); render(); })
+      .catch(function(){ err='load failed'; loaded=true; render(); })
+      .then(function(){ btn.disabled=false; btn.innerHTML='&#9654; Fetch'; });
+  }
+
+  // Excel export — flatten the current drill pivot (dimension columns + Invoices / Quantity /
+  // Litres / Value), respecting all filters. Hidden Sales is Oil only.
+  function exportXlsx(){
+    var a=activeRows();
+    if(!a.length){ window.alert('No data to export — click Fetch first.'); return; }
+    var dims=order.length?order:['customer'];
+    var months=activeMonths(a), nM=months.length||1;
+    function xv(o,k){var v=metricRaw(o,k);return k==='rlz'?Math.round(v*100)/100:Math.round(v);}   // grand/cell value per metric
+    function av(o,k){return k==='rlz'?xv(o,k):Math.round(metricRaw(o,k)/nM);}                       // avg per metric (rate = blended)
+    var tree=buildTree(a,dims,0,'');
+    // One sub-column per (month × selected metric), grouped by month, then Grand Total + Avg per metric.
+    var hd=dims.map(function(k){return DIM_LABEL[k];});
+    months.forEach(function(mo){metrics.forEach(function(k){hd.push(mo.label+' — '+METRIC_LBL[k]);});});
+    metrics.forEach(function(k){hd.push('Grand Total — '+METRIC_LBL[k]);});
+    metrics.forEach(function(k){hd.push('Avg — '+METRIC_LBL[k]);});
+    var out=[hd.map(function(h){return {value:h,bold:true,fill:'0F172A',color:'FFFFFF'};})];
+    (function walk(nodes,depth,labels){
+      nodes.forEach(function(n){
+        var dc=[]; for(var i=0;i<dims.length;i++)dc.push(i<depth?labels[i]:(i===depth?n.label:''));
+        var mc=[]; months.forEach(function(mo){var b=n.byM[mo.ym]||{};metrics.forEach(function(k){mc.push(xv(b,k));});});
+        var gc=metrics.map(function(k){return xv(n,k);}), ac=metrics.map(function(k){return av(n,k);});
+        out.push(dc.concat(mc).concat(gc).concat(ac));
+        if(!n.leaf)walk(n.kids,depth+1,labels.concat([n.label]));
+      });
+    })(tree,0,[]);
+    var t=blank(); a.forEach(function(r){addRow(t,r);});
+    var tr=[{value:'TOTAL',bold:true}]; for(var i=1;i<dims.length;i++)tr.push('');
+    var tmc=[]; months.forEach(function(mo){var b=t.byM[mo.ym]||{};metrics.forEach(function(k){tmc.push({value:xv(b,k),bold:true});});});
+    var tgc=metrics.map(function(k){return {value:xv(t,k),bold:true};}), tac=metrics.map(function(k){return {value:av(t,k),bold:true};});
+    out.push(tr.concat(tmc).concat(tgc).concat(tac));
+    var fn='Oil_Hidden_Customer_Sales';
+    fetch('/realise/api/export-xlsx/',{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':csrf()},
+      body:JSON.stringify({filename:fn,sheets:[{name:'Hidden Sales',rows:out}]})})
+      .then(function(r){return r.ok?r.blob():null;})
+      .then(function(b){ if(!b){window.alert('Export failed.');return;} var u=URL.createObjectURL(b),el=document.createElement('a');el.href=u;el.download=fn+'.xlsx';document.body.appendChild(el);el.click();el.remove();URL.revokeObjectURL(u); });
+  }
+
+  // Wiring
+  document.getElementById('hsFetch').addEventListener('click',load);
+  document.getElementById('hsExport').addEventListener('click',exportXlsx);
+  document.getElementById('hsStart').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+  document.getElementById('hsEnd').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+  document.getElementById('hsMonths').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+  var searchDeb=debounce(render,120);
+  document.getElementById('hsSearch').addEventListener('input',function(){searchF=this.value.trim().toLowerCase();searchDeb();});
+  document.getElementById('hsType').addEventListener('change',function(){typeF=this.value;render();});
+  document.getElementById('hsState').addEventListener('change',function(){stateF=this.value;render();});
+  document.getElementById('hsGroup').addEventListener('change',function(){groupF=this.value;render();});
+  // Metric multi-select (Value / Litres / Quantity / Realise) — stacked in each cell.
+  function updateMetricLabel(){
+    metrics=METRIC_DEFS.filter(function(d){return metrics.indexOf(d.k)!==-1;}).map(function(d){return d.k;});
+    if(!metrics.length)metrics=['val'];
+    document.getElementById('hsMetricLabel').textContent=metrics.map(function(k){return METRIC_LBL[k];}).join(', ');
+  }
+  function renderMetricList(){
+    var list=document.getElementById('hsMetricList'); list.innerHTML='';
+    METRIC_DEFS.forEach(function(d){
+      var lab=document.createElement('label');
+      lab.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 11px;cursor:pointer;font-size:13px;font-weight:600;color:var(--rz-ink)';
+      lab.innerHTML='<input type="checkbox"'+(metrics.indexOf(d.k)!==-1?' checked':'')+'>'+esc(d.l);
+      lab.querySelector('input').addEventListener('change',function(){
+        var i=metrics.indexOf(d.k);
+        if(this.checked){ if(i===-1)metrics.push(d.k); }
+        else if(i!==-1){ if(metrics.length>1)metrics.splice(i,1); else this.checked=true; }   // keep at least one
+        updateMetricLabel(); render();
+      });
+      list.appendChild(lab);
+    });
+  }
+  (function(){
+    var btn=document.getElementById('hsMetricBtn'), panel=document.getElementById('hsMetricPanel');
+    btn.addEventListener('click',function(e){e.stopPropagation();renderMetricList();panel.classList.toggle('open');});
+    panel.addEventListener('click',function(e){e.stopPropagation();});
+    document.addEventListener('click',function(){panel.classList.remove('open');});
+    updateMetricLabel();
+  })();
+  document.getElementById('hsBody').addEventListener('click',function(e){
+    var t=e.target&&e.target.closest?e.target.closest('[data-hstoggle]'):null; if(!t)return;
+    var p=t.getAttribute('data-hstoggle'); expanded[p]=!expanded[p]; render();
+  });
+  (function(){
+    var btn=document.getElementById('hsDrillBtn'), panel=document.getElementById('hsDrillPanel');
+    btn.addEventListener('click',function(e){e.stopPropagation();chosen=order.slice();renderDrillList();panel.classList.toggle('open');});
+    panel.addEventListener('click',function(e){e.stopPropagation();});
+    document.addEventListener('click',function(){panel.classList.remove('open');});
+    document.getElementById('hsDrillAll').addEventListener('click',function(){chosen=DIMS.map(function(d){return d.key;});renderDrillList();});
+    document.getElementById('hsDrillClr').addEventListener('click',function(){chosen=[];renderDrillList();});
+    document.getElementById('hsDrillApply').addEventListener('click',function(){if(!chosen.length)return;order=chosen.slice();expanded={};panel.classList.remove('open');render();});
+  })();
+
+  // Default range = current month to date, then auto-fetch.
+  (function(){var t=new Date();
+    document.getElementById('hsStart').value=ymd(new Date(t.getFullYear(),t.getMonth(),1));
+    document.getElementById('hsEnd').value=ymd(t);
+  })();
+  renderDrillList();
+  load();
+})();
+</script>
+
+
+</body>
+</html>

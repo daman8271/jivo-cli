@@ -1,0 +1,1 @@
+"use strict";(self["webpackChunkimads"]=self["webpackChunkimads"]||[]).push([[3211],{75412(e,n,t){t.r(n);t.d(n,{GenericIcon:()=>r});var a=t(62172);var c=t(53156);var s=t.n(c);const r=e=>{let{Icon:n}=e;if(n&&typeof n==="object"&&"default"in n){n=n.default}return s().createElement(a.Z,Object.assign({},e,{Icon:n}))}}}]);

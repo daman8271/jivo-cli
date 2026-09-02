@@ -1,0 +1,1349 @@
+{
+  "section": "transporter",
+  "title": "Transporter As Per SAP",
+  "tables": "OINV OPCH ORPC OCRD OCRG CUFD UFD1 ODLN OPDN",
+  "blurb": "Who moved JIVO's goods and what the carriers billed for it. SAP's own shipping table OSHP is EMPTY in all three books, so the carrier, the lorry receipt and the vehicle number are read from user-defined fields on the A/R invoice - which is the real dispatch document here - and the cost is joined in from A/P, because no usable freight amount is kept on the dispatch itself (U_BiltAmt is filled on 4 of Oil's 19,332 invoices and on none in Mart or Beverages).",
+  "grain": "ONE ROW = ONE (SCOPE, GRP_KEY) PAIR. Seven scopes are stacked into one bounded result set and (SCOPE, GRP_KEY) is unique - verified 0 duplicates in all three books (Oil 107 rows, Mart 82, Bev 107; hard cap 250). SCOPE='TOTAL' 1 row (the company headline) | 'FIELD' 11 rows (one per transport UDF: where the data lives and how full it is) | 'NAMECLASS' up to 4 (THIRD_PARTY / OWN_OR_SELF / UNUSABLE / UNNAMED - Mart has no UNUSABLE row today) | 'PARTY' 3 (EXTERNAL / BRANCH / INTERCOMPANY) | 'MONTH' up to 36 (Oil 23, Mart 21, Bev 23) | 'TRANSPORTER' top 40 carrier families by dispatch value (Oil 40, Mart 18, Bev 40) | 'FREIGHT_VENDOR' top 25 supplier cards by A/P freight (25 in every book). MOST COLUMNS ARE NULL IN MOST SCOPES: DISP_VAL_L is NULL on all 36 FIELD+FREIGHT_VENDOR rows, VENDOR_CODE is populated only on TRANSPORTER and FREIGHT_VENDOR rows, FRT_* only on TOTAL / MONTH / TRANSPORTER / FREIGHT_VENDOR. Read a column only in the scope that owns it. TWO COLUMNS CHANGE MEANING BY SCOPE. (a) FILLED: on a FIELD row it is the number of DOCUMENTS carrying that UDF; on a TRANSPORTER row it is the number of distinct squashed name KEYS that merged into that carrier family - same column, unrelated units. (b) DISP_DOCS: on a FIELD row it is the DENOMINATOR for that field's table (OINV 19,332 for Oil, but ODLN 2,792 and OPDN 10,662 on the two delivery/GRPO rows), not a dispatch count - which is why summing DISP_DOCS down the table gives 272,264 in Oil against a true 19,332 (14.08x). THERE ARE NO CO_* BROADCAST COLUMNS in this section - the company totals live in the single TOTAL row instead, so the vendor-ageing style 'read it off any row' trap does not apply here; the faceting trap does. THE DETAIL SLICE HAS A DIFFERENT GRAIN: transporter-detail.sql emits ONE ROW PER (CARRIER FAMILY, MONTH) for the top 20 families plus a ZZ_OTHER bucket (Oil 282 rows / 21 families, Mart 46 / 18, Bev 172 / 21). Its DISP_VAL_L sums EXACTLY to the summary's NAMECLASS THIRD_PARTY row (verified: Oil 60,257.19 L both sides, doc counts 7,644 = 7,644) but its FRT_SPEND_L is structurally short by design and must never be totalled.",
+  "faceted": true,
+  "facet_note": "FACETED. The facet column is SCOPE. THE TOTAL ROW IS IDENTIFIED BY SCOPE == 'TOTAL' AND GRP_KEY == 'ALL' - exactly one such row per company, GRP_LABEL 'Company total', SORT_KEY '1'. Every company-level KPI reads that one row with agg='first'; agg='sum' over an unfiltered result set is ALWAYS wrong here. Measured cost of getting it wrong (2026-08-22 build): naive SUM(DISP_VAL_L) over every row = Oil 4.64x the truth, Mart 4.16x, Bev 4.83x; naive SUM(FRT_SPEND_L) = 3.78x / 3.30x / 3.99x; naive SUM(DISP_DOCS) = 14.08x / 13.38x / 14.64x. WHICH FACETS FOOT AND WHICH DO NOT. NAMECLASS, PARTY and MONTH are complete partitions of the same document population and each foots EXACTLY to the TOTAL row (verified to the rupee on DISP_DOCS and to the 2-dp lakhs rounding on DISP_VAL_L in all three books). TRANSPORTER (top 40) and FREIGHT_VENDOR (top 25) are deliberate top-N subsets and never foot - the build's own audit.json already files them as severity 'partial-coverage' (Oil TRANSPORTER DISP_VAL_L -36.1%, FREIGHT_VENDOR FRT_SPEND_L -5.4%). FIELD is not a partition of anything - its rows are per-UDF statistics whose DISP_DOCS is a denominator. THE SAME RUPEE APPEARS IN SEVERAL SCOPES ON PURPOSE: a freight bill is counted once on its MONTH row, once on its carrier's TRANSPORTER row and once on its vendor's FREIGHT_VENDOR row. Filter to one scope, always.",
+  "kpis": [
+    {
+      "id": "trn-dispatch-value",
+      "label": "Goods dispatched (net of GST, all parties)",
+      "unit": "INR",
+      "column": "DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'TOTAL' and r.get('GRP_KEY') == 'ALL'",
+      "agg": "first",
+      "formula": "DISP_VAL_L x 1e5 read off the single TOTAL/ALL row. DISP_VAL_L is INR LAKHS (the _L suffix), = SUM(OINV.DocTotal - OINV.VatSum) over CANCELED='N', DocDate <= as-of, DocDate <> 2024-09-30. This is DISPATCH VALUE, not turnover: sales returns are not netted off and branch + intercompany movements are inside it.",
+      "terms": [
+        {
+          "label": "External customers (real trade)",
+          "col": "EXT_DISP_VAL_L",
+          "op": "+",
+          "source": "OINV + OCRD + OCRG",
+          "note": "Oil Rs 546.77 Cr of Rs 925.60 Cr = 59.1%. Mart 95.8%, Bev 95.1%."
+        },
+        {
+          "label": "Own branch GST registrations",
+          "col": "DISP_VAL_L",
+          "op": "+",
+          "source": "PARTY scope, GRP_KEY='BRANCH'",
+          "note": "OCRG.GroupName LIKE '%BRANCH%'. Oil Rs 73.20 Cr on 931 invoices, Mart Rs 5.84 Cr on 229, Bev Rs 0.60 Cr on 86."
+        },
+        {
+          "label": "JIVO group companies",
+          "col": "DISP_VAL_L",
+          "op": "+",
+          "source": "PARTY scope, GRP_KEY='INTERCOMPANY'",
+          "note": "OCRD.CardName LIKE '%JIVO%'. Oil Rs 305.64 Cr on 2,980 invoices - 33% of the book, and ALL of it is one card, CUSTA000606 JIVO MART (C-0005)."
+        },
+        {
+          "label": "Company total dispatch value",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "derived",
+          "note": "Read off the TOTAL row. Summing DISP_VAL_L down the whole table gives Rs 4,293.43 Cr in Oil - 4.64x."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Cancelled invoices and their system mirrors",
+          "row_filter": "n/a - excluded in SQL, no row survives",
+          "why": "C-0021 - CANCELED is three-valued N/Y/C; the SQL filters ='N', which correctly drops both halves of a cancellation pair. Oil OINV carries 320 'Y' and 320 'C'."
+        },
+        {
+          "label": "Go-live opening invoices dated exactly 2024-09-30",
+          "row_filter": "n/a - excluded in SQL",
+          "why": "TRN-MIGRATION - 11,078 Oil invoices worth Rs 74.74 Cr, none carrying a transporter; leaving them in dilutes every coverage percentage by about a third. That date exists only in the Oil book."
+        }
+      ],
+      "sql_lines": [
+        141,
+        159
+      ],
+      "caveats": [
+        "TRN-FACET",
+        "TRN-LAKHS",
+        "TRN-NOT-TURNOVER",
+        "TRN-MIGRATION",
+        "C-0021",
+        "C-0005"
+      ],
+      "check": {
+        "method": "CROSS-SECTION, not a re-read: return-note.sql is a different file with its own SALES CTE, its own customer classifier and its own cancellation handling, and it publishes SALES_NET in RUPEES over the same invoice population. Measured 2026-08-22: transporter TOTAL x 1e5 vs return-note TOTAL/ALL SALES_NET agrees to Rs 260.99 (Oil), Rs 133.61 (Mart), Rs 2.00 (Bev) - every delta inside the +/- Rs 500 granularity of a 2-dp lakhs column, so it is exact. The three PARTY rows reproduce return-note's three CLASS rows to the same tolerance, and all 67 MONTH cells across the three books agree with return-note's MONTH scope to a maximum of Rs 492.29. A second, internal triangulation: NAMECLASS, PARTY and MONTH each foot to this row on DISP_DOCS with zero residual.",
+        "recipe": "rn={ (r['SCOPE'],r['GRP_KEY']):r for r in slice('return-note',co)['summary'] }\nT=[r for r in rows if r['SCOPE']=='TOTAL'][0]\nalt=rn[('TOTAL','ALL')]['SALES_NET']; assert abs(T['DISP_VAL_L']*1e5 - alt) < 500\nfor tk,rk in [('EXTERNAL','EXTERNAL'),('BRANCH','BRANCH'),('INTERCOMPANY','INTERCOMPANY')]:\n    p=[r for r in rows if r['SCOPE']=='PARTY' and r['GRP_KEY']==tk][0]\n    assert abs(p['DISP_VAL_L']*1e5 - rn[('CLASS',rk)]['SALES_NET']) < 500\nfor s in ['NAMECLASS','PARTY','MONTH']:\n    assert sum(r['DISP_DOCS'] for r in rows if r['SCOPE']==s) == T['DISP_DOCS']",
+        "check_note": "Do NOT 'verify' this by summing the MONTH rows alone and calling it independent - MONTH is a GROUP BY over the same D CTE. The return-note route is the one that shares no SQL."
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "PARTY"
+        }
+      },
+      "live": {
+        "oil": 9256036000.0,
+        "mart": 3243527000.0,
+        "bev": 217888000.0
+      }
+    },
+    {
+      "id": "trn-ext-dispatch-value",
+      "label": "Dispatched to outside customers",
+      "unit": "INR",
+      "column": "EXT_DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'TOTAL' and r.get('GRP_KEY') == 'ALL'",
+      "agg": "first",
+      "formula": "EXT_DISP_VAL_L x 1e5 on the TOTAL row = SUM((DocTotal - VatSum) WHERE PARTY_CLASS='EXTERNAL'). Identical to the PARTY/EXTERNAL row's DISP_VAL_L (verified to the paise in all three books). This is the only dispatch figure that represents goods leaving the group.",
+      "terms": [
+        {
+          "label": "Invoices to customers that are neither a branch group nor named JIVO",
+          "col": "EXT_DISP_VAL_L",
+          "op": "=",
+          "source": "OINV + OCRD + OCRG",
+          "note": "Oil 15,421 of 19,332 invoices; Mart 24,922 of 25,186; Bev 5,078 of 5,331."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Own branch GST registrations",
+          "row_filter": "r.get('SCOPE') == 'PARTY' and r.get('GRP_KEY') == 'BRANCH'",
+          "why": "C-0020 - a stock transfer between JIVO's own state registrations is not a sale, but a truck still ran, so it is flagged and kept, never dropped."
+        },
+        {
+          "label": "JIVO group companies",
+          "row_filter": "r.get('SCOPE') == 'PARTY' and r.get('GRP_KEY') == 'INTERCOMPANY'",
+          "why": "C-0005 - Oil's whole Rs 305.64 Cr intercompany dispatch is CUSTA000606 JIVO MART, which sits in card group 'DELHI', so the group test alone misses it and only the CardName test catches it."
+        }
+      ],
+      "sql_lines": [
+        150,
+        152
+      ],
+      "caveats": [
+        "TRN-FACET",
+        "TRN-LAKHS",
+        "TRN-NOT-TURNOVER",
+        "C-0005",
+        "C-0020"
+      ],
+      "check": {
+        "method": "Two routes that do not share the section's SQL. (a) return-note.sql's CLASS/EXTERNAL SALES_NET, produced by a different classifier in a different file: Oil Rs 5,467,703,791.30 against this KPI's Rs 5,467,704,000 (delta Rs 208.70), Mart Rs 3,107,439,643.23 vs Rs 3,107,440,000 (Rs 356.77), Bev Rs 207,200,413.24 vs Rs 207,200,000 (Rs 413.24) - all inside the lakhs rounding. (b) Validate the CLASSIFIER, not just the total, against correction C-0005's settled CardCode list: return-note's CUSTOMER scope shows Oil's entire INTERCOMPANY figure sitting on CUSTA000606 (Rs 3,056,382,296.77 = the whole CLASS row), Mart's on CUSTA000001 (Rs 77,733,033.27) and Bev's on CUSTA000606 (Rs 4,716,535.04) - every one of them on C-0005's list. A group card that the heuristic missed would show up as an unexplained residual in this comparison.",
+        "recipe": "rn=slice('return-note',co)['summary']; R={(r['SCOPE'],r['GRP_KEY']):r for r in rn}\nT=[r for r in rows if r['SCOPE']=='TOTAL'][0]\nassert abs(T['EXT_DISP_VAL_L']*1e5 - R[('CLASS','EXTERNAL')]['SALES_NET']) < 500\nic=[r for r in rn if r['SCOPE']=='CUSTOMER' and r['GRP_KEY'] in C0005_CODES]\nassert abs(sum(r['SALES_NET'] for r in ic) - R[('CLASS','INTERCOMPANY')]['SALES_NET']) < 1.0"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "PARTY",
+          "key": "EXTERNAL"
+        }
+      },
+      "live": {
+        "oil": 5467704000.0,
+        "mart": 3107440000.0,
+        "bev": 207200000.0
+      }
+    },
+    {
+      "id": "trn-group-dispatch-value",
+      "label": "Dispatched to JIVO's own branches and group companies",
+      "unit": "INR",
+      "column": "DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'PARTY' and r.get('GRP_KEY') != 'EXTERNAL'",
+      "agg": "sum",
+      "formula": "SUM(DISP_VAL_L) x 1e5 over the two non-EXTERNAL PARTY rows (BRANCH + INTERCOMPANY). Equals TOTAL DISP_VAL_L - TOTAL EXT_DISP_VAL_L exactly. Oil Rs 378.83 Cr on 3,911 invoices = 40.9% of the headline: two fifths of Oil's 'dispatch' is JIVO moving goods to itself.",
+      "terms": [
+        {
+          "label": "Own branch GST registrations",
+          "col": "DISP_VAL_L",
+          "op": "+",
+          "source": "PARTY scope BRANCH",
+          "note": "Oil Rs 73.20 Cr / 931 docs, Mart Rs 5.84 Cr / 229, Bev Rs 0.60 Cr / 86. Carrier is named on 61.8% of these in Oil - far better than the 36.7% on real customer sales."
+        },
+        {
+          "label": "JIVO group companies",
+          "col": "DISP_VAL_L",
+          "op": "+",
+          "source": "PARTY scope INTERCOMPANY",
+          "note": "Oil Rs 305.64 Cr / 2,980; Mart Rs 7.77 Cr / 35; Bev Rs 0.47 Cr / 167."
+        },
+        {
+          "label": "Not-trade dispatch",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "derived",
+          "note": "40.93% of Oil's dispatch value, 4.20% of Mart's, 4.91% of Bev's. Adding the three books together double counts it."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "External customers",
+          "row_filter": "r.get('SCOPE') == 'PARTY' and r.get('GRP_KEY') == 'EXTERNAL'",
+          "why": "this KPI is the complement of trn-ext-dispatch-value and exists so the reader subtracts it consciously"
+        }
+      ],
+      "sql_lines": [
+        425,
+        434
+      ],
+      "caveats": [
+        "TRN-FACET",
+        "TRN-LAKHS",
+        "C-0005",
+        "C-0020"
+      ],
+      "check": {
+        "method": "Re-derive from return-note.sql's CLASS scope (a separate query, separate classifier): CLASS/BRANCH + CLASS/INTERCOMPANY SALES_NET. Oil Rs 731,950,172.91 + Rs 3,056,382,296.77 = Rs 3,788,332,469.68 against this KPI's Rs 3,788,332,000 (delta Rs 469.68, inside the lakhs rounding); Mart Rs 136,087,490.39 vs Rs 136,087,000; Bev Rs 10,687,588.77 vs Rs 10,688,000. Then attack the classifier itself: re-run the two predicates (group name contains BRANCH, card name contains JIVO) against return-note's per-customer rows and confirm every C-0005 CardCode lands outside EXTERNAL. Beverages has no card that is caught by name alone, Oil and Mart each have exactly one that the group test would have missed - name them in the output rather than reporting a bare pass.",
+        "recipe": "R={(r['SCOPE'],r['GRP_KEY']):r for r in slice('return-note',co)['summary']}\nalt=R[('CLASS','BRANCH')]['SALES_NET']+R[('CLASS','INTERCOMPANY')]['SALES_NET']\nprimary=sum(r['DISP_VAL_L'] for r in rows if r['SCOPE']=='PARTY' and r['GRP_KEY']!='EXTERNAL')*1e5\nassert abs(alt-primary) < 1000  # two rows, so two roundings"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "PARTY",
+          "key": "GROUP"
+        }
+      },
+      "live": {
+        "oil": 3788332000.0,
+        "mart": 136087000.0,
+        "bev": 10688000.0
+      }
+    },
+    {
+      "id": "trn-external-share",
+      "label": "Share of dispatch value that is real outside trade",
+      "unit": "pct",
+      "column": "EXT_DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'TOTAL' and r.get('GRP_KEY') == 'ALL'",
+      "agg": "first",
+      "formula": "100 x EXT_DISP_VAL_L / DISP_VAL_L on the TOTAL row. Numerator and denominator are two different columns on the SAME row, so no scope arithmetic is involved. Oil 59.07% - the single number that stops a reader treating Rs 925.60 Cr of 'dispatch' as Rs 925.60 Cr of sales.",
+      "terms": [
+        {
+          "label": "External dispatch value",
+          "col": "EXT_DISP_VAL_L",
+          "op": "+",
+          "source": "OINV + OCRD + OCRG",
+          "note": "numerator"
+        },
+        {
+          "label": "All dispatch value",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "OINV",
+          "note": "DENOMINATOR - the all-parties figure on the same TOTAL row, never the EXTERNAL PARTY row's own DISP_VAL_L (which equals the numerator and would give a flat 100%)"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        350,
+        350
+      ],
+      "caveats": [
+        "TRN-FACET",
+        "C-0005",
+        "C-0020"
+      ],
+      "check": {
+        "method": "Compute the complement from the other side and require the two to sum to 100: 100 x SUM(DISP_VAL_L over PARTY rows != 'EXTERNAL') / TOTAL DISP_VAL_L. That route uses two rows this KPI never touches. Cross-section confirmation from return-note: 100 x CLASS/EXTERNAL SALES_NET / TOTAL SALES_NET = 59.0718 / 95.8044 / 95.0947 - identical to 4 decimal places, from a query that shares no code with this one.",
+        "recipe": "T=[r for r in rows if r['SCOPE']=='TOTAL'][0]\ngrp=sum(r['DISP_VAL_L'] for r in rows if r['SCOPE']=='PARTY' and r['GRP_KEY']!='EXTERNAL')\nalt=100*(1-grp/T['DISP_VAL_L'])  # oil 59.0718, mart 95.8044, bev 95.0947\nR={(r['SCOPE'],r['GRP_KEY']):r for r in slice('return-note',co)['summary']}\nalt2=100*R[('CLASS','EXTERNAL')]['SALES_NET']/R[('TOTAL','ALL')]['SALES_NET']\nassert abs(alt-alt2) < 0.01"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "trn-external-share"
+        }
+      },
+      "live": {
+        "oil": 59.0718,
+        "mart": 95.8044,
+        "bev": 95.0947
+      }
+    },
+    {
+      "id": "trn-dispatch-docs",
+      "label": "Dispatch invoices in scope",
+      "unit": "count",
+      "column": "DISP_DOCS",
+      "row_filter": "r.get('SCOPE') == 'TOTAL' and r.get('GRP_KEY') == 'ALL'",
+      "agg": "first",
+      "formula": "DISP_DOCS on the TOTAL row = COUNT of uncancelled OINV rows dated on or before as-of and not on 2024-09-30. NOT the row count of the section, and NOT summable from the FIELD scope, where DISP_DOCS is a per-table denominator.",
+      "terms": [
+        {
+          "label": "Live A/R invoices, ex-migration",
+          "col": "DISP_DOCS",
+          "op": "=",
+          "source": "OINV",
+          "note": "Oil 19,332 of 30,410 uncancelled invoices - the other 11,078 are the 2024-09-30 go-live load. Mart 25,186, Bev 5,331, neither of which has any row on that date."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Cancelled documents and their mirrors",
+          "row_filter": "n/a - excluded in SQL",
+          "why": "C-0021"
+        },
+        {
+          "label": "Deliveries (ODLN) and GRPOs (OPDN)",
+          "row_filter": "r.get('SCOPE') == 'FIELD' and r.get('GRP_KEY','').startswith(('ODLN','OPDN'))",
+          "why": "TRN-FILLED-POLYSEMY - those two FIELD rows carry their OWN table's row count in DISP_DOCS (Oil 2,792 deliveries and 10,662 GRPOs). They are present only to prove the transport data is not kept there; counting them as dispatches inflates Oil by 69%."
+        }
+      ],
+      "sql_lines": [
+        330,
+        338
+      ],
+      "caveats": [
+        "TRN-FACET",
+        "TRN-MIGRATION",
+        "TRN-FILLED-POLYSEMY",
+        "C-0021"
+      ],
+      "check": {
+        "method": "FIELDSTAT is a separate CTE that counts OINV directly with the same three predicates and never touches the D CTE this KPI comes from. Every OINV FIELD row's DISP_DOCS must equal this number: verified 9 of 9 rows in each book (Oil 19,332, Mart 25,186, Bev 5,331), and the two ODLN/OPDN rows must NOT (they carry their own tables' counts) - a build where all eleven agreed would mean FIELDSTAT had silently lost its per-table FROM clause. Second route: NAMECLASS, PARTY and MONTH doc counts each foot to this exactly (0 residual, all three books).",
+        "recipe": "T=[r for r in rows if r['SCOPE']=='TOTAL'][0]\noinv=[r for r in rows if r['SCOPE']=='FIELD' and r['GRP_KEY'].startswith('OINV')]\nassert len(oinv)==9 and all(r['DISP_DOCS']==T['DISP_DOCS'] for r in oinv)\nassert all(r['DISP_DOCS']!=T['DISP_DOCS'] for r in rows if r['SCOPE']=='FIELD' and not r['GRP_KEY'].startswith('OINV'))\nfor s in ['NAMECLASS','PARTY','MONTH']: assert sum(r['DISP_DOCS'] for r in rows if r['SCOPE']==s)==T['DISP_DOCS']"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "MONTH"
+        }
+      },
+      "live": {
+        "oil": 19332,
+        "mart": 25186,
+        "bev": 5331
+      }
+    },
+    {
+      "id": "trn-freight-spend",
+      "label": "Freight billed by carriers (A/P, net of GST and credit notes)",
+      "unit": "INR",
+      "column": "FRT_SPEND_L",
+      "row_filter": "r.get('SCOPE') == 'TOTAL' and r.get('GRP_KEY') == 'ALL'",
+      "agg": "first",
+      "formula": "FRT_SPEND_L x 1e5 on the TOTAL row = SUM(OPCH.DocTotal - OPCH.VatSum) MINUS SUM(ORPC.DocTotal - ORPC.VatSum) over uncancelled documents dated <= as-of and not 2024-09-30, for supplier cards in the freight-vendor universe. It is WHAT CARRIERS BILLED, not total freight cost - freight accrued straight to the ledger by journal entry never appears.",
+      "terms": [
+        {
+          "label": "A/P invoices from freight vendors",
+          "col": "FRT_SPEND_L",
+          "op": "+",
+          "source": "OPCH",
+          "note": "Oil 1,455 bills. The vendor universe is a supplier card that is EITHER in a transport/freight/logistics/courier/carriage group OR carries a road-carrier token in its own name."
+        },
+        {
+          "label": "A/P credit notes from the same vendors",
+          "col": "FRT_SPEND_L",
+          "op": "-",
+          "source": "ORPC",
+          "note": "netted off inside the same column. Note they contribute 0 to FRT_DOCS by design (sql line 228), so FRT_DOCS counts BILLS only and a book with many freight credit notes will look under-documented."
+        },
+        {
+          "label": "Freight billed",
+          "col": "FRT_SPEND_L",
+          "op": "=",
+          "source": "derived",
+          "note": "Oil Rs 18.02 Cr, Mart Rs 3.26 Cr, Bev Rs 2.03 Cr. Before the 2026-08-21 vendor-universe fix Oil read Rs 5.20 Cr - understated 3.5x."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Ocean freight, container agents and clearing-and-forwarding houses",
+          "row_filter": "n/a - excluded from VEND by token choice",
+          "why": "TRN-VENDOR-WIDENING - SHIPPING / EXPRESS / FORWARD / TEMPO / LOGIS / TRANS were tested and rejected: they pull in COSCO, MSC, EVERGREEN, OCEAN NETWORK EXPRESS and the false positive KAMAL TRANSFORMERS. That excluded remainder is Oil Rs 1.93 Cr, Mart Rs 0, Bev Rs 0.02 Cr - it is import freight on goods BOUGHT, a different cost family."
+        },
+        {
+          "label": "Freight accrued by journal entry with no A/P invoice",
+          "row_filter": "n/a - invisible to this section",
+          "why": "TRN-AP-ONLY - Oil's twelve 2165xxx FREIGHT PAYABLE provision accounts created Rs 7.09 Cr of credits, 100% by manual JE, with Rs 1.00 Cr still outstanding. Account 5670001 FREIGHT AND CARTAGE OUTWARD carries far more debit than arrives through transporter A/P."
+        },
+        {
+          "label": "Go-live opening freight bills dated 2024-09-30",
+          "row_filter": "n/a - excluded in SQL",
+          "why": "TRN-MIGRATION - Rs 0.44 Cr of opening transporter A/P in Oil (R K TANKER Rs 15.76 L, CARGO CLEARING Rs 13.34 L, MAHADEV TEMPO Rs 6.21 L). Correct and symmetric, since the dispatches those bills belong to are excluded too, but it does mean freight is measured 'since go-live'."
+        }
+      ],
+      "sql_lines": [
+        220,
+        236
+      ],
+      "caveats": [
+        "TRN-FACET",
+        "TRN-LAKHS",
+        "TRN-AP-ONLY",
+        "TRN-VENDOR-WIDENING",
+        "TRN-MIGRATION",
+        "C-0021"
+      ],
+      "check": {
+        "method": "THREE routes, only one of which is inside this KPI's own aggregation path. (a) MONTH-grain re-aggregation: the MONTH rows get their freight from a correlated scalar subquery over FRTDOC grouped by YM, while the TOTAL row gets it from FRTTOT's card-grain sum over FRTV - different GROUP BY, different join. They foot exactly: Oil 1,802.06 L both sides (0 delta), Mart 325.72 vs 325.73, Bev 203.03 vs 203.04, both within one 2-dp rounding. THE STRUCTURAL RISK THIS ROUTE CARRIES, and it must be stated: MONTH rows are driven off dispatch months, so a freight bill booked in a month with no dispatches has no cell and would vanish - if the two ever disagree, the MONTH figure is the one that is short. (b) FREIGHT_VENDOR shown-set as a LOWER BOUND: Oil Rs 17.05 Cr of Rs 18.02 Cr (94.62%), Mart 97.18%, Bev 99.60%; it can never exceed the KPI, and if it does, the top-25 cap or the vendor join has broken. (c) GENUINELY OUTSIDE THE SECTION - the general-ledger route via the provisions slice, which reads JDT1/OACT and never touches OPCH: Oil's FREIGHT PAYABLE family shows Rs 7.09 Cr created and Rs 6.08 Cr reversed, Bev Rs 1.38 Cr / Rs 1.36 Cr, Mart effectively nil (Rs 0.18 L on one account). This is NOT additive to the A/P figure and must not be presented as one - a provision is reversed when its bill lands. Its role is to size the accrual channel and prove the caveat: Mart's A/P route is close to complete on the accrual side, Oil's is not.",
+        "recipe": "T=[r for r in rows if r['SCOPE']=='TOTAL'][0]\nalt_month=sum(r['FRT_SPEND_L'] or 0 for r in rows if r['SCOPE']=='MONTH'); assert abs(alt_month-T['FRT_SPEND_L'])<0.02\nlb=sum(r['FRT_SPEND_L'] or 0 for r in rows if r['SCOPE']=='FREIGHT_VENDOR'); assert lb <= T['FRT_SPEND_L']+0.02\ncoverage=100*lb/T['FRT_SPEND_L']  # oil 94.62, mart 97.18, bev 99.60\nprov=[r for r in slice('provisions',co)['summary'] if 'FREIGHT' in (r.get('PARENT_NAME') or r.get('ACCT_NAME') or '').upper()]\ngl_created=sum(r.get('CREATED_CR_L') or 0 for r in prov)  # oil 708.56 L, mart 0.18, bev 137.64 - report, never add",
+        "check_note": "Do NOT total the detail slice's FRT_SPEND_L as a check. transporter-detail.sql discloses in its own header that its freight column is structurally short (Oil Rs 10.12 Cr against Rs 18.02 Cr here) because families outside the top 20 fold into ZZ_OTHER, whose freight is NULL by design, and a bill booked in a month that carrier did not dispatch in has no cell to land in."
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "FREIGHT_VENDOR"
+        }
+      },
+      "live": {
+        "oil": 180206000.0,
+        "mart": 32573000.0,
+        "bev": 20304000.0
+      }
+    },
+    {
+      "id": "trn-freight-share",
+      "label": "Freight billed per Rs 100 of goods dispatched",
+      "unit": "pct",
+      "column": "FRT_SPEND_L",
+      "row_filter": "r.get('SCOPE') == 'TOTAL' and r.get('GRP_KEY') == 'ALL'",
+      "agg": "first",
+      "formula": "100 x FRT_SPEND_L / DISP_VAL_L on the TOTAL row. Compute it - do NOT read the FRT_PCT_OF_DISP column, which is ROUND(x,1) and currently prints 1.9 for Oil where the pipeline notes and README both quote 2.0% (the true value moved from 1.9507 to 1.9469 on one day of extra dispatches).",
+      "terms": [
+        {
+          "label": "Freight billed by carriers",
+          "col": "FRT_SPEND_L",
+          "op": "+",
+          "source": "OPCH - ORPC",
+          "note": "numerator"
+        },
+        {
+          "label": "All dispatch value",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "OINV",
+          "note": "DENOMINATOR. All-parties on purpose: carriers are paid to move branch and intercompany stock too. Over EXTERNAL only the ratio is Oil 3.30%, Mart 1.05%, Bev 9.80% - state which denominator you used or the Oil number changes by 70%."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        359,
+        359
+      ],
+      "caveats": [
+        "TRN-FACET",
+        "TRN-AP-ONLY",
+        "TRN-ROUNDED-PCT"
+      ],
+      "check": {
+        "method": "Recompute the same ratio from month-grain components that never pass through the TOTAL row: SUM(MONTH FRT_SPEND_L) / SUM(MONTH DISP_VAL_L). Oil 1802.06/92560.38 = 1.9469, Mart 325.72/32435.27 = 1.0042, Bev 203.03/2178.88 = 9.3180 - matching the primary to 3 decimal places, with the Bev gap being the single-paise rounding on 23 month cells. Then run the sensitivity that actually matters and publish it beside the KPI: the same numerator over EXT_DISP_VAL_L gives 3.2958 / 1.0482 / 9.7992. Finally assert the section's own rounded column has not drifted: abs(round(kpi,1) - FRT_PCT_OF_DISP) must be 0.",
+        "recipe": "mo=[r for r in rows if r['SCOPE']=='MONTH']\nalt=100*sum(r['FRT_SPEND_L'] or 0 for r in mo)/sum(r['DISP_VAL_L'] for r in mo)\nT=[r for r in rows if r['SCOPE']=='TOTAL'][0]\nalt_ext=100*T['FRT_SPEND_L']/T['EXT_DISP_VAL_L']  # oil 3.2958, mart 1.0482, bev 9.7992\nassert abs(round(100*T['FRT_SPEND_L']/T['DISP_VAL_L'],1) - T['FRT_PCT_OF_DISP']) < 0.05"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "trn-freight-share"
+        }
+      },
+      "live": {
+        "oil": 1.9469,
+        "mart": 1.0042,
+        "bev": 9.3185
+      }
+    },
+    {
+      "id": "trn-freight-outside-group",
+      "label": "Freight from carriers filed OUTSIDE the transporter supplier group",
+      "unit": "INR",
+      "column": "FRT_SPEND_L",
+      "row_filter": "r.get('SCOPE') == 'FREIGHT_VENDOR' and (r.get('NOTE') or '').startswith('OUTSIDE')",
+      "agg": "sum",
+      "formula": "SUM(FRT_SPEND_L) x 1e5 over the FREIGHT_VENDOR rows whose NOTE begins 'OUTSIDE the transporter group' - supplier cards admitted to the freight universe by a road-carrier token in their own name rather than by their OCRG group. THIS IS THE SHOWN-SET FIGURE (top 25 vendors only); the uncapped total is stated in the TOTAL row's NOTE: Oil 32 carriers worth Rs 12.82 Cr, Mart 14 worth Rs 0.36 Cr, Bev 12 worth Rs 0.35 Cr.",
+      "terms": [
+        {
+          "label": "R K TANKER SERVICE, Oil VENDA000671",
+          "col": "FRT_SPEND_L",
+          "op": "+",
+          "source": "OPCH + OCRD",
+          "note": "Rs 9.45 Cr, every line reading 'TPT FREIGHT FROM SHEMLA TO SONIPAT', filed under supplier group 110 PURCHASE OIL. On a group-only test this ONE card was more than the entire freight figure the section used to report (Rs 5.20 Cr) - and the page printed 'NO FREIGHT VENDOR CARD MATCHED' beside it while it was Oil's 4th largest carrier by dispatch value."
+        },
+        {
+          "label": "Other carriers pulled in by name",
+          "col": "FRT_SPEND_L",
+          "op": "+",
+          "source": "OPCH + OCRD",
+          "note": "ARSH TRANSPORT (PURCHASE OIL) Rs 0.72 Cr, OM LOGISTICS SUPPLY CHAIN (SERVICE) Rs 0.57 Cr, BALMUKUND ROADWAYS (PURCHASE OIL) Rs 0.46 Cr, SEA VENTURE LOGISTICS (PURCHASE OIL) Rs 0.27 Cr."
+        },
+        {
+          "label": "Freight a group-only definition would have deleted",
+          "col": "FRT_SPEND_L",
+          "op": "=",
+          "source": "derived",
+          "note": "Rs 12.60 Cr of Oil's Rs 17.05 Cr shown freight = 74%. Read the group-only figure as roughly a THIRD of the truth in the Oil book."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Carriers that were already in a transporter/freight/logistics group",
+          "row_filter": "r.get('SCOPE') == 'FREIGHT_VENDOR' and not (r.get('NOTE') or '').startswith('OUTSIDE')",
+          "why": "they were never at risk; this KPI exists to size the widening, not to size freight"
+        },
+        {
+          "label": "Vendors ranked below the top 25 by spend",
+          "row_filter": "n/a - capped in SQL at line 480",
+          "why": "TRN-TOPN - which is why this KPI is a LOWER BOUND and the TOTAL NOTE's uncapped figure must be shown next to it"
+        }
+      ],
+      "sql_lines": [
+        177,
+        219
+      ],
+      "caveats": [
+        "TRN-VENDOR-WIDENING",
+        "TRN-TOPN",
+        "TRN-LAKHS"
+      ],
+      "check": {
+        "method": "The uncapped figure is computed by a completely different expression in a different CTE: FRTTOT (sql lines 342-346) does SUM(CASE WHEN v.IN_GRP = 0 THEN f.FAMT END) over EVERY freight vendor, with no ROW_NUMBER and no cap, and renders it into the TOTAL row's NOTE. Parse it and require the shown-set sum to be less than or equal to it and to account for most of it: Oil Rs 12.60 Cr shown against Rs 12.82 Cr uncapped (98.3%, 13 of 32 cards), Mart Rs 0.34 Cr of Rs 0.36 Cr (7 of 14), Bev Rs 0.34 Cr of Rs 0.35 Cr (9 of 12). Independently assert the finding that produced this KPI still holds - VENDA000671 R K TANKER SERVICE must be present, flagged OUTSIDE, and larger than Rs 5.20 Cr, the whole freight figure the section reported before the fix.",
+        "recipe": "import re\nT=[r for r in rows if r['SCOPE']=='TOTAL'][0]\nm=re.search(r'(\\d+) carrier\\(s\\) worth ([\\d.]+) L sit OUTSIDE', T['NOTE']); n_all, amt_all = int(m.group(1)), float(m.group(2))\nshown=[r for r in rows if r['SCOPE']=='FREIGHT_VENDOR' and (r['NOTE'] or '').startswith('OUTSIDE')]\nassert sum(r['FRT_SPEND_L'] for r in shown) <= amt_all + 0.02 and len(shown) <= n_all\nif co=='oil': rk=[r for r in rows if r['GRP_KEY']=='VENDA000671'][0]; assert rk['NOTE'].startswith('OUTSIDE') and rk['FRT_SPEND_L'] > 520.09"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "FREIGHT_VENDOR",
+          "filter": "outside_group"
+        }
+      },
+      "live": {
+        "oil": 126008000.0,
+        "mart": 3363000.0,
+        "bev": 3437000.0
+      }
+    },
+    {
+      "id": "trn-freight-never-named",
+      "label": "Freight paid to carriers never named on any dispatch",
+      "unit": "INR",
+      "column": "FRT_SPEND_L",
+      "row_filter": "r.get('SCOPE') == 'FREIGHT_VENDOR' and 'PAID BUT NEVER NAMED ON A DISPATCH' in (r.get('NOTE') or '')",
+      "agg": "sum",
+      "formula": "SUM(FRT_SPEND_L) x 1e5 over FREIGHT_VENDOR rows with no VMAP family - money that left the building for road transport with no dispatch document naming the carrier. Shown-set (top 25) figure; the uncapped complement is in the TOTAL NOTE as 100% minus the 'tied to a named transporter' percentage: Oil Rs 1.84 Cr, Mart Rs 2.20 Cr, Bev Rs 0.02 Cr.",
+      "terms": [
+        {
+          "label": "Freight vendors with A/P but no matching transporter family",
+          "col": "FRT_SPEND_L",
+          "op": "=",
+          "source": "FRTV minus VMAP",
+          "note": "Mart is the finding: 17 of its 25 shown freight vendors have never been typed onto a dispatch, worth Rs 2.12 Cr of its Rs 3.17 Cr shown freight (67%). Its two largest carriers by spend - OM LOGISTICS SUPPLY CHAIN Rs 0.76 Cr and OM LOGISTICS LTD Rs 0.51 Cr - appear nowhere in its dispatch data. Oil is Rs 1.48 Cr on 7 cards, Bev Rs 0.02 Cr on 2."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Vendors whose card matched a transporter family",
+          "row_filter": "r.get('SCOPE') == 'FREIGHT_VENDOR' and 'ships under transporter family' in (r.get('NOTE') or '')",
+          "why": "those are the traceable ones - this KPI is the untraceable remainder"
+        },
+        {
+          "label": "Vendors below the top 25",
+          "row_filter": "n/a - capped in SQL",
+          "why": "TRN-TOPN, so this is a lower bound"
+        }
+      ],
+      "sql_lines": [
+        467,
+        480
+      ],
+      "caveats": [
+        "TRN-TOPN",
+        "TRN-FREETEXT",
+        "TRN-PREFIX-FAMILY",
+        "TRN-LAKHS"
+      ],
+      "check": {
+        "method": "The complement is computed uncapped, by a different expression, in FRTTOT: FAMT_MATCHED / FAMT is rendered into the TOTAL NOTE as 'Freight A/P X% tied to a named transporter'. (100 - X)% x FRT_SPEND_L gives Oil Rs 1.84 Cr, Mart Rs 2.20 Cr, Bev Rs 0.02 Cr, and the shown-set sum must be at or below that: Oil Rs 1.48 Cr, Mart Rs 2.12 Cr, Bev Rs 0.02 Cr - 81%, 96% and 89% coverage respectively. Report the coverage, never just the delta. Cross-check the OPPOSITE direction from the dispatch side, which is a different scope: TRANSPORTER rows whose NOTE begins 'NO FREIGHT VENDOR CARD MATCHED' are carriers that moved goods and were never paid through a matched card. If both lists are large in the same book, the failure is name matching, not procurement - which is exactly what Mart shows.",
+        "recipe": "import re\nT=[r for r in rows if r['SCOPE']=='TOTAL'][0]\ntied=float(re.search(r'Freight A/P ([\\d.]+)% tied', T['NOTE']).group(1))\nbound=(100-tied)/100*T['FRT_SPEND_L']  # oil 183.81 L, mart 220.19, bev 1.83\nshown=sum(r['FRT_SPEND_L'] for r in rows if r['SCOPE']=='FREIGHT_VENDOR' and 'PAID BUT NEVER NAMED' in (r['NOTE'] or ''))\nassert shown <= bound + 0.02; coverage = 100*shown/bound\nother_side=[r['GRP_LABEL'] for r in rows if r['SCOPE']=='TRANSPORTER' and (r['NOTE'] or '').startswith('NO FREIGHT VENDOR CARD MATCHED')]"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "FREIGHT_VENDOR",
+          "filter": "never_named"
+        }
+      },
+      "live": {
+        "oil": 14837000.0,
+        "mart": 21160000.0,
+        "bev": 162000.0
+      }
+    },
+    {
+      "id": "trn-third-party-value",
+      "label": "Dispatched under a named third-party carrier",
+      "unit": "INR",
+      "column": "DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'NAMECLASS' and r.get('GRP_KEY') == 'THIRD_PARTY'",
+      "agg": "first",
+      "formula": "DISP_VAL_L x 1e5 on the NAMECLASS/THIRD_PARTY row - dispatches whose U_TransporterName squashes to a key that is not blank, not a placeholder (NA/NIL/X/0/TEST), not SELF*/JIVO*/BYHAND*/CUSTOMERPICK*, not *SELFPICK*/*OWNVEHIC*, and does not END in VEHICLE or VEHICAL. This is the only population the TRANSPORTER scope and the whole detail grid are built on.",
+      "terms": [
+        {
+          "label": "Dispatches with a usable carrier name",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "OINV.U_TransporterName",
+          "note": "Oil Rs 602.57 Cr on 7,644 invoices = 65.1% of dispatch value but only 39.5% of documents - the named ones are the big ones. Mart Rs 53.38 Cr / 640 docs (16.5% of value, 2.5% of docs). Bev Rs 18.31 Cr / 3,916 docs (84.0% / 73.5%)."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "No transporter recorded at all",
+          "row_filter": "r.get('SCOPE') == 'NAMECLASS' and r.get('GRP_KEY') == 'UNNAMED'",
+          "why": "published separately as trn-unnamed-value"
+        },
+        {
+          "label": "Own fleet or collected by the customer",
+          "row_filter": "r.get('SCOPE') == 'NAMECLASS' and r.get('GRP_KEY') == 'OWN_OR_SELF'",
+          "why": "no freight is bought, so dividing freight by these dispatches would be meaningless - published separately as trn-ownfleet-value"
+        },
+        {
+          "label": "Placeholder keystrokes (NA, NIL, X, 0, TEST)",
+          "row_filter": "r.get('SCOPE') == 'NAMECLASS' and r.get('GRP_KEY') == 'UNUSABLE'",
+          "why": "TRN-FREETEXT - Oil Rs 22.12 Cr on 210 invoices, of which only Rs 0.11 Cr is external, so almost all of it is intercompany stock movement typed 'NA'. Mart has no such row at all."
+        }
+      ],
+      "sql_lines": [
+        163,
+        172
+      ],
+      "caveats": [
+        "TRN-FREETEXT",
+        "TRN-CLASS-LEAK",
+        "TRN-FACET",
+        "TRN-LAKHS"
+      ],
+      "check": {
+        "method": "transporter-detail.sql is a SEPARATE FILE with its own DISP/D CTEs and its own inline copy of the name-class predicates written as NOT LIKE filters rather than a CASE, and every one of its rows is by construction third-party. Its DISP_VAL_L therefore has to sum to this KPI and its DISP_DOCS to this row's DISP_DOCS. Measured 2026-08-22: Oil Rs 602.5719 Cr vs Rs 602.5719 Cr and 7,644 = 7,644 docs; Mart Rs 53.3792 Cr vs Rs 53.3789 Cr (Rs 3,000, being 46 separately-rounded cells) and 640 = 640; Bev Rs 18.3073 Cr vs Rs 18.3070 Cr and 3,916 = 3,916. Doc counts are exact in all three books, which is the part that cannot be explained away by rounding. Second, cheaper route with full coverage: TOTAL DISP_VAL_L minus the other three NAMECLASS rows.",
+        "recipe": "det=slice('transporter',co)['detail']\ntp=[r for r in rows if r['SCOPE']=='NAMECLASS' and r['GRP_KEY']=='THIRD_PARTY'][0]\nassert sum(r['DISP_DOCS'] for r in det) == tp['DISP_DOCS']\nassert abs(sum(r['DISP_VAL_L'] for r in det) - tp['DISP_VAL_L']) < 0.05\nT=[r for r in rows if r['SCOPE']=='TOTAL'][0]\nalt=T['DISP_VAL_L']-sum(r['DISP_VAL_L'] for r in rows if r['SCOPE']=='NAMECLASS' and r['GRP_KEY']!='THIRD_PARTY')"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "TRANSPORTER"
+        }
+      },
+      "live": {
+        "oil": 6025719000.0,
+        "mart": 533789000.0,
+        "bev": 183070000.0
+      }
+    },
+    {
+      "id": "trn-unnamed-value",
+      "label": "Dispatched with no transporter recorded",
+      "unit": "INR",
+      "column": "DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'NAMECLASS' and r.get('GRP_KEY') == 'UNNAMED'",
+      "agg": "first",
+      "formula": "DISP_VAL_L x 1e5 on the NAMECLASS/UNNAMED row - invoices where U_TransporterName is NULL or blank. This is the section's blind spot measured in rupees: goods that demonstrably moved, with nothing in SAP saying who moved them.",
+      "terms": [
+        {
+          "label": "Invoices with an empty transporter field",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "OINV.U_TransporterName",
+          "note": "Mart is the outlier: Rs 248.43 Cr on 24,205 of its 25,186 invoices - 96.1% of the book by document count. Oil Rs 217.21 Cr on 10,254 docs (23.5% of value), Bev Rs 2.35 Cr on 1,060 (10.8%). These rows carry an LR number on 4.9% / 0.1% / 26.3% of documents, so the bilty does not rescue them either."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        163,
+        164
+      ],
+      "caveats": [
+        "TRN-FREETEXT",
+        "TRN-FACET",
+        "TRN-LAKHS"
+      ],
+      "check": {
+        "method": "Reach the same row from a CTE that never sees NAME_CLASS. FIELDSTAT counts OINV.U_TransporterName directly (sql lines 298-300); TOTAL DISP_DOCS minus that FILLED count must equal this row's DISP_DOCS. Verified exactly, no tolerance needed: Oil 19,332 - 9,078 = 10,254; Mart 25,186 - 981 = 24,205; Bev 5,331 - 4,271 = 1,060. That is a genuine second implementation of 'is this field empty', because FIELDSTAT tests IFNULL(TRIM(...)) <> '' on the raw column while NAME_CLASS tests the punctuation-squashed key. A third route on value: TOTAL DISP_VAL_L minus the three non-UNNAMED NAMECLASS rows.",
+        "recipe": "T=[r for r in rows if r['SCOPE']=='TOTAL'][0]\nf=[r for r in rows if r['SCOPE']=='FIELD' and r['GRP_KEY']=='OINV.U_TransporterName'][0]\nun=[r for r in rows if r['SCOPE']=='NAMECLASS' and r['GRP_KEY']=='UNNAMED'][0]\nassert T['DISP_DOCS'] - f['FILLED'] == un['DISP_DOCS']\nalt=T['DISP_VAL_L']-sum(r['DISP_VAL_L'] for r in rows if r['SCOPE']=='NAMECLASS' and r['GRP_KEY']!='UNNAMED')"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "NAMECLASS",
+          "key": "UNNAMED"
+        }
+      },
+      "live": {
+        "oil": 2172098000.0,
+        "mart": 2484335000.0,
+        "bev": 23489000.0
+      }
+    },
+    {
+      "id": "trn-ownfleet-value",
+      "label": "Moved on JIVO's own trucks or collected by the customer",
+      "unit": "INR",
+      "column": "DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'NAMECLASS' and r.get('GRP_KEY') == 'OWN_OR_SELF'",
+      "agg": "first",
+      "formula": "DISP_VAL_L x 1e5 on the NAMECLASS/OWN_OR_SELF row - keys starting SELF / JIVO / BYHAND / CUSTOMERPICK, containing SELFPICK or OWNVEHIC, or ENDING in VEHICLE or VEHICAL ('AMAZON VEHICLE', 'BARU SAHIB VEHICLE' - the counterparty's own truck). No freight is bought against these, so they must be out of any cost-per-carrier denominator.",
+      "terms": [
+        {
+          "label": "Own fleet and customer-collected dispatches",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "OINV.U_TransporterName",
+          "note": "Oil Rs 83.70 Cr on 1,224 invoices, but only Rs 21.49 Cr of it external - most own-fleet running is branch and intercompany stock movement. Mart Rs 22.54 Cr / 341 docs, Bev Rs 1.09 Cr / 251."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        167,
+        171
+      ],
+      "caveats": [
+        "TRN-CLASS-LEAK",
+        "TRN-FREETEXT",
+        "TRN-FACET"
+      ],
+      "check": {
+        "method": "Re-execute the predicates in Python against the THIRD_PARTY population rather than trusting the CASE, and treat every hit as a FINDING. Running a widened own-fleet test (contains VEHICLE / VEHICAL / SELF / PICKUP anywhere, not only as a suffix or prefix) over the TRANSPORTER scope surfaces Mart's 'Amazon vehicle pickup', Rs 3.26 Cr on 41 invoices, sitting in THIRD_PARTY and ranked its 6th largest 'carrier' - it escapes because the key ends PICKUP, not VEHICLE. Bev's 'BARU SAHIB' (Rs 0.01 Cr) escapes for the same reason where 'BARU SAHIB VEHICLE' is caught. So the correct statement is that this KPI is a LOWER BOUND on own-fleet movement, understated by at least Rs 3.26 Cr in Mart. Value-side completeness check: the four NAMECLASS rows must foot to TOTAL DISP_VAL_L, which they do to the rounding in all three books.",
+        "recipe": "import re\ntr=[r for r in rows if r['SCOPE']=='TRANSPORTER']\nleak=[(r['GRP_LABEL'],r['DISP_VAL_L']) for r in tr if re.search(r'VEHIC|VEHICAL|SELF|PICKUP', str(r['GRP_KEY']).upper())]\n# mart: [('Amazon vehicle pickup', 325.8), ('PICK & SHIP', 225.77)] - the first is a leak, the second is a real logistics vendor\nassert abs(sum(r['DISP_VAL_L'] for r in rows if r['SCOPE']=='NAMECLASS') - [r for r in rows if r['SCOPE']=='TOTAL'][0]['DISP_VAL_L']) < 0.05"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "NAMECLASS",
+          "key": "OWN_OR_SELF"
+        }
+      },
+      "live": {
+        "oil": 836974000.0,
+        "mart": 225403000.0,
+        "bev": 10890000.0
+      }
+    },
+    {
+      "id": "trn-name-field-fill",
+      "label": "Invoices with anything typed in the transporter field",
+      "unit": "pct",
+      "column": "FILLED",
+      "row_filter": "r.get('SCOPE') == 'FIELD' and r.get('GRP_KEY') == 'OINV.U_TransporterName'",
+      "agg": "first",
+      "formula": "100 x FILLED / DISP_DOCS on the FIELD row for OINV.U_TransporterName. THIS IS NOT CARRIER COVERAGE and must never be labelled as such: it counts anything non-blank, including 'NA', 'SELF' and 'JIVO VEHICLE'. Oil reads 46.96% here against 39.54% of documents carrying a usable third-party name - a 7.4-point gap, 1,434 documents.",
+      "terms": [
+        {
+          "label": "Documents with a non-blank transporter field",
+          "col": "FILLED",
+          "op": "+",
+          "source": "OINV.U_TransporterName",
+          "note": "numerator. Oil 9,078 = 7,644 third-party + 1,224 own-fleet + 210 placeholder, exactly."
+        },
+        {
+          "label": "Dispatch invoices in scope",
+          "col": "DISP_DOCS",
+          "op": "=",
+          "source": "OINV",
+          "note": "DENOMINATOR - the FIELD row's own DISP_DOCS, which for the nine OINV rows equals the TOTAL row's DISP_DOCS but for the ODLN and OPDN rows does not."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Deliveries and GRPOs",
+          "row_filter": "r.get('SCOPE') == 'FIELD' and not (r.get('GRP_KEY') or '').startswith('OINV')",
+          "why": "ODLN.U_TransporterName is filled on 225 of Oil's 2,792 deliveries and on 0 of Mart's 6,023 and Bev's 287; OPDN on 826 of 10,662 and 246 of 4,565. Those rows exist to prove the transport data is NOT kept on deliveries - they are not part of dispatch coverage."
+        }
+      ],
+      "sql_lines": [
+        297,
+        300
+      ],
+      "caveats": [
+        "TRN-FILLED-POLYSEMY",
+        "TRN-FREETEXT",
+        "TRN-FACET"
+      ],
+      "check": {
+        "method": "Rebuild the numerator from the NAMECLASS scope, which comes from the D CTE and never touches FIELDSTAT: FILLED must equal THIRD_PARTY + OWN_OR_SELF + UNUSABLE document counts. Verified exactly, zero residual, all three books - Oil 7,644 + 1,224 + 210 = 9,078; Mart 640 + 341 + 0 = 981; Bev 3,916 + 251 + 104 = 4,271. Because it is exact rather than approximate, this is also the tripwire for the classifier: if a future spelling made NAME_CLASS and 'field is non-blank' disagree, the residual would be non-zero here first. Then publish the gap that makes the KPI honest: this percentage minus the TOTAL row's NAMED_PCT is the share of documents where somebody typed something that is not a carrier (Oil 7.4 pts, Mart 1.35 pts, Bev 6.7 pts).",
+        "recipe": "f=[r for r in rows if r['SCOPE']=='FIELD' and r['GRP_KEY']=='OINV.U_TransporterName'][0]\nnc={r['GRP_KEY']:r for r in rows if r['SCOPE']=='NAMECLASS'}\nassert sum(nc[k]['DISP_DOCS'] for k in nc if k!='UNNAMED') == f['FILLED']\nT=[r for r in rows if r['SCOPE']=='TOTAL'][0]\ngap=100*f['FILLED']/f['DISP_DOCS'] - T['NAMED_PCT']  # oil ~7.4, mart ~1.4, bev ~6.6"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "FIELD",
+          "key": "OINV.U_TransporterName"
+        }
+      },
+      "live": {
+        "oil": 46.9584,
+        "mart": 3.895,
+        "bev": 80.1163
+      }
+    },
+    {
+      "id": "trn-bilty-coverage",
+      "label": "Dispatches carrying a lorry receipt (bilty) number",
+      "unit": "pct",
+      "column": "FILLED",
+      "row_filter": "r.get('SCOPE') == 'FIELD' and r.get('GRP_KEY') == 'OINV.LR_NUMBER (bilty)'",
+      "agg": "first",
+      "formula": "100 x FILLED / DISP_DOCS on the synthetic FIELD row 'OINV.LR_NUMBER (bilty)'. The underlying column is per-book: U_BilltyNumber in Oil and Mart, U_BiltyNumber in Beverages (respelled), resolved by the UDFX shim. It is NOT U_LRNUmber, whose SAP caption is 'Bill Of Entry No.'.",
+      "terms": [
+        {
+          "label": "Dispatches with a bilty number",
+          "col": "FILLED",
+          "op": "+",
+          "source": "OINV per-book bilty UDF",
+          "note": "numerator. Oil 9,393, Mart 980, Bev 4,508. Beverages is the only book that keys it properly."
+        },
+        {
+          "label": "Dispatch invoices in scope",
+          "col": "DISP_DOCS",
+          "op": "=",
+          "source": "OINV",
+          "note": "DENOMINATOR"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        389,
+        395
+      ],
+      "caveats": [
+        "TRN-UDF-SHIM",
+        "TRN-LR-IS-BOE",
+        "TRN-FILLED-POLYSEMY"
+      ],
+      "check": {
+        "method": "The bilty flag is also carried per document into the D CTE and surfaces as LR_PCT on every NAMECLASS, PARTY, MONTH and TRANSPORTER row. Reconstruct the document count by weighting those percentages by their own DISP_DOCS and compare with FILLED - a different aggregation of the same flag through a different CTE. Measured 2026-08-22, MONTH route: Oil 9,393.2 implied vs 9,393 actual, Mart 979.6 vs 980, Bev 4,507.9 vs 4,508 - within one document in all three books. The NAMECLASS route is coarser because LR_PCT is rounded to 1 dp over as few as 3 buckets (Oil 9,391.4, Mart 989.2, Bev 4,506.2), so tolerate 1.5% there and 0.2% on months. If the MONTH route ever drifts by more than a handful of documents, the UDFX shim has matched the wrong book.",
+        "recipe": "f=[r for r in rows if r['SCOPE']=='FIELD' and r['GRP_KEY']=='OINV.LR_NUMBER (bilty)'][0]\nmo=[r for r in rows if r['SCOPE']=='MONTH']\nimplied=sum((r['LR_PCT'] or 0)/100*r['DISP_DOCS'] for r in mo)\nassert abs(implied-f['FILLED']) <= max(3, 0.002*f['FILLED'])\nassert 'NOT U_LRNUmber' in f['NOTE'] and 'UDF SHIM MISS' not in f['NOTE']"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "FIELD",
+          "key": "OINV.LR_NUMBER (bilty)"
+        }
+      },
+      "live": {
+        "oil": 48.5878,
+        "mart": 3.8911,
+        "bev": 84.562
+      }
+    },
+    {
+      "id": "trn-vehicle-coverage",
+      "label": "Dispatches carrying a vehicle number (e-way bill Part B)",
+      "unit": "pct",
+      "column": "FILLED",
+      "row_filter": "r.get('SCOPE') == 'FIELD' and r.get('GRP_KEY') == 'OINV.VEHICLE_NO'",
+      "agg": "first",
+      "formula": "100 x FILLED / DISP_DOCS on the synthetic FIELD row 'OINV.VEHICLE_NO'. Per-book column: U_VehicleNoM in Oil and Mart, U_VechileNom in Beverages (respelled twice over), resolved by the UDFX shim. This is the field an e-way bill Part B needs, which is why it is a compliance figure and not just a data-quality one.",
+      "terms": [
+        {
+          "label": "Dispatches with a vehicle number",
+          "col": "FILLED",
+          "op": "+",
+          "source": "OINV per-book vehicle UDF",
+          "note": "numerator. Oil 8,761, Mart 995, Bev 4,247."
+        },
+        {
+          "label": "Dispatch invoices in scope",
+          "col": "DISP_DOCS",
+          "op": "=",
+          "source": "OINV",
+          "note": "DENOMINATOR"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        405,
+        410
+      ],
+      "caveats": [
+        "TRN-UDF-SHIM",
+        "TRN-FILLED-POLYSEMY"
+      ],
+      "check": {
+        "method": "Same weighted reconstruction as trn-bilty-coverage but on VEH_PCT, which is a separate per-document flag: MONTH route gives Oil 8,761.4 vs 8,761, Mart 995.4 vs 995, Bev 4,247.0 vs 4,247. Second, structural rather than numeric: compare against the bilty coverage on the same rows. Vehicle number is filled slightly LESS often than the bilty in Oil and Bev (45.3% vs 48.6%, 79.7% vs 84.6%) but slightly MORE often in Mart (3.95% vs 3.89%), so the two fields are not a single keyed-together block and a build where they became identical would mean the UDFX shim had collapsed both to one column.",
+        "recipe": "f=[r for r in rows if r['SCOPE']=='FIELD' and r['GRP_KEY']=='OINV.VEHICLE_NO'][0]\nmo=[r for r in rows if r['SCOPE']=='MONTH']\nimplied=sum((r['VEH_PCT'] or 0)/100*r['DISP_DOCS'] for r in mo)\nassert abs(implied-f['FILLED']) <= max(3, 0.002*f['FILLED'])\nb=[r for r in rows if r['SCOPE']=='FIELD' and r['GRP_KEY']=='OINV.LR_NUMBER (bilty)'][0]\nassert f['FILLED'] != b['FILLED']"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "FIELD",
+          "key": "OINV.VEHICLE_NO"
+        }
+      },
+      "live": {
+        "oil": 45.3186,
+        "mart": 3.9506,
+        "bev": 79.6661
+      }
+    },
+    {
+      "id": "trn-boe-mistaken-for-lr",
+      "label": "Documents in the field everyone mistakes for the LR number",
+      "unit": "count",
+      "column": "FILLED",
+      "row_filter": "r.get('SCOPE') == 'FIELD' and r.get('GRP_KEY') == 'OINV.U_LRNUmber'",
+      "agg": "first",
+      "formula": "FILLED on the FIELD row for OINV.U_LRNUmber. The name says LR number; the SAP caption in CUFD.Descr says 'Bill Of Entry No.' - a customs/import field. Publishing the count is how the section stops the next analyst rebuilding LR coverage on it: 39 documents in Oil against 9,393 real bilty numbers.",
+      "terms": [
+        {
+          "label": "Documents with a Bill Of Entry number",
+          "col": "FILLED",
+          "op": "=",
+          "source": "OINV.U_LRNUmber",
+          "note": "Oil 39 of 19,332 (0.2%), Mart 1 of 25,186, Beverages 0 - and Bev's 0 is because THE COLUMN DOES NOT EXIST in that book, which the row's NOTE says as '(no such column in this book)'."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        397,
+        403
+      ],
+      "caveats": [
+        "TRN-LR-IS-BOE",
+        "TRN-UDF-SHIM",
+        "C-0016"
+      ],
+      "check": {
+        "method": "The caption is the evidence, and it comes from a different table than the count. FLD reads CUFD.Descr / TypeID / UFD1 for every OINV, ODLN and OPDN user field (sql lines 291-296); this row's GRP_LABEL must literally read 'Bill Of Entry No. (NOT a lorry receipt)' and the bilty row must carry a strictly larger FILLED. Assert the ordering rather than the number - it is the ordering that encodes the finding: FILLED here must be at least two orders of magnitude below the bilty row in Oil (39 vs 9,393 = 241x). For Beverages assert the STRUCTURAL zero: the NOTE must contain '(no such column in this book)', because a numeric 0 alone is indistinguishable from a real empty column and would invite someone to 'fix the data entry'.",
+        "recipe": "boe=[r for r in rows if r['SCOPE']=='FIELD' and r['GRP_KEY']=='OINV.U_LRNUmber'][0]\nbil=[r for r in rows if r['SCOPE']=='FIELD' and r['GRP_KEY']=='OINV.LR_NUMBER (bilty)'][0]\nassert 'Bill Of Entry' in boe['GRP_LABEL'] and boe['FILLED'] < bil['FILLED']\nif co=='bev': assert 'no such column in this book' in boe['NOTE']"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "FIELD",
+          "key": "OINV.U_LRNUmber"
+        }
+      },
+      "live": {
+        "oil": 39,
+        "mart": 1,
+        "bev": 0
+      }
+    },
+    {
+      "id": "trn-name-variants",
+      "label": "Distinct spellings typed into the transporter field",
+      "unit": "count",
+      "column": "VARIANTS",
+      "row_filter": "r.get('SCOPE') == 'TOTAL' and r.get('GRP_KEY') == 'ALL'",
+      "agg": "first",
+      "formula": "VARIANTS on the TOTAL row = COUNT(DISTINCT non-blank U_TransporterName) across all four name classes. The field is unvalidated free text - CUFD.EditType is blank and UFD1 holds zero valid values in all three books - so this is the number that decides whether the dashboard needs a hand-written normalisation map.",
+      "terms": [
+        {
+          "label": "Raw spellings, all classes",
+          "col": "VARIANTS",
+          "op": "=",
+          "source": "OINV.U_TransporterName",
+          "note": "Oil 234 raw spellings (196 of them third-party) collapsing to 147 squashed keys and then 106 prefix families. Mart 31 -> 19 -> 18. Bev 147 -> 98 -> 77. The TOTAL row's NOTE carries all three counts."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Blank transporter fields",
+          "row_filter": "r.get('SCOPE') == 'NAMECLASS' and r.get('GRP_KEY') == 'UNNAMED'",
+          "why": "the UNNAMED row's VARIANTS is 0 by construction (COUNT(DISTINCT CASE WHEN TN_RAW <> '' ...)), so blanks never inflate the spread"
+        }
+      ],
+      "sql_lines": [
+        335,
+        336
+      ],
+      "caveats": [
+        "TRN-FREETEXT",
+        "TRN-PREFIX-FAMILY",
+        "TRN-VARIANTS-NOT-ADDITIVE"
+      ],
+      "check": {
+        "method": "VARIANTS is computed per row by an independent COUNT(DISTINCT ...) in each scope's SELECT, and NAME_CLASS partitions the spellings (a spelling maps to exactly one key, and a key to exactly one class), so the four NAMECLASS VARIANTS must sum to this number. Verified exactly: Oil 196 + 32 + 6 + 0 = 234, Mart 23 + 8 + 0 = 31, Bev 121 + 21 + 5 + 0 = 147. THE SAME TEST ACROSS MONTH MUST FAIL, and that failure is the point: months share spellings, so Oil's 23 month rows sum to 821, Mart's 21 to 65 and Bev's 23 to 416. Assert both - the NAMECLASS equality and the MONTH inequality - or a renderer will eventually total the month column and print '821 transporters'.",
+        "recipe": "T=[r for r in rows if r['SCOPE']=='TOTAL'][0]\nassert sum(r['VARIANTS'] or 0 for r in rows if r['SCOPE']=='NAMECLASS') == T['VARIANTS']\nassert sum(r['VARIANTS'] or 0 for r in rows if r['SCOPE']=='MONTH') > T['VARIANTS']  # oil 821, mart 65, bev 416"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "TRANSPORTER",
+          "sort": "VARIANTS",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 234,
+        "mart": 31,
+        "bev": 147
+      }
+    },
+    {
+      "id": "trn-top-carrier-value",
+      "label": "Goods moved by the single largest carrier",
+      "unit": "INR",
+      "column": "DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'TRANSPORTER'",
+      "agg": "max",
+      "formula": "MAX(DISP_VAL_L) x 1e5 over the TRANSPORTER scope - the biggest carrier family by dispatch value. Oil DELHI PUNJAB Rs 136.86 Cr (22.7% of third-party dispatch, 14.8% of the whole book), Mart ABHIMAN EXPRESS Rs 21.82 Cr, Beverages ARNAV TRANSPORT Rs 10.28 Cr - which is 56.2% of Beverages' third-party dispatch and 47.2% of its entire book.",
+      "terms": [
+        {
+          "label": "Largest carrier family's dispatch value",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "OINV grouped by prefix family",
+          "note": "A FAMILY, not a spelling: Oil's DELHIPUNJAB merges 9 raw spellings into 6 keys and 3 vendor cards. Read FILLED (keys merged) and VARIANTS (spellings merged) beside it or the figure looks like one clean master record."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Own fleet, placeholders and unnamed dispatches",
+          "row_filter": "r.get('SCOPE') == 'NAMECLASS' and r.get('GRP_KEY') != 'THIRD_PARTY'",
+          "why": "the TRANSPORTER scope is built on THIRD_PARTY only - which is correct, and also why 'JIVO VEHICLE' (848 Oil documents) never appears as a carrier"
+        },
+        {
+          "label": "Carriers ranked below the top 40",
+          "row_filter": "n/a - capped in SQL at line 465",
+          "why": "TRN-TOPN - irrelevant to a MAX, but it means the same scope cannot be summed to a company total (it covers 98.1% of Oil's third-party value, 100% of Mart's, 99.3% of Bev's)"
+        }
+      ],
+      "sql_lines": [
+        449,
+        465
+      ],
+      "caveats": [
+        "TRN-TOPN",
+        "TRN-PREFIX-FAMILY",
+        "TRN-FREETEXT",
+        "TRN-LAKHS"
+      ],
+      "check": {
+        "method": "transporter-detail.sql rebuilds the same family from its own CTEs at (family, month) grain. Summing that family's monthly cells must return the summary row: Oil DELHIPUNJAB 1,822 docs and Rs 136.8608 Cr from 23 monthly cells against Rs 136.8610 Cr here (Rs 200, being 23 separately-rounded cells); Mart ABHIMANEXPR 211 docs, Rs 21.8172 Cr vs Rs 21.8170 Cr; Bev ARNAVTRANSPORT 2,289 docs, Rs 10.2806 Cr vs Rs 10.2805 Cr. Document counts are exact in every case, in every book. Run it over ALL non-ZZ_OTHER families, not just the top one: 21 Oil families reconcile with 4 rounding differences of Rs 3,000 or less and zero doc-count differences, 18 Mart with 1, 21 Bev with 1.",
+        "recipe": "det=slice('transporter',co)['detail']; fam={}\nfor r in det:\n    f=fam.setdefault(r['FAM_KEY'],{'v':0.0,'d':0}); f['v']+=r['DISP_VAL_L']; f['d']+=r['DISP_DOCS']\nfor s in [r for r in rows if r['SCOPE']=='TRANSPORTER']:\n    if s['GRP_KEY'] in fam:\n        assert fam[s['GRP_KEY']]['d']==s['DISP_DOCS'] and abs(fam[s['GRP_KEY']]['v']-s['DISP_VAL_L'])<0.05"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "TRANSPORTER",
+          "sort": "DISP_VAL_L",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 1368610000.0,
+        "mart": 218170000.0,
+        "bev": 102805000.0
+      }
+    },
+    {
+      "id": "trn-unmatched-carrier-value",
+      "label": "Goods moved by carriers with no freight vendor card matched",
+      "unit": "INR",
+      "column": "DISP_VAL_L",
+      "row_filter": "r.get('SCOPE') == 'TRANSPORTER' and r.get('VENDOR_CODE') is None",
+      "agg": "sum",
+      "formula": "SUM(DISP_VAL_L) x 1e5 over TRANSPORTER rows where no supplier card matched the family name - dispatches whose cost cannot be attributed to anyone. Oil Rs 34.62 Cr across 9 of its top 40 carriers, Mart Rs 9.94 Cr across 9 of 18, Bev Rs 0.80 Cr across 13 of 40.",
+      "terms": [
+        {
+          "label": "Carrier families with no matched supplier card",
+          "col": "DISP_VAL_L",
+          "op": "=",
+          "source": "FAMAGG minus VMAP",
+          "note": "MOSTLY A SPELLING PROBLEM, NOT A MISSING VENDOR. Rs 26.99 Cr of Oil's Rs 34.62 Cr is a near-variant of a family that DOES have a card: 'Bombey Sri Nagar' (Rs 13.56 Cr) and 'Bombe Sri Nagar' (Rs 1.90 Cr) beside carded BOMBAYSRINAGAR, 'Mahaveer Transport' (Rs 8.12 Cr) beside carded MAHAVIRTRANSPORT, 'SONIPAT GOODS' (Rs 2.51 Cr) beside carded SONEPATGOODS. None is a prefix of the other, so the family collapse cannot merge them."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Carriers whose card exists but carries no A/P at all",
+          "row_filter": "r.get('SCOPE') == 'TRANSPORTER' and r.get('VENDOR_CODE') is not None and (r.get('FRT_SPEND_L') or 0) == 0",
+          "why": "'NEVER BILLED' is a different fact from 'no card matched' and the SQL keeps them as different strings on purpose. Oil has exactly one: BABA MIRCHI NATH TRANSPORT CO, VENDA000745, Rs 11.33 Cr of dispatches and zero freight bills. Mart and Bev have none."
+        },
+        {
+          "label": "Carriers below the top 40",
+          "row_filter": "n/a - capped in SQL",
+          "why": "TRN-TOPN - a lower bound"
+        }
+      ],
+      "sql_lines": [
+        270,
+        279
+      ],
+      "caveats": [
+        "TRN-PREFIX-FAMILY",
+        "TRN-TOPN",
+        "TRN-VENDOR-WIDENING",
+        "TRN-FREETEXT"
+      ],
+      "check": {
+        "method": "The same fact is encoded twice in the row by two different expressions - VENDOR_CODE comes from FAMFRT's MAX(CASE WHEN RN=1 ...) join, the NOTE prefix comes from a CASE on r.TOP_CODE IS NULL - and they must agree on every row. Verified: zero disagreements in all three books, and the distinct 'NEVER BILLED' string appears on exactly the 1 / 0 / 0 rows expected. Then run the finding rather than the total: fuzzy-match every unmatched family key against the carded ones and report how much of the KPI is a spelling split (Oil Rs 26.99 Cr of Rs 34.62 Cr = 78%, Mart Rs 6.15 Cr of Rs 9.94 Cr, Bev Rs 0.67 Cr of Rs 0.80 Cr). That is a different answer from the KPI and it is the one Accounts can act on - it is a normalisation map, not a vendor onboarding.",
+        "recipe": "import difflib\ntr=[r for r in rows if r['SCOPE']=='TRANSPORTER']\nassert not [r for r in tr if (r['VENDOR_CODE'] is None) != (r['NOTE'] or '').startswith('NO FREIGHT VENDOR CARD MATCHED')]\ncarded={r['GRP_KEY'] for r in tr if r['VENDOR_CODE']}\nsplit=sum(r['DISP_VAL_L'] for r in tr if not r['VENDOR_CODE'] and difflib.get_close_matches(r['GRP_KEY'], carded, n=1, cutoff=0.75))"
+      },
+      "drill": {
+        "page": "transporter.html",
+        "params": {
+          "scope": "TRANSPORTER",
+          "filter": "no_vendor_card"
+        }
+      },
+      "live": {
+        "oil": 346193000.0,
+        "mart": 99438000.0,
+        "bev": 8016000.0
+      }
+    }
+  ],
+  "columns": [
+    {
+      "col": "SCOPE",
+      "label": "Scope",
+      "unit": "text",
+      "meaning": "THE FACET COLUMN. One of TOTAL / FIELD / NAMECLASS / PARTY / MONTH / TRANSPORTER / FREIGHT_VENDOR. Every read of this section must filter on it first. (SCOPE, GRP_KEY) is unique - 0 duplicates in any book.",
+      "link": "none"
+    },
+    {
+      "col": "GRP_KEY",
+      "label": "Key",
+      "unit": "text",
+      "meaning": "The identity within the scope: 'ALL' on TOTAL; the qualified UDF name on FIELD ('OINV.U_TransporterName'); the class name on NAMECLASS and PARTY; 'YYYY-MM' on MONTH; the squashed carrier key on TRANSPORTER ('RKTANKER'); the supplier CardCode on FREIGHT_VENDOR ('VENDA000671'). Always a string.",
+      "link": "none"
+    },
+    {
+      "col": "GRP_LABEL",
+      "label": "Label",
+      "unit": "text",
+      "meaning": "Human-readable name. On TRANSPORTER rows it is MIN(raw spelling) in the family, so it is a SAMPLE, not a canonical name ('Bombey Sri Nagar', 'MAHADEV'). NOT ALWAYS A STRING: JSON types it as an integer on the rows where a phone number was typed into the transporter field (3 in Mart, 1 in Bev) - coerce with str() before any string operation.",
+      "link": "party"
+    },
+    {
+      "col": "SORT_KEY",
+      "label": "Sort",
+      "unit": "text",
+      "meaning": "Scope display order 1..7, serialised as a STRING ('1','2',...'7'), not a number. Sort on it lexically or cast it - it happens to be safe only because there are fewer than ten scopes.",
+      "link": "none"
+    },
+    {
+      "col": "DISP_DOCS",
+      "label": "Dispatch invoices",
+      "unit": "count",
+      "meaning": "CONTEXT-DEPENDENT. On TOTAL/NAMECLASS/PARTY/MONTH/TRANSPORTER it is a count of dispatch invoices. On a FIELD row it is that FIELD'S OWN TABLE's row count - OINV for nine of them, but ODLN (Oil 2,792) and OPDN (Oil 10,662) for the other two. NULL on every FREIGHT_VENDOR row. Summing it down the table gives Oil 272,264 against 19,332.",
+      "link": "document"
+    },
+    {
+      "col": "DISP_VAL_L",
+      "label": "Dispatch value",
+      "unit": "INR lakhs",
+      "meaning": "MONEY IN LAKHS - multiply by 1e5 for rupees. SUM(OINV.DocTotal - VatSum), ROUNDed to 2 dp, so the finest resolution is Rs 100 and any cross-check tolerance must be at least Rs 500. Includes branch and intercompany; excludes cancelled documents and the 2024-09-30 migration; does NOT net sales returns, so it is dispatch value, never turnover. NULL on FIELD and FREIGHT_VENDOR rows.",
+      "link": "none"
+    },
+    {
+      "col": "EXT_DISP_DOCS",
+      "label": "External invoices",
+      "unit": "count",
+      "meaning": "Documents in the row whose customer is neither a BRANCH-group card nor named JIVO. On the PARTY/EXTERNAL row it equals DISP_DOCS; on PARTY/BRANCH and PARTY/INTERCOMPANY it is 0 by construction.",
+      "link": "document"
+    },
+    {
+      "col": "EXT_DISP_VAL_L",
+      "label": "External dispatch value",
+      "unit": "INR lakhs",
+      "meaning": "MONEY IN LAKHS. The external-only half of DISP_VAL_L, carried on every dispatch-bearing scope so neither figure can be silently dropped or silently included. Reproduced to the rupee by return-note.sql's CLASS/EXTERNAL SALES_NET.",
+      "link": "none"
+    },
+    {
+      "col": "NAMED_PCT",
+      "label": "Carrier named",
+      "unit": "pct",
+      "meaning": "Percentage of the row's DOCUMENTS whose transporter name classifies as THIRD_PARTY. Populated on TOTAL, PARTY and MONTH only - NULL on NAMECLASS (where it would be trivially 0 or 100) and on TRANSPORTER. Not the same as the U_TransporterName fill rate, which counts 'NA' and 'SELF' too and runs 7.4 points higher in Oil.",
+      "link": "none"
+    },
+    {
+      "col": "LR_PCT",
+      "label": "Bilty on file",
+      "unit": "pct",
+      "meaning": "Percentage of the row's documents carrying a bilty / lorry receipt number, from the per-book UDF resolved by the UDFX shim (U_BilltyNumber in Oil and Mart, U_BiltyNumber in Bev). NEVER built on U_LRNUmber, which is a customs field. Rounded to 1 dp, so weighted reconstructions carry about +/- 1 document per row.",
+      "link": "none"
+    },
+    {
+      "col": "VEH_PCT",
+      "label": "Vehicle number on file",
+      "unit": "pct",
+      "meaning": "Percentage of the row's documents carrying a vehicle number (U_VehicleNoM / U_VechileNom). This is e-way bill Part B data, so it reads as a compliance measure, not just data quality.",
+      "link": "none"
+    },
+    {
+      "col": "DRIVER_PCT",
+      "label": "Driver named",
+      "unit": "pct",
+      "meaning": "Percentage carrying U_DriverName. Near-dead everywhere - Oil 2.6% and falling to 0.0-0.3% in every month of 2026, Mart 0.0%, Bev 2.8% and 0.0% since 2026-02. Do not build a KPI on it; it is evidence that a field was abandoned.",
+      "link": "none"
+    },
+    {
+      "col": "FILLED",
+      "label": "Filled / keys merged",
+      "unit": "count",
+      "meaning": "TWO DIFFERENT QUANTITIES IN ONE COLUMN. On a FIELD row it is how many DOCUMENTS carry that UDF (Oil's bilty: 9,393). On a TRANSPORTER row it is KEYS_IN_FAM - how many distinct squashed spellings collapsed into that carrier family (Oil's RKTANKER: 7). NULL on every other scope. Never chart it without splitting by scope first.",
+      "link": "none"
+    },
+    {
+      "col": "FILL_PCT",
+      "label": "Fill rate",
+      "unit": "pct",
+      "meaning": "100 x FILLED / DISP_DOCS, populated on FIELD rows ONLY (NULL everywhere else, including TRANSPORTER where FILLED is populated). Rounded to 1 dp.",
+      "link": "none"
+    },
+    {
+      "col": "VARIANTS",
+      "label": "Raw spellings",
+      "unit": "count",
+      "meaning": "COUNT(DISTINCT non-blank raw transporter name) within the row. Additive across NAMECLASS (they partition the spellings - verified exact in all three books) and NOT additive across MONTH (months share spellings: Oil's 23 month rows sum to 821 against a true 234). The number that decides whether a normalisation map is needed.",
+      "link": "none"
+    },
+    {
+      "col": "VENDOR_CODE",
+      "label": "Vendor card",
+      "unit": "text",
+      "meaning": "OCRD.CardCode of the supplier card the carrier family was matched to (TRANSPORTER rows: the highest-spend card of possibly several), or the card itself (FREIGHT_VENDOR rows). NULL on a TRANSPORTER row means no card matched - which the NOTE says in words too, and the two must always agree.",
+      "link": "party"
+    },
+    {
+      "col": "VENDOR_NAME",
+      "label": "Vendor name",
+      "unit": "text",
+      "meaning": "OCRD.CardName for VENDOR_CODE. Load-bearing rather than cosmetic: the freight-vendor universe admits a card on this name alone when its supplier group is wrong, which is how R K TANKER SERVICE (group 110 PURCHASE OIL) gets in.",
+      "link": "party"
+    },
+    {
+      "col": "FRT_DOCS",
+      "label": "Freight bills",
+      "unit": "count",
+      "meaning": "Count of A/P INVOICES only. A/P credit notes contribute 0 here by design while still reducing FRT_SPEND_L (sql line 228), so this is 'bills', not 'documents', and a period with heavy credit notes will look under-documented. NULL on NAMECLASS, PARTY and FIELD rows.",
+      "link": "document"
+    },
+    {
+      "col": "FRT_SPEND_L",
+      "label": "Freight billed",
+      "unit": "INR lakhs",
+      "meaning": "MONEY IN LAKHS. OPCH minus ORPC, net of GST, for freight-vendor cards, ex-cancelled, ex 2024-09-30. It is what carriers BILLED - freight accrued straight to the ledger by journal entry is invisible here. The same rupee appears on a MONTH row, a TRANSPORTER row and a FREIGHT_VENDOR row, so summing the column across scopes gives Oil 3.78x the truth.",
+      "link": "none"
+    },
+    {
+      "col": "FRT_PCT_OF_DISP",
+      "label": "Freight per Rs 100 dispatched",
+      "unit": "pct",
+      "meaning": "100 x FRT_SPEND_L / DISP_VAL_L within the row, ROUNDed to 1 dp. On TRANSPORTER rows it is the ship-versus-pay ratio and is only meaningful where VENDOR_CODE is not NULL. The two sides are dated independently - a freight bill lands in the month it is booked, not the month the truck ran - so read the monthly figure as a trend, never as a per-consignment rate.",
+      "link": "none"
+    },
+    {
+      "col": "NOTE",
+      "label": "Note",
+      "unit": "text",
+      "meaning": "STRUCTURED DATA, not decoration, and on several rows the only place a fact exists. The TOTAL note carries the uncapped out-of-group freight (Oil '32 carrier(s) worth 1281.97 L'), the share of freight tied to a named carrier (Oil 89.8%, Mart 32.4%, Bev 99.1%) and the spellings -> keys -> families collapse. TRANSPORTER notes carry the exact prefixes 'NO FREIGHT VENDOR CARD MATCHED', 'vendor card exists but was NEVER BILLED' and 'N vendor cards merged here', plus every raw spelling in the family. FREIGHT_VENDOR notes say whether the card entered by group or by name, and under which family it ships. NULL on NAMECLASS and PARTY rows.",
+      "link": "none"
+    }
+  ],
+  "drilldowns": [
+    "transporter.html",
+    "party.html",
+    "document.html",
+    "gl-account.html",
+    "derivation.html",
+    "methodology.html"
+  ],
+  "charts": [
+    {
+      "type": "waterfall",
+      "title": "From everything we dispatched to the carriers we can actually name",
+      "x": "step",
+      "y": "value",
+      "series": "kind",
+      "why": "This is the chart that explains why every carrier table on the page is smaller than the headline. Steps for Oil: DISP_VAL_L Rs 925.60 Cr -> minus UNNAMED Rs 217.21 Cr -> minus OWN_OR_SELF Rs 83.70 Cr -> minus UNUSABLE Rs 22.12 Cr -> THIRD_PARTY Rs 602.57 Cr -> minus families outside the top 40 Rs 11.56 Cr -> TRANSPORTER shown Rs 591.02 Cr. A reader who has seen it once stops asking why the carrier list does not add up to the dispatch figure, and can see that the three deductions are different in kind: one is missing data, one is our own trucks, one is a keystroke. Mart's version is the argument for fixing data entry - it loses 84% at the first step."
+    },
+    {
+      "type": "multiLine",
+      "title": "Is the transport data getting better? Three fields, 23 months",
+      "x": "GRP_KEY",
+      "y": "pct",
+      "series": "NAMED_PCT | LR_PCT | VEH_PCT",
+      "why": "MONTH scope, three series, one panel per company. Oil climbs from 22.2% named in 2024-10 to 64.0% in 2026-07; Mart is a flat ZERO until 2026-03 and then jumps 2.4 -> 17.8 -> 25.3%, which dates a process change to the month; Beverages sits at 70-90% throughout. No table shows an inflection point, and this one turns 'coverage is bad' into 'coverage was fixed on this date in this book, and here is what it looks like when it works'. The final month is always a part-month and must be drawn dashed or dropped - Oil's 2026-08 reads 44.7% against 64.0% the month before purely because the month is three weeks short."
+    },
+    {
+      "type": "pareto",
+      "title": "How few carriers this actually is",
+      "x": "GRP_LABEL",
+      "y": "DISP_VAL_L",
+      "series": "cumulative_pct",
+      "why": "TRANSPORTER rows descending with a cumulative line over THIRD_PARTY value. Oil's top 5 of 106 families are 66.6%; Mart's top 5 of 18 are 80.0%; Beverages' SINGLE largest, ARNAV TRANSPORT, is 56.2% of third-party dispatch and 47.2% of the entire book. A sorted table gives the same rows but the reader has to add up in their head to learn that a rate negotiation is a five-name conversation in Oil and a one-name dependency in Beverages. Label the bars from GRP_LABEL but show VARIANTS in the tooltip, or the reader will think each bar is one clean master record."
+    },
+    {
+      "type": "scatter",
+      "title": "What each carrier moves against what each carrier charges",
+      "x": "DISP_VAL_L",
+      "y": "FRT_SPEND_L",
+      "series": "FRT_PCT_OF_DISP",
+      "why": "One point per TRANSPORTER row with a matched vendor card, log-log, point size = DISP_DOCS, with iso-ratio diagonals at 0.5% / 2% / 10%. It separates carrier TYPES, which no ranking can: Oil's R K TANKER bills 17.2% of the goods value it carries against DELHI PUNJAB's 0.9%, because one hauls bulk oil in tankers and the other moves cased goods - so 'R K TANKER is expensive' is the wrong reading and the chart is what prevents it. The bottom-right outliers are the finding to chase: TRUEX LOGISTIC moved Rs 10.60 Cr of Oil stock and billed Rs 0.15 L (0.0%), and BABA MIRCHI NATH moved Rs 11.33 Cr and has never been billed at all. Points with VENDOR_CODE NULL must be excluded, not plotted at y=0, or 9 Oil carriers will read as free."
+    },
+    {
+      "type": "hbars",
+      "title": "The freight a supplier-group definition would have deleted",
+      "x": "GRP_LABEL",
+      "y": "FRT_SPEND_L",
+      "series": "in_group",
+      "why": "FREIGHT_VENDOR rows, coloured by whether the card entered on its supplier GROUP or on a carrier token in its NAME (parse the NOTE prefix 'OUTSIDE the transporter group'). It draws the one material defect this section has ever had: 13 of Oil's top 25 freight vendors, Rs 12.60 Cr of Rs 17.05 Cr, are filed under PURCHASE OIL or SERVICE, and the single biggest bar - R K TANKER SERVICE at Rs 9.45 Cr - is larger than the entire freight figure the section reported before the fix. Keeping the two colours on the page is what stops someone 'tidying' the vendor universe back to a group test."
+    },
+    {
+      "type": "dotplot",
+      "title": "Which transport fields are actually keyed, in which book",
+      "x": "FILL_PCT",
+      "y": "GRP_KEY",
+      "series": "company",
+      "why": "FIELD scope, eleven rows, three dots each. In one image: the bilty is the live LR field (48.6 / 3.9 / 84.6%) while U_LRNUmber - the one whose NAME says LR - is dead (0.2 / 0.0 / absent) because SAP captions it 'Bill Of Entry No.'; U_BiltAmt is filled on 4 documents in the entire Oil book, which is why freight has to come from A/P at all; the Gate Pass field has 1 / 2 / 0 entries; and deliveries (ODLN) carry a transporter on 8.1 / 0 / 0%, which is the evidence that the invoice is the dispatch document here. Beverages is visibly the only book that keys the set. The ODLN and OPDN rows must be drawn in a separate band with their own denominators named, because their DISP_DOCS is not the dispatch count."
+    },
+    {
+      "type": "groupedBars",
+      "title": "Freight per Rs 100 dispatched, month by month",
+      "x": "GRP_KEY",
+      "y": "FRT_PCT_OF_DISP",
+      "series": "company",
+      "why": "MONTH scope. It shows the level difference nobody expects - Beverages runs at 9.3% against Oil's 1.9% and Mart's 1.0%, because Beverages ships small consignments of low-value goods - and it shows the volatility that proves the ratio is not a rate: Bev swings 1.7% to 28.6% between adjacent months because a freight bill is dated when it is booked, not when the truck ran. Drawing that volatility is the honest way to publish the ratio; a single annual number invites someone to budget against it. Bev's 2026-08 cell has FRT_DOCS 1 and FRT_SPEND_L 0.00 - a real zero, not a gap - and Mart's 2024-12 has no freight cell at all."
+    },
+    {
+      "type": "stackedBars",
+      "title": "We key the paperwork better when we are shipping to ourselves",
+      "x": "GRP_KEY",
+      "y": "pct",
+      "series": "NAMED_PCT | LR_PCT | VEH_PCT",
+      "why": "PARTY scope: three bars, three measures. Oil names a carrier on 61.8% of dispatches to its own branches and 47.0% to group companies, but only 36.7% to real outside customers - the paperwork is best exactly where the commercial risk is lowest. Beverages shows the same shape inverted (75.1% external against 27.9% branch). This interaction lives nowhere else on the board: PARTY answers 'whose goods' and NAMECLASS answers 'who carried them', and only crossing them shows that coverage is a function of who the customer is."
+    }
+  ],
+  "traps": [
+    "THE FACET TRAP, and it is the big one. SCOPE stacks seven different aggregations into one array. Summing DISP_VAL_L over every row gives Oil Rs 4,293.43 Cr against a true Rs 925.60 Cr (4.64x), Mart 4.16x, Bev 4.83x. Summing FRT_SPEND_L gives 3.78x / 3.30x / 3.99x, because the same freight rupee is counted once on its MONTH row, once on its carrier's TRANSPORTER row and once on its vendor's FREIGHT_VENDOR row. Summing DISP_DOCS is worst of all at 14.08x / 13.38x / 14.64x. The company figure is the SINGLE row SCOPE=='TOTAL' and GRP_KEY=='ALL'.",
+    "DISP_DOCS ON A FIELD ROW IS NOT A DISPATCH COUNT - it is that field's own table's row count. Nine of the eleven FIELD rows read OINV and carry 19,332 (Oil), but ODLN.U_TransporterName carries 2,792 deliveries and OPDN.U_TransporterName carries 10,662 GRPOs. The eleven FIELD rows alone contribute 187,442 of the 272,264 you get by summing the column in Oil. A renderer that averages FILL_PCT across all eleven rows is averaging three different populations.",
+    "FILLED MEANS TWO UNRELATED THINGS. On a FIELD row it is a document count (Oil bilty: 9,393 documents). On a TRANSPORTER row it is KEYS_IN_FAM - how many distinct squashed spellings merged into that carrier family (Oil RKTANKER: 7). Charting FILLED without splitting by scope puts '9,393 documents' and '7 spellings' on the same axis. FILL_PCT, confusingly, is populated on FIELD rows only and is NULL on the TRANSPORTER rows where FILLED is populated.",
+    "TRANSPORTER (top 40) AND FREIGHT_VENDOR (top 25) ARE TOP-N SUBSETS AND NEVER FOOT. The build's own audit.json already files them as 'partial-coverage': Oil TRANSPORTER DISP_VAL_L is -36.1% against the TOTAL rollup, FREIGHT_VENDOR FRT_SPEND_L -5.4%, Mart TRANSPORTER -83.5%. Coverage of what they are actually subsets of is much better and is the number to quote: TRANSPORTER covers 98.1% / 100% / 99.3% of THIRD_PARTY dispatch value, and FREIGHT_VENDOR covers 94.6% / 97.2% / 99.6% of freight. NAMECLASS, PARTY and MONTH DO foot exactly and may be summed.",
+    "THE FREIGHT-VENDOR UNIVERSE IS NOT THE TRANSPORTER SUPPLIER GROUP, and defining it that way was the one material defect this section has had. R K TANKER SERVICE (Oil VENDA000671) bills Rs 9.45 Cr of pure road freight - every line 'TPT FREIGHT FROM SHEMLA TO SONIPAT' - and is filed under supplier group 110 PURCHASE OIL. On a group-only test that entire Rs 9.45 Cr vanished, which was MORE THAN THE WHOLE FREIGHT FIGURE the section then reported (Rs 5.20 Cr), and the page printed 'NO FREIGHT VENDOR CARD MATCHED' next to Oil's 4th-largest carrier. A card now qualifies on the group OR a road-carrier token in VENDOR_NAME; every FREIGHT_VENDOR row says which, in its NOTE. Read the group-only figure as roughly a THIRD of the truth in Oil. Do not 'clean this up' back to a group test.",
+    "FRT_SPEND_L IS FREIGHT BILLED, NOT FREIGHT COST. Freight accrued straight to the ledger by journal entry never reaches this section: Oil's twelve 2165xxx FREIGHT PAYABLE accounts created Rs 7.09 Cr of credits, 100% by manual JE, with Rs 1.00 Cr still outstanding (visible in the provisions section, not here), and account 5670001 FREIGHT AND CARTAGE OUTWARD carries far more debit than arrives through carrier A/P. The two are NOT additive - a provision is reversed when its bill lands - so never present 'A/P freight plus freight provisions' as total freight. Mart is the one book where the A/P route is close to complete on the accrual side (Rs 0.18 L of freight provision in total).",
+    "DISP_VAL_L IS DISPATCH VALUE, NOT TURNOVER. Sales returns (ORIN) are not netted off - a return does not un-dispatch a truck - and service invoices (DocType='S') are counted in: Oil Rs 5.56 Cr / 0.6%, Mart Rs 15.67 Cr / 4.9%, Bev none. None of the service invoices carries a transporter name, so they only dilute the coverage percentages; they never invent a carrier. This figure will not tie to any turnover figure elsewhere on the board and is not meant to.",
+    "'U_LRNUmber' IS NOT THE LR NUMBER. Its SAP caption in CUFD.Descr is 'Bill Of Entry No.', a customs field: filled on 39 of Oil's 19,332 dispatches, 1 of Mart's 25,186, and THE COLUMN DOES NOT EXIST AT ALL IN BEVERAGES (its row's NOTE says '(no such column in this book)', which is why its 0 must never be read as bad data entry). The real lorry receipt is the bilty, and LR_PCT is built on it. Rebuilding LR coverage on the field whose name says LR would report 0.2% instead of 48.6%.",
+    "THE UDF NAMES DIFFER BETWEEN BOOKS and are resolved by a three-branch shim: Oil and Mart spell them U_BilltyNumber / U_VehicleNoM, Beverages U_BiltyNumber / U_VechileNom. Only those two columns are shimmed. FIELDSTAT and DISP name six more UDFs literally (U_TransporterName, U_TransporterInvoice, U_DriverName, U_BiltyDate, U_BiltAmt, U_Ship_From), so a FOURTH company book missing any of them would fail at HANA compile time, not degrade gracefully. If LR_PCT and VEH_PCT ever come back 0 with a NOTE reading 'UDF SHIM MISS', the shim has missed the book - that is a broken build, not a book with no bilty numbers.",
+    "U_TransporterName IS UNVALIDATED FREE TEXT - CUFD.EditType is blank and UFD1 holds zero valid values in all three books. Oil holds 234 raw spellings, Bev 147, and among them are vehicle registration numbers and mobile numbers typed into the carrier field: Mart's THIRD_PARTY list contains '9896437186' (Rs 0.18 Cr), 'HR55Ak6402', '9958007610' and '6006399745'; Beverages' contains 'DL01LY5728', 'UP85CT2177', 'DL01LT9351', '9718858411', a bare 'A' and the literal string 'Transport Name'; Oil has a bare 'd' worth Rs 0.88 Cr. They are all scored THIRD_PARTY and all appear in the TRANSPORTER scope as carriers. This is also why GRP_LABEL is sometimes a JSON integer.",
+    "NAME_CLASS LEAKS OWN-FLEET DISPATCHES INTO THIRD_PARTY. The own-fleet test catches keys ENDING in VEHICLE or VEHICAL, so 'AMAZON VEHICLE' and 'BARU SAHIB VEHICLE' are caught - but Mart's 'Amazon vehicle pickup' (Rs 3.26 Cr on 41 invoices, its 6th largest 'carrier' by value) ends in PICKUP and is scored THIRD_PARTY, as is Beverages' plain 'BARU SAHIB'. trn-ownfleet-value is therefore a LOWER BOUND, understated by at least Rs 3.26 Cr in Mart, and Mart's carrier ranking has a customer's own truck sitting in it.",
+    "THE FAMILY COLLAPSE UNDER-MERGES, AND IT SPLITS CARRIERS AWAY FROM THEIR VENDOR CARD. Families are built by a two-sided prefix test with a 6-character floor, so spellings that are not prefixes of one another stay apart: 'Bombey Sri Nagar' (Rs 13.56 Cr) and 'Bombe Sri Nagar' (Rs 1.90 Cr) are separate families from carded BOMBAYSRINAGAR; 'Mahaveer Transport' (Rs 8.12 Cr) is separate from carded MAHAVIRTRANSPORT; 'SONIPAT GOODS' (Rs 2.51 Cr) from carded SONEPATGOODS. Rs 26.99 Cr of Oil's Rs 34.62 Cr of 'no vendor card matched' is this - a spelling problem, not a missing vendor. Under-merging never inflates a carrier, but it does make the page tell an operator that a carrier is unbilled when the same carrier is billed one row away.",
+    "'NO FREIGHT VENDOR CARD MATCHED' AND 'NEVER BILLED' ARE DIFFERENT FACTS and the SQL keeps them as different NOTE strings on purpose. The first means the name never matched a supplier card. The second means the card exists and carries no A/P at all - Oil has exactly one, BABA MIRCHI NATH TRANSPORT CO (VENDA000745), which moved Rs 11.33 Cr of goods and has never been billed. Conflating them turns a genuine unbilled-carrier finding into a name-matching complaint.",
+    "VARIANTS IS ADDITIVE ACROSS NAMECLASS AND NOT ACROSS MONTH. The four NAMECLASS rows partition the spellings and sum exactly to the TOTAL (Oil 196+32+6+0 = 234). Months share spellings, so Oil's 23 MONTH rows sum to 821, Mart's to 65 and Bev's to 416. A 'transporters used' figure built by totalling the month column overstates Oil 3.5x.",
+    "FRT_DOCS COUNTS A/P INVOICES ONLY. A/P credit notes contribute 0 to the count while still subtracting from FRT_SPEND_L (sql line 228), so a period with heavy freight credit notes shows fewer documents than the money implies, and average-bill-value computed as FRT_SPEND_L / FRT_DOCS is biased low. Bev's 2026-08 MONTH row has FRT_DOCS 1 and FRT_SPEND_L 0.00 - a real zero, not a missing value.",
+    "THE MONTH ROW'S FREIGHT IS DRIVEN OFF DISPATCH MONTHS. MONTH rows come from grouping the dispatch population, and freight is attached by a correlated subquery on the same YM - so a freight bill booked in a month with NO dispatches has no cell to land in and silently disappears from the month series. It happens to reconcile today (Oil 1,802.06 L both ways, Mart 325.72 vs 325.73, Bev 203.03 vs 203.04), and Mart's 2024-12 row already shows the shape of the failure with a NULL freight cell. The TOTAL row, not the month series, is the authority on freight.",
+    "THE TWO SIDES OF FRT_PCT_OF_DISP ARE DATED INDEPENDENTLY. A freight bill is dated when it is booked, not when the truck ran, so the monthly ratio swings hard on small books - Beverages moves between 1.7% and 28.6% in adjacent months. Read it as a trend; never quote a month's figure as a per-consignment rate or use it to price a lane.",
+    "FRT_PCT_OF_DISP IS ROUNDED TO 1 DECIMAL AND HAS ALREADY MOVED. Oil's TOTAL row currently prints 1.9 where pipeline/notes/transporter.md and README.md both quote 2.0% - the true ratio slipped from 1.9507 to 1.9469 on one extra day of dispatches. Compute the percentage from FRT_SPEND_L and DISP_VAL_L rather than reading the rounded column, and never quote the notes' figure as live.",
+    "THE PIPELINE NOTES ARE A BUILD BEHIND. pipeline/notes/transporter.md records as-of 2026-08-21 (Oil 19,309 docs / 92,379.73 L / freight 2.0% of dispatch); the live slice is as-of 2026-08-22 (19,332 docs / 92,560.36 L / 1.9%). Every figure in that file is a lead, not a live number - re-derive from the slice before publishing anything.",
+    "EVERY MONEY COLUMN ENDS _L AND IS LAKHS, rounded to 2 decimals. So the finest resolution the section can express is Rs 100, and any cross-check tolerance must be at least Rs 500 (Oil's headline reads Rs 9,256,036,000 against return-note's Rs 9,256,036,260.99). Multiply by 1e5 for rupees, and multiply exactly once - the *_PCT columns are already 0-100 and DISP_DOCS / FRT_DOCS / FILLED / VARIANTS are counts.",
+    "THE 2024-09-30 EXCLUSION IS OIL-ONLY AND IS NOT APPLIED CONSISTENTLY. Oil has 11,078 live invoices dated exactly that day (Rs 74.74 Cr of go-live openings, none carrying a transporter); Mart and Bev have zero rows on that date in OINV, OPCH, ORPC and ODLN, so the filter is a no-op for them. But the ODLN branch of FIELDSTAT (sql line 324) omits the date exclusion that every other branch carries. The effect is almost certainly nil - I did not measure ODLN rows on 2024-09-30 - and it means the ODLN fill rate is computed on a marginally different population from the OINV ones.",
+    "GROUP TOTALS ARE NOT ELIMINATED. Adding oil + mart + bev double counts JIVO's inter-book movement - Oil's Rs 305.64 Cr of dispatches to CUSTA000606 JIVO MART is the mirror of Mart's own inward stock. Per-company is the figure that means something, and the PARTY scope exists so the reader can see exactly how much would be double counted (Oil 40.9% of its headline).",
+    "THE PARTY CLASSIFIER IS A HEURISTIC, NOT A REGISTER: group name contains BRANCH, or card name contains JIVO. It catches all 23 of C-0005's settled intercompany CardCodes today - nine by group, the rest only by name, including CUSTA000606 JIVO MART which sits in card group 'DELHI' - but a new group entity named otherwise would score EXTERNAL and inflate the trade figure silently. Unlike the vendor side of the board there is no STAFF class here at all.",
+    "DO NOT TOTAL THE DETAIL GRID'S FREIGHT COLUMN. transporter-detail.sql discloses it in its own header and the live numbers confirm it: the grid carries Oil Rs 10.12 Cr against the Rs 18.02 Cr this section reports, Mart Rs 0.66 Cr against Rs 3.26 Cr, Bev Rs 1.85 Cr against Rs 2.03 Cr. Two structural causes, both inherent to the (family, month) grain: families outside the top 20 fold into ZZ_OTHER, whose freight is NULL by design, and a bill booked in a month that carrier did not dispatch in has no cell. The grid's DISPATCH columns, by contrast, foot exactly to the THIRD_PARTY row and are safe.",
+    "ZZ_OTHER IS IN THE DETAIL AND NOT IN THE SUMMARY. The detail grid carries a synthetic ZZ_OTHER family (Oil 23 rows / Rs 56.24 Cr, Bev 23 rows / Rs 0.44 Cr, Mart none) so its months still foot to the third-party total. It is not a carrier, it has no vendor card and its freight is deliberately NULL. Joining detail rows to summary TRANSPORTER rows on FAM_KEY silently drops it, which is correct for a carrier list and wrong for a total.",
+    "GRP_LABEL IS NOT ALWAYS A STRING. On the rows where a phone number was typed into the transporter field, JSON serialises GRP_LABEL as an integer - 3 rows in Mart, 1 in Bev. Any .upper(), .startswith() or string slice on it will raise. Coerce with str() first. SORT_KEY, by contrast, is always a string even though it holds 1..7."
+  ],
+  "empty_states": [
+    "Section error or zero rows for a company: render empty('SAP returned no transporter rows for this book - the query failed, this is not a book with no dispatches') with the error text. All three books have always returned 82-107 rows; a zero here is a broken build. Note that the query is designed to survive a genuinely empty period - forced to --as-of 2020-01-01 it still returns 12 rows with a readable TOTAL - so even an empty book should not produce zero rows.",
+    "manifest.stale is true, or generated_at is more than 30 minutes old in working hours: the dispatch and freight panels keep their numbers but must say how old they are. This section moves every single day - Oil gained 23 invoices and Rs 1.81 Cr between the 08-21 and 08-22 builds, enough to flip the printed freight ratio from 2.0% to 1.9%.",
+    "NAMECLASS/UNUSABLE row absent for Mart: that book has no placeholder-text dispatches at all. Render empty('Mart has never had NA, NIL or X typed into the transporter field') rather than a Rs 0 slice, which reads as 'the placeholders were cleaned up'. Watch for the same shape appearing in the other two books after a data cleanup.",
+    "PARTY/INTERCOMPANY or PARTY/BRANCH with DISP_VAL_L present but EXT_DISP_VAL_L = 0: that zero is structural, not missing. Every non-EXTERNAL row has EXT_DISP_DOCS 0 and EXT_DISP_VAL_L 0 by construction. Render it as '- (not external by definition)', never as Rs 0, and never let a chart plot it as a real zero-height bar beside EXTERNAL.",
+    "TRANSPORTER row with VENDOR_CODE NULL: render empty('no supplier card matched this spelling - check whether the same carrier is billed under a different spelling before concluding it is unbilled') and, where a fuzzy match exists, name it. Do NOT render a Rs 0 freight cell: 9 Oil, 9 Mart and 13 Bev carriers are in this state and Rs 26.99 Cr of Oil's is a near-variant of a carded family.",
+    "TRANSPORTER row with a VENDOR_CODE and FRT_SPEND_L = 0: this is the genuinely different 'NEVER BILLED' state and it is a real, meaningful zero. Render it as 'Rs 0 - vendor card exists, no A/P invoice on file' with the card code. Oil's BABA MIRCHI NATH TRANSPORT CO carries Rs 11.33 Cr of dispatches against it; that is a finding for Accounts, not an empty cell.",
+    "MONTH row with FRT_SPEND_L NULL (Mart 2024-12): no freight document fell in that month. Render '-' with the words 'no freight bill booked in this month', not Rs 0, and drop the point from the ratio series rather than plotting 0% - the two sides are dated independently and a zero here says nothing about what the trucks did.",
+    "MONTH row with FRT_DOCS > 0 and FRT_SPEND_L = 0.00 (Bev 2026-08): a real zero - bills and credit notes netted out, or a nil-value bill. Print 'Rs 0 on 1 bill' rather than suppressing the row.",
+    "FIELD row with FILLED = 0: distinguish the two cases in words. Beverages' U_LRNUmber row reads 0 because THE COLUMN DOES NOT EXIST there - its NOTE says '(no such column in this book)' and it must render as 'not in this book', never as 'never filled'. Mart's ODLN.U_TransporterName row reads 0 because the column exists and nobody has ever used it in 6,023 deliveries, which is a data-entry fact and should say so.",
+    "FIELD row for U_BiltAmt: filled on 4 documents in Oil and 0 in Mart and Bev. Do not render it as a fill-rate bar at 0.0% next to the others - render empty('the freight amount is not kept on the dispatch document in any book; that is why cost comes from A/P') , because a 0% bar invites someone to try to fix data entry on a field the business has never used.",
+    "Carrier ratio panel where DISP_VAL_L is present and FRT_SPEND_L is NULL: render empty('this carrier has no matched vendor card, so there is no cost to divide') rather than a 0% ratio. FRT_PCT_OF_DISP is NULL on exactly those rows and coercing it to 0 puts unbilled carriers at the cheap end of every ranking.",
+    "Any KPI whose check could not run (the return-note, provisions or detail slice is missing or errored): render the KPI with an amber check dot linking to the derivation, not a green one and not a silent pass. Four of this section's KPIs check against OTHER slices, so a partial build degrades their evidence without changing their number.",
+    "Freight total for a book where the notes say the section under-reports (every book, for the accrual channel): the panel must carry the words 'billed by carriers' in its label, not 'freight cost'. There is no build state in which the accrual gap is zero for Oil, so this is a permanent label, not a conditional empty state."
+  ]
+}

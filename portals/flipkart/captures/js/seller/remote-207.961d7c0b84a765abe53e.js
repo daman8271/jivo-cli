@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcoe=self.webpackChunkcoe||[]).push([[207],{98207:(e,s,t)=>{t.r(s),t.d(s,{default:()=>i});t(60954);var c=t(74848);const i=function(){return(0,c.jsx)("img",{src:"https://static-assets-web.flixcart.com/fk-p-fk-sellerhub/images/selectionWidgetLogo1696572004.svg",alt:"selection-isnights-widget-icon"})}}}]);

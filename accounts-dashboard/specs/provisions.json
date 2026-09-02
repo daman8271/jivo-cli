@@ -1,0 +1,1154 @@
+{
+  "section": "provisions",
+  "title": "Provisions Register",
+  "tables": "OACT OJDT JDT1",
+  "blurb": "For every provision and accrual liability account in the book: what was provided, what has since been reversed or utilised, what is still standing, and how old the un-reversed balance is.",
+  "grain": "One summary row = one POSTABLE liability G/L account that qualifies for the register (family A_PROVISIONS: any account under the non-postable title 'PROVISIONS'; B_EXPENSES_PAYABLE: under 'EXPENSES PAYABLE' and either moved or holds a balance; C_OTHER_BY_MEMO: any other postable liability account whose JE memo/line memo says PROVISION, gated at >= Rs 5 L memo-tagged credit AND >= 25% of that account's total credit). Account codes are unique within a company (verified 53/40/39 rows, 0 duplicates). There is NO detail grain: provisions has summary rows only \u2014 there is no provisions-detail.sql and data.json carries detail:{} for this section, so no drill to individual JDT1 journal lines is possible from this data.",
+  "faceted": false,
+  "facet_note": "NOT faceted. There is no TOTAL/CLASS/MONTH/VENDOR stacking and no ZZ_TOTAL row: every row is one G/L account and summing OUTSTANDING_CR_L over all rows is the correct headline. The faceting trap in this section is DIFFERENT and just as fatal: CROSSED_YEAREND_L and MIGRATED_OPENING_L are RE-CUTS of the same FIFO residual already counted in AGE_0_30_L..AGE_365P_L. Adding them to the four AGE_* buckets double counts (Oil: +Rs 3.23 Cr on a Rs 5.99 Cr base). The only additive bucket set is the four AGE_* columns, and they sum to OUTSTANDING_CR_L.",
+  "kpis": [
+    {
+      "id": "prov-standing",
+      "label": "Still provided for",
+      "unit": "INR",
+      "column": "OUTSTANDING_CR_L",
+      "row_filter": "True",
+      "agg": "sum",
+      "formula": "SUM over accounts of MAX(0, SUM(JDT1.Credit) - SUM(JDT1.Debit)) x 1e5  (column is in LAKHS)",
+      "terms": [
+        {
+          "label": "Provisions created (lifetime credits)",
+          "col": "CREATED_CR_L",
+          "op": "+",
+          "source": "JDT1.Credit",
+          "note": "literally SUM(\"Credit\"), so a line posted as a NEGATIVE credit reduces this instead of showing as a reversal"
+        },
+        {
+          "label": "Reversed / utilised (lifetime debits)",
+          "col": "REVERSED_DR_L",
+          "op": "-",
+          "source": "JDT1.Debit",
+          "note": "includes both legs of storno reversals; OJDT has no CANCELED column so cancellation is netted, not filtered"
+        },
+        {
+          "label": "Credit balance still standing, floored at zero per account",
+          "col": "OUTSTANDING_CR_L",
+          "op": "=",
+          "source": "OACT+JDT1",
+          "note": "GREATEST(0, CR-DR) per account \u2014 the floor is why this is GROSS, see prov-net-position"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Over-reversed accounts (debit balances)",
+          "row_filter": "r.get('DEBIT_BALANCE_FLAG')=='Y'",
+          "why": "floored at 0 by GREATEST(0,...) \u2014 Rs 1.37 Cr Oil / Rs 16.63 L Mart / Rs 5.15 L Bev is NOT netted off; published separately as prov-over-reversed"
+        },
+        {
+          "label": "Statutory dues (TDS 2133xxx block, SUNDRY CREDITOR SERVICE)",
+          "row_filter": "not qualifying under C_OTHER_BY_MEMO materiality gate",
+          "why": "sql lines 244-246: memo-tagged credit must be >= Rs 5 L AND >= 25% of the account's total credit; without it the whole TDS-withholding block enters the register"
+        },
+        {
+          "label": "Dormant B_EXPENSES_PAYABLE family accounts",
+          "row_filter": "FAMILY=='B_EXPENSES_PAYABLE' and N_LINES==0 and abs(OACT.CurrTotal)<=1",
+          "why": "sql lines 238-239; verified every excluded account has CurrTotal 0.00 and zero JE lines \u2014 6 Oil / 15 Mart / 14 Bev"
+        }
+      ],
+      "sql_lines": [
+        146,
+        210
+      ],
+      "caveats": [
+        "P-GROSS-NOT-NET",
+        "P-RECUT-BUCKETS",
+        "P-LAKHS",
+        "P-FIFO",
+        "P-NO-DETAIL"
+      ],
+      "check": {
+        "method": "Re-derive from OACT.\"CurrTotal\" alone \u2014 SAP's own stored trial-balance figure for the account. This route touches NO JDT1 line, runs NO CTE and NO FIFO; it is a different SAP table answering the same question. Tolerance Rs 1,000 x row count (every _L column is rounded to 2 dp of a lakh = Rs 1,000 granularity), never exact equality. Valid only while as_of = today: CurrTotal is a LIFETIME balance, and it coincides with the as-of figure only because there are zero future-dated JE lines on register accounts (verified). At any historical as-of this check must be skipped, not shown red.",
+        "recipe": "sum(max(0.0, -float(r['OACT_CURRTOTAL_L'] or 0)) for r in rows) * 1e5   # measured delta vs primary: oil 0, mart 0, bev 0"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "sort": "OUTSTANDING_CR_L",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 59901000,
+        "mart": 37460000,
+        "bev": 5964000
+      }
+    },
+    {
+      "id": "prov-net-position",
+      "label": "Net position of the register",
+      "unit": "INR",
+      "column": "NET_DR_MINUS_CR_L",
+      "row_filter": "True",
+      "agg": "sum",
+      "formula": "-SUM(NET_DR_MINUS_CR_L) x 1e5  =  prov-standing - prov-over-reversed",
+      "terms": [
+        {
+          "label": "Still provided for (gross)",
+          "col": "OUTSTANDING_CR_L",
+          "op": "+",
+          "source": "JDT1",
+          "note": "credit balances only"
+        },
+        {
+          "label": "Over-reversed (debit balances)",
+          "col": "DEBIT_BAL_L",
+          "op": "-",
+          "source": "JDT1",
+          "note": "payable accounts sitting in debit"
+        },
+        {
+          "label": "Net credit the register actually carries",
+          "col": "NET_DR_MINUS_CR_L",
+          "op": "=",
+          "source": "JDT1",
+          "note": "SIGN: the column is Debit-Credit, so NEGATIVE = still provided for. Negate before display or the bars point the wrong way."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        146,
+        211
+      ],
+      "caveats": [
+        "P-SIGN",
+        "P-GROSS-NOT-NET",
+        "P-LAKHS"
+      ],
+      "check": {
+        "method": "Rebuild from the two lifetime movement columns instead of the netted column: SUM(CREATED_CR_L) - SUM(REVERSED_DR_L). Different columns, different rounding path (round-then-sum on two columns vs round-after-subtract on one), so it exercises the arithmetic independently.",
+        "recipe": "(sum(float(r['CREATED_CR_L'] or 0) for r in rows) - sum(float(r['REVERSED_DR_L'] or 0) for r in rows)) * 1e5   # measured delta: oil 0, mart 0, bev +2,000 (2 dp-of-lakh rounding)"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "prov-net-position",
+          "co": "<company>"
+        }
+      },
+      "live": {
+        "oil": 46216000,
+        "mart": 35797000,
+        "bev": 5449000
+      }
+    },
+    {
+      "id": "prov-over-reversed",
+      "label": "Over-reversed (debit balances)",
+      "unit": "INR",
+      "column": "DEBIT_BAL_L",
+      "row_filter": "r.get('DEBIT_BALANCE_FLAG')=='Y'",
+      "agg": "sum",
+      "formula": "SUM over accounts of MAX(0, SUM(JDT1.Debit) - SUM(JDT1.Credit)) x 1e5",
+      "terms": [
+        {
+          "label": "Debit balance per account",
+          "col": "DEBIT_BAL_L",
+          "op": "=",
+          "source": "JDT1",
+          "note": "a liability account in debit: more reversed/paid than was ever provided"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        209,
+        224
+      ],
+      "caveats": [
+        "P-V1-COUNT-ONLY",
+        "P-GROSS-NOT-NET",
+        "P-LAKHS"
+      ],
+      "check": {
+        "method": "Re-derive from OACT.\"CurrTotal\" only (SAP's stored balance, no JDT1): sum the POSITIVE CurrTotals, i.e. the debit side. Same independence argument as prov-standing.",
+        "recipe": "sum(max(0.0, float(r['OACT_CURRTOTAL_L'] or 0)) for r in rows) * 1e5   # measured delta: oil 0, mart 0, bev 0"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "filter": "DEBIT_BALANCE_FLAG=Y"
+        }
+      },
+      "live": {
+        "oil": 13685000,
+        "mart": 1663000,
+        "bev": 515000
+      }
+    },
+    {
+      "id": "prov-over-reversed-count",
+      "label": "Accounts sitting in debit",
+      "unit": "count",
+      "column": "DEBIT_BALANCE_FLAG",
+      "row_filter": "r.get('DEBIT_BALANCE_FLAG')=='Y'",
+      "agg": "sum",
+      "formula": "COUNT(accounts where SUM(Debit) - SUM(Credit) > Rs 1)",
+      "terms": [
+        {
+          "label": "Flagged accounts",
+          "col": "DEBIT_BALANCE_FLAG",
+          "op": "=",
+          "source": "JDT1",
+          "note": "sql line 224; the Rs 1 threshold suppresses float dust"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        224,
+        224
+      ],
+      "caveats": [
+        "P-V1-COUNT-ONLY"
+      ],
+      "check": {
+        "method": "Recount from the money column rather than the flag: accounts whose NET_DR_MINUS_CR_L is strictly positive. Tests the flag against the number it is supposed to describe.",
+        "recipe": "len([r for r in rows if float(r['NET_DR_MINUS_CR_L'] or 0) > 0])   # measured: oil 8 vs 8, mart 7 vs 7, bev 5 vs 5"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "filter": "DEBIT_BALANCE_FLAG=Y"
+        }
+      },
+      "live": {
+        "oil": 8,
+        "mart": 7,
+        "bev": 5
+      }
+    },
+    {
+      "id": "prov-aged-365p",
+      "label": "Standing more than a year",
+      "unit": "INR",
+      "column": "AGE_365P_L",
+      "row_filter": "True",
+      "agg": "sum",
+      "formula": "SUM(AGE_365P_L) x 1e5 \u2014 FIFO residual whose own RefDate is more than 365 days before as_of",
+      "terms": [
+        {
+          "label": "0-30 days",
+          "col": "AGE_0_30_L",
+          "op": "+",
+          "source": "JDT1.RefDate",
+          "note": ""
+        },
+        {
+          "label": "31-90 days",
+          "col": "AGE_31_90_L",
+          "op": "+",
+          "source": "JDT1.RefDate",
+          "note": ""
+        },
+        {
+          "label": "91-365 days",
+          "col": "AGE_91_365_L",
+          "op": "+",
+          "source": "JDT1.RefDate",
+          "note": ""
+        },
+        {
+          "label": "365 days +",
+          "col": "AGE_365P_L",
+          "op": "+",
+          "source": "JDT1.RefDate",
+          "note": "the four buckets sum to OUTSTANDING_CR_L by construction (post 2026-08-21 signed-FIFO fix)"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "CROSSED_YEAREND_L and MIGRATED_OPENING_L",
+          "row_filter": "never add these",
+          "why": "P-RECUT-BUCKETS \u2014 they are re-cuts of the SAME residual, not extra buckets"
+        }
+      ],
+      "sql_lines": [
+        164,
+        218
+      ],
+      "caveats": [
+        "P-FIFO",
+        "P-MIGRATION",
+        "P-RECUT-BUCKETS",
+        "P-LAKHS"
+      ],
+      "check": {
+        "method": "Derive it as the leftover: total standing minus the three younger buckets. Independent of reading AGE_365P_L, and it fails loudly if the four-bucket / OUTSTANDING_CR_L invariant ever breaks again (it broke once, on negative-signed credits, fixed 2026-08-21).",
+        "recipe": "(sum(float(r['OUTSTANDING_CR_L'] or 0) for r in rows) - sum(float(r['AGE_0_30_L'] or 0)+float(r['AGE_31_90_L'] or 0)+float(r['AGE_91_365_L'] or 0) for r in rows)) * 1e5   # measured delta: oil +1,000, mart -1,000, bev 0 (rounding)"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "filter": "AGE_365P_L>0"
+        }
+      },
+      "live": {
+        "oil": 15971000,
+        "mart": 70000,
+        "bev": 0
+      }
+    },
+    {
+      "id": "prov-migrated-opening",
+      "label": "Of that, the go-live opening balance",
+      "unit": "INR",
+      "column": "MIGRATED_OPENING_L",
+      "row_filter": "True",
+      "agg": "sum",
+      "formula": "SUM(residual credit whose RefDate = 2024-09-30) x 1e5 \u2014 the SAP go-live opening entry",
+      "terms": [
+        {
+          "label": "Residual dated exactly 2024-09-30",
+          "col": "MIGRATED_OPENING_L",
+          "op": "=",
+          "source": "JDT1.RefDate = GOLIVE",
+          "note": "sql lines 65-66, 191, 222; a re-cut of the residual, always a subset of AGE_365P_L once as_of is past 2025-09-30"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        184,
+        222
+      ],
+      "caveats": [
+        "P-MIGRATION",
+        "P-RECUT-BUCKETS",
+        "P-NOT-DISPLAYED-IN-V1"
+      ],
+      "check": {
+        "method": "Two-part, both independent of re-reading the column. (a) Containment invariant per row: 0 <= MIGRATED_OPENING_L <= CROSSED_YEAREND_L <= OUTSTANDING_CR_L, and MIGRATED_OPENING_L > 0 only where OLDEST_OPEN_DATE = 2024-09-30 (verified: 0 violations in all 132 rows). (b) Monotonicity across history.jsonl: go-live credits can only be consumed, never created, so this figure must never RISE between builds within a company \u2014 a rise means the FIFO re-attributed, which is a real defect.",
+        "recipe": "violations = [r['ACCT_CODE'] for r in rows if not (0 <= float(r['MIGRATED_OPENING_L'] or 0) <= float(r['CROSSED_YEAREND_L'] or 0)+0.011 <= float(r['OUTSTANDING_CR_L'] or 0)+0.022) or (float(r['MIGRATED_OPENING_L'] or 0) > 0 and r.get('OLDEST_OPEN_DATE') != '2024-09-30')]; assert not violations  # then: value <= previous build's value in history.jsonl. NOTE the naive alt route sum(AGE_365P_L for rows with FIRST_POST=='2024-09-30') OVERSTATES it (oil 15,971,000 vs 15,222,000) because those accounts also hold post-go-live residual older than a year \u2014 do not use it as the check."
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "filter": "MIGRATED_OPENING_L>0"
+        }
+      },
+      "live": {
+        "oil": 15222000,
+        "mart": 0,
+        "bev": 0
+      }
+    },
+    {
+      "id": "prov-aged-365p-ex-migrated",
+      "label": "Genuinely old, excluding the migration",
+      "unit": "INR",
+      "column": "AGE_365P_L",
+      "row_filter": "True",
+      "agg": "sum",
+      "formula": "SUM(AGE_365P_L) - SUM(MIGRATED_OPENING_L), both x 1e5",
+      "terms": [
+        {
+          "label": "Standing more than a year",
+          "col": "AGE_365P_L",
+          "op": "+",
+          "source": "JDT1",
+          "note": ""
+        },
+        {
+          "label": "Less the 2024-09-30 go-live opening",
+          "col": "MIGRATED_OPENING_L",
+          "op": "-",
+          "source": "JDT1",
+          "note": "balance-sheet carry-forward, not an unreviewed provision"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        184,
+        222
+      ],
+      "caveats": [
+        "P-MIGRATION",
+        "P-FIFO"
+      ],
+      "check": {
+        "method": "Account-level rebuild: for every account whose OLDEST_OPEN_DATE is NOT 2024-09-30, take its whole AGE_365P_L; for accounts that ARE go-live-dated, take AGE_365P_L - MIGRATED_OPENING_L. Summing per account rather than netting two book totals catches an account where the two columns disagree.",
+        "recipe": "sum((float(r['AGE_365P_L'] or 0) - float(r['MIGRATED_OPENING_L'] or 0)) for r in rows) * 1e5   # per-account netting; oil 749,000 / mart 70,000 / bev 0"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "filter": "AGE_365P_L>0"
+        }
+      },
+      "live": {
+        "oil": 749000,
+        "mart": 70000,
+        "bev": 0
+      }
+    },
+    {
+      "id": "prov-never-reversed",
+      "label": "Never once reversed",
+      "unit": "INR",
+      "column": "OUTSTANDING_CR_L",
+      "row_filter": "r.get('NEVER_REVERSED')=='Y'",
+      "agg": "sum",
+      "formula": "SUM(OUTSTANDING_CR_L where SUM(Credit) > 0 AND SUM(Debit) = 0) x 1e5",
+      "terms": [
+        {
+          "label": "Outstanding on accounts with zero lifetime debits",
+          "col": "OUTSTANDING_CR_L",
+          "op": "=",
+          "source": "JDT1",
+          "note": "sql line 223"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Never-posted accounts",
+          "row_filter": "r.get('N_LINES')==0",
+          "why": "the flag reads 'N' for an account with no postings at all (TOT_CR = 0), so a nil dormant row is not counted here \u2014 correct, but the flag name is misleading"
+        }
+      ],
+      "sql_lines": [
+        223,
+        223
+      ],
+      "caveats": [
+        "P-NEVER-REVERSED-FLAG",
+        "P-MIGRATION"
+      ],
+      "check": {
+        "method": "Recompute the flag from the money columns instead of trusting it: accounts with REVERSED_DR_L = 0 and CREATED_CR_L > 0.",
+        "recipe": "sum(float(r['OUTSTANDING_CR_L'] or 0) for r in rows if float(r['REVERSED_DR_L'] or 0)==0 and float(r['CREATED_CR_L'] or 0)>0) * 1e5   # measured: oil 15,679,000 vs 15,679,000, mart 0 vs 0, bev 0 vs 0"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "filter": "NEVER_REVERSED=Y"
+        }
+      },
+      "live": {
+        "oil": 15679000,
+        "mart": 0,
+        "bev": 0
+      }
+    },
+    {
+      "id": "prov-created-fytd",
+      "label": "Provided this financial year",
+      "unit": "INR",
+      "column": "CREATED_FYTD_L",
+      "row_filter": "True",
+      "agg": "sum",
+      "formula": "SUM(JDT1.Credit where RefDate >= FY_START) x 1e5; FY_START = 1 April of the current Indian FY (sql lines 67-70)",
+      "terms": [
+        {
+          "label": "Credits since 1 Apr",
+          "col": "CREATED_FYTD_L",
+          "op": "=",
+          "source": "JDT1.Credit",
+          "note": "RefDate, not posting date \u2014 JIVO dates JEs by reference date"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        153,
+        213
+      ],
+      "caveats": [
+        "P-FY-BOUNDARY",
+        "P-LAKHS"
+      ],
+      "check": {
+        "method": "No second column carries an FY split, so the check is (a) a containment bound per account \u2014 CREATED_FYTD_L <= CREATED_CR_L on every row (0 violations measured in all 132 rows) \u2014 and (b) monotonicity in history.jsonl: within one financial year this figure can only rise between builds; a fall means either a backdated reversal was booked as a negative credit or the FY_START branch flipped. Both are genuinely different routes from re-summing the column.",
+        "recipe": "assert not [r['ACCT_CODE'] for r in rows if float(r['CREATED_FYTD_L'] or 0) > float(r['CREATED_CR_L'] or 0) + 0.011]; assert value >= previous_same_fy_value_from_history"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "sort": "CREATED_FYTD_L",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 167504000,
+        "mart": 91310000,
+        "bev": 22168000
+      }
+    },
+    {
+      "id": "prov-reversed-fytd",
+      "label": "Reversed or utilised this financial year",
+      "unit": "INR",
+      "column": "REVERSED_FYTD_L",
+      "row_filter": "True",
+      "agg": "sum",
+      "formula": "SUM(JDT1.Debit where RefDate >= FY_START) x 1e5",
+      "terms": [
+        {
+          "label": "Debits since 1 Apr",
+          "col": "REVERSED_FYTD_L",
+          "op": "=",
+          "source": "JDT1.Debit",
+          "note": ""
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        154,
+        214
+      ],
+      "caveats": [
+        "P-FY-BOUNDARY",
+        "P-LAKHS"
+      ],
+      "check": {
+        "method": "Same shape as prov-created-fytd: per-account containment REVERSED_FYTD_L <= REVERSED_DR_L (0 violations measured), plus within-FY monotonicity across history.jsonl.",
+        "recipe": "assert not [r['ACCT_CODE'] for r in rows if float(r['REVERSED_FYTD_L'] or 0) > float(r['REVERSED_DR_L'] or 0) + 0.011]; assert value >= previous_same_fy_value_from_history"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "sort": "REVERSED_FYTD_L",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 180727000,
+        "mart": 75574000,
+        "bev": 19113000
+      }
+    },
+    {
+      "id": "prov-net-fytd",
+      "label": "Net movement this financial year",
+      "unit": "INR",
+      "column": "CREATED_FYTD_L",
+      "row_filter": "True",
+      "agg": "sum",
+      "formula": "SUM(CREATED_FYTD_L) - SUM(REVERSED_FYTD_L), x 1e5. NEGATIVE = the book released more provision than it raised this year.",
+      "terms": [
+        {
+          "label": "Provided this FY",
+          "col": "CREATED_FYTD_L",
+          "op": "+",
+          "source": "JDT1.Credit",
+          "note": ""
+        },
+        {
+          "label": "Reversed this FY",
+          "col": "REVERSED_FYTD_L",
+          "op": "-",
+          "source": "JDT1.Debit",
+          "note": ""
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        153,
+        214
+      ],
+      "caveats": [
+        "P-FY-BOUNDARY",
+        "P-OPENING-NOT-AVAILABLE"
+      ],
+      "check": {
+        "method": "Roll-forward identity against history.jsonl: (standing at FY start, i.e. the first prov-standing recorded on or after 1 Apr) + net FYTD movement should track today's prov-standing, allowing for the FIFO floor at zero on over-reversed accounts. This is a time-series route, not a re-sum. It is only available once history.jsonl spans the FY start; until then render the KPI with its check dot marked 'no history yet', never green.",
+        "recipe": "abs((history_first_in_fy['prov-net-position'] + value) - current['prov-net-position']) <= 1000 * len(rows)  # requires history.jsonl to reach 2026-04-01; today it does not, so this check is NOT YET RUNNABLE and must report unavailable rather than ok"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "prov-net-fytd",
+          "co": "<company>"
+        }
+      },
+      "live": {
+        "oil": -13223000,
+        "mart": 15736000,
+        "bev": 3055000
+      }
+    },
+    {
+      "id": "prov-dormant-standing",
+      "label": "Standing on accounts nobody has touched in 90 days",
+      "unit": "INR",
+      "column": "OUTSTANDING_CR_L",
+      "row_filter": "float(r.get('OUTSTANDING_CR_L') or 0) > 0 and (r.get('DAYS_SINCE_LAST_POST') or 0) >= 90",
+      "agg": "sum",
+      "formula": "SUM(OUTSTANDING_CR_L where OUTSTANDING_CR_L > 0 AND DAYS_SINCE_LAST_POST >= 90) x 1e5",
+      "terms": [
+        {
+          "label": "Days since the last posting",
+          "col": "DAYS_SINCE_LAST_POST",
+          "op": "=",
+          "source": "MAX(JDT1.RefDate)",
+          "note": "sql line 206; NULL on accounts that were never posted"
+        },
+        {
+          "label": "Balance still carried",
+          "col": "OUTSTANDING_CR_L",
+          "op": "=",
+          "source": "JDT1",
+          "note": ""
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Never-posted accounts",
+          "row_filter": "r.get('LAST_POST') is None",
+          "why": "DAYS_SINCE_LAST_POST is NULL; they carry no balance so they cannot contribute, but the filter must not coerce NULL to 0 and count them as fresh"
+        }
+      ],
+      "sql_lines": [
+        205,
+        210
+      ],
+      "caveats": [
+        "P-NULL-DATES",
+        "P-FIFO"
+      ],
+      "check": {
+        "method": "Recompute the age from the raw date instead of the published integer: parse LAST_POST and difference it against AS_OF in the client. This tests HANA's DAYS_BETWEEN and the as-of plumbing, not just the sum.",
+        "recipe": "from datetime import date; asof=date(*map(int, rows[0]['AS_OF'].split('-'))); sum(float(r['OUTSTANDING_CR_L'] or 0) for r in rows if float(r['OUTSTANDING_CR_L'] or 0)>0 and r.get('LAST_POST') and (asof-date(*map(int,r['LAST_POST'].split('-')))).days>=90) * 1e5   # measured: oil 17,302,000 vs 17,302,000, mart 123,000 vs 123,000, bev 139,000 vs 139,000"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "filter": "DAYS_SINCE_LAST_POST>=90&OUTSTANDING_CR_L>0"
+        }
+      },
+      "live": {
+        "oil": 17302000,
+        "mart": 123000,
+        "bev": 139000
+      }
+    },
+    {
+      "id": "prov-manual-je-share",
+      "label": "Share of provision movement posted by hand",
+      "unit": "pct",
+      "column": "MANUAL_JE_PCT",
+      "row_filter": "float(r.get('OUTSTANDING_CR_L') or 0) > 0",
+      "agg": "sum",
+      "formula": "SUM(OUTSTANDING_CR_L x MANUAL_JE_PCT) / SUM(OUTSTANDING_CR_L) over accounts still carrying a balance. MANUAL_JE_PCT per account = 100 x movement on TransType '30' (manual JE) / all movement (Debit+Credit).",
+      "terms": [
+        {
+          "label": "Manual-JE movement",
+          "col": "MANUAL_JE_PCT",
+          "op": "=",
+          "source": "JDT1.TransType = '30'",
+          "note": "sql lines 136, 156, 225-226; NULL when the account has no movement at all"
+        },
+        {
+          "label": "Weight",
+          "col": "OUTSTANDING_CR_L",
+          "op": "=",
+          "source": "JDT1",
+          "note": "weighted by the balance each account still carries, so a dormant account does not dilute the reading"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Accounts with no movement",
+          "row_filter": "r.get('MANUAL_JE_PCT') is None",
+          "why": "explicit divide-by-zero guard in the SQL; they must be dropped from the weighting, not read as 0%"
+        }
+      ],
+      "sql_lines": [
+        136,
+        226
+      ],
+      "caveats": [
+        "P-WEAK-CHECK",
+        "P-NULL-MANUAL-PCT"
+      ],
+      "check": {
+        "method": "WEAK \u2014 state it as weak on the page. No second column in this section measures posting origin, so there is no genuinely independent route inside the data. What can be checked: (a) bounds, 0 <= MANUAL_JE_PCT <= 100 and NULL only where N_LINES = 0; (b) re-weight by CREATED_CR_L instead of OUTSTANDING_CR_L and require the two weightings to sit in the same band \u2014 a large gap means one big account is driving the reading; (c) history stability, a jump of more than 10 points between builds is a flag, not a fact. The check dot for this KPI must never render green on bounds alone; amber with 'no independent route' is the honest state.",
+        "recipe": "alt = sum(float(r['CREATED_CR_L'] or 0)*float(r['MANUAL_JE_PCT']) for r in rows if r.get('MANUAL_JE_PCT') is not None) / sum(float(r['CREATED_CR_L'] or 0) for r in rows if r.get('MANUAL_JE_PCT') is not None)  # credit-weighted vs balance-weighted; report the band, not an equality"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "sort": "MANUAL_JE_PCT",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 76.0,
+        "mart": 99.2,
+        "bev": 99.5
+      }
+    },
+    {
+      "id": "prov-accounts-carrying",
+      "label": "Accounts carrying a balance",
+      "unit": "count",
+      "column": "OUTSTANDING_CR_L",
+      "row_filter": "float(r.get('OUTSTANDING_CR_L') or 0) > 0",
+      "agg": "sum",
+      "formula": "COUNT(accounts where OUTSTANDING_CR_L > 0). Published rows are 53 / 40 / 39 \u2014 most of them are deliberately-listed dormant accounts, so row count is NOT this number.",
+      "terms": [
+        {
+          "label": "Accounts with a credit balance",
+          "col": "OUTSTANDING_CR_L",
+          "op": "=",
+          "source": "JDT1",
+          "note": "25 Oil / 24 Mart / 24 Bev published rows are nil by design"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Nil and never-posted accounts",
+          "row_filter": "float(r.get('OUTSTANDING_CR_L') or 0) == 0",
+          "why": "dormant provision heads are published so an unused head is visibly unused (sql line 236) \u2014 counting rows overstates activity ~2.6x"
+        }
+      ],
+      "sql_lines": [
+        234,
+        247
+      ],
+      "caveats": [
+        "P-DORMANT-ROWS"
+      ],
+      "check": {
+        "method": "Recount via the ageing path instead of the balance column: an account carries a balance if and only if its four AGE_* buckets sum above zero. Different code path in the SQL (FIFO residual vs GREATEST on the aggregate).",
+        "recipe": "len([r for r in rows if (float(r['AGE_0_30_L'] or 0)+float(r['AGE_31_90_L'] or 0)+float(r['AGE_91_365_L'] or 0)+float(r['AGE_365P_L'] or 0)) > 0])   # measured: oil 20 vs 20, mart 9 vs 9, bev 10 vs 10"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "filter": "OUTSTANDING_CR_L>0"
+        }
+      },
+      "live": {
+        "oil": 20,
+        "mart": 9,
+        "bev": 10
+      }
+    },
+    {
+      "id": "prov-oldest-days",
+      "label": "Oldest un-reversed provision",
+      "unit": "days",
+      "column": "OLDEST_OPEN_DAYS",
+      "row_filter": "float(r.get('OUTSTANDING_CR_L') or 0) > 0",
+      "agg": "max",
+      "formula": "MAX(OLDEST_OPEN_DAYS) over accounts still carrying a balance = DAYS_BETWEEN(oldest un-consumed credit's RefDate, as_of)",
+      "terms": [
+        {
+          "label": "Oldest un-consumed credit",
+          "col": "OLDEST_OPEN_DATE",
+          "op": "=",
+          "source": "JDT1.RefDate",
+          "note": "FIFO residual, so this is as old as the method allows \u2014 see P-FIFO"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Accounts with no residual",
+          "row_filter": "float(r.get('OUTSTANDING_CR_L') or 0) == 0",
+          "why": "OLDEST_OPEN_DATE is NULL there; the RESID >= 0.01 tolerance exists precisely so a fully-reversed account does not report 386 days old (seen live on Mart 2180014)"
+        }
+      ],
+      "sql_lines": [
+        171,
+        220
+      ],
+      "caveats": [
+        "P-FIFO",
+        "P-MIGRATION",
+        "P-NULL-DATES"
+      ],
+      "check": {
+        "method": "Recompute the day count client-side from OLDEST_OPEN_DATE against AS_OF rather than reading HANA's DAYS_BETWEEN result.",
+        "recipe": "from datetime import date; asof=date(*map(int, rows[0]['AS_OF'].split('-'))); max((asof-date(*map(int,r['OLDEST_OPEN_DATE'].split('-')))).days for r in rows if r.get('OLDEST_OPEN_DATE') and float(r['OUTSTANDING_CR_L'] or 0)>0)   # measured: oil 691 vs 691, mart 599 vs 599, bev 144 vs 144"
+      },
+      "drill": {
+        "page": "provisions.html",
+        "params": {
+          "co": "<company>",
+          "sort": "OLDEST_OPEN_DAYS",
+          "dir": "desc"
+        }
+      },
+      "live": {
+        "oil": 691,
+        "mart": 599,
+        "bev": 144
+      }
+    },
+    {
+      "id": "prov-top1-share",
+      "label": "Share held by the single largest account",
+      "unit": "pct",
+      "column": "OUTSTANDING_CR_L",
+      "row_filter": "True",
+      "agg": "max",
+      "formula": "MAX(OUTSTANDING_CR_L) / SUM(OUTSTANDING_CR_L) x 100",
+      "terms": [
+        {
+          "label": "Largest single provision account",
+          "col": "OUTSTANDING_CR_L",
+          "op": "=",
+          "source": "JDT1",
+          "note": "oil 2163022 COGS PAYABLE Rs 231.54 L; mart 2180010 PROVISION FOR CLAIMS PAYABLE -RK Rs 269.30 L; bev 2180005 PROVISION FOR ELECTRICITY Rs 24.92 L"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        210,
+        210
+      ],
+      "caveats": [
+        "P-CONCENTRATION"
+      ],
+      "check": {
+        "method": "Independent route via the ageing decomposition: rebuild each account's balance as the sum of its four AGE_* buckets, re-rank on that, and confirm the same account tops the list and lands within Rs 1,000 of the same share. A concentration figure computed off a different column proves the ranking is not an artefact of one column.",
+        "recipe": "b=lambda r: float(r['AGE_0_30_L'] or 0)+float(r['AGE_31_90_L'] or 0)+float(r['AGE_91_365_L'] or 0)+float(r['AGE_365P_L'] or 0); round(max(b(r) for r in rows)/sum(b(r) for r in rows)*100,1)   # top-3 share for context: oil 64.8%, mart 96.9%, bev 82.0%"
+      },
+      "drill": {
+        "page": "gl-account.html",
+        "params": {
+          "co": "<company>",
+          "acct": "<ACCT_CODE of the largest row>"
+        }
+      },
+      "live": {
+        "oil": 38.7,
+        "mart": 71.9,
+        "bev": 41.8
+      }
+    }
+  ],
+  "columns": [
+    {
+      "col": "COMPANY_SCHEMA",
+      "label": "Book",
+      "unit": "text",
+      "meaning": "HANA schema the row came from \u2014 JIVO_OIL_HANADB / JIVO_MART_HANADB / JIVO_BEVERAGES_HANADB. Constant within a slice; use it only to prove a slice was not cross-loaded.",
+      "link": "none"
+    },
+    {
+      "col": "AS_OF",
+      "label": "As of",
+      "unit": "date",
+      "meaning": "The cut-off date the whole row was computed to. Every JDT1 line with RefDate <= this is included. Not a point-in-time snapshot of SAP: it is today's ledger filtered by date.",
+      "link": "none"
+    },
+    {
+      "col": "FAMILY",
+      "label": "How it entered the register",
+      "unit": "text",
+      "meaning": "A_PROVISIONS = under the non-postable title account named PROVISIONS. B_EXPENSES_PAYABLE = under EXPENSES PAYABLE (this is where Oil and Bev actually book monthly freight/salary accruals). C_OTHER_BY_MEMO = an off-piste liability account caught by the PROVISION memo rule and passing the materiality gate. Families come from walking OACT.FatherNum, never from the account-code prefix.",
+      "link": "none"
+    },
+    {
+      "col": "ACCT_CODE",
+      "label": "G/L account",
+      "unit": "text",
+      "meaning": "OACT.AcctCode. Unique within a company. The drill-down key for gl-account.html.",
+      "link": "gl"
+    },
+    {
+      "col": "ACCT_NAME",
+      "label": "Account name",
+      "unit": "text",
+      "meaning": "OACT.AcctName. Month-named accounts (FREIGHT PAYABLE JUN, SALARY PAYABLE JUL) are the accrual convention \u2014 the month in the name is the month provided for, not the month posted.",
+      "link": "gl"
+    },
+    {
+      "col": "PARENT_NAME",
+      "label": "Sits under",
+      "unit": "text",
+      "meaning": "Name of the immediate OACT.FatherNum parent. Blank for a root-level account.",
+      "link": "none"
+    },
+    {
+      "col": "N_LINES",
+      "label": "JE lines",
+      "unit": "count",
+      "meaning": "Count of JDT1 lines on the account up to as_of, including BOTH legs of storno reversals \u2014 so it is posting volume, not transaction count. 0 means the account exists in the register but has never been posted.",
+      "link": "none"
+    },
+    {
+      "col": "FIRST_POST",
+      "label": "First posting",
+      "unit": "date",
+      "meaning": "MIN(JDT1.RefDate). NULL for a never-posted account. 2024-09-30 means the account was opened by the SAP go-live migration.",
+      "link": "none"
+    },
+    {
+      "col": "LAST_POST",
+      "label": "Last posting",
+      "unit": "date",
+      "meaning": "MAX(JDT1.RefDate). NULL for a never-posted account.",
+      "link": "none"
+    },
+    {
+      "col": "DAYS_SINCE_LAST_POST",
+      "label": "Days quiet",
+      "unit": "days",
+      "meaning": "as_of minus LAST_POST. NULL when never posted \u2014 must not be coerced to 0, which would read as 'posted today'.",
+      "link": "none"
+    },
+    {
+      "col": "CREATED_CR_L",
+      "label": "Provided (lifetime)",
+      "unit": "INR",
+      "meaning": "LAKHS. Literally SUM(JDT1.Credit) to as_of. A line booked as a NEGATIVE credit reduces this rather than showing up as a reversal, so this is not exactly 'provisions raised' in the accounting sense.",
+      "link": "none"
+    },
+    {
+      "col": "REVERSED_DR_L",
+      "label": "Reversed / utilised (lifetime)",
+      "unit": "INR",
+      "meaning": "LAKHS. SUM(JDT1.Debit) to as_of. Covers reversal, utilisation and payment alike \u2014 the register cannot distinguish them.",
+      "link": "none"
+    },
+    {
+      "col": "NET_DR_MINUS_CR_L",
+      "label": "Net (Dr - Cr)",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED, SAP-native: Debit minus Credit. NEGATIVE = still provided for. POSITIVE = over-reversed. Same sign convention as OCRD.Balance elsewhere at JIVO.",
+      "link": "none"
+    },
+    {
+      "col": "OUTSTANDING_CR_L",
+      "label": "Still standing",
+      "unit": "INR",
+      "meaning": "LAKHS. MAX(0, Credit - Debit) \u2014 the credit balance as a positive number, floored at zero per account. The headline column. Despite the _CR in its name it is LAKHS, not crores.",
+      "link": "none"
+    },
+    {
+      "col": "DEBIT_BAL_L",
+      "label": "Over-reversed",
+      "unit": "INR",
+      "meaning": "LAKHS. MAX(0, Debit - Credit) \u2014 a liability account sitting in debit. The counterpart the headline floors away.",
+      "link": "none"
+    },
+    {
+      "col": "OACT_CURRTOTAL_L",
+      "label": "SAP's own balance",
+      "unit": "INR",
+      "meaning": "LAKHS, SIGNED. OACT.CurrTotal, SAP's stored trial-balance figure, negative for a credit balance. LIFETIME \u2014 not filtered by as_of. It is the independent cross-check for the headline and matches exactly today because no register account has a future-dated JE line.",
+      "link": "gl"
+    },
+    {
+      "col": "CREATED_FYTD_L",
+      "label": "Provided this FY",
+      "unit": "INR",
+      "meaning": "LAKHS. Credits with RefDate on or after 1 April of the current Indian financial year (the FY_START branch flips on month >= 4).",
+      "link": "none"
+    },
+    {
+      "col": "REVERSED_FYTD_L",
+      "label": "Reversed this FY",
+      "unit": "INR",
+      "meaning": "LAKHS. Debits since 1 April.",
+      "link": "none"
+    },
+    {
+      "col": "AGE_0_30_L",
+      "label": "0-30 d",
+      "unit": "INR",
+      "meaning": "LAKHS. FIFO residual whose own RefDate is within 30 days of as_of. One of the only four additive buckets.",
+      "link": "none"
+    },
+    {
+      "col": "AGE_31_90_L",
+      "label": "31-90 d",
+      "unit": "INR",
+      "meaning": "LAKHS. FIFO residual aged 31-90 days.",
+      "link": "none"
+    },
+    {
+      "col": "AGE_91_365_L",
+      "label": "91-365 d",
+      "unit": "INR",
+      "meaning": "LAKHS. FIFO residual aged 91-365 days.",
+      "link": "none"
+    },
+    {
+      "col": "AGE_365P_L",
+      "label": "365 d +",
+      "unit": "INR",
+      "meaning": "LAKHS. FIFO residual older than a year. Reads as neglect; in Oil it is 95.3% the go-live opening \u2014 always show MIGRATED_OPENING_L next to it.",
+      "link": "none"
+    },
+    {
+      "col": "OLDEST_OPEN_DATE",
+      "label": "Oldest un-consumed credit",
+      "unit": "date",
+      "meaning": "RefDate of the oldest credit line FIFO has not consumed. NULL when nothing is standing. Not 'when the provision was made' \u2014 it is the oldest credit the FIFO happens to leave un-consumed.",
+      "link": "none"
+    },
+    {
+      "col": "OLDEST_OPEN_DAYS",
+      "label": "Age of the oldest",
+      "unit": "days",
+      "meaning": "as_of minus OLDEST_OPEN_DATE. 691 on the Oil go-live accounts is the migration date showing through, not 691 days of neglect.",
+      "link": "none"
+    },
+    {
+      "col": "CROSSED_YEAREND_L",
+      "label": "Carried over the year end",
+      "unit": "INR",
+      "meaning": "LAKHS. RE-CUT of the same residual: the part dated before this FY's 1 April. NEVER add it to the AGE_* buckets.",
+      "link": "none"
+    },
+    {
+      "col": "MIGRATED_OPENING_L",
+      "label": "Go-live opening balance",
+      "unit": "INR",
+      "meaning": "LAKHS. RE-CUT of the same residual: the part dated exactly 2024-09-30, the SAP go-live opening entry. NEVER add it to the AGE_* buckets. Computed in v1 but never displayed.",
+      "link": "none"
+    },
+    {
+      "col": "NEVER_REVERSED",
+      "label": "Never reversed",
+      "unit": "text",
+      "meaning": "'Y' when the account has lifetime credits and zero lifetime debits. Reads 'N' for an account that has never been posted at all, which is true but misleading \u2014 it is not a 'has been reversed' flag.",
+      "link": "none"
+    },
+    {
+      "col": "DEBIT_BALANCE_FLAG",
+      "label": "In debit",
+      "unit": "text",
+      "meaning": "'Y' when Debit - Credit exceeds Rs 1. Marks a liability account sitting in debit.",
+      "link": "none"
+    },
+    {
+      "col": "MANUAL_JE_PCT",
+      "label": "Posted by hand",
+      "unit": "pct",
+      "meaning": "Percent of the account's total movement (Debit+Credit) posted on TransType '30', a manual journal entry rather than a document. NULL when the account has no movement. A control indicator, not a money figure.",
+      "link": "none"
+    },
+    {
+      "col": "PROV_MEMO_CR_L",
+      "label": "Memo says PROVISION",
+      "unit": "INR",
+      "meaning": "LAKHS. Credits whose JE header memo or line memo contains PROVISION. Its only functional job is the C_OTHER_BY_MEMO materiality gate (>= Rs 5 L and >= 25% of the account's credit); elsewhere it is a weak label, not a classification.",
+      "link": "none"
+    }
+  ],
+  "drilldowns": [
+    "gl-account.html",
+    "derivation.html",
+    "methodology.html"
+  ],
+  "charts": [
+    {
+      "type": "waterfall",
+      "title": "Gross standing is not the net position",
+      "x": "step",
+      "y": "INR",
+      "series": "kind",
+      "why": "Draws the section's biggest honesty problem. Steps: Provided lifetime (CREATED_CR_L) -> less Reversed lifetime (REVERSED_DR_L) -> Net position -> add back the over-reversed accounts the headline floors at zero (DEBIT_BAL_L) -> Still provided for. On Oil the last step is Rs 1.37 Cr, so the reader sees at a glance that the Rs 5.99 Cr headline is gross and the book's real register position is Rs 4.62 Cr."
+    },
+    {
+      "type": "stackedBars",
+      "title": "Age of the un-reversed balance, by account",
+      "x": "ACCT_NAME",
+      "y": "AGE_0_30_L|AGE_31_90_L|AGE_91_365_L|AGE_365P_L",
+      "series": "bucket",
+      "why": "The only additive bucket set, one bar per account still carrying a balance, ordered by size. Teaches which specific account owns the old money \u2014 Oil's 365-day bar is four accounts, not a spread. Uses --age1/--age3/--age5/--age6; CROSSED_YEAREND_L and MIGRATED_OPENING_L must never be added as extra segments."
+    },
+    {
+      "type": "pareto",
+      "title": "How few accounts hold the provision",
+      "x": "ACCT_NAME",
+      "y": "OUTSTANDING_CR_L",
+      "series": "cumulative %",
+      "why": "Concentration a table hides: Mart's single PROVISION FOR CLAIMS PAYABLE -RK is 71.9% of the whole book's standing and its top three are 96.9%. Tells the reader that reviewing three accounts reviews the number."
+    },
+    {
+      "type": "scatter",
+      "title": "Age against size \u2014 the big old ones",
+      "x": "OLDEST_OPEN_DAYS",
+      "y": "OUTSTANDING_CR_L",
+      "series": "FAMILY",
+      "why": "Finds what neither sort order finds alone: an account that is both large and stale. Points dated 2024-09-30 (MIGRATED_OPENING_L > 0) get a distinct mark and a label, because otherwise Oil's four go-live accounts read as a scandal at 691 days. Each point links to gl-account.html."
+    },
+    {
+      "type": "donut",
+      "title": "Where the standing balance actually sits",
+      "x": "FAMILY",
+      "y": "OUTSTANDING_CR_L",
+      "series": "FAMILY",
+      "why": "Answers 'is this really provisions?'. Oil: Rs 3.68 Cr of Rs 5.99 Cr sits in B_EXPENSES_PAYABLE (accruals named PAYABLE), only Rs 1.76 Cr under the PROVISIONS head, Rs 0.55 Cr in an off-piste clearing account. Mart is the opposite shape \u2014 Rs 3.64 Cr of Rs 3.75 Cr under PROVISIONS. Render two slices, not a zero slice, where a family has no qualifying account (Mart has no C_OTHER_BY_MEMO)."
+    },
+    {
+      "type": "hbars",
+      "title": "Credit standing against debit balances, per account",
+      "x": "OUTSTANDING_CR_L|DEBIT_BAL_L",
+      "y": "ACCT_NAME",
+      "series": "side",
+      "why": "A diverging bar per account: credit right, debit left. It is the only view that shows SALARY PAYABLE JUL sitting at a Rs 1.10 Cr DEBIT next to SALARY PAYABLE MAY sitting in credit \u2014 a pattern (this month paid before it is accrued) that no single-sided chart reveals. v1 renders this as a bare count of 8."
+    },
+    {
+      "type": "meter",
+      "title": "Provision movement posted by hand",
+      "x": "MANUAL_JE_PCT",
+      "y": "OUTSTANDING_CR_L",
+      "series": "company",
+      "why": "Balance-weighted share of movement posted as a manual JE (TransType 30) rather than through a document: Oil 76.0%, Mart 99.2%, Bev 99.5%. A control reading, not money \u2014 near-100% means the provision book is almost entirely hand-keyed. Must be labelled as a weak-checked figure."
+    },
+    {
+      "type": "sparkline",
+      "title": "Still provided for, over time",
+      "x": "t",
+      "y": "prov-standing",
+      "series": "company",
+      "why": "From history.jsonl on the KPI card. A provision register should breathe with the month-end cycle; a flat line through a month end means nothing was provided or reversed, which is itself the finding. Renders empty('no history yet') until history.jsonl has two points."
+    }
+  ],
+  "traps": [
+    "CROSSED_YEAREND_L and MIGRATED_OPENING_L are RE-CUTS of the same FIFO residual already inside AGE_0_30_L..AGE_365P_L. Adding them as extra buckets inflates Oil by Rs 3.23 Cr on a Rs 5.99 Cr base. Only the four AGE_* columns are additive, and they sum to OUTSTANDING_CR_L.",
+    "The headline is GROSS. OUTSTANDING_CR_L is floored at zero per account, so over-reversal is not netted: Oil's real net register position is Rs 4.62 Cr, not the Rs 5.99 Cr headline. Column: DEBIT_BAL_L (Rs 1.37 Cr Oil / Rs 16.63 L Mart / Rs 5.15 L Bev).",
+    "v1 renders the over-reversal KPI as String(dr.length) \u2014 a COUNT of 8 \u2014 so Rs 1.37 Cr never reaches the page. Column: DEBIT_BAL_L. The single biggest is Oil 2161007 SALARY PAYABLE JUL at a Rs 1.10 Cr DEBIT, which is itself worth an Accounts look.",
+    "'Older than a year' reads as neglect and mostly is not. AGE_365P_L on Oil is Rs 1.60 Cr of which Rs 1.52 Cr (95.3%) is the 2024-09-30 SAP go-live opening \u2014 balance-sheet carry-forward, not an unreviewed provision. Ex-migration it is Rs 7.49 L. Never render AGE_365P_L without MIGRATED_OPENING_L beside it.",
+    "Every money column is LAKHS. CREATED_CR_L, OUTSTANDING_CR_L, PROV_MEMO_CR_L and NET_DR_MINUS_CR_L contain '_CR' but do not END in it, so scale() must take the _L branch. Rename any of them to _CR and the page renders 100x too large.",
+    "Sign convention: NET_DR_MINUS_CR_L and OACT_CURRTOTAL_L are Debit-minus-Credit, so NEGATIVE means still provided for. Plotting either raw draws provisions as negative bars and over-reversal as positive.",
+    "The ageing is a MODELLING CHOICE, not something SAP says. JDT1.IntrnMatch = 0, ExtrMatch = 0 and Closed = 'N' on 100% of 15,630 register lines in all three books, so SAP cannot say which provision is still open. Debits consume the OLDEST credit first, which deliberately ages the residual as old as possible. Never caption a bucket chart 'per SAP'.",
+    "This is a G/L register, not a party or document register \u2014 no CardCode, no DocEntry, no DocStatus. C-0019 / C-0021 / C-0005 do not bite here. What does bite: 'total liabilities = payables + provisions' is not a supported sum. Oil 2110008 SUNDRY CREDITORS CLEARING (Rs 55.32 L) and Bev 2110008 (Rs 2.23 L) are fed through five internal clearing VENDOR cards that also appear in vendor-ageing. Measured on today's data the vendor-side ADJ_OPEN on those cards is Rs 29,897 (Oil, VENDA000987 INCENTIVE TA/DA/PAYABLE) and Rs 500 (Bev), so the arithmetic overlap is small \u2014 but it is not zero, and the two sections must never be added.",
+    "Rounding is coarse: every _L column is ROUND(x/100000, 2), i.e. Rs 1,000 granularity. Per-row the four AGE_* buckets can miss OUTSTANDING_CR_L by Rs 1,000 (live today: Oil 2163025 BLOWING CONVERSION PAYABLE, Mart 2180010 PROVISION FOR CLAIMS PAYABLE -RK). Book-level route deltas run to Rs 2,000. Every check must use a Rs 1,000 x rowcount tolerance; exact equality WILL false-alarm.",
+    "Dormant accounts are published on purpose (25 nil rows Oil, 24 Mart, 24 Bev out of 53/40/39). Counting rows as 'provision accounts' overstates activity about 2.6x. Count OUTSTANDING_CR_L > 0 \u2014 that is 20 / 9 / 10.",
+    "NEVER_REVERSED reads 'N' for an account that has never been posted at all (lifetime credit is 0). It is not a 'has been reversed' flag. Column: NEVER_REVERSED, cross-read with N_LINES.",
+    "The C_OTHER_BY_MEMO gate (>= Rs 5 L memo-tagged credit AND >= 25% of the account's total credit) is hard-coded and absolute, not scaled to book size. Mart yields no C_OTHER_BY_MEMO row at all \u2014 that is data, not a failure, and the family chart must not draw a zero slice or an error.",
+    "OACT_CURRTOTAL_L is a LIFETIME balance and is NOT filtered by as_of. It equals the as-of figure today only because there are zero future-dated JE lines on register accounts. Any historical as-of run will make the OACT cross-check legitimately disagree, and the check dot must report 'not applicable at this as-of', not red.",
+    "PROV_MEMO_CR_L is a weak label, not a classification. Its only real job is the C_OTHER_BY_MEMO gate. Book-wide it covers 22.7% of Oil's lifetime credits, 59.5% of Mart's, 30.9% of Bev's \u2014 do not present it as 'how much of this is really a provision'.",
+    "There is no detail slice. provisions has summary rows only (data.json detail: {}), so no page may offer a drill to individual JDT1 journal lines, a JE memo list, or a posting timeline. gl-account.html for a provision account can show only the 30 summary columns for that one account plus its history.jsonl trend.",
+    "N_LINES counts BOTH legs of storno reversals (160 of them touch Oil's register accounts), so it measures posting volume, not the number of provisions raised.",
+    "CREATED_CR_L is literally SUM(Credit), so a line posted as a NEGATIVE credit reduces 'created' instead of appearing as a reversal. Created minus Reversed is therefore not exactly 'raised less released' in accounting terms \u2014 it is a net of the two columns as SAP stores them.",
+    "Month names in ACCT_NAME (FREIGHT PAYABLE JUN, SALARY PAYABLE JUL) are the month PROVIDED FOR, not the month posted, and the FIFO ages by RefDate. Do not read the account name as a date."
+  ],
+  "empty_states": [
+    "data.json sections.provisions.errors has an entry for the selected company: render the error text and the failing schema, never a zero. (Today errors is {} for all three.)",
+    "summary[company] is an empty array: render empty('No provision or accrual account qualified for the register in this book.'). provisions is in build_data.py's MAY_BE_EMPTY set, so an empty section will NOT block the build \u2014 an empty panel is reachable and must not read as Rs 0.",
+    "Every published row is nil (possible at a pre-go-live as_of; verified the query returns 29/19 all-zero rows at 2020-01-01): render empty('No provision account carried a balance at this as-of date') rather than a row of Rs 0 KPIs.",
+    "AGE_365P_L totals zero, as it genuinely does for Beverages today: this is a MEASURED nil, not an unknown. Render it as an explicit 'none older than a year' with the account count 0, so it cannot be mistaken for a failed computation. Same rule for prov-migrated-opening in Mart and Bev (0.00, measured) and prov-never-reversed in Mart and Bev (0.00, measured).",
+    "MIGRATED_OPENING_L is zero for the company: suppress the 'of which go-live opening' sub-line entirely, or say 'none' \u2014 never an em-dash, which would read the same as unknown.",
+    "MANUAL_JE_PCT is NULL on an account (no movement at all; 1 Oil / 5 Mart / 6 Bev rows have N_LINES = 0): exclude it from the weighted meter and state how many accounts were excluded. If every carrying account were NULL, render empty('no posting activity to measure').",
+    "FIRST_POST / LAST_POST / OLDEST_OPEN_DATE are NULL on never-posted accounts and on accounts with nothing standing: render 'never posted' / 'nothing standing', never a blank cell and never an epoch date.",
+    "A FAMILY has no qualifying account in this book (Mart has no C_OTHER_BY_MEMO): omit the slice and footnote why, rather than drawing a zero-size slice or an error.",
+    "history.jsonl has fewer than two points for this KPI: sparklines render empty('no history yet') and the prov-net-fytd roll-forward check reports 'unavailable', not ok and not red.",
+    "as_of is not today (a historical run): the OACT.CurrTotal cross-check on prov-standing and prov-over-reversed must render 'not applicable at this as-of' rather than a red delta, because CurrTotal is a lifetime figure."
+  ]
+}

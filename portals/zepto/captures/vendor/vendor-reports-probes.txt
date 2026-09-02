@@ -1,0 +1,16 @@
+# Vendor Reports Queue — read-only probe transcript
+# Section slug: vendor-reports | lane: vendor | host: fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, no Bearer prefix)
+# Rules: GET only, read-only allowlist, cap 8, stop on 401/403/429/WAF.
+
+## PROBE 1 — GET https://fcc.zepto.co.in/api/v1/reports?offset=0&limit=5
+# const GET_REPORTS_LISTING — reports queue listing (pure read)
+# Request headers: authorization: <jwt-REDACTED>, accept: application/json, normal User-Agent
+STATUS: HTTP/2 401
+BODY (first lines):
+{"code":401,"message":"Token expired"}
+
+# Token exp = epoch 1783967399 = Mon Jul 13 23:59:59 IST 2026; probe run 2026-07-24 -> EXPIRED.
+# STOP CONDITION HIT (401). No further probes attempted.
+# Result: 1 probe attempted, 0 x 2xx. No endpoint upgraded to PROVEN.
+# All endpoints in this section remain: documented (not probed).

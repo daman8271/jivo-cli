@@ -1,0 +1,1481 @@
+{
+  "section": "grpo",
+  "title": "GRPO Goods Receipt PO",
+  "tables": "OPDN PDN1",
+  "blurb": "What goods have physically arrived at JIVO that no vendor bill has been booked against yet - the GR/IR liability Accounts owes but has not recorded, aged from the gate-in date, and who to phone about it.",
+  "grain": "SUMMARY: one row per (SCOPE, GRP_KEY) - a bounded aggregate over live GRPO LINES (PDN1) with header attributes denormalised on, stacked into seven facets of the same company. Money is line-level (PDN1.GTotal / LineTotal); document counts are COUNT(DISTINCT OPDN.DocEntry) within the facet. DETAIL: one row per GRPO DOCUMENT that still owes a vendor bill - either ROW_KIND='UNBILLED' (at least one line open with no live A/P invoice line drawing it: a live liability) or ROW_KIND='CLOSED_NOBILL' (every offending line closed and still never billed: an audit item). Fully-invoiced receipts do not appear in detail at all, so the detail file is a chase list and not a register.",
+  "faceted": true,
+  "faceted_note": "SEVEN scopes stack in one result. The TOTAL row is uniquely identified by SCOPE=='TOTAL' AND GRP_KEY=='ALL' (GRP_LABEL 'All GRPOs', SORT_KEY '1') - exactly one row per company, verified 1/1/1 across oil/mart/bev. Summing every row multiplies the book by about seven. Row counts live: oil 185 (TOTAL 1, CLASS 4, MONTH 24, BRANCH 4, VENDOR 60, VENDOR_UNBILLED 60, WAREHOUSE 32), mart 93 (1/3/20/4/40/9/16), bev 151 (1/3/24/3/60/43/17). CLASS, MONTH and BRANCH re-total to TOTAL to the paisa. WAREHOUSE re-totals on MONEY but over-counts DOCUMENTS. VENDOR and VENDOR_UNBILLED are top-60 and deliberately do not re-total.",
+  "kpis": [
+    {
+      "id": "grpo-unbilled-external",
+      "label": "Goods in, no vendor bill (outside suppliers)",
+      "unit": "INR",
+      "column": "EXT_UNBILLED_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "UNBILLED_GROSS (all cards) - unbilled on JIVO's own BRANCH / INTERCOMPANY / INTERNAL_ADJ cards = EXT_UNBILLED_GROSS",
+      "terms": [
+        {
+          "label": "Unbilled receipt value, every card",
+          "col": "UNBILLED_GROSS",
+          "op": "+",
+          "source": "PDN1.GTotal (line level)",
+          "note": "line is LineStatus='O', no live PCH1/OPCH draw, no live RPD1/ORPD draw"
+        },
+        {
+          "label": "On JIVO's own branch GST registrations",
+          "col": "UNBILLED_GROSS @ SCOPE='CLASS' GRP_KEY='BRANCH'",
+          "op": "-",
+          "source": "OCRG.GroupName LIKE '%BRANCH%'",
+          "note": "stock moving between JIVO's own state registrations, never an outside bill"
+        },
+        {
+          "label": "On sister companies",
+          "col": "UNBILLED_GROSS @ SCOPE='CLASS' GRP_KEY='INTERCOMPANY'",
+          "op": "-",
+          "source": "OCRD.CardName LIKE '%JIVO%'",
+          "note": "C-0020: Mart's VENDA000001 JIVO WELLNESS sits in group PURCHASE, only the NAME test catches it"
+        },
+        {
+          "label": "On the internal stock-adjustment card",
+          "col": "UNBILLED_GROSS @ SCOPE='CLASS' GRP_KEY='INTERNAL_ADJ'",
+          "op": "-",
+          "source": "OCRD.CardName LIKE 'STOCK GOODS%'",
+          "note": "Bev VENDA001306 STOCK GOODS RECEIPTS will never issue a vendor bill"
+        },
+        {
+          "label": "Unbilled owed to outside suppliers",
+          "col": "EXT_UNBILLED_GROSS",
+          "op": "=",
+          "source": "OPDN+PDN1",
+          "note": "the GR/IR liability Accounts must chase"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Branch (JIVO's own GST registrations)",
+          "row_filter": "r.get('SCOPE')=='CLASS' and r.get('GRP_KEY')=='BRANCH'",
+          "why": "C-0005"
+        },
+        {
+          "label": "Intercompany (sister companies, matched on CardName)",
+          "row_filter": "r.get('SCOPE')=='CLASS' and r.get('GRP_KEY')=='INTERCOMPANY'",
+          "why": "C-0020"
+        },
+        {
+          "label": "Internal stock adjustment (STOCK GOODS RECEIPTS)",
+          "row_filter": "r.get('SCOPE')=='CLASS' and r.get('GRP_KEY')=='INTERNAL_ADJ'",
+          "why": "C-0005"
+        },
+        {
+          "label": "Cancelled GRPOs and their system mirrors",
+          "row_filter": "OPDN.CANCELED in ('Y','C') - never enters the slice",
+          "why": "C-0021"
+        }
+      ],
+      "sql_lines": [
+        188,
+        365
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0017",
+        "C-0019",
+        "C-0020",
+        "C-0021",
+        "C-0022"
+      ],
+      "check": {
+        "method": "Rebuild the number from grpo-detail.sql, which is a SEPARATE query with a different shape: it aggregates the offending lines per DOCUMENT (BADAGG) and never builds the LF/DF line-fact or the SCOPES cross join. Nothing in the summary query is re-read.",
+        "recipe": "round(sum(r['OPEN_GROSS'] for r in slice('grpo',co)['detail'] if r['ROW_KIND']=='UNBILLED' and r['PARTY_CLASS']=='EXTERNAL'),2)  # tolerance 0.10 INR: the detail ROUNDs once per document, the summary once per line"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "kind": "UNBILLED",
+          "party_class": "EXTERNAL",
+          "sort": "OPEN_GROSS desc"
+        }
+      },
+      "live": {
+        "oil": 64801676.11,
+        "mart": 1605121.28,
+        "bev": 15644977.48
+      }
+    },
+    {
+      "id": "grpo-unbilled-total",
+      "label": "Goods in, no vendor bill (every card, JIVO's own included)",
+      "unit": "INR",
+      "column": "UNBILLED_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM over GRPO lines where LineStatus='O' AND no live A/P invoice line AND no live goods-return line, of PDN1.GTotal",
+      "terms": [
+        {
+          "label": "Unbilled net",
+          "col": "UNBILLED_NET",
+          "op": "+",
+          "source": "PDN1.LineTotal",
+          "note": "ex-GST value of the goods"
+        },
+        {
+          "label": "Unbilled GST",
+          "col": "UNBILLED_GST",
+          "op": "+",
+          "source": "PDN1.GTotal - PDN1.LineTotal",
+          "note": "tax carried on the line, not the header"
+        },
+        {
+          "label": "Unbilled gross",
+          "col": "UNBILLED_GROSS",
+          "op": "=",
+          "source": "PDN1.GTotal",
+          "note": "the tax-inclusive value of goods held with no bill"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Cancelled GRPOs ('Y') and their cancellation mirrors ('C')",
+          "row_filter": "OPDN.CANCELED='N' only",
+          "why": "C-0021"
+        },
+        {
+          "label": "Lines drawn by a CANCELLED A/P invoice - correctly re-opened, not excluded",
+          "row_filter": "OPCH.CANCELED='N' on the link",
+          "why": "C-0021"
+        }
+      ],
+      "sql_lines": [
+        210,
+        331
+      ],
+      "caveats": [
+        "C-0017",
+        "C-0019",
+        "C-0021",
+        "C-0022"
+      ],
+      "check": {
+        "method": "Sum the per-document open value from grpo-detail.sql (different file, document-grain aggregation) over UNBILLED rows only.",
+        "recipe": "round(sum(r['OPEN_GROSS'] for r in slice('grpo',co)['detail'] if r['ROW_KIND']=='UNBILLED'),2)  # must NOT include CLOSED_NOBILL rows, and must NOT be filtered on HAS_AP_INVOICE"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "kind": "UNBILLED"
+        }
+      },
+      "live": {
+        "oil": 64803692.11,
+        "mart": 19659251.78,
+        "bev": 44107579.16
+      }
+    },
+    {
+      "id": "grpo-unbilled-internal",
+      "label": "Of the unbilled, the part on JIVO's own cards",
+      "unit": "INR",
+      "column": "UNBILLED_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "UNBILLED_GROSS - EXT_UNBILLED_GROSS = unbilled sitting on branch / sister-company / stock-adjustment cards",
+      "terms": [
+        {
+          "label": "All unbilled",
+          "col": "UNBILLED_GROSS",
+          "op": "+",
+          "source": "PDN1",
+          "note": ""
+        },
+        {
+          "label": "Outside suppliers only",
+          "col": "EXT_UNBILLED_GROSS",
+          "op": "-",
+          "source": "PDN1 filtered PARTY_CLASS='EXTERNAL'",
+          "note": ""
+        },
+        {
+          "label": "JIVO's own",
+          "col": "(derived)",
+          "op": "=",
+          "source": "OCRD/OCRG classification",
+          "note": "never a real supplier liability; it is stock moved inside the group"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        188,
+        365
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0020"
+      ],
+      "check": {
+        "method": "Add up the CLASS facet rows that are not EXTERNAL. That reaches the same number by summing named class rows rather than by subtracting an EXT_ twin computed inside the aggregate.",
+        "recipe": "round(sum(r['UNBILLED_GROSS'] for r in slice('grpo',co)['summary'] if r['SCOPE']=='CLASS' and r['GRP_KEY']!='EXTERNAL'),2)"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "facet": "CLASS"
+        }
+      },
+      "live": {
+        "oil": 2016.0,
+        "mart": 18054130.5,
+        "bev": 28462601.68
+      }
+    },
+    {
+      "id": "grpo-unbilled-docs-external",
+      "label": "Outside receipts waiting for a bill",
+      "unit": "count",
+      "column": "EXT_UNBILLED_DOCS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "COUNT(DISTINCT DocEntry) over GRPOs from EXTERNAL vendors carrying at least one unbilled line",
+      "terms": [
+        {
+          "label": "GRPO documents with an unbilled line, external vendors",
+          "col": "EXT_UNBILLED_DOCS",
+          "op": "=",
+          "source": "OPDN",
+          "note": "a document counts once however many lines are open"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "JIVO's own branch / sister / stock-adjustment cards",
+          "row_filter": "PARTY_CLASS != 'EXTERNAL'",
+          "why": "C-0005"
+        }
+      ],
+      "sql_lines": [
+        364,
+        364
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0020",
+        "C-0021"
+      ],
+      "check": {
+        "method": "Count the rows in the detail chase list - one row per problem document, produced by the other SQL file.",
+        "recipe": "len([r for r in slice('grpo',co)['detail'] if r['ROW_KIND']=='UNBILLED' and r['PARTY_CLASS']=='EXTERNAL'])"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "kind": "UNBILLED",
+          "party_class": "EXTERNAL"
+        }
+      },
+      "live": {
+        "oil": 313,
+        "mart": 31,
+        "bev": 227
+      }
+    },
+    {
+      "id": "grpo-ub-90plus-external",
+      "label": "Unbilled more than 90 days (outside suppliers)",
+      "unit": "INR",
+      "column": "EXT_UB_90PLUS_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "UB_91_180 + UB_181_365 + UB_365PLUS, restricted to PARTY_CLASS='EXTERNAL'; ageing runs off the GRPO's own DocDate (= gate-in date)",
+      "terms": [
+        {
+          "label": "91-180 days",
+          "col": "UB_91_180",
+          "op": "+",
+          "source": "PDN1.GTotal aged on OPDN.DocDate",
+          "note": ""
+        },
+        {
+          "label": "181-365 days",
+          "col": "UB_181_365",
+          "op": "+",
+          "source": "PDN1.GTotal aged on OPDN.DocDate",
+          "note": ""
+        },
+        {
+          "label": "Over 365 days",
+          "col": "UB_365PLUS",
+          "op": "+",
+          "source": "PDN1.GTotal aged on OPDN.DocDate",
+          "note": ""
+        },
+        {
+          "label": "90+ unbilled, all cards",
+          "col": "UB_90PLUS_GROSS",
+          "op": "=",
+          "source": "OPDN+PDN1",
+          "note": "the EXTERNAL-only twin is EXT_UB_90PLUS_GROSS"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "JIVO's own cards",
+          "row_filter": "PARTY_CLASS != 'EXTERNAL'",
+          "why": "C-0005"
+        }
+      ],
+      "sql_lines": [
+        245,
+        367
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0017",
+        "C-0021",
+        "C-0022"
+      ],
+      "check": {
+        "method": "Re-age from the detail rows using DAYS_OPEN, which grpo-detail.sql computes independently of the summary's AGE_DAYS/CASE ladder.",
+        "recipe": "round(sum(r['OPEN_GROSS'] for r in slice('grpo',co)['detail'] if r['ROW_KIND']=='UNBILLED' and r['PARTY_CLASS']=='EXTERNAL' and r['DAYS_OPEN']>90),2)  # note strictly >90, matching the SQL's BETWEEN 91 AND 180 boundary"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "kind": "UNBILLED",
+          "party_class": "EXTERNAL",
+          "min_days": 91
+        }
+      },
+      "live": {
+        "oil": 293525.05,
+        "mart": 138605.51,
+        "bev": 3536783.09
+      }
+    },
+    {
+      "id": "grpo-ub-90plus-docs-external",
+      "label": "Outside receipts unbilled over 90 days",
+      "unit": "count",
+      "column": "EXT_UB_90PLUS_DOCS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "COUNT(DISTINCT DocEntry) where the GRPO has an unbilled line and DocDate is more than 90 days before as-of, EXTERNAL vendors only",
+      "terms": [
+        {
+          "label": "Documents",
+          "col": "EXT_UB_90PLUS_DOCS",
+          "op": "=",
+          "source": "OPDN",
+          "note": "this is the call list; each one is a missing vendor bill"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "JIVO's own cards",
+          "row_filter": "PARTY_CLASS != 'EXTERNAL'",
+          "why": "C-0005"
+        }
+      ],
+      "sql_lines": [
+        366,
+        366
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0017",
+        "C-0022"
+      ],
+      "check": {
+        "method": "Count the detail chase rows older than 90 days.",
+        "recipe": "len([r for r in slice('grpo',co)['detail'] if r['ROW_KIND']=='UNBILLED' and r['PARTY_CLASS']=='EXTERNAL' and r['DAYS_OPEN']>90])"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "kind": "UNBILLED",
+          "party_class": "EXTERNAL",
+          "min_days": 91
+        }
+      },
+      "live": {
+        "oil": 36,
+        "mart": 3,
+        "bev": 22
+      }
+    },
+    {
+      "id": "grpo-oldest-unbilled-days",
+      "label": "Oldest receipt still without a bill",
+      "unit": "days",
+      "column": "OLDEST_UB_DAYS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "DAYS_BETWEEN(MIN(DocDate of any GRPO carrying an unbilled line), as_of)",
+      "terms": [
+        {
+          "label": "Oldest unbilled GRPO date",
+          "col": "OLDEST_UB_DATE",
+          "op": "+",
+          "source": "OPDN.DocDate",
+          "note": "gate-in date, C-0017"
+        },
+        {
+          "label": "Days to as-of",
+          "col": "OLDEST_UB_DAYS",
+          "op": "=",
+          "source": "as_of - OLDEST_UB_DATE",
+          "note": "NULL, not 0, when the facet has nothing unbilled"
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        235,
+        343
+      ],
+      "caveats": [
+        "C-0017",
+        "C-0022"
+      ],
+      "check": {
+        "method": "Take the maximum DAYS_OPEN over the detail chase list - a max over document rows instead of a MIN over line dates.",
+        "recipe": "max((r['DAYS_OPEN'] for r in slice('grpo',co)['detail'] if r['ROW_KIND']=='UNBILLED'), default=None)"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "kind": "UNBILLED",
+          "sort": "DAYS_OPEN desc"
+        }
+      },
+      "live": {
+        "oil": 663,
+        "mart": 343,
+        "bev": 687
+      }
+    },
+    {
+      "id": "grpo-received-external",
+      "label": "Goods received from outside suppliers",
+      "unit": "INR",
+      "column": "EXT_GRPO_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM(PDN1.GTotal) over live GRPO lines, PARTY_CLASS='EXTERNAL'; line-level money, never OPDN.DocTotal",
+      "terms": [
+        {
+          "label": "Receipt value, every card",
+          "col": "GRPO_GROSS",
+          "op": "+",
+          "source": "PDN1.GTotal",
+          "note": "lines, not header - see trap 7"
+        },
+        {
+          "label": "JIVO's own branch / sister / adjustment cards",
+          "col": "GRPO_GROSS on non-EXTERNAL CLASS rows",
+          "op": "-",
+          "source": "OCRD/OCRG",
+          "note": "Mart is 94% intercompany; the plain total is not a purchase figure"
+        },
+        {
+          "label": "External goods received",
+          "col": "EXT_GRPO_GROSS",
+          "op": "=",
+          "source": "OPDN+PDN1",
+          "note": ""
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Header freight OPDN.TotalExpns (Oil ~9.50 L)",
+          "row_filter": "never joined - money is line-level",
+          "why": "C-0022"
+        },
+        {
+          "label": "Cancelled receipts and mirrors",
+          "row_filter": "OPDN.CANCELED='N'",
+          "why": "C-0021"
+        }
+      ],
+      "sql_lines": [
+        188,
+        363
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0020",
+        "C-0021"
+      ],
+      "check": {
+        "method": "Re-total the MONTH facet (24 rows, keyed on DocDate) and subtract the non-EXTERNAL CLASS rows. Two different facets of the result set, neither of them the TOTAL row and neither of them the EXT_ twin.",
+        "recipe": "s=slice('grpo',co)['summary']; round(sum(r['GRPO_GROSS'] for r in s if r['SCOPE']=='MONTH') - sum(r['GRPO_GROSS'] for r in s if r['SCOPE']=='CLASS' and r['GRP_KEY']!='EXTERNAL'),2)"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "facet": "VENDOR"
+        }
+      },
+      "live": {
+        "oil": 7253916120.84,
+        "mart": 51752167.71,
+        "bev": 209725071.14
+      }
+    },
+    {
+      "id": "grpo-unbilled-rate-pct",
+      "label": "Share of outside receipts still unbilled",
+      "unit": "pct",
+      "column": "EXT_UNBILLED_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "100 * EXT_UNBILLED_GROSS / EXT_GRPO_GROSS",
+      "terms": [
+        {
+          "label": "Unbilled, outside suppliers",
+          "col": "EXT_UNBILLED_GROSS",
+          "op": "+",
+          "source": "PDN1",
+          "note": "numerator"
+        },
+        {
+          "label": "Received, outside suppliers",
+          "col": "EXT_GRPO_GROSS",
+          "op": "=",
+          "source": "PDN1",
+          "note": "denominator - lifetime receipts since SAP go-live, so this is a stock-over-flow ratio, not a monthly rate"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "JIVO's own cards on both sides",
+          "row_filter": "PARTY_CLASS != 'EXTERNAL'",
+          "why": "C-0005"
+        }
+      ],
+      "sql_lines": [
+        362,
+        367
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0017"
+      ],
+      "check": {
+        "method": "Recompute from the two detail-verified components rather than from the summary columns: detail external unbilled over the MONTH-facet-minus-internal receipt total.",
+        "recipe": "det=slice('grpo',co)['detail']; s=slice('grpo',co)['summary']; num=sum(r['OPEN_GROSS'] for r in det if r['ROW_KIND']=='UNBILLED' and r['PARTY_CLASS']=='EXTERNAL'); den=sum(r['GRPO_GROSS'] for r in s if r['SCOPE']=='MONTH')-sum(r['GRPO_GROSS'] for r in s if r['SCOPE']=='CLASS' and r['GRP_KEY']!='EXTERNAL'); round(100*num/den,3)"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "grpo-unbilled-rate-pct"
+        }
+      },
+      "live": {
+        "oil": 0.893,
+        "mart": 3.102,
+        "bev": 7.46
+      }
+    },
+    {
+      "id": "grpo-sameday-billing-pct",
+      "label": "Vendor bill booked on the day the goods arrived",
+      "unit": "pct",
+      "column": "INV_SAMEDAY_PCT",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "100 * INV_SAMEDAY_DOCS / INV_PAIR_DOCS, where a document is same-day when its FIRST live A/P invoice carries the GRPO's own DocDate",
+      "terms": [
+        {
+          "label": "GRPOs with at least one live A/P invoice",
+          "col": "INV_PAIR_DOCS",
+          "op": "+",
+          "source": "PCH1 BaseType=20 -> OPCH",
+          "note": "equals INVOICED_DOCS"
+        },
+        {
+          "label": "Of those, invoice dated the same day",
+          "col": "INV_SAMEDAY_DOCS",
+          "op": "+",
+          "source": "MIN(OPCH.DocDate) = OPDN.DocDate",
+          "note": "the C-0022 test: A/P DocDate vs GRPO DocDate"
+        },
+        {
+          "label": "Same-day share",
+          "col": "INV_SAMEDAY_PCT",
+          "op": "=",
+          "source": "OPDN+OPCH",
+          "note": "NULL when INV_PAIR_DOCS=0; NULL on every WAREHOUSE row by design"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Cancelled A/P invoices",
+          "row_filter": "OPCH.CANCELED='N'",
+          "why": "C-0021"
+        }
+      ],
+      "sql_lines": [
+        269,
+        356
+      ],
+      "caveats": [
+        "C-0021",
+        "C-0022"
+      ],
+      "check": {
+        "method": "Re-aggregate from the BRANCH facet: weight each branch's same-day count by its own paired-document count. That rebuilds the ratio from four independent groupings instead of reading the pre-divided TOTAL column.",
+        "recipe": "br=[r for r in slice('grpo',co)['summary'] if r['SCOPE']=='BRANCH']; round(100*sum(r['INV_SAMEDAY_DOCS'] or 0 for r in br)/sum(r['INV_PAIR_DOCS'] or 0 for r in br),2)"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "facet": "BRANCH"
+        }
+      },
+      "live": {
+        "oil": 51.48,
+        "mart": 84.15,
+        "bev": 21.23
+      }
+    },
+    {
+      "id": "grpo-inv-lag-avg-days",
+      "label": "Average wait from goods in to bill booked",
+      "unit": "days",
+      "column": "INV_LAG_AVG_DAYS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "AVG over invoiced GRPOs of DAYS_BETWEEN(OPDN.DocDate, MIN(live OPCH.DocDate))",
+      "terms": [
+        {
+          "label": "Average lag",
+          "col": "INV_LAG_AVG_DAYS",
+          "op": "=",
+          "source": "OPDN.DocDate vs OPCH.DocDate",
+          "note": "mean, dragged by a long tail"
+        },
+        {
+          "label": "Median lag",
+          "col": "INV_LAG_MED_DAYS",
+          "op": "=",
+          "source": "OPDN.DocDate vs OPCH.DocDate",
+          "note": "show both - Oil's mean is 14 days and its median is 0"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "GRPOs never invoiced",
+          "row_filter": "INV_COUNT IS NULL",
+          "why": "they have no lag; they are NOINV_DOCS instead"
+        }
+      ],
+      "sql_lines": [
+        269,
+        357
+      ],
+      "caveats": [
+        "C-0022"
+      ],
+      "check": {
+        "method": "Rebuild the mean as a document-count-weighted average of the four BRANCH rows' own averages.",
+        "recipe": "br=[r for r in slice('grpo',co)['summary'] if r['SCOPE']=='BRANCH']; round(sum((r['INV_LAG_AVG_DAYS'] or 0)*(r['INV_PAIR_DOCS'] or 0) for r in br)/sum(r['INV_PAIR_DOCS'] or 0 for r in br),2)"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "facet": "BRANCH"
+        }
+      },
+      "live": {
+        "oil": 14.09,
+        "mart": 1.48,
+        "bev": 13.03
+      }
+    },
+    {
+      "id": "grpo-closed-nobill-gross",
+      "label": "Receipts closed without a bill ever being booked",
+      "unit": "INR",
+      "column": "CLOSED_NOBILL_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM(PDN1.GTotal) over lines with LineStatus='C' AND no live A/P invoice AND no live goods return",
+      "terms": [
+        {
+          "label": "Closed-no-bill lines",
+          "col": "CLOSED_NOBILL_LINES",
+          "op": "+",
+          "source": "PDN1.LineStatus='C'",
+          "note": ""
+        },
+        {
+          "label": "Their value",
+          "col": "CLOSED_NOBILL_GROSS",
+          "op": "=",
+          "source": "PDN1.GTotal",
+          "note": "NOT a live liability - it is an audit item: somebody closed the receipt and the bill never came"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Lines a live A/P invoice or live goods return draws",
+          "row_filter": "BILLED / RETURNED link is NULL",
+          "why": "C-0021"
+        }
+      ],
+      "sql_lines": [
+        212,
+        346
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0021"
+      ],
+      "check": {
+        "method": "Sum the CLOSED_NOBILL rows of the detail chase list, which classifies a document by ANY_OPEN over its own bad lines rather than by a line-level CNB flag.",
+        "recipe": "round(sum(r['OPEN_GROSS'] for r in slice('grpo',co)['detail'] if r['ROW_KIND']=='CLOSED_NOBILL'),2)  # exact only while no document mixes an open bad line with a closed one; if it ever does, the detail figure drops the closed lines into the UNBILLED row instead"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "kind": "CLOSED_NOBILL"
+        }
+      },
+      "live": {
+        "oil": 5991356.27,
+        "mart": 4151699.64,
+        "bev": 3503177.4
+      }
+    },
+    {
+      "id": "grpo-ub-zeroqty-gross",
+      "label": "Unbilled service lines that will never clear themselves",
+      "unit": "INR",
+      "column": "UB_ZEROQTY_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM(PDN1.GTotal) over unbilled lines with PDN1.Quantity = 0 - freight and expense lines that keep LineStatus='O' forever",
+      "terms": [
+        {
+          "label": "Zero-quantity unbilled lines",
+          "col": "UB_ZEROQTY_LINES",
+          "op": "+",
+          "source": "PDN1.Quantity=0",
+          "note": "they never self-close; a human has to close them"
+        },
+        {
+          "label": "Their value",
+          "col": "UB_ZEROQTY_GROSS",
+          "op": "=",
+          "source": "PDN1.GTotal",
+          "note": "already inside UNBILLED_GROSS - do not add it on top"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Zero-qty lines that ARE drawn by a live A/P invoice",
+          "row_filter": "the BILLED link removes them",
+          "why": "otherwise Oil would overstate GR/IR by 18 documents"
+        }
+      ],
+      "sql_lines": [
+        208,
+        341
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Count the zero-quantity unbilled LINES from the detail file (a per-document line counter) and compare to the summary's line count. Line counts are exactly comparable; the value is only comparable while no document mixes zero-qty and priced unbilled lines.",
+        "recipe": "sum(r['NUM_ZEROQTY_UNBILLED_LINES'] or 0 for r in slice('grpo',co)['detail'] if r['ROW_KIND']=='UNBILLED') == TOTAL['UB_ZEROQTY_LINES']  # value route: sum OPEN_GROSS over detail UNBILLED rows where NUM_ZEROQTY_UNBILLED_LINES == NUM_UNBILLED_LINES"
+      },
+      "drill": {
+        "page": "grpo.html",
+        "params": {
+          "kind": "UNBILLED",
+          "zero_qty_only": true
+        }
+      },
+      "live": {
+        "oil": 1673571.67,
+        "mart": 1466515.78,
+        "bev": 1234737.92
+      }
+    }
+  ],
+  "columns": [
+    {
+      "col": "SCOPE",
+      "label": "Facet",
+      "unit": "text",
+      "meaning": "SUMMARY - which stack this row belongs to: TOTAL / CLASS / MONTH / BRANCH / VENDOR / VENDOR_UNBILLED / WAREHOUSE. This is the faceting column; never sum across it.",
+      "link": "none"
+    },
+    {
+      "col": "GRP_KEY",
+      "label": "Group key",
+      "unit": "text",
+      "meaning": "SUMMARY - the identity inside the facet: 'ALL' on TOTAL, the class name, 'YYYY-MM', OPDN.BPLId, OCRD.CardCode, or PDN1.WhsCode. On VENDOR scopes it is a CardCode and links to the party page.",
+      "link": "party"
+    },
+    {
+      "col": "GRP_LABEL",
+      "label": "Group label",
+      "unit": "text",
+      "meaning": "SUMMARY - display name. On VENDOR rows it is 'CARDNAME [PARTY_CLASS]'; on BRANCH rows it is UPPER(OPDN.BPLName) because the stored capitalisation drifted and split branch 2 in two before it was upper-cased.",
+      "link": "none"
+    },
+    {
+      "col": "SORT_KEY",
+      "label": "Facet order",
+      "unit": "text",
+      "meaning": "SUMMARY - '1'..'7', the display order of the stacks. Not data.",
+      "link": "none"
+    },
+    {
+      "col": "GRPO_DOCS",
+      "label": "Receipts",
+      "unit": "count",
+      "meaning": "SUMMARY - COUNT(DISTINCT OPDN.DocEntry). Additive across CLASS / MONTH / BRANCH; NOT additive across WAREHOUSE, where a document touching two warehouses is counted in both rows.",
+      "link": "none"
+    },
+    {
+      "col": "GRPO_LINES",
+      "label": "Receipt lines",
+      "unit": "count",
+      "meaning": "SUMMARY - number of PDN1 rows.",
+      "link": "none"
+    },
+    {
+      "col": "GRPO_NET",
+      "label": "Received, ex-GST",
+      "unit": "INR",
+      "meaning": "SUMMARY - SUM(PDN1.LineTotal). Line-level, not OPDN.DocTotal.",
+      "link": "none"
+    },
+    {
+      "col": "GRPO_GST",
+      "label": "GST on receipts",
+      "unit": "INR",
+      "meaning": "SUMMARY - SUM(PDN1.GTotal - PDN1.LineTotal). On 27% of Oil and 67% of Bev headers OPDN.VatSum is 0 while the lines do carry this tax.",
+      "link": "none"
+    },
+    {
+      "col": "GRPO_GROSS",
+      "label": "Goods received",
+      "unit": "INR",
+      "meaning": "SUMMARY - SUM(PDN1.GTotal), tax-inclusive value of everything received. Excludes header freight (OPDN.TotalExpns), which never reaches the lines.",
+      "link": "none"
+    },
+    {
+      "col": "UNBILLED_DOCS",
+      "label": "Receipts with no bill",
+      "unit": "count",
+      "meaning": "SUMMARY - COUNT(DISTINCT DocEntry) carrying at least one unbilled line. A document can be partly billed and still counted here.",
+      "link": "none"
+    },
+    {
+      "col": "UNBILLED_LINES",
+      "label": "Unbilled lines",
+      "unit": "count",
+      "meaning": "SUMMARY - PDN1 lines with LineStatus='O', no live A/P invoice draw, no live goods-return draw.",
+      "link": "none"
+    },
+    {
+      "col": "UNBILLED_NET",
+      "label": "Unbilled, ex-GST",
+      "unit": "INR",
+      "meaning": "SUMMARY - SUM(PDN1.LineTotal) on those lines.",
+      "link": "none"
+    },
+    {
+      "col": "UNBILLED_GST",
+      "label": "GST on unbilled",
+      "unit": "INR",
+      "meaning": "SUMMARY - the tax that will land when the bill arrives; it is not yet in the input-credit ledger.",
+      "link": "none"
+    },
+    {
+      "col": "UNBILLED_GROSS",
+      "label": "Goods in, no bill",
+      "unit": "INR",
+      "meaning": "SUMMARY - THE GR/IR figure. Includes JIVO's own branch, sister-company and stock-adjustment cards; use EXT_UNBILLED_GROSS for the trade number.",
+      "link": "none"
+    },
+    {
+      "col": "UB_0_30",
+      "label": "Unbilled 0-30 d",
+      "unit": "INR",
+      "meaning": "SUMMARY - unbilled value on receipts aged 0-30 days from OPDN.DocDate. Ordinary goods-in-ahead-of-bill flow.",
+      "link": "none"
+    },
+    {
+      "col": "UB_31_60",
+      "label": "Unbilled 31-60 d",
+      "unit": "INR",
+      "meaning": "SUMMARY - unbilled value aged 31-60 days.",
+      "link": "none"
+    },
+    {
+      "col": "UB_61_90",
+      "label": "Unbilled 61-90 d",
+      "unit": "INR",
+      "meaning": "SUMMARY - unbilled value aged 61-90 days.",
+      "link": "none"
+    },
+    {
+      "col": "UB_91_180",
+      "label": "Unbilled 91-180 d",
+      "unit": "INR",
+      "meaning": "SUMMARY - unbilled value aged 91-180 days. Past here a missing bill is a problem, not a lag.",
+      "link": "none"
+    },
+    {
+      "col": "UB_181_365",
+      "label": "Unbilled 181-365 d",
+      "unit": "INR",
+      "meaning": "SUMMARY - unbilled value aged 181-365 days.",
+      "link": "none"
+    },
+    {
+      "col": "UB_365PLUS",
+      "label": "Unbilled 365+ d",
+      "unit": "INR",
+      "meaning": "SUMMARY - unbilled value over a year old.",
+      "link": "none"
+    },
+    {
+      "col": "UB_90PLUS_DOCS",
+      "label": "Receipts unbilled 90 d +",
+      "unit": "count",
+      "meaning": "SUMMARY - COUNT(DISTINCT DocEntry) of unbilled receipts older than 90 days. The chase list length.",
+      "link": "none"
+    },
+    {
+      "col": "UB_90PLUS_GROSS",
+      "label": "Unbilled 90 d +",
+      "unit": "INR",
+      "meaning": "SUMMARY - UB_91_180 + UB_181_365 + UB_365PLUS. All cards; EXT_UB_90PLUS_GROSS is the trade twin.",
+      "link": "none"
+    },
+    {
+      "col": "UB_ZEROQTY_LINES",
+      "label": "Zero-qty unbilled lines",
+      "unit": "count",
+      "meaning": "SUMMARY - unbilled lines with PDN1.Quantity=0: freight and expense lines that never close by themselves and need a human.",
+      "link": "none"
+    },
+    {
+      "col": "UB_ZEROQTY_GROSS",
+      "label": "Zero-qty unbilled value",
+      "unit": "INR",
+      "meaning": "SUMMARY - value of those lines. Already inside UNBILLED_GROSS; never add it on top.",
+      "link": "none"
+    },
+    {
+      "col": "OLDEST_UB_DATE",
+      "label": "Oldest unbilled receipt",
+      "unit": "date",
+      "meaning": "SUMMARY - MIN(OPDN.DocDate) among unbilled receipts. NULL when the facet has nothing unbilled - render empty(), not a date.",
+      "link": "none"
+    },
+    {
+      "col": "OLDEST_UB_DAYS",
+      "label": "Days since that receipt",
+      "unit": "days",
+      "meaning": "SUMMARY - as_of minus OLDEST_UB_DATE. NULL when nothing is unbilled - a 0 here would read as 'up to date' and be a lie.",
+      "link": "none"
+    },
+    {
+      "col": "CLOSED_NOBILL_DOCS",
+      "label": "Closed with no bill",
+      "unit": "count",
+      "meaning": "SUMMARY - COUNT(DISTINCT DocEntry) with a LineStatus='C' line that no live invoice and no live return ever drew.",
+      "link": "none"
+    },
+    {
+      "col": "CLOSED_NOBILL_LINES",
+      "label": "Closed-no-bill lines",
+      "unit": "count",
+      "meaning": "SUMMARY - the line count behind it.",
+      "link": "none"
+    },
+    {
+      "col": "CLOSED_NOBILL_GROSS",
+      "label": "Closed-no-bill value",
+      "unit": "INR",
+      "meaning": "SUMMARY - value of receipts somebody closed without ever booking the vendor bill. An audit item, NOT a liability - do not add it to UNBILLED_GROSS as if it were owed.",
+      "link": "none"
+    },
+    {
+      "col": "RETURNED_DOCS",
+      "label": "Receipts a return was copied from",
+      "unit": "count",
+      "meaning": "SUMMARY - do NOT read as 'goods sent back'. 96%+ of JIVO's goods returns are raised standalone (RPD1.BaseType=-1) with no GRPO link, so this column is near-empty by construction. v1 does not render it.",
+      "link": "none"
+    },
+    {
+      "col": "RETURNED_LINES",
+      "label": "Return-linked lines",
+      "unit": "count",
+      "meaning": "SUMMARY - same caveat as RETURNED_DOCS.",
+      "link": "none"
+    },
+    {
+      "col": "RETURNED_GROSS",
+      "label": "Return-linked value",
+      "unit": "INR",
+      "meaning": "SUMMARY - the GRPO line's gross, not the return's. Near-empty by construction; not a returns figure.",
+      "link": "none"
+    },
+    {
+      "col": "INVOICED_DOCS",
+      "label": "Receipts with a live A/P invoice",
+      "unit": "count",
+      "meaning": "SUMMARY - GRPOs that fed at least one non-cancelled A/P invoice. INVOICED_DOCS + NOINV_DOCS = GRPO_DOCS exactly.",
+      "link": "none"
+    },
+    {
+      "col": "NOINV_DOCS",
+      "label": "Receipts with no A/P invoice at all",
+      "unit": "count",
+      "meaning": "SUMMARY - not the same as UNBILLED_DOCS: this counts documents with no invoice anywhere, including ones whose lines were closed without a bill.",
+      "link": "none"
+    },
+    {
+      "col": "NOINV_GROSS",
+      "label": "Value with no A/P invoice at all",
+      "unit": "INR",
+      "meaning": "SUMMARY - full receipt value of those documents, so it is larger than UNBILLED_GROSS (which only counts the offending LINES).",
+      "link": "none"
+    },
+    {
+      "col": "INV_PAIR_DOCS",
+      "label": "Receipts measurable for lag",
+      "unit": "count",
+      "meaning": "SUMMARY - documents with a lag to measure; equals INVOICED_DOCS. NULL on every WAREHOUSE row by design.",
+      "link": "none"
+    },
+    {
+      "col": "INV_SAMEDAY_DOCS",
+      "label": "Billed same day",
+      "unit": "count",
+      "meaning": "SUMMARY - GRPOs whose first live A/P invoice carries the GRPO's own DocDate.",
+      "link": "none"
+    },
+    {
+      "col": "INV_SAMEDAY_PCT",
+      "label": "Billed same day",
+      "unit": "pct",
+      "meaning": "SUMMARY - INV_SAMEDAY_DOCS / INV_PAIR_DOCS. NULL when nothing is invoiced and NULL on WAREHOUSE rows; a rendered 0% would be wrong.",
+      "link": "none"
+    },
+    {
+      "col": "INV_LAG_AVG_DAYS",
+      "label": "Average bill lag",
+      "unit": "days",
+      "meaning": "SUMMARY - mean days from goods in to the first live A/P invoice. Dragged by a tail; read it beside the median.",
+      "link": "none"
+    },
+    {
+      "col": "INV_LAG_MED_DAYS",
+      "label": "Median bill lag",
+      "unit": "days",
+      "meaning": "SUMMARY - median of the same. Oil: mean 14, median 0.",
+      "link": "none"
+    },
+    {
+      "col": "EXT_GRPO_DOCS",
+      "label": "Receipts from outside suppliers",
+      "unit": "count",
+      "meaning": "SUMMARY - GRPO_DOCS restricted to PARTY_CLASS='EXTERNAL'.",
+      "link": "none"
+    },
+    {
+      "col": "EXT_GRPO_GROSS",
+      "label": "Goods received from outside suppliers",
+      "unit": "INR",
+      "meaning": "SUMMARY - the purchase figure. Mart's plain GRPO_GROSS is 94% intercompany, so only this one is a purchase number.",
+      "link": "none"
+    },
+    {
+      "col": "EXT_UNBILLED_DOCS",
+      "label": "Outside receipts with no bill",
+      "unit": "count",
+      "meaning": "SUMMARY - UNBILLED_DOCS for external vendors only.",
+      "link": "none"
+    },
+    {
+      "col": "EXT_UNBILLED_GROSS",
+      "label": "GR/IR owed to outside suppliers",
+      "unit": "INR",
+      "meaning": "SUMMARY - THE headline. Bev's plain total is 64% one internal stock-adjustment card; Mart's is 92% intercompany.",
+      "link": "none"
+    },
+    {
+      "col": "EXT_UB_90PLUS_DOCS",
+      "label": "Outside receipts unbilled 90 d +",
+      "unit": "count",
+      "meaning": "SUMMARY - the real chase list length.",
+      "link": "none"
+    },
+    {
+      "col": "EXT_UB_90PLUS_GROSS",
+      "label": "Outside unbilled 90 d +",
+      "unit": "INR",
+      "meaning": "SUMMARY - the real aged exposure.",
+      "link": "none"
+    },
+    {
+      "col": "ROW_KIND",
+      "label": "Problem type",
+      "unit": "text",
+      "meaning": "DETAIL - 'UNBILLED' (has an open line with no live bill: a live liability) or 'CLOSED_NOBILL' (every offending line is closed and still never billed: an audit item). Fully-invoiced GRPOs are absent from this list entirely.",
+      "link": "none"
+    },
+    {
+      "col": "DOC_ENTRY",
+      "label": "SAP internal key",
+      "unit": "text",
+      "meaning": "DETAIL - OPDN.DocEntry, the key to open the document. ObjType 20.",
+      "link": "document"
+    },
+    {
+      "col": "DOC_NUM",
+      "label": "Receipt number",
+      "unit": "text",
+      "meaning": "DETAIL - OPDN.DocNum, the number a human reads off the SAP screen.",
+      "link": "document"
+    },
+    {
+      "col": "DOC_DATE",
+      "label": "Receipt date",
+      "unit": "date",
+      "meaning": "DETAIL - OPDN.DocDate. At JIVO this IS the gate-in date (C-0017), which is why it is the ageing clock.",
+      "link": "none"
+    },
+    {
+      "col": "DOC_MONTH",
+      "label": "Receipt month",
+      "unit": "text",
+      "meaning": "DETAIL - 'YYYY-MM' of DOC_DATE.",
+      "link": "none"
+    },
+    {
+      "col": "DAYS_OPEN",
+      "label": "Days since goods arrived",
+      "unit": "days",
+      "meaning": "DETAIL - as_of minus DOC_DATE. On a CLOSED_NOBILL row it is days since the goods came in, NOT days the document was open.",
+      "link": "none"
+    },
+    {
+      "col": "AGE_BUCKET",
+      "label": "Age band",
+      "unit": "text",
+      "meaning": "DETAIL - '0-30' / '31-60' / '61-90' / '91-180' / '181-365' / '365+', matching the summary's UB_* columns.",
+      "link": "none"
+    },
+    {
+      "col": "DOC_STATUS",
+      "label": "Header status",
+      "unit": "text",
+      "meaning": "DETAIL - OPDN.DocStatus, DISPLAY ONLY. It disagrees with the lines in both directions - live today: 2 Oil, 1 Mart and 3 Bev documents read 'C' while still carrying an unbilled line.",
+      "link": "none"
+    },
+    {
+      "col": "CARD_CODE",
+      "label": "Vendor code",
+      "unit": "text",
+      "meaning": "DETAIL - OPDN.CardCode.",
+      "link": "party"
+    },
+    {
+      "col": "CARD_NAME",
+      "label": "Vendor",
+      "unit": "text",
+      "meaning": "DETAIL - OCRD.CardName, falling back to the name stored on the document.",
+      "link": "party"
+    },
+    {
+      "col": "VENDOR_GROUP",
+      "label": "Vendor group",
+      "unit": "text",
+      "meaning": "DETAIL - OCRG.GroupName. Not sufficient on its own to spot intercompany: Mart's JIVO WELLNESS sits in group PURCHASE (C-0020).",
+      "link": "none"
+    },
+    {
+      "col": "PARTY_CLASS",
+      "label": "Who this is",
+      "unit": "text",
+      "meaning": "DETAIL - EXTERNAL / BRANCH / INTERCOMPANY / INTERNAL_ADJ. Derived from the group name AND the card name; nothing is dropped, everything is flagged.",
+      "link": "none"
+    },
+    {
+      "col": "BRANCH_ID",
+      "label": "GST branch id",
+      "unit": "text",
+      "meaning": "DETAIL - OPDN.BPLId.",
+      "link": "none"
+    },
+    {
+      "col": "BRANCH_NAME",
+      "label": "GST branch",
+      "unit": "text",
+      "meaning": "DETAIL - OPDN.BPLName, stored per document; its capitalisation drifts, so group case-insensitively.",
+      "link": "none"
+    },
+    {
+      "col": "WAREHOUSES",
+      "label": "Warehouses",
+      "unit": "text",
+      "meaning": "DETAIL - comma-separated distinct PDN1.WhsCode for the document. '(none)' is how zero-quantity freight and expense lines show up.",
+      "link": "none"
+    },
+    {
+      "col": "VENDOR_REF",
+      "label": "Vendor's own bill ref",
+      "unit": "text",
+      "meaning": "DETAIL - OPDN.NumAtCard. NULL on a handful of rows; it is the string to search when phoning the vendor.",
+      "link": "none"
+    },
+    {
+      "col": "PO_DOCNUMS",
+      "label": "Purchase order(s)",
+      "unit": "text",
+      "meaning": "DETAIL - OPOR.DocNum behind the receipt. NULL on ~44% of Oil rows (receipt raised without a PO). TYPE TRAP: an int when there is exactly one PO, a comma-separated string when there are several.",
+      "link": "document"
+    },
+    {
+      "col": "NUM_LINES",
+      "label": "Lines on the receipt",
+      "unit": "count",
+      "meaning": "DETAIL - total PDN1 lines, billed or not.",
+      "link": "none"
+    },
+    {
+      "col": "NUM_UNBILLED_LINES",
+      "label": "Offending lines",
+      "unit": "count",
+      "meaning": "DETAIL - lines with no live invoice and no live return. On an UNBILLED row this can include closed lines on the same document.",
+      "link": "none"
+    },
+    {
+      "col": "NUM_ZEROQTY_UNBILLED_LINES",
+      "label": "Of those, zero-quantity",
+      "unit": "count",
+      "meaning": "DETAIL - freight/expense lines that will never self-clear.",
+      "link": "none"
+    },
+    {
+      "col": "DOC_NET",
+      "label": "Header value, ex-GST",
+      "unit": "INR",
+      "meaning": "DETAIL - OPDN.DocTotal - OPDN.VatSum. What the SAP header screen shows.",
+      "link": "none"
+    },
+    {
+      "col": "DOC_GST",
+      "label": "Header GST",
+      "unit": "INR",
+      "meaning": "DETAIL - OPDN.VatSum. Zero on 27% of Oil and 67% of Bev live receipts even when the lines carry tax.",
+      "link": "none"
+    },
+    {
+      "col": "DOC_GROSS",
+      "label": "Header value",
+      "unit": "INR",
+      "meaning": "DETAIL - OPDN.DocTotal. Reconciles to the SAP screen, NOT to OPEN_GROSS.",
+      "link": "none"
+    },
+    {
+      "col": "OPEN_NET",
+      "label": "Open value, ex-GST",
+      "unit": "INR",
+      "meaning": "DETAIL - SUM(PDN1.LineTotal) over the offending lines only.",
+      "link": "none"
+    },
+    {
+      "col": "OPEN_GST",
+      "label": "GST on the open value",
+      "unit": "INR",
+      "meaning": "DETAIL - OPEN_GROSS - OPEN_NET.",
+      "link": "none"
+    },
+    {
+      "col": "OPEN_GROSS",
+      "label": "Open value",
+      "unit": "INR",
+      "meaning": "DETAIL - SUM(PDN1.GTotal) over the offending lines. THIS is the number to chase. It can exceed DOC_GROSS (166 of 456 Oil rows, 213 of 285 Bev) because the header carries VatSum=0 while the lines are taxed - not a bug.",
+      "link": "none"
+    },
+    {
+      "col": "HAS_AP_INVOICE",
+      "label": "Any live bill at all?",
+      "unit": "text",
+      "meaning": "DETAIL - 'Y' when a live A/P invoice draws SOME line of this receipt. 'Y' together with ROW_KIND='UNBILLED' means PARTLY billed. Do not use this as the unbilled test - it is not one.",
+      "link": "none"
+    },
+    {
+      "col": "AP_INVOICE_COUNT",
+      "label": "Live bills drawn",
+      "unit": "count",
+      "meaning": "DETAIL - how many distinct live A/P invoices touch this receipt.",
+      "link": "none"
+    },
+    {
+      "col": "AP_INVOICE_DOCNUMS",
+      "label": "Bill number(s)",
+      "unit": "text",
+      "meaning": "DETAIL - OPCH.DocNum list. Same type trap as PO_DOCNUMS: int when one, comma string when several, null when none.",
+      "link": "document"
+    },
+    {
+      "col": "AP_LAG_DAYS",
+      "label": "Days to the first bill",
+      "unit": "days",
+      "meaning": "DETAIL - DOC_DATE to the first live A/P invoice's DocDate. NULL when no bill exists (the majority of this list).",
+      "link": "none"
+    }
+  ],
+  "drilldowns": [
+    "document.html",
+    "party.html",
+    "payables.html",
+    "derivation.html",
+    "methodology.html"
+  ],
+  "charts": [
+    {
+      "type": "waterfall",
+      "title": "From every unbilled receipt to what outside suppliers are actually owed",
+      "x": "GRP_KEY (CLASS facet)",
+      "y": "UNBILLED_GROSS",
+      "series": "PARTY_CLASS",
+      "why": "This is the C-0005/C-0020 correction drawn: UNBILLED_GROSS, minus BRANCH, minus INTERCOMPANY, minus INTERNAL_ADJ, equals EXT_UNBILLED_GROSS. In Beverages the bar falls from 4.41 Cr to 1.56 Cr and in Mart from 1.97 Cr to 16.05 L, so a reader sees in one glance that the plain total is mostly JIVO's own stock and not a supplier bill."
+    },
+    {
+      "type": "stackedBars",
+      "title": "How old the unbilled receipts are, external against internal",
+      "x": "age bucket (UB_0_30 .. UB_365PLUS)",
+      "y": "unbilled value",
+      "series": "CLASS facet row",
+      "why": "Separates ordinary flow from a real problem. Oil is 97% inside 30 days - that is goods arriving ahead of the bill and nothing else. Bev has 35.5 L past 90 days on external cards, which is the part somebody has to chase. A single-total bar chart cannot show that split."
+    },
+    {
+      "type": "pareto",
+      "title": "Which suppliers are holding the unbilled bills",
+      "x": "GRP_LABEL (VENDOR_UNBILLED facet)",
+      "y": "UNBILLED_GROSS",
+      "series": "cumulative %",
+      "why": "Turns the liability into a call list: it names the handful of vendors that are 80% of GR/IR (Oil's top five are ~52% of 6.48 Cr) so Accounts phones five people instead of reading 313 documents. The cumulative line also shows when the tail stops mattering."
+    },
+    {
+      "type": "scatter",
+      "title": "Age against size - the big old ones",
+      "x": "DAYS_OPEN (detail)",
+      "y": "OPEN_GROSS (detail)",
+      "series": "PARTY_CLASS",
+      "why": "The only view that finds the outlier instantly: Bev's TULA ENGINEERING receipt sits alone at 257 days and 29.50 L, far from the 0-30 day cloud. Each point links to document.html, so the chart is the drill-down. A table sorted by value buries it under fresh receipts and a table sorted by age buries it under 5,520-rupee scraps."
+    },
+    {
+      "type": "lineArea",
+      "title": "Goods received by month, outside suppliers against JIVO's own",
+      "x": "GRP_KEY (MONTH facet)",
+      "y": "GRPO_GROSS",
+      "series": "total vs EXTERNAL share",
+      "why": "Puts the GR/IR number in proportion and shows the receipt rhythm across 24 months. It is also the fastest way to see a broken feeder: a month whose receipts collapse to near zero is a factory GRPO feed that stopped, which has happened before at JIVO."
+    },
+    {
+      "type": "meter",
+      "title": "Is the bill booked on the day the goods arrive?",
+      "x": "GRP_LABEL (BRANCH facet)",
+      "y": "INV_SAMEDAY_PCT",
+      "series": "branch",
+      "why": "One meter per GST branch against the 100% target, with INV_LAG_AVG_DAYS underneath. It localises the discipline problem: Bev FACTORY books same-day 21% of the time against Mart HARYANA's 87%, and that gap is exactly why Bev's GR/IR is proportionally eight times Oil's."
+    },
+    {
+      "type": "heatmap",
+      "title": "Where the unbilled value is stuck - branch against age",
+      "x": "AGE_BUCKET (detail)",
+      "y": "BRANCH_NAME (detail)",
+      "series": "SUM(OPEN_GROSS)",
+      "why": "Crosses two facets the summary can only show separately, so a cell answers 'which branch is sitting on old unbilled receipts' rather than 'which branch is big'. Warm cells on the right-hand columns are the audit findings."
+    },
+    {
+      "type": "flow",
+      "title": "Purchase order to goods receipt to vendor bill, and where it stops",
+      "x": "stage",
+      "y": "document count",
+      "series": "outcome",
+      "why": "Draws the chain as it really ends: GRPO_DOCS split into INVOICED_DOCS and NOINV_DOCS (an exact identity), then NOINV_DOCS split into still-open UNBILLED and quietly CLOSED_NOBILL. It makes the two failure modes visible as sizes rather than as two numbers in different KPI cards, and it shows that most receipts do get billed - which is what stops the GR/IR figure being read as a scandal."
+    }
+  ],
+  "traps": [
+    "FACETED - the single biggest error available here. Seven scopes are stacked in one result (TOTAL, CLASS, MONTH, BRANCH, VENDOR, VENDOR_UNBILLED, WAREHOUSE). Summing every row multiplies the book by roughly seven. The TOTAL row is SCOPE=='TOTAL' AND GRP_KEY=='ALL' - exactly one row per company (verified: 1/1/1).",
+    "VENDOR and VENDOR_UNBILLED are TOP-60 and do NOT re-total (SCOPE, GRP_KEY). Verified live: Oil VENDOR sums to 36.43 Cr LESS than TOTAL GRPO_GROSS and VENDOR_UNBILLED to 647.92 Cr less (it is ordered by unbilled value, not receipt value). Re-totalling from a vendor facet silently understates. CLASS, MONTH and BRANCH do re-total to the paisa.",
+    "WAREHOUSE money re-totals but WAREHOUSE DOC COUNTS DO NOT (GRPO_DOCS, UNBILLED_DOCS). A receipt spanning two warehouses is counted once in each row - verified live: Oil sums to 10,668 against a TOTAL of 10,663, Mart +2, Bev +7. Never add up GRPO_DOCS across WAREHOUSE.",
+    "UNBILLED_GROSS is contaminated by JIVO's own cards. Live today: 64.5% of Beverages' 4.41 Cr is the internal card VENDA001306 'STOCK GOODS RECEIPTS' (which will never receive a vendor bill) and 92% of Mart's 1.97 Cr is VENDA000001 'JIVO WELLNESS PVT LTD'. Quote EXT_UNBILLED_GROSS as the liability and name what came out (C-0005, C-0020).",
+    "OPDN.CANCELED is THREE-valued (CANCELED): 'N' live, 'Y' the cancelled original, 'C' SAP's cancellation mirror, and 'Y' and 'C' carry IDENTICAL totals. A '<> Y' filter adds 94.63 Cr of phantom receipts to Oil. The SQL keeps only 'N', on OPDN and on every linked OPCH and ORPD (C-0021).",
+    "HAS_AP_INVOICE is NOT the unbilled test (HAS_AP_INVOICE). It is text 'Y'/'N', not 0/1, and a partly-billed receipt reads 'Y' while still carrying unbilled lines. PLAN-V2 section 3.4 proposes 'sum of grpo detail rows where HAS_AP_INVOICE = 0' as the independent check for this KPI: that recipe is WRONG and overstates by 59.73 L (Oil), 41.52 L (Mart) and 35.03 L (Bev) because it sweeps in the CLOSED_NOBILL rows. The correct filter is ROW_KIND=='UNBILLED'.",
+    "CLOSED_NOBILL_GROSS is not a liability (CLOSED_NOBILL_GROSS). Somebody closed the receipt and the bill never came - an audit item. Adding it to UNBILLED_GROSS to get 'total exposure' is wrong twice over: it is not owed, and NOINV_GROSS already counts those documents at their FULL value rather than at the offending lines.",
+    "NOINV_GROSS is not UNBILLED_GROSS (NOINV_GROSS, UNBILLED_GROSS). NOINV_* counts whole documents with no invoice anywhere at their full receipt value; UNBILLED_* counts only the offending LINES. Live Oil: 7.12 Cr against 6.48 Cr. They are different questions and the names do not say so.",
+    "PDN1.OpenQty is broken at JIVO (OpenQty) - it still equals Quantity on fully invoiced closed lines - and OpenInvQty is stated in the BASE UoM while Quantity is in the DOCUMENT UoM (oil RM factor 1098.9). Neither is used, and no quantity arithmetic exists anywhere in this section. Do not add one (C-0001).",
+    "Zero-quantity freight and expense lines never close by themselves (UB_ZEROQTY_LINES). A naive LineStatus='O' count overstates Oil's GR/IR by 18 documents. They are excluded by the live-invoice link, and the genuinely unbilled ones are reported separately - Oil 178 lines / 16.74 L, Mart 63 / 14.67 L, Bev 206 / 12.35 L. That value is INSIDE UNBILLED_GROSS; do not add it on top.",
+    "DOC_STATUS is display only (DOC_STATUS, OPDN.DocStatus). It disagrees with the lines in both directions - live today 2 Oil, 1 Mart and 3 Bev detail rows read 'C' yet are ROW_KIND='UNBILLED'. Open-ness is decided line by line, exactly as C-0019 requires for the A/R side.",
+    "OPEN_GROSS can exceed DOC_GROSS and that is correct (OPEN_GROSS, DOC_GROSS). On 166 of 456 Oil detail rows, 28 of 47 Mart and 213 of 285 Bev the header carries VatSum=0 while the lines carry tax, so DOC_GROSS is the NET receipt. DOC_* reconciles to the SAP screen; OPEN_* is the number to chase. Never 'fix' one to match the other.",
+    "Money is line-level throughout (PDN1.GTotal), never OPDN.DocTotal, so header freight (OPDN.TotalExpns, Oil ~9.50 L) is NOT in any figure on this page. Anyone reconciling this section to a header-total report will be out by the freight and by the hidden line tax in both directions.",
+    "RETURNED_DOCS / RETURNED_LINES / RETURNED_GROSS do not mean 'goods sent back' (RETURNED_GROSS). 96%+ of JIVO's goods returns are raised standalone with RPD1.BaseType=-1 and no GRPO link, so these columns are near-empty by construction (Oil 3 docs, Mart 1, Bev 0). Consequence: goods received, never billed and then returned standalone STAY in the GR/IR bucket. Upper bound by vendor overlap: Oil 43.50 L, Bev 0.83 L.",
+    "This is a TODAY dashboard (PDN1.LineStatus). LineStatus is a current-state flag with no history, so a historical --as-of run silently DROPS lines that were open then and have since been billed - measured at as-of 2026-05-31: Oil 143 docs / 67.69 L and Bev 165 / 8.81 L invisible. Never quote a month-end GR/IR provision from this section without saying so.",
+    "INTERNAL_ADJ and INTERCOMPANY are detected by CARD NAME (CardName LIKE 'STOCK GOODS%' and LIKE '%JIVO%'). A differently-named internal adjustment card would be classed EXTERNAL and would inflate EXT_UNBILLED_GROSS - the very number the headline quotes. Unresolved; worth a jivo-correct if Accounts knows the real rule.",
+    "GR/IR is NOT in the A/P ledger. By definition no vendor bill exists, so none of this appears in vendor-ageing / payables and it must never be reconciled against them. It is ADDITIONAL supplier exposure: Oil trade payable plus 6.48 Cr of GR/IR. A reader who assumes payables already covers it understates what JIVO owes.",
+    "OLDEST_UB_DAYS on the TOTAL row is over ALL cards, not external only (OLDEST_UB_DAYS). It happens to be an external receipt in all three books today, so the two agree - do not rely on that. It is NULL, never 0, when a facet has nothing unbilled (Oil: 44 of 60 VENDOR rows, 24 of 32 WAREHOUSE rows, 6 of 24 MONTH rows).",
+    "INV_SAMEDAY_PCT, INV_PAIR_DOCS, INV_SAMEDAY_DOCS and INV_LAG_* are NULL on every WAREHOUSE row by design - an invoice lag is a document property and a warehouse is a line attribute - and NULL wherever nothing was invoiced. Rendering NULL as 0% would report perfect failure where there is no measurement.",
+    "PO_DOCNUMS and AP_INVOICE_DOCNUMS change TYPE with cardinality: int when there is exactly one, comma-separated string when there are several, null when none. A renderer calling .split(',') crashes on the int; a renderer formatting it as a number mangles the list.",
+    "Ageing runs off the GRPO's own DocDate (OPDN.DocDate), which at JIVO is the gate-in date (C-0017) - not the A/P invoice date, which is a different date in the books (C-0022). Do not re-age this section on an invoice date to make it agree with a payables report.",
+    "Detail is capped at 1000 rows per company and summary at 300 (ORDER BY open value DESC). Live today 456/47/285 and 185/93/151, so nothing is truncated - but a renderer must check the cap rather than assume, or a growing GR/IR problem will quietly stop appearing.",
+    "The detail slice is a SEPARATE query, so summary and detail can disagree by up to a paisa per document from independent ROUNDing (verified live: Oil +0.07 across 456 documents, Mart +0.01, Bev +0.01). Any equality check needs a tolerance; a strict == will show a false red dot.",
+    "This section is genuinely live and moves during the working day. Between two reads seven minutes apart while writing this spec, Mart's UNBILLED_GROSS went from 1.66 Cr to 1.97 Cr as new intercompany receipts landed. Every figure here is stamped to one snapshot; never mix figures read at different times."
+  ],
+  "empty_states": [
+    "No TOTAL row for the company (a book with zero live GRPOs produces an empty result set, not zeros): render empty('No goods receipts in this book') for the whole page. Never a zero KPI row.",
+    "sections.grpo.errors[company] is set, or the section status is 'error': render empty with the error text. The section is not empty, it is unknown, and a 0 would be read as 'nothing unbilled'.",
+    "EXT_UNBILLED_GROSS absent or null (a data.json generated before 2026-08-21 has no EXT_* columns): do not blank and do not silently show the contaminated total. Show UNBILLED_GROSS with an explicit banner that the external-only twin is unavailable in this build.",
+    "OLDEST_UB_DATE / OLDEST_UB_DAYS null - the facet has nothing unbilled: render empty('nothing unbilled here'), never '0 days', which reads as 'billed today'.",
+    "INV_SAMEDAY_PCT / INV_LAG_AVG_DAYS / INV_LAG_MED_DAYS / INV_PAIR_DOCS null - always on WAREHOUSE rows, and anywhere INV_PAIR_DOCS is 0: render empty('an invoice lag is a document property, not a warehouse one') rather than 0%.",
+    "SCOPE='VENDOR_UNBILLED' returns no rows (the SQL drops vendors with zero unbilled): render empty('no vendor is holding an unbilled receipt in this book') for the pareto and the chase-list chart. An empty axis reads as a rendering failure.",
+    "The detail slice is empty while the TOTAL row shows UNBILLED_DOCS > 0: the two queries disagree. Render empty('the chase list could not be built - summary says N receipts are unbilled') and raise a red check dot. Never show an empty table beside a non-zero KPI.",
+    "len(detail) == 1000 (the hard cap) or len(summary) == 300: render the table with an explicit 'truncated at the query cap' banner, and mark any total derived from detail as a lower bound.",
+    "RETURNED_DOCS / RETURNED_LINES / RETURNED_GROSS are 0 (Beverages today): render empty('JIVO raises goods returns standalone, so this column cannot see them') rather than 0 - a zero here would be read as 'nothing was returned', which is false.",
+    "manifest.as_of is not today (a historical --as-of build): the GR/IR figures are structurally understated. Render the KPI row behind a warning banner rather than as a live position.",
+    "A charted facet has exactly one row (Bev BRANCH has 3, a smaller book could have 1): render the table, not a single-bar chart or a full-circle donut, which would imply a comparison that does not exist."
+  ],
+  "sources": {
+    "sql": [
+      "pipeline/sql/grpo.sql (405 lines, 46 columns)",
+      "pipeline/sql/grpo-detail.sql (184 lines, 30 columns)"
+    ],
+    "notes": "pipeline/notes/grpo.md (adversarial review, verdict FIXED; 18 attacks, 4 defects found)",
+    "v1_render": "site/index.html lines 448-449 (section registry) and 1080-1128 (renderFaceted 'grpo')",
+    "data_snapshot": "site/data.json generated_at 2026-08-22T19:05:02+05:30, as_of 2026-08-22 (frozen copy used for every live figure in this spec)",
+    "rows": {
+      "summary": {
+        "oil": 185,
+        "mart": 93,
+        "bev": 151
+      },
+      "detail": {
+        "oil": 456,
+        "mart": 47,
+        "bev": 285
+      }
+    },
+    "money_units": "every money column is RAW INR RUPEES - no column in either file ends in _L or _CR, so scale() is a no-op here"
+  },
+  "unresolved": [
+    "Whether the GR/IR figure agrees with a G/L accrual balance is NOT checked - JDT1/OJDT were never opened for GRPO journal entries. If Accounts wants the GR/IR ACCOUNT reconciled rather than the DOCUMENTS aged, that is a second query this section cannot answer.",
+    "Standalone goods returns cannot be attributed to a GRPO line, so returned-but-never-billed goods remain in GR/IR. Upper bound by vendor overlap: Oil 43.50 L, Bev 0.83 L. These are bounds, not measurements.",
+    "Why 27% of Oil and 67% of Bev GRPO headers carry VatSum=0 while their lines are taxed is sized but not explained. It changes no figure here (money is line-level) but it will bite a GST reconciliation built on OPDN.DocTotal.",
+    "A partially-drawn line is treated as fully billed (BILLED is an existence test), so the section UNDERSTATES. Exposure measured at exactly one line in all three books, ~1,732 INR. Deliberately not fixed - pro-rating would need the unsafe UoM conversion.",
+    "No quantities anywhere. GRPO lines mix UoMs (oil RM in MTS, packaging in pieces), so no tonnage or bottle count can be built from this section without a separate pass over PDN1.UoMNum/UoMDen and OITM."
+  ]
+}

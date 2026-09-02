@@ -30,7 +30,11 @@ go test ./internal/wa/ -run TestNothingSends -v
 
 echo "==> building"
 mkdir -p "$HOME/go/bin"
-go build -trimpath -o "$HOME/go/bin/jwa" ./cmd/jwa
+# -buildvcs=false: this tree is normally an rsync'd copy sitting outside any
+# checkout. If a stray .git exists anywhere above it (there is one in /root on
+# the JIVO VPS) Go tries to stamp the binary from it and the build dies with
+# "error obtaining VCS status: exit status 128". The stamp buys us nothing here.
+go build -trimpath -buildvcs=false -o "$HOME/go/bin/jwa" ./cmd/jwa
 echo "    installed: $HOME/go/bin/jwa"
 
 echo "==> installing the user service"

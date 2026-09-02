@@ -211,6 +211,7 @@ Do not use this CLI for:
 - `jivo-factory-pp-cli gate-core job-work-sap-production-orders` — SAP production orders available to link to a job-work entry — planned vs completed vs remaining quantity.
 - `jivo-factory-pp-cli gate-core maintenance-gate-entry` — Full view of a maintenance-material gate entry. Required: id.
 - `jivo-factory-pp-cli gate-core raw-material-gate-entry` — Full view of a raw-material gate entry — the complete record the review screen shows. Required: id.
+- `jivo-factory-pp-cli gate-core raw-material-gate-entry-po-receipts` — The PO receipts on one raw-material gate entry WITH their edit-lock state — is_editable and lock_reason. Required: id.
 - `jivo-factory-pp-cli gate-core rejected-qc-return` — One rejected-QC return record by id. Required: id.
 - `jivo-factory-pp-cli gate-core rejected-qc-returns` — QC-rejected material leaving the plant — goods sent back out after failing quality control.
 - `jivo-factory-pp-cli gate-core sales-dispatch` — Customer dispatches at the gate ('docking') — one row per company per truck, from docked through gatepass to dispatched
@@ -299,6 +300,7 @@ Do not use this CLI for:
 - `jivo-factory-pp-cli maintenance pm-executions` — Actual PM rounds generated from the plans — what was due, what got done, what was skipped, with the checklist results.
 - `jivo-factory-pp-cli maintenance pm-plans` — Preventive-maintenance plans — which asset gets serviced how often, and when it is next due.
 - `jivo-factory-pp-cli maintenance reports` — Twelve canned maintenance reports (daily, monthly, PM compliance, breakdown, downtime pareto, MTTR, MTBF, asset history
+- `jivo-factory-pp-cli maintenance scan-lookup` — Scan lookup: find the maintenance asset or spare behind a QR/barcode printed on the shop floor. Required: code.
 - `jivo-factory-pp-cli maintenance spare-categories` — Spare category master.
 - `jivo-factory-pp-cli maintenance spare-movements` — The spare stock ledger — every receipt, issue, consumption, return and adjustment with quantity and value.
 - `jivo-factory-pp-cli maintenance spare-requests` — Requests raised off a work order for spares from the maintenance store, through issue
@@ -454,6 +456,7 @@ Do not use this CLI for:
 - `jivo-factory-pp-cli quality-control production-qc` — List production QC sessions — in-process and final quality checks recorded against production runs.
 - `jivo-factory-pp-cli quality-control production-qc-counts` — Production QC scoreboard: how many QC sessions are draft, submitted, approved and rejected.
 - `jivo-factory-pp-cli quality-control production-qc-pending` — Production QC sessions submitted and waiting for approval — the FG-release approval queue.
+- `jivo-factory-pp-cli quality-control production-qc-run-sessions` — Every QC session recorded against one production run — in-process and final checks with their workflow status. Required: id.
 - `jivo-factory-pp-cli quality-control qc-arrival-slip-get` — Show one QA arrival slip in full, including its COA/COQ attachment URLs. Required: id.
 - `jivo-factory-pp-cli quality-control qc-inspection-get` — Full raw-material inspection report: header, material type, both sign-offs, every parameter result and the attachments.
 - `jivo-factory-pp-cli quality-control qc-inspections-decision-changed` — Inspections where the QA Manager overturned an earlier verdict — the audit queue for changed decisions.

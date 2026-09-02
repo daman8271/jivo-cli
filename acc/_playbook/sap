@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# sapb1 with the bridge + operator login already applied. Env doesn't survive
+# between shells, so every call goes through here.
+#   acc/_playbook/sap doctor
+#   ACC_ENV=lovepreet-veerji.env acc/_playbook/sap query Invoices --top 5
+set -euo pipefail
+R="$(cd "$(dirname "$0")/../.." && pwd)"
+nc -z 127.0.0.1 15000 2>/dev/null || bash "$R/connections/sap-home-bridge.sh" >&2
+set -a; . "$R/sap-b1/cli/${ACC_ENV:-navdeep-user36.env}"; set +a
+export SAPB1_HOST=127.0.0.1 SAPB1_PORT=15000 SAPB1_TIMEOUT=180
+export SAPB1_WRITE_LOG="$R/queries/${SAPB1_USER:-unknown}/sap-writes.jsonl"
+mkdir -p "$(dirname "$SAPB1_WRITE_LOG")"
+exec "$R/sap-b1/cli/sapb1" "$@"

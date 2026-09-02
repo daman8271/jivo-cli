@@ -1,0 +1,43 @@
+# Platform-Common (Layout, Commons, Config, Files, Support) — read-only probe transcript
+# Section slug: platform-common | lane: platform | hosts: auth-backend.zepto.co.in + fcc.zepto.co.in + events.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token payload (decoded elsewhere): sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, emailId ecom1@jivo.in,
+#   roleName "External Super Ads Admin", iat 1783887610, exp 1783967399
+#   = exp Mon Jul 13 2026 18:29:59 UTC (23:59:59 IST) -> EXPIRED at probe time (run 2026-07-24, ~11 days lapsed).
+# Rules: curl -s -X GET only, read-only allowlist, cap 8 probes, ~1 req/s, STOP on any 401/403/429/WAF.
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/vendor/api/v1/config/load
+# const GET_META_INFO — load the vendor shell meta/config for the current session.
+# Chosen because it is the cleanest unambiguous pure-GET read in this section: matches "config"/"load"
+#   allowlist words, no path param, no body, no download/export/generate/otp/upload/create/mutate keyword.
+#   It fetches static shell configuration keyed off the bearer JWT — a read.
+# Headers: authorization: <jwt-REDACTED>, accept: application/json, origin/referer https://brands.zepto.co.in,
+#   normal desktop Chrome User-Agent.
+HTTP 401
+{"code":401,"message":"Token expired"}
+
+======================================================
+HALT: received 401 {"code":401,"message":"Token expired"} on the first probe.
+Per READ-ONLY guardrails, stopped immediately after the first 401.
+Probes fired: 1.  2xx PROVEN: 0.  All Platform-Common endpoints remain DOCUMENTED (not probed).
+(Same expired token as the sibling auth-identity / users-access / subscription-billing / kyc-onboarding
+ probe runs — one shared JWT, exp 2026-07-13, lapsed ~11 days before this run.)
+
+Remaining pure-GET reads that PASS the read-only allowlist and would be probed with a fresh token
+(cap 8, ~1 req/s, in this priority order):
+  - GET https://fcc.zepto.co.in/relay/api/v1/config/get-configdata            (GET_FETAURE_FLAGS — feature flags)
+  - GET https://auth-backend.zepto.co.in/api/v1/commons/status-config         (GET_STATUS_CONFIG)
+  - GET https://auth-backend.zepto.co.in/api/v1/commons/manufacturer-list     (GET_MANUFACTURER_LIST)
+  - GET https://auth-backend.zepto.co.in/api/v1/commons/user/vendor-list      (VENDOR_FILTER_LIST)
+  - GET https://auth-backend.zepto.co.in/api/v1/commons/user/mh-list          (LOCATION_FILTER_LIST)
+  - GET https://fcc.zepto.co.in/api/v1/filter/city-list                       (GET_CITY)
+  - GET https://fcc.zepto.co.in/contractservice/api/v1/common/fbz-margins     (GET_FBZ_MARGINS)
+  - GET https://auth-backend.zepto.co.in/api/v1/commons/config/learning-center/all (GET_ALL_LEARNING_CONTENT)
+
+NOT probed (excluded by the read-only allowlist / method): every POST list/search that could be re-issued as GET
+  is left to the GET variant only; and every write/export verb — chat/feedback, commons/feedback,
+  commons/impersonation, sendbird token/refresh, publish-events, users/${id}/update, tnc/user,
+  domain/create-domains, contractservice bulk-jobs/create + attachment/save, vendor bulk-job/create,
+  vendor ticket/create, crm-ticketing actions/reassign|reopen, customer ticket rating, and all
+  document-upload / generate-upload-url / get-upload-url EXPORT endpoints — DOCUMENTED FROM BUNDLE ONLY.

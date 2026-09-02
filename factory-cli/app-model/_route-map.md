@@ -9,6 +9,13 @@ tags: [jivogpt, factory-cli, routes]
 
 # Jivo Mart UI Route Map (per section) — extracted from ji.jivo.in bundle
 
+> [!warning] SUPERSEDED — 2026-08-31
+> This is a **2026-06-30, JIVO_MART-only** snapshot: 393 routes, 14 top-level segments.
+> The live app has **420 routes across 25 sections**, including 8 sections that did not
+> exist here (`/etp`, `/warehouse-ops`, `/returns`, `/fire`, `/planning-purchase`,
+> `/finance`, `/daily-tasks`, `/sap-reports`), and no longer has `/wms` or `/dispatch-plans`.
+> Use [[_route-map-2026-08-31]].
+
 > **Provenance — imported 2026-07-19; source snapshot 2026-06-30.** This note came from the JIVO_MART-only `daman8271/jivo-factory-intel` baseline. For the current three-company study and the live-verified 2026-07-19 state, use [[docs/factory/FACTORY_MAP|FACTORY_MAP]] and [[CLI/factory-cli/README|the current CLI guide]].
 
 > Each section's react-router pages. Sub-paths = subpages/steps. API prefixes feed each.

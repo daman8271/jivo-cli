@@ -1,0 +1,250 @@
+#!/usr/bin/env bash
+# gstd — the GST portal session keeper for the JIVO fleet.
+#
+# WHY THIS EXISTS
+#   A GST session dies of idleness and reviving it needs a 6-digit captcha, so
+#   every operator was hand-logging into 8 registrations. This box holds ONE set
+#   of sessions and every device borrows its cookie jars.
+#
+# THE FOUR RULES, each learned from a live failure:
+#
+#   1. keepalive is safe; login is not. Pinging holds OUR session and disturbs
+#      nobody. Logging in ENDS whoever else is on that username, because the
+#      portal allows one session per login. So this pings freely and logs in
+#      grudgingly.
+#
+#   2. 503 means WAIT, never LOG IN. The portal takes its authenticated API
+#      offline overnight (observed 2026-09-02 00:15 IST: ustatus, return. and
+#      payment. all 503, and the login flow with them). A keeper that reads
+#      "down" as "expired" burns attempts all night for nothing.
+#
+#   3. A locally-lapsed jar CANNOT tell you the portal is down. This is the
+#      subtle one, and it is what made the first version of this script thrash.
+#      gst-portal refuses to send a request on a jar older than its idle guard,
+#      so once every jar is stale the keepalive never reaches the portal and
+#      reports "expired" for all eight — during an outage. The fix is that the
+#      FIRST captcha mint of a run doubles as the availability probe: if the
+#      portal will not mint one, nothing is wrong with our sessions and no
+#      further login is attempted this run.
+#
+#   4. If our session keeps dying fast, a HUMAN is on it — yield, do not fight.
+#      A session killed within KILL_WINDOW of our own login was almost certainly
+#      taken by a person in the office. Re-logging in would kick them out, they
+#      would log in again, and the two of us would trade the account all day.
+#      Each such kill raises a strike and backs off exponentially.
+#
+# A credential rejection is never retried, by anyone, ever: gst-portal records
+# it and refuses, and that is how a statutory filing account avoids a lockout.
+set -uo pipefail
+
+GST_DIR=/root/jivo-cli/portals/gst
+CLI="$GST_DIR/cli/gst-portal"
+STATE=/root/gstd/state
+LOG=/root/gstd/log/gstd.log
+CLEAN=/root/gstd/bin/captcha-clean.py
+export GST_STATE_DIR=/root/gstd/jars
+
+KILL_WINDOW=600        # a session lost this soon after our login = a human took it
+LOGIN_COOLDOWN=300     # never two logins for one GSTIN inside this
+BACKOFF_BASE=900       # first yield after a human kill: 15 min
+BACKOFF_MAX=14400      # ceiling: 4 h
+DOWN_BACKOFF=1200      # portal in its maintenance window: recheck in 20 min
+MAX_LOGINS_PER_DAY=24  # hard stop per registration
+CAPTCHA_TRIES=3        # fresh images are free; a wrong one is not a credential failure
+
+mkdir -p "$STATE" "$GST_STATE_DIR" "$(dirname "$LOG")" /root/gstd/tmp
+
+log() { printf "%s %s\n" "$(date -Is)" "$*" | tee -a "$LOG" >&2; }
+now() { date +%s; }
+st()  { cat "$STATE/$1" 2>/dev/null || echo "${2:-0}"; }
+setst(){ printf "%s" "$2" > "$STATE/$1"; }
+rejected() { [[ -f "$GST_STATE_DIR/gst-portal/rejected-${1//[^A-Z0-9]/}.json" ]]; }
+
+# auth list --json emits a BARE ARRAY; only --agent wraps it in {data:[...]}.
+# Accept either, so this keeps working whichever the CLI is asked for.
+gstins() { "$CLI" auth list --json 2>/dev/null | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+for r in (d.get('data',[]) if isinstance(d,dict) else d):
+    print(r['gstin'], r['state'].replace(' ','_'))
+"; }
+
+# PORTAL_DOWN is set the moment any call proves the portal is unavailable. Once
+# set, no further login is attempted in this run — see rule 3.
+PORTAL_DOWN=0
+
+# mint_captcha <gstin> — fetch + clean one image.
+#   0 = ready   1 = failed for some other reason   2 = PORTAL IS DOWN
+mint_captcha() {
+  local g=$1 img=/root/gstd/tmp/$1.png err
+  rm -f "/root/gstd/tmp/$1"_*.png "$img"
+  err=$("$CLI" auth captcha --gstin "$g" --out "$img" 2>&1 >/dev/null)
+  if [[ ! -s "$img" ]]; then
+    # The captcha mint is also this run's availability probe (rule 3).
+    if grep -qE 'HTTP (50[0-9]|429)' <<<"$err"; then
+      PORTAL_DOWN=1
+      return 2
+    fi
+    log "WARN  $g — captcha mint failed: $(head -c 160 <<<"$err")"
+    return 1
+  fi
+  "$CLEAN" "$img" >/dev/null 2>&1 || return 1
+  return 0
+}
+
+# read_captcha <gstin> -> prints 6 digits.
+# The reader is headless Claude on this box: it looks at both renders and
+# answers. Scored 5/5 against captchas whose digits were proved by a successful
+# login (2026-09-02). Tesseract was tried first and is not close — it misread
+# every one of the same five.
+read_captcha() {
+  local g=$1 d
+  d=$(timeout 200 claude -p "Read the image /root/gstd/tmp/${g}_open.png and also /root/gstd/tmp/${g}_gray.png. They are two renders of the SAME 6-digit captcha from the Indian GST portal. Reply with ONLY the six digits, nothing else." \
+        --allowedTools "Read" 2>/dev/null | tr -dc '0-9' | tail -c 6)
+  [[ ${#d} -eq 6 ]] || return 1
+  printf '%s' "$d"
+}
+
+# try_login <gstin> <state> — one guarded login.
+#   0 = session live   1 = blocked/failed   2 = portal down
+try_login() {
+  local g=$1 s=$2 t; t=$(now)
+
+  if rejected "$g"; then
+    log "SKIP  $s $g — credentials were rejected; a human must fix the password. Never retried."
+    return 1
+  fi
+  local until; until=$(st "backoff-$g")
+  if (( t < until )); then
+    log "YIELD $s $g — backing off for $(( (until - t) / 60 )) more min"
+    return 1
+  fi
+  local last; last=$(st "lastlogin-$g")
+  if (( t - last < LOGIN_COOLDOWN )); then
+    log "SKIP  $s $g — logged in $(( t - last ))s ago, under the ${LOGIN_COOLDOWN}s cooldown"
+    return 1
+  fi
+  local day today count; today=$(date +%F); day=$(st "day-$g" "")
+  count=$(st "logins-$g")
+  if [[ "$day" != "$today" ]]; then setst "day-$g" "$today"; count=0; setst "logins-$g" 0; fi
+  if (( count >= MAX_LOGINS_PER_DAY )); then
+    log "STOP  $s $g — $count logins today already; refusing more until tomorrow"
+    return 1
+  fi
+
+  local i code rc
+  for (( i=1; i<=CAPTCHA_TRIES; i++ )); do
+    mint_captcha "$g"; rc=$?
+    if (( rc == 2 )); then
+      log "DOWN  $s $g — portal will not serve the login flow; NOT retrying this run"
+      setst "backoff-$g" $(( t + DOWN_BACKOFF )); return 2
+    fi
+    (( rc == 1 )) && continue
+    local digits; digits=$(read_captcha "$g") || { log "WARN  $s $g — captcha unreadable (try $i); fresh image is free"; continue; }
+    "$CLI" auth login --gstin "$g" --captcha "$digits" >/dev/null 2>&1; code=$?
+    case $code in
+      0) setst "lastlogin-$g" "$t"; setst "logins-$g" $((count+1))
+         log "LOGIN $s $g — in (try $i)"; return 0 ;;
+      4) # a captcha miss and a credential rejection share exit 4; the CLI
+         # persists the latter, so the file is what tells them apart.
+         if rejected "$g"; then
+           log "FAIL  $s $g — CREDENTIALS REJECTED by the portal. Not retrying. A human must supply the new password."
+           return 1
+         fi
+         log "WARN  $s $g — captcha rejected by the portal (try $i)" ;;
+      6) log "DOWN  $s $g — portal went unavailable mid-login"
+         PORTAL_DOWN=1; setst "backoff-$g" $(( t + DOWN_BACKOFF )); return 2 ;;
+      *) log "FAIL  $s $g — login exit $code"; return 1 ;;
+    esac
+  done
+  log "FAIL  $s $g — $CAPTCHA_TRIES captchas in a row were rejected"
+  return 1
+}
+
+# ensure — the whole job. Ping everything; log in only what needs it and only
+# where the guards allow.
+cmd_ensure() {
+  local out verdicts alive=0 revived=0 down=0 blocked=0
+  out=$("$CLI" auth keepalive --all --agent 2>/dev/null)
+  verdicts=$(printf '%s' "$out" | python3 -c "
+import sys,json
+try: d=json.load(sys.stdin)
+except Exception: sys.exit(0)
+for r in d.get('data',[]): print(r['gstin'], r.get('verdict','expired'), r['state'].replace(' ','_'))
+")
+  if [[ -z "$verdicts" ]]; then
+    log "ERROR keepalive produced nothing — is $CLI built and is .env present?"
+    return 1
+  fi
+
+  while read -r g v s; do
+    [[ -z "$g" ]] && continue
+    local last strikes
+    case "$v" in
+      alive)
+        alive=$((alive+1))
+        # Surviving past KILL_WINDOW means the last death was ordinary idleness,
+        # not a person taking the account — clear the strikes.
+        last=$(st "lastlogin-$g")
+        if (( last > 0 && $(now) - last > KILL_WINDOW )); then setst "strikes-$g" 0; fi
+        ;;
+      unavailable)
+        down=$((down+1)); PORTAL_DOWN=1
+        setst "backoff-$g" $(( $(now) + DOWN_BACKOFF ))
+        log "DOWN  $s $g — portal in its maintenance window; NOT logging in" ;;
+      expired)
+        if (( PORTAL_DOWN )); then
+          down=$((down+1))
+          log "DOWN  $s $g — portal is down this run; session state unknown, not attempting"
+          continue
+        fi
+        last=$(st "lastlogin-$g"); strikes=$(st "strikes-$g")
+        if (( last > 0 && $(now) - last < KILL_WINDOW )); then
+          strikes=$((strikes+1)); setst "strikes-$g" "$strikes"
+          local back=$(( BACKOFF_BASE * (1 << (strikes-1)) ))
+          (( back > BACKOFF_MAX )) && back=$BACKOFF_MAX
+          setst "backoff-$g" $(( $(now) + back ))
+          log "HUMAN $s $g — session died $(( $(now) - last ))s after our login. Someone is working on this account; yielding ${back}s (strike $strikes)."
+          blocked=$((blocked+1))
+        else
+          try_login "$g" "$s"; local rc=$?
+          case $rc in
+            0) revived=$((revived+1)) ;;
+            2) down=$((down+1)) ;;
+            *) blocked=$((blocked+1)) ;;
+          esac
+        fi ;;
+    esac
+  done <<< "$verdicts"
+
+  log "ENSURE alive=$alive revived=$revived down=$down blocked=$blocked"
+  printf 'alive=%d revived=%d down=%d blocked=%d\n' "$alive" "$revived" "$down" "$blocked"
+  # Exit 0 for any run that did what it could. A blocked registration is an
+  # OUTCOME, not a failure of this run: Haryana is blocked on a wrong password
+  # and will stay blocked until a person fixes it, and a keeper that returns
+  # non-zero forever trains every caller to ignore its exit code. Only a broken
+  # install (handled above) is a failure.
+  return 0
+}
+
+cmd_status() {
+  "$CLI" auth status --all 2>/dev/null
+  echo
+  echo "guards:"
+  local t; t=$(now)
+  while read -r g s; do
+    [[ -z "$g" ]] && continue
+    local b extra=""; b=$(st "backoff-$g")
+    (( b > t )) && extra=" backoff=$(( (b-t)/60 ))m"
+    rejected "$g" && extra="$extra CREDENTIALS-REJECTED"
+    printf '  %-18s %-22s logins_today=%s strikes=%s%s\n' \
+      "$g" "$s" "$(st "logins-$g")" "$(st "strikes-$g")" "$extra"
+  done < <(gstins)
+}
+
+case "${1:-ensure}" in
+  ensure) cmd_ensure ;;
+  status) cmd_status ;;
+  jars)   printf '%s\n' "$GST_STATE_DIR/gst-portal" ;;
+  *) echo "usage: gstd {ensure|status|jars}" >&2; exit 2 ;;
+esac

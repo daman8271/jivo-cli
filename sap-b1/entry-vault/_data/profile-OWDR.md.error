@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/profile.py", line 211, in <module>
+    main()
+    ~~~~^^
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/profile.py", line 191, in main
+    per_co[co] = profile(sch, a.table, a.days) if table_exists(sch, a.table) else {"n": 0}
+                 ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/profile.py", line 38, in profile
+    head = q(f'''SELECT COUNT(*) N, SUM(CASE WHEN {rec} THEN 1 ELSE 0 END) NR
+           ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 {f', MIN("{dc}") A, MAX("{dc}") B' if dc else ''}
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                 FROM "{schema}"."{table}"''')[0]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/common.py", line 52, in q
+    raise RuntimeError(f"hana-sql failed: {last}\nSQL: {sql[:400]}")
+RuntimeError: hana-sql failed: QUERY ERROR: SQL Error 259 - invalid table name:  Could not find table/view OWDR in schema JIVO_OIL_HANADB: line 3 col 41 (at pos 117) (statement no: 0) — hint: table names must be schema-qualified and double-quoted, e.g. "JIVO_OIL_HANADB"."OINV" (the three schemas are JIVO_OIL_HANADB, JIVO_MART_HANADB, JIVO_BEVERAGES_HANADB)
+SQL: SELECT COUNT(*) N, SUM(CASE WHEN 1=0 THEN 1 ELSE 0 END) NR
+                 
+                 FROM "JIVO_OIL_HANADB"."OWDR"

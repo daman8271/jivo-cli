@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# gst-sync — "this device just came online; give me working GST sessions."
+#
+# Runs ON A DEVICE (Mac or Linux), not on the VPS. It asks the VPS holder to
+# make sure all eight registrations are logged in, then copies the resulting
+# cookie jars down so the local `gst-portal` can read the portal with no captcha
+# and no login of its own.
+#
+# WHY THE DEVICE CALLS, AND NOT THE OTHER WAY ROUND
+#   Daman asked for a webhook that fires when a device comes online. The webhook
+#   exists (gstd-webhook on the VPS) but it cannot be pushed to a laptop: the
+#   laptop is behind NAT with no stable address, and when it is asleep there is
+#   nothing to push to. Whoever wakes up has to make the call. So the trigger
+#   lives here, on the device, and it calls the webhook.
+#
+# WHY ONE SHARED JAR AND NOT A LOGIN PER DEVICE
+#   The GST portal allows ONE session per username. If five devices each logged
+#   in, they would spend the day kicking each other off. So exactly one machine
+#   (the VPS) ever logs in, and every device borrows its jars. Sharing the jar
+#   is not a workaround — it is the only arrangement the portal permits.
+set -uo pipefail
+
+VPS=${GST_VPS:-vps}
+REMOTE_JARS=/root/gstd/jars/gst-portal
+
+# Where the local gst-portal keeps sessions: os.UserConfigDir() + /gst-portal.
+if [[ -n "${GST_STATE_DIR:-}" ]]; then
+  LOCAL_JARS="$GST_STATE_DIR/gst-portal"
+elif [[ "$(uname -s)" == "Darwin" ]]; then
+  LOCAL_JARS="$HOME/Library/Application Support/gst-portal"
+else
+  LOCAL_JARS="${XDG_CONFIG_HOME:-$HOME/.config}/gst-portal"
+fi
+
+QUIET=0
+[[ "${1:-}" == "--quiet" ]] && QUIET=1
+say() { (( QUIET )) || printf '%s\n' "$*"; }
+
+mkdir -p "$LOCAL_JARS"
+chmod 700 "$LOCAL_JARS" 2>/dev/null || true
+
+# 1. Ask the holder to bring the sessions up. `gstd ensure` is idempotent and
+#    self-guarding: it pings first, logs in only what is dead, refuses during
+#    the portal's overnight window, and yields if a human is on the account.
+# No `timeout` here on purpose: macOS has none in /usr/bin (it is Homebrew
+# coreutils), and a LaunchAgent runs with a bare PATH — relying on it made this
+# script fail silently on every automatic run while working by hand. ssh and
+# rsync can both bound themselves, so let them.
+SSHOPT=(-o BatchMode=yes -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=40)
+if ! out=$(ssh "${SSHOPT[@]}" "$VPS" '/root/gstd/bin/gstd ensure' 2>/dev/null | tail -1); then
+  say "gst-sync: could not reach $VPS (or ensure failed) — using whatever jars are already here"
+  out=""
+fi
+[[ -n "$out" ]] && say "gst-sync: holder says $out"
+
+# 2. Pull the jars. Sessions only: a credential rejection is per-box state and
+#    a stale one copied down would block a password somebody has since fixed.
+if ! rsync -az --timeout=60 -e "ssh ${SSHOPT[*]}" \
+       "$VPS:$REMOTE_JARS/session-*.json" "$LOCAL_JARS/" 2>/dev/null; then
+  say "gst-sync: jar copy failed — the local sessions are unchanged"
+  exit 1
+fi
+chmod 600 "$LOCAL_JARS"/session-*.json 2>/dev/null || true
+
+n=$(ls -1 "$LOCAL_JARS"/session-*.json 2>/dev/null | grep -vc pending || true)
+say "gst-sync: $n session jar(s) in $LOCAL_JARS"

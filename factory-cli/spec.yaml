@@ -1856,7 +1856,18 @@ resources:
         - name: id
           type: integer
           required: true
-          description: 'path param — gate entry id, sourced from the raw-material gatein app''s entry list (another domain group)'
+          description: 'path param — the vehicle_entry_id, from `grpo all-entries`.results[].vehicle_entry_id. (The raw-material gatein app''s own entry list is a dead route; this is the working source.) Entries are per-company.'
+      raw-material-gate-entry-po-receipts:
+        method: GET
+        path: '/raw-material-gatein/gate-entries/{id}/po-receipts/view/'
+        description: 'The PO receipts on one raw-material gate entry WITH their edit-lock state — is_editable and lock_reason, plus the last-modified stamp. Those three fields exist nowhere else in this CLI; the receipt and item figures themselves (ordered/received/short qty, unit price, uom, sap_line_num) are also in `gate-core raw-material-gate-entry` and `grpo all-entries`. Reach for this one when the question is "can this receipt still be edited, and why is it locked". The path keeps the /raw-material-gatein/ prefix even though the command lives under gate-core — mirroring `gate-core raw-material-gate-entry`. Required: id.'
+        response:
+          type: array
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'path param — the vehicle_entry_id, from `grpo all-entries`.results[].vehicle_entry_id. (The raw-material gatein app''s own entry list is a dead route; this is the working source.) Entries are per-company, so an id from one company 404s in the other two.'
       rejected-qc-returns:
         method: GET
         path: /gate-core/rejected-qc-returns/
@@ -3430,6 +3441,17 @@ resources:
           type: integer
           required: true
           description: 'path segment int'
+      scan-lookup:
+        method: GET
+        path: /maintenance/scan/lookup/
+        description: 'Scan lookup: find the maintenance asset or spare behind a QR/barcode printed on the shop floor. Searches the MAINTENANCE register (machines and spares) — not the finished-goods box/pallet registry that `barcode lookup` covers. A miss returns HTTP 404 with a JSON body {"found":false,...} — that is the handler''s own answer, not a routing error. The hit-path (200) response shape is UNOBSERVED and unobservable until an asset carries a real qr_code; sample keys found/code/detail are the MISS body only. Required: code.'
+        response:
+          type: object
+        params:
+        - name: code
+          type: string
+          required: true
+          description: 'REQUIRED. The code printed on the physical tag. PROVEN NOT to be `asset_code`: JIVO_OIL holds an asset whose asset_code is exactly "LIVE-SMOKE-1" and looking that string up still returns found:false. So do not feed it a value from `maintenance assets`.asset_code. It is matched against the asset''s qr_code / the spare''s part code, and/or restricted to active assets — undetermined, because every asset in all three companies has qr_code '''' today. (query)'
   maintenance-gatein:
     description: 'These five prefixes are the "what came in the gate" flows, split by what kind of material arrived: raw material / packing material against a purchase order, daily-needs (canteen food and consumables),'
     endpoints:
@@ -5355,6 +5377,20 @@ resources:
           type: string
           description: 'Arrival-slip id from `quality-control arrival-slips`'
           required: true
+      production-qc-run-sessions:
+        method: GET
+        path: '/quality-control/production-qc/runs/{id}/sessions/'
+        description: 'Every QC session recorded against one production run — in-process and final checks with their workflow status. 404 with {"detail":"No ProductionRun matches the given query."} means that run id does not exist in the company you asked (runs are per-company). Required: id.'
+        response:
+          type: array
+        params:
+        - name: id
+          type: integer
+          required: true
+          description: 'path param — production run id, from `production-execution runs`. Runs are per-company: JIVO_MART currently has none, so every id 404s there.'
+        - name: session_type
+          type: string
+          description: 'FINAL is the only value present in live data (all 9 sessions across all three companies); INPROCESS is accepted and filters correctly but currently matches nothing. TRAP: an unrecognised value is accepted silently and returns 200 [] — ?session_type=BOGUS returns an empty array, so a typo reads as "no sessions" rather than an error. (query)'
 
   returnable-items:
     description: 'This is JIVO''s RGP/NRGP gate-pass book — the register of material that leaves the factory gate and is meant to come back. A department raises a pass for a pump, motor, mould shaft, cutter, cooler, or'

@@ -33,13 +33,29 @@ print(sum(1 for t in d.get('tools',[]) if (t.get('method') or 'GET').upper()!='G
 echo
 echo "=== 2. Endpoints that must NEVER be published ==="
 # Reading these mutates, or they are unproven and therefore excluded.
+#
+# 2026-08-31 — "/po-receipts/view" REMOVED from this list, on Daman's call, with
+# evidence. It was excluded alongside security/view and weighment/view for sharing
+# their get_or_create NAME shape (a child keyed by its parent's gate-entry id), the
+# shape that made GET /marketplace/settings/ create six production rows (C-0007).
+# The RESPONSE shape separates them. On the same entry 3707
+# (research/refute-factory-2026-08-22.md:108-110):
+#     /raw-material-gatein/.../po-receipts/view/ -> [{"id":1087, ...}]   ARRAY
+#     /security-checks/.../security/view/        -> {"id":1207, ...}     OBJECT
+# A Django get_or_create returns one object; a many=True list serializer cannot
+# create. po-receipts is a filtered list, the other two are singletons — they were
+# grouped by name, not by behaviour. Corroborating: 192 raw-material gate entries
+# scanned across all three companies via `grpo all-entries` have >=1 po_receipt
+# each, so the create branch has no reachable input in live data.
+# Residual risk (~10%): a view could get_or_create and then serialize many=True
+# over a queryset. Unusual, unprovable without the Django source. security/view and
+# weighment/view stay excluded — they really do return singletons.
 for p in \
   "/marketplace/settings/" \
   "/marketplace/orders/resolve/" \
   "/grpo/draft/" \
   "/security-checks/gate-entries" \
   "/weighment/gate-entries" \
-  "/po-receipts/view" \
   "/production-planning/" \
   "/warehouse/wms/dashboard/" \
   "/warehouse/wms/stock/overview/" \

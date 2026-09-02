@@ -1,0 +1,702 @@
+{
+  "section": "open-item-list",
+  "title": "Open Item List",
+  "tables": "OINV ORIN ORCT OPCH ORPC OVPM",
+  "blurb": "Every SAP document still marked open on both sides of the ledger — customer invoices, credit notes, unapplied receipts, vendor bills, vendor credit notes and unapplied payments — one row each, so Accounts can see exactly which documents make up a party's position and which ones SAP simply never closed.",
+
+  "grain": "ONE SUMMARY ROW = ONE OPEN SAP DOCUMENT, keyed by (DOCTYPE, DOC_ENTRY) — an OINV/ORIN/OPCH/ORPC line with DocStatus='O' and DocTotal-PaidToDate>0, or an ORCT/OVPM payment with OpenBal>0. There is NO detail array: data.json carries sections['open-item-list'].detail == {} for all three companies, and there is no open-item-list-detail.sql. The section IS the detail layer — it is the document-level drill-down behind customer-ageing and vendor-ageing. The row set is CAPPED and FLOORED (see traps): only documents with OPEN_AMT >= 10,000 that are in the company's 1,500 biggest OR their own DOCTYPE's 400 biggest are returned — live 2,168 of 23,240 rows (oil), 2,188 of 10,105 (mart), 1,096 of 2,212 (bev). Every row also carries UNCAPPED per-DOCTYPE (DT_*), per-card (CARD_*) and per-company (CO_*) totals broadcast onto it.",
+
+  "faceted": false,
+
+  "faceted_note": "There is no TOTAL/CLASS/MONTH row to find — every row is a document, and the six DOCTYPE values (AR_INV, AR_CN, AR_RCT, AP_INV, AP_CN, AP_PMT) are mutually exclusive document classes, not facets stacked on a total. BUT THE SAME MULTIPLY-COUNTING BUG CLASS APPLIES, in a nastier form: 22 of the 51 columns are broadcast aggregates repeated identically on every row they describe. CO_ITEMS_ALL, CO_ITEMS_SHOWN, CO_OPEN_ALL, CO_OPEN_SHOWN, CO_OPEN_NET, CO_OCRD_NET, CO_STALE_GAP, CO_MIGRATED_OPEN and AS_OF are constant across the whole company slice (verified: exactly 1 distinct value per column per company). DT_ITEMS_ALL, DT_OPEN_ALL, DT_ITEMS_SHOWN, DT_OPEN_SHOWN are constant within a DOCTYPE. CARD_BALANCE, CARD_OPEN_NET, CARD_OPEN_GROSS, CARD_STALE_GAP, CARD_REAL_PCT are constant within a CARD_CODE. READ THESE OFF ONE ROW — summing CO_OPEN_ALL down the oil slice yields Rs 5,60,806 Cr instead of Rs 2,586.70 Cr, a 2,168x overstatement. The ONLY per-row, safe-to-add money columns are DOC_TOTAL, APPLIED, OPEN_AMT, SIGNED_OPEN, OPEN_AMT_FC, ITEM_REAL_EST and OITR_RECON_AMT.",
+
+  "as_of": "2026-08-22",
+  "data_snapshot": "site/data.json generated_at 2026-08-22T19:05:02+05:30, data_sha256 02737049b8e35871…. NOTE: data.json is rebuilt by the VPS cron every 2 minutes; between 18:58:48 and 19:05:02 during this inventory the oil face value moved +Rs 40.32 L on one new A/R invoice, and CO_OCRD_NET moved by the identical amount, leaving CO_STALE_GAP unchanged. Every 'live' figure below is from the 19:05:02 build. Treat them as a regression baseline of shape, not of the last paisa.",
+
+  "kpis": [
+    {
+      "id": "oi-docs-open",
+      "label": "Documents SAP has not closed",
+      "unit": "count",
+      "column": "CO_ITEMS_ALL",
+      "row_filter": "True  # read off summary[0]; identical on every row",
+      "agg": "first",
+      "formula": "COUNT of every open OINV + ORIN + ORCT + OPCH + ORPC + OVPM row, UNCAPPED and BEFORE the Rs 10,000 materiality floor",
+      "terms": [
+        {"label": "Open A/R invoices", "col": "DT_ITEMS_ALL @ DOCTYPE='AR_INV'", "op": "+", "source": "OINV", "note": "DocStatus='O', CANCELED='N', DocTotal-PaidToDate>0"},
+        {"label": "Open A/R credit notes", "col": "DT_ITEMS_ALL @ DOCTYPE='AR_CN'", "op": "+", "source": "ORIN", "note": "same test"},
+        {"label": "Unapplied receipts", "col": "DT_ITEMS_ALL @ DOCTYPE='AR_RCT'", "op": "+", "source": "ORCT", "note": "Canceled='N', OpenBal>0"},
+        {"label": "Open A/P invoices", "col": "DT_ITEMS_ALL @ DOCTYPE='AP_INV'", "op": "+", "source": "OPCH", "note": "DocStatus='O', CANCELED='N'"},
+        {"label": "Open A/P credit notes", "col": "DT_ITEMS_ALL @ DOCTYPE='AP_CN'", "op": "+", "source": "ORPC", "note": "same test"},
+        {"label": "Unapplied vendor payments", "col": "DT_ITEMS_ALL @ DOCTYPE='AP_PMT'", "op": "+", "source": "OVPM", "note": "Canceled='N', OpenBal>0"}
+      ],
+      "excludes": [
+        {"label": "Cancelled documents", "row_filter": "CANCELED/'Canceled' <> 'N'", "why": "C-0021"},
+        {"label": "Negative OpenBal (over-applied payments)", "row_filter": "OpenBal <= 0", "why": "Rs 1,025.91 across all three books; measured and left"}
+      ],
+      "sql_lines": [363, 369],
+      "caveats": ["C-0019", "C-0021"],
+      "check": {
+        "method": "The per-DOCTYPE counts are computed by a SEPARATE CTE (dt) from a SEPARATE grouping than the company CTE (co). Reading DT_ITEMS_ALL once per DOCTYPE and adding the six must reproduce CO_ITEMS_ALL. A discrepancy means the union lost or duplicated a table.",
+        "recipe": "first_per(rows,'DOCTYPE') -> sum(int(r['DT_ITEMS_ALL']) for r in six) == int(rows[0]['CO_ITEMS_ALL'])   # VERIFIED EXACT: oil 23240==23240, mart 10105==10105, bev 2212==2212"
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>"}},
+      "live": {"oil": 23240, "mart": 10105, "bev": 2212}
+    },
+
+    {
+      "id": "oi-face-value",
+      "label": "Face value of what SAP calls open",
+      "unit": "INR",
+      "column": "CO_OPEN_ALL",
+      "row_filter": "True  # read off summary[0]",
+      "agg": "first",
+      "formula": "SUM(OPEN_AMT) over every open document, UNSIGNED and UNCAPPED = AR_INV + AR_CN + AR_RCT + AP_INV + AP_CN + AP_PMT",
+      "terms": [
+        {"label": "Open A/R invoices", "col": "DT_OPEN_ALL @ AR_INV", "op": "+", "source": "OINV", "note": "DocTotal - PaidToDate"},
+        {"label": "Open A/R credit notes", "col": "DT_OPEN_ALL @ AR_CN", "op": "+", "source": "ORIN", "note": "gross, sign ignored here"},
+        {"label": "Receipts never applied", "col": "DT_OPEN_ALL @ AR_RCT", "op": "+", "source": "ORCT", "note": "OpenBal"},
+        {"label": "Open A/P invoices", "col": "DT_OPEN_ALL @ AP_INV", "op": "+", "source": "OPCH", "note": "DocTotal - PaidToDate"},
+        {"label": "Open A/P credit notes", "col": "DT_OPEN_ALL @ AP_CN", "op": "+", "source": "ORPC", "note": "gross"},
+        {"label": "Payments never applied", "col": "DT_OPEN_ALL @ AP_PMT", "op": "+", "source": "OVPM", "note": "OpenBal"}
+      ],
+      "excludes": [
+        {"label": "Cancelled documents", "row_filter": "CANCELED/'Canceled' <> 'N'", "why": "C-0021"},
+        {"label": "Nothing else", "row_filter": "-", "why": "This figure is DELIBERATELY gross and includes branch, intercompany, staff and migration openings. It is the headline the board must NOT let a reader mistake for money owed."}
+      ],
+      "sql_lines": [363, 369],
+      "caveats": ["C-0019", "C-0021", "C-0005", "C-0020"],
+      "check": {
+        "method": "Rebuild the face value entirely from the OTHER TWO SECTIONS' SQL files (customer-ageing.sql and vendor-ageing.sql), which query the same six SAP tables with different predicates, different grouping and different CTEs. The residual must be exactly the cross-side payment refunds that the ageings scope out by card type — a residual that is NOT that number means one of the three queries has drifted.",
+        "recipe": "ca = customer-ageing row where KIND=='ZZ_TOTAL'; va = vendor-ageing rows[0]; alt = ca['RAW_OPEN_INR'] + ca['UNAPPLIED_RECEIPTS_INR'] + ca['OPEN_CREDIT_NOTES_INR'] + va['CO_RAW_OPEN'] + va['CO_UNAPPLIED_PAY'] + va['CO_OPEN_CN']; residual = CO_OPEN_ALL - alt; assert abs(residual - (crossside_rct + crossside_pmt)) < 0.05 where crossside_rct = DT_OPEN_ALL@AR_RCT - ca['UNAPPLIED_RECEIPTS_INR'] and crossside_pmt = DT_OPEN_ALL@AP_PMT - va['CO_UNAPPLIED_PAY'].   VERIFIED: oil residual 25,129,263.40 vs crossside 25,129,263.40 (closes to Rs 0.00); mart 279,691.97 vs 279,691.97 (Rs 0.00); bev 74,629.33 vs 74,629.32 (Rs 0.01).",
+        "alt_value": {"oil": 25841833106.77, "mart": 6521971869.70, "bev": 142228265.97},
+        "expected_residual": {"oil": 25129263.40, "mart": 279691.97, "bev": 74629.33}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>"}},
+      "live": {"oil": 25866962370.17, "mart": 6522251561.67, "bev": 142302895.30}
+    },
+
+    {
+      "id": "oi-open-net",
+      "label": "Net position across every open document",
+      "unit": "INR",
+      "column": "CO_OPEN_NET",
+      "row_filter": "True  # read off summary[0]",
+      "agg": "first",
+      "formula": "SUM(SGN * OPEN_AMT) = (AR_INV + AP_CN + AP_PMT) − (AR_CN + AR_RCT + AP_INV). Positive = the documents say parties owe JIVO on balance.",
+      "terms": [
+        {"label": "A/R invoices (debit)", "col": "DT_OPEN_ALL @ AR_INV", "op": "+", "source": "OINV", "note": "SGN +1"},
+        {"label": "A/P credit notes (debit)", "col": "DT_OPEN_ALL @ AP_CN", "op": "+", "source": "ORPC", "note": "SGN +1"},
+        {"label": "Vendor payments unapplied (debit)", "col": "DT_OPEN_ALL @ AP_PMT", "op": "+", "source": "OVPM", "note": "SGN +1 — money out, sits as an advance"},
+        {"label": "A/R credit notes (credit)", "col": "DT_OPEN_ALL @ AR_CN", "op": "-", "source": "ORIN", "note": "SGN −1"},
+        {"label": "Receipts unapplied (credit)", "col": "DT_OPEN_ALL @ AR_RCT", "op": "-", "source": "ORCT", "note": "SGN −1 — money in, not matched"},
+        {"label": "A/P invoices (credit)", "col": "DT_OPEN_ALL @ AP_INV", "op": "-", "source": "OPCH", "note": "SGN −1"}
+      ],
+      "excludes": [
+        {"label": "Nothing", "row_filter": "-", "why": "Uncapped and unfiltered by ACCT_KIND — branch, intercompany and staff are all inside this figure. C-0005."}
+      ],
+      "sql_lines": [363, 369],
+      "caveats": ["C-0019", "C-0005"],
+      "check": {
+        "method": "Re-derive the sign-weighted total from the six independently-grouped DT_OPEN_ALL values (dt CTE) instead of the co CTE. Second leg: for every party whose whole document set survived the cap, SUM(SIGNED_OPEN) over its rows must equal that card's CARD_OPEN_NET — a per-card proof that the SGN map is right on all six document types.",
+        "recipe": "SGN={'AR_INV':1,'AR_CN':-1,'AR_RCT':-1,'AP_INV':-1,'AP_CN':1,'AP_PMT':1}; alt = sum(SGN[t]*first_per_doctype[t]['DT_OPEN_ALL'] for t in SGN); assert abs(alt - rows[0]['CO_OPEN_NET']) < 0.05.   VERIFIED EXACT (delta 0.00) in all three books. Per-card leg VERIFIED: on the 64 oil / 4 mart / 197 bev cards fully contained in the shown set, SUM(SIGNED_OPEN)==CARD_OPEN_NET on 64/64, 4/4, 197/197.",
+        "alt_value": {"oil": 18150743316.23, "mart": 98961765.93, "bev": 40086620.29}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>"}},
+      "live": {"oil": 18150743316.23, "mart": 98961765.93, "bev": 40086620.29}
+    },
+
+    {
+      "id": "oi-ledger-net",
+      "label": "What those parties' ledgers actually net to",
+      "unit": "INR",
+      "column": "CO_OCRD_NET",
+      "row_filter": "True  # read off summary[0]",
+      "agg": "first",
+      "formula": "SUM(OCRD.Balance) over exactly the CardCodes that carry at least one open item. Positive = DEBIT (party owes JIVO), negative = CREDIT (JIVO owes).",
+      "terms": [
+        {"label": "Ledger balance of every card with an open item", "col": "CO_OCRD_NET", "op": "=", "source": "OCRD", "note": "the ground truth; C-0019 says never trust DocStatus over this"}
+      ],
+      "excludes": [
+        {"label": "Cards with no open document", "row_filter": "CARD_CODE not in card CTE", "why": "This is scoped to the open set on purpose so it is comparable to CO_OPEN_NET; it is NOT the company's total BP balance."}
+      ],
+      "sql_lines": [371, 374],
+      "caveats": ["C-0019", "C-0023"],
+      "check": {
+        "method": "vendor-ageing.sql reads OCRD.Balance per vendor card from a completely separate query. Summing its OCRD_BALANCE over its vendor rows gives the vendor half; customer-ageing's OCRD_DEBIT_INR − OCRD_CREDIT_INR (ZZ_TOTAL) gives the customer half. The two halves are scoped to ALL cards, not just cards with an open item, so this is a BOUND check, not equality: |CO_OCRD_NET| must be <= |the two-sided total| and must move with it build over build.",
+        "recipe": "va_side = sum(scale(r['OCRD_BALANCE'],'OCRD_BALANCE') for r in slice('vendor-ageing',co)['summary']); ca = ZZ_TOTAL row of customer-ageing; ca_side = ca['OCRD_DEBIT_INR'] - ca['OCRD_CREDIT_INR']; assert sign and order of magnitude agree. STRONGER SECOND LEG, exact: CO_OPEN_NET − CO_OCRD_NET must equal CO_STALE_GAP to the paisa — VERIFIED oil 18,150,743,316.23 − 128,919,661.96 = 18,021,823,654.27 vs CO_STALE_GAP 18,021,823,654.28 (1 paisa); mart and bev likewise."
+      },
+      "drill": {"page": "party.html", "params": {"co": "<company>", "card": "<CARD_CODE>"}},
+      "live": {"oil": 128919661.96, "mart": -93910521.25, "bev": 38766911.85}
+    },
+
+    {
+      "id": "oi-stale-gap",
+      "label": "How much the open documents overstate the ledger",
+      "unit": "INR",
+      "column": "CO_STALE_GAP",
+      "row_filter": "True  # read off summary[0]",
+      "agg": "first",
+      "formula": "CO_OPEN_NET − CO_OCRD_NET = CO_STALE_GAP",
+      "terms": [
+        {"label": "Net of every open document", "col": "CO_OPEN_NET", "op": "+", "source": "OINV ORIN ORCT OPCH ORPC OVPM", "note": "what DocStatus claims"},
+        {"label": "Net of the same parties' ledgers", "col": "CO_OCRD_NET", "op": "-", "source": "OCRD", "note": "what the books actually say"},
+        {"label": "The gap", "col": "CO_STALE_GAP", "op": "=", "source": "derived", "note": "documents settled by journal entry or an unmatched on-account payment that SAP never closed"}
+      ],
+      "excludes": [],
+      "sql_lines": [458, 460],
+      "caveats": ["C-0019", "C-0023"],
+      "check": {
+        "method": "Two independent legs. (1) Arithmetic closure against the two columns it is derived from, which come from DIFFERENT CTEs (co vs co_bal). (2) A structural leg: SAP's own journal-level match state is empty at JIVO — JDT1.IntrnMatch<>0 and JDT1.Closed='Y' both return zero rows in all three books (Oil 526,820 / Mart 344,144 / Bev 86,414 JDT1 rows, re-checked 2026-08-21) — so a stale gap of roughly this size is EXPECTED, and a gap that suddenly collapses to near zero means somebody started reconciling, or the query broke.",
+        "recipe": "assert abs((rows[0]['CO_OPEN_NET'] - rows[0]['CO_OCRD_NET']) - rows[0]['CO_STALE_GAP']) <= 0.01. VERIFIED oil/mart/bev, max delta 1 paisa. Trend leg: history.jsonl — flag if |CO_STALE_GAP| drops more than 50% build over build."
+      },
+      "drill": {"page": "derivation.html", "params": {"k": "oi-stale-gap", "co": "<company>"}},
+      "live": {"oil": 18021823654.28, "mart": 192872287.18, "bev": 1319708.43}
+    },
+
+    {
+      "id": "oi-migrated-open",
+      "label": "Still open from the go-live opening balances",
+      "unit": "INR",
+      "column": "CO_MIGRATED_OPEN",
+      "row_filter": "True  # read off summary[0]",
+      "agg": "first",
+      "formula": "SUM(OPEN_AMT) where DOC_DATE = 2024-09-30 (SAP go-live), UNCAPPED",
+      "terms": [
+        {"label": "Open items dated exactly 2024-09-30", "col": "CO_MIGRATED_OPEN", "op": "=", "source": "all six tables", "note": "migrated opening balances, not transactions. 77 unapplied vendor payments alone carry Rs 1,874.81 Cr of Oil's total; seven of them are to AL GHURAIR (USD ~41 M each) on a card whose ledger balance today is Rs 2.35 L."}
+      ],
+      "excludes": [
+        {"label": "Mart and Bev have no migration cohort", "row_filter": "co in ('mart','bev')", "why": "Their books open 2024-10-03/2025-01-01 (Mart) and 2024-10-01 (Bev). Mart's whole 2025-01-01 opening day leaves Rs 1,800 of open A/P; Bev's first days leave nothing open. ZERO HERE IS A VERIFIED TRUE ZERO, not a missed go-live date — render it as ₹0 with that sentence, never as empty()."}
+      ],
+      "sql_lines": [347, 367],
+      "caveats": ["C-0019"],
+      "check": {
+        "method": "Sum OPEN_AMT over the SHOWN rows where IS_MIGRATED=1. Because the cap can only ever drop the SMALLEST items, this is a strict LOWER BOUND on CO_MIGRATED_OPEN and must land just under it. It is not an equality check and must never be reported as one. The two ageings also carry migration figures, but they cover invoices only (no ORCT/OVPM), so CA+VA is a much weaker floor and is shown here as a third, far looser bound.",
+        "recipe": "bound = sum(r['OPEN_AMT'] for r in rows if int(r['IS_MIGRATED'])==1); assert bound <= rows[0]['CO_MIGRATED_OPEN'] and bound >= 0.95*rows[0]['CO_MIGRATED_OPEN'].   VERIFIED oil 19,716,338,264.54 <= 19,824,875,948.08 (99.45% captured); mart 0 == 0; bev 0 == 0. Loose leg: customer-ageing.MIGRATED_OPEN_INR(ZZ_TOTAL) + vendor-ageing.CO_MIGRATED_OPEN = oil 13,240,067.05 — invoices only, so far below, as expected.",
+        "alt_value": {"oil": 19716338264.54, "mart": 0.0, "bev": 0.0}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "IS_MIGRATED": 1}},
+      "live": {"oil": 19824875948.08, "mart": 0.0, "bev": 0.0}
+    },
+
+    {
+      "id": "oi-ar-inv-open",
+      "label": "Customer invoices still open",
+      "unit": "INR",
+      "column": "DT_OPEN_ALL",
+      "row_filter": "r.get('DOCTYPE')=='AR_INV'  # read off the FIRST such row only",
+      "agg": "first",
+      "formula": "SUM(OINV.DocTotal − OINV.PaidToDate) where DocStatus='O' and CANCELED='N' and DocDate <= AS_OF, UNCAPPED",
+      "terms": [
+        {"label": "Open A/R invoice face value", "col": "DT_OPEN_ALL", "op": "=", "source": "OINV", "note": "13,027 documents in Oil"},
+        {"label": "Documents behind it", "col": "DT_ITEMS_ALL", "op": "=", "source": "OINV", "note": "count, uncapped"}
+      ],
+      "excludes": [
+        {"label": "Cancelled invoices", "row_filter": "CANCELED <> 'N'", "why": "C-0021"}
+      ],
+      "sql_lines": [248, 262],
+      "caveats": ["C-0019", "C-0021"],
+      "check": {
+        "method": "customer-ageing.sql computes the identical universe as RAW_OPEN_INR with its own CTE chain and its own party classification. Different file, different query, same six SAP tables. This must tie TO THE PAISA — it is the cleanest cross-section check in the whole board.",
+        "recipe": "ca = [r for r in slice('customer-ageing',co)['summary'] if r['KIND']=='ZZ_TOTAL'][0]; assert abs(DT_OPEN_ALL@AR_INV - ca['RAW_OPEN_INR']) < 0.01 and DT_ITEMS_ALL@AR_INV == int(ca['N_OPEN_INV']).   VERIFIED EXACT: oil 1,825,743,008.07 both / 13,027 both; mart 1,299,229,356.71 both / 4,329 both; bev 63,506,376.02 both / 1,164 both.",
+        "alt_value": {"oil": 1825743008.07, "mart": 1299229356.71, "bev": 63506376.02}
+      },
+      "drill": {"page": "receivables.html", "params": {"co": "<company>"}},
+      "live": {"oil": 1825743008.07, "mart": 1299229356.71, "bev": 63506376.02}
+    },
+
+    {
+      "id": "oi-ap-inv-open",
+      "label": "Vendor bills still open",
+      "unit": "INR",
+      "column": "DT_OPEN_ALL",
+      "row_filter": "r.get('DOCTYPE')=='AP_INV'  # read off the FIRST such row only",
+      "agg": "first",
+      "formula": "SUM(OPCH.DocTotal − OPCH.PaidToDate) where DocStatus='O' and CANCELED='N' and DocDate <= AS_OF, UNCAPPED",
+      "terms": [
+        {"label": "Open A/P invoice face value", "col": "DT_OPEN_ALL", "op": "=", "source": "OPCH", "note": "4,321 documents in Oil"},
+        {"label": "Documents behind it", "col": "DT_ITEMS_ALL", "op": "=", "source": "OPCH", "note": "count, uncapped"}
+      ],
+      "excludes": [
+        {"label": "Cancelled bills", "row_filter": "CANCELED <> 'N'", "why": "C-0021"}
+      ],
+      "sql_lines": [297, 308],
+      "caveats": ["C-0019", "C-0021", "C-0022"],
+      "check": {
+        "method": "vendor-ageing.sql computes the same universe as CO_RAW_OPEN through a per-vendor-card aggregation and broadcasts the company total. Independent file, independent grouping. Must tie to the paisa.",
+        "recipe": "va = slice('vendor-ageing',co)['summary'][0]; assert abs(DT_OPEN_ALL@AP_INV - va['CO_RAW_OPEN']) < 0.01.   VERIFIED EXACT: oil 3,107,075,765.73 both; mart 2,196,096,119.28 both; bev 35,098,111.38 both.",
+        "alt_value": {"oil": 3107075765.73, "mart": 2196096119.28, "bev": 35098111.38}
+      },
+      "drill": {"page": "payables.html", "params": {"co": "<company>"}},
+      "live": {"oil": 3107075765.73, "mart": 2196096119.28, "bev": 35098111.38}
+    },
+
+    {
+      "id": "oi-unapplied-in",
+      "label": "Money received and never applied to a bill",
+      "unit": "INR",
+      "column": "DT_OPEN_ALL",
+      "row_filter": "r.get('DOCTYPE')=='AR_RCT'  # read off the FIRST such row only",
+      "agg": "first",
+      "formula": "SUM(ORCT.OpenBal) where Canceled='N' and OpenBal>0 and DocDate <= AS_OF, UNCAPPED. This is cash JIVO has banked that no invoice has been matched against — it is why invoices read open after the money arrived.",
+      "terms": [
+        {"label": "Receipts with an unapplied balance", "col": "DT_OPEN_ALL", "op": "=", "source": "ORCT", "note": "includes ORCT rows whose DocType='S' — cash received BACK FROM A VENDOR, which lands on SIDE='AP'"}
+      ],
+      "excludes": [
+        {"label": "Cancelled receipts", "row_filter": "Canceled <> 'N'", "why": "C-0021 — note ORCT spells it 'Canceled', mixed case, two values"},
+        {"label": "Negative OpenBal", "row_filter": "OpenBal <= 0", "why": "over-applied receipts; Rs 0.91 in Oil"}
+      ],
+      "sql_lines": [277, 295],
+      "caveats": ["C-0019", "C-0021"],
+      "check": {
+        "method": "customer-ageing.sql computes UNAPPLIED_RECEIPTS_INR over the SAME ORCT table but scoped to CUSTOMER cards only. The difference must be EXACTLY the vendor-refund receipts (ORCT.DocType='S', which this section labels SIDE='AP'). This is a two-sided check: it proves both the ORCT total and the D1 side-derivation fix at once.",
+        "recipe": "ca = ZZ_TOTAL row of customer-ageing; delta = DT_OPEN_ALL@AR_RCT - ca['UNAPPLIED_RECEIPTS_INR']; shown_lower_bound = sum(r['OPEN_AMT'] for r in rows if r['DOCTYPE']=='AR_RCT' and r['SIDE']=='AP'); assert delta > 0 and shown_lower_bound <= delta.   VERIFIED: oil delta 22,543,535.40 with shown bound 21,452,492.32 (95.2% captured); mart delta 278,691.97 (all below the shown floor); bev delta 5,393.32.",
+        "alt_value": {"oil": 716095977.71, "mart": 899375617.62, "bev": 15382489.75}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "DOCTYPE": "AR_RCT"}},
+      "live": {"oil": 738639513.11, "mart": 899654309.59, "bev": 15387883.07}
+    },
+
+    {
+      "id": "oi-unapplied-out",
+      "label": "Money paid out and never applied to a bill",
+      "unit": "INR",
+      "column": "DT_OPEN_ALL",
+      "row_filter": "r.get('DOCTYPE')=='AP_PMT'  # read off the FIRST such row only",
+      "agg": "first",
+      "formula": "SUM(OVPM.OpenBal) where Canceled='N' and OpenBal>0 and DocDate <= AS_OF, UNCAPPED. In Oil this single figure is Rs 2,017.97 Cr and 78% of the whole face value — almost all of it migration openings.",
+      "terms": [
+        {"label": "Vendor payments with an unapplied balance", "col": "DT_OPEN_ALL", "op": "=", "source": "OVPM", "note": "includes OVPM rows whose DocType='C' — a refund PAID TO A CUSTOMER, which lands on SIDE='AR'"}
+      ],
+      "excludes": [
+        {"label": "Cancelled payments", "row_filter": "Canceled <> 'N'", "why": "C-0021"},
+        {"label": "Negative OpenBal", "row_filter": "OpenBal <= 0", "why": "over-applied payments; Rs 1,025 total"}
+      ],
+      "sql_lines": [323, 340],
+      "caveats": ["C-0019", "C-0021"],
+      "check": {
+        "method": "vendor-ageing.sql's CO_UNAPPLIED_PAY reads the same OVPM table scoped to VENDOR cards only. The difference must be exactly the customer-refund payments (OVPM.DocType='C', SIDE='AR' here). Same two-sided proof as oi-unapplied-in.",
+        "recipe": "va = slice('vendor-ageing',co)['summary'][0]; delta = DT_OPEN_ALL@AP_PMT - va['CO_UNAPPLIED_PAY']; shown_bound = sum(r['OPEN_AMT'] for r in rows if r['DOCTYPE']=='AP_PMT' and r['SIDE']=='AR'); assert delta >= 0 and shown_bound <= delta.   VERIFIED: oil delta 2,585,728.00 with shown bound 2,533,359.00 (98.0%); mart delta 1,000.00; bev delta 69,236.00 with shown bound 69,000.00 (99.7%).",
+        "alt_value": {"oil": 20177122474.13, "mart": 1856127470.61, "bev": 27451585.77}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "DOCTYPE": "AP_PMT"}},
+      "live": {"oil": 20179708202.13, "mart": 1856128470.61, "bev": 27520821.77}
+    },
+
+    {
+      "id": "oi-open-cn-ar",
+      "label": "Credit notes owed back to customers",
+      "unit": "INR",
+      "column": "DT_OPEN_ALL",
+      "row_filter": "r.get('DOCTYPE')=='AR_CN'  # read off the FIRST such row only",
+      "agg": "first",
+      "formula": "SUM(ORIN.DocTotal − ORIN.PaidToDate) where DocStatus='O' and CANCELED='N', UNCAPPED",
+      "terms": [
+        {"label": "Open A/R credit notes", "col": "DT_OPEN_ALL", "op": "=", "source": "ORIN", "note": "SGN −1 in the netting; a credit JIVO still owes the customer"}
+      ],
+      "excludes": [{"label": "Cancelled credit notes", "row_filter": "CANCELED <> 'N'", "why": "C-0021"}],
+      "sql_lines": [264, 275],
+      "caveats": ["C-0019", "C-0021"],
+      "check": {
+        "method": "customer-ageing.sql's OPEN_CREDIT_NOTES_INR on the ZZ_TOTAL row is the same universe from a different query. Must tie to the paisa.",
+        "recipe": "ca = ZZ_TOTAL row of customer-ageing; assert abs(DT_OPEN_ALL@AR_CN - ca['OPEN_CREDIT_NOTES_INR']) < 0.01.   VERIFIED EXACT: oil 12,394,248.13 both; mart 115,894,469.00 both; bev 622,143.05 both.",
+        "alt_value": {"oil": 12394248.13, "mart": 115894469.00, "bev": 622143.05}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "DOCTYPE": "AR_CN"}},
+      "live": {"oil": 12394248.13, "mart": 115894469.00, "bev": 622143.05}
+    },
+
+    {
+      "id": "oi-open-cn-ap",
+      "label": "Credit notes owed to JIVO by vendors",
+      "unit": "INR",
+      "column": "DT_OPEN_ALL",
+      "row_filter": "r.get('DOCTYPE')=='AP_CN'  # read off the FIRST such row only",
+      "agg": "first",
+      "formula": "SUM(ORPC.DocTotal − ORPC.PaidToDate) where DocStatus='O' and CANCELED='N', UNCAPPED",
+      "terms": [
+        {"label": "Open A/P credit notes", "col": "DT_OPEN_ALL", "op": "=", "source": "ORPC", "note": "SGN +1; a debit JIVO holds against the vendor"}
+      ],
+      "excludes": [{"label": "Cancelled credit notes", "row_filter": "CANCELED <> 'N'", "why": "C-0021"}],
+      "sql_lines": [310, 321],
+      "caveats": ["C-0019", "C-0021"],
+      "check": {
+        "method": "vendor-ageing.sql's CO_OPEN_CN is the same universe from a different query. Must tie to the paisa. Bev has only TWO such documents in the whole book, so this KPI is the canary for the section's smallest doctype: if the AP_CN row disappears from the shown set the KPI becomes unreachable and must render empty(), never ₹0.",
+        "recipe": "va = slice('vendor-ageing',co)['summary'][0]; assert abs(DT_OPEN_ALL@AP_CN - va['CO_OPEN_CN']) < 0.01.   VERIFIED EXACT: oil 3,401,633.00 both; mart 155,248,836.48 both; bev 167,560.00 both.",
+        "alt_value": {"oil": 3401633.00, "mart": 155248836.48, "bev": 167560.00}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "DOCTYPE": "AP_CN"}},
+      "live": {"oil": 3401633.00, "mart": 155248836.48, "bev": 167560.00}
+    },
+
+    {
+      "id": "oi-group-open-shown",
+      "label": "Of the shown list, JIVO's own branches and group companies",
+      "unit": "INR",
+      "column": "OPEN_AMT",
+      "row_filter": "int(r.get('IS_GROUP',0))==1",
+      "agg": "sum",
+      "formula": "SUM(OPEN_AMT) over shown rows where ACCT_KIND in (BRANCH, INTERCO). SHOWN-SET ONLY — there is no uncapped equivalent in the output.",
+      "terms": [
+        {"label": "BRANCH — JIVO's own state GST registrations", "col": "OPEN_AMT where ACCT_KIND='BRANCH'", "op": "+", "source": "OCRD + OCRG", "note": "OCRG.GroupName LIKE '%BRANCH%'"},
+        {"label": "INTERCO — the other JIVO entities and Akal", "col": "OPEN_AMT where ACCT_KIND='INTERCO'", "op": "+", "source": "OCRD name + group test", "note": "UPPER(CardName) LIKE 'JIVO%' OR AKAL ROZGAR/INFO OR group PARENT COMPANY / COMPANY UNIT CUSTOMER / COMPANY UNIT VENDOR. The NAME test does work the group test cannot — C-0020."}
+      ],
+      "excludes": [
+        {"label": "TRADE and STAFF", "row_filter": "ACCT_KIND in ('TRADE','STAFF')", "why": "C-0005 — group parties are flagged and kept, never dropped; this KPI isolates them so the reader can subtract them consciously"}
+      ],
+      "sql_lines": [192, 204],
+      "caveats": ["C-0005", "C-0020"],
+      "check": {
+        "method": "Partition closure: TRADE + (BRANCH+INTERCO) + STAFF must reconstruct CO_OPEN_SHOWN exactly, because ACCT_KIND is a total partition of the shown rows. A gap means a new BP group name slipped past the CASE and is silently sitting in TRADE.",
+        "recipe": "trade = sum(OPEN_AMT where ACCT_KIND=='TRADE'); group = sum(OPEN_AMT where IS_GROUP==1); staff = sum(OPEN_AMT where ACCT_KIND=='STAFF'); assert abs(trade+group+staff - rows[0]['CO_OPEN_SHOWN']) < 1.0. Also assert every row with IS_GROUP==1 has ACCT_KIND in ('BRANCH','INTERCO').   VERIFIED: oil 23,487,276,980.37 + 1,704,936,004.45 + 5,203,541.00 = 25,197,416,525.82 vs CO_OPEN_SHOWN 25,197,416,525.75 (Rs 0.07 rounding); mart exact; bev exact.",
+        "alt_value": {"oil": 1704936004.45, "mart": 3622892283.28, "bev": 16178706.00}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "IS_GROUP": 1}},
+      "live": {"oil": 1704936004.45, "mart": 3622892283.28, "bev": 16178706.00}
+    },
+
+    {
+      "id": "oi-coverage-pct",
+      "label": "Share of the open value the shown list actually carries",
+      "unit": "pct",
+      "column": "CO_OPEN_SHOWN",
+      "row_filter": "True  # read off summary[0]",
+      "agg": "first",
+      "formula": "100 × CO_OPEN_SHOWN / CO_OPEN_ALL. The cap can only ever drop the SMALLEST items, so this is how much of the book the table on screen represents.",
+      "terms": [
+        {"label": "Value of the rows shown", "col": "CO_OPEN_SHOWN", "op": "+", "source": "kept CTE", "note": "after the Rs 10,000 floor and the 1500/400 rank cap"},
+        {"label": "Value of every open document", "col": "CO_OPEN_ALL", "op": "=", "source": "co CTE", "note": "uncapped, unfloored"}
+      ],
+      "excludes": [],
+      "sql_lines": [418, 426],
+      "caveats": [],
+      "check": {
+        "method": "CO_OPEN_SHOWN is computed by the shown_co CTE over the kept set. Re-add OPEN_AMT down the actual delivered rows — a different route, because it uses the rows the JSON really contains rather than a SQL aggregate. If the two disagree, rows were lost in the TSV round-trip (a tab or newline inside CardName / NumAtCard / BPLName would silently drop a row — measured clean 2026-08-21, re-check whenever the count moves without the SQL changing).",
+        "recipe": "assert abs(sum(r['OPEN_AMT'] for r in rows) - rows[0]['CO_OPEN_SHOWN']) < 1.0 and len(rows) == int(rows[0]['CO_ITEMS_SHOWN']).   VERIFIED: oil sum 25,197,416,525.82 vs 25,197,416,525.75 (Rs 0.07) and 2,168 == 2,168; mart exact, 2,188 == 2,188; bev exact, 1,096 == 1,096.",
+        "alt_value": {"oil": 97.4116, "mart": 81.4111, "bev": 98.0714}
+      },
+      "drill": {"page": "derivation.html", "params": {"k": "oi-coverage-pct", "co": "<company>"}},
+      "live": {"oil": 97.4116, "mart": 81.4111, "bev": 98.0714}
+    },
+
+    {
+      "id": "oi-fx-open-shown",
+      "label": "Of the shown list, booked in foreign currency",
+      "unit": "INR",
+      "column": "OPEN_AMT",
+      "row_filter": "r.get('CURRENCY') not in (None,'','INR')",
+      "agg": "sum",
+      "formula": "SUM(OPEN_AMT) over shown rows where CURRENCY <> 'INR'. OPEN_AMT is ALWAYS the local INR figure; OPEN_AMT_FC carries the foreign amount.",
+      "terms": [
+        {"label": "Non-INR open items, at SAP's local value", "col": "OPEN_AMT", "op": "=", "source": "OINV/OPCH/OVPM DocTotal-PaidToDate or OpenBal", "note": "oil: 99 USD + 7 EUR + 1 AUD in the shown set, Rs 2,103.78 Cr — 83% of the shown value"},
+        {"label": "The same items in their own currency", "col": "OPEN_AMT_FC", "op": "=", "source": "DocTotalFC-PaidFC / OpenBalFc", "note": "never add this to OPEN_AMT; different units per row"}
+      ],
+      "excludes": [
+        {"label": "Rows whose DocRate was keyed as 0.0001", "row_filter": "-", "why": "Oil OVPM DocEntry 26317 (AL GHURAIR) books USD 44.34 L as Rs 443.40, ~87,000x too small, so it sinks below the Rs 10,000 floor and is INVISIBLE here. A SAP data-entry defect, deliberately not patched. One row found; no systematic sweep was run."}
+      ],
+      "sql_lines": [257, 258],
+      "caveats": [],
+      "check": {
+        "method": "Cross-foot the currency partition: the CURRENCY column is a total partition of the shown rows, so INR-only plus non-INR must equal CO_OPEN_SHOWN. Second leg: every row with CURRENCY<>'INR' must carry a non-zero OPEN_AMT_FC, and every INR row must carry OPEN_AMT_FC == 0 — a mismatch means the FC columns were read off the wrong table.",
+        "recipe": "assert abs(sum(OPEN_AMT where CURRENCY=='INR') + sum(OPEN_AMT where CURRENCY!='INR') - rows[0]['CO_OPEN_SHOWN']) < 1.0; assert all(r['OPEN_AMT_FC']!=0 for r in rows if r['CURRENCY']!='INR').   VERIFIED: oil 107 non-INR rows Rs 21,037,837,351.22; mart 0 rows (TRUE ZERO — Mart books nothing in foreign currency, render '—  none in this book', not empty()); bev 1 row Rs 1,350,280.75.",
+        "alt_value": {"oil": 21037837351.22, "mart": 0.0, "bev": 1350280.75}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "CURRENCY": "!INR"}},
+      "live": {"oil": 21037837351.22, "mart": 0.0, "bev": 1350280.75}
+    },
+
+    {
+      "id": "oi-365plus-shown",
+      "label": "Of the shown list, more than a year past due",
+      "unit": "INR",
+      "column": "OPEN_AMT",
+      "row_filter": "r.get('AGE_BUCKET')=='6_365+'",
+      "agg": "sum",
+      "formula": "SUM(OPEN_AMT) over shown rows where DAYS_OVERDUE > 365, i.e. AGE_BUCKET = '6_365+'",
+      "terms": [
+        {"label": "Open value more than 365 days past its due date", "col": "OPEN_AMT", "op": "=", "source": "DUE_DATE vs AS_OF", "note": "oil Rs 2,215.01 Cr = 87.9% of the shown value — but read the trap: most of it is migration openings whose DUE_DATE pre-dates go-live"}
+      ],
+      "excludes": [
+        {"label": "Rows outside the cap", "row_filter": "SIZE_RANK>1500 and DT_SIZE_RANK>400", "why": "shown-set only; no uncapped bucket total exists in this section's output"}
+      ],
+      "sql_lines": [385, 391],
+      "caveats": ["C-0019"],
+      "check": {
+        "method": "Recompute the bucket from DAYS_OVERDUE in Python rather than reading AGE_BUCKET, and cross-foot the whole partition against CO_OPEN_SHOWN. The adversarial review re-derived AGE_BUCKET for every row and matched 100%, and DocDueDate is NULL on zero rows in all six tables in all three books, so no row can fall through the CASE.",
+        "recipe": "def b(d): return '0_NOTDUE' if d<=0 else '1_1-30' if d<=30 else '2_31-60' if d<=60 else '3_61-90' if d<=90 else '4_91-180' if d<=180 else '5_181-365' if d<=365 else '6_365+'; assert all(b(int(r['DAYS_OVERDUE']))==r['AGE_BUCKET'] for r in rows); assert abs(sum(OPEN_AMT grouped by AGE_BUCKET) - rows[0]['CO_OPEN_SHOWN']) < 1.0.   VERIFIED: 0 mismatches in all three books; oil 1,087 rows / Rs 22,150,122,490.82, mart 352 / Rs 757,116,175.80, bev 213 / Rs 18,548,049.62.",
+        "alt_value": {"oil": 22150122490.82, "mart": 757116175.80, "bev": 18548049.62}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "AGE_BUCKET": "6_365+"}},
+      "live": {"oil": 22150122490.82, "mart": 757116175.80, "bev": 18548049.62}
+    },
+
+    {
+      "id": "oi-oitr-settled-docs",
+      "label": "SAP's own reconciliation says settled, the document still reads open",
+      "unit": "count",
+      "column": "RECON_STATE",
+      "row_filter": "r.get('RECON_STATE')=='FULL_PER_OITR'",
+      "agg": "sum",
+      "formula": "COUNT of shown rows where an uncancelled OITR/ITR1 reconciliation covers at least (DOC_TOTAL − 1) yet DocStatus is still 'O'. The cleanest single smoking gun for the stale-open problem.",
+      "terms": [
+        {"label": "Documents with an ITR1 reconciliation >= their own total", "col": "RECON_STATE='FULL_PER_OITR'", "op": "=", "source": "OITR + ITR1", "note": "RECON_AMT = GREATEST(SUM(D-side), SUM(C-side)) — never the sum of both; one settlement is written twice on opposite IsCredit sides"},
+        {"label": "Their open value", "col": "OPEN_AMT", "op": "=", "source": "the six tables", "note": "oil Rs 86.47 Cr across 81 documents"}
+      ],
+      "excludes": [
+        {"label": "Cancelled reconciliations", "row_filter": "OITR.Canceled <> 'N'", "why": "C-0021"},
+        {"label": "Reconciliations dated after AS_OF", "row_filter": "OITR.ReconDate > AS_OF", "why": "keeps the diagnostic consistent with the position date"}
+      ],
+      "sql_lines": [232, 246],
+      "caveats": ["C-0019"],
+      "check": {
+        "method": "Arithmetic-impossibility audit, which is the check that caught defect D2. RECON_AMT can legitimately exceed DOC_TOTAL only for account-level system reconciliations that stamp the whole reconciliation total onto each participant line. The COUNT of such rows is a known, bounded number; if it jumps, the GREATEST(D,C) guard has been removed and the naive signed SUM is back.",
+        "recipe": "impossible = [r for r in rows if r['OITR_RECON_AMT'] > r['DOC_TOTAL'] + 1]; assert len(impossible) is small and stable (baseline after the fix: 87 oil / 14 mart / 1 bev across the UNCAPPED set; before the fix it was 128 / 47 / 15 carrying Rs 18.24 Cr of phantom excess in Oil alone). Second leg: assert every FULL_PER_OITR row has OITR_LINES >= 1 and every RECON_STATE=='NONE' row has OITR_LINES == 0 and OITR_RECON_AMT == 0.   VERIFIED live: oil 81 / Rs 864,661,193.37; mart 6 / Rs 2,159,868.00; bev 0 — bev's zero is a TRUE ZERO (its whole book has no such document), render '0 — none in this book', never empty().",
+        "alt_value": {"oil": 81, "mart": 6, "bev": 0}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "RECON_STATE": "FULL_PER_OITR"}},
+      "live": {"oil": 81, "mart": 6, "bev": 0}
+    },
+
+    {
+      "id": "oi-worst-days-overdue",
+      "label": "Oldest thing on the list, in days past due",
+      "unit": "days",
+      "column": "DAYS_OVERDUE",
+      "row_filter": "True",
+      "agg": "max",
+      "formula": "MAX(DAYS_BETWEEN(DUE_DATE, AS_OF)) over the shown rows",
+      "terms": [
+        {"label": "Days between the document's due date and today", "col": "DAYS_OVERDUE", "op": "=", "source": "DocDueDate", "note": "negative means not yet due — the shown minimum is −49 (oil), −9 (mart), −43 (bev)"}
+      ],
+      "excludes": [],
+      "sql_lines": [345, 345],
+      "caveats": [],
+      "check": {
+        "method": "Sanity-bound against AGE_DAYS, which measures from DOC_DATE instead of DUE_DATE. On a normal document AGE_DAYS >= DAYS_OVERDUE. Where DAYS_OVERDUE far EXCEEDS AGE_DAYS the document is a migration opening carrying its true pre-go-live due date, and the row must also have IS_MIGRATED=1 — that pairing is the check.",
+        "recipe": "worst = max(int(r['DAYS_OVERDUE']) for r in rows); assert all(int(r['IS_MIGRATED'])==1 for r in rows if int(r['DAYS_OVERDUE']) > int(r['AGE_DAYS'])+1).   VERIFIED: oil worst 2,376 days on a 2024-09-30 migrated invoice whose DUE_DATE is 2020-02-19, against a max AGE_DAYS of only 691 — the two clocks disagree by 1,685 days and BOTH are correct. mart 598 (== its max AGE_DAYS, no migration cohort); bev 684 (== its max AGE_DAYS).",
+        "alt_value": {"oil": 691, "mart": 598, "bev": 684}
+      },
+      "drill": {"page": "open-items.html", "params": {"co": "<company>", "sort": "DAYS_OVERDUE desc"}},
+      "live": {"oil": 2376, "mart": 598, "bev": 684}
+    }
+  ],
+
+  "columns": [
+    {"col": "DOCTYPE", "label": "type", "unit": "text", "link": "none",
+     "meaning": "Which SAP table the row came from and which money direction it is: AR_INV=OINV, AR_CN=ORIN, AR_RCT=ORCT, AP_INV=OPCH, AP_CN=ORPC, AP_PMT=OVPM. It names the DOCUMENT, not the party's ledger side — see SIDE. Six mutually exclusive values; never a total row."},
+    {"col": "SIDE", "label": "ledger side", "unit": "text", "link": "none",
+     "meaning": "Whether the counterparty is a customer (AR) or a vendor (AP), read off the document's own DocType, NOT off which table it sits in. For invoices and credit notes SIDE always agrees with DOCTYPE; for payments it does not — an ORCT with DocType='S' is cash received back FROM a vendor and is SIDE='AP'. Filtering the drill-down by DOCTYPE when you meant SIDE puts vendor refunds in the receivables list; that was defect D1."},
+    {"col": "SGN", "label": "dr/cr", "unit": "count", "link": "none",
+     "meaning": "Debit/credit sign, +1 or −1, correct for all six doctypes regardless of SIDE. +1 on AR_INV, AP_CN, AP_PMT; −1 on AR_CN, AR_RCT, AP_INV. SIGNED_OPEN = SGN × OPEN_AMT, verified exact on every row."},
+    {"col": "OBJ_TYPE", "label": "sap object", "unit": "count", "link": "document",
+     "meaning": "SAP's numeric object type: 13=OINV, 14=ORIN, 24=ORCT, 18=OPCH, 19=ORPC, 46=OVPM. Declared as a string in the SQL but arrives in data.json as an INTEGER (the TSV parser coerces it) — cast before building a document URL."},
+    {"col": "DOC_ENTRY", "label": "entry", "unit": "text", "link": "document",
+     "meaning": "SAP's internal primary key for the document. Together with OBJ_TYPE this is the only reliable document identity — DOC_NUM is not unique across series. Arrives as a STRING in data.json."},
+    {"col": "DOC_NUM", "label": "doc no", "unit": "text", "link": "document",
+     "meaning": "The document number a human reads off the printed invoice. Not unique across numbering series or across the six tables — never key on it."},
+    {"col": "EXT_REF", "label": "their ref", "unit": "text", "link": "none",
+     "meaning": "NumAtCard — the counterparty's own reference on the document. NULL on every payment row (the SQL selects an empty string for ORCT/OVPM and the pipeline writes it as null) and on invoices where nobody keyed one: 1,344 of 2,168 oil rows, 909 of 2,188 mart, 883 of 1,096 bev. It is the ONLY nullable column in the section — render a dash, never the literal 'None'."},
+    {"col": "CARD_CODE", "label": "party code", "unit": "text", "link": "party",
+     "meaning": "OCRD.CardCode. The join key to party.html and to the parties index. CUSTA*/ORGC* are customer-side, VENDA*/ORGV* vendor-side, but do not infer the side from the prefix — use CARD_TYPE."},
+    {"col": "CARD_NAME", "label": "party", "unit": "text", "link": "party",
+     "meaning": "OCRD.CardName, or the literal '(card not in OCRD)' when a document references a card the master data no longer has."},
+    {"col": "CARD_TYPE", "label": "c/v", "unit": "text", "link": "none",
+     "meaning": "OCRD.CardType — 'C' customer, 'S' supplier. After the D1 fix it agrees with SIDE on 100% of rows in all three books (verified live), so a SIDE≠CARD_TYPE row is now a hard defect signal, not noise."},
+    {"col": "BP_GROUP", "label": "bp group", "unit": "text", "link": "none",
+     "meaning": "OCRG.GroupName, joined on GroupCode AND GroupType=CardType — the group-code space is separate for customers and vendors, so a code-only join cross-wires them. Drives the BRANCH and STAFF legs of ACCT_KIND."},
+    {"col": "ACCT_KIND", "label": "kind", "unit": "text", "link": "none",
+     "meaning": "TRADE / BRANCH / INTERCO / STAFF. A total partition of the rows — the four always cross-foot to CO_OPEN_SHOWN. BRANCH = JIVO's own state GST registrations; INTERCO = the other JIVO entities and Akal, caught by NAME as well as group because Mart's VENDA000001 'JIVO WELLNESS PVT LTD' sits in group PURCHASE and Oil's VENDA000483 'JIVO MART PVT LTD' in E-COMMERCE (C-0020). STAFF is a group-name test only, so a handful of imprest cards filed under a geography group read as TRADE — measured at 11 items / Rs 1.27 L (oil), 2 / Rs 1,957 (mart), 6 / Rs 11,562 (bev)."},
+    {"col": "IS_GROUP", "label": "group party", "unit": "count", "link": "none",
+     "meaning": "1 when ACCT_KIND is BRANCH or INTERCO. The one-click 'this is not outside trade' flag. C-0005."},
+    {"col": "BPL_ID", "label": "branch id", "unit": "text", "link": "none",
+     "meaning": "Business-place id — JIVO's GST branch on the document."},
+    {"col": "BPL_NAME", "label": "branch", "unit": "text", "link": "none",
+     "meaning": "Branch name as SAP holds it, INCONSISTENTLY CASED: oil carries both 'FACTORY' and 'Factory', both 'DELHI' and 'Delhi'; bev carries 'FACTORY'/'Factory', 'DELHI'/'Delhi', 'Punjab'. Uppercase before grouping or a branch chart splits one branch into two bars."},
+    {"col": "DOC_DATE", "label": "dated", "unit": "date", "link": "none",
+     "meaning": "The document's own posting date. Exactly 2024-09-30 means a migrated opening balance in the Oil book (IS_MIGRATED=1). Range in the shown data: 2024-09 to 2026-08 (oil), 2025-01 to 2026-08 (mart), 2024-10 to 2026-08 (bev)."},
+    {"col": "DUE_DATE", "label": "due", "unit": "date", "link": "none",
+     "meaning": "DocDueDate. On a migrated opening this is the TRUE ORIGINAL due date, which can pre-date go-live by years — oil's worst row is dated 2024-09-30 with a due date of 2020-02-19. On a payment (AR_RCT/AP_PMT) it is the payment's own due date, which means nothing as a deadline. NULL on zero rows in all six tables in all three books."},
+    {"col": "DAYS_OVERDUE", "label": "days over", "unit": "days", "link": "none",
+     "meaning": "DAYS_BETWEEN(DUE_DATE, AS_OF). Negative = not yet due. On payments it reads as 'days this money has sat unapplied', not 'days late'. It is the field AGE_BUCKET is built from, and on migrated rows it can exceed AGE_DAYS by years."},
+    {"col": "AGE_DAYS", "label": "age", "unit": "days", "link": "none",
+     "meaning": "DAYS_BETWEEN(DOC_DATE, AS_OF) — how long the document has existed. This is the honest clock for AR_RCT/AP_PMT, which have no meaningful due date. Never negative in the live data. Maxima: 691 (oil), 598 (mart), 684 (bev)."},
+    {"col": "AGE_BUCKET", "label": "bucket", "unit": "text", "link": "none",
+     "meaning": "Seven buckets cut on DAYS_OVERDUE, prefixed with a sort digit: 0_NOTDUE, 1_1-30, 2_31-60, 3_61-90, 4_91-180, 5_181-365, 6_365+. Strip the prefix for display; keep it for ordering. Re-derived in Python for every row and matched 100%."},
+    {"col": "IS_MIGRATED", "label": "go-live", "unit": "count", "link": "none",
+     "meaning": "1 when DOC_DATE is exactly 2024-09-30, SAP's go-live. These are opening balances, not transactions. Live only in Oil (208 shown rows carrying Rs 1,971.63 Cr); Mart and Bev genuinely have no migration cohort — that is verified truth, not a missed date."},
+    {"col": "DOC_TOTAL", "label": "document", "unit": "INR", "link": "none",
+     "meaning": "The document's full local-currency value. PER-ROW, safe to add. DOC_TOTAL − APPLIED = OPEN_AMT holds on every row in all three books (0 breaks)."},
+    {"col": "APPLIED", "label": "applied", "unit": "INR", "link": "none",
+     "meaning": "PaidToDate for the four document types; back-solved as DocTotal − OpenBal for the two payment types. PER-ROW, safe to add. WARNING: the v1 renderer's isMoneyCol() does not match the bare word APPLIED, so without an explicit money formatter it prints as a plain integer beside ₹ figures and reads as a document count — defect D6."},
+    {"col": "OPEN_AMT", "label": "still open", "unit": "INR", "link": "none",
+     "meaning": "The unsigned remaining amount, ALWAYS in INR rupees even when the document is foreign-currency. PER-ROW, safe to add — this is the section's main money column. > 0 by construction, and floored at Rs 10,000 for inclusion."},
+    {"col": "SIGNED_OPEN", "label": "net effect", "unit": "INR", "link": "none",
+     "meaning": "SGN × OPEN_AMT — the column to add when you want a POSITION rather than a face value. Positive = the party owes JIVO. PER-ROW, safe to add. On the 64 oil / 4 mart / 197 bev cards fully inside the shown set, SUM(SIGNED_OPEN) equals CARD_OPEN_NET exactly."},
+    {"col": "CURRENCY", "label": "ccy", "unit": "text", "link": "none",
+     "meaning": "The document currency code. Shown set: oil INR 2,061 / USD 99 / EUR 7 / AUD 1; mart INR only; bev INR 1,095 / USD 1. Non-INR rows are the biggest in Oil's book — USD alone is 81% of the shown value."},
+    {"col": "OPEN_AMT_FC", "label": "open (fc)", "unit": "INR", "link": "none",
+     "meaning": "The open amount in the DOCUMENT'S OWN currency — despite the unit column here, this is NOT rupees on a non-INR row. Zero on INR rows. NEVER add it to OPEN_AMT and never total the column: different rows are different units. Its job is to expose rotten DocRate entries (Oil OVPM 26317 books USD 44.34 L as Rs 443.40)."},
+    {"col": "OITR_RECON_AMT", "label": "recon amt", "unit": "INR", "link": "none",
+     "meaning": "GREATEST(D-side, C-side) of the document's uncancelled ITR1 reconciliation lines. A DIAGNOSTIC, never a settlement figure — SAP writes account-level system reconciliations that stamp the whole reconciliation total onto each participant line, so 87 oil / 14 mart / 1 bev documents legitimately carry a RECON_AMT larger than their own DOC_TOTAL. It is never used to compute OPEN_AMT."},
+    {"col": "OITR_LINES", "label": "recon lines", "unit": "count", "link": "none",
+     "meaning": "How many ITR1 lines touch this document. 0 means SAP's reconciliation never saw it at all — true for the majority: only 3,903 of oil's 23,240 open items have an ITR1 row."},
+    {"col": "RECON_STATE", "label": "recon", "unit": "text", "link": "none",
+     "meaning": "NONE (no ITR1 row) / PARTIAL / FULL_PER_OITR (SAP's own reconciliation covers the document's full value yet DocStatus is still 'O'). FULL_PER_OITR is the section's headline stale-open signal. Shown counts: oil 1,551 / 536 / 81; mart 1,545 / 637 / 6; bev 957 / 139 / 0."},
+    {"col": "CARD_BALANCE", "label": "party ledger", "unit": "INR", "link": "party",
+     "meaning": "OCRD.Balance for this row's card — the ground truth for what the party actually owes (positive = DEBIT, party owes JIVO). BROADCAST per card: identical on every row of that card. Never sum it down the table."},
+    {"col": "CARD_OPEN_NET", "label": "party open (net)", "unit": "INR", "link": "party",
+     "meaning": "SUM(SIGNED_OPEN) for this card across the UNCAPPED set. BROADCAST per card. Compare it to CARD_BALANCE, do not add them."},
+    {"col": "CARD_OPEN_GROSS", "label": "party open (gross)", "unit": "INR", "link": "party",
+     "meaning": "SUM(OPEN_AMT) for this card across the UNCAPPED set. BROADCAST per card. Useful for telling whether a card's rows all survived the cap: if it equals the sum of that card's shown OPEN_AMT, the card is fully represented (true for 64/421 oil, 4/50 mart, 197/306 bev cards)."},
+    {"col": "CARD_STALE_GAP", "label": "party gap", "unit": "INR", "link": "party",
+     "meaning": "CARD_OPEN_NET − CARD_BALANCE. BROADCAST per card. Identity verified on every row, 0 breaks in all three books."},
+    {"col": "CARD_REAL_PCT", "label": "% real", "unit": "pct", "link": "none",
+     "meaning": "100 × LEAST(1, |CARD_BALANCE| / |CARD_OPEN_NET|), 4 dp, or 100 when the card's net is under half a paisa. BROADCAST per card. Four decimals on purpose: oil's AL GHURAIR card is 0.0014% real and at 2 dp printed 0.00 beside a non-zero estimate, which reads as a bug."},
+    {"col": "ITEM_REAL_EST", "label": "est. real", "unit": "INR", "link": "none",
+     "meaning": "OPEN_AMT × CARD_REAL_PCT/100 — a PRO-RATA ESTIMATE, INFERRED, not a SAP figure. Computed from the unrounded percentage, so it will not re-derive from the printed CARD_REAL_PCT (719 oil / 920 mart / 356 bev rows differ by more than 5 paise); trust ITEM_REAL_EST. It is per-row and technically addable, but ONLY SIGNED: because the percentage is a ratio of NETS applied to GROSS amounts, a card whose big debits and credits offset gets CARD_REAL_PCT=100 and every row's estimate equals its full OPEN_AMT. Mart's VENDA000001 therefore shows Rs 347.86 Cr of 'real' open against a card balance of −Rs 20.93 Cr. SUM(SGN × ITEM_REAL_EST) per card equals sign(net) × min(|net|,|balance|) — verified on 265 of 265 fully-contained cards — and that is the only safe way to total it."},
+    {"col": "SIZE_RANK", "label": "size rank", "unit": "count", "link": "none",
+     "meaning": "1 = the company's single biggest open item. The cap keeps SIZE_RANK <= 1500."},
+    {"col": "DT_SIZE_RANK", "label": "rank in type", "unit": "count", "link": "none",
+     "meaning": "Rank by OPEN_AMT within the document's own DOCTYPE. The cap also keeps DT_SIZE_RANK <= 400 — that leg exists so the small credit-note types are not silently wiped out by a pure size cut."},
+    {"col": "DT_ITEMS_ALL", "label": "type: docs (all)", "unit": "count", "link": "none",
+     "meaning": "UNCAPPED count of open documents of this DOCTYPE. BROADCAST per doctype — read once per doctype, never summed down the table."},
+    {"col": "DT_OPEN_ALL", "label": "type: value (all)", "unit": "INR", "link": "none",
+     "meaning": "UNCAPPED SUM(OPEN_AMT) for this DOCTYPE. BROADCAST per doctype. This is the column any doctype chart or KPI must use — the v1 bug was charting the sum of SHOWN rows under an UNCAPPED headline, so oil drew Rs 2,516 Cr of bars beneath a Rs 2,582 Cr number."},
+    {"col": "DT_ITEMS_SHOWN", "label": "type: docs (shown)", "unit": "count", "link": "none",
+     "meaning": "Count of this DOCTYPE that survived the floor and the cap. BROADCAST per doctype."},
+    {"col": "DT_OPEN_SHOWN", "label": "type: value (shown)", "unit": "INR", "link": "none",
+     "meaning": "SUM(OPEN_AMT) of this DOCTYPE among the shown rows. BROADCAST per doctype. Use it only to say 'showing X of Y'."},
+    {"col": "CO_ITEMS_ALL", "label": "docs (all)", "unit": "count", "link": "none",
+     "meaning": "UNCAPPED count of every open document in the company. BROADCAST company-wide — exactly one distinct value across the whole slice."},
+    {"col": "CO_ITEMS_SHOWN", "label": "docs (shown)", "unit": "count", "link": "none",
+     "meaning": "Count of rows actually delivered. BROADCAST. Equals len(summary) in all three books."},
+    {"col": "CO_OPEN_ALL", "label": "face value (all)", "unit": "INR", "link": "none",
+     "meaning": "UNCAPPED SUM(OPEN_AMT) for the company. BROADCAST. The board's headline — and the number that must never be presented as money owed."},
+    {"col": "CO_OPEN_SHOWN", "label": "face value (shown)", "unit": "INR", "link": "none",
+     "meaning": "SUM(OPEN_AMT) over the delivered rows. BROADCAST. Matches a direct re-add of the rows to within Rs 0.07 (rounding)."},
+    {"col": "CO_OPEN_NET", "label": "net of all documents", "unit": "INR", "link": "none",
+     "meaning": "UNCAPPED SUM(SIGNED_OPEN). BROADCAST. Positive = the documents claim parties owe JIVO on balance. Reproduces exactly from the six SGN-weighted DT_OPEN_ALL values."},
+    {"col": "CO_OCRD_NET", "label": "what the ledgers say", "unit": "INR", "link": "none",
+     "meaning": "SUM(OCRD.Balance) over exactly the cards that carry an open item. BROADCAST. Mart's is NEGATIVE (−Rs 9.39 Cr): on balance Mart owes those parties. Not the company's total BP balance — it is scoped to the open set so it is comparable to CO_OPEN_NET."},
+    {"col": "CO_STALE_GAP", "label": "the gap", "unit": "INR", "link": "none",
+     "meaning": "CO_OPEN_NET − CO_OCRD_NET. BROADCAST. Oil Rs 1,802.18 Cr — documents SAP never closed after the money moved. This IS the section's point."},
+    {"col": "CO_MIGRATED_OPEN", "label": "from go-live", "unit": "INR", "link": "none",
+     "meaning": "UNCAPPED SUM(OPEN_AMT) where DOC_DATE = 2024-09-30. BROADCAST. Oil Rs 1,982.49 Cr = 76.6% of the face value. Zero in Mart and Bev is a VERIFIED true zero."},
+    {"col": "AS_OF", "label": "as of", "unit": "date", "link": "none",
+     "meaning": "The position date the query ran for. BROADCAST. It filters DocDate only — PaidToDate, OpenBal and OCRD.Balance are all LIVE with no history, so back-dating gives 'documents that existed then, with today's settlement state', never a historical position."}
+  ],
+
+  "drilldowns": [
+    "party.html",
+    "document.html",
+    "receivables.html",
+    "payables.html",
+    "derivation.html",
+    "methodology.html"
+  ],
+
+  "charts": [
+    {
+      "type": "waterfall",
+      "title": "From face value to what the ledgers actually say",
+      "x": "step",
+      "y": "value",
+      "series": "kind",
+      "why": "The single most important picture in this section. Steps: AR_INV (+) → AP_CN (+) → AP_PMT (+) → AR_CN (−) → AR_RCT (−) → AP_INV (−) = CO_OPEN_NET (total), then a separate marker bar for CO_OCRD_NET with the CO_STALE_GAP labelled between them. Built from DT_OPEN_ALL read once per doctype, so the bars sum to the uncapped headline and not to the capped table. It shows in one glance that Oil's Rs 2,586.70 Cr of 'open' documents net to Rs 1,815.07 Cr of claimed position against Rs 12.89 Cr of real ledger — i.e. the list is a document backlog, not a receivable. VERIFIED: the six SGN-weighted DT_OPEN_ALL values reproduce CO_OPEN_NET to Rs 0.00 in all three books."
+    },
+    {
+      "type": "pareto",
+      "title": "How few parties this is really about",
+      "x": "CARD_NAME",
+      "y": "OPEN_AMT",
+      "series": "ACCT_KIND",
+      "why": "Bars of the top 15 parties by SUM(OPEN_AMT) over the shown rows, with the cumulative-% line. Teaches concentration a table cannot: 3 of 421 parties are 80% of Oil's shown value (AL GHURAIR alone is Rs 1,929.61 Cr across 42 documents), 2 of 50 in Mart, but 21 of 306 in Bev — three completely different problems that the same table would hide. Bars carry the ACCT_KIND colour so an intercompany giant is visible as such, and each bar links to party.html."
+    },
+    {
+      "type": "stackedBars",
+      "title": "Age of the open value, split by document type",
+      "x": "AGE_BUCKET",
+      "y": "OPEN_AMT",
+      "series": "DOCTYPE",
+      "why": "Seven ageing buckets on the ramp, each stacked by the six doctypes. It answers 'is the old money invoices we are owed, or payments we never applied?' — in Oil the 365+ bar is almost entirely AP_PMT, which is the migration cohort, whereas in Mart the old money is genuinely A/P invoices. Every segment carries a value label because the two lightest ramp steps fail 3:1 on cream."
+    },
+    {
+      "type": "scatter",
+      "title": "Age against size — the big old ones",
+      "x": "DAYS_OVERDUE",
+      "y": "OPEN_AMT",
+      "series": "SIDE",
+      "why": "One point per shown document, log-scaled on y, coloured by SIDE, shaped by IS_MIGRATED. The top-right corner is the working list: large and long overdue. A ranked table buries these because it sorts on one axis at a time. Every point links to document.html?type=OBJ_TYPE&entry=DOC_ENTRY. Oil's x-range runs −49 to 2,376 days; the far-right cluster is entirely IS_MIGRATED=1, which the shape encoding makes obvious rather than alarming."
+    },
+    {
+      "type": "donut",
+      "title": "Whose money this is — trade, branch, intercompany, staff",
+      "x": "ACCT_KIND",
+      "y": "OPEN_AMT",
+      "series": "ACCT_KIND",
+      "why": "Four slices from a total partition that cross-foots to CO_OPEN_SHOWN exactly. It is the fastest way to see that the three books are not the same animal. Oil: TRADE 93.2% / BRANCH 5.1% / INTERCO 1.7% / STAFF 0.0% of Rs 2,519.74 Cr. Bev: TRADE 82.1% / BRANCH 11.1% / STAFF 6.3% / INTERCO 0.5% of Rs 13.96 Cr — the only book where staff imprest is material. Mart: INTERCO 67.2% / TRADE 31.7% / BRANCH 1.1% of Rs 530.98 Cr — two thirds of Mart's shown list is JIVO trading with itself, and nobody should read Mart's headline without that in front of them (C-0005)."
+    },
+    {
+      "type": "heatmap",
+      "title": "Which document types go stale, and how far",
+      "x": "AGE_BUCKET",
+      "y": "DOCTYPE",
+      "series": "OPEN_AMT",
+      "why": "A 7x6 grid of open value, 39/42 cells populated in Oil. Where the stacked bar shows the mix inside each age, the heatmap shows the reverse — the ageing profile OF each document type — which is what exposes process failures: AR_RCT concentrated in 181-365 means receipts routinely sit months before anyone applies them, and that is a matching-discipline problem, not a debt problem. Cell text carries the value; colour is the sequential ageing ramp, never the only encoding."
+    },
+    {
+      "type": "meter",
+      "title": "How much of the book you are actually looking at",
+      "x": "CO_OPEN_SHOWN",
+      "y": "CO_OPEN_ALL",
+      "series": "none",
+      "why": "The table is capped at ~2,000 rows out of 23,240, and every reader assumes a table is the whole thing. One meter reading 97.4% (oil) / 81.4% (mart) / 98.1% (bev) of value, with '2,168 of 23,240 documents' underneath, turns a silent truncation into a stated one. Mart's 81% is the one to notice — nearly a fifth of its open value is in rows nobody can click."
+    }
+  ],
+
+  "traps": [
+    "CO_*, DT_* and CARD_* are BROADCAST AGGREGATES repeated on every row they describe. Summing CO_OPEN_ALL down the oil slice gives Rs 5,60,806 Cr instead of Rs 2,586.70 Cr — a 2,168x overstatement. Read CO_* off summary[0], DT_* off the first row of each DOCTYPE, CARD_* off the first row of each CARD_CODE. The only per-row money columns are DOC_TOTAL, APPLIED, OPEN_AMT, SIGNED_OPEN, OPEN_AMT_FC, ITEM_REAL_EST, OITR_RECON_AMT.",
+
+    "THE ROW SET IS CAPPED AND FLOORED, and nothing in the row data says so except CO_ITEMS_SHOWN vs CO_ITEMS_ALL. Only documents with OPEN_AMT >= Rs 10,000 that rank in the company's top 1,500 or their own doctype's top 400 are delivered — 2,168 of 23,240 (oil), 2,188 of 10,105 (mart), 1,096 of 2,212 (bev). Any KPI computed by summing the delivered rows is a SHOWN-SET figure and must be labelled as one. This is exactly the v1 bug the notes record: the doctype bar chart summed shown rows under an uncapped headline, drawing Rs 2,516 Cr of bars beneath a Rs 2,582 Cr number.",
+
+    "CO_OPEN_ALL IS NOT MONEY OWED, AND IS THE MOST DANGEROUS NUMBER ON THE BOARD. Oil shows Rs 2,586.70 Cr of open documents against Rs 12.89 Cr of actual ledger balance across the same parties — a 200x gap. Two causes, both measured: 76.6% is migration openings dated 2024-09-30, and the rest is DocStatus='O' being unreliable at JIVO because bills are settled by manual journal entry or unmatched on-account payments (C-0019). The receivable and payable figures come from customer-ageing / vendor-ageing, which anchor on OCRD.Balance. Every panel that shows CO_OPEN_ALL must carry that sentence.",
+
+    "DOCTYPE AND SIDE ARE DIFFERENT AXES. DOCTYPE names the SAP table; SIDE names the party's ledger side, derived from the payment's own DocType. Filtering by DOCTYPE='AR_RCT' when you meant 'customer receipts' pulls in ORCT rows with DocType='S' — cash received back FROM A VENDOR — worth Rs 2.25 Cr across 146 oil documents. Mirror image: 26 oil OVPM rows (Rs 25.86 L) are refunds paid TO A CUSTOMER and are SIDE='AR'. This was defect D1; after the fix SIDE agrees with OCRD.CardType on 100% of rows, so any disagreement is now a hard defect signal.",
+
+    "DAYS_OVERDUE AND AGE_DAYS DISAGREE BY YEARS ON MIGRATED ROWS, and both are correct. Oil's worst row is dated 2024-09-30 (691 days old) with a true original due date of 2020-02-19 (2,376 days overdue). AGE_BUCKET is cut on DAYS_OVERDUE, so 87.9% of Oil's shown value lands in 365+ largely because of pre-go-live due dates. Never write 'this document is N days old' from DAYS_OVERDUE, and never write 'N days overdue' from AGE_DAYS. On payments (AR_RCT/AP_PMT) DUE_DATE is the payment's own and means nothing as a deadline — AGE_DAYS is the honest field there.",
+
+    "ITEM_REAL_EST MUST BE SUMMED SIGNED OR NOT AT ALL. It is OPEN_AMT × CARD_REAL_PCT/100, and CARD_REAL_PCT is a ratio of NETS applied to GROSS amounts. A card whose large debits and credits offset gets 100% and every one of its rows is estimated at its full face value: Mart's VENDA000001 sums to Rs 347.86 Cr of 'really open' against a card balance of −Rs 20.93 Cr. Gross-summing it across Mart's shown rows yields Rs 505.88 Cr against a CO_OCRD_NET of −Rs 9.39 Cr, which is nonsense. 233 of 421 oil cards, 17 of 50 mart, 43 of 306 bev overstate this way. SUM(SGN × ITEM_REAL_EST) per card = sign(net) × min(|net|,|balance|) — verified on all 265 fully-contained cards — and that is the only defensible total. Recommendation: do NOT publish a company-level 'really open' KPI from this column; expose it per row and per card only.",
+
+    "OPEN_AMT_FC IS NOT RUPEES AND ITS COLUMN IS NOT ADDABLE. OPEN_AMT is always local INR; OPEN_AMT_FC is the same item in its own currency, so totalling the column adds USD to EUR to zero. 107 oil rows are non-INR and they are Rs 2,103.78 Cr of the Rs 2,519.74 Cr shown — 83% of the book is exchange-rate exposed. Worse, rows with a rotten DocRate are INVISIBLE: Oil OVPM 26317 books USD 44.34 L as Rs 443.40 (~87,000x too small) and sinks below the Rs 10,000 floor entirely. One such row was found; no systematic sweep was run.",
+
+    "OITR_RECON_AMT CAN EXCEED THE DOCUMENT'S OWN TOTAL AND THAT IS NOT A BUG. SAP writes account-level system reconciliations that stamp the reconciliation's whole total onto each participant line, so 87 oil / 14 mart / 1 bev documents legitimately carry more reconciliation than value. It is a DIAGNOSTIC, never a settlement figure, and it is never used to compute OPEN_AMT. It is also easy to break: the naive SUM over ITR1's signed lines double-counted settlements written on both IsCredit sides and fired FULL_PER_OITR on documents SAP had not reconciled (128 impossible rows and Rs 18.24 Cr of phantom excess in Oil before defect D2 was fixed). If the impossible-row count jumps back toward 128, the GREATEST(D,C) guard has been removed.",
+
+    "MART'S SHOWN LIST IS 67.2% INTERCOMPANY BY VALUE (Rs 356.62 Cr of Rs 530.98 Cr), 68.2% once its BRANCH cards are added (Rs 362.29 Cr = the IS_GROUP=1 figure) — and VENDA000001 'JIVO WELLNESS PVT LTD' alone is Rs 347.86 Cr across 1,070 documents. Any Mart headline read without ACCT_KIND in front of it is mostly JIVO trading with itself (C-0005). Oil is 6.8% group (BRANCH 5.1% + INTERCO 1.7%), Bev 11.6% (BRANCH 11.1% + INTERCO 0.5%). Group parties are flagged and kept here, never dropped — the board must let the reader subtract them consciously.",
+
+    "BPL_NAME IS INCONSISTENTLY CASED IN SAP. Oil carries both 'FACTORY' and 'Factory' and both 'DELHI' and 'Delhi'; Bev carries 'FACTORY'/'Factory', 'DELHI'/'Delhi' and 'Punjab'. Grouping without UPPER() splits one branch into two bars and understates the larger one.",
+
+    "EXT_REF IS NULL ON EVERY PAYMENT ROW and on many invoices — 1,344 of 2,168 oil rows, 909 of 2,188 mart, 883 of 1,096 bev. It is the ONLY nullable column in the 51. A naive String(v) prints the literal 'None'.",
+
+    "OBJ_TYPE AND DOC_ENTRY ARRIVE WITH MIXED JSON TYPES. The SQL declares OBJ_TYPE as a string but data.json holds it as an INTEGER (13, 14, 18, 19, 24, 46), while DOC_ENTRY — a numeric key in SAP — arrives as a STRING. Cast both before building a document URL or the link silently 404s.",
+
+    "AS_OF FILTERS DocDate ONLY. PaidToDate, OpenBal and OCRD.Balance are live values with no history in these tables, so a back-dated run gives 'documents that existed on that date, with today's settlement state' — not the open position as it stood. Measured on Oil: --as-of 2026-03-31 reports Rs 80.34 Cr adjusted receivable against Rs 108.86 Cr today. Never label a back-dated run as a closing position.",
+
+    "STAFF IS A GROUP-NAME TEST ONLY, so employee imprest cards filed under a geography group (ORGC000031 'ARVINDER SINGH IMPREST JWPL0115', group DELHI) come out as TRADE. Measured cost: 11 items / Rs 1.27 L (oil), 2 / Rs 1,957 (mart), 6 / Rs 11,562 (bev). Immaterial, deliberately left — but do not present the TRADE figure as 'purely external' without this footnote.",
+
+    "NEGATIVE OpenBal ROWS ARE SILENTLY DROPPED by the > 0 filter: 2 oil rows (−Rs 0.91), 2 mart (−Rs 1,025), 0 bev. Total Rs 1,025.91 across all three books. Immaterial, but it is why the ORCT/OVPM totals here differ by exactly that amount from a raw table scan.",
+
+    "data.json MOVES UNDER YOU. The VPS rebuilds it every 2 minutes. Between 18:58:48 and 19:05:02 on 2026-08-22 Oil's CO_OPEN_ALL moved +Rs 40.32 L on a single new A/R invoice — and CO_OCRD_NET moved by the identical amount, leaving CO_STALE_GAP unchanged, which is exactly the behaviour a correct pipeline should show. Any regression test must compare shape and identities, not frozen paise."
+  ],
+
+  "empty_states": [
+    "errors['open-item-list'][company] is non-null → render empty() naming the section, the company and the SQL error. Never fall back to the previous build's numbers without saying so.",
+    "summary[company] is an empty list → empty('SAP returned no open documents in this book as at <AS_OF>.'). Verified reachable: --as-of 2020-01-01 returns header-only, 0 rows, exit 0 in all three schemas. Do NOT render ₹0 for any KPI in this state — with no rows there is no summary[0] to read the broadcast totals off, so every CO_*/DT_* KPI is UNKNOWN, not zero.",
+    "A DOCTYPE has no row in the shown set → its DT_OPEN_ALL / DT_ITEMS_ALL are unreachable even though the uncapped total is non-zero, because the value only exists broadcast onto that doctype's rows. Render empty('no <doctype> document survived the ₹10,000 materiality floor and the size cap — the uncapped total for this type is not carried in the delivered rows'). Live risk: Bev's AP_CN has exactly 2 documents in the whole book.",
+    "CO_MIGRATED_OPEN == 0 (mart, bev) → this is a VERIFIED TRUE ZERO, not a gap. Render '₹0 — no migration cohort in this book (Mart opens 2024-10-03/2025-01-01, Bev 2024-10-01; their opening days leave nothing material open)'. Rendering empty() here would be wrong in the other direction.",
+    "oi-oitr-settled-docs == 0 (bev) → true zero: no Bev document has an OITR reconciliation covering its full value. Render '0 — none in this book', not empty().",
+    "oi-fx-open-shown == 0 (mart) → true zero: Mart books nothing in foreign currency. Render '— none in this book', not ₹0 and not empty().",
+    "Any panel that would present a company-level total of ITEM_REAL_EST → render empty('a book-wide \"really open\" figure cannot be derived from this column — the pro-rata is a ratio of nets applied to gross amounts and overstates by up to 17x on offsetting cards') and offer the per-card view instead. A confident number here would be the worst output in the section.",
+    "Any panel that would total OPEN_AMT_FC across rows → render empty('mixed currencies — total not defined') and show the per-currency split instead.",
+    "generated_at is more than 30 minutes old between 07:00 and 23:00 IST → the section's figures stay on screen but the page carries the red staleness banner and every KPI is stamped 'as at <generated_at>'. A frozen board that looks live is the failure mode this build exists to kill."
+  ]
+}

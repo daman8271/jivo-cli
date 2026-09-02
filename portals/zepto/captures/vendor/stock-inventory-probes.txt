@@ -1,0 +1,34 @@
+Stock View & Inventory — read-only probe transcript
+Section: stock-inventory (lane: vendor)  |  Date: 2026-07-24
+Auth: authorization header (no Bearer), JWT reused from captures/vendor/23-sales-list.txt
+Token status: EXPIRED (exp 2026-07-13 18:29:59 UTC) — no 2xx obtainable; no endpoint upgraded to PROVEN.
+Method note: all 8 stock-view analytics endpoints are POST-with-filters reads in the bundle
+(Kp.post({path,data})), so per the READ-ONLY LAW they were NOT fired (POST forbidden even when
+read-effect). Only the confirmed-GET ads-bff endpoint was eligible for a GET probe. Tokens redacted.
+
+────────────────────────────────────────────────────────────────────────
+PROBE 1  GET https://fcc.zepto.co.in/brand-analytics-web/api/v1/stock-view/availability/summary
+  (exploratory GET to see gateway routing; the bundle wires this as POST)
+  HTTP 404
+  {"message":"Provided api path is not found in bifrost - Api path not found:
+   /api/v1/stock-view/availability/summary","code":404}
+  -> bifrost gateway strips the brand-analytics-web/ proxy segment; GET route absent (endpoint is POST).
+
+PROBE 2  GET https://fcc.zepto.co.in/api/v1/stock-view/availability/summary  [x-proxy-target: brand-analytics-web]
+  HTTP 404
+  {"message":"no Route matched with those values","request_id":"7b61fe4df4821f77230f4b3dd54bdf1d"}
+
+PROBE 3  GET https://fcc.zepto.co.in/api/v1/stock-view/availability/summary  [x-proxy-target: brand-analytics]
+  HTTP 404
+  {"message":"no Route matched with those values","request_id":"ade6542cb898095a2a1c56568292091b"}
+  -> confirms the real URL is fcc.zepto.co.in/brand-analytics-web/api/v1/... (path const carries the
+     proxy segment); GET has no matching route because the method is POST.
+
+PROBE 4  GET https://fcc.zepto.co.in/ads-bff/api/v1/inventory/availability
+         ?brand_id=b3550d5d-…&start_date=2026-07-01&end_date=2026-07-15&market_place_type=ZEPTO
+  HTTP 429  (rate-limited / WAF throttle)
+  -> STOP rule triggered (429). Remaining endpoints left "documented (not probed)".
+
+Result: 0 endpoints PROVEN. Gateway reachable (fcc.zepto.co.in) but expired token + POST-only
+analytics routes + a 429 on the one GET endpoint mean nothing returned 2xx. All 9 endpoints are
+documented from the bundle only.

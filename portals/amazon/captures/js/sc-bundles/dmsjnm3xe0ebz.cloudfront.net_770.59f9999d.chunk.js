@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunk_amzn_quick_list=self.webpackChunk_amzn_quick_list||[]).push([[385,770],{36920:(e,a,i)=>{i.r(a),i.d(a,{F1DisclaimerText:()=>r});var t=i(56273),n=i(44914),l=i.n(n),s=i(7541),g=i(48336),c=i(9994),r=function(e){return e.workflow===t.xE.EDIT?l().createElement(s.A,{listingLanguageCode:e.listingLanguageCode,listingMarketplaceId:e.listingMarketplaceId}):l().createElement(g.A,{listingLanguageCode:e.listingLanguageCode,listingMarketplaceId:e.listingMarketplaceId})};a.default=(0,c.withChassis)(r)}}]);
+//# sourceMappingURL=770.59f9999d.chunk.js.map

@@ -1,0 +1,1786 @@
+{
+ "section": "bank-accounts",
+ "title": "Bank & Cash Register (Bank A/c Wise)",
+ "tables": "ODSC OACT JDT1 OJDT DSC1 OCRD OCRG",
+ "blurb": "Every bank, cash, wallet, deposit and bank-facility G/L account in the book: what it holds or owes today, what moved through it over the last twelve months, how much of that was cancelled churn or JIVO's own inter-company money, and which accounts nobody has touched. Account numbers never leave SAP in full - they are masked to the last four digits, and every digit inside the account name is replaced with 'x'.",
+ "grain": "One summary row = one POSTABLE G/L account sitting directly under one of the eight banking drawers of the chart of accounts, resolved through OACT.FatherNum by the parent's NAME: BANK ACCOUNTS (CURRENT_ACCOUNT), PAYMENT BANK ONLINE (PAYMENT_WALLET), CASH IN HAND (CASH_IN_HAND), BANK CASH CREDIT LOAN (CASH_CREDIT_OD), FDR (FIXED_DEPOSIT), TERM LOAN, VEHICLE LOAN, CREDIT CARD. Live row counts Oil 70 / Mart 44 / Beverages 18, and the drawer child-counts add up exactly. Account codes are unique within a company, there is no document fan-out anywhere in the query, and the per-account columns are therefore safe to sum. There is NO detail grain: detail is [] in all three slices, so no drill to individual JDT1 journal lines, no payment list and no statement view is possible from this data - that is bank-reco's job.",
+ "faceted": false,
+ "facet_note": "NOT faceted. There is no TOTAL/CLASS/MONTH stacking and no ZZ_TOTAL row: every row is one G/L account, and summing a per-account money column over all rows is correct. The fatal trap here is a DIFFERENT shape of the same mistake - BROADCAST columns. The seven TOT_* columns (TOT_CASH_AND_BANK_L, TOT_BANK_CURRENT_L, TOT_CASH_IN_HAND_L, TOT_WALLET_L, TOT_CC_OD_NET_L, TOT_FIXED_DEPOSIT_L, TOT_BORROWINGS_L) are company-level window totals (SUM(...) OVER ()) repeated IDENTICALLY on every row of the company. Summing one of them across rows multiplies it by the row count: Oil's TOT_BORROWINGS_L summed over 70 rows gives 601,615 L = Rs 6,016 Cr against a true Rs 85.95 Cr. Every KPI built on a TOT_* column must use agg='first' on one row per company. Second, the seven TOT_* columns are NOT disjoint and must never be added to each other: TOT_CASH_AND_BANK_L already contains TOT_BANK_CURRENT_L + TOT_CASH_IN_HAND_L + TOT_WALLET_L + TOT_CC_OD_NET_L, and TOT_BORROWINGS_L (gross drawn) overlaps TOT_CC_OD_NET_L (net). Read ONE of them per question. Third, MONTHLY_IN_L_SERIES / MONTHLY_OUT_L_SERIES / MONTHLY_NET_L_SERIES are SERIES STRINGS, not scalars - they are parsed, never summed or scaled.",
+ "kpis": [
+  {
+   "id": "bank-net-position",
+   "label": "Net bank position",
+   "unit": "INR",
+   "column": "TOT_BANK_CURRENT_L",
+   "row_filter": "True   # one-company slice, so agg='first' takes exactly ONE row. If the three slices are ever concatenated, de-duplicate on COMPANY_SCHEMA before taking first, exactly as site/index.html:1595 does.",
+   "agg": "first",
+   "formula": "(TOT_BANK_CURRENT_L + TOT_CASH_IN_HAND_L + TOT_WALLET_L + TOT_FIXED_DEPOSIT_L - ABS(TOT_BORROWINGS_L)) x 1e5. Deliberately NOT 'cash and bank': JIVO holds almost nothing in current accounts and funds itself on cash credit, so a cash-and-bank headline would read as liquidity the business does not have. Deposits and cash LESS all bank borrowings is the honest headline, and it is the one v1 already publishes (site/index.html:1591-1601, 1631).",
+   "terms": [
+    {
+     "label": "Current accounts",
+     "col": "TOT_BANK_CURRENT_L",
+     "op": "+",
+     "source": "OACT+JDT1",
+     "note": "Oil 5.52 L across 6 accounts - Rs 5.5 lakh for a Rs 865 Cr-a-year cash flow"
+    },
+    {
+     "label": "Cash in hand",
+     "col": "TOT_CASH_IN_HAND_L",
+     "op": "+",
+     "source": "OACT+JDT1",
+     "note": "Oil is NEGATIVE today (-10.12 L): 1105001 CASH SALE sits at -10.23 L, a till in credit"
+    },
+    {
+     "label": "Payment wallets",
+     "col": "TOT_WALLET_L",
+     "op": "+",
+     "source": "OACT+JDT1",
+     "note": "PAYTM / RAZORPAY float; Oil -0.42 L, Mart -0.73 L"
+    },
+    {
+     "label": "Fixed deposits",
+     "col": "TOT_FIXED_DEPOSIT_L",
+     "op": "+",
+     "source": "OACT+JDT1",
+     "note": "Oil 1,113.34 L; largely margin held against the credit line, not free cash"
+    },
+    {
+     "label": "Bank borrowings drawn",
+     "col": "TOT_BORROWINGS_L",
+     "op": "-",
+     "source": "OACT+JDT1",
+     "note": "GROSS drawn (negatives only): CC/OD + term + vehicle + card. abs() because the column is already positive"
+    },
+    {
+     "label": "Net bank position",
+     "col": "-",
+     "op": "=",
+     "source": "OACT+JDT1",
+     "note": "Oil -7,486.18 L = -Rs 74.86 Cr. Negative is the normal state of a business funded on cash credit, not an error"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "2202000 UNSECURED LOAN",
+     "row_filter": "never in the universe",
+     "why": "directors', subsidiary and NBFC borrowings - Oil ~2,330 L, Mart ~233 L, Bev nil - are real debt but not a BANK facility (sql lines 80-83). Total Oil debt is ~Rs 109 Cr, not the Rs 85.95 Cr this page shows"
+    },
+    {
+     "label": "Cash-credit / OD net position (TOT_CC_OD_NET_L)",
+     "row_filter": "TOT_CC_OD_NET_L",
+     "why": "already inside TOT_BORROWINGS_L on its drawn side; adding TOT_CC_OD_NET_L as well double counts the facility"
+    }
+   ],
+   "sql_lines": [
+    614,
+    628
+   ],
+   "caveats": [
+    "B-BROADCAST",
+    "B-TOT-OVERLAP",
+    "B-LAKHS",
+    "B-UNSECURED-OUT",
+    "B-NO-LIMIT",
+    "B-ROUNDING"
+   ],
+   "check": {
+    "method": "Rebuild it from OACT.\"CurrTotal\" per account - SAP's own stored trial-balance figure - instead of from the JDT1-derived window totals. This touches a different table (OACT, not JDT1), a different code path (no window function, no CTE) and a different grain (70 per-account values, not one broadcast value), so it tests the broadcast, the ledger sum and the category mapping at once. Tolerance Rs 1,000 x row count: every _L column is ROUND(x/1e5, 2), and the TOT_* window totals round AFTER summing in rupees while a per-row sum rounds first. Valid ONLY while as_of = today - CURRTOTAL_TODAY_L is a LIFETIME balance and will legitimately disagree at any historical as-of, when the check must report 'not applicable', never red.",
+    "recipe": "ASSET={'CURRENT_ACCOUNT','PAYMENT_WALLET','CASH_IN_HAND','FIXED_DEPOSIT'}; FAC=lambda r: r['CATEGORY_KIND']=='BORROWING' or r['CATEGORY']=='CASH_CREDIT_OD'; (sum(float(r['CURRTOTAL_TODAY_L'] or 0) for r in rows if r['CATEGORY'] in ASSET) - sum(max(0.0,-float(r['CURRTOTAL_TODAY_L'] or 0)) for r in rows if FAC(r))) * 1e5   # measured: oil -748,617,000 vs -748,618,000 (delta Rs 1,000), mart 9,523,000 vs 9,523,000 (0), bev 4,591,000 vs 4,591,000 (0)"
+   },
+   "drill": {
+    "page": "derivation.html",
+    "params": {
+     "k": "bank-net-position",
+     "co": "<company>"
+    }
+   },
+   "live": {
+    "oil": -748618000,
+    "mart": 9523000,
+    "bev": 4591000
+   }
+  },
+  {
+   "id": "bank-liquid-now",
+   "label": "In current accounts, wallets and hand",
+   "unit": "INR",
+   "column": "TOT_BANK_CURRENT_L",
+   "row_filter": "True   # one-company slice, so agg='first' takes exactly ONE row. If the three slices are ever concatenated, de-duplicate on COMPANY_SCHEMA before taking first, exactly as site/index.html:1595 does.",
+   "agg": "first",
+   "formula": "(TOT_BANK_CURRENT_L + TOT_CASH_IN_HAND_L + TOT_WALLET_L) x 1e5 - money that could be spent this minute, with no facility drawn and no deposit broken.",
+   "terms": [
+    {
+     "label": "Current accounts",
+     "col": "TOT_BANK_CURRENT_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "Oil 5.52 L / Mart 95.96 L / Bev 42.51 L"
+    },
+    {
+     "label": "Cash in hand",
+     "col": "TOT_CASH_IN_HAND_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "Oil -10.12 L - a NEGATIVE cash box, see B-OVERDRAWN"
+    },
+    {
+     "label": "Wallets",
+     "col": "TOT_WALLET_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "PAYTM / RAZORPAY"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Fixed deposits",
+     "row_filter": "r['CATEGORY']=='FIXED_DEPOSIT'",
+     "why": "Oil's 1,113.34 L of FDR is largely margin against the credit line - it is not on call and must not be shown as spendable"
+    },
+    {
+     "label": "Debit balances on CC/OD accounts",
+     "row_filter": "r['CATEGORY']=='CASH_CREDIT_OD' and float(r['BALANCE_L'] or 0)>0",
+     "why": "Oil 2201105 (+806.68 L) and 1104107 (+684.51 L) are over-repaid FACILITIES, not cash. Summing FUNDS_AVAILABLE_L across all rows sweeps these 1,491.19 L in and turns a NEGATIVE liquid position into a fictional Rs 26.10 Cr"
+    }
+   ],
+   "sql_lines": [
+    616,
+    621
+   ],
+   "caveats": [
+    "B-BROADCAST",
+    "B-LAKHS",
+    "B-OVERDRAWN",
+    "B-FUNDS-AVAILABLE",
+    "B-ROUNDING"
+   ],
+   "check": {
+    "method": "Re-derive from the per-account BALANCE_L column instead of the three broadcast window totals: sum BALANCE_L over CATEGORY in (CURRENT_ACCOUNT, CASH_IN_HAND, PAYMENT_WALLET). Different grain and a different rounding order (round-then-sum vs sum-then-round), which is exactly what a broadcast bug or a mis-mapped drawer would break. It also re-tests the drawer->category mapping, because a mis-filed account would land in the per-row sum but not in the window total's CASE.",
+    "recipe": "sum(float(r['BALANCE_L'] or 0) for r in rows if r['CATEGORY'] in ('CURRENT_ACCOUNT','CASH_IN_HAND','PAYMENT_WALLET')) * 1e5   # measured: oil -501,000 vs -502,000 (Rs 1,000 rounding on the cash drawer), mart 9,523,000 vs 9,523,000, bev 4,483,000 vs 4,483,000"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "CATEGORY=CURRENT_ACCOUNT|CASH_IN_HAND|PAYMENT_WALLET"
+    }
+   },
+   "live": {
+    "oil": -502000,
+    "mart": 9523000,
+    "bev": 4483000
+   }
+  },
+  {
+   "id": "bank-cash-and-bank-headline",
+   "label": "\"Cash and bank\" as the column defines it",
+   "unit": "INR",
+   "column": "TOT_CASH_AND_BANK_L",
+   "row_filter": "True   # one-company slice, so agg='first' takes exactly ONE row. If the three slices are ever concatenated, de-duplicate on COMPANY_SCHEMA before taking first, exactly as site/index.html:1595 does.",
+   "agg": "first",
+   "formula": "TOT_CASH_AND_BANK_L x 1e5 = SUM(BALANCE_L where IS_CASH_AND_BANK='Y') = current accounts + wallets + cash + CASH_CREDIT_OD. Published ON PURPOSE so the reader can see why the hero card does not use it: because it nets the drawn overdraft into 'cash', Oil's cash-and-bank is MINUS Rs 37.65 Cr.",
+   "terms": [
+    {
+     "label": "Current accounts + wallets + cash",
+     "col": "TOT_BANK_CURRENT_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "Oil -5.02 L"
+    },
+    {
+     "label": "Cash credit / overdraft, NET",
+     "col": "TOT_CC_OD_NET_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "Oil -3,760.04 L - this is what makes the headline negative"
+    },
+    {
+     "label": "'Cash and bank'",
+     "col": "TOT_CASH_AND_BANK_L",
+     "op": "=",
+     "source": "JDT1",
+     "note": "a treasury net position, NOT cash. Never label it 'cash'"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Fixed deposits and term/vehicle/card debt",
+     "row_filter": "r['IS_CASH_AND_BANK']=='N'",
+     "why": "deliberately outside the column (sql line 284-286); they are carried separately in TOT_FIXED_DEPOSIT_L and TOT_BORROWINGS_L"
+    }
+   ],
+   "sql_lines": [
+    284,
+    615
+   ],
+   "caveats": [
+    "B-BROADCAST",
+    "B-TOT-OVERLAP",
+    "B-CASH-AND-BANK-NAME",
+    "B-LAKHS"
+   ],
+   "check": {
+    "method": "Re-derive from the per-account rows using the IS_CASH_AND_BANK flag rather than the window total, then assert the identity that names the trap: TOT_CASH_AND_BANK_L must equal TOT_BANK_CURRENT_L + TOT_CASH_IN_HAND_L + TOT_WALLET_L + TOT_CC_OD_NET_L within rounding. If that identity ever holds without the CC/OD term, the column has silently changed meaning and every 'cash' caption on the page is wrong.",
+    "recipe": "alt = sum(float(r['BALANCE_L'] or 0) for r in rows if r['IS_CASH_AND_BANK']=='Y') * 1e5; r0=rows[0]; ident = (float(r0['TOT_BANK_CURRENT_L'])+float(r0['TOT_CASH_IN_HAND_L'])+float(r0['TOT_WALLET_L'])+float(r0['TOT_CC_OD_NET_L']))*1e5; assert abs(ident - value) <= 1000*len(rows)   # measured alt: oil -376,505,000 vs -376,506,000, mart 9,523,000 vs 9,523,000, bev 4,483,000 vs 4,483,000"
+   },
+   "drill": {
+    "page": "derivation.html",
+    "params": {
+     "k": "bank-cash-and-bank-headline",
+     "co": "<company>"
+    }
+   },
+   "live": {
+    "oil": -376506000,
+    "mart": 9523000,
+    "bev": 4483000
+   }
+  },
+  {
+   "id": "bank-fixed-deposits",
+   "label": "Held in fixed deposits",
+   "unit": "INR",
+   "column": "TOT_FIXED_DEPOSIT_L",
+   "row_filter": "True   # one-company slice, so agg='first' takes exactly ONE row. If the three slices are ever concatenated, de-duplicate on COMPANY_SCHEMA before taking first, exactly as site/index.html:1595 does.",
+   "agg": "first",
+   "formula": "TOT_FIXED_DEPOSIT_L x 1e5 = SUM(BALANCE_L where CATEGORY='FIXED_DEPOSIT'), i.e. every postable child of the FDR drawer.",
+   "terms": [
+    {
+     "label": "FDR accounts",
+     "col": "TOT_FIXED_DEPOSIT_L",
+     "op": "=",
+     "source": "OACT drawer 'FDR' + JDT1",
+     "note": "Oil 32 accounts / Mart 17 (all nil) / Bev 1. Includes two 'FDR - ACCRUED INTEREST' heads and Oil's mis-filed 1103115 'R & D WHEAT GRASS' (134.05 L), which hangs under FDR but is not a deposit account by name"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Accrued-interest heads read as deposits",
+     "row_filter": "r['BANK_NAME'] is None and r['CATEGORY']=='FIXED_DEPOSIT'",
+     "why": "1106102 / 1106122 FDR-ACCRUED INTEREST and 1103115 carry BANK_NAME NULL and BANK_NAME_SOURCE='UNRESOLVED'; they are inside the total but must not be captioned as bank deposits"
+    }
+   ],
+   "sql_lines": [
+    624,
+    625
+   ],
+   "caveats": [
+    "B-BROADCAST",
+    "B-LAKHS",
+    "B-DORMANT-FD",
+    "B-UNRESOLVED-BANK"
+   ],
+   "check": {
+    "method": "Two independent routes, both away from the window total. (a) Sum CURRTOTAL_TODAY_L (OACT's stored balance, a different table) over CATEGORY='FIXED_DEPOSIT'. (b) Assert containment against the dormancy view: on today's data 21 of Oil's 24 balance-carrying dormant accounts are FDs holding 1,113.33 L, i.e. essentially the entire deposit book last moved on 2026-03-31 (year-end interest posting). If the FD total moves but that dormant subtotal does not, an FD was opened or broken and the page should say so.",
+    "recipe": "sum(float(r['CURRTOTAL_TODAY_L'] or 0) for r in rows if r['CATEGORY']=='FIXED_DEPOSIT') * 1e5   # measured: oil 111,333,000 vs 111,334,000 (Rs 1,000), mart 0 vs 0 (measured nil, 17 accounts all zero), bev 108,000 vs 108,000"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "CATEGORY=FIXED_DEPOSIT",
+     "sort": "BALANCE_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 111334000,
+    "mart": 0,
+    "bev": 108000
+   }
+  },
+  {
+   "id": "bank-borrowings-gross",
+   "label": "Owed to the banks (gross drawn)",
+   "unit": "INR",
+   "column": "TOT_BORROWINGS_L",
+   "row_filter": "True   # one-company slice, so agg='first' takes exactly ONE row. If the three slices are ever concatenated, de-duplicate on COMPANY_SCHEMA before taking first, exactly as site/index.html:1595 does.",
+   "agg": "first",
+   "formula": "TOT_BORROWINGS_L x 1e5 = SUM over facility accounts (CATEGORY_KIND='BORROWING' OR CATEGORY='CASH_CREDIT_OD') of MAX(0, -BALANCE_L) - the NEGATIVE side only, so it is GROSS drawn: what the banks have lent, before netting the facilities that happen to sit in debit.",
+   "terms": [
+    {
+     "label": "Cash credit / OD drawn",
+     "col": "AMOUNT_DRAWN_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "Oil 5,251.23 L across 9 accounts"
+    },
+    {
+     "label": "Term loans",
+     "col": "AMOUNT_DRAWN_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "Oil 3,329.37 L across 13 accounts"
+    },
+    {
+     "label": "Vehicle loans",
+     "col": "AMOUNT_DRAWN_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "Oil 13.89 L"
+    },
+    {
+     "label": "Credit cards",
+     "col": "AMOUNT_DRAWN_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "0.00 L in all three books today - measured nil, not missing"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "2202000 UNSECURED LOAN",
+     "row_filter": "never in the universe",
+     "why": "directors' / subsidiary / NBFC debt, ~2,330 L in Oil. 'Total borrowings Rs 85.95 Cr' is BANK borrowings; total debt is ~Rs 109 Cr (sql lines 80-83)"
+    },
+    {
+     "label": "Overdrawn asset accounts",
+     "row_filter": "r['OVERDRAWN_FLAG']=='Y'",
+     "why": "summing AMOUNT_DRAWN_L over ALL rows gives Oil 8,605.14 L, not 8,594.50 - the extra 10.65 L is a cash box and a PayTM wallet sitting in credit, which is a booking problem, not bank debt"
+    }
+   ],
+   "sql_lines": [
+    626,
+    628
+   ],
+   "caveats": [
+    "B-BROADCAST",
+    "B-GROSS-VS-NET",
+    "B-UNSECURED-OUT",
+    "B-LAKHS",
+    "B-NO-LIMIT"
+   ],
+   "check": {
+    "method": "Two routes, both independent of the window total. (a) OACT: sum the negative side of CURRTOTAL_TODAY_L over facility accounts - a different SAP store from the JDT1 ledger the window total is built on. (b) Per-account: sum AMOUNT_DRAWN_L with the SAME facility predicate, which catches the commonest misreading (summing AMOUNT_DRAWN_L over every row and picking up overdrawn cash boxes).",
+    "recipe": "FAC=lambda r: r['CATEGORY_KIND']=='BORROWING' or r['CATEGORY']=='CASH_CREDIT_OD'; sum(max(0.0,-float(r['CURRTOTAL_TODAY_L'] or 0)) for r in rows if FAC(r)) * 1e5   # measured: oil 859,449,000 vs 859,450,000 (Rs 1,000), mart 0, bev 0. Per-account AMOUNT_DRAWN_L route gives the same 859,449,000; over ALL rows it wrongly gives 860,514,000"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "CATEGORY_KIND=BORROWING|CASH_CREDIT_OD",
+     "sort": "AMOUNT_DRAWN_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 859450000,
+    "mart": 0,
+    "bev": 0
+   }
+  },
+  {
+   "id": "bank-borrowings-net",
+   "label": "Owed to the banks, net of facilities in credit",
+   "unit": "INR",
+   "column": "TOT_BORROWINGS_L",
+   "row_filter": "True   # one-company slice, so agg='first' takes exactly ONE row. If the three slices are ever concatenated, de-duplicate on COMPANY_SCHEMA before taking first, exactly as site/index.html:1595 does.",
+   "agg": "first",
+   "formula": "(TOT_BORROWINGS_L - SUM(FUNDS_AVAILABLE_L on facility accounts)) x 1e5. TOT_BORROWINGS_L counts only the drawn (negative) side, so a facility sitting in DEBIT is invisible to it. Oil has two: 2201105 HSBC +806.68 L and 1104107 ICICI +684.51 L = 1,491.19 L, so gross Rs 85.95 Cr becomes net Rs 71.03 Cr.",
+   "terms": [
+    {
+     "label": "Gross drawn",
+     "col": "TOT_BORROWINGS_L",
+     "op": "+",
+     "source": "JDT1",
+     "note": "the right reading for 'what the banks have lent us'"
+    },
+    {
+     "label": "Facility accounts sitting in debit",
+     "col": "FUNDS_AVAILABLE_L",
+     "op": "-",
+     "source": "JDT1",
+     "note": "an over-repaid or in-credit CC/OD account - not cash, and not lending either"
+    },
+    {
+     "label": "Net bank debt",
+     "col": "-",
+     "op": "=",
+     "source": "JDT1",
+     "note": "Oil 7,103.31 L = Rs 71.03 Cr"
+    }
+   ],
+   "excludes": [],
+   "sql_lines": [
+    574,
+    628
+   ],
+   "caveats": [
+    "B-GROSS-VS-NET",
+    "B-FUNDS-AVAILABLE",
+    "B-LAKHS",
+    "B-ROUNDING"
+   ],
+   "check": {
+    "method": "Rebuild it in one step from the SIGNED per-account balance instead of subtracting two positive columns: negate SUM(BALANCE_L) over facility accounts. That is a single netting on a different column, so it cannot inherit an error in either AMOUNT_DRAWN_L or FUNDS_AVAILABLE_L, and it fails loudly if the GREATEST/LEAST split in the SQL ever stops partitioning the balance exactly.",
+    "recipe": "FAC=lambda r: r['CATEGORY_KIND']=='BORROWING' or r['CATEGORY']=='CASH_CREDIT_OD'; -sum(float(r['BALANCE_L'] or 0) for r in rows if FAC(r)) * 1e5   # measured: oil 710,330,000 vs 710,331,000 (Rs 1,000), mart 0 vs 0, bev 0 vs 0"
+   },
+   "drill": {
+    "page": "derivation.html",
+    "params": {
+     "k": "bank-borrowings-net",
+     "co": "<company>"
+    }
+   },
+   "live": {
+    "oil": 710331000,
+    "mart": 0,
+    "bev": 0
+   }
+  },
+  {
+   "id": "bank-cc-od-drawn",
+   "label": "Drawn on cash credit and overdraft",
+   "unit": "INR",
+   "column": "TOT_CC_OD_NET_L",
+   "row_filter": "True   # one-company slice, so agg='first' takes exactly ONE row. If the three slices are ever concatenated, de-duplicate on COMPANY_SCHEMA before taking first, exactly as site/index.html:1595 does.",
+   "agg": "first",
+   "formula": "ABS(TOT_CC_OD_NET_L) x 1e5. NET across the CC/OD drawer - drawn accounts less the two Oil facilities sitting in debit - which is why it (3,760.04 L) is smaller than the drawer's gross drawn (5,251.23 L).",
+   "terms": [
+    {
+     "label": "CC / OD accounts, net",
+     "col": "TOT_CC_OD_NET_L",
+     "op": "=",
+     "source": "JDT1",
+     "note": "SIGN: the column is NEGATIVE when drawn. abs() before display or the bar points the wrong way"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Term, vehicle and card debt",
+     "row_filter": "r['CATEGORY'] in ('TERM_LOAN','VEHICLE_LOAN','CREDIT_CARD')",
+     "why": "carried in TOT_BORROWINGS_L; adding TOT_CC_OD_NET_L to TOT_BORROWINGS_L double counts the overdraft"
+    }
+   ],
+   "sql_lines": [
+    622,
+    623
+   ],
+   "caveats": [
+    "B-BROADCAST",
+    "B-TOT-OVERLAP",
+    "B-SIGN",
+    "B-LAKHS",
+    "B-NO-LIMIT"
+   ],
+   "check": {
+    "method": "Re-derive per account from the signed balance column, then assert the gross/net decomposition that the single figure hides: SUM(AMOUNT_DRAWN_L) - SUM(FUNDS_AVAILABLE_L) over CC/OD rows must reproduce it (Oil 5,251.23 - 1,491.19 = 3,760.04). Two columns that are computed by separate CASE expressions in the SQL have to agree with one that is computed by a window function.",
+    "recipe": "cc=[r for r in rows if r['CATEGORY']=='CASH_CREDIT_OD']; abs(sum(float(r['BALANCE_L'] or 0) for r in cc)) * 1e5   # measured: oil 376,004,000 vs 376,004,000 (exact), mart 0 (2 accounts, both nil), bev n/a - Beverages has NO CC/OD account at all"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "CATEGORY=CASH_CREDIT_OD"
+    }
+   },
+   "live": {
+    "oil": 376004000,
+    "mart": 0,
+    "bev": 0
+   }
+  },
+  {
+   "id": "bank-est-annual-interest",
+   "label": "Estimated interest run-rate on today's debt",
+   "unit": "INR",
+   "column": "EST_ANNUAL_INTEREST_L",
+   "row_filter": "r['CATEGORY_KIND']=='BORROWING' or r['CATEGORY']=='CASH_CREDIT_OD'",
+   "agg": "sum",
+   "formula": "SUM(AMOUNT_DRAWN_L x 0.0847) x 1e5 over facility accounts. 0.0847 is an INPUT CONSTANT handed to the section (sql line 255), NOT derived from the books, and it is applied to TODAY's drawn balance. It is an inferred upper-bound run-rate - not an accrual, not a measured cost, and not comparable to the interest actually expensed.",
+   "terms": [
+    {
+     "label": "Drawn on every facility",
+     "col": "AMOUNT_DRAWN_L",
+     "op": "x",
+     "source": "JDT1",
+     "note": "Oil 8,594.49 L today"
+    },
+    {
+     "label": "Assumed rate 8.47%",
+     "col": "-",
+     "op": "x",
+     "source": "input constant",
+     "note": "sql line 255; not measured, not per-facility, and not split between cheap term debt and dearer CC"
+    },
+    {
+     "label": "Estimated annual interest",
+     "col": "EST_ANNUAL_INTEREST_L",
+     "op": "=",
+     "source": "derived",
+     "note": "Oil 727.97 L = Rs 7.28 Cr"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Interest actually posted",
+     "row_filter": "not in this section",
+     "why": "5610001 INTEREST ON BANK LOAN is not in the bank register. Measured on Oil for the same 12 months (2026-08-21 run): 463.37 L of debits, ~7.53% gross on an average month-end drawn debt of 6,148.65 L. The estimate runs ~57% above the measured spend because it applies a higher rate to a higher, present-day balance"
+    }
+   ],
+   "sql_lines": [
+    255,
+    583
+   ],
+   "caveats": [
+    "B-RATE-CONSTANT",
+    "B-WEAK-CHECK",
+    "B-LAKHS",
+    "B-NO-LIMIT"
+   ],
+   "check": {
+    "method": "WEAK - say so on the page. Inside this section the only available route is the arithmetic identity 0.0847 x TOT_BORROWINGS_L, which re-runs the same multiplication and proves nothing about the rate. What can honestly be checked: (a) the per-row identity EST_ANNUAL_INTEREST_L = ROUND(AMOUNT_DRAWN_L x 0.0847, 2) holds on every facility row and is exactly 0 on every non-facility row (0 violations measured in all 132 rows); (b) the figure is bounded BELOW by nothing and must be captioned as an upper bound, because the genuinely independent route - interest debited to 5610001 - lives in another section and came out 36% lower. The check dot must never render green: amber with 'no independent route inside this section' is the honest state.",
+    "recipe": "bad=[r['GL_ACCT_CODE'] for r in rows if abs(float(r['EST_ANNUAL_INTEREST_L'] or 0) - round(float(r['AMOUNT_DRAWN_L'] or 0)*0.0847, 2)) > 0.011 and (r['CATEGORY_KIND']=='BORROWING' or r['CATEGORY']=='CASH_CREDIT_OD')]; assert not bad; alt = 0.0847*float(rows[0]['TOT_BORROWINGS_L'] or 0)*1e5   # oil alt 72,795,415 vs 72,797,000 - a rounding echo, NOT a verification"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "sort": "EST_ANNUAL_INTEREST_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 72797000,
+    "mart": 0,
+    "bev": 0
+   }
+  },
+  {
+   "id": "bank-receipts-12m",
+   "label": "Money into the banks, 12 months",
+   "unit": "INR",
+   "column": "RECEIPTS_IN_12M_L",
+   "row_filter": "True",
+   "agg": "sum",
+   "formula": "SUM(RECEIPTS_IN_12M_L) x 1e5 = SUM(JDT1.Debit) over the twelve calendar months ending with the month of as_of, EXCLUDING both halves of every cancelled/reversed transaction (OJDT.StornoToTr). Per-account rows, so summing is correct. Read PHYSICALLY: on a CC/OD or loan account a debit is a repayment, still money going in.",
+   "terms": [
+    {
+     "label": "Debits to every banking account in the window",
+     "col": "RECEIPTS_IN_12M_L",
+     "op": "=",
+     "source": "JDT1.Debit",
+     "note": "window = 2025-09-01..2026-08-22; the last month is partial"
+    },
+    {
+     "label": "Cancelled churn removed",
+     "col": "CANCELLED_GROSS_12M_L",
+     "op": "-",
+     "source": "OJDT.StornoToTr",
+     "note": "Oil 14,940.37 L, 14.7% of the pre-fix gross - reported separately, not hidden"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Cancelled and reversed transactions",
+     "row_filter": "OJDT.StornoToTr pairs",
+     "why": "SAP posts a cancellation as the original PLUS a mirror, and marks BOTH rows Canceled (C-0021: CANCELED is three-valued N/Y/C). Counting both doubles gross movement"
+    },
+    {
+     "label": "Nothing else",
+     "row_filter": "-",
+     "why": "inter-company and branch money is NOT dropped - it genuinely moved through the bank - only flagged in INTERCO_IN_12M_L"
+    }
+   ],
+   "sql_lines": [
+    417,
+    585
+   ],
+   "caveats": [
+    "B-STORNO",
+    "B-PHYSICAL-DR-CR",
+    "B-INTERCO-UPPER-BOUND",
+    "B-LAKHS",
+    "B-SERIES"
+   ],
+   "check": {
+    "method": "Rebuild the total from the MONTHLY_IN_L_SERIES strings by parsing the twelve 'YYYY-MM=<lakhs>' slots and summing them. In the SQL these are produced by a completely separate path - a dense account x month cross join, then STRING_AGG with rounding done inside the DECIMAL domain - not by the SUM that makes RECEIPTS_IN_12M_L, so a window-boundary bug, a lost month or a storno filter applied to one path and not the other shows up immediately. Twelve 2-dp values cannot sum to a 2-dp total exactly: tolerate 0.02 L per account and about 0.05 L per book.",
+    "recipe": "p=lambda s:[float(x.split('=')[1]) for x in (s or '').split(';') if x]; sum(sum(p(r['MONTHLY_IN_L_SERIES'])) for r in rows) * 1e5   # measured: oil 8,657,403,000 vs 8,657,406,000 (Rs 3,000), mart 1,900,846,000 vs 1,900,847,000, bev 228,428,000 vs 228,425,000"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "sort": "RECEIPTS_IN_12M_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 8657406000,
+    "mart": 1900847000,
+    "bev": 228425000
+   }
+  },
+  {
+   "id": "bank-payments-12m",
+   "label": "Money out of the banks, 12 months",
+   "unit": "INR",
+   "column": "PAYMENTS_OUT_12M_L",
+   "row_filter": "True",
+   "agg": "sum",
+   "formula": "SUM(PAYMENTS_OUT_12M_L) x 1e5 = SUM(JDT1.Credit) over the same 12-month window, cancellations removed. On a facility account a credit is a drawdown or an interest charge - still money going out.",
+   "terms": [
+    {
+     "label": "Credits on every banking account in the window",
+     "col": "PAYMENTS_OUT_12M_L",
+     "op": "=",
+     "source": "JDT1.Credit",
+     "note": "Oil 87,906.34 L = Rs 879.06 Cr"
+    },
+    {
+     "label": "Of which left from a borrowed facility",
+     "col": "PAYMENTS_OUT_12M_L",
+     "op": "info",
+     "source": "CATEGORY='CASH_CREDIT_OD'",
+     "note": "Oil 82,747.20 L - 94.1% of everything Oil pays out leaves a CC/OD account, not a current account"
+    },
+    {
+     "label": "Of which went to JIVO group / branch",
+     "col": "INTERCO_OUT_12M_L",
+     "op": "info",
+     "source": "OCRD+OCRG",
+     "note": "Mart 16,593.56 L = 87.6% - reading Mart's payments as third-party spend overstates it about eightfold"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Cancelled and reversed transactions",
+     "row_filter": "OJDT.StornoToTr pairs",
+     "why": "as for receipts - Mart's gross was inflated 20.5% before the fix"
+    }
+   ],
+   "sql_lines": [
+    418,
+    586
+   ],
+   "caveats": [
+    "B-STORNO",
+    "B-PHYSICAL-DR-CR",
+    "B-INTERCO-UPPER-BOUND",
+    "B-LAKHS",
+    "B-SERIES"
+   ],
+   "check": {
+    "method": "Two routes. (a) Parse and sum MONTHLY_OUT_L_SERIES - a separate SQL path, as for receipts. (b) A second, structurally different route inside the same row: AVG_MONTHLY_OUT_L x ACTIVE_MONTHS_12M must reconstruct PAYMENTS_OUT_12M_L, because the average is the total divided by ACTIVE months, not by 12. That one is the only check that also exercises ACTIVE_MONTHS_12M, the column most likely to be misread as a run-rate denominator.",
+    "recipe": "p=lambda s:[float(x.split('=')[1]) for x in (s or '').split(';') if x]; alt1=sum(sum(p(r['MONTHLY_OUT_L_SERIES'])) for r in rows)*1e5; alt2=sum(float(r['AVG_MONTHLY_OUT_L'] or 0)*float(r['ACTIVE_MONTHS_12M'] or 0) for r in rows)*1e5   # measured oil: alt1 8,790,639,000 / alt2 8,790,643,000 vs 8,790,634,000; mart 1,894,775,000 / 1,894,774,000 vs 1,894,778,000; bev 224,775,000 / 224,766,000 vs 224,774,000"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "sort": "PAYMENTS_OUT_12M_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 8790634000,
+    "mart": 1894778000,
+    "bev": 224774000
+   }
+  },
+  {
+   "id": "bank-net-12m",
+   "label": "Net movement through the banks, 12 months",
+   "unit": "INR",
+   "column": "NET_12M_L",
+   "row_filter": "True",
+   "agg": "sum",
+   "formula": "SUM(NET_12M_L) x 1e5 = receipts less payments over the window. NEGATIVE means the banking accounts paid out more than they took in over the year - for Oil that is the overdraft being drawn further.",
+   "terms": [
+    {
+     "label": "In",
+     "col": "RECEIPTS_IN_12M_L",
+     "op": "+",
+     "source": "JDT1.Debit",
+     "note": ""
+    },
+    {
+     "label": "Out",
+     "col": "PAYMENTS_OUT_12M_L",
+     "op": "-",
+     "source": "JDT1.Credit",
+     "note": ""
+    },
+    {
+     "label": "Net",
+     "col": "NET_12M_L",
+     "op": "=",
+     "source": "JDT1",
+     "note": "unchanged by the storno fix - a cancelled pair nets to zero, so only the gross sides moved"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "The opening balance",
+     "row_filter": "OPENING_BAL_L",
+     "why": "NET_12M_L is movement inside a 12-month window, not the change in position since the book opened. It cannot be added to BALANCE_L to get anything meaningful"
+    }
+   ],
+   "sql_lines": [
+    587,
+    587
+   ],
+   "caveats": [
+    "B-STORNO",
+    "B-SIGN",
+    "B-LAKHS",
+    "B-SERIES"
+   ],
+   "check": {
+    "method": "Two genuinely different routes, and they disagree slightly by design so both are worth showing. (a) SUM(RECEIPTS_IN_12M_L) - SUM(PAYMENTS_OUT_12M_L): different columns, and it rounds twice before subtracting where NET_12M_L rounds once after. (b) Parse and sum MONTHLY_NET_L_SERIES, which is built by the dense-month path. Any gap larger than about Rs 5,000 a book means a month fell outside the window on one path only.",
+    "recipe": "alt1=(sum(float(r['RECEIPTS_IN_12M_L'] or 0) for r in rows)-sum(float(r['PAYMENTS_OUT_12M_L'] or 0) for r in rows))*1e5; p=lambda s:[float(x.split('=')[1]) for x in (s or '').split(';') if x]; alt2=sum(sum(p(r['MONTHLY_NET_L_SERIES'])) for r in rows)*1e5   # measured oil: alt1 -133,228,000 / alt2 -133,226,000 vs -133,225,000; mart 6,069,000 / 6,066,000 vs 6,067,000; bev 3,651,000 / 3,649,000 vs 3,650,000"
+   },
+   "drill": {
+    "page": "derivation.html",
+    "params": {
+     "k": "bank-net-12m",
+     "co": "<company>"
+    }
+   },
+   "live": {
+    "oil": -133225000,
+    "mart": 6067000,
+    "bev": 3650000
+   }
+  },
+  {
+   "id": "bank-cancelled-churn-12m",
+   "label": "Cancelled payment churn removed",
+   "unit": "INR",
+   "column": "CANCELLED_GROSS_12M_L",
+   "row_filter": "True",
+   "agg": "sum",
+   "formula": "SUM(CANCELLED_GROSS_12M_L) x 1e5 = the debit side of every storno-paired journal line touching a banking account in the window. This money never moved: SAP posts a cancellation as the original PLUS a mirror-image reversal, so counting both inflates BOTH gross sides equally. Published so the removal is visible rather than silent.",
+   "terms": [
+    {
+     "label": "Storno-paired lines",
+     "col": "CANCELLED_GROSS_12M_L",
+     "op": "=",
+     "source": "OJDT.StornoToTr",
+     "note": "doc-type agnostic, so it also catches reversed MANUAL journal entries that the ORCT/OVPM Canceled flag misses (4 extra lines Oil, 8 Mart, 0 Bev)"
+    },
+    {
+     "label": "Share of the pre-fix gross",
+     "col": "-",
+     "op": "info",
+     "source": "derived",
+     "note": "Oil 14.72%, Mart 20.61%, Bev 11.58% of what a naive SUM(Debit) would have reported"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "The balance",
+     "row_filter": "BALANCE_L / OPENING_BAL_L",
+     "why": "the position columns deliberately KEEP cancelled lines: the pair nets to exactly zero per account, so BALANCE_L still equals what SAP itself reports, even at an as-of falling between an original and its later reversal"
+    }
+   ],
+   "sql_lines": [
+    333,
+    590
+   ],
+   "caveats": [
+    "B-STORNO",
+    "B-LAKHS",
+    "B-NEVER-USED-STORNO"
+   ],
+   "check": {
+    "method": "Regression against the measurement taken when the defect was fixed, which is a different kind of evidence from re-summing a column: on 2026-08-21 the storno removal was quantified independently at Oil 14,679.73 L (-14.5% of receipts, -14.3% of payments, 1,268 of 14,380 lines), Mart 4,874.42 L (-20.5% / -20.5%), Bev 298.42 L (-11.6% / -11.7%), and the ledger route was proved equal to the DOCUMENT route (ORCT/OVPM with Canceled='N' plus manual-JE legs) to the paisa on Oil 2201101. Today's shares must stay within about a point of those; a jump means either a burst of cancellations or a broken filter. Also assert the structural bound CANCELLED_GROSS_12M_L >= 0 on every row, and note that a row can carry churn while reporting N_LINES_12M = 0 (live: Mart 1104107, 2.21 L).",
+    "recipe": "share = 100*sum(float(r['CANCELLED_GROSS_12M_L'] or 0) for r in rows)/(sum(float(r['RECEIPTS_IN_12M_L'] or 0) for r in rows)+sum(float(r['CANCELLED_GROSS_12M_L'] or 0) for r in rows))   # measured today: oil 14.72% (14,940.37 L), mart 20.61% (4,933.42 L), bev 11.58% (299.07 L) against the 2026-08-21 fix measurement of 14.5 / 20.5 / 11.6"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "sort": "CANCELLED_GROSS_12M_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 1494037000,
+    "mart": 493342000,
+    "bev": 29907000
+   }
+  },
+  {
+   "id": "bank-interco-out-share",
+   "label": "Share of payments out that went to JIVO itself",
+   "unit": "pct",
+   "column": "INTERCO_OUT_12M_L",
+   "row_filter": "True",
+   "agg": "sum",
+   "formula": "100 x SUM(INTERCO_OUT_12M_L) / SUM(PAYMENTS_OUT_12M_L). A counterparty is JIVO group/branch when OCRG.GroupName LIKE '%BRANCH%' OR OCRD.CardName LIKE '%JIVO%' - the group test alone is not enough, because Mart's largest payable VENDA000001 'JIVO WELLNESS PVT LTD' sits in an ordinary PURCHASE group (C-0005).",
+   "terms": [
+    {
+     "label": "Paid to a JIVO group or branch party",
+     "col": "INTERCO_OUT_12M_L",
+     "op": "/",
+     "source": "JDT1+OCRD+OCRG",
+     "note": "Mart 16,593.56 L of 18,947.78 L"
+    },
+    {
+     "label": "All payments out",
+     "col": "PAYMENTS_OUT_12M_L",
+     "op": "=",
+     "source": "JDT1.Credit",
+     "note": ""
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Nothing is dropped",
+     "row_filter": "-",
+     "why": "the money genuinely left the bank. It is flagged so it is not read as third-party trade spend - Mart's bank account is in effect a conduit"
+    }
+   ],
+   "sql_lines": [
+    347,
+    592
+   ],
+   "caveats": [
+    "B-INTERCO-UPPER-BOUND",
+    "B-LAKHS"
+   ],
+   "check": {
+    "method": "Cross-BOOK reconciliation - the strongest check in this section and completely outside the column being tested. Oil's INTERCO_IN_12M_L and Mart's INTERCO_OUT_12M_L are the two sides of the same flow, computed in two separate schemas from two separate charts of accounts and two separate party masters. They must land close: measured today 16,531.11 L in (Oil) against 16,593.56 L out (Mart), a 0.38% gap explained by Beverages, branch-vendor flows and cross-book timing. A gap of more than a few percent means the GroupName/CardName test has stopped catching a group party in one book.",
+    "recipe": "oil_in = sum(float(r['INTERCO_IN_12M_L'] or 0) for r in oil_rows); mart_out = sum(float(r['INTERCO_OUT_12M_L'] or 0) for r in mart_rows); assert abs(oil_in-mart_out)/mart_out < 0.05   # measured 16,531.11 vs 16,593.56 = 0.38%"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "sort": "INTERCO_OUT_12M_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 0.1,
+    "mart": 87.6,
+    "bev": 0.0
+   }
+  },
+  {
+   "id": "bank-interco-in-12m",
+   "label": "Received from JIVO group and branches",
+   "unit": "INR",
+   "column": "INTERCO_IN_12M_L",
+   "row_filter": "True",
+   "agg": "sum",
+   "formula": "SUM(INTERCO_IN_12M_L) x 1e5 - receipts sitting in a transaction that also touched a JIVO group or branch party. Oil takes Rs 165.31 Cr this way, 19.1% of everything it banks.",
+   "terms": [
+    {
+     "label": "Group / branch receipts",
+     "col": "INTERCO_IN_12M_L",
+     "op": "=",
+     "source": "JDT1+OCRD+OCRG",
+     "note": "Oil 16,531.11 L (19.1% of receipts), Mart 15.00 L (0.1%), Bev 40.45 L (1.8%)"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Per-party allocation",
+     "row_filter": "not available",
+     "why": "attribution is at TRANSACTION level: a journal that touches a group party at all contributes its WHOLE bank line. Upper bound, never an allocation, and never a per-party figure"
+    }
+   ],
+   "sql_lines": [
+    425,
+    591
+   ],
+   "caveats": [
+    "B-INTERCO-UPPER-BOUND",
+    "B-LAKHS"
+   ],
+   "check": {
+    "method": "Same cross-book route as bank-interco-out-share, read in the other direction, plus a per-account containment bound that the aggregate hides: INTERCO_IN_12M_L <= RECEIPTS_IN_12M_L on EVERY row. That bound is the one that would catch the classic fan-out bug - if the DISTINCT on grptx (sql line 356) were ever dropped, the left join would multiply the flagged lines and the flagged share could exceed 100%.",
+    "recipe": "bad=[r['GL_ACCT_CODE'] for r in rows if float(r['INTERCO_IN_12M_L'] or 0) > float(r['RECEIPTS_IN_12M_L'] or 0)+0.011]; assert not bad   # 0 violations in all 132 rows; cross-book: Oil in 16,531.11 L vs Mart out 16,593.56 L = 0.38% apart"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "sort": "INTERCO_IN_12M_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 1653111000,
+    "mart": 1500000,
+    "bev": 4045000
+   }
+  },
+  {
+   "id": "bank-facility-funded-share",
+   "label": "Share of payments made from a borrowed facility",
+   "unit": "pct",
+   "column": "PAYMENTS_OUT_12M_L",
+   "row_filter": "r['CATEGORY']=='CASH_CREDIT_OD'",
+   "agg": "sum",
+   "formula": "100 x SUM(PAYMENTS_OUT_12M_L where CATEGORY='CASH_CREDIT_OD') / SUM(PAYMENTS_OUT_12M_L). The single number that explains the whole section: Oil settles 94.1% of its outgoings from cash-credit accounts, which is why its liquid balance is near zero and its net position is minus Rs 74.86 Cr.",
+   "terms": [
+    {
+     "label": "Paid out of CC/OD accounts",
+     "col": "PAYMENTS_OUT_12M_L",
+     "op": "/",
+     "source": "JDT1.Credit",
+     "note": "Oil 82,747.20 L of 87,906.34 L"
+    },
+    {
+     "label": "Paid out of current accounts",
+     "col": "PAYMENTS_OUT_12M_L",
+     "op": "info",
+     "source": "JDT1.Credit",
+     "note": "Oil only 1,557.97 L (1.8%); Mart pays 98.8% from current accounts because it has no facility at all"
+    }
+   ],
+   "excludes": [],
+   "sql_lines": [
+    284,
+    586
+   ],
+   "caveats": [
+    "B-PHYSICAL-DR-CR",
+    "B-NO-LIMIT"
+   ],
+   "check": {
+    "method": "Recompute the numerator through the drawer name rather than the CATEGORY label - GL_DRAWER = 'BANK CASH CREDIT LOAN' - which is the string the SQL actually maps from (sql line 269). If a drawer were ever renamed, CATEGORY would go NULL while GL_DRAWER kept the new name, and the two routes would part company. Also assert that no account is both CASH_CREDIT_OD and outside that drawer.",
+    "recipe": "num=sum(float(r['PAYMENTS_OUT_12M_L'] or 0) for r in rows if r['GL_DRAWER']=='BANK CASH CREDIT LOAN'); round(100*num/sum(float(r['PAYMENTS_OUT_12M_L'] or 0) for r in rows),1)   # measured: oil 94.1 vs 94.1, mart 0.0 vs 0.0 (2 CC/OD accounts, both nil), bev n/a - no CC/OD account exists"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "CATEGORY=CASH_CREDIT_OD",
+     "sort": "PAYMENTS_OUT_12M_L",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 94.1,
+    "mart": 0.0,
+    "bev": 0.0
+   }
+  },
+  {
+   "id": "bank-dormant-money",
+   "label": "Sitting in accounts nobody has touched in 90 days",
+   "unit": "INR",
+   "column": "FUNDS_AVAILABLE_L",
+   "row_filter": "r['DORMANT_90D_FLAG']=='Y'",
+   "agg": "sum",
+   "formula": "SUM(FUNDS_AVAILABLE_L where DORMANT_90D_FLAG='Y') x 1e5. Debit balances only, so a dormant facility in credit cannot flatter it.",
+   "terms": [
+    {
+     "label": "Dormant accounts carrying money",
+     "col": "FUNDS_AVAILABLE_L",
+     "op": "=",
+     "source": "JDT1",
+     "note": "Oil 1,114.67 L across 24 accounts"
+    },
+    {
+     "label": "Of which fixed deposits",
+     "col": "FUNDS_AVAILABLE_L",
+     "op": "info",
+     "source": "CATEGORY='FIXED_DEPOSIT'",
+     "note": "Oil 1,113.33 L on 21 accounts - a deposit that moves once a year at interest posting is dormant BY DESIGN, not neglected"
+    },
+    {
+     "label": "Genuinely idle, excluding deposits",
+     "col": "FUNDS_AVAILABLE_L",
+     "op": "info",
+     "source": "derived",
+     "note": "Oil 1.34 L on 3 old current accounts, Mart 1.42 L on one, Bev 0.00 L. That is the number worth acting on"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Dormant accounts with no balance",
+     "row_filter": "float(r['BALANCE_L'] or 0)==0",
+     "why": "the flag is on 44 Oil / 34 Mart / 14 Bev rows, but only 24 / 1 / 1 carry a balance. Counting flagged rows overstates the finding roughly twofold in Oil and thirtyfold in Mart"
+    },
+    {
+     "label": "Never-used accounts",
+     "row_filter": "r['NEVER_USED_FLAG']=='Y'",
+     "why": "DORMANT_90D_FLAG is also 'Y' when LAST_MOVE_DATE is NULL, so all 4 Oil / 33 Mart / 12 Bev never-used accounts are inside the dormant count. None of them carries a balance today (measured), but the flag must not be read as 'went quiet'"
+    }
+   ],
+   "sql_lines": [
+    603,
+    605
+   ],
+   "caveats": [
+    "B-DORMANT-FD",
+    "B-NEVER-USED-STORNO",
+    "B-LAKHS",
+    "B-NULL-DATES"
+   ],
+   "check": {
+    "method": "Recompute the dormancy from the raw date rather than trusting the flag or HANA's DAYS_BETWEEN: parse LAST_MOVE_DATE, difference it against AS_OF in the client, and treat a NULL last-move as dormant. This tests the flag, the day count and the as-of plumbing in one pass, and it is the only way to catch a flag frozen at a stale as_of.",
+    "recipe": "from datetime import date; d=lambda s: date(*map(int,s.split('-'))); asof=d(rows[0]['AS_OF']); sum(float(r['FUNDS_AVAILABLE_L'] or 0) for r in rows if (not r['LAST_MOVE_DATE']) or (asof-d(r['LAST_MOVE_DATE'])).days>=90) * 1e5   # measured: oil 111,467,000 vs 111,467,000, mart 142,000 vs 142,000, bev 108,000 vs 108,000 (exact)"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "DORMANT_90D_FLAG=Y&BALANCE_L!=0"
+    }
+   },
+   "live": {
+    "oil": 111467000,
+    "mart": 142000,
+    "bev": 108000
+   }
+  },
+  {
+   "id": "bank-dormant-accounts",
+   "label": "Dormant accounts still carrying a balance",
+   "unit": "count",
+   "column": "DORMANT_90D_FLAG",
+   "row_filter": "r['DORMANT_90D_FLAG']=='Y' and float(r['BALANCE_L'] or 0)!=0",
+   "agg": "sum",
+   "formula": "COUNT(rows where DORMANT_90D_FLAG='Y' AND BALANCE_L <> 0). This is what v1 renders as its 'Dormant 90 d +' card (site/index.html:1462, 1471).",
+   "terms": [
+    {
+     "label": "Flagged dormant",
+     "col": "DORMANT_90D_FLAG",
+     "op": "=",
+     "source": "MAX(JDT1.RefDate) excl. storno",
+     "note": "44 Oil / 34 Mart / 14 Bev rows carry the flag"
+    },
+    {
+     "label": "and carrying a balance",
+     "col": "BALANCE_L",
+     "op": "=",
+     "source": "JDT1",
+     "note": "24 Oil / 1 Mart / 1 Bev - and 21 of Oil's 24 are fixed deposits"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Sub-Rs 1,000 balances",
+     "row_filter": "abs(BALANCE_L) < 0.01",
+     "why": "BALANCE_L is rounded to 2 dp of a lakh, so an account holding under Rs 1,000 reads 0.00 and drops out of the count even though BALANCE_SIGN still says DEBIT (live: Mart 1105001 CASH SALE)"
+    }
+   ],
+   "sql_lines": [
+    601,
+    605
+   ],
+   "caveats": [
+    "B-DORMANT-FD",
+    "B-SIGN-RUPEES",
+    "B-NEVER-USED-STORNO"
+   ],
+   "check": {
+    "method": "Recount from the two independent columns the flag is derived from rather than the flag itself - DAYS_SINCE_LAST_MOVE >= 90 or LAST_MOVE_DATE IS NULL - and separately confirm the flag total (including nil accounts) reproduces: 44 / 34 / 14. Splitting the two figures is the point: the flag total and the carrying-a-balance total differ by 20 / 33 / 13, and quoting the wrong one is the mistake this KPI exists to prevent.",
+    "recipe": "len([r for r in rows if ((r['LAST_MOVE_DATE'] is None) or float(r['DAYS_SINCE_LAST_MOVE'] or 0)>=90) and float(r['BALANCE_L'] or 0)!=0])   # measured: oil 24 vs 24, mart 1 vs 1, bev 1 vs 1; flag total 44 / 34 / 14"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "DORMANT_90D_FLAG=Y&BALANCE_L!=0",
+     "sort": "DAYS_SINCE_LAST_MOVE",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 24,
+    "mart": 1,
+    "bev": 1
+   }
+  },
+  {
+   "id": "bank-overdrawn-amount",
+   "label": "Asset accounts sitting in credit",
+   "unit": "INR",
+   "column": "AMOUNT_DRAWN_L",
+   "row_filter": "r['OVERDRAWN_FLAG']=='Y'",
+   "agg": "sum",
+   "formula": "SUM(AMOUNT_DRAWN_L where OVERDRAWN_FLAG='Y') x 1e5. The flag fires only on asset-side categories (CURRENT_ACCOUNT, PAYMENT_WALLET, CASH_IN_HAND, FIXED_DEPOSIT) whose raw rupee balance is below -Rs 100 - a CC/OD or loan account in credit is simply borrowing and is deliberately NOT flagged.",
+   "terms": [
+    {
+     "label": "Overdrawn asset accounts",
+     "col": "AMOUNT_DRAWN_L",
+     "op": "=",
+     "source": "JDT1",
+     "note": "Oil 10.65 L on 2 accounts - 1105001 CASH SALE at -10.23 L (a till in CREDIT, which cannot physically happen) and 1104201 PAYTM at -0.42 L. Mart 2.90 L on 3, including its main operating account 1104108 ICICI at -2.17 L. Bev none"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Facility accounts in credit",
+     "row_filter": "r['CATEGORY_KIND']=='BORROWING' or r['CATEGORY']=='CASH_CREDIT_OD'",
+     "why": "a negative balance there is the loan itself, not an error (sql lines 577-580)"
+    }
+   ],
+   "sql_lines": [
+    578,
+    580
+   ],
+   "caveats": [
+    "B-OVERDRAWN",
+    "B-SIGN-RUPEES",
+    "B-LAKHS"
+   ],
+   "check": {
+    "method": "Recompute the flag from BALANCE_L and CATEGORY instead of reading it, and state the one place the two routes can legitimately part: the SQL threshold is -Rs 100 in RUPEES while BALANCE_L is rounded to Rs 1,000, so an account between -Rs 100 and -Rs 500 is flagged but reads -0.00. Cross-read BALANCE_SIGN='CREDIT' as the tie-breaker, since that column is computed on the unrounded rupee balance.",
+    "recipe": "ASSET={'CURRENT_ACCOUNT','PAYMENT_WALLET','CASH_IN_HAND','FIXED_DEPOSIT'}; alt=[r['GL_ACCT_CODE'] for r in rows if r['CATEGORY'] in ASSET and r['BALANCE_SIGN']=='CREDIT']; sum(-float(r['BALANCE_L'] or 0) for r in rows if r['CATEGORY'] in ASSET and r['BALANCE_SIGN']=='CREDIT')*1e5   # measured: oil ['1104201','1105001'] = 1,065,000 vs 1,065,000; mart ['1104108','1104201','1104202'] = 290,000 vs 290,000; bev [] = 0"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "OVERDRAWN_FLAG=Y"
+    }
+   },
+   "live": {
+    "oil": 1065000,
+    "mart": 290000,
+    "bev": 0
+   }
+  },
+  {
+   "id": "bank-manual-je-share",
+   "label": "Share of bank lines keyed by hand",
+   "unit": "pct",
+   "column": "MANUAL_JE_LINE_PCT_12M",
+   "row_filter": "r.get('MANUAL_JE_LINE_PCT_12M') is not None",
+   "agg": "sum",
+   "formula": "SUM(N_LINES_12M x MANUAL_JE_LINE_PCT_12M) / SUM(N_LINES_12M) over accounts with 12-month traffic. Per account the column is 100 x TransType-30 lines / all lines - a share of LINES, never of value. Only three TransTypes ever touch these accounts: 24 incoming payment, 46 outgoing payment, 30 manual JE.",
+   "terms": [
+    {
+     "label": "Manual journal lines",
+     "col": "MANUAL_JE_LINE_PCT_12M",
+     "op": "=",
+     "source": "JDT1.TransType='30'",
+     "note": "NULL where the account had no traffic in the window - Oil 14 / Mart 33 / Bev 12 rows"
+    },
+    {
+     "label": "Weight",
+     "col": "N_LINES_12M",
+     "op": "x",
+     "source": "JDT1",
+     "note": "line-weighted, so a dead account with one hand-keyed line does not swing the reading"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Accounts with no 12-month traffic",
+     "row_filter": "r.get('MANUAL_JE_LINE_PCT_12M') is None",
+     "why": "explicit divide-by-zero guard in the SQL (line 595). They must be dropped from the weighting, never read as 0%"
+    }
+   ],
+   "sql_lines": [
+    420,
+    597
+   ],
+   "caveats": [
+    "B-MANUAL-PCT-LINES",
+    "B-WEAK-CHECK"
+   ],
+   "check": {
+    "method": "WEAK - label it so. No other column in this section measures posting origin, so nothing here can confirm the TransType split. What is honest: (a) bounds, 0 <= MANUAL_JE_LINE_PCT_12M <= 100, and NULL exactly where N_LINES_12M = 0 (0 violations measured); (b) reconstruct the absolute manual line count (N_LINES_12M x pct / 100) and re-derive the share from counts rather than from an average of averages; (c) show the UNWEIGHTED mean next to it and expect a large gap - measured 45.6% unweighted against 5.4% line-weighted in Oil, because a dozen accounts carry a single line at 100%. Quote the weighted figure and say the band.",
+    "recipe": "num=sum(float(r['N_LINES_12M'] or 0)*float(r['MANUAL_JE_LINE_PCT_12M'])/100 for r in rows if r.get('MANUAL_JE_LINE_PCT_12M') is not None); den=sum(float(r['N_LINES_12M'] or 0) for r in rows if r.get('MANUAL_JE_LINE_PCT_12M') is not None); round(100*num/den,1)   # measured: oil 5.4 vs 5.4, mart 0.1 vs 0.1, bev 1.4 vs 1.4; unweighted means 45.6 / 7.0 / 26.2 - report the band, not an equality"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "sort": "MANUAL_JE_LINE_PCT_12M",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 5.4,
+    "mart": 0.1,
+    "bev": 1.4
+   }
+  },
+  {
+   "id": "bank-oldest-quiet-days",
+   "label": "Longest a balance has sat untouched",
+   "unit": "days",
+   "column": "DAYS_SINCE_LAST_MOVE",
+   "row_filter": "float(r['BALANCE_L'] or 0)!=0 and r['LAST_MOVE_DATE'] is not None",
+   "agg": "max",
+   "formula": "MAX(DAYS_SINCE_LAST_MOVE) over accounts that still carry a balance = as_of minus the last non-cancelled posting.",
+   "terms": [
+    {
+     "label": "Days since the last real movement",
+     "col": "DAYS_SINCE_LAST_MOVE",
+     "op": "=",
+     "source": "MAX(JDT1.RefDate) excl. storno",
+     "note": "Oil 691 days on 1106106, a fixed deposit whose last movement is the 2024-09-30 go-live entry itself; Mart 115 on current account 1104109; Bev 144 on its single FDR"
+    }
+   ],
+   "excludes": [
+    {
+     "label": "Never-used accounts",
+     "row_filter": "r['LAST_MOVE_DATE'] is None",
+     "why": "DAYS_SINCE_LAST_MOVE is NULL there and must not be coerced to 0 (which reads as 'moved today') or to a huge number (which would win the MAX for the wrong reason)"
+    },
+    {
+     "label": "Accounts with no balance",
+     "row_filter": "float(r['BALANCE_L'] or 0)==0",
+     "why": "a closed account quiet for two years is not a finding; a balance quiet for two years is"
+    }
+   ],
+   "sql_lines": [
+    601,
+    602
+   ],
+   "caveats": [
+    "B-NULL-DATES",
+    "B-DORMANT-FD",
+    "B-MIGRATION-DATE"
+   ],
+   "check": {
+    "method": "Recompute the day count client-side from LAST_MOVE_DATE against AS_OF rather than reading HANA's DAYS_BETWEEN result, and check what the winner IS: 691 days in Oil is the go-live date (2024-09-30) showing through on a deposit account, not 691 days of neglect. Any 'oldest' figure that lands exactly on the book opening date must be captioned as migration, the same way provisions handles MIGRATED_OPENING_L.",
+    "recipe": "from datetime import date; d=lambda s: date(*map(int,s.split('-'))); asof=d(rows[0]['AS_OF']); max((asof-d(r['LAST_MOVE_DATE'])).days for r in rows if r['LAST_MOVE_DATE'] and float(r['BALANCE_L'] or 0)!=0)   # measured: oil 691 vs 691 (1106106, last move = BOOK_OPENING_DATE 2024-09-30), mart 115 vs 115, bev 144 vs 144"
+   },
+   "drill": {
+    "page": "banks.html",
+    "params": {
+     "co": "<company>",
+     "filter": "BALANCE_L!=0",
+     "sort": "DAYS_SINCE_LAST_MOVE",
+     "dir": "desc"
+    }
+   },
+   "live": {
+    "oil": 691,
+    "mart": 115,
+    "bev": 144
+   }
+  },
+  {
+   "id": "bank-top1-out-share",
+   "label": "Share of payments leaving through one account",
+   "unit": "pct",
+   "column": "PAYMENTS_OUT_12M_L",
+   "row_filter": "True",
+   "agg": "max",
+   "formula": "MAX(PAYMENTS_OUT_12M_L) / SUM(PAYMENTS_OUT_12M_L) x 100 - how concentrated the payment traffic is.",
+   "terms": [
+    {
+     "label": "Largest paying account",
+     "col": "PAYMENTS_OUT_12M_L",
+     "op": "=",
+     "source": "JDT1.Credit",
+     "note": "Oil 2201101 INDIAN BANK CC A/C (34,310.48 L, 39.0%); Mart 1104108 ICICI (12,271.20 L, 64.8%); Bev 1104106 INDIAN BANK (1,019.08 L, 45.3%)"
+    },
+    {
+     "label": "Top three together",
+     "col": "PAYMENTS_OUT_12M_L",
+     "op": "info",
+     "source": "derived",
+     "note": "Oil 75.9%, Mart 98.0%, Bev 99.4% - reviewing three accounts reviews the whole flow"
+    }
+   ],
+   "excludes": [],
+   "sql_lines": [
+    586,
+    586
+   ],
+   "caveats": [
+    "B-CONCENTRATION",
+    "B-STORNO"
+   ],
+   "check": {
+    "method": "Re-rank on the monthly series instead of the aggregate column: rebuild each account's 12-month outflow by parsing MONTHLY_OUT_L_SERIES and confirm the SAME account tops the list at the same share. A concentration figure computed from a different SQL path proves the ranking is not an artefact of one column, and it would expose a single month wrongly attributed to one big account.",
+    "recipe": "p=lambda s:[float(x.split('=')[1]) for x in (s or '').split(';') if x]; tot=sum(sum(p(r['MONTHLY_OUT_L_SERIES'])) for r in rows); top=max(rows, key=lambda r: sum(p(r['MONTHLY_OUT_L_SERIES']))); round(100*sum(p(top['MONTHLY_OUT_L_SERIES']))/tot,1)   # measured: oil 39.0 (2201101), mart 64.8 (1104108), bev 45.3 (1104106) - same account, same share on both routes"
+   },
+   "drill": {
+    "page": "gl-account.html",
+    "params": {
+     "co": "<company>",
+     "acct": "<GL_ACCT_CODE of the largest row>"
+    }
+   },
+   "live": {
+    "oil": 39.0,
+    "mart": 64.8,
+    "bev": 45.3
+   }
+  }
+ ],
+ "columns": [
+  {
+   "col": "COMPANY_SCHEMA",
+   "label": "Book",
+   "unit": "text",
+   "meaning": "HANA schema the row came from - JIVO_OIL_HANADB / JIVO_MART_HANADB / JIVO_BEVERAGES_HANADB. Constant within a slice; its only real use is proving a slice was not cross-loaded, and de-duplicating on it before reading a broadcast TOT_* column if the three slices are ever concatenated.",
+   "link": "none"
+  },
+  {
+   "col": "AS_OF",
+   "label": "As of",
+   "unit": "date",
+   "meaning": "The cut-off the whole row was computed to. Every JDT1 line with RefDate <= this is in the balance. Not a snapshot of SAP as it stood that day: it is today's ledger filtered by date. Live 2026-08-22 in all three books.",
+   "link": "none"
+  },
+  {
+   "col": "CATEGORY",
+   "label": "What kind of account",
+   "unit": "text",
+   "meaning": "One of eight, mapped from the PARENT drawer's name, never from the account code: CURRENT_ACCOUNT, PAYMENT_WALLET, CASH_IN_HAND, CASH_CREDIT_OD, FIXED_DEPOSIT, TERM_LOAN, VEHICLE_LOAN, CREDIT_CARD. Beverages has no CASH_CREDIT_OD, VEHICLE_LOAN or CREDIT_CARD row at all - those drawers exist but are empty.",
+   "link": "none"
+  },
+  {
+   "col": "CATEGORY_KIND",
+   "label": "Family",
+   "unit": "text",
+   "meaning": "BANK (current accounts, wallets, CC/OD), CASH, DEPOSIT (FDR), BORROWING (term, vehicle, card). Note CASH_CREDIT_OD is KIND='BANK', not 'BORROWING', so any 'what do we owe' filter must say CATEGORY_KIND='BORROWING' OR CATEGORY='CASH_CREDIT_OD' - that exact pair appears in the SQL (lines 581, 626) and must be copied, not paraphrased.",
+   "link": "none"
+  },
+  {
+   "col": "IS_CASH_AND_BANK",
+   "label": "In the cash-and-bank total",
+   "unit": "text",
+   "meaning": "'Y' for CURRENT_ACCOUNT, PAYMENT_WALLET, CASH_IN_HAND and CASH_CREDIT_OD - the four drawers TOT_CASH_AND_BANK_L sums. It includes the drawn overdraft, which is why that total is NEGATIVE for Oil. 20 'Y' rows in Oil, 20 in Mart, 13 in Bev.",
+   "link": "none"
+  },
+  {
+   "col": "GL_ACCT_CODE",
+   "label": "G/L account",
+   "unit": "text",
+   "meaning": "OACT.AcctCode. Unique within a company and the drill key for gl-account.html. It is a chart-of-accounts code, NOT a bank account number - safe to display in full.",
+   "link": "gl"
+  },
+  {
+   "col": "GL_DRAWER",
+   "label": "Sits under",
+   "unit": "text",
+   "meaning": "OACT.AcctName of the parent drawer - the string the CATEGORY mapping is built from (sql lines 265-286). Names are used rather than codes so the query survives a renumbered chart; a renamed drawer would make CATEGORY NULL while this column kept the new name.",
+   "link": "none"
+  },
+  {
+   "col": "GL_ACCT_LABEL_MASKED",
+   "label": "Account",
+   "unit": "text",
+   "meaning": "OACT.AcctName with EVERY digit replaced by 'x' ('INDIAN BANK-xxxxxxxxxx'), because the bank account number lives inside the account name. The raw name is never emitted anywhere in this section. It keeps whatever the account name carries, including JIVO unit tags - 'PUNJAB & SIND BANK TPT' is a unit tag, not part of the bank's name.",
+   "link": "none"
+  },
+  {
+   "col": "BANK_CODE",
+   "label": "Bank code",
+   "unit": "text",
+   "meaning": "ODSC.BankCode, or DSC1's code when the house-bank row AGREES. NULL on 9 Oil / 11 Mart / 5 Bev rows (cash boxes, wallets, accrued-interest heads). Beverages' 1104102 shows 'INB' from the ODSC master even though its DSC1 row MISMATCHes - the DSC1 branch is suppressed there, the ODSC name and code are not.",
+   "link": "none"
+  },
+  {
+   "col": "BANK_NAME",
+   "label": "Bank",
+   "unit": "text",
+   "meaning": "Canonical bank name from the ODSC master, else the leading words of the account name but ONLY if that name contains 'BANK'. NULL by design where the account is not bank-linked: cash boxes, 'FDR - ACCRUED INTEREST', and Oil's mis-filed 1103115 'R & D WHEAT GRASS' which hangs under the FDR drawer. NULL means 'not a bank', not 'unknown bank' - never fall back to the account label.",
+   "link": "none"
+  },
+  {
+   "col": "BANK_NAME_SOURCE",
+   "label": "How the bank was identified",
+   "unit": "text",
+   "meaning": "ODSC_MASTER (Oil 61 / Mart 33 / Bev 13), GL_ACCT_NAME (3 / 3 / 2 - parsed out of the account name, weaker) or UNRESOLVED (6 / 8 / 3 - genuinely not bank-linked). Read it before trusting BANK_NAME in a grouping: a GL_ACCT_NAME value is whatever capitals the account name happened to start with.",
+   "link": "none"
+  },
+  {
+   "col": "BRANCH",
+   "label": "Branch",
+   "unit": "text",
+   "meaning": "DSC1 BranchName/Branch, and ONLY when HOUSE_BANK_AGREES='AGREE'. That is 5 rows in Oil (SONEPAT, RAJOURI GARDEN) and ZERO in Mart and Beverages, because Mart has no joinable DSC1 row and Bev's single one mismatches. In a book with no house bank, hide the column rather than print 44 dashes.",
+   "link": "none"
+  },
+  {
+   "col": "IS_HOUSE_BANK",
+   "label": "Has a house-bank row",
+   "unit": "text",
+   "meaning": "'Y' when a DSC1 row exists for this G/L account - it does NOT mean the row is correct. Bev 1104102 is 'Y' with HOUSE_BANK_AGREES='MISMATCH': its DSC1 row was copied from Oil's chart and names a different account. v1 renders a green 'house' pill off this column alone (site/index.html:1503), which is misleading on that one Bev row. Read HOUSE_BANK_AGREES.",
+   "link": "none"
+  },
+  {
+   "col": "HOUSE_BANK_AGREES",
+   "label": "Does the house-bank row match",
+   "unit": "text",
+   "meaning": "AGREE = the DSC1 account digits and the digits inside the G/L account name overlap (Oil 5/5). MISMATCH = they do not, so the DSC1 branch and bank code are suppressed and the number falls back to the account name (Bev 1104102). UNKNOWN = the account name holds no digits to compare. NO_HOUSE_BANK_ROW = no DSC1 row at all (Oil 65, Mart 44, Bev 17). DSC1 is nearly empty and partly wrong; this column is what makes it safe to use.",
+   "link": "none"
+  },
+  {
+   "col": "ACCT_NO_MASKED",
+   "label": "A/c no",
+   "unit": "text",
+   "meaning": "'xxxx' plus the last 4 digits, from DSC1 when the house-bank row agrees, otherwise from the digits embedded in the account name. NULL when the source string holds fewer than 4 digits - 9 Oil / 6 Mart / 5 Bev rows (cash boxes, wallets, 'HSBC BANK LAI', accrued-interest heads). NULL means the number is not in the books, not that the account has none, and it must never be back-filled with the G/L code.",
+   "link": "none"
+  },
+  {
+   "col": "ACCT_NO_SOURCE",
+   "label": "Where the number came from",
+   "unit": "text",
+   "meaning": "DSC1_HOUSE_BANK (5 Oil only - the trustworthy source), GL_ACCT_NAME (56 / 38 / 13 - digits scraped out of the account name) or NONE. Where the name writes the number in hyphenated groups ('HSBC BANK A/C- 166-794941-511'), 'the last 4 as written' is the last 4 of the concatenated digits.",
+   "link": "none"
+  },
+  {
+   "col": "ACCT_NO_NDIGITS",
+   "label": "Digits in the number",
+   "unit": "count",
+   "meaning": "How many digits the source string held, so a reader can see the true account-number length without seeing the number. 0 wherever ACCT_NO_MASKED is NULL. It is a length, not money and not an identifier.",
+   "link": "none"
+  },
+  {
+   "col": "BALANCE_L",
+   "label": "Balance",
+   "unit": "INR",
+   "meaning": "LAKHS, SIGNED, SAP-native: SUM(Debit) - SUM(Credit) over lines with RefDate <= as_of. POSITIVE = DEBIT = money sitting with JIVO (or an over-repaid facility). NEGATIVE = CREDIT = JIVO owes (drawn facility, or a genuinely overdrawn account). Same convention as OCRD.Balance. Cancelled payments are deliberately NOT filtered here - the storno pair nets to exactly zero, so this stays equal to what SAP itself reports.",
+   "link": "none"
+  },
+  {
+   "col": "CURRTOTAL_TODAY_L",
+   "label": "SAP's own balance",
+   "unit": "INR",
+   "meaning": "LAKHS, SIGNED. OACT.CurrTotal, SAP's stored trial-balance figure. LIFETIME - it is NOT filtered by as_of. It matches BALANCE_L exactly on all 132 rows today (max |diff| 0.00 L, and 8e-6 rupees on the raw check), which is what makes it a genuine second route; at any historical as_of it will legitimately differ and the cross-check must report 'not applicable'.",
+   "link": "gl"
+  },
+  {
+   "col": "BALANCE_SIGN",
+   "label": "Dr / Cr",
+   "unit": "text",
+   "meaning": "'DEBIT', 'CREDIT' or 'NIL', computed on the RUPEE balance (ROUND(BAL,2)), not on the rounded lakh column. So a row can read BALANCE_L = 0.00 and BALANCE_SIGN = 'DEBIT' - live: Mart 1105001 CASH SALE, which holds under Rs 1,000. Use this column, not the sign of BALANCE_L, whenever the answer turns on direction.",
+   "link": "none"
+  },
+  {
+   "col": "FUNDS_AVAILABLE_L",
+   "label": "Available",
+   "unit": "INR",
+   "meaning": "LAKHS. MAX(0, BALANCE_L) - the debit side only. Per account this is fine; SUMMED OVER ALL ROWS IT IS NOT LIQUIDITY: Oil's 2,610.16 L is 1,491.19 L of over-repaid CC/OD facilities plus 1,113.33 L of fixed deposits, leaving 5.64 L actually on call. v1 labels this column 'available' in the account table (site/index.html:1499) - that is per-row correct and column-total misleading.",
+   "link": "none"
+  },
+  {
+   "col": "AMOUNT_DRAWN_L",
+   "label": "Drawn",
+   "unit": "INR",
+   "meaning": "LAKHS. MAX(0, -BALANCE_L) - the credit side as a positive number. On a facility it is the borrowing; on an asset account it is an overdraw. Summed over ALL rows it is NOT borrowings (Oil 8,605.14 L against a true 8,594.50 L) because it sweeps in the overdrawn cash box and wallet.",
+   "link": "none"
+  },
+  {
+   "col": "OVERDRAWN_FLAG",
+   "label": "Overdrawn",
+   "unit": "text",
+   "meaning": "'Y' only for an ASSET-side category (CURRENT_ACCOUNT, PAYMENT_WALLET, CASH_IN_HAND, FIXED_DEPOSIT) whose raw balance is below -Rs 100. A CC/OD or loan account in credit is borrowing and is deliberately NOT flagged. Live: Oil 2 (a cash till at -10.23 L and PayTM at -0.42 L), Mart 3 (including its main operating account 1104108 at -2.17 L), Bev 0. The threshold is in rupees, so an account between -Rs 100 and -Rs 500 is flagged while BALANCE_L still reads -0.00.",
+   "link": "none"
+  },
+  {
+   "col": "EST_ANNUAL_INTEREST_L",
+   "label": "Estimated annual interest",
+   "unit": "INR",
+   "meaning": "LAKHS. AMOUNT_DRAWN_L x 0.0847 on facility rows, 0 elsewhere. 8.47% is an INPUT CONSTANT (sql line 255), not derived from the books, applied to TODAY's drawn balance. It is an inferred upper-bound run-rate - not an accrual, not a measured cost. Oil's 727.97 L compares with 463.37 L of interest actually debited to 5610001 over the same 12 months.",
+   "link": "none"
+  },
+  {
+   "col": "RECEIPTS_IN_12M_L",
+   "label": "In, 12 m",
+   "unit": "INR",
+   "meaning": "LAKHS. SUM(JDT1.Debit) over the twelve calendar months ending with the month of as_of, EXCLUDING both halves of every storno pair. Read it physically: on a CC/OD or loan account a debit is a repayment, still money in.",
+   "link": "none"
+  },
+  {
+   "col": "PAYMENTS_OUT_12M_L",
+   "label": "Out, 12 m",
+   "unit": "INR",
+   "meaning": "LAKHS. SUM(JDT1.Credit) over the same window, cancellations excluded. On a facility a credit is a drawdown or an interest charge. For Oil, 94.1% of it leaves from CC/OD accounts; for Mart, 87.6% of it goes to JIVO's own companies and branches.",
+   "link": "none"
+  },
+  {
+   "col": "NET_12M_L",
+   "label": "Net, 12 m",
+   "unit": "INR",
+   "meaning": "LAKHS. Receipts less payments inside the window. Unaffected by the storno fix - a cancelled pair nets to zero, so only the gross sides moved. It is window movement, NOT the change in position since the book opened, and must not be added to OPENING_BAL_L.",
+   "link": "none"
+  },
+  {
+   "col": "AVG_MONTHLY_OUT_L",
+   "label": "Average month out",
+   "unit": "INR",
+   "meaning": "LAKHS. PAYMENTS_OUT_12M_L divided by ACTIVE_MONTHS_12M, not by 12, so a seasonal account is not flattered by its idle months. The flip side: Oil 2201211 reads 1,500.00 L 'per month' off a single Rs 15 Cr term-loan repayment in one active month. It is not a run-rate and must never be annualised by x12.",
+   "link": "none"
+  },
+  {
+   "col": "CANCELLED_GROSS_12M_L",
+   "label": "Cancelled churn removed",
+   "unit": "INR",
+   "meaning": "LAKHS. The debit side of every storno-paired line in the window - money that never moved, taken out of the gross movement columns and reported here rather than silently dropped. Debit side equals credit side per account. A row can carry churn while showing N_LINES_12M = 0 (live: Mart 1104107, 2.21 L on an account whose only 12-month traffic was a cancelled payment).",
+   "link": "none"
+  },
+  {
+   "col": "INTERCO_IN_12M_L",
+   "label": "In, from JIVO group",
+   "unit": "INR",
+   "meaning": "LAKHS. Receipts sitting in a transaction that also touched a JIVO group or branch party (OCRG.GroupName LIKE '%BRANCH%' OR OCRD.CardName LIKE '%JIVO%'). TRANSACTION-level attribution: a journal that touches a group party at all contributes its whole bank line, so this is an UPPER BOUND, never an allocation. Oil 16,531.11 L = 19.1% of receipts.",
+   "link": "none"
+  },
+  {
+   "col": "INTERCO_OUT_12M_L",
+   "label": "Out, to JIVO group",
+   "unit": "INR",
+   "meaning": "LAKHS. Same test on the credit side. Mart 16,593.56 L = 87.6% of everything it pays out - its bank account is in effect a conduit, and reading PAYMENTS_OUT_12M_L for Mart as third-party spend overstates it about eightfold. Money is flagged, never dropped: it genuinely left the bank.",
+   "link": "none"
+  },
+  {
+   "col": "N_LINES_12M",
+   "label": "Lines, 12 m",
+   "unit": "count",
+   "meaning": "Journal lines on the account inside the window, cancelled/reversed lines EXCLUDED. Posting volume, not transaction count and not payment count - one payment can post several lines. 0 does not mean nothing happened: see CANCELLED_GROSS_12M_L.",
+   "link": "none"
+  },
+  {
+   "col": "ACTIVE_MONTHS_12M",
+   "label": "Active months",
+   "unit": "count",
+   "meaning": "Of the twelve slots, how many carried at least one non-cancelled line. Counted on lines rather than rows precisely so a month whose only traffic was a cancelled payment does not count as active. It is the denominator of AVG_MONTHLY_OUT_L.",
+   "link": "none"
+  },
+  {
+   "col": "MANUAL_JE_LINE_PCT_12M",
+   "label": "Hand-keyed",
+   "unit": "pct",
+   "meaning": "Percent of the account's 12-month LINES posted on TransType '30' (manual journal entry) rather than through a payment document. A share of lines, NOT of value. NULL where there was no traffic at all (Oil 14 / Mart 33 / Bev 12 rows) - never read that as 0%. It reads 100.0 on accounts with a single line, so weight it by N_LINES_12M: line-weighted the books run 5.4% / 0.1% / 1.4% against unweighted means of 45.6% / 7.0% / 26.2%.",
+   "link": "none"
+  },
+  {
+   "col": "FIRST_MOVE_DATE",
+   "label": "First movement",
+   "unit": "date",
+   "meaning": "MIN(JDT1.RefDate) over NON-cancelled lines. NULL when the account has never really moved. 2024-09-30 (Oil, Bev) or 2024-12-31 (Mart) means the account was opened by the migration entry itself.",
+   "link": "none"
+  },
+  {
+   "col": "LAST_MOVE_DATE",
+   "label": "Last movement",
+   "unit": "date",
+   "meaning": "MAX(JDT1.RefDate) over NON-cancelled lines - deliberately storno-filtered, so a cancelled payment and its reversal cannot make a dead account look alive. NULL when never used.",
+   "link": "none"
+  },
+  {
+   "col": "DAYS_SINCE_LAST_MOVE",
+   "label": "Days quiet",
+   "unit": "days",
+   "meaning": "as_of minus LAST_MOVE_DATE. NULL when never used, and must not be coerced to 0 (reads as 'moved today') or to a large number (which would win any MAX for the wrong reason). Oil's maximum on a balance-carrying account is 691 days - a deposit whose last movement is the go-live entry.",
+   "link": "none"
+  },
+  {
+   "col": "DORMANT_90D_FLAG",
+   "label": "Dormant",
+   "unit": "text",
+   "meaning": "'Y' when the last real movement is 90+ days old OR the account has never moved at all. 44 Oil / 34 Mart / 14 Bev rows carry it, but only 24 / 1 / 1 carry a balance - and 21 of Oil's 24 are fixed deposits, which move once a year at interest posting (all last moved 2026-03-31). Dormancy on an FD is by design; ex-deposits the genuinely idle money is 1.34 L Oil, 1.42 L Mart, 0.00 L Bev.",
+   "link": "none"
+  },
+  {
+   "col": "NEVER_USED_FLAG",
+   "label": "Never used",
+   "unit": "text",
+   "meaning": "'Y' when FIRST_MOVE_DATE is NULL. Because movement is storno-filtered, it means 'never REALLY moved', not 'never posted': Mart 1104107 reads 'Y' while carrying 2.21 L of cancelled payment churn in the last 12 months. Live 4 Oil / 33 Mart / 12 Bev, none of them carrying a balance today (measured).",
+   "link": "none"
+  },
+  {
+   "col": "BOOK_OPENING_DATE",
+   "label": "Book opens",
+   "unit": "date",
+   "meaning": "The earliest RefDate posted to ANY banking account in this book, gated by as_of - derived, never hardcoded to the 2024-09-30 go-live. Oil and Beverages open 2024-09-30; MART OPENS 2024-12-31, with nothing at all before it. A hardcoded go-live date returns 0 for every Mart account. NULL at an as_of before the book opened.",
+   "link": "none"
+  },
+  {
+   "col": "OPENING_BAL_L",
+   "label": "Opening balance",
+   "unit": "INR",
+   "meaning": "LAKHS, SIGNED. What this account was given on BOOK_OPENING_DATE. Oil 30 accounts, net -2,352.98 L (the overdraft was already drawn at go-live: 2201101 alone opens at -3,426.82 L). Mart 3 accounts, +83.17 L. Beverages 0.00 across all 18 rows - a measured nil, not a gap. It is a starting position, not movement, and cannot be added to NET_12M_L.",
+   "link": "none"
+  },
+  {
+   "col": "MONTHLY_IN_L_SERIES",
+   "label": "Monthly in",
+   "unit": "series",
+   "meaning": "A STRING, not a number: twelve 'YYYY-MM=<lakhs>' pairs joined by ';', always 12 slots, chronological, zero-filled - a missing month means zero, never unknown. Parse with split(';') then split('='). Never sum it as a column and never pass it to a unit scaler: the name contains '_L_' but ENDS in '_SERIES', so unit detection must anchor at the end of the name. The twelve values add back to RECEIPTS_IN_12M_L within 0.02 L per account.",
+   "link": "none"
+  },
+  {
+   "col": "MONTHLY_OUT_L_SERIES",
+   "label": "Monthly out",
+   "unit": "series",
+   "meaning": "Same shape, credit side. Feeds the in/out lineArea chart. Adds back to PAYMENTS_OUT_12M_L within 0.02 L per account (HANA's CAST(double AS DECIMAL) truncates rather than rounds, so the SQL rounds inside the DECIMAL domain - twelve 2-dp values still cannot sum to a 2-dp total exactly).",
+   "link": "none"
+  },
+  {
+   "col": "MONTHLY_NET_L_SERIES",
+   "label": "Monthly net",
+   "unit": "series",
+   "meaning": "Same shape, signed net per month. The only column that shows the shape of the year rather than its total - Oil's outflow spikes to 13,896 L in 2026-07 against a 7,300 L median month.",
+   "link": "none"
+  },
+  {
+   "col": "TOT_CASH_AND_BANK_L",
+   "label": "'Cash and bank' (broadcast)",
+   "unit": "INR",
+   "meaning": "LAKHS, BROADCAST - identical on every row of the company. Current accounts + wallets + cash + CASH_CREDIT_OD, i.e. a NET TREASURY position that includes the drawn overdraft. Oil -3,765.06 L: captioning this 'cash' would report minus Rs 37.65 Cr of cash. Never sum it across rows (x70 in Oil); never add it to the other TOT_* columns, which it already contains.",
+   "link": "none"
+  },
+  {
+   "col": "TOT_BANK_CURRENT_L",
+   "label": "Current accounts (broadcast)",
+   "unit": "INR",
+   "meaning": "LAKHS, BROADCAST. SUM(BALANCE_L) over CATEGORY='CURRENT_ACCOUNT'. Oil 5.52 L - Rs 5.5 lakh of current-account money behind Rs 865 Cr of annual receipts, which is the whole story of this section.",
+   "link": "none"
+  },
+  {
+   "col": "TOT_CASH_IN_HAND_L",
+   "label": "Cash in hand (broadcast)",
+   "unit": "INR",
+   "meaning": "LAKHS, BROADCAST. Oil is NEGATIVE (-10.12 L) because 1105001 CASH SALE sits at -10.23 L. A till in credit cannot physically happen - it is a booking or timing artefact and should be read as a control finding, not as cash.",
+   "link": "none"
+  },
+  {
+   "col": "TOT_WALLET_L",
+   "label": "Wallets (broadcast)",
+   "unit": "INR",
+   "meaning": "LAKHS, BROADCAST. PAYTM and RAZORPAY float. Small and often slightly negative (Oil -0.42, Mart -0.73) because settlement lags the sale.",
+   "link": "none"
+  },
+  {
+   "col": "TOT_CC_OD_NET_L",
+   "label": "Cash credit / OD, net (broadcast)",
+   "unit": "INR",
+   "meaning": "LAKHS, BROADCAST, SIGNED - NEGATIVE when drawn. NET across the drawer, so Oil's -3,760.04 L is 5,251.23 L drawn less 1,491.19 L on two facility accounts that happen to sit in debit. Despite the 'NET' and 'OD' tokens in the middle of the name, it ENDS in _L and is therefore lakhs.",
+   "link": "none"
+  },
+  {
+   "col": "TOT_FIXED_DEPOSIT_L",
+   "label": "Fixed deposits (broadcast)",
+   "unit": "INR",
+   "meaning": "LAKHS, BROADCAST. Oil 1,113.34 L, Mart 0.00 (17 accounts, all nil - measured), Bev 1.08 L. Largely margin held against the credit line rather than free cash, and almost all of it is dormant by design.",
+   "link": "none"
+  },
+  {
+   "col": "TOT_BORROWINGS_L",
+   "label": "Bank borrowings, gross (broadcast)",
+   "unit": "INR",
+   "meaning": "LAKHS, BROADCAST, POSITIVE. GROSS drawn across CC/OD + term + vehicle + card - negatives only, so facilities sitting in debit are invisible to it and net bank debt is lower (Oil 8,594.50 gross vs 7,103.31 net). BANK borrowings only: 2202000 UNSECURED LOAN (directors', subsidiary, NBFC - Oil ~2,330 L) is deliberately outside this register.",
+   "link": "none"
+  }
+ ],
+ "drilldowns": [
+  "banks.html",
+  "gl-account.html",
+  "derivation.html",
+  "bank-reco.html",
+  "methodology.html"
+ ],
+ "charts": [
+  {
+   "type": "waterfall",
+   "title": "How the net bank position is built",
+   "x": "step",
+   "y": "INR",
+   "series": "kind",
+   "why": "The section's headline honesty problem in one picture. Steps: Current accounts (TOT_BANK_CURRENT_L) -> Cash in hand (TOT_CASH_IN_HAND_L, NEGATIVE in Oil) -> Wallets (TOT_WALLET_L) -> Fixed deposits (TOT_FIXED_DEPOSIT_L) -> less Bank borrowings (TOT_BORROWINGS_L) -> Net bank position. Oil walks from +5.52 L to -7,486.18 L, and the reader sees that the 1,113.34 L of deposits does not begin to cover 8,594.50 L of drawn debt. Read the five TOT_* columns off ONE row (agg='first'); summing them across rows multiplies by 70. Draw the gross-vs-net borrowing gap (1,491.19 L) as a labelled sub-step, not a separate bar."
+  },
+  {
+   "type": "lineArea",
+   "title": "Money in and out, month by month",
+   "x": "YYYY-MM",
+   "y": "lakhs",
+   "series": "in | out | net",
+   "why": "The only view of the year's SHAPE, and the only correct use of MONTHLY_IN_L_SERIES / MONTHLY_OUT_L_SERIES / MONTHLY_NET_L_SERIES - parse the twelve 'YYYY-MM=<lakhs>' slots, never sum or scale the column. Oil's outflow spikes to 13,896 L in 2026-07 against a ~7,300 L median month while receipts spike to 13,723 L - a scale that only shows against its own months. Always 12 zero-filled slots, so a flat segment means zero, never missing. Caption that the last month is PARTIAL whenever as_of is not a month end."
+  },
+  {
+   "type": "divergingBars",
+   "title": "What each account holds, against what it owes",
+   "x": "FUNDS_AVAILABLE_L | AMOUNT_DRAWN_L",
+   "y": "GL_ACCT_LABEL_MASKED",
+   "series": "side",
+   "why": "Assets and liabilities are never charted on one axis, but they belong on one page: debit balances right, drawn balances left, one row per account. It is the only view that puts Oil's 2201101 INDIAN BANK CC at 3,087.99 L drawn next to 2201105 HSBC at 806.68 L in DEBIT - two accounts at the same bank pulling opposite ways - and the only one where Oil's cash till showing on the drawn side reads as the control finding it is. v1 draws these as two separate one-sided charts (site/index.html:1491-1495)."
+  },
+  {
+   "type": "stackedBars",
+   "title": "Which kind of account the money leaves from",
+   "x": "CATEGORY",
+   "y": "PAYMENTS_OUT_12M_L",
+   "series": "CATEGORY",
+   "why": "Answers 'how is this business actually funded?' in one bar. Oil: 82,747.20 L of 87,906.34 L (94.1%) leaves from CASH_CREDIT_OD accounts and only 1,557.97 L from current accounts. Mart: 98.8% from current accounts, because it has no facility at all. Same chart, opposite reading, and it is what makes the negative net position expected rather than alarming."
+  },
+  {
+   "type": "donut",
+   "title": "Third-party money against JIVO's own",
+   "x": "counterparty",
+   "y": "PAYMENTS_OUT_12M_L",
+   "series": "interco | third party",
+   "why": "Mart pays 16,593.56 L of its 18,947.78 L - 87.6% - to JIVO group companies and branches, so its bank account is a conduit and its 'spend' is eight times smaller than it looks. Oil is the mirror on the receipts side (19.1% in). Label the slice an UPPER BOUND: attribution is at transaction level, so a journal that touches one group party contributes its whole bank line. Where a book has no inter-company traffic (Bev out = 0.00, measured) render one slice and a footnote, never a zero slice."
+  },
+  {
+   "type": "scatter",
+   "title": "Quiet against carried - which balances are actually stranded",
+   "x": "DAYS_SINCE_LAST_MOVE",
+   "y": "FUNDS_AVAILABLE_L",
+   "series": "CATEGORY",
+   "why": "Finds what neither sort order finds alone: a balance that is both large and stale. FIXED_DEPOSIT points get a distinct mark, because 21 of Oil's 24 dormant balance-carrying accounts are deposits sitting at exactly 144 days (the 2026-03-31 interest posting) and would otherwise read as Rs 11.13 Cr of neglect instead of Rs 1.34 Cr. Never-used accounts have NULL days and must be shown in a separate 'never used' column, not plotted at zero. Each point links to gl-account.html."
+  },
+  {
+   "type": "bars",
+   "title": "Cancelled churn that was taken out",
+   "x": "GL_ACCT_LABEL_MASKED",
+   "y": "CANCELLED_GROSS_12M_L",
+   "series": "company",
+   "why": "Makes the biggest correction in this section visible instead of invisible: Rs 149.40 Cr removed in Oil (14.7% of the pre-fix gross), Rs 49.33 Cr in Mart (20.6%), Rs 2.99 Cr in Bev (11.6%). Without this chart the fix looks like a silent Rs 149 Cr disappearance the next time someone compares against an older extract. Include the row that carries churn with N_LINES_12M = 0 (Mart 1104107) - it is the cleanest illustration of why NEVER_USED_FLAG is not 'never posted'."
+  },
+  {
+   "type": "sparkline",
+   "title": "Net bank position over time",
+   "x": "t",
+   "y": "bank-net-position",
+   "series": "company",
+   "why": "From history.jsonl on the KPI card. A treasury position funded on cash credit should breathe with the collection cycle; a monotonic slide is the finding, and a flat line through a month end means the feed stopped. Renders empty('no history yet') until history.jsonl carries two points for this KPI."
+  }
+ ],
+ "traps": [
+  "BROADCAST COLUMNS. The seven TOT_* columns are company-level window totals (SUM(...) OVER (), sql lines 614-628) repeated IDENTICALLY on every row. Summing one across rows multiplies it by the row count: Oil's TOT_BORROWINGS_L summed over 70 rows gives 601,615 L = Rs 6,016 Cr against a true Rs 85.95 Cr. Every TOT_* KPI must use agg='first' on one row per company, and a concatenated multi-company array must be de-duplicated on COMPANY_SCHEMA first (site/index.html:1595 does exactly this).",
+  "The seven TOT_* columns are NOT DISJOINT and must never be added together. TOT_CASH_AND_BANK_L already contains TOT_BANK_CURRENT_L + TOT_CASH_IN_HAND_L + TOT_WALLET_L + TOT_CC_OD_NET_L, and TOT_BORROWINGS_L (gross drawn) overlaps TOT_CC_OD_NET_L (net). Read ONE per question. The per-account columns, by contrast, ARE safe to sum: one row per G/L account, no fan-out, no faceting.",
+  "'Cash and bank' is not cash. TOT_CASH_AND_BANK_L includes the drawn overdraft, so Oil's is -3,765.06 L = MINUS Rs 37.65 Cr. The hero card deliberately publishes 'Net bank position' = current + cash + wallets + deposits - abs(borrowings) instead, because JIVO holds almost nothing in current accounts and funds itself on cash credit: a cash-and-bank headline would read as liquidity the business does not have. Oil's real net position is -Rs 74.86 Cr. Keep that reasoning attached to the number wherever it is shown.",
+  "Oil's liquid position is NEGATIVE: -5.02 L across current accounts, wallets and cash. Of that, cash in hand is -10.12 L because 1105001 CASH SALE sits at -10.23 L - a till in CREDIT, which cannot physically happen. Do not present it as 'cash held'; it is a control finding (OVERDRAWN_FLAG='Y'). Mart's main operating account 1104108 ICICI is likewise at -2.17 L with Rs 122 Cr flowing through it in the year.",
+  "CANCELLED PAYMENTS WERE ONCE DOUBLE-COUNTED IN EVERY GROSS-MOVEMENT COLUMN. SAP posts a cancellation as the original PLUS a mirror-image reversal and marks BOTH rows cancelled (C-0021: CANCELED is three-valued N/Y/C, so a Canceled='Y' test is not enough on its own). Before the fix Oil's receipts read 101,144.62 L against a true 86,464.88 L - an inflation of Rs 146.80 Cr, +14.5%; Mart +20.5%, Bev +11.6%. The fix filters both halves via OJDT.StornoToTr, which is DOC-TYPE AGNOSTIC and so also catches reversed manual journal entries the ORCT/OVPM flag misses (4 extra lines Oil, 8 Mart, 0 Bev). Today's removal: Oil 14,940.37 L (14.7%), Mart 4,933.42 L (20.6%), Bev 299.07 L (11.6%), all carried in CANCELLED_GROSS_12M_L. Any comparison against an extract older than 2026-08-21 will differ by exactly this amount.",
+  "BALANCE_L and OPENING_BAL_L deliberately do NOT filter cancellations, and that is correct: the storno pair nets to exactly zero per account, so the ledger still equals what SAP itself reports even at an as-of falling between an original payment and its later reversal. Applying the movement filter to the balance would break the tie to OACT.CurrTotal. Never 'fix' this asymmetry.",
+  "MONTHLY_IN_L_SERIES / MONTHLY_OUT_L_SERIES / MONTHLY_NET_L_SERIES ARE STRINGS, NOT SCALARS - twelve 'YYYY-MM=<lakhs>' pairs joined by ';'. They feed a lineArea chart and are parsed, never summed and never passed to a unit scaler. Their names contain '_L_' but END in '_SERIES', so unit detection must anchor at the END of the column name; a scaler keyed on 'contains _L' would multiply a string by 1e5.",
+  "EVERY money column is INR LAKHS and ENDS in _L (x1e5). Anchor unit detection to the END of the name: TOT_CC_OD_NET_L, MANUAL_JE_LINE_PCT_12M and MONTHLY_NET_L_SERIES all carry misleading tokens mid-name. A column ending _L is lakhs no matter what else is in it; a column not ending _L is not money, even if it contains '_L_'. Non-money columns: N_LINES_12M, ACTIVE_MONTHS_12M, DAYS_SINCE_LAST_MOVE, ACCT_NO_NDIGITS, MANUAL_JE_LINE_PCT_12M.",
+  "SUMMING AMOUNT_DRAWN_L OVER ALL ROWS IS NOT BORROWINGS. Oil gives 8,605.14 L against a true 8,594.50 L: the extra 10.65 L is a cash till and a PayTM wallet sitting in credit. The correct predicate is the one the SQL uses at lines 581 and 626 - CATEGORY_KIND='BORROWING' OR CATEGORY='CASH_CREDIT_OD' - because CASH_CREDIT_OD is KIND='BANK', not 'BORROWING'.",
+  "GROSS versus NET borrowings. TOT_BORROWINGS_L counts only the drawn (negative) side, so the two Oil facilities sitting in DEBIT - 2201105 HSBC +806.68 L and 1104107 ICICI +684.51 L, 1,491.19 L together - are invisible to it. Gross Rs 85.95 Cr, net Rs 71.03 Cr. Gross is the right reading for 'what the banks have lent us'; it is the wrong reading for 'what we would repay today'.",
+  "SUMMING FUNDS_AVAILABLE_L ACROSS ROWS IS NOT LIQUIDITY. Oil's 2,610.16 L is 1,491.19 L of over-repaid CC/OD facilities (not cash) plus 1,113.33 L of fixed deposits (not on call), leaving 5.64 L. v1's per-row column label 'available' is fine; a column total under it would not be.",
+  "TOT_BORROWINGS_L is BANK borrowings only. 2202000 UNSECURED LOAN - directors', subsidiary and NBFC debt, Oil ~2,330 L, Mart ~233 L, Bev nil - is deliberately outside this register (sql lines 80-83). Anyone quoting 'total borrowings Rs 85.95 Cr' off this page is quoting bank debt; Oil's total debt is about Rs 109 Cr.",
+  "READ DEBIT AND CREDIT PHYSICALLY, NOT BY ACCOUNT TYPE. On a CC/OD or loan account a Debit is money going IN (a repayment) and a Credit is money going OUT (a drawdown or an interest charge). Oil's CC/OD accounts carry 82,747.20 L of 'payments out' in twelve months - that is the business settling its bills from the facility, not new borrowing, and 94.1% of everything Oil pays out leaves from a borrowed account rather than a current account.",
+  "BALANCE_SIGN is computed on the RUPEE balance; BALANCE_L is rounded to 2 dp of a lakh (Rs 1,000 granularity). A row can therefore read BALANCE_L 0.00 with BALANCE_SIGN 'DEBIT' - live: Mart 1105001 CASH SALE. Derive direction from BALANCE_SIGN, never from the sign of the rounded column, and never filter 'carrying a balance' on BALANCE_L alone if sub-Rs 1,000 balances matter.",
+  "OVERDRAWN_FLAG fires only on ASSET-side categories and only below -Rs 100 in RUPEES. A CC/OD or loan account in credit is borrowing and is deliberately not flagged - do not 'fix' that. And because the threshold is in rupees while BALANCE_L is rounded to Rs 1,000, an account between -Rs 100 and -Rs 500 is flagged while its balance column reads -0.00. Live counts: Oil 2, Mart 3, Bev 0.",
+  "DORMANT_90D_FLAG is 'Y' both for a balance that went quiet AND for an account that has NEVER moved (LAST_MOVE_DATE NULL). 44 Oil / 34 Mart / 14 Bev rows carry it; only 24 / 1 / 1 carry a balance. Worse, 21 of Oil's 24 are FIXED DEPOSITS holding 1,113.33 L that all last moved on 2026-03-31 - a deposit that moves once a year at interest posting is dormant BY DESIGN. Ex-deposits, the genuinely idle money is 1.34 L Oil, 1.42 L Mart, 0.00 L Bev. Quoting Rs 11.15 Cr of 'idle bank money' for Oil would be wrong by three orders of magnitude.",
+  "NEVER_USED_FLAG means 'never REALLY moved', not 'never posted'. Movement is storno-filtered, so an account whose only traffic was a cancelled payment reads 'Y': live, Mart 1104107 is NEVER_USED='Y' with 2.21 L of CANCELLED_GROSS_12M_L and N_LINES_12M = 0. Cross-read the two columns before calling an account unused.",
+  "IS_HOUSE_BANK='Y' only means a DSC1 row EXISTS - not that it is right. DSC1 is nearly empty and partly wrong: Oil 5 rows, Bev 3, Mart 1 (with a NULL GLAccount, so Mart gets zero matches at all), against 13-30 live bank G/L accounts a book, and Beverages' rows were copied from Oil's chart and still carry Oil's G/L codes. Bev 1104102 is IS_HOUSE_BANK='Y' with HOUSE_BANK_AGREES='MISMATCH'. v1 renders a green 'house' pill off IS_HOUSE_BANK alone (site/index.html:1503) - read HOUSE_BANK_AGREES instead, and expect BRANCH to be NULL on every Mart and Beverages row.",
+  "THE ACCOUNT-CODE PREFIX LIES, and ActType/CashBox do not mark bank accounts. Oil's 1104106/07/08/10 carry 1104* ('BANK ACCOUNTS') codes but hang under BANK CASH CREDIT LOAN and come out CASH_CREDIT_OD; 1103114-17 carry 1103* (STOCKS) codes but hang under FDR; 2201104 and 2201402 hang under TERM LOAN. Every one of Oil's 70 banking accounts has ActType='N' and CashBox='N' - and so do ~984 other postable accounts. The universe is the parent drawer NAME through OACT.FatherNum, never LIKE '1104%' and never a flag.",
+  "INTERCO_IN_12M_L / INTERCO_OUT_12M_L are TRANSACTION-level attributions, so they are an UPPER BOUND, never an allocation: a journal that touches one JIVO group party contributes its WHOLE bank line. Mart pays 87.6% of everything out to JIVO group/branch parties, so reading its PAYMENTS_OUT_12M_L as third-party spend overstates it about eightfold. The test is OCRG.GroupName LIKE '%BRANCH%' OR OCRD.CardName LIKE '%JIVO%' - the group test alone misses Mart's largest payable VENDA000001 'JIVO WELLNESS PVT LTD', which sits in an ordinary PURCHASE group, and the 23 known group CardCodes (C-0005) are book-specific and cannot be hardcoded across three schemas.",
+  "EST_ANNUAL_INTEREST_L is an INPUT CONSTANT (8.47%, sql line 255) applied to TODAY's drawn balance - not an accrual, not a measured cost, and not comparable with the P&L. Oil's 727.97 L sits about 57% above the 463.37 L actually debited to 5610001 INTEREST ON BANK LOAN over the same twelve months (measured 2026-08-21, ~7.53% gross on an average drawn 6,148.65 L). Some borrowing cost also sits on other accounts (2163024 TRADEPAY interest payable, 2163026 term-loan interest payable). Present it as an upper-bound run-rate, never as interest paid.",
+  "AVG_MONTHLY_OUT_L divides by ACTIVE months, not by 12 - deliberately, so a seasonal account is not flattered. The cost: Oil 2201211 reads 1,500.00 L 'per month' off a single Rs 15 Cr term-loan repayment in one active month. Never annualise it by x12, and never rank accounts on it.",
+  "MANUAL_JE_LINE_PCT_12M is a share of LINES, not of value, and it is NULL - not 0 - where the account had no 12-month traffic (Oil 14 / Mart 33 / Bev 12 rows). It reads 100.0 on any account with a single line, so an unweighted average is meaningless: measured 45.6% unweighted against 5.4% line-weighted in Oil. Only three TransTypes ever touch these accounts (24 incoming, 46 outgoing, 30 manual JE); no invoice posts to a bank account directly.",
+  "CURRTOTAL_TODAY_L is a LIFETIME balance and is NOT filtered by as_of. It equals BALANCE_L exactly on all 132 rows today, which is what makes it a valid independent cross-check - but any historical as-of run will make it legitimately disagree, and the check dot must then read 'not applicable at this as-of', not red. Beverages' JDT1 does hold lines out to 2026-12-31, so the <= as_of guard is not decorative.",
+  "ROUNDING IS COARSE AND ASYMMETRIC. Every _L column is ROUND(x/1e5, 2) = Rs 1,000 granularity, and the TOT_* window totals round AFTER summing in rupees while a per-row sum rounds first. Live deltas today: Oil cash-in-hand -0.01 L, fixed deposits +0.01 L, borrowings -0.01 L. The monthly series adds back to the 12-month totals within 0.02 L per account (HANA's CAST(double AS DECIMAL) TRUNCATES, so the SQL rounds inside the DECIMAL domain). Every check needs a Rs 1,000 x rowcount tolerance; exact equality WILL false-alarm.",
+  "BOOK_OPENING_DATE is DERIVED per book, never hardcoded to the 2024-09-30 go-live: MART'S BANKING LEDGER OPENS 2024-12-31, with nothing before it. A hardcoded go-live returns 0 for every Mart account. OPENING_BAL_L is gated by as_of after a fix on 2026-08-21 - before it, an as-of BEFORE the book opened reported a FUTURE opening balance (measured: Mart at --as-of 2024-11-30 showed 80.03 L of opening against a nil closing balance). Beverages has 0.00 opening on all 18 rows, a measured nil.",
+  "THERE IS NO DETAIL SLICE. detail is [] in all three books, so no page may offer a drill to individual JDT1 lines, a payment list, a cheque number or a statement view. gl-account.html for a bank account can show only the 51 summary columns for that account, its three monthly series, and its history.jsonl trend. Whether the G/L position agrees with what the bank says is bank-reco's job (OBNK), not this section's - this section never touches OBNK.",
+  "THERE IS NO FACILITY LIMIT ANYWHERE IN THIS DATA. Sanctioned limits, drawing power and margin are not in ODSC, DSC1 or OACT, so 'headroom', '% of limit used' and 'available credit' cannot be computed here and must not be implied by a gauge, a progress bar or a phrase like 'available'. FUNDS_AVAILABLE_L is a debit balance, not a credit line.",
+  "This is a G/L register, not a party or document register - no CardCode, no DocEntry, no DocStatus, so C-0019 / C-0021's document half do not bite here. What does bite: these figures cannot be added to any other section. Bank movement is not turnover, INTERCO_* overlaps whatever the ageing sections flag as intercompany, and 'total liabilities = payables + provisions + borrowings' is not a supported sum.",
+  "ACCOUNT NUMBERS ARE SENSITIVE AND ARE NEVER EMITTED IN FULL. They live INSIDE OACT.AcctName, so the raw account name never leaves the query: GL_ACCT_LABEL_MASKED x's every digit and ACCT_NO_MASKED is 'xxxx' + last 4. Never join this section back to OACT.AcctName to 'improve' a label, never widen the mask, and never treat ACCT_NO_MASKED NULL (9 Oil / 6 Mart / 5 Bev rows) as an error - it means the books hold fewer than four digits for that account. GL_ACCT_CODE is a chart code, not a bank account number, and is safe."
+ ],
+ "empty_states": [
+  "The slice carries an error for the selected company (bank-accounts.<co>.json 'error', or manifest.sections['bank-accounts'].error): render the error text and the failing schema, never a zero and never an empty table. Today error is null and status 'ok' for all three books.",
+  "summary is an empty array: bank-accounts is NOT in build_data.py's MAY_BE_EMPTY set (line 66), so an all-empty section FAILS the build - an empty panel here is an alarm, not a normal state. For a single empty company render empty('No bank, cash or facility account exists in this book's chart of accounts') and say the build guard only fires when all three are empty. Verified the query survives an empty universe: exit 0, 0 rows, 51 columns, no error.",
+  "A whole CATEGORY has no account in this book - Beverages has NO CASH_CREDIT_OD, VEHICLE_LOAN or CREDIT_CARD row at all (the drawers exist but are empty). Omit the bar or slice and footnote why; never draw a zero-height bar and never render an error.",
+  "TOT_BORROWINGS_L = 0 (Mart and Beverages today, measured): say 'owes the banks nothing', not an em-dash and not 'unknown'. Same for TOT_CC_OD_NET_L = 0, TOT_FIXED_DEPOSIT_L = 0 (Mart, 17 accounts all nil) and EST_ANNUAL_INTEREST_L = 0. These are measured nils and must be visually distinct from a missing figure.",
+  "FIRST_MOVE_DATE / LAST_MOVE_DATE / DAYS_SINCE_LAST_MOVE are NULL on never-used accounts (Oil 4 / Mart 33 / Bev 12): render 'never used', never a blank cell, never an epoch date and never 0 days - 0 would read as 'moved today' and would silently join the active set.",
+  "MANUAL_JE_LINE_PCT_12M is NULL where the account had no 12-month traffic (Oil 14 / Mart 33 / Bev 12): exclude those rows from the weighting and state how many were excluded. If every row is NULL, render empty('no bank traffic in the last twelve months') rather than 0%.",
+  "ACCT_NO_MASKED is NULL (Oil 9 / Mart 6 / Bev 5 - cash boxes, wallets, 'HSBC BANK LAI', accrued-interest heads): render 'not in the books' with ACCT_NO_NDIGITS = 0 beside it. Never print a bare 'xxxx', never substitute the G/L code, and never leave the cell blank so it reads as a redaction failure.",
+  "BANK_NAME is NULL / BANK_NAME_SOURCE = 'UNRESOLVED' (Oil 6 / Mart 8 / Bev 3): show the masked account label instead and mark it 'not bank-linked'. Do not invent a bank from the label - these are cash tills, FDR accrued-interest heads and Oil's mis-filed 1103115 'R & D WHEAT GRASS'.",
+  "BRANCH is NULL on every row of a book with no agreeing house-bank row (Mart 44/44, Beverages 18/18): hide the column entirely for that company rather than printing a column of dashes, and footnote that DSC1 carries no usable row for this book.",
+  "No dormant, overdrawn or never-used account in a book (Beverages overdrawn = 0, measured): render an explicit 'none' with the count 0, so a measured nil cannot be mistaken for a failed computation.",
+  "history.jsonl has fewer than two points for a KPI: sparklines render empty('no history yet') and any trend caption is suppressed - never draw a single-point line and never imply a direction.",
+  "as_of is not today (a historical run): the CURRTOTAL_TODAY_L cross-check on every position KPI must render 'not applicable at this as-of', not a red delta, because CurrTotal is a lifetime figure. At an as_of before the book opened (Mart before 2024-12-31), BOOK_OPENING_DATE is NULL and every OPENING_BAL_L is 0 - render 'the book had not opened', not Rs 0.",
+  "An account's twelve monthly slots are all zero (any never-used account): the series still exists and is zero-filled by construction - render a flat line at zero, never empty and never a gap. A missing month inside a series would be a defect, not an empty state."
+ ]
+}

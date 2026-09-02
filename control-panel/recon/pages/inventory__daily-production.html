@@ -1,0 +1,767 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="KKPO42jXUuJxWMYjCkG4sjjI7gaXBptasgOI31eZgZNJD7QIwuzfRIaJOtojkoep">
+  <title>Daily Production Transaction — Jivo Group</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300,0,0" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Raleway', sans-serif; background: #f3f4f6; color: #1f2937; }
+
+    /* ── Light & subtle report theme tokens ───────────────────────────────────
+       Shared palette for the Realise/report pages so they all read like the Home
+       dashboard: white cards, thin colour accents, soft shadows, dark-on-light text.
+       Tweak here to re-tone every page at once. */
+    :root {
+      --rz-bg:        #f4f6fb;   /* page background                       */
+      --rz-card:      #ffffff;   /* card / panel surface                  */
+      --rz-card-brd:  #ecebf5;   /* subtle card border                    */
+      --rz-shadow:    0 4px 14px rgba(15,23,42,.05);   /* soft card shadow */
+      --rz-shadow-lg: 0 8px 24px rgba(15,23,42,.07);   /* hero / raised    */
+      --rz-ink:       #0f172a;   /* primary heading / value text          */
+      --rz-body:      #334155;   /* body text                             */
+      --rz-muted:     #64748b;   /* muted labels                          */
+      --rz-faint:     #94a3b8;   /* faint / placeholder                   */
+      --rz-line:      #e5e7eb;   /* hairline / divider                    */
+      --rz-indigo:    #6366f1;   /* primary accent                        */
+      --rz-indigo-deep:#4338ca;  /* accent text on soft bg                */
+      --rz-soft:      #eef2ff;   /* soft accent fill (active chips)       */
+      --rz-soft-brd:  #e0e7ff;   /* soft accent border                    */
+      --rz-head-bg:   #f8fafc;   /* table header background (light)       */
+      --rz-head-ink:  #475569;   /* table header text                     */
+      --rz-total-bg:  #f1f5f9;   /* grand-total row background            */
+      --rz-total-brd: #e2e8f0;   /* grand-total row top border            */
+      --rz-pos:       #16a34a;   /* positive / green                      */
+      --rz-neg:       #e11d48;   /* negative / red                        */
+      --rz-amber:     #d97706;   /* amber accent                          */
+      --rz-teal:      #0d9488;   /* teal accent                           */
+      /* Numeric font: plain upright figures for money / metric values. Raleway's numerals
+         read as slanted / "cursive"; a neutral system sans keeps numbers legible & subtle.
+         Applied to numeric cells & KPI values app-wide via the rule below.               */
+      --rz-num: system-ui, "Segoe UI", Roboto, -apple-system, "Helvetica Neue", Arial, sans-serif;
+      /* KPI accent bars (thin top strip on white stat cards) */
+      --rz-acc-indigo: linear-gradient(90deg,#6366f1,#7c3aed);
+      --rz-acc-green:  linear-gradient(90deg,#059669,#16a34a);
+      --rz-acc-red:    linear-gradient(90deg,#e11d48,#f43f5e);
+      --rz-acc-amber:  linear-gradient(90deg,#d97706,#f59e0b);
+      --rz-acc-teal:   linear-gradient(90deg,#0d9488,#14b8a6);
+    }
+
+    /* ── Numeric values: subtle, upright figures across every report ───────────
+       Numbers in these pages were inheriting Raleway, whose numerals look slanted /
+       "cursive". Force a neutral tabular sans + normal style on the numeric containers
+       used app-wide: KPI stat values (*-kpi-v), the shared .num table cell, and the
+       common per-report money/qty cell classes. Selectors only hit number-only elements,
+       so prose (party names, headings) keeps Raleway. Edit --rz-num to re-tone at once. */
+    [class$="kpi-v"], [class*="kpi-v "], .kpi-value,
+    .num, td.num, .op-hi, .dd-mono,
+    .sv, .sp-amt, .sa-qty, .doc, .doc-bal, .cmp-big, .cmp-chg, .cm-gst,
+    .rc-so-one, .pf-prow-qty, .sc2-state-val, .sc2-drillval {
+      font-family: var(--rz-num);
+      font-variant-numeric: tabular-nums;
+      font-style: normal;
+      letter-spacing: 0;
+    }
+
+    /* ── Topbar ── */
+    .cp-topbar { display: flex; align-items: center; gap: 24px; padding: 0 20px; background: #ffffff; border-bottom: 1px solid #e5e7eb; height: 56px; position: sticky; top: 0; z-index: 100; }
+    .cp-topbar-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .cp-topbar-logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(99,102,241,0.35); }
+    .cp-topbar-title { font-size: 14px; font-weight: 700; line-height: 1.1; color: #111827; }
+    .cp-topbar-subtitle { font-size: 11px; color: #6b7280; }
+    .cp-topbar-ticker { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
+    .cp-live-pill { background: #d1fae5; color: #047857; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; }
+    .cp-live-dot { width: 6px; height: 6px; background: #10b981; border-radius: 50%; animation: cp-pulse 2s infinite; }
+    @keyframes cp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .cp-ticker-item { padding: 4px 10px; background: #f3f4f6; border-radius: 20px; font-size: 11px; white-space: nowrap; flex-shrink: 0; color: #374151; }
+    .cp-ticker-item b { color: #4338ca; margin-right: 4px; }
+
+    /* ── Shell ── */
+    .cp-shell { display: flex; min-height: calc(100vh - 56px); position: relative; }
+
+    /* ── Sidebar ── */
+    /* Frozen in place: sticky just below the 56px topbar and exactly viewport-tall, so the
+       sidebar stays put while only .cp-main scrolls. align-self:flex-start stops the flex
+       row from stretching it (which would break sticky); overflow-y lets a tall sidebar
+       scroll on its own. */
+    .cp-sidebar { width: 240px; background: #f8fafc; color: #334155; padding: 20px 14px; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; overflow-x: hidden; border-right: 1px solid #e5e7eb; transition: width .22s ease, padding .22s ease; position: sticky; top: 56px; height: calc(100vh - 56px); align-self: flex-start; }
+    /* Modern outlined icon set in the sidebar (Material Symbols) — lighter & cleaner than filled. */
+    .cp-sidebar .material-icons, .cp-sidebar-open .material-icons { font-family: 'Material Symbols Outlined'; font-weight: normal; font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24; }
+    /* Collapsed = a slim icon rail (not empty space): keep the nav icons,
+       hide all text/labels, and let the floating menu button expand it. */
+    /* Smart hover sidebar: collapsed = a slim icon rail that expands on hover and PUSHES
+       the content (everything adjusts smoothly — nothing is hidden). 'cp-sb-peek' is
+       toggled by JS on mouse enter/leave (with a small close-delay); :focus-within keeps
+       keyboard navigation working. */
+    body.cp-sidebar-collapsed .cp-sidebar {
+      width: 64px; padding: 16px 8px;
+      transition: width .2s ease, padding .2s ease;
+    }
+    body.cp-sidebar-collapsed .cp-sidebar.cp-sb-peek,
+    body.cp-sidebar-collapsed .cp-sidebar:focus-within {
+      width: 240px; padding: 20px 14px;
+    }
+    /* Icon-only look only while the rail is NOT peeking/focused */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-brand,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-section-label,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-user-badge,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-logout-form { display: none; }
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav:first-of-type { margin-top: 56px; }  /* clear the floating menu button */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-item { justify-content: center; gap: 0; padding: 11px 0; font-size: 0; }
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-item .material-icons { font-size: 22px; }
+    /* On the slim rail, collapse the group to just its icon (no chevron, no sub-items). */
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-sub,
+    body.cp-sidebar-collapsed .cp-sidebar:not(.cp-sb-peek):not(:focus-within) .cp-nav-group-chev { display: none; }
+    /* The floating "pin" button shows on the slim rail; it hides while peeking (the
+       in-rail close/pin button takes over once the rail is expanded). */
+    body.cp-sidebar-collapsed .cp-sidebar-open { top: 14px; left: 14px; }
+    body.cp-sidebar-collapsed .cp-sidebar.cp-sb-peek ~ .cp-sidebar-open { opacity: 0; pointer-events: none; }
+    .cp-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px 18px 6px; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px; }
+    .cp-brand-copy { min-width: 0; flex: 1; }
+    .cp-brand-logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; box-shadow: 0 4px 12px rgba(99,102,241,0.45); }
+    .cp-brand-title { font-size: 13px; font-weight: 700; color: #0f172a; }
+    .cp-brand-subtitle { font-size: 10px; color: #94a3b8; }
+    .cp-sidebar-close, .cp-sidebar-open { border: 0; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; justify-content: center; transition: background .15s, color .15s, opacity .15s, transform .15s; }
+    .cp-sidebar-close { width: 30px; height: 30px; border-radius: 8px; background: #f1f5f9; color: #64748b; flex-shrink: 0; }
+    .cp-sidebar-close:hover { background: #e2e8f0; color: #334155; }
+    .cp-sidebar-close .material-icons { font-size: 18px; }
+    .cp-sidebar-open { position: absolute; top: 12px; left: 12px; z-index: 20; width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; box-shadow: 0 8px 20px rgba(79,70,229,.4); opacity: 0; pointer-events: none; transform: translateX(-8px); }
+    body.cp-sidebar-collapsed .cp-sidebar-open { opacity: 1; pointer-events: auto; transform: translateX(0); }
+    .cp-sidebar-open:hover { background: linear-gradient(135deg, #818cf8, #6366f1); }
+    .cp-sidebar-open .material-icons { font-size: 21px; }
+    .cp-section-label { font-size: 10px; font-weight: 700; letter-spacing: 0.9px; color: #64748b; margin: 16px 6px 6px 6px; text-transform: uppercase; }
+    .cp-nav { display: flex; flex-direction: column; gap: 3px; }
+    .cp-nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border-radius: 10px; color: #334155; text-decoration: none; font-size: 13px; font-weight: 600; transition: background .15s, color .15s, box-shadow .15s; }
+    .cp-nav-item:hover { background: #eef2ff; color: #1e293b; }
+    .cp-nav-item.active { background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; box-shadow: 0 6px 18px rgba(79,70,229,0.5); }
+    .cp-nav-item.active .material-icons { color: #fff; font-variation-settings: 'FILL' 1, 'wght' 400; }
+    .cp-nav-item .material-icons { font-size: 20px; }
+
+    /* ── Collapsible nav group (e.g. Analytical Reports) ── */
+    .cp-nav-group { display: flex; flex-direction: column; }
+    .cp-nav-group-btn { width: 100%; border: 0; background: none; font-family: inherit; cursor: pointer; justify-content: space-between; }
+    .cp-nav-group-lead { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    .cp-nav-group-chev { font-size: 18px !important; color: #94a3b8; transition: transform .18s ease; }
+    .cp-nav-group.open > .cp-nav-group-btn { color: #1e293b; }
+    .cp-nav-group.open > .cp-nav-group-btn .cp-nav-group-chev { transform: rotate(180deg); }
+    .cp-nav-sub { display: none; flex-direction: column; gap: 3px; margin: 3px 0 2px 17px; padding-left: 12px; border-left: 2px solid #e2e8f0; }
+    .cp-nav-group.open > .cp-nav-sub { display: flex; }
+    .cp-nav-sub .cp-nav-item { font-size: 12.5px; padding: 8px 11px; }
+
+    /* ── User badge ── */
+    .cp-user-badge { margin-top: auto; padding: 10px; background: #f1f5f9; border: 1px solid #e5e7eb; border-radius: 11px; display: flex; align-items: center; gap: 10px; }
+    .cp-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; box-shadow: 0 3px 9px rgba(99,102,241,0.4); }
+    .cp-user-name { font-size: 12px; font-weight: 700; color: #0f172a; }
+    .cp-user-role { font-size: 10px; color: #64748b; text-transform: capitalize; }
+    .cp-logout-form { margin-top: 8px; }
+    .cp-logout-btn { width: 100%; padding: 9px; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 12px; font-weight: 700; transition: background .15s, color .15s, border-color .15s; }
+    .cp-logout-btn:hover { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+
+    /* ── Main content ── */
+    .cp-main { flex: 1; padding: 28px 32px; overflow: auto; min-width: 0; }
+    /* (push mode) content sits flush after the flex sidebar — no extra left padding. */
+    /* Dashboard pages auto-size to the available width at any screen size / zoom: drop the
+       per-page fixed max-width caps on the content root (the single ".<name>-wrap" div that
+       each page renders directly inside .cp-main). Higher specificity than the page's own
+       ".x-wrap{max-width:…}" rule, so this wins without !important. */
+    .cp-main > div[class*="-wrap"] { max-width: none; }
+  </style>
+  
+<style>
+  .cp-main{background:var(--rz-bg) !important}
+  .dp-wrap{max-width:1500px;margin:0 auto}
+  .dp-h1{font-size:30px;font-weight:800;color:var(--rz-ink);margin:0;letter-spacing:-.5px}
+  .dp-psub{margin:6px 0 0;font-size:13px;color:var(--rz-muted)}
+
+  .dp-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:16px 0}
+  .dp-kpi{position:relative;overflow:hidden;border-radius:16px;padding:18px 20px;color:var(--rz-ink);background:var(--rz-card);border:1px solid var(--rz-card-brd);box-shadow:var(--rz-shadow)}
+  .dp-kpi::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--kpi-acc,var(--rz-acc-indigo))}
+  .dp-kpi .dp-kpi-l{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--rz-muted);display:flex;align-items:center;gap:7px}
+  .dp-kpi .dp-kpi-l .material-icons{color:var(--kpi-ic,#6366f1)}
+  .dp-kpi .dp-kpi-v{font-size:29px;font-weight:900;margin-top:8px;letter-spacing:-.5px;line-height:1;color:var(--rz-ink)}
+  .dp-kpi .dp-kpi-m{font-size:12px;font-weight:600;color:var(--rz-muted);margin-top:6px}
+  .dp-kpi .material-icons.dp-kpi-bg{position:absolute;right:-8px;bottom:-14px;font-size:96px;color:var(--kpi-ic,#6366f1);opacity:.08}
+  .k-ltr{--kpi-acc:var(--rz-acc-teal);--kpi-ic:#0d9488}
+  .k-box{--kpi-acc:var(--rz-acc-amber);--kpi-ic:#d97706}
+  .k-qty{--kpi-acc:var(--rz-acc-indigo);--kpi-ic:#6366f1}
+  .k-wo{--kpi-acc:var(--rz-acc-teal);--kpi-ic:#0891b2}
+
+  .dp-bar{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:0 0 14px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+  .dp-fld{display:flex;flex-direction:column;gap:5px}
+  .dp-lbl{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#64748b}
+  .dp-bar input[type=date],.dp-bar input[type=search]{font-family:inherit;font-size:13px;font-weight:600;color:#1f2937;border:1px solid #d9e5ee;border-radius:9px;padding:8px 10px;background:#fff;outline:none}
+  .dp-bar input[type=search]{min-width:200px}
+  .dp-bar input[type=search]:focus,.dp-bar input[type=date]:focus{border-color:var(--rz-indigo);box-shadow:0 0 0 3px rgba(99,102,241,.14)}
+  .dp-fetch{background:var(--rz-indigo);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .dp-fetch:hover{background:var(--rz-indigo-deep)}
+
+  .com-drill-box{position:relative}
+  .com-drill-btn{display:inline-flex;align-items:center;gap:10px;min-width:170px;justify-content:space-between;background:#fff;border:1px solid #d9e5ee;color:var(--rz-indigo);font-weight:700;font-size:12px;padding:8px 10px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .com-drill-btn .com-caret{color:#64748b;font-size:10px}
+  .com-drill-panel{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:40;width:250px;max-height:320px;overflow:auto;background:#fff;border:1px solid #d9e5ee;border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.16)}
+  .com-drill-panel.open{display:block}
+  .com-dp-head{display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #eef2f6;position:sticky;top:0;background:#fff}
+  .com-dp-head a{color:var(--rz-indigo);font-size:12px;font-weight:700;cursor:pointer}
+  .com-dp-list{padding:4px 0}
+  .com-dp-item{display:flex;align-items:center;gap:9px;padding:8px 12px;cursor:pointer;font-size:13px}
+  .com-dp-item:hover{background:#f4f7fb}
+  .com-dp-item input{width:16px;height:16px;cursor:pointer;flex:0 0 auto}
+  .com-dp-item .com-dp-name{flex:1 1 auto;font-weight:600;color:#1f2937}
+  .com-dp-item .com-dp-sub{font-size:10px;color:#94a3b8;font-weight:600}
+  .com-dp-item .com-pos{flex:0 0 auto;width:19px;height:19px;border-radius:50%;background:var(--rz-indigo);color:#fff;font-size:11px;font-weight:800;display:none;align-items:center;justify-content:center}
+  .com-dp-item.checked .com-pos{display:inline-flex}
+  .com-dp-foot{padding:9px 12px;border-top:1px solid #eef2f6;position:sticky;bottom:0;background:#fff}
+  .com-dp-foot button{width:100%;background:var(--rz-indigo);color:#fff;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+
+  .dp-table-card{background:var(--rz-card);border:1px solid var(--rz-card-brd);border-radius:16px;overflow:hidden;box-shadow:var(--rz-shadow)}
+  .dp-table-wrap{overflow:auto;max-height:72vh}
+  table.dp-table{width:max-content;min-width:100%;border-collapse:collapse;font-size:13px}
+  table.dp-table thead th{position:sticky;top:0;z-index:2;background:var(--rz-head-bg);color:var(--rz-head-ink);text-align:right;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;padding:12px 16px;white-space:nowrap;border-bottom:1px solid var(--rz-line)}
+  table.dp-table thead th.gc-name{text-align:left;left:0;z-index:3}
+  table.dp-table tbody td{padding:9px 16px;border-bottom:1px solid #eef2f6;color:#334155;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  table.dp-table tbody td.gc-name{text-align:left;color:#0f172a;font-weight:600;position:sticky;left:0;background:#fff;z-index:1}
+  table.dp-table tbody tr:nth-child(even) td.gc-name{background:#fafcff}
+  table.dp-table tbody tr:hover td{background:#f1f5ff}
+  table.dp-table tbody tr:hover td.gc-name{background:#eef3ff}
+  td.dp-hi{font-weight:800;color:var(--rz-ink)}
+  .dp-v0{color:#cbd5e1}
+  table.dp-table tbody tr.dp-total td{background:var(--rz-total-bg);color:var(--rz-ink);font-weight:800;position:sticky;bottom:0;border-top:2px solid var(--rz-total-brd)}
+  table.dp-table tbody tr.dp-total td.gc-name{background:var(--rz-total-bg);color:var(--rz-ink)}
+  .dp-tw{display:inline-block;width:13px;font-size:9px;color:#64748b;margin-right:7px;cursor:pointer;transition:transform .12s;vertical-align:middle}
+  .dp-tw.open{transform:rotate(90deg)}
+  .dp-tw-empty{display:inline-block;width:13px;margin-right:7px}
+  .dp-tag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:4px;background:#e2e8f0;color:#475569;margin-right:8px;vertical-align:middle}
+  .dp-empty{padding:40px;text-align:center;color:#7b8794}
+</style>
+
+</head>
+<body>
+
+  
+  <div class="cp-topbar">
+    <div class="cp-topbar-brand">
+      <div class="cp-topbar-logo">JG</div>
+      <div>
+        <div class="cp-topbar-title">Jivo Group</div>
+        <div class="cp-topbar-subtitle">Control Panel</div>
+      </div>
+    </div>
+    <div class="cp-topbar-ticker">
+      <span class="cp-live-pill"><span class="cp-live-dot"></span>LIVE</span>
+      
+        <span class="cp-ticker-item"><b>REALISE</b>₹171.07/L</span>
+      
+    </div>
+  </div>
+
+  
+  <div class="cp-shell">
+    <aside class="cp-sidebar">
+
+      <div class="cp-brand">
+        <div class="cp-brand-logo">JG</div>
+        <div class="cp-brand-copy">
+          <div class="cp-brand-title">Jivo Group</div>
+          <div class="cp-brand-subtitle">Control Panel</div>
+        </div>
+        <button class="cp-sidebar-close" type="button" onclick="toggleControlPanelSidebar()" title="Pin / unpin sidebar" aria-label="Pin or unpin control panel sidebar">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      
+        <div class="cp-section-label">Main Menu</div>
+        <nav class="cp-nav">
+          <a class="cp-nav-item " href="/" title="Control Panel">
+            <span class="material-icons">space_dashboard</span>Control Panel
+          </a>
+          
+          <a class="cp-nav-item " href="/realise/" title="Sales">
+            <span class="material-icons">bolt</span>Sales
+          </a>
+          
+        </nav>
+
+        
+        <div class="cp-section-label">Reports</div>
+        <nav class="cp-nav">
+          
+          
+          
+          <div class="cp-nav-group" data-group="reports-sales">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Sales" aria-label="Toggle Sales reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">trending_up</span>Sales</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/compare-sales/" title="Compare Sales">
+                <span class="material-icons">bar_chart</span>Compare Sales
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/sales-cn/" title="Sales vs Credit Notes">
+                <span class="material-icons">receipt_long</span>Sales vs CN
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/hidden-sales/" title="Hidden Customer Sales">
+                <span class="material-icons">visibility_off</span>Hidden Sales
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/sales-flow/" title="Sales Document Flow">
+                <span class="material-icons">account_tree</span>Sales Doc Flow
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/dispatch-details/" title="Dispatch Details">
+                <span class="material-icons">local_shipping</span>Dispatch Details
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/realise-calculator/" title="Realise Calculator">
+                <span class="material-icons">calculate</span>Realise Calculator
+              </a>
+              <a class="cp-nav-item " href="/realise/rate-list/" title="Rate List">
+                <span class="material-icons">sell</span>Rate List
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group" data-group="reports-accounts">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Accounts" aria-label="Toggle Accounts reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">account_balance</span>Accounts</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/customer-aging/" title="Customer Aging">
+                <span class="material-icons">account_balance_wallet</span>Customer Aging
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/required-credit-limit/" title="Required Credit Limit">
+                <span class="material-icons">credit_score</span>Required Credit Limit
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/open-payments/" title="Open Payments">
+                <span class="material-icons">account_balance</span>Open Payments
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/claims/" title="Claims">
+                <span class="material-icons">gavel</span>Claims
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/reconciliation/" title="Wellness–Mart Reconciliation">
+                <span class="material-icons">account_tree</span>Wellness–Mart Recon
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group open" data-group="reports-inventory">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Inventory & Production" aria-label="Toggle Inventory & Production reports">
+              <span class="cp-nav-group-lead"><span class="material-icons">inventory</span>Inventory &amp; Production</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/inventory/stock-available/" title="Stock Available">
+                <span class="material-icons">warehouse</span>Stock Available
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/non-inventory/" title="Finished Goods — Non Moving Stock">
+                <span class="material-icons">inventory_2</span>Non Moving Stock
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/realise/oih-vs-stock/" title="OIH vs Stock">
+                <span class="material-icons">compare_arrows</span>OIH vs Stock
+              </a>
+              
+              
+              <a class="cp-nav-item " href="/inventory/production/" title="Production Plan">
+                <span class="material-icons">precision_manufacturing</span>Production Plan
+              </a>
+              
+              
+              <a class="cp-nav-item active" href="/inventory/daily-production/" title="Daily Production Transaction">
+                <span class="material-icons">factory</span>Daily Production
+              </a>
+              
+            </div>
+          </div>
+          
+
+          
+          
+          <div class="cp-nav-group" data-group="reports-master">
+            <button type="button" class="cp-nav-item cp-nav-group-btn" onclick="toggleNavGroup(this)" title="Master Data" aria-label="Toggle Master Data">
+              <span class="cp-nav-group-lead"><span class="material-icons">dataset</span>Master Data</span>
+              <span class="material-icons cp-nav-group-chev">expand_more</span>
+            </button>
+            <div class="cp-nav-sub">
+              
+              <a class="cp-nav-item " href="/realise/customer-master/" title="Customer Master">
+                <span class="material-icons">contacts</span>Customer Master
+              </a>
+              
+            </div>
+          </div>
+          
+          
+          
+        </nav>
+        
+
+        
+        <div class="cp-section-label">Admin</div>
+        <nav class="cp-nav">
+          <a class="cp-nav-item " href="/users/" title="User Management">
+            <span class="material-icons">manage_accounts</span>Users
+          </a>
+        </nav>
+        
+
+        <div class="cp-user-badge">
+          <div class="cp-avatar">PR</div>
+          <div>
+            <div class="cp-user-name">preshit</div>
+            <div class="cp-user-role">admin</div>
+          </div>
+        </div>
+        <form class="cp-logout-form" method="post" action="/accounts/logout/">
+          <input type="hidden" name="csrfmiddlewaretoken" value="KKPO42jXUuJxWMYjCkG4sjjI7gaXBptasgOI31eZgZNJD7QIwuzfRIaJOtojkoep">
+          <button type="submit" class="cp-logout-btn">Sign out</button>
+        </form>
+      
+
+    </aside>
+
+    <button class="cp-sidebar-open" type="button" onclick="setControlPanelSidebar(true)" title="Open sidebar" aria-label="Open control panel sidebar">
+      <span class="material-icons">menu</span>
+    </button>
+
+    <main class="cp-main">
+      
+<div class="dp-wrap">
+  <div>
+    <h1 class="dp-h1">Daily Production Transaction</h1>
+    <p class="dp-psub">What's producing each day — standard work orders (OWOR). Drill by date, variety, item, warehouse or user; completed volume shown in Litres &amp; Boxes.</p>
+  </div>
+
+  <div class="dp-kpis" id="dpKpis"></div>
+
+  <div class="dp-bar">
+    <div class="dp-fld"><span class="dp-lbl">From</span><input type="date" id="dpStart"></div>
+    <div class="dp-fld"><span class="dp-lbl">To</span><input type="date" id="dpEnd"></div>
+    <button class="dp-fetch" id="dpFetch">&#9654; Fetch</button>
+    <div class="dp-fld"><span class="dp-lbl">Warehouse</span>
+      <div class="com-drill-box">
+        <button type="button" class="com-drill-btn" id="dpWhBtn"><span id="dpWhLabel">BH-PF</span><span class="com-caret">&#9662;</span></button>
+        <div class="com-drill-panel" id="dpWhPanel">
+          <div class="com-dp-head"><a id="dpWhAll">Select All</a><a id="dpWhClr">Clear All</a></div>
+          <div class="com-dp-list" id="dpWhList"></div>
+          <div class="com-dp-foot"><button type="button" id="dpWhApply">Apply</button></div>
+        </div>
+      </div>
+    </div>
+    <div class="dp-fld"><span class="dp-lbl">Search</span>
+      <input type="search" id="dpSearch" placeholder="Item / variety / user / doc…" autocomplete="off">
+    </div>
+    <div class="dp-fld"><span class="dp-lbl">Drill By</span>
+      <div class="com-drill-box">
+        <button type="button" class="com-drill-btn" id="dpDrillBtn"><span id="dpDrillLabel">Date › Item</span><span class="com-caret">&#9662;</span></button>
+        <div class="com-drill-panel" id="dpDrillPanel">
+          <div class="com-dp-head"><a id="dpDrillAll">Select All</a><a id="dpDrillClr">Clear All</a></div>
+          <div class="com-dp-list" id="dpDrillList"></div>
+          <div class="com-dp-foot"><button type="button" id="dpDrillApply">Apply</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dp-table-card">
+    <div class="dp-table-wrap">
+      <table class="dp-table">
+        <thead id="dpHead"></thead>
+        <tbody id="dpBody"><tr><td class="dp-empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+    </main>
+  </div>
+
+  <script>
+    window.loginUser = {"id": 12, "username": "preshit", "display_name": "preshit", "email": "", "is_staff": true, "is_superuser": false, "groups": ["claims_viewer", "compare_sales_viewer", "customer_aging_viewer", "customer_master_viewer", "daily_production_viewer", "dispatch_details_viewer", "hidden_sales_viewer", "oih_vs_stock_viewer", "open_payments_viewer", "production_viewer", "realise_admin", "realise_calculator_viewer", "reconciliation_viewer", "required_credit_viewer", "sales_cn_viewer", "sales_flow_viewer", "stock_viewer"], "group_permission_codenames": ["inventory.view_stock_available"], "permission_codenames": ["inventory.view_stock_available", "realise.add_cityowner", "realise.add_maingroupmaster", "realise.add_monthlytarget", "realise.add_segmenttarget", "realise.add_statemaster", "realise.add_targetmaster", "realise.add_targetnode", "realise.add_territorymapping", "realise.add_territoryproducttarget", "realise.change_cityowner", "realise.change_maingroupmaster", "realise.change_monthlytarget", "realise.change_segmenttarget", "realise.change_statemaster", "realise.change_targetmaster", "realise.change_targetnode", "realise.change_territorymapping", "realise.change_territoryproducttarget", "realise.delete_cityowner", "realise.delete_maingroupmaster", "realise.delete_monthlytarget", "realise.delete_segmenttarget", "realise.delete_statemaster", "realise.delete_targetmaster", "realise.delete_targetnode", "realise.delete_territorymapping", "realise.delete_territoryproducttarget", "realise.view_cityowner", "realise.view_maingroupmaster", "realise.view_monthlytarget", "realise.view_segmenttarget", "realise.view_statemaster", "realise.view_targetmaster", "realise.view_targetnode", "realise.view_territorymapping", "realise.view_territoryproducttarget"], "role": "admin", "type_filter": "", "permissions": {"can_edit": true, "can_realise": true, "can_inventory": false, "inventory_can_edit": false, "can_stock_available": true, "can_non_inventory": true, "can_reconciliation": true, "can_production": true, "can_daily_production": true, "can_oih_vs_stock": true, "can_compare_sales": true, "can_sales_cn": true, "can_hidden_sales": true, "can_customer_master": true, "can_open_payments": true, "can_dispatch_details": true, "can_realise_calculator": true, "can_sales_flow": true, "can_claims": true, "can_customer_aging": true, "can_required_credit_limit": true, "can_sales": false, "can_expenses": false, "can_salaries": false, "can_cogs": false}, "can_edit": true, "can_realise": true, "can_inventory": false, "inventory_can_edit": false, "can_stock_available": true, "can_non_inventory": true, "can_reconciliation": true, "can_production": true, "can_daily_production": true, "can_oih_vs_stock": true, "can_compare_sales": true, "can_sales_cn": true, "can_hidden_sales": true, "can_customer_master": true, "can_open_payments": true, "can_dispatch_details": true, "can_realise_calculator": true, "can_sales_flow": true, "can_claims": true, "can_customer_aging": true, "can_required_credit_limit": true, "can_sales": false, "can_expenses": false, "can_salaries": false, "can_cogs": false};
+
+    function setControlPanelSidebar(open) {
+      document.body.classList.toggle('cp-sidebar-collapsed', !open);
+      var sb = document.querySelector('.cp-sidebar');
+      if (sb) sb.classList.remove('cp-sb-peek');   // pinning/unpinning clears any hover-peek
+      try { localStorage.setItem('cpSidebarOpen', open ? '1' : '0'); } catch (err) {}
+    }
+    // Pin (expand & lock) when collapsed; unpin (back to hover-rail) when expanded.
+    function toggleControlPanelSidebar() {
+      setControlPanelSidebar(document.body.classList.contains('cp-sidebar-collapsed'));
+    }
+
+    // Expand/collapse a sidebar nav group (e.g. Analytical Reports); remember the choice.
+    function toggleNavGroup(btn) {
+      var g = btn.closest('.cp-nav-group');
+      if (!g) return;
+      var open = g.classList.toggle('open');
+      try { localStorage.setItem('cpNavGroup_' + (g.dataset.group || 'g'), open ? '1' : '0'); } catch (err) {}
+    }
+    // Restore each group's last state — unless the server already opened it (active child).
+    (function () {
+      document.querySelectorAll('.cp-nav-group').forEach(function (g) {
+        if (g.classList.contains('open')) return;
+        try { if (localStorage.getItem('cpNavGroup_' + (g.dataset.group || 'g')) === '1') g.classList.add('open'); } catch (err) {}
+      });
+    })();
+
+    (function () {
+      try {
+        if (localStorage.getItem('cpSidebarOpen') === '0') {
+          document.body.classList.add('cp-sidebar-collapsed');
+        }
+      } catch (err) {}
+    })();
+
+    // Smart hover: while collapsed, hovering the rail expands it (overlay); a short delay
+    // before collapse prevents flicker if the cursor briefly leaves the edge.
+    (function () {
+      var sb = document.querySelector('.cp-sidebar');
+      if (!sb) return;
+      var timer = null;
+      sb.addEventListener('mouseenter', function () {
+        if (timer) { clearTimeout(timer); timer = null; }
+        if (document.body.classList.contains('cp-sidebar-collapsed')) sb.classList.add('cp-sb-peek');
+      });
+      sb.addEventListener('mouseleave', function () {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(function () { sb.classList.remove('cp-sb-peek'); }, 180);
+      });
+    })();
+
+  </script>
+  
+<script>
+(function(){
+  function csrf(){var m=document.querySelector('meta[name=csrf-token]');return m?m.content:'';}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function fN(n){n=Number(n)||0;if(Math.abs(n)<0.5)return '<span class="dp-v0">—</span>';return Math.round(n).toLocaleString('en-IN');}
+  function abbrQ(n){n=Number(n)||0;var a=Math.abs(n),sg=n<0?'-':'';if(a>=1e5)return sg+(a/1e5).toFixed(2)+' L';if(a>=1e3)return sg+(a/1e3).toFixed(1)+' K';return sg+Math.round(a).toLocaleString('en-IN');}
+  function debounce(fn,ms){var t;return function(){clearTimeout(t);t=setTimeout(fn,ms);};}
+
+  var DIMS=[
+    {key:'date',label:'Date',sub:'Production day'},
+    {key:'variety',label:'Variety',sub:'Oil sub-group'},
+    {key:'item_name',label:'Item Name',sub:'Finished good'},
+    {key:'warehouse',label:'Warehouse',sub:'Production godown'},
+    {key:'user',label:'User',sub:'Created by'},
+  ];
+  var DIM_LABEL={}; DIMS.forEach(function(d){DIM_LABEL[d.key]=d.label;});
+  // Measure columns: work-order count + the four production quantities.
+  var COLS=[{k:'wo',l:'Work Orders'},{k:'planned',l:'Planned Qty'},{k:'completed',l:'Completed Qty'},{k:'litres',l:'Litres'},{k:'boxes',l:'Boxes'}];
+
+  var rows=[], loaded=false, err=null, expanded={};
+  var order=['date','item_name'], chosen=['date','item_name'];
+  var searchF='';
+  var whAll=[], whSel=['BH-PF'], whChosen=[];
+
+  function blank(){return {wo:0,planned:0,completed:0,litres:0,boxes:0};}
+  function addRow(n,r){n.wo+=1;n.planned+=Number(r.planned)||0;n.completed+=Number(r.completed)||0;n.litres+=Number(r.litres)||0;n.boxes+=Number(r.boxes)||0;}
+  function vals(n){return [n.wo,n.planned,n.completed,n.litres,n.boxes];}
+
+  function rowMatches(r){
+    if(whSel.length && whSel.indexOf(r.warehouse)===-1) return false;
+    if(searchF){
+      var hay=(r.item_name+' '+r.variety+' '+r.user+' '+r.doc+' '+r.warehouse+' '+r.item_code).toLowerCase();
+      if(hay.indexOf(searchF)===-1) return false;
+    }
+    return true;
+  }
+  function activeRows(){var out=[];for(var i=0;i<rows.length;i++){if(rowMatches(rows[i]))out.push(rows[i]);}return out;}
+
+  function buildTree(subset,dims,depth,prefix){
+    if(depth>=dims.length)return [];
+    var dim=dims[depth], map={}, ord=[];
+    for(var i=0;i<subset.length;i++){var r=subset[i],k=String(r[dim]||'—')||'—';
+      var n=map[k]; if(!n){n=map[k]=blank();n.label=k;n.dim=dim;n._rows=[];ord.push(k);}
+      addRow(n,r); n._rows.push(r);
+    }
+    return ord.map(function(k){var n=map[k]; n.path=prefix+'>'+dim+':'+k;
+      n.kids=buildTree(n._rows,dims,depth+1,n.path); n.leaf=!n.kids.length; delete n._rows; return n;
+    }).sort(function(a,b){
+      // Dates newest-first (chronological); every other dimension by completed volume desc.
+      if(dim==='date')return String(b.label).localeCompare(String(a.label));
+      return (b.litres-a.litres)||(b.completed-a.completed)||String(a.label).localeCompare(String(b.label));
+    });
+  }
+
+  function cells(m){return '<td class="dp-hi">'+fN(m[0])+'</td><td>'+fN(m[1])+'</td><td>'+fN(m[2])+'</td><td class="dp-hi">'+fN(m[3])+'</td><td>'+fN(m[4])+'</td>';}
+
+  function treeRows(nodes,depth){
+    var html='';
+    nodes.forEach(function(n){
+      var hasKids=!n.leaf, open=!!expanded[n.path], pad='padding-left:'+(12+depth*18)+'px';
+      var tw=hasKids?'<span class="dp-tw'+(open?' open':'')+'" data-dppath="'+esc(n.path)+'">&#9654;</span>':'<span class="dp-tw-empty"></span>';
+      var tag='<span class="dp-tag">'+esc(DIM_LABEL[n.dim]||n.dim)+'</span>';
+      var name='<td class="gc-name" style="'+pad+(hasKids?';cursor:pointer':'')+'" '+(hasKids?'data-dptoggle="'+esc(n.path)+'"':'')+'>'+tw+tag+esc(n.label)+'</td>';
+      html+='<tr>'+name+cells(vals(n))+'</tr>';
+      if(hasKids&&open)html+=treeRows(n.kids,depth+1);
+    });
+    return html;
+  }
+
+  function renderKpis(){
+    var t=blank(); activeRows().forEach(function(r){addRow(t,r);});
+    var cards=[
+      {c:'k-ltr',ic:'water_drop',l:'Total Litres',v:abbrQ(t.litres),m:'Completed × pack size'},
+      {c:'k-box',ic:'inventory_2',l:'Total Boxes',v:abbrQ(t.boxes),m:'Completed ÷ box size'},
+      {c:'k-qty',ic:'done_all',l:'Completed Qty',v:abbrQ(t.completed),m:'Units produced'},
+      {c:'k-wo',ic:'factory',l:'Work Orders',v:fN(t.wo),m:'Standard production orders'}
+    ];
+    document.getElementById('dpKpis').innerHTML=cards.map(function(k){
+      return '<div class="dp-kpi '+k.c+'"><div class="dp-kpi-l"><span class="material-icons" style="font-size:15px">'+k.ic+'</span>'+k.l+'</div>'
+        +'<div class="dp-kpi-v">'+k.v+'</div><div class="dp-kpi-m">'+esc(k.m)+'</div>'
+        +'<span class="material-icons dp-kpi-bg">'+k.ic+'</span></div>';
+    }).join('');
+  }
+
+  function render(){
+    document.getElementById('dpDrillLabel').textContent=order.length?order.map(function(k){return DIM_LABEL[k];}).join(' › '):'— none —';
+    var head=document.getElementById('dpHead'), body=document.getElementById('dpBody');
+    if(err){head.innerHTML='';body.innerHTML='<tr><td class="dp-empty">Could not load ('+esc(err)+').</td></tr>';document.getElementById('dpKpis').innerHTML='';return;}
+    if(!loaded){head.innerHTML='';body.innerHTML='<tr><td class="dp-empty">Loading…</td></tr>';return;}
+    renderKpis();
+    var dims=order.length?order:['date'];
+    head.innerHTML='<tr><th class="gc-name">'+esc(dims.map(function(k){return DIM_LABEL[k];}).join(' › '))+'</th>'+COLS.map(function(c){return '<th>'+esc(c.l)+'</th>';}).join('')+'</tr>';
+    var a=activeRows();
+    if(!a.length){body.innerHTML='<tr><td class="dp-empty" colspan="6">No production in this selection.</td></tr>';return;}
+    var html=treeRows(buildTree(a,dims,0,''),0);
+    var t=blank(); a.forEach(function(r){addRow(t,r);});
+    html+='<tr class="dp-total"><td class="gc-name">TOTAL</td>'+cells(vals(t))+'</tr>';
+    body.innerHTML=html;
+  }
+
+  // ── Warehouse multi-select (default BH-PF) ──
+  function renderWhList(){
+    var list=document.getElementById('dpWhList'); list.innerHTML='';
+    whAll.forEach(function(w){
+      var on=whChosen.indexOf(w)!==-1;
+      var item=document.createElement('label'); item.className='com-dp-item'+(on?' checked':'');
+      item.innerHTML='<input type="checkbox" '+(on?'checked':'')+'><span class="com-dp-name">'+esc(w)+'</span><span class="com-pos">&#10003;</span>';
+      item.querySelector('input').addEventListener('change',function(){
+        var i=whChosen.indexOf(w); if(this.checked){if(i===-1)whChosen.push(w);}else if(i!==-1)whChosen.splice(i,1);
+        renderWhList();
+      });
+      list.appendChild(item);
+    });
+  }
+  function whLabel(){
+    var el=document.getElementById('dpWhLabel');
+    el.textContent=whSel.length===0?'All warehouses':(whSel.length===1?whSel[0]:whSel.length+' warehouses');
+  }
+  function rebuildWh(){
+    whAll=(function(){var s={};rows.forEach(function(r){if(r.warehouse)s[r.warehouse]=1;});return Object.keys(s).sort();})();
+    whSel=whSel.filter(function(w){return whAll.indexOf(w)!==-1;});
+    if(!whSel.length && whAll.indexOf('BH-PF')!==-1) whSel=['BH-PF'];
+    whLabel();
+  }
+
+  function renderDrillList(){
+    var list=document.getElementById('dpDrillList'); list.innerHTML='';
+    DIMS.forEach(function(d){
+      var pos=chosen.indexOf(d.key);
+      var item=document.createElement('label'); item.className='com-dp-item'+(pos!==-1?' checked':'');
+      item.innerHTML='<input type="checkbox" '+(pos!==-1?'checked':'')+'><span class="com-dp-name">'+esc(d.label)+'<div class="com-dp-sub">'+esc(d.sub)+'</div></span><span class="com-pos">'+(pos!==-1?pos+1:'')+'</span>';
+      item.querySelector('input').addEventListener('change',function(){
+        var i=chosen.indexOf(d.key); if(this.checked){if(i===-1)chosen.push(d.key);}else if(i!==-1)chosen.splice(i,1);
+        renderDrillList();
+      });
+      list.appendChild(item);
+    });
+  }
+
+  function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function load(){
+    var sd=document.getElementById('dpStart').value, ed=document.getElementById('dpEnd').value;
+    if(!sd||!ed)return;
+    var btn=document.getElementById('dpFetch'); btn.disabled=true; btn.textContent='Loading…';
+    loaded=false; render();
+    fetch('/inventory/daily-production/api/data/?start='+encodeURIComponent(sd)+'&end='+encodeURIComponent(ed),
+      {headers:{'X-CSRFToken':csrf()}})
+      .then(function(r){return r.ok?r.json():{status:'error',error:'HTTP '+r.status};})
+      .then(function(p){
+        rows=p.rows||[]; err=p.status==='error'?(p.error||'error'):null; loaded=true; expanded={};
+        rebuildWh(); render();
+      })
+      .catch(function(){ err='load failed'; loaded=true; render(); })
+      .then(function(){ btn.disabled=false; btn.innerHTML='&#9654; Fetch'; });
+  }
+
+  // Wiring
+  document.getElementById('dpFetch').addEventListener('click',load);
+  document.getElementById('dpStart').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+  document.getElementById('dpEnd').addEventListener('keydown',function(e){if(e.key==='Enter')load();});
+  var searchDeb=debounce(render,120);
+  document.getElementById('dpSearch').addEventListener('input',function(){searchF=this.value.trim().toLowerCase();searchDeb();});
+  document.getElementById('dpBody').addEventListener('click',function(e){
+    var t=e.target&&e.target.closest?e.target.closest('[data-dptoggle]'):null; if(!t)return;
+    var p=t.getAttribute('data-dptoggle'); expanded[p]=!expanded[p]; render();
+  });
+  (function(){
+    var btn=document.getElementById('dpWhBtn'), panel=document.getElementById('dpWhPanel');
+    btn.addEventListener('click',function(e){e.stopPropagation();whChosen=whSel.slice();renderWhList();panel.classList.toggle('open');});
+    panel.addEventListener('click',function(e){e.stopPropagation();});
+    document.addEventListener('click',function(){panel.classList.remove('open');});
+    document.getElementById('dpWhAll').addEventListener('click',function(){whChosen=whAll.slice();renderWhList();});
+    document.getElementById('dpWhClr').addEventListener('click',function(){whChosen=[];renderWhList();});
+    document.getElementById('dpWhApply').addEventListener('click',function(){whSel=whChosen.slice();whLabel();panel.classList.remove('open');render();});
+  })();
+  (function(){
+    var btn=document.getElementById('dpDrillBtn'), panel=document.getElementById('dpDrillPanel');
+    btn.addEventListener('click',function(e){e.stopPropagation();chosen=order.slice();renderDrillList();panel.classList.toggle('open');});
+    panel.addEventListener('click',function(e){e.stopPropagation();});
+    document.addEventListener('click',function(){panel.classList.remove('open');});
+    document.getElementById('dpDrillAll').addEventListener('click',function(){chosen=DIMS.map(function(d){return d.key;});renderDrillList();});
+    document.getElementById('dpDrillClr').addEventListener('click',function(){chosen=[];renderDrillList();});
+    document.getElementById('dpDrillApply').addEventListener('click',function(){if(!chosen.length)return;order=chosen.slice();expanded={};panel.classList.remove('open');render();});
+  })();
+
+  // Default range = current month to date, then auto-fetch.
+  (function(){var t=new Date();
+    document.getElementById('dpStart').value=ymd(new Date(t.getFullYear(),t.getMonth(),1));
+    document.getElementById('dpEnd').value=ymd(t);
+  })();
+  renderDrillList();
+  load();
+})();
+</script>
+
+
+</body>
+</html>

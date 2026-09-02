@@ -1,0 +1,36 @@
+# Catalog & Catalog Health — read-only probe transcript
+# Section slug: catalog | lane: vendor | host: fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, no Bearer prefix). Token REDACTED below.
+# JWT exp = epoch 1783967399 = Mon Jul 13 23:59:59 IST 2026; probe run 2026-07-24.
+# Rules: GET only, read-only allowlist, cap 8, ~1 req/s, stop on 401/403/429/WAF.
+
+## PROBE 1 — GET https://fcc.zepto.co.in/vendor/api/v1/catalog/sku-onboarding/list?offset=0&limit=5
+# const SKU_ONBOARDING_LIST — SKU onboarding draft/submission list (pure read)
+# Request headers: authorization: <jwt-REDACTED>, accept: application/json, normal User-Agent
+STATUS: HTTP 404
+BODY (first lines):
+{"code":404,"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/catalog/sku-onboarding/list"}
+# NOTE: bifrost gateway strips the /vendor prefix and cannot map the remaining path.
+# Auth is not even reached (no 401). Endpoint needs the correct x-proxy-target routing header
+# (vendor micro-frontend proxy), which was not captured. Not a stop condition (404, not 401/403/429),
+# continuing per allowlist.
+
+## PROBE 2 — GET https://fcc.zepto.co.in/vendor/api/v1/catalog-health-dashboard/sku-ruleset-score/overview
+# const GET_SKU_RULESET_SCORE_OVERVIEW — catalog-health SKU ruleset score overview (pure read)
+# Extra headers added: origin/referer https://brands.zepto.co.in
+STATUS: HTTP 404
+BODY (first lines):
+{"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/catalog-health-dashboard/sku-ruleset-score/overview","code":404}
+
+## PROBE 3 — GET https://fcc.zepto.co.in/vendor/api/v1/catalog-health-dashboard/sku-ruleset-scores
+# const GET_PRODUCT_SCORES — catalog-health per-SKU ruleset scores grid (pure read)
+STATUS: HTTP 404
+BODY (first lines):
+{"code":404,"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/catalog-health-dashboard/sku-ruleset-scores"}
+
+## RESULT
+# 3 probes attempted, 0 x 2xx. No endpoint upgraded to PROVEN.
+# All catalog-health / catalog-onboarding paths return bifrost 404 (gateway drops /vendor and
+# cannot route without the vendor proxy-target header, which was not in the corpus). The JWT is
+# also past expiry (Jul 13), so even correct routing would 401. Stopped after 3 (well under cap 8).
+# All endpoints in this section remain: documented (not probed / not proven).

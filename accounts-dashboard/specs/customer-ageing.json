@@ -1,0 +1,1917 @@
+{
+  "section": "customer-ageing",
+  "title": "Customer Ageing",
+  "tables": "OINV ORCT ORIN OCRD",
+  "blurb": "What each customer really owes JIVO after netting off cash already banked and credit notes already raised that SAP never matched to the invoice — and how much of the 'debtors' figure is JIVO's own branch, intercompany and staff accounts rather than anyone external.",
+  "grain": "One SUMMARY row = one KIND of customer account (BRANCH / INTERCO / STAFF / TRADE) for one company, plus a fifth GROUPING SETS roll-up row literal 'ZZ_TOTAL'; 5 rows per book, 15 in all. One DETAIL row = one customer card (OCRD CardType='C') that has any of an open invoice, a non-zero balance, an unapplied receipt or an open credit note, with the seven ageing buckets as COLUMNS, not as rows; 642 Oil / 100 Mart / 451 Bev at 2026-08-22T19:05 IST.",
+  "faceted": true,
+  "faceted_total_row": "column KIND, value 'ZZ_TOTAL'. Summing a money column across all five rows returns exactly 2x. TRADE is KIND=='TRADE'; the non-trade block is KIND in ('BRANCH','INTERCO','STAFF').",
+  "kpis": [
+    {
+      "id": "ar-trade-open",
+      "label": "Customers owe JIVO (real, external, credit-adjusted)",
+      "unit": "INR",
+      "column": "EFF_OPEN_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "RAW_OPEN_INR − UNAPPLIED_CREDIT_INR = EFF_OPEN_INR, on the TRADE row only. Equivalently, per customer: min(Σ open invoices, max(0, OCRD.Balance)), summed.",
+      "terms": [
+        {
+          "label": "Open A/R invoices as SAP flags them",
+          "col": "RAW_OPEN_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": "Σ(DocTotal − PaidToDate) where DocStatus='O' AND CANCELED='N' AND DocDate <= as-of. This is the number a naive ageing prints."
+        },
+        {
+          "label": "Cash banked / credit raised but never matched to the invoice",
+          "col": "UNAPPLIED_CREDIT_INR",
+          "op": "-",
+          "source": "OCRD",
+          "note": "max(0, Σ open invoices − max(0, OCRD.Balance)) per card. Derived from the ledger balance, NOT from ORCT/ORIN — those are diagnostics and are never netted off."
+        },
+        {
+          "label": "Genuinely outstanding after netting, aged oldest-due-first",
+          "col": "EFF_OPEN_INR",
+          "op": "=",
+          "source": "OINV × OCRD",
+          "note": "Capped at the ledger debit, so it understates the trade debit book by BAL_NOT_IN_INV_INR (Oil 8.13%, Mart 1.26%, Bev 0.12%)."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        },
+        {
+          "label": "Cancelled invoices and credit notes",
+          "row_filter": "SQL-level: OINV/ORIN \"CANCELED\" = 'N'  ·  ORCT \"Canceled\" = 'N'",
+          "why": "C-0021 — CANCELED is three-valued: 'N' live, 'Y' was cancelled, 'C' IS the cancelling document. Spelled with one 'l' on OINV/ORIN and two on ORCT."
+        },
+        {
+          "label": "Documents dated after the as-of date",
+          "row_filter": "SQL-level: CAST(\"DocDate\" AS DATE) <= DATE'{{ASOF}}'",
+          "why": "Ageing reference date. Measured live 2026-08-21: zero open invoices dated after today in any book, so today's run excludes nothing."
+        }
+      ],
+      "sql_lines": [
+        104,
+        213
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0005",
+        "C-0020",
+        "C-0021",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Closed form with no window function and no bucketing, over the per-customer detail rows. The shipped value is produced by a HANA running-window FIFO allocation and then re-summed from seven bucket columns; the check reads OCRD.Balance and the raw open total per card and takes min() of the two. Different arithmetic, different columns, same answer.",
+        "recipe": "sum(min(r['RAW_OPEN'], r['RECEIVABLE']) for r in detail if r['ACCT_KIND']=='TRADE')  # verified 2026-08-22T19:05 IST: oil 73549062.49 vs 73549062.47 (Δ0.02, 2.7e-8%), mart 102957783.82 vs 102957783.80, bev 38424760.07 vs 38424760.06. Tolerance: 1 rupee (per-row ROUND(x,2) vs sum-then-round). A third route also exists: detail column CO_ADJ_OPEN_TRADE, carried on every detail row by a separate SUM() OVER () in customer-ageing-detail.sql."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "sort": "ADJ_OPEN"
+        }
+      },
+      "live": {
+        "oil": 73549062.47,
+        "mart": 102957783.8,
+        "bev": 38424760.06
+      }
+    },
+    {
+      "id": "ar-trade-raw-open",
+      "label": "What SAP shows as open (the wrong number, shown on purpose)",
+      "unit": "INR",
+      "column": "RAW_OPEN_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "Σ over open A/R invoices of (DocTotal − PaidToDate), TRADE cards only",
+      "terms": [
+        {
+          "label": "Open invoice balance",
+          "col": "RAW_OPEN_INR",
+          "op": "=",
+          "source": "OINV",
+          "note": "DocStatus='O' AND CANCELED='N' AND (DocTotal−PaidToDate) > 0 AND DocDate <= as-of."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        },
+        {
+          "label": "Cancelled invoices and credit notes",
+          "row_filter": "SQL-level: OINV/ORIN \"CANCELED\" = 'N'  ·  ORCT \"Canceled\" = 'N'",
+          "why": "C-0021 — CANCELED is three-valued: 'N' live, 'Y' was cancelled, 'C' IS the cancelling document. Spelled with one 'l' on OINV/ORIN and two on ORCT."
+        },
+        {
+          "label": "Documents dated after the as-of date",
+          "row_filter": "SQL-level: CAST(\"DocDate\" AS DATE) <= DATE'{{ASOF}}'",
+          "why": "Ageing reference date. Measured live 2026-08-21: zero open invoices dated after today in any book, so today's run excludes nothing."
+        }
+      ],
+      "sql_lines": [
+        104,
+        211
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0021"
+      ],
+      "check": {
+        "method": "Sum the same figure from the per-customer detail query, which re-runs the OINV scan independently, and against the CO_RAW_OPEN window column that detail query carries on every row.",
+        "recipe": "sum(r['RAW_OPEN'] for r in detail if r['ACCT_KIND']=='TRADE')  # and detail[0]['CO_RAW_OPEN'] must equal the ZZ_TOTAL RAW_OPEN_INR. Verified: 0 mismatches over 255 detail↔summary checks, worst drift ₹0.10. NOTE: open-item-list's CARD_OPEN_GROSS is NOT a valid second route — it folds unapplied receipts into 'gross open' (Oil CUSTA000844 ILAHI CO. reads ₹44.71 L there vs ₹24.71 L here)."
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "ar-trade-open"
+        }
+      },
+      "live": {
+        "oil": 758571559.41,
+        "mart": 1138437158.84,
+        "bev": 49960993.02
+      }
+    },
+    {
+      "id": "ar-trade-credit-applied",
+      "label": "Banked or credited, never matched to an invoice",
+      "unit": "INR",
+      "column": "UNAPPLIED_CREDIT_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "max(0, Σ open invoices − max(0, OCRD.Balance)) per customer, summed over TRADE",
+      "terms": [
+        {
+          "label": "Open invoice balance",
+          "col": "RAW_OPEN_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": "what SAP still flags open"
+        },
+        {
+          "label": "Ledger debit — the ground truth",
+          "col": "OCRD_DEBIT_INR",
+          "op": "-",
+          "source": "OCRD",
+          "note": "max(0, Balance). Rebuilt card-by-card from JDT1 on 2026-08-21: 0 of 1,176 Oil cards disagreed, 0 of 943 Mart, 0 of 1,262 Bev."
+        },
+        {
+          "label": "The fiction, applied oldest-due-invoice-first",
+          "col": "UNAPPLIED_CREDIT_INR",
+          "op": "=",
+          "source": "OINV × OCRD",
+          "note": "Its SIZE is a measurement; its ALLOCATION across invoices is an assumption."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        119,
+        212
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Recompute as a difference of two other reported columns rather than from the CTE, and separately sum the detail query's own CREDIT_APPLIED column.",
+        "recipe": "trade['RAW_OPEN_INR'] - trade['EFF_OPEN_INR']  ==  trade['UNAPPLIED_CREDIT_INR']  (verified exact on all 15 summary rows, worst drift ₹0.01); and sum(r['CREDIT_APPLIED'] for r in detail if r['ACCT_KIND']=='TRADE')"
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "sort": "CREDIT_APPLIED"
+        }
+      },
+      "live": {
+        "oil": 685022496.94,
+        "mart": 1035479375.04,
+        "bev": 11536232.96
+      }
+    },
+    {
+      "id": "ar-trade-overdue-60p",
+      "label": "Overdue more than 60 days — the collection list",
+      "unit": "INR",
+      "column": "OD60P_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "D61_90_INR + D91_180_INR + D181_365_INR + D365P_INR, after credit netting",
+      "terms": [
+        {
+          "label": "61–90 days",
+          "col": "D61_90_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": "DAYS_BETWEEN(DocDueDate, as-of) 61..90"
+        },
+        {
+          "label": "91–180 days",
+          "col": "D91_180_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": ""
+        },
+        {
+          "label": "181–365 days",
+          "col": "D181_365_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": ""
+        },
+        {
+          "label": "365 days +",
+          "col": "D365P_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": "Oil: 96.6% of this bucket is the pre-SAP migrated opening batch, not rot since go-live."
+        },
+        {
+          "label": "Overdue 60+",
+          "col": "OD60P_INR",
+          "op": "=",
+          "source": "OINV",
+          "note": "ALLOCATION-DEPENDENT. Re-running the netting newest-first moves Mart from ₹30.14 L to ₹8.46 Cr (28x). Treat as a lower bound, Mart especially."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        138,
+        222
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0021"
+      ],
+      "check": {
+        "method": "Rebuild from the per-customer bucket columns in the detail query (a separate SQL file with its own window allocation), and cross-check against the ADJ_OVERDUE_60PLUS column it computes independently as B3+B4+B5+B6.",
+        "recipe": "sum(r['ADJ_OVERDUE_60PLUS'] for r in detail if r['ACCT_KIND']=='TRADE')  == detail[0]['CO_ADJ_OVERDUE_60PLUS_TRADE']  # verified oil 28358421.56 vs 28358421.55, mart 3014261.43 vs .42, bev 31985098.07 vs .06. Second, weaker route: trade['EFF_OPEN_INR'] − trade['NOTDUE_INR'] − trade['D1_30_INR'] − trade['D31_60_INR']."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "sort": "ADJ_OVERDUE_60PLUS",
+          "min": "1"
+        }
+      },
+      "live": {
+        "oil": 28358421.55,
+        "mart": 3014261.42,
+        "bev": 31985098.06
+      }
+    },
+    {
+      "id": "ar-trade-notdue",
+      "label": "Not yet due",
+      "unit": "INR",
+      "column": "NOTDUE_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "Σ of credit-adjusted open where DAYS_BETWEEN(DocDueDate, as-of) <= 0",
+      "terms": [
+        {
+          "label": "Within terms",
+          "col": "NOTDUE_INR",
+          "op": "=",
+          "source": "OINV",
+          "note": "Includes invoices due exactly today (DAYS_OD = 0)."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        141,
+        214
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Subtract the independently-computed overdue total from the effective open total — a different pair of aggregates than the bucket CASE that produced it.",
+        "recipe": "trade['EFF_OPEN_INR'] - trade['OVERDUE_INR']  == trade['NOTDUE_INR']  (verified exact on all 15 rows); and sum(r['B0_NOTDUE'] for r in detail if r['ACCT_KIND']=='TRADE')"
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "bucket": "B0_NOTDUE"
+        }
+      },
+      "live": {
+        "oil": 22740511.0,
+        "mart": 11471035.68,
+        "bev": 561052.0
+      }
+    },
+    {
+      "id": "ar-nontrade-open",
+      "label": "JIVO's own accounts sitting in 'debtors' (branch + intercompany + staff)",
+      "unit": "INR",
+      "column": "EFF_OPEN_INR",
+      "row_filter": "r.get('KIND') in ('BRANCH','INTERCO','STAFF')",
+      "agg": "sum",
+      "formula": "EFF_OPEN_INR(BRANCH) + EFF_OPEN_INR(INTERCO) + EFF_OPEN_INR(STAFF) — the ZZ_TOTAL row must be excluded from this sum",
+      "terms": [
+        {
+          "label": "Branch (own state GST registrations)",
+          "col": "EFF_OPEN_INR",
+          "op": "+",
+          "source": "OCRD × OCRG",
+          "note": "Oil ₹77.56 Cr — inter-registration GST transfers nobody settles; 96%+ of it is 365 days+ overdue."
+        },
+        {
+          "label": "Intercompany (Oil↔Mart↔Bev)",
+          "col": "EFF_OPEN_INR",
+          "op": "+",
+          "source": "OCRD",
+          "note": "Oil ₹25.19 Cr, caught by the CardName test — CUSTA000606 'JIVO MART PVT LTD' sits in group DELHI, so a group-only test calls it a trade customer."
+        },
+        {
+          "label": "Staff imprest",
+          "col": "EFF_OPEN_INR",
+          "op": "+",
+          "source": "OCRD × OCRG",
+          "note": "Group 'STAFF CUSTOMER'."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        78,
+        213
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0020"
+      ],
+      "check": {
+        "method": "Derive it as a subtraction from the roll-up row instead of a sum of three rows — if the GROUPING SETS total and the three KIND rows ever disagree, the two routes diverge.",
+        "recipe": "total['EFF_OPEN_INR'] - trade['EFF_OPEN_INR']  # verified oil 1031682593.66 vs 1031682593.67 (Δ0.01), mart 65618459.87 exact, bev 9691634.00 exact"
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "NONTRADE"
+        }
+      },
+      "live": {
+        "oil": 1031682593.67,
+        "mart": 65618459.87,
+        "bev": 9691634.0
+      }
+    },
+    {
+      "id": "ar-book-open-total",
+      "label": "Whole customer book, JIVO's own accounts included",
+      "unit": "INR",
+      "column": "EFF_OPEN_INR",
+      "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+      "agg": "first",
+      "formula": "the GROUPING SETS () roll-up of EFF_OPEN_INR over every CardType='C' card",
+      "terms": [
+        {
+          "label": "All kinds",
+          "col": "EFF_OPEN_INR",
+          "op": "=",
+          "source": "OCRD × OINV",
+          "note": "Never present this as the receivable. Oil is 93.4% JIVO's own money, Mart 38.9%, Bev 20.1%."
+        }
+      ],
+      "excludes": [],
+      "sql_lines": [
+        205,
+        231
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0019"
+      ],
+      "check": {
+        "method": "Sum the four KIND rows. This is the ONE place summing the facets is correct — it is precisely the test that the roll-up row and the detail rows describe the same population.",
+        "recipe": "sum(r['EFF_OPEN_INR'] for r in summary if r['KIND']!='ZZ_TOTAL')  # verified oil 1105231656.14 vs 1105231656.13 (Δ0.01), mart and bev exact. Also: sum(r['ADJ_OPEN'] for r in detail) over ALL kinds."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {}
+      },
+      "live": {
+        "oil": 1105231656.13,
+        "mart": 168576243.67,
+        "bev": 48116394.06
+      }
+    },
+    {
+      "id": "ar-trade-ledger-debit",
+      "label": "Trade ledger debit (OCRD ground truth)",
+      "unit": "INR",
+      "column": "OCRD_DEBIT_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "Σ max(0, OCRD.Balance) over TRADE cards  =  EFF_OPEN_INR + BAL_NOT_IN_INV_INR",
+      "terms": [
+        {
+          "label": "Aged against open invoices",
+          "col": "EFF_OPEN_INR",
+          "op": "+",
+          "source": "OINV × OCRD",
+          "note": ""
+        },
+        {
+          "label": "Debit carried by no open invoice",
+          "col": "BAL_NOT_IN_INV_INR",
+          "op": "+",
+          "source": "OCRD",
+          "note": "Settled by journal, or a debit note / on-account charge. Cannot be aged."
+        },
+        {
+          "label": "Ledger debit",
+          "col": "OCRD_DEBIT_INR",
+          "op": "=",
+          "source": "OCRD",
+          "note": "Positive = DEBIT = the party owes JIVO."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        194,
+        225
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Cross-FILE, not cross-column: open-item-list.sql reads OCRD.Balance for its own purposes and carries it per card as CARD_BALANCE. Compare card by card against this section's detail OCRD_BALANCE. Nothing in the two queries is shared but the table.",
+        "recipe": "for each CARD_TYPE=='C' card in open-item-list summary: abs(oi['CARD_BALANCE'] - detail_by_card[oi['CARD_CODE']]['OCRD_BALANCE']) <= 0.05  # verified 2026-08-22: 0 mismatches on 229 Oil / 21 Mart / 220 Bev shared cards. Route 3 (needs HANA, not in data.json): rebuild every balance as Σ(JDT1.Debit − JDT1.Credit) by ShortName — done 2026-08-21, 0 of 3,381 cards disagreed."
+      },
+      "drill": {
+        "page": "party.html",
+        "params": {
+          "card": "<CARD_CODE>"
+        }
+      },
+      "live": {
+        "oil": 80056550.48,
+        "mart": 104266949.78,
+        "bev": 38470138.06
+      }
+    },
+    {
+      "id": "ar-trade-unbacked-debit",
+      "label": "Trade debit backed by no open invoice (cannot be aged)",
+      "unit": "INR",
+      "column": "BAL_NOT_IN_INV_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "max(0, OCRD.Balance) − Σ open invoices, floored at 0, per card",
+      "terms": [
+        {
+          "label": "Unbacked debit",
+          "col": "BAL_NOT_IN_INV_INR",
+          "op": "=",
+          "source": "OCRD",
+          "note": "The headline understates the trade debit book by exactly this: Oil 8.13% of the ledger debit, Mart 1.26%, Bev 0.12%. Disclosed, not hidden."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        193,
+        224
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023"
+      ],
+      "check": {
+        "method": "Recompute as the residual of the section's own reconciliation identity, then re-derive it a second time from the detail query's UNBACKED_CREDIT column (which is computed from RECEIVABLE and RAW_OPEN, never from the buckets).",
+        "recipe": "trade['OCRD_DEBIT_INR'] - trade['EFF_OPEN_INR']  == trade['BAL_NOT_IN_INV_INR']  (identity holds to ₹0.00 on all 15 summary rows); and sum(r['UNBACKED_CREDIT'] for r in detail if r['ACCT_KIND']=='TRADE')"
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "sort": "UNBACKED_CREDIT"
+        }
+      },
+      "live": {
+        "oil": 6507488.01,
+        "mart": 1309165.98,
+        "bev": 45378.0
+      }
+    },
+    {
+      "id": "ar-trade-advances-held",
+      "label": "Customer money JIVO is holding (credit balances)",
+      "unit": "INR",
+      "column": "OCRD_CREDIT_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "−Σ min(0, OCRD.Balance) over TRADE cards — reported NEGATIVE in the summary, shown positive",
+      "terms": [
+        {
+          "label": "Advances / over-collections held",
+          "col": "OCRD_CREDIT_INR",
+          "op": "=",
+          "source": "OCRD",
+          "note": "Negative = CREDIT = JIVO owes the customer. Never add this to OCRD_DEBIT_INR to get a 'net' — a customer in credit does not fund another customer's debt."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        196,
+        226
+      ],
+      "caveats": [
+        "C-0023"
+      ],
+      "check": {
+        "method": "Sum the detail query's CUSTOMER_ADVANCE column, which is computed as GREATEST(0, −Balance) per card — the opposite floor of the summary's LEAST(0, Balance), so a sign error in either one shows up immediately.",
+        "recipe": "sum(r['CUSTOMER_ADVANCE'] for r in detail if r['ACCT_KIND']=='TRADE')  == -trade['OCRD_CREDIT_INR']  # verified oil 13376844.80 vs 13376844.86, mart 3570360.67 vs .68, bev 3194942.56 vs .58 (per-row rounding). Also assert: no detail row has RECEIVABLE>0 AND CUSTOMER_ADVANCE>0 (0 rows, all three books)."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "sort": "CUSTOMER_ADVANCE"
+        }
+      },
+      "live": {
+        "oil": 13376844.86,
+        "mart": 3570360.68,
+        "bev": 3194942.58
+      }
+    },
+    {
+      "id": "ar-unapplied-receipts",
+      "label": "Customer cash banked and never knocked off an invoice",
+      "unit": "INR",
+      "column": "UNAPPLIED_RECEIPTS_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "Σ ORCT.OpenBal where DocType='C' AND Canceled='N' AND DocDate <= as-of",
+      "terms": [
+        {
+          "label": "Unapplied incoming payments",
+          "col": "UNAPPLIED_RECEIPTS_INR",
+          "op": "=",
+          "source": "ORCT",
+          "note": "DIAGNOSTIC ONLY. Already inside OCRD.Balance — subtracting it from the receivable double-counts and would wipe two thirds of Oil's book. It is the size of the reconciliation backlog, not a deduction."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        },
+        {
+          "label": "Cancelled invoices and credit notes",
+          "row_filter": "SQL-level: OINV/ORIN \"CANCELED\" = 'N'  ·  ORCT \"Canceled\" = 'N'",
+          "why": "C-0021 — CANCELED is three-valued: 'N' live, 'Y' was cancelled, 'C' IS the cancelling document. Spelled with one 'l' on OINV/ORIN and two on ORCT."
+        },
+        {
+          "label": "Documents dated after the as-of date",
+          "row_filter": "SQL-level: CAST(\"DocDate\" AS DATE) <= DATE'{{ASOF}}'",
+          "why": "Ageing reference date. Measured live 2026-08-21: zero open invoices dated after today in any book, so today's run excludes nothing."
+        }
+      ],
+      "sql_lines": [
+        159,
+        227
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Sum the detail query's own ORCT scan. Its filter differs (it adds OpenBal <> 0 and counts documents), so agreement means both scans see the same population.",
+        "recipe": "sum(r['UNAPPLIED_RCPT'] for r in detail if r['ACCT_KIND']=='TRADE')  == trade['UNAPPLIED_RECEIPTS_INR']  # tolerance ₹0.10 (worst observed drift in the section). Assert also that sum(r['N_UNAPPLIED_RCPT']) > 0 wherever the amount is > 0."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "sort": "UNAPPLIED_RCPT"
+        }
+      },
+      "live": {
+        "oil": 662153999.71,
+        "mart": 897875617.62,
+        "bev": 11955727.75
+      }
+    },
+    {
+      "id": "ar-open-credit-notes",
+      "label": "Open sales credit notes",
+      "unit": "INR",
+      "column": "OPEN_CREDIT_NOTES_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "Σ (ORIN.DocTotal − ORIN.PaidToDate) where DocStatus='O' AND CANCELED='N' AND DocDate <= as-of",
+      "terms": [
+        {
+          "label": "Unapplied A/R credit notes",
+          "col": "OPEN_CREDIT_NOTES_INR",
+          "op": "=",
+          "source": "ORIN",
+          "note": "DIAGNOSTIC ONLY, same rule as unapplied receipts — already inside OCRD.Balance, never netted off. Mart's ₹11.58 Cr against a ₹10.43 Cr ledger debit is the tell that Mart is settled outside SAP's matching."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        },
+        {
+          "label": "Cancelled invoices and credit notes",
+          "row_filter": "SQL-level: OINV/ORIN \"CANCELED\" = 'N'  ·  ORCT \"Canceled\" = 'N'",
+          "why": "C-0021 — CANCELED is three-valued: 'N' live, 'Y' was cancelled, 'C' IS the cancelling document. Spelled with one 'l' on OINV/ORIN and two on ORCT."
+        },
+        {
+          "label": "Documents dated after the as-of date",
+          "row_filter": "SQL-level: CAST(\"DocDate\" AS DATE) <= DATE'{{ASOF}}'",
+          "why": "Ageing reference date. Measured live 2026-08-21: zero open invoices dated after today in any book, so today's run excludes nothing."
+        }
+      ],
+      "sql_lines": [
+        167,
+        228
+      ],
+      "caveats": [
+        "C-0021"
+      ],
+      "check": {
+        "method": "Sum the detail query's independent ORIN scan and compare document counts as well as money.",
+        "recipe": "sum(r['OPEN_CN'] for r in detail if r['ACCT_KIND']=='TRADE')  == trade['OPEN_CREDIT_NOTES_INR']. Guard: neither query has a >0 filter on (DocTotal − PaidToDate) for ORIN, so assert min(r['OPEN_CN'] for r in detail) >= 0 — a credit note with PaidToDate > DocTotal would silently subtract."
+      },
+      "drill": {
+        "page": "open-items.html",
+        "params": {
+          "doctype": "AR_CN"
+        }
+      },
+      "live": {
+        "oil": 11856063.13,
+        "mart": 115841909.0,
+        "bev": 508327.05
+      }
+    },
+    {
+      "id": "ar-migrated-open",
+      "label": "Pre-SAP opening balances still open",
+      "unit": "INR",
+      "column": "MIGRATED_OPEN_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "Σ credit-adjusted open where OINV.DocDate = 2024-09-30 (SAP go-live)",
+      "terms": [
+        {
+          "label": "Migrated opening A/R",
+          "col": "MIGRATED_OPEN_INR",
+          "op": "=",
+          "source": "OINV",
+          "note": "Oil only, by fact not by bug: 11,078 Oil invoices are dated exactly go-live with true original due dates back to 2017. It is 96.6% of Oil's 365-days+ TRADE bucket. Mart's first invoice is 2024-10-03 and Bev's 2024-10-04 — their 0.00 is a TRUE zero."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        150,
+        223
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "A completely different test for the same documents: the detail query flags rows whose DUE date precedes their DOC date (BACKDATED_DUE_OPEN). A migrated opening carries its true pre-go-live due date, so the two populations should be nearly identical without either query knowing about the other's rule.",
+        "recipe": "sum(r['BACKDATED_DUE_OPEN'] for r in detail if r['ACCT_KIND']=='TRADE')  vs  trade['MIGRATED_OPEN_INR']  # verified oil 10,654,936.88 vs 10,655,574.47 — a ₹638 gap (one invoice dated at go-live whose due date is also on/after go-live). Tolerance: 0.1%. Mart 0 vs 0, Bev 60 vs 0 (₹60, one backdated non-migrated invoice). This check is a corroboration, not an identity — do not assert equality."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "flag": "MIGRATED"
+        }
+      },
+      "live": {
+        "oil": 10655574.47,
+        "mart": 0.0,
+        "bev": 0.0
+      }
+    },
+    {
+      "id": "ar-trade-eff-customers",
+      "label": "Customers who actually carry the receivable",
+      "unit": "count",
+      "column": "N_EFF_CUSTOMERS",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "COUNT(cards where EFF_OPEN > 0) — NOT N_CUSTOMERS, which is every card with any balance",
+      "terms": [
+        {
+          "label": "Cards SAP counts as open debtors",
+          "col": "N_CUSTOMERS",
+          "op": "+",
+          "source": "OCRD",
+          "note": "Oil 356, Mart 55, Bev 358. Quoting this beside the corrected money re-introduces the exact error this section exists to remove."
+        },
+        {
+          "label": "Cards actually carrying it",
+          "col": "N_EFF_CUSTOMERS",
+          "op": "=",
+          "source": "OINV × OCRD",
+          "note": "Oil 89 of 356 (25%), Mart 24 of 55, Bev 188 of 358."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        207,
+        208
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Count the detail rows that carry money. Known, documented divergence of a few cards from sub-paise dust balances that are >0 in SQL but round to 0.00 in the detail's 2-dp column — so this check has a tolerance in CARDS, and must never be turned into an equality assertion.",
+        "recipe": "len([r for r in detail if r['ACCT_KIND']=='TRADE' and r['ADJ_OPEN']>0])  # verified oil 85 vs 89 (4 dust cards), mart 24 vs 24 exact, bev 188 vs 188 exact. Tolerance: ±5 cards, and 0 rupees."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "carrying": "1"
+        }
+      },
+      "live": {
+        "oil": 89,
+        "mart": 24,
+        "bev": 188
+      }
+    },
+    {
+      "id": "ar-trade-eff-invoices",
+      "label": "Invoices that actually carry the receivable",
+      "unit": "count",
+      "column": "N_EFF_INV",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "COUNT(open invoices with EFFOPEN > 0 after the FIFO netting)",
+      "terms": [
+        {
+          "label": "Invoices carrying money",
+          "col": "N_EFF_INV",
+          "op": "=",
+          "source": "OINV",
+          "note": "Oil 1,325 of 11,499 (11.5%). ₹7.35 Cr ÷ 11,499 = ₹6,396 an invoice is wrong; ÷ 1,325 = ₹55,509 is right."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        154,
+        210
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "NO independent route exists in the shipped data — invoice-level counts survive only in this summary; the detail query aggregates to the customer and open-item-list is truncated to the largest ~666 AR invoices per book. State that plainly rather than inventing a check. What CAN be asserted are bounds and an allocation-invariance property.",
+        "recipe": "assert 0 < trade['N_EFF_INV'] <= trade['N_OPEN_INV'] and trade['N_EFF_INV'] >= trade['N_EFF_CUSTOMERS'] and (trade['EFF_OPEN_INR']>0) == (trade['N_EFF_INV']>0)  # holds on all three books. Mark the check dot AMBER-with-reason, never green: this KPI is single-route."
+      },
+      "drill": {
+        "page": "open-items.html",
+        "params": {
+          "doctype": "AR_INV",
+          "kind": "TRADE"
+        }
+      },
+      "live": {
+        "oil": 1325,
+        "mart": 741,
+        "bev": 452
+      }
+    },
+    {
+      "id": "ar-trade-sap-open-invoices",
+      "label": "Invoices SAP still flags open (the struck-through count)",
+      "unit": "count",
+      "column": "N_OPEN_INV",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "COUNT(OINV rows with DocStatus='O' AND CANCELED='N' AND DocTotal−PaidToDate > 0)",
+      "terms": [
+        {
+          "label": "SAP's open invoice count",
+          "col": "N_OPEN_INV",
+          "op": "=",
+          "source": "OINV",
+          "note": "Render it struck through beside N_EFF_INV. On its own it is a wrong number, and the page's job is to show HOW wrong."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        },
+        {
+          "label": "Cancelled invoices and credit notes",
+          "row_filter": "SQL-level: OINV/ORIN \"CANCELED\" = 'N'  ·  ORCT \"Canceled\" = 'N'",
+          "why": "C-0021 — CANCELED is three-valued: 'N' live, 'Y' was cancelled, 'C' IS the cancelling document. Spelled with one 'l' on OINV/ORIN and two on ORCT."
+        },
+        {
+          "label": "Documents dated after the as-of date",
+          "row_filter": "SQL-level: CAST(\"DocDate\" AS DATE) <= DATE'{{ASOF}}'",
+          "why": "Ageing reference date. Measured live 2026-08-21: zero open invoices dated after today in any book, so today's run excludes nothing."
+        }
+      ],
+      "sql_lines": [
+        106,
+        209
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0021"
+      ],
+      "check": {
+        "method": "Sum the detail query's per-customer N_OPEN_INV, which counts the same OINV population grouped by card in a separate SQL file.",
+        "recipe": "sum(r['N_OPEN_INV'] for r in detail if r['ACCT_KIND']=='TRADE')  == trade['N_OPEN_INV']  # verified exact, all three books, part of the 255-check reconciliation"
+      },
+      "drill": {
+        "page": "open-items.html",
+        "params": {
+          "doctype": "AR_INV",
+          "kind": "TRADE"
+        }
+      },
+      "live": {
+        "oil": 11499,
+        "mart": 4049,
+        "bev": 796
+      }
+    },
+    {
+      "id": "ar-oldest-item-days",
+      "label": "Age of the oldest item still carrying money",
+      "unit": "days",
+      "column": "OLDEST_OPEN_DUE",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "as_of − MIN(DocDueDate where EFFOPEN > 0), in days",
+      "terms": [
+        {
+          "label": "Oldest effective due date",
+          "col": "OLDEST_OPEN_DUE",
+          "op": "=",
+          "source": "OINV",
+          "note": "AFTER credit application, so it moves when a receipt is matched. It is NOT the oldest open document — vendor-ageing.sql reports the raw oldest bill and the two files deliberately differ."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        156,
+        229
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Take the maximum DAYS_OLDEST across detail rows that still carry money. The detail query computes the age per customer with its own DAYS_BETWEEN; the summary takes MIN of dates and the page converts to days. Different order of operations, different column.",
+        "recipe": "max(r['DAYS_OLDEST'] for r in detail if r['ACCT_KIND']=='TRADE' and r['ADJ_OPEN']>0)  # verified oil 2445 (2019-12-12, FUTURE RETAIL LTD, in insolvency), mart 479 (2025-04-30), bev 676 (2024-10-15). Must match to the day."
+      },
+      "drill": {
+        "page": "party.html",
+        "params": {
+          "card": "<oldest card>"
+        }
+      },
+      "live": {
+        "oil": 2445,
+        "mart": 479,
+        "bev": 676
+      }
+    },
+    {
+      "id": "ar-overdue-60p-share",
+      "label": "Share of the trade book more than 60 days overdue",
+      "unit": "pct",
+      "column": "OD60P_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "OD60P_INR ÷ EFF_OPEN_INR × 100",
+      "terms": [
+        {
+          "label": "Overdue 60+",
+          "col": "OD60P_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": ""
+        },
+        {
+          "label": "Trade book",
+          "col": "EFF_OPEN_INR",
+          "op": "=",
+          "source": "OINV × OCRD",
+          "note": "Bev 83% is one customer; Mart 2.9% is a FIFO artefact, not health."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        213,
+        222
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Recompute the ratio from the detail rows on both sides, so a summary/detail divergence in either numerator or denominator breaks it.",
+        "recipe": "100*sum(r['ADJ_OVERDUE_60PLUS'] for r in detail if r['ACCT_KIND']=='TRADE')/sum(r['ADJ_OPEN'] for r in detail if r['ACCT_KIND']=='TRADE')  # verified oil 38.56, mart 2.93, bev 83.24. Tolerance 0.01 pp."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "kind": "TRADE",
+          "sort": "ADJ_OVERDUE_60PLUS"
+        }
+      },
+      "live": {
+        "oil": 38.56,
+        "mart": 2.93,
+        "bev": 83.24
+      }
+    },
+    {
+      "id": "ar-sap-overstatement-share",
+      "label": "How much of SAP's open A/R is not really owed",
+      "unit": "pct",
+      "column": "UNAPPLIED_CREDIT_INR",
+      "row_filter": "r.get('KIND')=='TRADE'",
+      "agg": "first",
+      "formula": "UNAPPLIED_CREDIT_INR ÷ RAW_OPEN_INR × 100 (equivalently 1 − EFF/RAW)",
+      "terms": [
+        {
+          "label": "Never matched",
+          "col": "UNAPPLIED_CREDIT_INR",
+          "op": "+",
+          "source": "OCRD",
+          "note": ""
+        },
+        {
+          "label": "SAP's open figure",
+          "col": "RAW_OPEN_INR",
+          "op": "=",
+          "source": "OINV",
+          "note": "Oil 90.3% — SAP's TRADE headline is 10.3x the truth; Mart 91.0% (11.1x); Bev 23.1% (1.3x)."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        },
+        {
+          "label": "ZZ_TOTAL — the GROUPING SETS roll-up row",
+          "row_filter": "r.get('KIND')=='ZZ_TOTAL'",
+          "why": "Not an exclusion of money but of a ROW: ZZ_TOTAL sits in the same array as the four KIND rows, so any consumer that sums the column without filtering gets exactly 2x."
+        }
+      ],
+      "sql_lines": [
+        211,
+        213
+      ],
+      "caveats": [
+        "C-0019"
+      ],
+      "check": {
+        "method": "Recompute the ratio from the detail rows and confirm the complement route agrees: 100 − 100·ADJ_OPEN/RAW_OPEN.",
+        "recipe": "100*(1 - sum(r['ADJ_OPEN'] for r in detail if r['ACCT_KIND']=='TRADE')/sum(r['RAW_OPEN'] for r in detail if r['ACCT_KIND']=='TRADE'))  # verified oil 90.30, mart 90.96, bev 23.09"
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "ar-trade-open"
+        }
+      },
+      "live": {
+        "oil": 90.3,
+        "mart": 90.96,
+        "bev": 23.09
+      }
+    },
+    {
+      "id": "ar-top-customer-share",
+      "label": "Largest single customer as a share of the trade book",
+      "unit": "pct",
+      "column": "ADJ_OPEN",
+      "row_filter": "r.get('ACCT_KIND')=='TRADE'   # DETAIL rows, not summary",
+      "agg": "max",
+      "formula": "max(ADJ_OPEN over TRADE detail rows) ÷ CO_ADJ_OPEN_TRADE × 100",
+      "terms": [
+        {
+          "label": "Biggest single card",
+          "col": "ADJ_OPEN",
+          "op": "+",
+          "source": "OINV × OCRD",
+          "note": "Oil CUSTA000636 THE AREA MANAGER CANTEEN STORE DEPARTMENT ₹1.99 Cr; Mart CUSTA000048 R K WORLDINFOCOM ₹9.08 Cr; Bev CUSTA000175 BLESSING ADVERTISING ₹3.17 Cr."
+        },
+        {
+          "label": "Trade book",
+          "col": "CO_ADJ_OPEN_TRADE",
+          "op": "=",
+          "source": "OINV × OCRD",
+          "note": "Mart and Bev are not portfolios — one counterparty and a tail. 6 cards reach 80% of Oil's book, 1 card reaches 80% of Mart's and of Bev's."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "BRANCH — JIVO's own state GST registrations",
+          "row_filter": "r.get('KIND')=='BRANCH'  (detail: r.get('ACCT_KIND')=='BRANCH')",
+          "why": "C-0005 / C-0020 — OCRG.GroupName LIKE '%BRANCH%'. Oil ₹77.56 Cr, Mart ₹4.49 Cr, Bev ₹0.78 Cr of EFF_OPEN_INR. Flagged, never dropped."
+        },
+        {
+          "label": "INTERCO — the other JIVO entities (Oil↔Mart↔Bev, A U O JWPL)",
+          "row_filter": "r.get('KIND')=='INTERCO'  (detail: r.get('ACCT_KIND')=='INTERCO')",
+          "why": "C-0005 — the 15-CardCode list is AND-ed with UPPER(CardName) LIKE 'JIVO%' because the same code is a real outside shop in another book (CUSTA000874 = 'JIVO MART PVT LTD - DL' in Mart, 'RAKESH BROTHER' in Oil). Oil ₹25.19 Cr, Mart ₹2.07 Cr, Bev ₹0.07 Cr."
+        },
+        {
+          "label": "STAFF — employee imprest customer cards",
+          "row_filter": "r.get('KIND')=='STAFF'  (detail: r.get('ACCT_KIND')=='STAFF')",
+          "why": "OCRG.GroupName = 'STAFF CUSTOMER'. Not trade. Oil ₹1.38 L, Mart ₹9,060, Bev ₹11.45 L. 8-9 imprest cards filed in a STATE group instead leak into TRADE — ₹17,074 across the three books, disclosed in traps."
+        }
+      ],
+      "sql_lines": [
+        293,
+        321
+      ],
+      "caveats": [
+        "C-0005"
+      ],
+      "check": {
+        "method": "Cross-file: take the same card's OCRD.Balance from open-item-list (CARD_BALANCE) and divide by the summary row's EFF_OPEN_INR. For a card with no unbacked debit, balance and ADJ_OPEN are the same money reached through two different queries.",
+        "recipe": "oi_card['CARD_BALANCE'] (open-item-list, CARD_TYPE=='C') vs detail_card['ADJ_OPEN'] + detail_card['UNBACKED_CREDIT'] ; then / summary_trade['EFF_OPEN_INR'] * 100  # verified 0 balance mismatches over 229/21/220 shared cards"
+      },
+      "drill": {
+        "page": "party.html",
+        "params": {
+          "card": "CUSTA000636|CUSTA000048|CUSTA000175"
+        }
+      },
+      "live": {
+        "oil": 27.11,
+        "mart": 88.2,
+        "bev": 82.43
+      }
+    }
+  ],
+  "columns": [
+    {
+      "col": "KIND",
+      "label": "Account kind",
+      "unit": "text",
+      "meaning": "BRANCH / INTERCO / STAFF / TRADE, plus the roll-up literal 'ZZ_TOTAL'. It is a FACET, not a category column — ZZ_TOTAL is a fifth row in the same array.",
+      "link": "none"
+    },
+    {
+      "col": "N_CUSTOMERS",
+      "label": "Cards SAP counts",
+      "unit": "count",
+      "meaning": "Cards with EFF_OPEN>0 OR Balance<>0. SAP's uncorrected headcount — includes 25 Oil / 3 Mart / 9 Bev cards holding sub-paise dust. Never pair it with EFF_OPEN_INR.",
+      "link": "none"
+    },
+    {
+      "col": "N_EFF_CUSTOMERS",
+      "label": "Cards carrying the money",
+      "unit": "count",
+      "meaning": "Cards where any of EFF_OPEN_INR survives the credit netting. This is the number to show.",
+      "link": "none"
+    },
+    {
+      "col": "N_OPEN_INV",
+      "label": "Invoices SAP flags open",
+      "unit": "count",
+      "meaning": "OINV rows with DocStatus='O'. Oil TRADE: 11,499 — of which 10,174 carry nothing.",
+      "link": "none"
+    },
+    {
+      "col": "N_EFF_INV",
+      "label": "Invoices carrying the money",
+      "unit": "count",
+      "meaning": "Invoices with a non-zero remainder after FIFO netting. Divide money by THIS, never by N_OPEN_INV.",
+      "link": "none"
+    },
+    {
+      "col": "RAW_OPEN_INR",
+      "label": "Open per SAP",
+      "unit": "INR",
+      "meaning": "Σ(DocTotal − PaidToDate) on open, non-cancelled invoices. The naive answer, kept deliberately so the page can show the correction.",
+      "link": "none"
+    },
+    {
+      "col": "UNAPPLIED_CREDIT_INR",
+      "label": "Banked / credited, never matched",
+      "unit": "INR",
+      "meaning": "max(0, raw open − ledger debit) per card. Derived from OCRD.Balance, NOT from ORCT or ORIN.",
+      "link": "none"
+    },
+    {
+      "col": "EFF_OPEN_INR",
+      "label": "Really outstanding",
+      "unit": "INR",
+      "meaning": "The credit-adjusted receivable, capped at the ledger debit. The headline. Allocation-invariant.",
+      "link": "none"
+    },
+    {
+      "col": "NOTDUE_INR",
+      "label": "Not due",
+      "unit": "INR",
+      "meaning": "DAYS_BETWEEN(DocDueDate, as-of) <= 0, i.e. within terms including due today.",
+      "link": "none"
+    },
+    {
+      "col": "D1_30_INR",
+      "label": "1–30 d overdue",
+      "unit": "INR",
+      "meaning": "Bucket by DUE date, after netting. Allocation-dependent.",
+      "link": "none"
+    },
+    {
+      "col": "D31_60_INR",
+      "label": "31–60 d overdue",
+      "unit": "INR",
+      "meaning": "Bucket by DUE date, after netting. Allocation-dependent.",
+      "link": "none"
+    },
+    {
+      "col": "D61_90_INR",
+      "label": "61–90 d overdue",
+      "unit": "INR",
+      "meaning": "First bucket of the collection list.",
+      "link": "none"
+    },
+    {
+      "col": "D91_180_INR",
+      "label": "91–180 d overdue",
+      "unit": "INR",
+      "meaning": "",
+      "link": "none"
+    },
+    {
+      "col": "D181_365_INR",
+      "label": "181–365 d overdue",
+      "unit": "INR",
+      "meaning": "Bev's ₹3.01 Cr here is almost entirely one card.",
+      "link": "none"
+    },
+    {
+      "col": "D365P_INR",
+      "label": "365 d + overdue",
+      "unit": "INR",
+      "meaning": "On Oil TRADE this is 96.6% migrated pre-SAP opening balances carrying their true 2017-2020 due dates — inherited history, not decay since go-live.",
+      "link": "none"
+    },
+    {
+      "col": "OVERDUE_INR",
+      "label": "Overdue, any age",
+      "unit": "INR",
+      "meaning": "D1_30 + … + D365P. Equals EFF_OPEN_INR − NOTDUE_INR.",
+      "link": "none"
+    },
+    {
+      "col": "OD60P_INR",
+      "label": "Overdue 60 d +",
+      "unit": "INR",
+      "meaning": "D61_90 + D91_180 + D181_365 + D365P. Labelled '61 days and more' on the page — the SQL boundary is DAYS_OD > 60. A LOWER BOUND: it depends on the FIFO assumption.",
+      "link": "none"
+    },
+    {
+      "col": "MIGRATED_OPEN_INR",
+      "label": "Pre-SAP openings still open",
+      "unit": "INR",
+      "meaning": "EFF_OPEN on invoices dated exactly 2024-09-30 (go-live). Oil-only by fact; the hard-coded date must be re-checked if a fourth book is added.",
+      "link": "none"
+    },
+    {
+      "col": "BAL_NOT_IN_INV_INR",
+      "label": "Debit with no open invoice",
+      "unit": "INR",
+      "meaning": "Ledger debit that no open invoice carries — journal settlements, debit notes, on-account charges. It cannot be aged, so the headline understates the trade debit by this amount.",
+      "link": "none"
+    },
+    {
+      "col": "OCRD_DEBIT_INR",
+      "label": "Ledger debit (ground truth)",
+      "unit": "INR",
+      "meaning": "Σ max(0, OCRD.Balance). Positive = DEBIT = party owes JIVO. EFF_OPEN_INR + BAL_NOT_IN_INV_INR = this, exactly, on every row.",
+      "link": "party"
+    },
+    {
+      "col": "OCRD_CREDIT_INR",
+      "label": "Ledger credit (advances held)",
+      "unit": "INR",
+      "meaning": "Σ min(0, OCRD.Balance) — reported NEGATIVE. Money JIVO holds against customers. Never net against the debit.",
+      "link": "party"
+    },
+    {
+      "col": "UNAPPLIED_RECEIPTS_INR",
+      "label": "Receipts never matched",
+      "unit": "INR",
+      "meaning": "Σ ORCT.OpenBal. DIAGNOSTIC ONLY — already inside OCRD.Balance. This is the size of the reconciliation backlog somebody could clear.",
+      "link": "document"
+    },
+    {
+      "col": "OPEN_CREDIT_NOTES_INR",
+      "label": "Open credit notes",
+      "unit": "INR",
+      "meaning": "Σ(DocTotal − PaidToDate) on open ORIN. DIAGNOSTIC ONLY, never netted off. No >0 guard, so a negative is theoretically possible.",
+      "link": "document"
+    },
+    {
+      "col": "OLDEST_OPEN_DUE",
+      "label": "Oldest due date still carrying money",
+      "unit": "date",
+      "meaning": "MIN(DocDueDate) over invoices with a non-zero remainder AFTER credit application. Not the oldest open document — it jumps forward when a receipt is matched.",
+      "link": "document"
+    },
+    {
+      "col": "CARD_CODE",
+      "label": "Customer card",
+      "unit": "text",
+      "meaning": "detail. OCRD.CardCode. ORGC* codes are employee imprest cards.",
+      "link": "party"
+    },
+    {
+      "col": "CARD_NAME",
+      "label": "Customer name",
+      "unit": "text",
+      "meaning": "detail. The classification leans on this, not on the group: UPPER(CardName) LIKE 'JIVO%' is what catches intercompany hiding in a trade group.",
+      "link": "party"
+    },
+    {
+      "col": "CUSTOMER_GROUP",
+      "label": "BP group",
+      "unit": "text",
+      "meaning": "detail. OCRG.GroupName. A group-only test is NOT enough to classify — CUSTA000606 'JIVO MART PVT LTD' sits in group DELHI carrying ₹25 Cr.",
+      "link": "none"
+    },
+    {
+      "col": "ACCT_KIND",
+      "label": "Account kind (detail)",
+      "unit": "text",
+      "meaning": "detail twin of KIND. Same CASE expression, so the two files tie. open-item-list disagrees on exactly one card (CUSTA000242 AKAL INFORMATION SYSTEMS, ₹10,000): INTERCO there, TRADE here.",
+      "link": "none"
+    },
+    {
+      "col": "IS_EXCLUDED",
+      "label": "Not trade",
+      "unit": "count",
+      "meaning": "detail. 0 for TRADE, 1 otherwise. Verified redundant with ACCT_KIND on all 1,193 rows — use either, not both.",
+      "link": "none"
+    },
+    {
+      "col": "OCRD_BALANCE",
+      "label": "Ledger balance (signed)",
+      "unit": "INR",
+      "meaning": "detail. JIVO convention: +ve = DEBIT (owes JIVO), −ve = CREDIT (JIVO owes). The anchor for the whole section.",
+      "link": "party"
+    },
+    {
+      "col": "RECEIVABLE",
+      "label": "Receivable",
+      "unit": "INR",
+      "meaning": "detail. GREATEST(0, OCRD_BALANCE). Sums to OCRD_DEBIT_INR.",
+      "link": "party"
+    },
+    {
+      "col": "CUSTOMER_ADVANCE",
+      "label": "Advance held",
+      "unit": "INR",
+      "meaning": "detail. GREATEST(0, −OCRD_BALANCE), reported POSITIVE. Sums to −OCRD_CREDIT_INR. Sign-flipped from vendor-ageing's slot 8.",
+      "link": "party"
+    },
+    {
+      "col": "RAW_OPEN",
+      "label": "Open per SAP (per card)",
+      "unit": "INR",
+      "meaning": "detail. Sums to RAW_OPEN_INR.",
+      "link": "none"
+    },
+    {
+      "col": "CREDIT_APPLIED",
+      "label": "Credit netted off",
+      "unit": "INR",
+      "meaning": "detail. Sums to UNAPPLIED_CREDIT_INR.",
+      "link": "none"
+    },
+    {
+      "col": "ADJ_OPEN",
+      "label": "Really outstanding (per card)",
+      "unit": "INR",
+      "meaning": "detail. = B0+…+B6 = RAW_OPEN − CREDIT_APPLIED. Sums to EFF_OPEN_INR.",
+      "link": "party"
+    },
+    {
+      "col": "UNBACKED_CREDIT",
+      "label": "Debit with no open invoice (per card)",
+      "unit": "INR",
+      "meaning": "detail. MISLEADING NAME kept from vendor-ageing for renderer compatibility: on the A/R side it is an unbacked DEBIT, = GREATEST(0, RECEIVABLE − RAW_OPEN). Sums to BAL_NOT_IN_INV_INR.",
+      "link": "none"
+    },
+    {
+      "col": "MIGRATED_OPEN",
+      "label": "Pre-SAP opening (per card)",
+      "unit": "INR",
+      "meaning": "detail. DocDate = 2024-09-30.",
+      "link": "none"
+    },
+    {
+      "col": "BACKDATED_DUE_OPEN",
+      "label": "Due before dated",
+      "unit": "INR",
+      "meaning": "detail. EFF_OPEN on invoices where DocDueDate < DocDate — data entry, or a migrated opening. Independent corroboration of MIGRATED_OPEN.",
+      "link": "none"
+    },
+    {
+      "col": "OLDEST_DUE",
+      "label": "Oldest due date (per card)",
+      "unit": "date",
+      "meaning": "detail. NULL on the 537 Oil / 70 Mart / 253 Bev rows that carry no money — render 'nothing outstanding', never a date and never a 0-day age.",
+      "link": "document"
+    },
+    {
+      "col": "DAYS_OLDEST",
+      "label": "Age of oldest item",
+      "unit": "days",
+      "meaning": "detail. DAYS_BETWEEN(OLDEST_DUE, as-of). NULL wherever OLDEST_DUE is NULL.",
+      "link": "none"
+    },
+    {
+      "col": "B0_NOTDUE",
+      "label": "Not due (per card)",
+      "unit": "INR",
+      "meaning": "detail bucket. Ties to NOTDUE_INR.",
+      "link": "none"
+    },
+    {
+      "col": "B1_1_30",
+      "label": "1–30 d (per card)",
+      "unit": "INR",
+      "meaning": "detail bucket.",
+      "link": "none"
+    },
+    {
+      "col": "B2_31_60",
+      "label": "31–60 d (per card)",
+      "unit": "INR",
+      "meaning": "detail bucket.",
+      "link": "none"
+    },
+    {
+      "col": "B3_61_90",
+      "label": "61–90 d (per card)",
+      "unit": "INR",
+      "meaning": "detail bucket.",
+      "link": "none"
+    },
+    {
+      "col": "B4_91_180",
+      "label": "91–180 d (per card)",
+      "unit": "INR",
+      "meaning": "detail bucket.",
+      "link": "none"
+    },
+    {
+      "col": "B5_181_365",
+      "label": "181–365 d (per card)",
+      "unit": "INR",
+      "meaning": "detail bucket.",
+      "link": "none"
+    },
+    {
+      "col": "B6_365PLUS",
+      "label": "365 d + (per card)",
+      "unit": "INR",
+      "meaning": "detail bucket.",
+      "link": "none"
+    },
+    {
+      "col": "ADJ_OVERDUE_60PLUS",
+      "label": "Overdue 60 d + (per card)",
+      "unit": "INR",
+      "meaning": "detail. B3+B4+B5+B6. The collection list, sorted by this column descending in file order.",
+      "link": "party"
+    },
+    {
+      "col": "N_UNAPPLIED_RCPT",
+      "label": "Unmatched receipts",
+      "unit": "count",
+      "meaning": "detail. Documents, not money.",
+      "link": "none"
+    },
+    {
+      "col": "UNAPPLIED_RCPT",
+      "label": "Cash never matched (per card)",
+      "unit": "INR",
+      "meaning": "detail. Can be very slightly NEGATIVE from rounding — Oil CUSTA000482 METRO CASH & CARRY is −0.01. Clamp for charts; do not clamp for sums.",
+      "link": "document"
+    },
+    {
+      "col": "N_OPEN_CN",
+      "label": "Open credit notes",
+      "unit": "count",
+      "meaning": "detail. Documents, not money.",
+      "link": "none"
+    },
+    {
+      "col": "OPEN_CN",
+      "label": "Open credit notes (per card)",
+      "unit": "INR",
+      "meaning": "detail. Diagnostic only.",
+      "link": "document"
+    },
+    {
+      "col": "CO_ADJ_OPEN_TRADE",
+      "label": "Company trade book",
+      "unit": "INR",
+      "meaning": "detail. A company-level total repeated on EVERY detail row by SUM() OVER (). Read it off ONE row — averaging or summing it multiplies by the row count. Same for all eleven CO_* columns.",
+      "link": "none"
+    },
+    {
+      "col": "CO_ADJ_OVERDUE_60PLUS_TRADE",
+      "label": "Company trade 60 d +",
+      "unit": "INR",
+      "meaning": "detail. Same repeated-total rule as every CO_* column.",
+      "link": "none"
+    }
+  ],
+  "drilldowns": [
+    "party.html",
+    "document.html",
+    "derivation.html",
+    "open-items.html",
+    "methodology.html"
+  ],
+  "charts": [
+    {
+      "type": "waterfall",
+      "title": "From SAP's number to the real one",
+      "x": "step",
+      "y": "EFF_OPEN_INR",
+      "series": "KIND",
+      "why": "The correction, drawn. RAW_OPEN_INR (ZZ_TOTAL) → less UNAPPLIED_CREDIT_INR → book EFF_OPEN_INR → less BRANCH → less INTERCO → less STAFF → the TRADE receivable. On Oil that is ₹182.17 Cr → ₹110.52 Cr → ₹7.35 Cr in six labelled steps, and each step is a link to its own derivation. Every consumer who gets this section wrong got it wrong at one of these six bars."
+    },
+    {
+      "type": "stackedBars",
+      "title": "Ageing profile by account kind",
+      "x": "KIND",
+      "y": "NOTDUE_INR|D1_30_INR|D31_60_INR|D61_90_INR|D91_180_INR|D181_365_INR|D365P_INR",
+      "series": "bucket",
+      "why": "Four bars side by side make the classification argument without a sentence: Oil's BRANCH bar is 78% in the 365-day segment (₹60.18 Cr of frozen inter-registration GST transfers) while TRADE is front-loaded. Uses --age-nd + --age1..--age6 with a value label on every segment, because the two lightest ramp steps fail 3:1 on cream."
+    },
+    {
+      "type": "pareto",
+      "title": "How few customers are the whole book",
+      "x": "CARD_NAME",
+      "y": "ADJ_OPEN",
+      "series": "cumulative_pct",
+      "why": "Bars plus a cumulative line over TRADE detail rows. 6 cards reach 80% of Oil's book; ONE card reaches 80% of Mart's (R K WORLDINFOCOM, 88.2%) and of Bev's (BLESSING ADVERTISING, 82.4%). It tells a collector that two of the three books are a single phone call, which no table conveys at a glance."
+    },
+    {
+      "type": "scatter",
+      "title": "Age against size — what to chase first",
+      "x": "DAYS_OLDEST",
+      "y": "ADJ_OPEN",
+      "series": "ACCT_KIND",
+      "why": "One dot per TRADE customer, x = days since the oldest item still carrying money, y = amount, each dot a link to party.html. Big-and-old separates instantly from big-and-current: Oil's FUTURE RETAIL (₹94.5 L at 2,445 days, company in insolvency) sits alone in the top-right, while WAL MART's ₹98.9 L sits at 254 days and is not a problem. A sorted table cannot show two dimensions at once."
+    },
+    {
+      "type": "hbars",
+      "title": "The collection list — overdue more than 60 days",
+      "x": "ADJ_OVERDUE_60PLUS",
+      "y": "CARD_NAME",
+      "series": "none",
+      "why": "Top 12 TRADE cards by ADJ_OVERDUE_60PLUS, which is the file's own sort order, each linked to party.html. This is the panel an operator prints. Carries the lower-bound caveat inline because the ranking is FIFO-dependent."
+    },
+    {
+      "type": "treemap",
+      "title": "Where the unmatched cash is sitting",
+      "x": "CARD_NAME",
+      "y": "UNAPPLIED_RCPT",
+      "series": "ACCT_KIND",
+      "why": "₹66.2 Cr of Oil and ₹89.8 Cr of Mart TRADE receipts are banked and never knocked off an invoice — the operational CAUSE of the whole correction, and a backlog somebody can actually clear. A treemap answers 'which accounts do I clear first' in one glance; the equivalent table is 453 Oil rows long. Clamp the one −0.01 rupee cell to zero for area, and say so."
+    },
+    {
+      "type": "donut",
+      "title": "Whose money is in 'debtors'",
+      "x": "KIND",
+      "y": "EFF_OPEN_INR",
+      "series": "KIND",
+      "why": "TRADE / BRANCH / INTERCO / STAFF as a share of the book, ZZ_TOTAL excluded. Oil is 93.4% JIVO's own money, Mart 38.9%, Bev 20.1%. Four slices, fixed --c1..--c4 order, value labels — it is the single fastest way to stop someone quoting the ₹110 Cr."
+    },
+    {
+      "type": "meter",
+      "title": "How much of SAP's open A/R is real",
+      "x": "EFF_OPEN_INR",
+      "y": "RAW_OPEN_INR",
+      "series": "none",
+      "why": "EFF_OPEN_INR as a fraction of RAW_OPEN_INR on the TRADE row: Oil 9.7%, Mart 9.0%, Bev 76.9%. One number per book that says how far you can trust a raw SAP A/R report, and it makes Beverages' different character (a book that is mostly real and mostly one late customer) visible against the other two."
+    }
+  ],
+  "traps": [
+    "ZZ_TOTAL is a FIFTH ROW in the same array as BRANCH/INTERCO/STAFF/TRADE (GROUPING SETS, column KIND, literal value 'ZZ_TOTAL'). Summing any money column across all rows returns exactly 2x the truth. The TOTAL row is KIND=='ZZ_TOTAL'; every other consumer must filter by KIND. This is the section's live landmine and v1's renderer only just avoids it.",
+    "DocStatus='O' is not solvency at JIVO (C-0019). Raw open vs credit-adjusted on the TRADE book: Oil ₹75.86 Cr → ₹7.35 Cr (10.3x), Mart ₹113.84 Cr → ₹10.30 Cr (11.1x), Bev ₹5.00 Cr → ₹3.84 Cr (1.3x). Anything that reads RAW_OPEN_INR and calls it a receivable is wrong by an order of magnitude on two of the three books.",
+    "N_CUSTOMERS and N_OPEN_INV are SAP's UNCORRECTED counts. Pairing them with EFF_OPEN_INR re-commits the very error the section corrects: ₹7.35 Cr ÷ 11,499 invoices = ₹6,396 each, against the truth of ₹55,509 across 1,325. Use N_EFF_CUSTOMERS and N_EFF_INV; show the SAP count struck through if at all.",
+    "The bucket split is an ASSUMPTION, the total is a measurement. EFF_OPEN_INR is identical to the paisa whether credit is consumed oldest-first or newest-first; the BUCKETS are not. Mart's 60-day-plus figure moves from ₹30.14 L (shipped, FIFO) to ₹8.46 Cr (newest-first) — 28x. Oil 1.18x, Bev 1.01x. Every overdue figure on this page is a LOWER BOUND and must say so, Mart loudest.",
+    "Never subtract UNAPPLIED_RECEIPTS_INR or OPEN_CREDIT_NOTES_INR from the receivable. They are already inside OCRD.Balance, which is what EFF_OPEN_INR is capped at. Subtracting Oil's ₹66.2 Cr of unapplied receipts from its ₹7.35 Cr trade book would produce a large negative receivable out of correct data.",
+    "EFF_OPEN_INR is capped at the ledger debit, so BAL_NOT_IN_INV_INR of trade debit is carried by no open invoice and is never aged: Oil ₹65.07 L (8.13% of the trade ledger debit), Mart ₹13.09 L (1.26%), Bev ₹45,378 (0.12%). The headline is a disclosed understatement of the debit book. Show OCRD_DEBIT_INR beside it, never instead of it.",
+    "OCRD_CREDIT_INR is stored NEGATIVE (JIVO sign convention: −ve = JIVO owes the party). Adding it to OCRD_DEBIT_INR silently nets customers in advance against customers in arrears and produces a 'net receivable' that means nothing. The detail twin CUSTOMER_ADVANCE stores the same money POSITIVE — mixing the two flips a sign.",
+    "MIGRATED_OPEN_INR: Oil's 365-day-plus TRADE bucket is 96.6% migrated pre-SAP openings (invoices dated exactly at go-live 2024-09-30, carrying true original due dates back to 2017). Calling it 'debt that rotted since go-live' is wrong. The 0.00 in Mart and Bev is a TRUE zero — their first invoices are 2024-10-03 and 2024-10-04 and neither book has an opening batch — but the date is HARD-CODED and Oil-specific, so a fourth company book would need its own go-live checked.",
+    "OLDEST_OPEN_DUE / OLDEST_DUE is the oldest date that still carries money AFTER credit application, not the oldest open document. It jumps forward when a receipt is matched, and it deliberately means something different here than in vendor-ageing.sql, which reports the raw oldest bill. Do not compare the two sections' oldest dates.",
+    "The detail row count is NOT N_CUSTOMERS and must never be asserted equal. The detail keeps cards that exist only as an unapplied receipt or an open credit note (642 Oil rows vs 379 counted), and 25 Oil / 3 Mart / 9 Bev cards carry sub-paise dust balances that are <>0 in SQL but round to 0.00 at 2 dp. N_EFF_CUSTOMERS for Oil TRADE is 89 while detail rows with ADJ_OPEN>0 number 85 — same dust. Assert the money, never the headcount.",
+    "Classification divergences that are real and deliberately unfixed: Oil CUSTA000242 AKAL INFORMATION SYSTEMS LTD (group DEBTORS, ₹10,000) reads TRADE here and INTERCO in both vendor-ageing.sql and open-item-list.sql — verified live 2026-08-22, the one ACCT_KIND mismatch across 229 shared Oil cards. And 8-9 employee imprest cards filed in a STATE group instead of 'STAFF CUSTOMER' read TRADE (Oil ₹3,555 · Mart ₹1,957 · Bev ₹11,562 incl. CUSTA000902 NAVNEET SINGH, which has no 'IMPREST' in its name). Fixing either in one file without the other breaks the summary↔detail tie.",
+    "CUSTA000356 'FREE SAMPLE' is classified TRADE in all three books and carries a real ageing (Oil ₹91,239 with ₹85,509 over 60 days; Bev ₹57,809). Nothing in OCRG or the card name marks it internal. It is almost certainly not collectable and it has never been checked with Accounts — do not put it on a collection list without a footnote.",
+    "UNAPPLIED_RCPT can be NEGATIVE by a rounding paisa (Oil CUSTA000482 METRO CASH & CARRY = −0.01). Any treemap, log scale or sqrt-area chart over that column must clamp, and a 'top unmatched receipts' sort must not assume the column is non-negative.",
+    "Cross-section: open-item-list's CARD_OPEN_GROSS is NOT this section's RAW_OPEN — it folds unapplied receipts into 'gross open'. Oil CUSTA000844 ILAHI CO. reads ₹44.71 L there and ₹24.71 L here, a ₹20 L AR receipt. Its CARD_BALANCE, however, IS the same OCRD.Balance and matched on 229/21/220 shared cards with zero mismatches — that column is a valid cross-file check, CARD_OPEN_GROSS is not.",
+    "A back-dated {{ASOF}} is not a point-in-time A/R. OCRD.Balance and PaidToDate are the CURRENT snapshot — SAP keeps no per-date history — so a past as-of ages today's open items against an older calendar. Measured on Oil: --as-of 2026-03-31 gives ₹80.34 Cr adjusted against ₹108.86 Cr today, and ₹2.87 Cr of trade against ₹7.43 Cr. The cut-off is on DocDate only, so an invoice cancelled yesterday vanishes from a last-month run.",
+    "Group totals are NOT intercompany-eliminated. Oil, Mart and Bev trade with each other and each book carries the other as a customer; adding the three EFF_OPEN_INR figures double-counts JIVO's own money. Per-company is the only figure that means anything, and the INTERCO row names the amount in each book.",
+    "A KIND row with NOTDUE_INR = 0 and EFF_OPEN_INR > 0 is REAL, not a missing bucket: Oil BRANCH, Mart BRANCH/INTERCO/STAFF and Bev BRANCH/INTERCO are 100% overdue. Rendering that as an empty bar or 'no data' misreports a book that is entirely past due.",
+    "Every CO_* column in the detail (CO_RAW_OPEN … CO_ADJ_OVERDUE_60PLUS_TRADE) is a company-level total repeated on EVERY row by SUM() OVER (). Read one row. Summing the column multiplies it by 642 / 100 / 451.",
+    "data.json is being rewritten under readers roughly every 2 minutes by the VPS refresh loop. A consumer that reads the file twice in one pass can mix two builds — I hit exactly this and briefly saw ZZ_TOTAL disagree with the sum of its KIND rows by ₹40.32 L. Load once into memory, and stamp every derived figure with the generated_at it came from."
+  ],
+  "empty_states": [
+    "summary array is empty: HANA's GROUPING SETS ((KIND),()) emits NO grand-total row over empty input, so an empty book is zero rows — not a ZZ_TOTAL row of zeros. Render empty('No customer accounts in this book') and never synthesise a total.",
+    "A KIND row is absent entirely (a book with no STAFF or no INTERCO cards): render 'no <kind> accounts in this book', not a ₹0 card. Verified today all four KINDs exist in all three books, so an absent KIND means the classification changed and deserves to be noticed.",
+    "ZZ_TOTAL row missing while KIND rows are present: do NOT silently sum the KIND rows into a headline. Render empty('roll-up row missing — totals not computed') and flag the section, because the roll-up is absent only when the GROUPING SETS shape changed.",
+    "detail array empty while summary has rows: the per-customer panel, the pareto, the scatter and the treemap all render empty('per-customer detail did not build') with the section error text. Never fall back to plotting the four KIND rows as if they were customers.",
+    "MIGRATED_OPEN_INR == 0 for Mart and Bev: a TRUE zero (verified — neither book has an opening batch), so it renders as 'none — this book has no pre-SAP opening batch', which is different from a null. If the COLUMN is missing, render 'not computed'.",
+    "OLDEST_OPEN_DUE / OLDEST_DUE is NULL (537 Oil / 70 Mart / 253 Bev detail rows, and any KIND whose EFF_OPEN is 0): render 'nothing outstanding' — never a date, never 0 days, never today's date.",
+    "EFF_OPEN_INR is 0 but RAW_OPEN_INR is large (a card fully covered by unapplied credit — 541 of 642 Oil detail rows): show ₹0 outstanding WITH the raw figure and the credit beside it. A bare zero here reads as 'no invoices', which is the opposite of the truth.",
+    "OD60P_INR == 0 with EFF_OPEN_INR > 0 (Mart INTERCO and STAFF today): a real, healthy zero — label it 'nothing over 60 days', and keep the FIFO lower-bound caveat visible because a different allocation could make it non-zero.",
+    "sections['customer-ageing']['errors'] is non-empty for a company: the whole section renders as failed for that company with the error text and the last-good generated_at. Never partially render from a stale slice without saying it is stale.",
+    "A KPI's source column is absent from the row (a schema change or a rolled-back SQL edit): render 'not computed — column <NAME> missing from this build', never 0. v1 already guards N_EFF_INV this way with a == null fallback; keep that pattern."
+  ],
+  "source": {
+    "sql": [
+      "pipeline/sql/customer-ageing.sql",
+      "pipeline/sql/customer-ageing-detail.sql"
+    ],
+    "notes": [
+      "pipeline/notes/customer-ageing.md",
+      "pipeline/notes/customer-ageing-detail.md"
+    ],
+    "v1_renderer": "site/index.html renderKindAgeing() lines 717-800; hero KPIs lines 1242-1298",
+    "data_snapshot": {
+      "generated_at": "2026-08-22T19:05:02+05:30",
+      "as_of": "2026-08-22",
+      "data_sha256": "02737049b8e358714467a8c8429b5d1f928ac1cbe1748ff3105962717b1db3ce",
+      "note": "site/data.json is rewritten every ~2 min by the VPS refresh loop; every live value in this spec was computed from this one frozen snapshot."
+    },
+    "rows": {
+      "summary": {
+        "oil": 5,
+        "mart": 5,
+        "bev": 5
+      },
+      "detail": {
+        "oil": 642,
+        "mart": 100,
+        "bev": 451
+      }
+    },
+    "verification_run_here": [
+      "5 internal identities x 15 summary rows: worst drift Re. 0.01 (EFF+BAL_NOT_IN_INV=OCRD_DEBIT; buckets=EFF_OPEN; RAW-UNAPPLIED=EFF; B1..B6=OVERDUE; B3..B6=OD60P)",
+      "255 detail->summary aggregate checks across 3 books: 0 mismatches over Re. 1, worst drift Re. 0.10",
+      "ZZ_TOTAL vs sum of 4 KIND rows, 7 columns x 3 books: worst drift Re. 0.01",
+      "closed-form headline route (no window function): worst delta Re. 0.02 (2.7e-8 %)",
+      "cross-file OCRD.Balance vs open-item-list CARD_BALANCE: 0 mismatches on 229 Oil / 21 Mart / 220 Bev shared customer cards; 1 ACCT_KIND divergence (CUSTA000242)"
+    ]
+  }
+}

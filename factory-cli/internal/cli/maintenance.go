@@ -78,6 +78,7 @@ func newMaintenanceCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newMaintenancePmExecutionsCmd(flags))
 	cmd.AddCommand(newMaintenancePmPlansCmd(flags))
 	cmd.AddCommand(newMaintenanceReportsCmd(flags))
+	cmd.AddCommand(newMaintenanceScanLookupCmd(flags))
 	cmd.AddCommand(newMaintenanceSpareCategoriesCmd(flags))
 	cmd.AddCommand(newMaintenanceSpareMovementsCmd(flags))
 	cmd.AddCommand(newMaintenanceSpareRequestsCmd(flags))

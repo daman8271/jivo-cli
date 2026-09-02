@@ -1,0 +1,20 @@
+RTV read-only probes — Thu Jul 23 20:24:19 UTC 2026
+JWT exp 2026-07-13 (expired); probing to confirm state. Token REDACTED in this transcript.
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/api/v1/rtv/filter
+HTTP 401
+{"message":"Token expired","code":401}
+
+======================================================
+HALT: received 401 {"message":"Token expired","code":401} on first probe.
+Per READ-ONLY guardrails, stopped immediately. Remaining RTV GET endpoints
+left as DOCUMENTED (not probed):
+  - GET /api/v1/rtv/listing-stat
+  - GET /api/v1/rtv/user/mh-list
+  - GET /vendor/api/v2/rtv/filter
+  - GET /vendor/api/v2/rtv/{id}            (needs valid rtv id)
+  - GET /vendor/api/v2/rtv/{id}/checklist  (needs valid rtv id)
+  - GET /vendor/api/v2/rtv/{id}/items      (needs valid rtv id)
+  - GET /vendor/api/v1/rtv/{id}/list-packing-slips (needs valid rtv id)
+Probes fired: 1. 2xx PROVEN: 0.

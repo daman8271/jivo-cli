@@ -1,0 +1,1150 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   JIVO ACCOUNTS BOARD v2 — board.css
+   The only stylesheet. Twenty pages link this file and nothing else.
+
+   It carries v1's visual language forward unchanged (same tokens, same class
+   names, same restraint) and adds what a twenty-page board needs that a
+   one-page board never did: breadcrumbs, a freshness banner that cannot be
+   ignored, derivation term tables, SQL blocks, chart-plus-table disclosures,
+   filter chips, an exclusion panel, and a two-column detail layout.
+
+   Three rules govern every line below.
+
+   1. MOBILE-FIRST. The base rules ARE the phone. This board is read standing
+      at a desk on a 390px screen more often than it is read on a monitor, so
+      the phone layout is the design, not a shrunk desktop. Larger screens get
+      min-width queries that add columns and air — never a different design.
+
+   2. NOTHING SCROLLS SIDEWAYS EXCEPT THINGS THAT SAY THEY DO. Every grid and
+      flex child gets minmax(0,1fr)/min-width:0, because a grid child's default
+      min-width is auto — one long CardCode inside a "1fr" column is enough to
+      push the whole body sideways. Wide content (tables, code, some charts)
+      scrolls inside its own box. There is deliberately NO overflow-x:clip on
+      html/body: that hides an overflow bug from the layout check instead of
+      fixing it, and this board's whole point is not hiding things.
+
+   3. NO COLOUR CARRIES MEANING ALONE. Status is always a word, a glyph or a
+      shape as well as a hue. Check dots differ in FILL as well as colour and
+      always carry a title attribute. Ageing marks always carry a value label.
+
+   Two themes, dark by default (CONTRACT §6.1). Every colour gets its light
+   value on bare :root first; the dark block only ever RE-tints an existing
+   token. That is why the pill/callout/banner tints below are tokens rather
+   than hardcoded hexes inside a :root[data-theme="dark"] rule the way v1 did
+   it — v1 could get away with it at one page; forty rules across twenty pages
+   could not.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ── 1. TOKENS — daylight ──────────────────────────────────────────────────
+   CONTRACT §6, copied verbatim. Validated for lightness band, chroma floor,
+   colour-blind separation and contrast — do not "improve" a hex here without
+   re-running that validation.                                                */
+:root{
+  --brand:#0A7D3F; --brand-deep:#1F3524; --ink:#22301F;
+  --sage:#586055;  --soft:#8B9184;
+  --cream:#F5F4EF; --card:#FFFFFF; --card-warm:#FAF9F4;
+  --line:#E4E2D6;  --line-soft:#ECEAE0;
+
+  /* categorical — fixed order, never cycled. Six series, then stop; a seventh
+     series is a sign the chart is asking too much of one picture. */
+  --c1:#0A7D3F; --c2:#1D63C4; --c3:#C2610A; --c4:#8B2E9E; --c5:#0894B0; --c6:#B01253;
+
+  /* ageing severity — one warm hue, monotonic light → dark on daylight.
+     'not due' is a STATUS (brand green), not a step of the ramp. The two
+     lightest steps sit under 3:1 on cream, which is why every ageing mark
+     carries a visible value label and a table view behind it. */
+  --age-nd:#0A7D3F;
+  --age1:#D99A4E; --age2:#C97F2E; --age3:#B5651B;
+  --age4:#9A4D12; --age5:#7D370D; --age6:#5A2108;
+
+  /* status — reserved. Never reused as "series 7". Always word + colour. */
+  --ok:#0A7D3F; --warn:#935800; --bad:#B3261E; --info:#1D5F8A; --dead:#7D786C;
+
+  --radius:14px;
+  --shadow:0 1px 2px rgba(31,53,36,.05), 0 8px 24px -12px rgba(31,53,36,.14);
+
+  /* ── tokens beyond §6 ───────────────────────────────────────────────────
+     Everything below is a colour that USED to be a baked hex inside a
+     component rule. Tokenising it is what lets §6.1's last line hold: no
+     colour is ever defined only in the dark block. */
+
+  /* ink that sits ON a filled brand / bad field. Brand green is dark in
+     daylight and light after dark, so "white text" is not a constant. */
+  --on-brand:#FFFFFF;
+  --on-bad:#FFFFFF;
+
+  /* translucent backdrop behind the sticky nav — follows the page, not cream */
+  --veil:rgba(245,244,239,.93);
+
+  /* five status tints, one family each: surface / ink / edge. Used by .pill,
+     .err, .caveat, .excl, .freshbar and the health strip so those five
+     meanings look identical everywhere on the board. */
+  --tint-ok-bg:#E8F3EC;   --tint-ok-fg:#0A5C2F;   --tint-ok-line:#CFE6D8;
+  --tint-warn-bg:#FBF0DC; --tint-warn-fg:#6E4200; --tint-warn-line:#EFDFC0;
+  --tint-warn-strong:#4E2F00;
+  --tint-bad-bg:#FBE9E7;  --tint-bad-fg:#8C1D17;  --tint-bad-line:#F0CFCB;
+  --tint-dead-bg:#EFEEE9; --tint-dead-fg:#5C5850; --tint-dead-line:#E0DED5;
+  --tint-info-bg:#E4EFF6; --tint-info-fg:#154B6E; --tint-info-line:#CCE0EC;
+
+  /* highlighted SQL lines. Amber, not green — green in this board means "ok",
+     and a highlighted line is not a passing line, it is the line that made
+     the number. */
+  --mark-bg:#FFF3C4; --mark-line:#E8C86A;
+
+  /* live-dot glow, tokenised so the dark theme can re-tint it */
+  --pulse:rgba(10,125,63,.45); --pulse-0:rgba(10,125,63,0);
+
+  /* sticky offset. The nav pins to top:var(--stick). ui.js raises it to the
+     height of the freshness banner when the banner goes sticky-stale; the 0px
+     fallback means the worst case is the red banner covering the nav, which
+     is the correct thing to lose. */
+  --stick:0px;
+
+  /* how tall a scrolling table may get before it scrolls internally */
+  --tw-max:62vh;
+}
+
+
+/* ── 2. BASE ───────────────────────────────────────────────────────────────
+   min-width:0 on * is load-bearing, not tidiness: it is the single rule that
+   stops a long unbroken CardCode in a grid cell from widening the page.      */
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--cream); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:15px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  /* tabular numerals everywhere: a column of rupees that does not line up is
+     a column of rupees nobody trusts */
+  font-variant-numeric:tabular-nums;
+  padding-bottom:88px;
+}
+h1,h2,h3,h4{margin:0;font-weight:650;letter-spacing:-.01em;color:var(--brand-deep)}
+h1{font-size:21px}
+h2{font-size:17px}
+h3{font-size:14px}
+p{margin:0 0 10px}
+a{color:var(--brand)}
+a:hover{color:var(--brand)}
+code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+/* one focus ring for the whole board, so keyboard users never have to guess
+   which control the page decided to style specially */
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+
+/* anything with an id can be a link target (methodology.html#C-0019, a section
+   card, a term row) — keep it clear of the sticky nav when it lands */
+[id]{scroll-margin-top:calc(var(--stick) + 72px)}
+
+.wrap{max-width:1280px;margin:0 auto;padding:0 14px}
+
+/* small helpers the twenty pages would otherwise each reinvent */
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+.muted{color:var(--sage)}
+.faint{color:var(--soft)}
+.right{text-align:right}
+.nowrap{white-space:nowrap}
+.trunc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* long identifiers (CardCode, GSTIN, file paths) break anywhere rather than
+   widening their container — see rule 2 at the top of this file */
+.brk{overflow-wrap:anywhere;word-break:break-word}
+.tone-ok{color:var(--ok)} .tone-warn{color:var(--warn)} .tone-bad{color:var(--bad)}
+.tone-info{color:var(--info)} .tone-dead{color:var(--dead)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+         clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+
+/* "not computed" — the never-a-confident-zero marker (CONTRACT §0.3). It must
+   never look like a number and never look like nil, so it is small, grey,
+   lowercase and carries its reason in a title attribute. */
+.nc{font-size:.8em;font-weight:650;letter-spacing:.02em;color:var(--soft);
+    border-bottom:1px dotted var(--line);cursor:help}
+
+
+/* ── 3. MASTHEAD ───────────────────────────────────────────────────────────
+   v1 had one page, so its masthead only had to say which company. Twenty
+   pages need to say WHERE YOU ARE as well: brandmark, then breadcrumbs, then
+   the section context line, then the page title.                             */
+.mast{padding:16px 0 10px}
+/* The 104px right reserve is not whitespace taste: every HTML file in this
+   repo is written by Claude, and the PostToolUse hook stamps a fixed badge
+   into the corner at top:16px/right:18px, z-index max, on all twenty pages.
+   Nothing in the top-right of the masthead may live under it — v1 reserved
+   the same corner and this is where its 96/130px numbers came from. */
+.mast-top{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+          justify-content:space-between;padding-right:104px}
+.brandmark{font-size:20px;font-weight:800;letter-spacing:.02em;color:var(--brand);
+           text-decoration:none;display:inline-block}
+.brandmark span{color:var(--brand-deep);font-weight:650;letter-spacing:-.01em}
+.stamp{font-size:12.5px;color:var(--sage)}
+.stamp b{color:var(--ink);font-weight:600}
+
+/* the page's own heading block, under the brand row */
+.pagehead{margin:12px 0 2px}
+.pagehead .ctx{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+               color:var(--brand);display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+.pagehead .ctx .sep{color:var(--line);font-weight:400}
+.pagehead h1{margin:5px 0 0;font-size:23px;letter-spacing:-.02em}
+.pagehead .lede{margin:6px 0 0;font-size:13.5px;color:var(--sage);max-width:74ch}
+
+/* controls row: company switcher + theme toggle + whatever the page adds */
+.ctrls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
+.ctrls .spacer{flex:1 1 auto}
+
+
+/* ── 4. BREADCRUMBS ────────────────────────────────────────────────────────
+   Twenty pages three levels deep. The trail is how an operator knows that
+   derivation.html?k=ar-trade-open belongs to Receivables and not to some
+   other board. Separators are drawn in CSS so the trail stays one clean list
+   in the DOM; the rule fires for <nav class=crumb><ol><li> and for a bare
+   nav-with-links, because two page agents will write it two ways.            */
+.crumb{display:flex;flex-wrap:wrap;align-items:center;gap:4px 7px;
+       font-size:12px;color:var(--soft);margin:2px 0 0}
+.crumb ol{display:flex;flex-wrap:wrap;align-items:center;gap:4px 7px;
+          list-style:none;margin:0;padding:0}
+.crumb > * + *::before,
+.crumb ol > li + li::before{content:"›";color:var(--line);margin-right:7px;font-size:13px}
+.crumb a{color:var(--sage);text-decoration:none;border-bottom:1px solid transparent;
+         padding:2px 0}
+.crumb a:hover{color:var(--brand);border-bottom-color:var(--brand)}
+/* the current page is the end of the trail — present, but not a link */
+.crumb [aria-current="page"],.crumb .here{color:var(--ink);font-weight:650}
+
+
+/* ── 5. FRESHNESS BANNER ───────────────────────────────────────────────────
+   The most important component on the board, and the reason v2 exists in the
+   shape it does: v1 froze for five hours and kept serving 13:42 numbers as if
+   they were live, because nothing on the page had any opinion about the
+   clock. So this bar always renders — even when everything is fine — and the
+   stale state is the single loudest thing the stylesheet can produce.
+
+   Healthy: a quiet strip. Nobody should learn to ignore it.
+   Stale:   a solid --bad field, pinned to the top of the viewport, ringed,
+            glyphed and slowly pulsing. It does NOT hide the numbers — the
+            operator still needs them — it just stops them being presented
+            as live.                                                          */
+.freshbar{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;
+  font-size:12.5px;line-height:1.45;color:var(--sage);
+  background:var(--card-warm);border:1px solid var(--line-soft);
+  border-left:3px solid var(--ok);
+  border-radius:10px;padding:9px 12px;margin:10px 0 0;
+}
+.freshbar b,.freshbar strong{color:var(--ink);font-weight:650}
+.freshbar .spacer{flex:1 1 auto}
+.freshbar a{color:var(--sage);text-decoration:underline;text-underline-offset:2px}
+
+/* building / recovering — amber, same shape, so the change is state not layout */
+.freshbar.is-building{border-left-color:var(--warn);background:var(--tint-warn-bg);
+                      border-color:var(--tint-warn-line);color:var(--tint-warn-fg)}
+.freshbar.is-building b,.freshbar.is-building strong{color:var(--tint-warn-strong)}
+
+.freshbar.is-stale{
+  position:sticky;top:0;z-index:60;
+  background:var(--bad);color:var(--on-bad);
+  border:0;border-radius:0;
+  /* full-bleed: the banner escapes .wrap's 14px gutter so it reads as a
+     property of the whole page rather than of one column of content */
+  margin:0 -14px;padding:11px 14px;
+  font-size:13.5px;font-weight:600;min-height:44px;
+  box-shadow:0 6px 18px -10px rgba(0,0,0,.5);
+  animation:staleglow 3.2s ease-in-out infinite;
+}
+.freshbar.is-stale::before{content:"⚠";font-size:16px;line-height:1;flex:0 0 auto}
+.freshbar.is-stale b,.freshbar.is-stale strong{color:var(--on-bad);font-weight:800}
+.freshbar.is-stale a{color:var(--on-bad);text-decoration:underline}
+@keyframes staleglow{
+  0%,100%{box-shadow:0 6px 18px -10px rgba(0,0,0,.5), inset 0 0 0 0 rgba(255,255,255,0)}
+  50%    {box-shadow:0 6px 18px -10px rgba(0,0,0,.5), inset 0 0 0 3px rgba(255,255,255,.28)}
+}
+
+
+/* ── 6. COMPANY SWITCHER + THEME TOGGLE ───────────────────────────────────
+   Base is the phone: full width, 44px targets, short company names. The long
+   names come back when there is room for them (§14).                         */
+.seg{display:flex;background:var(--card);border:1px solid var(--line);
+     border-radius:999px;padding:3px;gap:2px;width:100%;justify-content:space-between}
+.seg button{
+  appearance:none;border:0;background:transparent;cursor:pointer;
+  font:inherit;font-size:12.5px;font-weight:600;color:var(--sage);
+  flex:1 1 0;min-width:0;min-height:44px;padding:11px 8px;border-radius:999px;
+  transition:background .15s,color .15s;
+}
+.seg button:hover{background:var(--card-warm);color:var(--ink)}
+.seg button[aria-pressed=true]{background:var(--brand);color:var(--on-brand)}
+.seg .lg{display:none}
+.seg .sm{display:inline}
+
+.themetog{
+  appearance:none;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  background:var(--card);border:1px solid var(--line);color:var(--sage);
+  border-radius:999px;padding:10px 14px;min-height:44px;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.themetog:hover{border-color:var(--brand);color:var(--brand);background:var(--card-warm)}
+.themetog .ic{font-size:13px;line-height:1}
+
+/* generic button, for "copy CSV", "expand all", "clear filters" */
+.btn{
+  appearance:none;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  background:var(--card);border:1px solid var(--line);color:var(--sage);
+  border-radius:999px;padding:9px 13px;min-height:38px;text-decoration:none;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.btn:hover{border-color:var(--brand);color:var(--brand);background:var(--card-warm)}
+.btn.is-primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+.btn.is-primary:hover{color:var(--on-brand);filter:brightness(1.06)}
+.btn.sm{font-size:11.5px;padding:6px 10px;min-height:30px}
+
+
+/* ── 7. SECTION NAV ────────────────────────────────────────────────────────
+   Eleven section pages plus four support pages will not fit a phone row, so
+   it scrolls sideways — the ONE place on the board where sideways is right,
+   because the alternative is a five-line wall of pills above every page.      */
+.navbar{position:sticky;top:var(--stick);z-index:20;
+        background:var(--veil);backdrop-filter:blur(8px);
+        border-bottom:1px solid var(--line);margin-top:12px}
+.navrow{display:flex;gap:5px;overflow-x:auto;padding:6px 96px 6px 0;
+        scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.navrow a{
+  flex:0 0 auto;font-size:12px;font-weight:600;text-decoration:none;
+  color:var(--sage);background:var(--card);border:1px solid var(--line);
+  padding:10px 13px;border-radius:999px;white-space:nowrap;
+  min-height:40px;display:flex;align-items:center;transition:.15s
+}
+.navrow a:hover{border-color:var(--brand);color:var(--brand)}
+/* you are here — the nav is also a location, not only a menu */
+.navrow a[aria-current="page"]{background:var(--brand);border-color:var(--brand);
+                               color:var(--on-brand)}
+
+
+/* ── 8. KPI CARDS ──────────────────────────────────────────────────────────
+   Base is one column (only genuinely tiny screens ever see it) and two from
+   360px up: eight figures stacked one-per-row is a lot of thumb before the
+   reader reaches any actual content.                                         */
+.kpis{display:grid;gap:9px;margin:16px 0 4px;grid-template-columns:minmax(0,1fr)}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:11px;
+     padding:11px 12px;box-shadow:var(--shadow);position:relative}
+.kpi .lab{font-size:10px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;
+          color:var(--soft);display:flex;align-items:center;gap:5px}
+.kpi .lab .dotlink{margin-left:auto}
+.kpi .val{font-size:19px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px;
+          color:var(--brand-deep)}
+/* the value is a link to its derivation — CONTRACT §0.4, every number is a
+   link. It must not look like a link until you reach for it, or eight blue
+   figures shout over the numbers themselves. */
+.kpi .val a{color:inherit;text-decoration:none;border-bottom:1px dotted transparent}
+.kpi .val a:hover{border-bottom-color:var(--brand);color:var(--brand)}
+.kpi .sub{font-size:11px;color:var(--sage);line-height:1.35}
+.kpi.is-bad .val{color:var(--bad)} .kpi.is-warn .val{color:var(--warn)}
+.kpi.is-ok .val{color:var(--ok)}
+/* the figure SAP reports, struck through, beside the one that is true */
+.kpi .sub s{color:var(--bad);text-decoration-thickness:1px;text-underline-offset:2px}
+/* sparkline slot: history.jsonl trend, decorative — the number is the fact */
+.kpi .spark{display:block;width:100%;height:26px;margin-top:6px;opacity:.85}
+.kpi .spark svg{display:block;width:100%;height:100%}
+
+
+/* ── 9. CHECK DOT ──────────────────────────────────────────────────────────
+   verify.py re-derives every headline by a second route; this 8px dot is that
+   result. Three things about it are deliberate:
+
+     • it is ALWAYS wrapped in a link — a red dot that cannot be clicked is an
+       accusation with no evidence, so the dot goes to the derivation's check;
+     • it is ALWAYS given a title attribute by the renderer, because 8px of
+       colour is not a sentence;
+     • the three states differ in FILL as well as hue — solid / hollow ring /
+       haloed — so they survive greyscale, a projector and deuteranopia.
+
+   The link is 24px (WCAG 2.2 target minimum) and pulls that back with negative
+   margin, so the hit area is real without the dot bloating the row.          */
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;flex:0 0 auto;
+     vertical-align:middle}
+.dot.is-ok{background:var(--ok)}
+.dot.is-warn{background:transparent;box-shadow:inset 0 0 0 3px var(--warn)}
+.dot.is-bad{background:var(--bad);box-shadow:0 0 0 1.5px var(--card),0 0 0 3.5px var(--bad)}
+.dot.is-dead{background:var(--dead);opacity:.7}
+/* -8px/-3px: the 24px hit box is pulled back so it costs no layout, and the
+   -3px puts the 8px DOT (not its padding) on the same right edge as the text
+   above and below it. */
+.dotlink{display:inline-flex;align-items:center;justify-content:center;
+         width:24px;height:24px;margin:-8px -3px;border-radius:50%;
+         text-decoration:none;vertical-align:middle}
+.dotlink:hover{background:var(--card-warm)}
+
+
+/* ── 10. CARDS ─────────────────────────────────────────────────────────────*/
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:12px;
+  box-shadow:var(--shadow);margin:14px 0;padding:16px 14px;
+  scroll-margin-top:calc(var(--stick) + 72px)
+}
+.card-head{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;
+           justify-content:space-between;margin-bottom:4px}
+.card-head h2{font-size:17px}
+.card-head .src{font-size:10px;color:var(--soft);
+                font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.card-head .acts{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}
+.blurb{font-size:13px;color:var(--sage);margin:2px 0 13px;max-width:78ch}
+.minikpis{display:grid;gap:8px;margin-bottom:14px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.mk{background:var(--card-warm);border:1px solid var(--line-soft);border-radius:10px;
+    padding:9px 11px}
+.mk .lab{font-size:9.5px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;
+         color:var(--soft);display:flex;align-items:center;gap:5px}
+.mk .val{font-size:16px;font-weight:700;color:var(--brand-deep);margin-top:3px;
+         letter-spacing:-.01em}
+.mk .val a{color:inherit;text-decoration:none;border-bottom:1px dotted transparent}
+.mk .val a:hover{border-bottom-color:var(--brand);color:var(--brand)}
+.mk .val.bad{color:var(--bad)} .mk .val.warn{color:var(--warn)} .mk .val.ok{color:var(--ok)}
+.mk .sub{font-size:11px;color:var(--sage);margin-top:2px}
+
+
+/* ── 11. SPLIT — two-column detail layout ─────────────────────────────────
+   party.html / document.html / bank-account.html / gl-account.html put facts
+   on one side and evidence on the other. One column on a phone; the minmax(0)
+   on both tracks is what stops a wide table on the right from widening the
+   grid instead of scrolling inside itself.                                   */
+.split{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);align-items:start}
+.split > *{min-width:0}
+/* align-items:start, not the grid default: a four-line "party facts" card
+   stretched to match a forty-line evidence column beside it is mostly empty
+   card, and empty card reads as missing data on a board whose whole promise
+   is that missing data says so. */
+/* .split.rail = main content plus a narrower sidebar (facts, links, caveats) */
+
+
+/* ── 12. KEY / VALUE — entity page headers ────────────────────────────────
+   Label above value, not label-beside-value: an Indian-grouped crore figure
+   and a 12-character CardCode cannot share a fixed label column at 390px.    */
+.kv{display:grid;gap:9px 16px;grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
+.kv > div{min-width:0}
+.kv dt,.kv .k{font-size:10px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;
+              color:var(--soft);margin:0}
+.kv dd,.kv .v{margin:2px 0 0;font-size:14px;font-weight:600;color:var(--ink);
+              overflow-wrap:anywhere}
+.kv .v.big{font-size:19px;letter-spacing:-.01em;color:var(--brand-deep)}
+
+/* a mono chip for a code the operator may need to copy or read aloud */
+.badge{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+       font-size:11.5px;background:var(--card-warm);border:1px solid var(--line-soft);
+       border-radius:5px;padding:1px 6px;color:var(--sage);overflow-wrap:anywhere}
+a.badge:hover{border-color:var(--brand);color:var(--brand)}
+
+
+/* ── 13. TOOLBAR — search, chips, counts ──────────────────────────────────*/
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px}
+.toolbar .count{font-size:12px;color:var(--soft);margin-left:auto;white-space:nowrap}
+
+.searchbox{position:relative;flex:1 1 220px;min-width:0}
+.searchbox input{
+  appearance:none;width:100%;font:inherit;font-size:14px;color:var(--ink);
+  background:var(--card);border:1px solid var(--line);border-radius:999px;
+  padding:11px 14px 11px 34px;min-height:44px;
+  transition:border-color .15s,box-shadow .15s;
+}
+.searchbox input::placeholder{color:var(--soft)}
+.searchbox input:focus{border-color:var(--brand);outline:none;
+                       box-shadow:0 0 0 3px var(--tint-ok-bg)}
+/* the magnifier is decorative and lives in CSS, so no page has to ship an
+   icon file to a board that ships no assets at all */
+.searchbox::before{content:"⌕";position:absolute;left:13px;top:50%;
+                   transform:translateY(-52%);font-size:16px;color:var(--soft);
+                   pointer-events:none;line-height:1}
+/* kill the browser's own clear button — it lands on top of ours and behaves
+   differently in every engine */
+.searchbox input[type=search]::-webkit-search-decoration,
+.searchbox input[type=search]::-webkit-search-cancel-button{-webkit-appearance:none}
+.searchbox .clear{position:absolute;right:6px;top:50%;transform:translateY(-50%);
+                  appearance:none;border:0;background:transparent;cursor:pointer;
+                  color:var(--soft);font:inherit;font-size:16px;line-height:1;
+                  width:32px;height:32px;border-radius:50%}
+.searchbox .clear:hover{background:var(--card-warm);color:var(--ink)}
+
+/* filter chips. aria-pressed carries the state; the fill and the weight change
+   with it, so "which filters are on" is answerable at a glance and not only
+   by colour. */
+.chips{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.chip{
+  appearance:none;cursor:pointer;font:inherit;font-size:12px;font-weight:600;
+  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+  background:var(--card);border:1px solid var(--line);color:var(--sage);
+  border-radius:999px;padding:8px 12px;min-height:36px;text-decoration:none;
+  transition:background .15s,color .15s,border-color .15s;
+}
+.chip:hover{border-color:var(--brand);color:var(--brand)}
+.chip[aria-pressed=true],.chip.is-on{
+  background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:700}
+.chip[aria-pressed=true]::before,.chip.is-on::before{content:"✓";font-size:11px}
+.chip .n{font-size:11px;opacity:.75;font-variant-numeric:tabular-nums}
+.chip[disabled]{opacity:.45;cursor:not-allowed}
+
+
+/* ── 14. TABLES ────────────────────────────────────────────────────────────
+   .tablewrap scrolls in BOTH axes, and that is a decision rather than an
+   oversight. A sticky <th> pins to its nearest scrollport; the moment a box
+   has overflow-x:auto the browser makes it a scrollport on both axes, so a
+   header inside a horizontally-scrolling box can never pin to the viewport.
+   You get one or the other. We take the internally-scrolling box with a real
+   pinned header, because a 1,200-row open-item table without a header is
+   unusable well before the page-level scroll becomes an issue.
+
+   .tablewrap.is-open opts out (no max-height) for short tables that should
+   just sit in the page — its header will not pin, by the same physics.       */
+.tablewrap,.tscroll{
+  overflow-x:auto;overflow-y:auto;max-height:var(--tw-max);
+  border:1px solid var(--line-soft);border-radius:10px;
+  -webkit-overflow-scrolling:touch;
+}
+.tablewrap.is-open,.tscroll.is-open{max-height:none;overflow-y:visible}
+.tablewrap.tall,.tscroll.tall{--tw-max:78vh}
+.tablewrap.short,.tscroll.short{--tw-max:40vh}
+
+table{border-collapse:separate;border-spacing:0;width:100%;font-size:12px}
+thead th{
+  position:sticky;top:0;z-index:1;background:var(--card);
+  text-align:left;font-weight:650;font-size:10px;letter-spacing:.02em;
+  text-transform:uppercase;color:var(--soft);padding:8px 9px;
+  border-bottom:1px solid var(--line);white-space:nowrap;user-select:none
+}
+thead th[aria-sort],thead th.sortable{cursor:pointer}
+thead th[aria-sort]:hover,thead th.sortable:hover{color:var(--brand)}
+thead th .ar{opacity:.45;font-size:9px;margin-left:3px}
+thead th[aria-sort]{color:var(--brand)}
+thead th[aria-sort] .ar{opacity:1}
+tbody td{padding:7px 9px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+/* content-visibility keeps a 5,452-row open-item table cheap to scroll; the
+   intrinsic size stops the scrollbar from jumping as rows realise themselves.
+   Only inside a scroll container — on a nine-row .terms table it buys nothing
+   and the guessed row height makes the page twitch as it settles. */
+.tablewrap tbody tr,.tscroll tbody tr{content-visibility:auto;contain-intrinsic-size:32px}
+tbody tr:hover{background:var(--card-warm)}
+tbody tr.is-total,tfoot td{background:var(--card-warm);font-weight:700;
+                           border-top:1px solid var(--line)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+td.neg{color:var(--bad)}
+td.nm{white-space:normal;min-width:130px;max-width:220px}
+td.code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11px}
+tbody td a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--line)}
+tbody td a:hover{color:var(--brand);border-bottom-color:var(--brand)}
+
+/* on a phone the first column FREEZES while the numbers scroll past it, so a
+   row of rupees never loses the party name it belongs to. Scoped to the
+   scroll containers on purpose: a .terms or .prose table is not in one, and a
+   sticky first cell there would only draw a shadow nothing ever scrolls past. */
+.tablewrap thead th:first-child,.tablewrap tbody td:first-child,
+.tscroll thead th:first-child,.tscroll tbody td:first-child{
+  position:sticky;left:0;z-index:2;background:var(--card);
+  box-shadow:1px 0 0 var(--line-soft);
+}
+.tablewrap thead th:first-child,.tscroll thead th:first-child{z-index:3}
+.tablewrap tbody tr:hover td:first-child,
+.tscroll tbody tr:hover td:first-child{background:var(--card-warm)}
+
+.tnote{font-size:11.5px;color:var(--soft);margin-top:8px;max-width:80ch;line-height:1.5}
+.tnote b{color:var(--sage)}
+
+
+/* ── 15. PILLS ─────────────────────────────────────────────────────────────
+   Five meanings, five tint families, and the word is always in the pill —
+   "OPEN", "OVERDUE", "NOT RECONCILED". Colour is the second signal, never
+   the only one.                                                              */
+.pill{display:inline-block;font-size:11px;font-weight:650;padding:2px 8px;
+      border-radius:999px;border:1px solid transparent;white-space:nowrap}
+.pill.ok  {background:var(--tint-ok-bg);   color:var(--tint-ok-fg);   border-color:var(--tint-ok-line)}
+.pill.warn{background:var(--tint-warn-bg); color:var(--tint-warn-fg); border-color:var(--tint-warn-line)}
+.pill.bad {background:var(--tint-bad-bg);  color:var(--tint-bad-fg);  border-color:var(--tint-bad-line)}
+.pill.dead{background:var(--tint-dead-bg); color:var(--tint-dead-fg); border-color:var(--tint-dead-line)}
+.pill.info{background:var(--tint-info-bg); color:var(--tint-info-fg); border-color:var(--tint-info-line)}
+a.pill{text-decoration:none}
+a.pill:hover{filter:brightness(.97)}
+
+
+/* ── 16. CHARTS ────────────────────────────────────────────────────────────
+   Every chart is wrapped in .chartwrap, and every .chartwrap carries a
+   <details> holding the same numbers as a table. That disclosure is not a
+   nicety: two steps of the ageing ramp fall under 3:1 on cream, several charts
+   are read by people who cannot separate the categorical hues, and some of
+   this board is read on a projector in a meeting. The table is the fallback
+   that makes the picture optional.                                           */
+.chart{margin:6px 0 16px}
+.chart-title{font-size:12px;font-weight:650;color:var(--sage);margin-bottom:9px}
+
+.chartwrap{margin:6px 0 16px;min-width:0}
+/* max-height matters more than it looks: charts.js emits a viewBox, so a
+   3:1 chart at 1280px wide would be 420px tall and stop being a glance. The
+   svg letterboxes inside the cap (preserveAspectRatio="meet"), it does not
+   distort. .is-tall opts out for a treemap or a 40-row pareto. */
+.chartwrap > svg{display:block;width:100%;height:auto;max-width:100%;max-height:48vh}
+.chartwrap.is-tall > svg{max-height:none}
+/* charts that genuinely cannot compress (heatmap month grids, Sankey-lite
+   flows) scroll inside their own box rather than squashing to illegibility */
+.chartwrap.is-wide{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.chartwrap.is-wide > svg{min-width:520px}
+.chartwrap > details{margin-top:8px;border-top:1px dashed var(--line-soft);padding-top:8px}
+.chartwrap > details > summary{
+  cursor:pointer;font-size:11.5px;font-weight:600;color:var(--sage);
+  list-style:none;display:inline-flex;align-items:center;gap:6px;
+  padding:6px 0;min-height:32px}
+.chartwrap > details > summary::-webkit-details-marker{display:none}
+.chartwrap > details > summary::before{content:"▸";font-size:10px;color:var(--soft)}
+.chartwrap > details[open] > summary::before{content:"▾"}
+.chartwrap > details > summary:hover{color:var(--brand)}
+.chartwrap > details .tablewrap{--tw-max:44vh;margin-top:6px}
+
+.legend{display:flex;flex-wrap:wrap;gap:7px 12px;margin:10px 0 0;font-size:11.5px;
+        color:var(--sage)}
+.legend i,.sw{display:inline-block;width:11px;height:11px;border-radius:3px;
+              margin-right:5px;vertical-align:-1px;flex:0 0 auto}
+/* named swatches so a page can build a legend without inline style attributes
+   — and so a theme switch re-tints the legend for free */
+.sw.c1{background:var(--c1)} .sw.c2{background:var(--c2)} .sw.c3{background:var(--c3)}
+.sw.c4{background:var(--c4)} .sw.c5{background:var(--c5)} .sw.c6{background:var(--c6)}
+.sw.nd{background:var(--age-nd)}
+.sw.a1{background:var(--age1)} .sw.a2{background:var(--age2)} .sw.a3{background:var(--age3)}
+.sw.a4{background:var(--age4)} .sw.a5{background:var(--age5)} .sw.a6{background:var(--age6)}
+.sw.ok{background:var(--ok)} .sw.warn{background:var(--warn)} .sw.bad{background:var(--bad)}
+.sw.info{background:var(--info)} .sw.dead{background:var(--dead)}
+
+/* horizontal bars, kept from v1. On a phone the name takes its own line
+   instead of fighting the bar for a 90px column. */
+.hbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 9px;
+      align-items:center;margin-bottom:11px;font-size:12.5px}
+.hbar .nm{grid-column:1 / -1;color:var(--sage);overflow:hidden;
+          text-overflow:ellipsis;white-space:nowrap}
+.hbar .nm a{color:inherit;text-decoration:none}
+.hbar .nm a:hover{color:var(--brand)}
+.hbar .tr{background:var(--line-soft);border-radius:5px;height:13px;overflow:hidden;display:flex}
+/* 2px surface gap between fills, 4px rounded data end — the inset shadow is
+   the gap, so stacked fills need no extra element between them */
+.hbar .fl{height:100%;border-radius:0 4px 4px 0;background:var(--brand);
+          box-shadow:0 0 0 1px var(--card) inset}
+.hbar .vl{color:var(--brand-deep);font-weight:650;font-size:12px;white-space:nowrap}
+
+/* stacked ageing bar */
+.stack{display:flex;height:24px;border-radius:6px;overflow:hidden;background:var(--line-soft)}
+.stack div{height:100%;box-shadow:1px 0 0 var(--card)}
+.stack div:last-child{box-shadow:none}
+
+
+/* ── 17. TERMS — the derivation table ─────────────────────────────────────
+   The whole brief in one component: a number, and every term that made it.
+   The operator column carries + − = as a glyph, so the arithmetic is readable
+   straight down the page without decoding colour, and the total row gets a
+   DOUBLE rule above it because that is what a double rule has meant on a
+   ledger for four hundred years.                                             */
+.terms{width:100%;font-size:13px;border-collapse:separate;border-spacing:0}
+/* width:99% on the label column makes auto table layout give it every pixel
+   the other three do not need, so the ± glyph sits against its amount instead
+   of stranded in the middle of the row where it reads as its own column of
+   nothing. */
+.terms th.lab,.terms td.lab{width:99%}
+.terms th{background:transparent;position:static;border-bottom:1px solid var(--line)}
+.terms td{padding:9px 8px;border-bottom:1px solid var(--line-soft);white-space:normal}
+.terms td.op{
+  width:2.2em;text-align:center;white-space:nowrap;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:15px;font-weight:700;color:var(--sage);padding-left:0;padding-right:0}
+.terms td.amt,.terms th.amt{
+  text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;
+  font-weight:650;color:var(--brand-deep)}
+.terms td.amt.neg{color:var(--bad)}
+.terms td.lab{color:var(--ink)}
+.terms td.lab .why{display:block;font-size:11.5px;color:var(--soft);
+                   font-weight:400;margin-top:2px;max-width:60ch}
+.terms td.src{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11px;color:var(--soft);
+  /* Phones only, and it is a compromise rather than a win: EFF_OPEN_INR does
+     break mid-token here, which is ugly. It stays because "no horizontal page
+     scroll at any nesting level" is a hard rule and this cell is the one that
+     breaks it — a page agent who forgets to wrap .terms in a .tablewrap would
+     otherwise push the whole board sideways on the derivation page, which is
+     the page most likely to be opened on a phone. Anything wider than a phone
+     gets the column name back in one piece, below. */
+  white-space:normal;overflow-wrap:anywhere}
+.terms td.src a{color:var(--soft);text-decoration:none;border-bottom:1px dotted var(--line)}
+.terms td.src a:hover{color:var(--brand);border-bottom-color:var(--brand)}
+.terms tr.is-sub td{background:var(--card-warm)}
+.terms tr.is-total td{
+  background:var(--card-warm);
+  border-top:3px double var(--line);border-bottom:0;
+  font-weight:800;font-size:14.5px;padding-top:11px;padding-bottom:11px}
+.terms tr.is-total td.amt{color:var(--brand-deep);font-size:16px;letter-spacing:-.01em}
+.terms tr.is-total td.op{font-size:16px;color:var(--brand)}
+
+/* the formula as prose, above the table — one line, monospace, so
+   "RAW_OPEN − UNAPPLIED_CREDIT = EFF_OPEN" reads as an equation and not a
+   sentence */
+.formula{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:12.5px;line-height:1.7;color:var(--ink);
+  background:var(--card-warm);border:1px solid var(--line-soft);
+  border-left:3px solid var(--brand);border-radius:8px;
+  padding:10px 12px;margin:0 0 14px;overflow-x:auto;overflow-wrap:anywhere}
+
+
+/* ── 18. EXCL — what was taken out ────────────────────────────────────────
+   C-0005 says intercompany is twenty-three CardCodes and that they must be
+   named, not silently dropped. This panel is where a figure admits what it
+   excluded and how much that was, with the codes one click away. It is tinted
+   --info rather than --warn: an exclusion is not a problem, it is a
+   definition, and tinting definitions amber trains people to ignore amber.    */
+.excl{
+  background:var(--tint-info-bg);border:1px solid var(--tint-info-line);
+  border-radius:10px;padding:12px 13px;margin:0 0 14px;color:var(--tint-info-fg);
+  font-size:13px;line-height:1.55}
+.excl h3{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+         color:var(--tint-info-fg);margin:0 0 8px}
+.excl-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;
+          align-items:baseline;padding:7px 0;border-top:1px solid var(--tint-info-line)}
+.excl-row:first-of-type{border-top:0;padding-top:0}
+.excl-row .lab{font-weight:650;min-width:0}
+.excl-row .amt{text-align:right;font-weight:700;white-space:nowrap;
+               font-variant-numeric:tabular-nums}
+.excl-row .why{grid-column:1 / -1;font-size:11.5px;opacity:.85}
+.excl-row .why a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.excl details{grid-column:1 / -1;margin-top:5px}
+.excl summary{cursor:pointer;font-size:11.5px;font-weight:600;padding:5px 0;min-height:30px;
+              display:inline-flex;align-items:center;gap:5px;list-style:none}
+.excl summary::-webkit-details-marker{display:none}
+.excl summary::before{content:"▸";font-size:10px}
+.excl details[open] summary::before{content:"▾"}
+.excl .codes{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.excl .codes code,.excl .codes a{
+  font-size:11px;background:var(--card);border:1px solid var(--tint-info-line);
+  border-radius:5px;padding:2px 6px;color:var(--tint-info-fg);text-decoration:none}
+.excl .codes a:hover{border-color:var(--info)}
+
+
+/* ── 19. SQLBOX — the query itself ────────────────────────────────────────
+   Shown in full, not summarised, because "here is the SQL" is the end of every
+   argument about a number.
+
+   The highlight trick: the <code> is width:max-content so long lines scroll
+   instead of wrapping (wrapped SQL is unreadable), and min-width:100% so a
+   short query still fills the box. <mark> is then a block at width:100%,
+   which means a highlighted line's band spans the FULL scroll width — not
+   just up to the end of that line's text, which is what you get by default
+   and which looks like a rendering bug.                                      */
+.sqlbox{
+  background:var(--card-warm);border:1px solid var(--line-soft);border-radius:10px;
+  max-height:46vh;overflow:auto;-webkit-overflow-scrolling:touch;
+  margin:0 0 12px;padding:10px 0}
+.sqlbox pre{margin:0}
+.sqlbox code{
+  display:block;width:max-content;min-width:100%;padding:0 12px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:11.5px;line-height:1.65;color:var(--ink);white-space:pre;tab-size:2}
+.sqlbox .ln{
+  display:inline-block;width:3.5ch;margin-right:12px;text-align:right;
+  color:var(--soft);user-select:none;-webkit-user-select:none;opacity:.7}
+/* the -12px margin cancels <code>'s padding so the band reaches the physical
+   edge of the box, and the 9px + 3px rule puts the text back on the same
+   column as every unhighlighted line */
+.sqlbox mark{
+  display:block;width:100%;margin:0 -12px;padding:0 12px 0 9px;
+  background:var(--mark-bg);color:inherit;
+  box-shadow:inset 3px 0 0 var(--mark-line)}
+.sqlbox mark .ln{color:var(--tint-warn-fg);opacity:1;font-weight:700}
+.sqlfoot{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11.5px;color:var(--soft);
+         margin:-6px 0 14px}
+
+
+/* ── 20. NOTES, CAVEATS, ERRORS, EMPTINESS ────────────────────────────────
+   The trap that makes a naive version of a figure wrong belongs ON the page,
+   not in a repo nobody opens.                                                */
+.note{
+  background:var(--card-warm);border:1px solid var(--line-soft);
+  border-left:3px solid var(--info);border-radius:10px;
+  padding:12px 13px;margin:0 0 14px;font-size:13px;color:var(--sage);line-height:1.6}
+.note h3,.note h4{color:var(--ink);font-size:13px;margin:0 0 6px}
+.note p:last-child{margin-bottom:0}
+.note code{background:var(--card);border:1px solid var(--line-soft);border-radius:4px;
+           padding:1px 5px;font-size:11.5px}
+
+.caveat{background:var(--tint-warn-bg);border:1px solid var(--tint-warn-line);
+        border-radius:10px;padding:11px 12px;font-size:12.5px;color:var(--tint-warn-fg);
+        margin:0 0 14px;line-height:1.55}
+.caveat b{color:var(--tint-warn-strong)}
+.caveat s{color:var(--bad)}
+.caveat a{color:var(--tint-warn-strong);text-decoration:underline;text-underline-offset:2px}
+/* a caveat code (C-0019) always links to methodology.html — the code alone
+   means nothing to anyone who has not read the corrections file */
+.cvcode{display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+        font-size:11px;font-weight:700;border-radius:5px;padding:1px 6px;
+        background:var(--tint-warn-bg);border:1px solid var(--tint-warn-line);
+        color:var(--tint-warn-fg);text-decoration:none;white-space:nowrap}
+a.cvcode:hover{border-color:var(--warn)}
+
+.err{padding:12px 14px;background:var(--tint-bad-bg);border:1px solid var(--tint-bad-line);
+     border-radius:10px;color:var(--tint-bad-fg);font-size:13px;margin-bottom:12px;
+     line-height:1.55}
+.err b{display:block;margin-bottom:3px}
+.err code{background:var(--card);border:1px solid var(--tint-bad-line);border-radius:4px;
+          padding:1px 5px;font-size:11.5px;overflow-wrap:anywhere}
+
+/* .empty is the "never a confident zero" renderer. It always carries a reason,
+   so it is roomy enough for a sentence rather than sized for an em-dash. */
+.empty{padding:22px 16px;text-align:center;color:var(--soft);font-size:13px;
+       background:var(--card-warm);border:1px dashed var(--line);border-radius:10px;
+       line-height:1.55}
+.empty b{display:block;color:var(--sage);margin-bottom:4px;font-size:13.5px}
+
+/* live indicator — the board refreshes itself, so say so */
+.live{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--sage)}
+.live i{width:7px;height:7px;border-radius:50%;background:var(--brand);flex:0 0 auto;
+        box-shadow:0 0 0 0 var(--pulse);animation:pulse 2.4s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--pulse)}
+                 70%{box-shadow:0 0 0 7px var(--pulse-0)}
+                 100%{box-shadow:0 0 0 0 var(--pulse-0)}}
+
+
+/* ── 21. HEALTH STRIP + SEARCH HITS ───────────────────────────────────────
+   index.html shows eleven sections' status in one strip; search.html shows a
+   flat result list across three books. Both are lists of links whose whole job
+   is to be scannable at a glance.                                            */
+.strip{display:grid;gap:6px;grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
+.strip a{
+  display:flex;align-items:center;gap:7px;min-width:0;text-decoration:none;
+  font-size:12px;font-weight:600;color:var(--sage);
+  background:var(--card-warm);border:1px solid var(--line-soft);
+  border-radius:9px;padding:9px 10px;min-height:40px}
+.strip a:hover{border-color:var(--brand);color:var(--brand)}
+.strip a .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.strip a .n{margin-left:auto;font-size:11px;color:var(--soft);font-variant-numeric:tabular-nums}
+
+.hits{display:grid;gap:7px;margin:0;padding:0;list-style:none}
+.hit{
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:baseline;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:11px 12px;text-decoration:none;color:inherit}
+.hit:hover{border-color:var(--brand)}
+.hit .nm{font-weight:650;color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.hit .amt{text-align:right;font-weight:700;white-space:nowrap;color:var(--brand-deep);
+          font-variant-numeric:tabular-nums}
+.hit .meta{grid-column:1 / -1;font-size:11.5px;color:var(--soft);
+           display:flex;flex-wrap:wrap;gap:4px 10px}
+.hit mark{background:var(--mark-bg);color:inherit;border-radius:3px;padding:0 2px}
+
+
+/* ── 22. PROSE — methodology.html ─────────────────────────────────────────
+   The one page on the board that is genuinely long-form. Measure is capped at
+   72ch: definitions that run the full 1280px are not read, they are skimmed,
+   and this is the page where skimming produces the wrong number.             */
+.prose{max-width:72ch;font-size:14px;line-height:1.65;color:var(--ink)}
+.prose h2{margin:26px 0 8px;font-size:18px}
+.prose h3{margin:20px 0 6px;font-size:14.5px;color:var(--sage)}
+.prose h2:first-child,.prose h3:first-child{margin-top:0}
+.prose p{margin:0 0 11px}
+.prose ul,.prose ol{margin:0 0 12px;padding-left:22px}
+.prose li{margin-bottom:5px}
+.prose code{background:var(--card-warm);border:1px solid var(--line-soft);border-radius:4px;
+            padding:1px 5px;font-size:12.5px;overflow-wrap:anywhere}
+.prose blockquote{margin:0 0 12px;padding:9px 13px;border-left:3px solid var(--line);
+                  color:var(--sage);background:var(--card-warm);border-radius:0 8px 8px 0}
+.prose hr{border:0;border-top:1px solid var(--line);margin:22px 0}
+.prose table{font-size:13px}
+.prose a{text-decoration:underline;text-underline-offset:2px}
+
+
+/* ── 23. FOOTER ────────────────────────────────────────────────────────────*/
+footer{margin:30px 0 0;padding:20px 0 10px;border-top:1px solid var(--line);
+       font-size:12px;color:var(--soft);line-height:1.6}
+footer h3{font-size:12.5px;color:var(--sage);margin-bottom:8px}
+footer a{color:var(--sage)}
+footer code{background:var(--card);border:1px solid var(--line-soft);border-radius:4px;
+            padding:1px 5px;font-size:11px;overflow-wrap:anywhere}
+.lineage{display:grid;gap:6px 18px;grid-template-columns:minmax(0,1fr);margin-bottom:14px}
+
+
+/* ═══ 24. LARGER SCREENS ═══════════════════════════════════════════════════
+   Everything above is the phone. From here on it is only ever more columns
+   and more air — never a different design, because the desktop board and the
+   phone board are read by the same person about the same number an hour
+   apart.                                                                     */
+
+/* 360px — two-up KPIs. Below this (a folded phone, an old SE) one column is
+   genuinely better than two 150px cards. */
+@media (min-width:360px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* 560px — small tablet / landscape phone: bars get their name column back,
+   mini-KPIs go three-up, the switcher stops being full-bleed */
+@media (min-width:560px){
+  .wrap{padding:0 18px}
+  .card{padding:18px 18px;border-radius:var(--radius);margin:16px 0}
+  .freshbar.is-stale{margin:0 -18px;padding:11px 18px}
+  .minikpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .seg{width:auto;display:inline-flex;justify-content:flex-start}
+  .seg button{flex:0 0 auto;padding:9px 15px;font-size:13px}
+  .hbar{grid-template-columns:minmax(90px,190px) minmax(0,1fr) auto;gap:10px;margin-bottom:7px}
+  .hbar .nm{grid-column:auto;color:var(--ink);font-size:13px}
+  .hbar .tr{height:15px}
+  .strip{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .kv{grid-template-columns:repeat(3,minmax(0,1fr))}
+  /* past a phone there is room for the SAP column name in one piece; if the
+     row still will not fit, .tablewrap scrolls it — that is what it is for */
+  .terms td.src{white-space:nowrap}
+  .lineage{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+}
+
+/* 820px — the desktop board. Two things flip here rather than at 760 as v1
+   did: the frozen first table column is released (a mouse can see the whole
+   row), and the company switcher shows full company names, which need roughly
+   this much room before "JIVO Wellness (Oil)" stops wrapping a four-up pill
+   row onto two lines. */
+@media (min-width:820px){
+  .mast{padding:26px 0 18px}
+  .brandmark{font-size:26px}
+  .stamp{font-size:13px;text-align:right}
+  .pagehead h1{font-size:27px}
+  .pagehead .lede{font-size:14px}
+  .ctrls{gap:10px;margin-top:14px}
+  .crumb{font-size:12.5px}
+
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:20px 0 8px}
+  .kpi{padding:15px 17px;border-radius:var(--radius)}
+  .kpi .lab{font-size:11.5px;letter-spacing:.06em}
+  .kpi .val{font-size:27px;margin:5px 0 2px}
+  .kpi .sub{font-size:12.5px}
+  .kpi .spark{height:30px}
+
+  .minikpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .mk{padding:11px 13px}
+  .mk .lab{font-size:10.5px}
+  .mk .val{font-size:19px}
+
+  .card-head h2{font-size:18px}
+  .card-head .src{font-size:11.5px}
+  .blurb{font-size:13.5px;margin-bottom:16px}
+
+  .navrow{padding:10px 130px 10px 0;gap:6px}
+  .navrow a{font-size:12.5px;padding:6px 12px;min-height:0}
+
+  table{font-size:13px}
+  thead th{padding:9px 11px;font-size:11.5px;letter-spacing:.04em}
+  tbody td{padding:8px 11px}
+  .tablewrap tbody tr,.tscroll tbody tr{contain-intrinsic-size:34px}
+  td.nm{min-width:180px;max-width:340px}
+  .tnote{font-size:12px}
+  /* release the frozen first column — with a mouse the whole row is visible
+     and the sticky shadow is just noise */
+  .tablewrap thead th:first-child,.tablewrap tbody td:first-child,
+  .tscroll thead th:first-child,.tscroll tbody td:first-child{
+    position:static;box-shadow:none}
+
+  .split{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+  .split.rail{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+  .strip{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .kv{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .terms{font-size:13.5px}
+  .terms td{padding:10px 10px}
+  .sqlbox code{font-size:12px}
+  .legend{font-size:12px}
+  .caveat{font-size:13px;padding:12px 14px}
+  .seg .lg{display:inline}
+  .seg .sm{display:none}
+  .freshbar{font-size:13px;padding:10px 14px}
+  .freshbar.is-stale{margin:0 -18px;padding:12px 18px;font-size:14px}
+  footer{margin:34px 0 0;padding:22px 0 10px;font-size:12.5px}
+}
+
+/* 1080px — the last column, and the gutter v1 shipped */
+@media (min-width:1080px){
+  .wrap{padding:0 20px}
+  .kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .freshbar.is-stale{margin:0 -20px;padding:12px 20px}
+  .strip{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .split.rail{grid-template-columns:minmax(0,2.4fr) minmax(0,1fr)}
+}
+
+
+/* ── 25. REDUCED MOTION ────────────────────────────────────────────────────
+   The stale banner's pulse and the live dot's glow are the only animations on
+   the board, and neither carries information the static state does not — the
+   banner is still a solid red field, the dot is still green. So both go.     */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  html{scroll-behavior:auto}
+}
+
+
+/* ═══ 26. AFTER DARK ═══════════════════════════════════════════════════════
+   CONTRACT §6.1 — mandatory, and the DEFAULT. Applied from a data-theme
+   attribute set before first paint, so a dark reader never gets a white flash.
+
+   Nothing about the layout or the data changes; only the palette is swapped,
+   and every swap keeps the rules the light palette was built on:
+     • one fixed categorical order, never cycled, still CVD-separable;
+     • the ageing ramp stays ONE warm hue and stays monotonic — but on dark
+       "worse" reads as HOTTER, not darker, so the ramp runs dim → bright
+       (the daylight board runs light → dark for exactly the same reason).
+       Do not simply reuse the light ramp here;
+     • 'not due' stays a STATUS in brand green, not a step of the ramp;
+     • status colours stay reserved, never reused as "series 7".
+
+   Every token below already has a daylight value on bare :root. That is the
+   rule that keeps the two themes the same board.                             */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --brand:#3FC177; --brand-deep:#EDF4EE; --ink:#E3E9E4;
+  --sage:#A3ADA5;  --soft:#7F8A81;
+  --cream:#0E1311; --card:#161C18; --card-warm:#1C231E;
+  --line:#2B342D;  --line-soft:#222A24;
+  /* same hue order as daylight, lifted into a dark-legible band */
+  --c1:#35C46F; --c2:#6BA5FF; --c3:#E8913A; --c4:#C98BE6; --c5:#3DC3DC; --c6:#F5729E;
+  /* ageing: one warm hue, monotonic dim -> bright (worse = hotter) */
+  --age-nd:#3FC177;
+  --age1:#97704A; --age2:#B0813F; --age3:#C69138;
+  --age4:#DCA333; --age5:#EEB23D; --age6:#FFC350;
+  --ok:#3FC177; --warn:#E0A63A; --bad:#FF7A6B; --info:#6BB6EE; --dead:#8B948C;
+  /* on dark a drop shadow does nothing — the border carries the edge, and the
+     shadow only sinks the card slightly into the page */
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -14px rgba(0,0,0,.6);
+  --pulse:rgba(63,193,119,.45); --pulse-0:rgba(63,193,119,0);
+
+  /* brand green and --bad are both LIGHT after dark, so the ink that sits on
+     top of them has to invert too — white-on-#FF7A6B would be unreadable and
+     white-on-#3FC177 fails contrast outright */
+  --on-brand:#07130C;
+  --on-bad:#2A0D09;
+
+  --veil:rgba(14,19,17,.92);
+
+  --tint-ok-bg:#14301F;   --tint-ok-fg:#7FDCA4;   --tint-ok-line:#20492F;
+  --tint-warn-bg:#33260C; --tint-warn-fg:#F0C173; --tint-warn-line:#4E3A12;
+  --tint-warn-strong:#FFD79A;
+  --tint-bad-bg:#3A1A16;  --tint-bad-fg:#FF9E92;  --tint-bad-line:#552722;
+  --tint-dead-bg:#242926; --tint-dead-fg:#9BA39C; --tint-dead-line:#333A35;
+  --tint-info-bg:#132A3A; --tint-info-fg:#8CC8F0; --tint-info-line:#1E4058;
+
+  --mark-bg:#3A3312; --mark-line:#A6852E;
+}
+
+/* Two structural adjustments the tokens cannot express. Both are about depth:
+   on dark, .card-warm is LIGHTER than .card, so anything that reads as
+   "recessed" in daylight reads as "raised" after dark unless it is given a
+   border instead of a fill difference. */
+:root[data-theme="dark"] .searchbox input:focus{box-shadow:0 0 0 3px rgba(63,193,119,.22)}
+:root[data-theme="dark"] .hbar .fl{box-shadow:0 0 0 1px var(--card) inset}
+
+
+/* ── 27. PRINT — A4 ────────────────────────────────────────────────────────
+   A section page gets printed and taken into a meeting, or filed. Three
+   things matter and nothing else does:
+
+     1. Print the DAYLIGHT palette whatever the screen was showing. A dark
+        board on paper is unreadable and empties a cartridge. Every value here
+        is the same one on bare :root above — nothing new is invented for
+        print, it is just re-asserted over the dark override.
+     2. Nothing may be cut off by a scroll box. Every internally-scrolling
+        container opens out; a table that scrolled 4,000 rows on screen prints
+        all 4,000, which is the operator's problem to filter, not ours to
+        silently truncate.
+     3. The freshness banner PRINTS. A printed board with no date on it is how
+        a stale figure ends up in a meeting six weeks later.
+
+   THIS BLOCK MUST STAY LAST IN THE FILE. `:root[data-theme="dark"]` inside
+   the selector list below has exactly the same specificity as the dark block
+   above it, so source order is the only thing deciding which set of hexes
+   wins. Put anything after this and a dark board prints #E3E9E4 ink on white
+   paper — invisible, and it took a headless print run to catch, not a
+   reading. The doubled :root is a second belt on the same trousers.          */
+@media print{
+  @page{size:A4;margin:14mm}
+
+  :root:root,:root:root[data-theme="dark"]{
+    color-scheme:light;
+    --brand:#0A7D3F; --brand-deep:#1F3524; --ink:#22301F;
+    --sage:#586055;  --soft:#8B9184;
+    --cream:#FFFFFF; --card:#FFFFFF; --card-warm:#FAF9F4;
+    --line:#CFCDC1;  --line-soft:#E4E2D6;
+    --c1:#0A7D3F; --c2:#1D63C4; --c3:#C2610A; --c4:#8B2E9E; --c5:#0894B0; --c6:#B01253;
+    --age-nd:#0A7D3F;
+    --age1:#D99A4E; --age2:#C97F2E; --age3:#B5651B;
+    --age4:#9A4D12; --age5:#7D370D; --age6:#5A2108;
+    --ok:#0A7D3F; --warn:#935800; --bad:#B3261E; --info:#1D5F8A; --dead:#7D786C;
+    --on-brand:#FFFFFF; --on-bad:#FFFFFF;
+    --veil:#FFFFFF;
+    --tint-ok-bg:#E8F3EC;   --tint-ok-fg:#0A5C2F;   --tint-ok-line:#CFE6D8;
+    --tint-warn-bg:#FBF0DC; --tint-warn-fg:#6E4200; --tint-warn-line:#EFDFC0;
+    --tint-warn-strong:#4E2F00;
+    --tint-bad-bg:#FBE9E7;  --tint-bad-fg:#8C1D17;  --tint-bad-line:#F0CFCB;
+    --tint-dead-bg:#EFEEE9; --tint-dead-fg:#5C5850; --tint-dead-line:#E0DED5;
+    --tint-info-bg:#E4EFF6; --tint-info-fg:#154B6E; --tint-info-line:#CCE0EC;
+    --mark-bg:#FFF3C4; --mark-line:#E8C86A;
+    --shadow:none; --stick:0px;
+  }
+
+  body{background:#fff;font-size:10.5pt;padding-bottom:0}
+  .wrap{max-width:none;padding:0}
+
+  /* controls do nothing on paper */
+  .navbar,.ctrls,.seg,.themetog,.toolbar,.chips,.searchbox,.btn,.kpi .spark{display:none!important}
+
+  /* the banner stays, and stops being sticky/full-bleed */
+  .freshbar{position:static!important;margin:0 0 8mm;border-radius:0;
+            border:1px solid var(--line);background:#fff;color:#000;
+            box-shadow:none;animation:none}
+  /* on paper the bar drops from a solid red field to a red-tinted one, so its
+     ink has to come back down with it — --on-bad is white, and white bold text
+     on a pale pink field is a blank rectangle where the warning used to be */
+  /* every one of these resets is here because .freshbar.is-stale out-specifies
+     the plain .freshbar rule above: without them the screen bar's full-bleed
+     negative margin and its drop shadow both print — as a band of grey ink
+     across the page under the warning. */
+  .freshbar.is-stale{background:var(--tint-bad-bg);color:var(--tint-bad-fg);
+                     border:2px solid var(--bad);padding:4mm;
+                     margin:0 0 8mm;box-shadow:none;animation:none;
+                     border-radius:0;position:static}
+  .freshbar.is-stale b,.freshbar.is-stale strong,.freshbar.is-stale a{
+    color:var(--tint-bad-fg)}
+
+  /* open every scroll box */
+  .tablewrap,.tscroll,.sqlbox,.chartwrap.is-wide{
+    max-height:none!important;overflow:visible!important;border-radius:0}
+  /* and once a box cannot scroll, its content has to wrap instead: a SQL line
+     that ran off the right of the screen ran off the right of the PAGE, where
+     there is no scrollbar to get it back. Wrapped SQL beats truncated SQL. */
+  .sqlbox code{white-space:pre-wrap;width:auto;min-width:0}
+  .sqlbox mark{width:auto;margin:0;padding-left:9px}
+  /* A4 is ~688px of usable width, which is under the 820px breakpoint, so the
+     phone rule letting a SAP column name break mid-token is what print would
+     otherwise inherit — and OPCH.RA / W_OPEN_ / INR over three lines is not a
+     column name any more */
+  .terms td.src{white-space:nowrap}
+  .chartwrap.is-wide > svg{min-width:0}
+  /* A disclosure on paper is a hidden fact, so ask for them open. CSS can
+     only ask: ::details-content lands this in current engines, and older ones
+     need ui.js to set [open] on beforeprint. Either way the summary goes —
+     "▸ show the table" is not a sentence on paper. */
+  details{display:block}
+  summary{display:none!important}
+  details::details-content{content-visibility:visible!important;
+                           block-size:auto!important;overflow:visible!important}
+
+  .card{break-inside:avoid;box-shadow:none;border:1px solid var(--line);
+        border-radius:0;margin:0 0 6mm;padding:5mm}
+  .kpi,.mk,.excl,.note,.caveat,.err{break-inside:avoid;box-shadow:none}
+  tr,.hbar,.terms tr{break-inside:avoid}
+  thead{display:table-header-group}
+  tfoot{display:table-footer-group}
+  thead th{position:static;background:#fff}
+  thead th:first-child,tbody td:first-child{position:static;box-shadow:none}
+  h1,h2,h3{break-after:avoid}
+
+  /* keep the ageing ramp, the pills and the check dots — they are the data.
+     Without this most browsers drop every background and an ageing chart
+     prints as six identical white boxes. */
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* deliberately NOT expanding href into visible text: this board's links are
+     query strings on twenty pages, and printing them would put a 90-character
+     URL after every figure in every table. The page's own footer carries the
+     board's address; that is the one an operator actually needs. */
+}

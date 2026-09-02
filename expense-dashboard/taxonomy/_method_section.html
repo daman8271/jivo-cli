@@ -1,0 +1,49 @@
+<section id="method">
+<h2><span class="num">11</span>Method, and the traps that would have broken this</h2>
+<div class="grid2">
+<div class="panel"><dl class="defs">
+<dt>What counts as an expense here</dt>
+<dd>Every posting to the <code>5600000 INDIRECT EXPENSE</code> tree — account codes 561xxxx through 569xxxx, <code>GroupMask = 5</code>. Direct expense (<code>5100000</code>), purchases (<code>5400xx</code>) and COGS (<code>50000xx</code>) are deliberately outside this. This is the "indirect expenses" head you asked for.</dd>
+<dt>Net, never gross</dt>
+<dd><code>SUM(Debit) − SUM(Credit)</code>. Several heads are provisioned monthly and reversed the next month; totalling debits alone overstated freight by ₹1.71&nbsp;Cr in a previous audit.</dd>
+<dt>Cost centre</dt>
+<dd>SAP Dimension 3, <code>JDT1.OcrCode3</code>. Dimension 4 is department, Dimension 5 is state, Dimension 1 is product/vehicle. A posting with no Dimension 3 stamp lands in "(no cost centre)".</dd>
+<dt>Excluded on your instruction</dt>
+<dd><code>OcrCode3 IN ('NPD1','NPD2','OTE')</code>. NPD 3 exists as a code in Oil and Mart but carries no postings in these four months, so it changes nothing either way.</dd>
+<dt>Rounding</dt>
+<dd>The HANA driver returns exact rationals, not decimals, so every sum is wrapped in <code>TO_BIGINT(ROUND(…,0))</code>. Per-row rounding makes a grand total differ from a directly-summed total by a rupee or two.</dd>
+</dl></div>
+<div class="panel"><dl class="defs">
+<dt style="color:var(--warn)">Trap — interest is inside</dt>
+<dd>Group 561 Finance Expense is part of indirect expense. Oil carries ₹35–50&nbsp;L a month of it. Excluding interest, Oil's four months are ₹1.90 / ₹2.03 / ₹4.04 / ₹0.98&nbsp;Cr — ₹8.95&nbsp;Cr, averaging ₹2.24&nbsp;Cr a month.</dd>
+<dt style="color:var(--warn)">Trap — Sales Realise is provision noise</dt>
+<dd>In Oil, this one cost centre booked ₹1.79&nbsp;Cr in June and reversed ₹1.24&nbsp;Cr in July. That single head is why June looks high and July looks low. June and July taken together are clean; either month alone is not.</dd>
+<dt style="color:var(--warn)">Trap — Mart swings the other way</dt>
+<dd>Mart's ECOM and Sales cost centres both carry negative months (a reversal larger than that month's spend). Mart's June is ₹36.9&nbsp;L and its July is ₹4.19&nbsp;Cr for the same reason. Read Mart on a four-month average, not monthly.</dd>
+<dt style="color:var(--warn)">Trap — one month is not a month</dt>
+<dd>August 2026 is deliberately absent. Only ₹10.95&nbsp;L had been posted in Oil when this was pulled, against a ₹2.6&nbsp;Cr monthly run-rate. A part-posted month read as a real one would look like a 95% cost saving.</dd>
+<dt style="color:var(--warn)">Trap — three companies, one group</dt>
+<dd>Intercompany recharges (Oil ↔ Mart ↔ Beverages) appear as real expense in the paying company's books. They net out only at group level, so the group column is the honest one.</dd>
+</dl></div>
+</div>
+<div class="panel">
+<h4 style="margin:0 0 10px;font-size:14px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)">The query behind every number</h4>
+<pre>SELECT IFNULL(j."OcrCode3",'(unallocated)') AS CC,
+       a."AcctCode", a."AcctName",
+       SUBSTRING(a."AcctCode",1,3)          AS GRP,
+       LEFT(j."RefDate",7)                  AS MTH,
+       TO_BIGINT(ROUND(SUM(IFNULL(j."Debit",0) - IFNULL(j."Credit",0)),0)) AS NET,
+       COUNT(*) AS TXNS
+FROM   &lt;COMPANY&gt;.JDT1 j
+JOIN   &lt;COMPANY&gt;.OACT a ON a."AcctCode" = j."Account"
+WHERE  SUBSTRING(a."AcctCode",1,2) = '56'
+  AND  a."GroupMask" = 5
+  AND  j."RefDate" &gt;= '2026-04-01' AND j."RefDate" &lt; '2026-08-01'
+GROUP BY IFNULL(j."OcrCode3",'(unallocated)'), a."AcctCode", a."AcctName",
+         SUBSTRING(a."AcctCode",1,3), LEFT(j."RefDate",7);
+
+-- run three times, once per company:
+--   JIVO_OIL_HANADB · JIVO_MART_HANADB · JIVO_BEVERAGES_HANADB
+-- effective-month basis: swap RefDate for TaxDate throughout.</pre>
+</div>
+</section>

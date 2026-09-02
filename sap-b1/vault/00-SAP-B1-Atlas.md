@@ -1,7 +1,18 @@
 # SAP B1 Atlas — Master Map of Content
 
-> [!danger] READ-ONLY STANDING RULE
-> **We NEVER write to SAP.** This is a live production ERP. The only sanctioned access path is the read-only `sapb1` CLI (`cd ~/sap-b1/cli && ./sapb1 ...`), which issues GET requests exclusively — the sole exceptions are [[Login]]/[[Logout]], which touch nothing but a session cookie. No curl against the server, no POST/PATCH/PUT/DELETE, ever. The write-side RPC services documented in this vault exist for completeness only; they are never called.
+> [!warning] SCOPE OF THIS VAULT — reads. Writes are a different vault.
+> This vault maps SAP's **API surface**: what the Service Layer exposes and how to read it.
+> Everything documented here is a GET.
+>
+> **It is not the authority on what may be written.** Writing to SAP *is* sanctioned and
+> expected — `sapb1 draft` / `post` / `patch` / `delete draft`, drafts-first, previewed and
+> logged. The rule lives in `CLAUDE.md` **RULE 0**, and nothing in this vault narrows it.
+> (This banner used to read "we NEVER write to SAP", which was true when the vault was
+> written in July 2026 and became wrong on 2026-08-22.)
+>
+> For **how JIVO actually keys entries** — required fields, series, dimensions, tax, the
+> journal each document posts, the traps — see the sibling vault
+> [[00-Entry-Atlas|sap-b1/entry-vault]].
 
 ## Connection
 

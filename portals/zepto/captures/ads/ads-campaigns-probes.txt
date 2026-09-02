@@ -1,0 +1,19 @@
+# Ads Campaigns, Booking & Keywords — read-only probe transcript
+# Section slug: ads-campaigns | lane: ads | host: fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token payload: sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, iat 1783887610, exp 1783967399
+#   = exp Mon Jul 13 2026 18:29:59 UTC (23:59:59 IST) -> EXPIRED at probe time (run 2026-07-24).
+# Rules: curl -s -X GET only, read-only allowlist, cap 8 probes, ~1 req/s, STOP on any 401/403/429/WAF.
+######################################################################
+
+## PROBE 1: GET https://fcc.zepto.co.in/ads-bff/api/v1/campaigns
+HTTP_STATUS: 429
+BODY (first 40 lines):
+<empty body — rate-limit / auth-reject page, no JSON returned>
+
+######################################################################
+Result: HTTP 429 on the first probe (expired ecom1@jivo.in JWT, same token that
+returned 429 for the sibling brands-audiences and vendor-lane probes). Per the
+read-only guardrail, any 401/403/429/WAF halts probing -> STOPPED after 1 probe.
+All 47 endpoints in this section are therefore DOCUMENTED FROM THE BUNDLE ONLY
+(not probed / not PROVEN). No response shapes captured live.

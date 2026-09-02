@@ -1,0 +1,18 @@
+# systemd unit for accounts-data-serve.py — the loopback server that hands the
+# accounts-board data to Traefik so the Vercel sites can proxy it (see the
+# header of accounts-data-serve.py for why the data no longer rides deploys).
+#
+# Install (on the VPS):
+#   cp pipeline/accounts-data.service /etc/systemd/system/accounts-data.service
+#   systemctl daemon-reload && systemctl enable --now accounts-data
+[Unit]
+Description=JIVO accounts-board data server (loopback, behind traefik)
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /root/jivo-cli/accounts-dashboard/pipeline/accounts-data-serve.py 7799
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

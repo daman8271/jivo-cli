@@ -1,0 +1,597 @@
+{
+  "section": "return-note",
+  "title": "Return Note",
+  "tables": "ORDN RDN1",
+  "blurb": "Customer returns that came back into JIVO — how much stock SAP put back on the shelf, and which of those returns the customer was never credited for.",
+  "grain": "SUMMARY: one row per (SCOPE, GRP_KEY). Six scopes are stacked in one array — TOTAL (1 row), CLASS (EXTERNAL/BRANCH/INTERCOMPANY), CREDIT_NOTE (HAS_CREDIT_NOTE/NO_CREDIT_NOTE), NO_CN_REASON (<=3), MONTH (<=36, one per YYYY-MM), CUSTOMER (top 40 CardCodes by stock cost). Capped at 200 rows; live counts oil 72 / mart 70 / bev 72. DETAIL: one row per return-note DOCUMENT (ORDN header, all three CANCELED states decoded), ranked by EXC_RANK and hard-capped at 500 — live counts oil 500 (truncated inside rank 4), mart 500 (truncated INSIDE rank 1, so no complete population), bev 185 (the whole register).",
+  "faceted": true,
+  "facet_column": "SCOPE",
+  "total_row": "The one and only company total is the row where SCOPE == 'TOTAL' (its GRP_KEY == 'ALL' and SORT_KEY == '1'). Summing every row in the array multiply-counts every return roughly four times (TOTAL + CLASS + CREDIT_NOTE + MONTH, plus a partial overlap from the CUSTOMER top-40). NO_CN_REASON rows are a partition of the NO_CREDIT_NOTE row only, not of TOTAL.",
+  "facet_additivity": {
+    "CLASS": "additive — sums to TOTAL exactly for every measure (verified 0.00 delta on all three books in this snapshot)",
+    "MONTH": "additive to TOTAL for every measure EXCEPT CN_DOCS (see traps); sub-paisa rounding drift only",
+    "CREDIT_NOTE": "additive to TOTAL for document and stock measures; SALES_NET / CN_PCT_OF_SALES / RET_COST_PCT_OF_SALES are NULL on these rows",
+    "NO_CN_REASON": "a partition of the NO_CREDIT_NOTE row, NOT of TOTAL — its RET_DOCS sums to RET_DOCS_NO_CN and its RET_STOCK_COST sums to RET_STOCK_COST_NO_CN",
+    "CUSTOMER": "top-40 only, NOT additive to TOTAL (oil 95.8% of stock cost, mart 100.0%, bev 100.0% in this snapshot)"
+  },
+  "data_snapshot": {
+    "generated_at": "2026-08-22T19:05:02+05:30",
+    "as_of": "2026-08-22",
+    "note": "site/data.json is rewritten by the VPS live-refresh cron every 2 minutes. Every 'live' value in this spec was computed from one frozen copy of the 19:05:02 build. Re-reading data.json later WILL move these figures — SALES_NET moved ~0.04% between two reads while this spec was being written.",
+    "rows": {"summary": {"oil": 72, "mart": 70, "bev": 72}, "detail": {"oil": 500, "mart": 500, "bev": 185}},
+    "seconds": {"summary": {"oil": 1.1, "mart": 1.3, "bev": 0.9}, "detail": {"oil": 1.0, "mart": 1.0, "bev": 0.6}},
+    "errors": {}
+  },
+
+  "kpis": [
+    {
+      "id": "rn-stock-cost",
+      "label": "Stock value handed back",
+      "unit": "INR",
+      "column": "RET_STOCK_COST",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "for every live return note: SUM(JDT1.Debit) on that return's own journal entry (ORDN.TransId), totalled = RET_STOCK_COST. It is what SAP put back into inventory, NOT what the goods were worth.",
+      "terms": [
+        {"label": "External customers", "col": "RET_STOCK_COST", "op": "+", "source": "ORDN x JDT1, PARTY_CLASS='EXTERNAL'", "note": "CLASS row EXTERNAL"},
+        {"label": "JIVO branch cards", "col": "RET_STOCK_COST", "op": "+", "source": "ORDN x JDT1, PARTY_CLASS='BRANCH'", "note": "CLASS row BRANCH — zero returns in all three books today"},
+        {"label": "Intercompany (JIVO group cards)", "col": "RET_STOCK_COST", "op": "+", "source": "ORDN x JDT1, PARTY_CLASS='INTERCOMPANY'", "note": "CLASS row INTERCOMPANY — 57.6% of Oil's total, C-0005/C-0020"},
+        {"label": "= all customer returns", "col": "RET_STOCK_COST", "op": "=", "source": "SCOPE='TOTAL'", "note": "CLASS sum equals TOTAL to 0.00 in all three books"}
+      ],
+      "excludes": [
+        {"label": "Cancelled returns and their cancellation mirrors", "row_filter": "ORDN.CANCELED != 'N'", "why": "C-0021 — CANCELED is three-valued N/Y/C; filtering '<> Y' alone would double-count the mirror"},
+        {"label": "Nothing else", "row_filter": "none", "why": "BRANCH and INTERCOMPANY are NOT excluded from this figure — they get their own CLASS rows. Use rn-external-cost for the trade-only number."}
+      ],
+      "sql_lines": [249, 257],
+      "caveats": ["C-0021", "C-0005", "C-0020", "RN-ZERO-VALUATION", "RN-RAW-MATERIAL-DOCS"],
+      "check": {
+        "method": "Sum STOCK_COST over the LIVE rows of the detail register, which is produced by a separately written SQL file (return-note-detail.sql) with different joins — it brings in ODLN, builds its COST subquery over all ORDN rather than only live ones, and rounds money per document instead of once at the end. Valid only where the register is complete. Completeness rule: the register is complete when len(detail) < 500; when it is at the cap, a rank is complete iff a strictly HIGHER EXC_RANK is present in the array. Where the register is capped, fall back to the (weaker, same-query) facet-sum route: CLASS rows and MONTH rows must each sum to the TOTAL row.",
+        "recipe": "det=slice('return-note',co)['detail']; alt=sum(r['STOCK_COST'] for r in det if r['CANCEL_STATUS']=='LIVE') if len(det)<500 else None; fallback=sum(r['RET_STOCK_COST'] for r in summary if r['SCOPE']=='CLASS')",
+        "measured": {"bev": "detail 259426.67 vs 259426.66 (delta 0.01, per-document rounding)", "oil": "detail route UNAVAILABLE (capped); CLASS-sum fallback delta 0.00; MONTH-sum fallback delta 0.00", "mart": "detail route UNAVAILABLE (capped inside rank 1); CLASS-sum delta 0.00; MONTH-sum delta -0.01"},
+        "build_time_route": "pipeline/verify.py should re-derive this from OINM instead — SUM(TransValue)+SUM(PriceDiff) on OINM.TransType=16 for live returns shares no table with the JDT1 path and reproduced all three books to the paisa in the 2026-08-21 adversarial review."
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "scope": "CLASS"}},
+      "live": {"oil": 87074785.82, "mart": 40063961.58, "bev": 259426.66}
+    },
+    {
+      "id": "rn-uncredited-cost",
+      "label": "Returned, never credited",
+      "unit": "INR",
+      "column": "RET_STOCK_COST_NO_CN",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "FROM_DELIVERY_INVOICED + FROM_DELIVERY_UNBILLED + STANDALONE_NO_LINK = RET_STOCK_COST_NO_CN — the stock cost of every live return with no LIVE credit note linked to it in SAP.",
+      "terms": [
+        {"label": "Billed, goods back, no credit (credit IS due)", "col": "RET_STOCK_COST", "op": "+", "source": "SCOPE='NO_CN_REASON' GRP_KEY='FROM_DELIVERY_INVOICED'", "note": "the work list"},
+        {"label": "Base delivery never invoiced (no credit due)", "col": "RET_STOCK_COST", "op": "+", "source": "SCOPE='NO_CN_REASON' GRP_KEY='FROM_DELIVERY_UNBILLED'", "note": "not an exception — shown so it is not double-counted as one"},
+        {"label": "No base link at all (unanswerable from structure)", "col": "RET_STOCK_COST", "op": "+", "source": "SCOPE='NO_CN_REASON' GRP_KEY='STANDALONE_NO_LINK'", "note": "Oil's biggest uncredited bucket"},
+        {"label": "= returned, never credited", "col": "RET_STOCK_COST_NO_CN", "op": "=", "source": "SCOPE='TOTAL'", "note": "sums to 0.00 delta in all three books"}
+      ],
+      "excludes": [
+        {"label": "Returns credited by a standalone credit note", "row_filter": "not structurally detectable", "why": "'no credit note' means no credit note LINKED in SAP. Per pipeline/notes/return-note.md, 2723 of Oil's 6147 / 975 of Mart's 4384 / 161 of Bev's 399 live credit notes carry no base document on any line, so a credited customer can still land here. This is a work list, never a proven loss."},
+        {"label": "Returns credited via the invoice chain", "row_filter": "RIN1.BaseType=13 on the invoice that consumed the base delivery", "why": "measured false-positive rate: Oil 4 of 212 (1.9%), Mart 3 of 913 (0.3%), Bev 0 of 3 — deliberately still counted as uncredited"}
+      ],
+      "sql_lines": [408, 429],
+      "caveats": ["C-0021", "RN-WORK-LIST-NOT-LOSS", "RN-ZERO-VALUATION"],
+      "check": {
+        "method": "Rebuild it from the detail register — a different SQL file that decides FLAG_NO_CREDIT_NOTE per document with its own CN subquery, rather than from a scope-level aggregate. Every uncredited return is EXC_RANK 1, 2 or 3, and those ranks sort BEFORE rank 4, so they survive the 500-row cap wherever a rank-4 row is present in the array. That makes this route valid for Oil (rank 4 present) and Bev (uncapped) even though neither book's register is complete overall — it is the one place the capped detail can still prove a total.",
+        "recipe": "det=slice('return-note',co)['detail']; ranks={r['EXC_RANK'] for r in det}; ok = len(det)<500 or 4 in ranks; alt = round(sum(r['STOCK_COST'] for r in det if r['FLAG_NO_CREDIT_NOTE']=='Y'),2) if ok else None",
+        "measured": {"oil": "detail 15217213.26 vs 15217213.18 (delta 0.08 = per-document rounding over 421 docs)", "mart": "UNAVAILABLE — register truncated inside rank 1, no rank 2/3/4 present; NO_CN_REASON-sum fallback delta 0.00", "bev": "detail 189198.63 vs 189198.63 (delta 0.00)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "scope": "NO_CN_REASON"}},
+      "live": {"oil": 15217213.18, "mart": 14382091.18, "bev": 189198.63}
+    },
+    {
+      "id": "rn-uncredited-docs",
+      "label": "Returns with no credit note",
+      "unit": "count",
+      "column": "RET_DOCS_NO_CN",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "COUNT of live return notes with no live A/R credit note carrying a RIN1.BaseType=16 line pointing at them. 23.2% of Oil's returns, 76.4% of Mart's, 37.3% of Bev's.",
+      "terms": [
+        {"label": "Live return notes", "col": "RET_DOCS", "op": "+", "source": "SCOPE='TOTAL'", "note": "ORDN CANCELED='N'"},
+        {"label": "less: has a live credit note", "col": "RET_DOCS", "op": "-", "source": "SCOPE='CREDIT_NOTE' GRP_KEY='HAS_CREDIT_NOTE'", "note": "linked from the credit-note side only, RIN1.BaseType=16"},
+        {"label": "= no credit note linked", "col": "RET_DOCS_NO_CN", "op": "=", "source": "SCOPE='TOTAL'", "note": "equals the NO_CREDIT_NOTE CREDIT_NOTE row exactly"}
+      ],
+      "excludes": [
+        {"label": "Cancelled credit notes", "row_filter": "ORIN.CANCELED != 'N'", "why": "the link is taken from the credit-note side because 5 live Oil and 3 live Bev returns still point at a CANCELLED credit note via RDN1.TargetType — the return side would call them credited. Verified: the credit-note side misses ZERO live-return/live-CN pairs in all three books."}
+      ],
+      "sql_lines": [258, 271],
+      "caveats": ["C-0021", "RN-WORK-LIST-NOT-LOSS"],
+      "check": {
+        "method": "Count FLAG_NO_CREDIT_NOTE=='Y' rows in the detail register (different file, per-document flag, its own CN subquery). Valid wherever a rank-4 row is present or the register is uncapped. Independently, the CREDIT_NOTE facet gives a third route: RET_DOCS(TOTAL) - RET_DOCS(HAS_CREDIT_NOTE).",
+        "recipe": "det=slice('return-note',co)['detail']; ok = len(det)<500 or 4 in {r['EXC_RANK'] for r in det}; alt = sum(1 for r in det if r['FLAG_NO_CREDIT_NOTE']=='Y') if ok else None; third = TOTAL.RET_DOCS - HAS_CREDIT_NOTE.RET_DOCS",
+        "measured": {"oil": "detail 421 vs 421 (exact); facet route 1817-1396=421", "mart": "detail UNAVAILABLE (500 = the cap, all rank 1); facet route 1793-423=1370 exact", "bev": "detail 60 vs 60 (exact); facet route 161-101=60"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "flag": "FLAG_NO_CREDIT_NOTE=Y"}},
+      "live": {"oil": 421, "mart": 1370, "bev": 60}
+    },
+    {
+      "id": "rn-billed-uncredited-docs",
+      "label": "Billed, goods came back, never credited",
+      "unit": "count",
+      "column": "RET_DOCS_NO_CN_BILLED",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "COUNT of live uncredited returns whose base delivery WAS consumed by a live A/R invoice — the customer was definitely billed for goods that came back, and no credit note was raised. This is the only actionable subset of rn-uncredited-docs.",
+      "terms": [
+        {"label": "Uncredited returns", "col": "RET_DOCS_NO_CN", "op": "+", "source": "SCOPE='TOTAL'", "note": "421 / 1370 / 60"},
+        {"label": "less: base delivery never invoiced (no credit due)", "col": "RET_DOCS", "op": "-", "source": "SCOPE='NO_CN_REASON' GRP_KEY='FROM_DELIVERY_UNBILLED'", "note": ""},
+        {"label": "less: no base link at all (unanswerable)", "col": "RET_DOCS", "op": "-", "source": "SCOPE='NO_CN_REASON' GRP_KEY='STANDALONE_NO_LINK'", "note": ""},
+        {"label": "= billed and uncredited", "col": "RET_DOCS_NO_CN_BILLED", "op": "=", "source": "SCOPE='TOTAL'", "note": "equals the FROM_DELIVERY_INVOICED row's RET_DOCS exactly"}
+      ],
+      "excludes": [
+        {"label": "Returns citing several deliveries that disagree", "row_filter": "MAX(DLV_INVOICED) over multiple BaseEntry values", "why": "DLV_INVOICED takes MAX, so a return counts as BILLED if ANY cited delivery was invoiced. Exactly 3 Mart returns are affected; Oil and Bev none. A choice, not an accident."}
+      ],
+      "sql_lines": [232, 248],
+      "caveats": ["C-0021", "RN-WORK-LIST-NOT-LOSS", "RN-MULTI-DELIVERY-MAX"],
+      "check": {
+        "method": "Count EXC_RANK==1 rows in the detail register — the detail computes the rank from its own ODLN join (the summary decides 'was the base delivery invoiced?' straight off RDN1.BaseEntry without confirming the delivery row exists), so the two routes disagree if an orphan BaseEntry ever appears. Cross-check the whole three-way split at once: rank1/rank2/rank3 counts must equal FROM_DELIVERY_INVOICED / STANDALONE_NO_LINK / FROM_DELIVERY_UNBILLED.",
+        "recipe": "det=slice('return-note',co)['detail']; ok = len(det)<500 or 4 in {r['EXC_RANK'] for r in det}; alt = sum(1 for r in det if r['EXC_RANK']==1) if ok else None",
+        "measured": {"oil": "detail rank1 212 vs 212; rank2 115 vs 115; rank3 94 vs 94 (all exact)", "mart": "UNAVAILABLE — 500 rank-1 rows is the cap, not the population (true count 913)", "bev": "detail rank1 3 vs 3; rank2 40 vs 40; rank3 17 vs 17 (all exact)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "reason": "FROM_DELIVERY_INVOICED"}},
+      "live": {"oil": 212, "mart": 913, "bev": 3}
+    },
+    {
+      "id": "rn-billed-uncredited-cost",
+      "label": "Stock cost of the work list",
+      "unit": "INR",
+      "column": "RET_STOCK_COST",
+      "row_filter": "r.get('SCOPE')=='NO_CN_REASON' and r.get('GRP_KEY')=='FROM_DELIVERY_INVOICED'",
+      "agg": "first",
+      "formula": "SUM(JDT1.Debit) over the billed-and-uncredited returns only. Deliberately much smaller than rn-uncredited-cost: Oil's work list is ₹3.18 L of the ₹1.52 Cr uncredited, because Oil's uncredited weight sits in STANDALONE_NO_LINK.",
+      "terms": [
+        {"label": "Billed, uncredited returns", "col": "RET_DOCS", "op": "+", "source": "SCOPE='NO_CN_REASON' GRP_KEY='FROM_DELIVERY_INVOICED'", "note": "212 / 913 / 3 documents"},
+        {"label": "= their stock cost", "col": "RET_STOCK_COST", "op": "=", "source": "same row", "note": ""}
+      ],
+      "excludes": [
+        {"label": "Uncredited returns with no invoiced base", "row_filter": "r.get('GRP_KEY') in ('FROM_DELIVERY_UNBILLED','STANDALONE_NO_LINK')", "why": "no credit is due on an unbilled shipment, and a standalone return cannot be judged from structure"}
+      ],
+      "sql_lines": [408, 429],
+      "caveats": ["RN-WORK-LIST-NOT-LOSS", "RN-ZERO-VALUATION"],
+      "check": {
+        "method": "Sum STOCK_COST over EXC_RANK==1 detail rows — different file, per-document rounding, its own ODLN-confirmed rank. Complete for Oil and Bev under the higher-rank-present rule; unavailable for Mart.",
+        "recipe": "det=slice('return-note',co)['detail']; ok = len(det)<500 or 4 in {r['EXC_RANK'] for r in det}; alt = round(sum(r['STOCK_COST'] for r in det if r['EXC_RANK']==1),2) if ok else None",
+        "measured": {"oil": "detail 318317.77 vs 318317.73 (delta 0.04)", "mart": "UNAVAILABLE (capped); detail sample of 500 of 913 gives 1621724.12 against a true 1845085.71 — do NOT use it", "bev": "detail 207.78 vs 207.78 (exact)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "reason": "FROM_DELIVERY_INVOICED"}},
+      "live": {"oil": 318317.73, "mart": 1845085.71, "bev": 207.78}
+    },
+    {
+      "id": "rn-standalone-cost",
+      "label": "Uncredited with no base link at all",
+      "unit": "INR",
+      "column": "RET_STOCK_COST",
+      "row_filter": "r.get('SCOPE')=='NO_CN_REASON' and r.get('GRP_KEY')=='STANDALONE_NO_LINK'",
+      "agg": "first",
+      "formula": "Stock cost of live uncredited returns that cite no base delivery at all (RDN1.BaseType is neither 15 nor 13). Nothing in SAP's document linkage says whether credit was due — this is the genuinely unanswerable bucket, and in Oil it is the largest of the three.",
+      "terms": [
+        {"label": "Standalone uncredited returns", "col": "RET_DOCS", "op": "+", "source": "SCOPE='NO_CN_REASON' GRP_KEY='STANDALONE_NO_LINK'", "note": "115 / 72 / 40 documents"},
+        {"label": "= their stock cost", "col": "RET_STOCK_COST", "op": "=", "source": "same row", "note": "55.8% of Oil's uncredited cost"}
+      ],
+      "excludes": [
+        {"label": "Free-text invoice references", "row_filter": "ORDN.Comments LIKE '%INVOICE%'", "why": "414 Oil returns type the invoice number into Comments in at least three incompatible formats. It is carried verbatim into the detail's REASON column and deliberately NOT parsed."}
+      ],
+      "sql_lines": [408, 429],
+      "caveats": ["RN-WORK-LIST-NOT-LOSS", "RN-FREETEXT-INVOICE-REF"],
+      "check": {
+        "method": "Sum STOCK_COST over EXC_RANK==2 detail rows and cross-check the count. Independently: the three NO_CN_REASON rows must sum to RET_STOCK_COST_NO_CN on the TOTAL row.",
+        "recipe": "det=slice('return-note',co)['detail']; ok = len(det)<500 or 4 in {r['EXC_RANK'] for r in det}; alt = round(sum(r['STOCK_COST'] for r in det if r['EXC_RANK']==2),2) if ok else None; partition_check = sum(r['RET_STOCK_COST'] for r in summary if r['SCOPE']=='NO_CN_REASON') == TOTAL.RET_STOCK_COST_NO_CN",
+        "measured": {"oil": "detail 8490503.54 vs 8490503.51 (delta 0.03); partition check delta 0.00", "mart": "detail UNAVAILABLE; partition check delta 0.00", "bev": "detail 627.50 vs 627.50 (exact); partition check delta 0.00"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "reason": "STANDALONE_NO_LINK"}},
+      "live": {"oil": 8490503.51, "mart": 3003825.69, "bev": 627.5}
+    },
+    {
+      "id": "rn-docs",
+      "label": "Live return notes",
+      "unit": "count",
+      "column": "RET_DOCS",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "COUNT(*) of ORDN headers with CANCELED='N' and DocDate <= as-of, excluding the 2024-09-30 go-live date (a no-op: no return note is dated 2024-09-30 in any book).",
+      "terms": [
+        {"label": "External", "col": "RET_DOCS", "op": "+", "source": "CLASS EXTERNAL", "note": "1340 / 1789 / 129"},
+        {"label": "Branch", "col": "RET_DOCS", "op": "+", "source": "CLASS BRANCH", "note": "0 / 0 / 1"},
+        {"label": "Intercompany", "col": "RET_DOCS", "op": "+", "source": "CLASS INTERCOMPANY", "note": "477 / 4 / 31"},
+        {"label": "= live return notes", "col": "RET_DOCS", "op": "=", "source": "SCOPE='TOTAL'", "note": ""}
+      ],
+      "excludes": [
+        {"label": "Cancelled originals (CANCELED='Y')", "row_filter": "r.get('CANCEL_STATUS')=='CANCELLED'", "why": "C-0021"},
+        {"label": "Cancellation mirrors (CANCELED='C')", "row_filter": "r.get('CANCEL_STATUS')=='CANCELLATION_DOC'", "why": "C-0021 — SAP auto-generates one per cancellation; a '<> Y' filter leaves these in and double-counts"}
+      ],
+      "sql_lines": [201, 220],
+      "caveats": ["C-0021"],
+      "check": {
+        "method": "Count LIVE rows in the detail register (which keeps all three CANCELED states and decodes them). Exact where the register is complete. A second in-array route: the CLASS rows and the CREDIT_NOTE rows must each sum to TOTAL.",
+        "recipe": "det=slice('return-note',co)['detail']; alt = sum(1 for r in det if r['CANCEL_STATUS']=='LIVE') if len(det)<500 else None; facet = sum(r['RET_DOCS'] for r in summary if r['SCOPE']=='CLASS')",
+        "measured": {"oil": "detail UNAVAILABLE (483 live of 1817 in the capped slice); CLASS sum 1817 = TOTAL; CREDIT_NOTE sum 1817 = TOTAL", "mart": "detail UNAVAILABLE; CLASS sum 1793 = TOTAL", "bev": "detail 161 vs 161 (exact); CLASS sum 161 = TOTAL"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>"}},
+      "live": {"oil": 1817, "mart": 1793, "bev": 161}
+    },
+    {
+      "id": "rn-zero-value-docs",
+      "label": "Return notes booked at zero value",
+      "unit": "count",
+      "column": "RET_DOCS_ZERO_VALUE",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "COUNT of live returns whose ORDN.DocTotal is exactly 0 — the note was used as a pure stock-movement document and the money was settled on a separate credit note. 60.8% of Oil's returns, 33.5% of Mart's, 83.2% of Bev's. This KPI exists to stop anyone reading RET_GROSS as the size of the return.",
+      "terms": [
+        {"label": "Live return notes", "col": "RET_DOCS", "op": "+", "source": "SCOPE='TOTAL'", "note": ""},
+        {"label": "of which DocTotal = 0", "col": "RET_DOCS_ZERO_VALUE", "op": "=", "source": "SCOPE='TOTAL'", "note": "185 of Oil's last 187 returns are value-blind (2026-05 onward)"}
+      ],
+      "excludes": [],
+      "sql_lines": [318, 333],
+      "caveats": ["RN-GROSS-IS-NOT-SIZE"],
+      "check": {
+        "method": "Count LIVE detail rows with GROSS_AMT == 0. Exact where the register is complete. Note this is a DIFFERENT measure from 'SAP valued the stock at nil' (STOCK_COST == 0) — a document can be value-blind on the header and still carry stock cost, and vice versa.",
+        "recipe": "det=slice('return-note',co)['detail']; alt = sum(1 for r in det if r['CANCEL_STATUS']=='LIVE' and r['GROSS_AMT']==0) if len(det)<500 else None",
+        "measured": {"oil": "UNAVAILABLE (capped: 173 of 1104 in the slice)", "mart": "UNAVAILABLE (58 of 601)", "bev": "detail 134 vs 134 (exact)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>"}},
+      "live": {"oil": 1104, "mart": 601, "bev": 134}
+    },
+    {
+      "id": "rn-qty-pcs",
+      "label": "Pieces returned",
+      "unit": "count",
+      "column": "RET_QTY_PCS",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "SUM(RDN1.Quantity) over lines whose unitMsr is 'PCS' or blank (blank behaves as PCS). Single bottles, never cartons (C-0001). Lines on SET/KGS/NOS/LTR/MTR/DRM/GMS go to RET_QTY_OTHER_UOM and must never be added to this.",
+      "terms": [
+        {"label": "PCS lines + blank-UoM lines", "col": "RET_QTY_PCS", "op": "=", "source": "RDN1", "note": "Oil: 391267.21 PCS + 3964 blank = 395231.21"},
+        {"label": "(separate) other units of measure", "col": "RET_QTY_OTHER_UOM", "op": "+", "source": "RDN1", "note": "NOT additive to the above — 99% of Bev's 245350.5 is grams on one raw-material document"}
+      ],
+      "excludes": [],
+      "sql_lines": [222, 231],
+      "caveats": ["C-0001", "RN-MIXED-UOM", "RN-ZERO-VALUATION"],
+      "check": {
+        "method": "Sum QTY_PCS over LIVE detail rows. Exact where complete. This measure is the antidote to rn-stock-cost: where the two diverge, SAP costed the goods at nil.",
+        "recipe": "det=slice('return-note',co)['detail']; alt = sum(r['QTY_PCS'] for r in det if r['CANCEL_STATUS']=='LIVE') if len(det)<500 else None",
+        "measured": {"oil": "UNAVAILABLE (273537.96 of 395231.21 in the capped slice)", "mart": "UNAVAILABLE (4433 of 137439)", "bev": "detail 170476.00 vs 170476 (exact)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>"}},
+      "live": {"oil": 395231.21, "mart": 137439.0, "bev": 170476.0}
+    },
+    {
+      "id": "rn-gross",
+      "label": "Header value of returns",
+      "unit": "INR",
+      "column": "RET_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "SUM(ORDN.DocTotal), GST-inclusive. Published so the gap against rn-stock-cost is visible, NOT as the size of the return: cost/gross is 2.52x in Oil, 2.93x in Mart, and 0.73x in Bev (the other direction, because SAP valued 87% of Bev's returned pieces at nil).",
+      "terms": [
+        {"label": "Net of GST", "col": "RET_NET", "op": "+", "source": "ORDN.DocTotal - ORDN.VatSum", "note": "Oil 32818293.74 / Mart 12999760.34 / Bev 340691.59"},
+        {"label": "GST", "col": "RET_GST", "op": "+", "source": "ORDN.VatSum", "note": "Oil 1699913.67 / Mart 686829.80 / Bev 13475.29"},
+        {"label": "= header value", "col": "RET_GROSS", "op": "=", "source": "ORDN.DocTotal", "note": ""}
+      ],
+      "excludes": [],
+      "sql_lines": [318, 333],
+      "caveats": ["RN-GROSS-IS-NOT-SIZE"],
+      "check": {
+        "method": "RET_NET + RET_GST must equal RET_GROSS on every row of every scope — an in-row identity that needs no second query and catches a scaling or rounding fault immediately. Plus, sum GROSS_AMT over LIVE detail rows where the register is complete.",
+        "recipe": "assert all(abs((r['RET_NET'] or 0)+(r['RET_GST'] or 0)-(r['RET_GROSS'] or 0))<0.02 for r in summary); alt = sum(r['GROSS_AMT'] for r in det if r['CANCEL_STATUS']=='LIVE') if len(det)<500 else None",
+        "measured": {"oil": "identity holds on all 72 rows; detail route UNAVAILABLE", "mart": "identity holds on all 70 rows; detail UNAVAILABLE", "bev": "identity holds on all 72 rows; detail 354166.88 vs 354166.87 (delta 0.01)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>"}},
+      "live": {"oil": 34518207.41, "mart": 13686590.14, "bev": 354166.87}
+    },
+    {
+      "id": "rn-external-cost",
+      "label": "External customer returns, at cost",
+      "unit": "INR",
+      "column": "RET_STOCK_COST",
+      "row_filter": "r.get('SCOPE')=='CLASS' and r.get('GRP_KEY')=='EXTERNAL'",
+      "agg": "first",
+      "formula": "The trade-only figure: rn-stock-cost less the BRANCH and INTERCOMPANY class rows. In Oil this is the number that means something — 57.6% of the company total is JIVO's own Mart book coming back.",
+      "terms": [
+        {"label": "All customer returns at cost", "col": "RET_STOCK_COST", "op": "+", "source": "SCOPE='TOTAL'", "note": ""},
+        {"label": "less: branch cards", "col": "RET_STOCK_COST", "op": "-", "source": "CLASS BRANCH", "note": "OCRG.GroupName LIKE '%BRANCH%'"},
+        {"label": "less: intercompany", "col": "RET_STOCK_COST", "op": "-", "source": "CLASS INTERCOMPANY", "note": "OCRD.CardName LIKE '%JIVO%' — C-0005, C-0020"},
+        {"label": "= external customers", "col": "RET_STOCK_COST", "op": "=", "source": "CLASS EXTERNAL", "note": ""}
+      ],
+      "excludes": [
+        {"label": "Branch", "row_filter": "r.get('GRP_KEY')=='BRANCH'", "why": "C-0005 — not trade"},
+        {"label": "Intercompany", "row_filter": "r.get('GRP_KEY')=='INTERCOMPANY'", "why": "C-0005 / C-0020 — CUSTA000606 JIVO MART PVT LTD sits in card group 'DELHI', so a group-name-only test files 92.5% of Oil's header value as EXTERNAL and the trade number becomes fiction. Classification is group-name THEN card-name, never a hard-coded code list (the same code is a different party in a different book)."}
+      ],
+      "sql_lines": [334, 351],
+      "caveats": ["C-0005", "C-0020", "RN-ZERO-VALUATION"],
+      "check": {
+        "method": "Sum STOCK_COST over LIVE detail rows with PARTY_CLASS=='EXTERNAL' — the detail re-derives PARTY_CLASS independently from its own OCRD/OCRG join. Where the register is capped, verify instead that TOTAL - BRANCH - INTERCOMPANY == EXTERNAL and that no CardCode carrying 'JIVO' appears in the EXTERNAL detail rows.",
+        "recipe": "det=slice('return-note',co)['detail']; alt = round(sum(r['STOCK_COST'] for r in det if r['CANCEL_STATUS']=='LIVE' and r['PARTY_CLASS']=='EXTERNAL'),2) if len(det)<500 else None; guard = not any('JIVO' in (r['CARD_NAME'] or '').upper() for r in det if r['PARTY_CLASS']=='EXTERNAL')",
+        "measured": {"oil": "detail UNAVAILABLE; TOTAL-BRANCH-INTERCO = 36895391.80 exact; JIVO-in-EXTERNAL guard passes", "mart": "detail UNAVAILABLE; arithmetic route exact; guard passes", "bev": "detail 241086.47 vs 241086.47 (exact); guard passes"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "class": "EXTERNAL"}},
+      "live": {"oil": 36895391.8, "mart": 39906816.05, "bev": 241086.47}
+    },
+    {
+      "id": "rn-interco-cost",
+      "label": "Intercompany returns, at cost",
+      "unit": "INR",
+      "column": "RET_STOCK_COST",
+      "row_filter": "r.get('SCOPE')=='CLASS' and r.get('GRP_KEY')=='INTERCOMPANY'",
+      "agg": "first",
+      "formula": "Stock coming back from JIVO's own group cards. 57.6% of Oil's entire return cost is CUSTA000606 JIVO MART PVT LTD — the Oil→Mart stock flow, not a customer return at all.",
+      "terms": [
+        {"label": "Intercompany returns", "col": "RET_DOCS", "op": "+", "source": "CLASS INTERCOMPANY", "note": "477 / 4 / 31 documents"},
+        {"label": "= their stock cost", "col": "RET_STOCK_COST", "op": "=", "source": "CLASS INTERCOMPANY", "note": "57.6% / 0.4% / 7.1% of the company total"}
+      ],
+      "excludes": [],
+      "sql_lines": [334, 351],
+      "caveats": ["C-0005", "C-0020"],
+      "check": {
+        "method": "Sum STOCK_COST over LIVE detail rows with PARTY_CLASS=='INTERCOMPANY' where the register is complete; otherwise confirm the CLASS partition closes (EXTERNAL+BRANCH+INTERCOMPANY == TOTAL) and that every CardCode landing in INTERCOMPANY is one of the 23 named group cards of C-0005.",
+        "recipe": "det=slice('return-note',co)['detail']; alt = round(sum(r['STOCK_COST'] for r in det if r['CANCEL_STATUS']=='LIVE' and r['PARTY_CLASS']=='INTERCOMPANY'),2) if len(det)<500 else None; roster = {r['CARD_CODE'] for r in det if r['PARTY_CLASS']=='INTERCOMPANY'} <= C0005_CARDS[co]",
+        "measured": {"oil": "detail UNAVAILABLE; CLASS partition closes at 0.00; detail INTERCOMPANY roster in this snapshot = {CUSTA000606} only", "mart": "detail UNAVAILABLE (0 intercompany rows survived the cap); partition closes at 0.00", "bev": "detail 18340.20 vs 18340.19 (delta 0.01); roster = {CUSTA000606, CUSTA000827}"}
+      },
+      "drill": {"page": "party.html", "params": {"co": "<company>", "card": "CUSTA000606"}},
+      "live": {"oil": 50179394.02, "mart": 157145.53, "bev": 18340.19}
+    },
+    {
+      "id": "rn-cn-net",
+      "label": "Credit notes raised against returns",
+      "unit": "INR",
+      "column": "CN_NET",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "SUM(RIN1.LineTotal) net of GST, at LINE level, over live A/R credit-note lines whose BaseType=16 points at a live return. Summed from lines, never from the ORIN header, because one return can be credited by 82 separate credit notes and one credit note can cover three returns.",
+      "terms": [
+        {"label": "External", "col": "CN_NET", "op": "+", "source": "CLASS EXTERNAL", "note": "33279271.81 / 31213325.58 / 908081.88"},
+        {"label": "Intercompany", "col": "CN_NET", "op": "+", "source": "CLASS INTERCOMPANY", "note": "51288458.82 / 0 / 271353.37"},
+        {"label": "= credit notes on returns", "col": "CN_NET", "op": "=", "source": "SCOPE='TOTAL'", "note": ""}
+      ],
+      "excludes": [
+        {"label": "Credit notes raised against an invoice", "row_filter": "RIN1.BaseType == 13", "why": "out of scope by definition — Oil holds ₹21.91 Cr of these"},
+        {"label": "Standalone credit notes", "row_filter": "RIN1.BaseType == -1", "why": "out of scope — Oil holds ₹16.32 Cr of these, and 2723 of Oil's 6147 live credit notes carry no base document at all"},
+        {"label": "Cancelled credit notes", "row_filter": "ORIN.CANCELED != 'N'", "why": "C-0021"}
+      ],
+      "sql_lines": [265, 271],
+      "caveats": ["C-0021", "RN-CN-PCT-IS-NARROW"],
+      "check": {
+        "method": "Sum CN_NET over LIVE detail rows — the detail aggregates credit notes per document via a different two-level subquery (group by BaseEntry+DocNum, then by BaseEntry) rather than one flat line-level SUM, so a fan-out fault in either shows as a divergence. Exact where the register is complete. Second route: the MONTH rows must sum to TOTAL (they do; CN_DOCS is the only column that must not be summed).",
+        "recipe": "det=slice('return-note',co)['detail']; alt = round(sum(r['CN_NET'] for r in det if r['CANCEL_STATUS']=='LIVE'),2) if len(det)<500 else None; month_route = sum(r['CN_NET'] for r in summary if r['SCOPE']=='MONTH')",
+        "measured": {"oil": "detail UNAVAILABLE; MONTH sum 84567730.62 vs 84567730.63 (delta 0.01)", "mart": "detail UNAVAILABLE (0.00 — no credited return survived the cap); MONTH sum exact", "bev": "detail 1179435.26 vs 1179435.25 (delta 0.01); MONTH sum 1179435.27 (delta 0.02)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "scope": "CREDIT_NOTE"}},
+      "live": {"oil": 84567730.63, "mart": 31213325.58, "bev": 1179435.25}
+    },
+    {
+      "id": "rn-sales-net",
+      "label": "Invoiced sales (the denominator)",
+      "unit": "INR",
+      "column": "SALES_NET",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "SUM(OINV.DocTotal - OINV.VatSum) over live invoices dated on or before the as-of date, excluding the 2024-09-30 go-live migration. BEFORE deducting credit notes — so the ratios read 'returns per rupee invoiced'. Deliberately NOT JIVO turnover (already net of credit notes), which would be circular.",
+      "terms": [
+        {"label": "External customers", "col": "SALES_NET", "op": "+", "source": "CLASS EXTERNAL", "note": ""},
+        {"label": "Branch", "col": "SALES_NET", "op": "+", "source": "CLASS BRANCH", "note": "Oil ₹73.20 Cr — with ZERO returns against it"},
+        {"label": "Intercompany", "col": "SALES_NET", "op": "+", "source": "CLASS INTERCOMPANY", "note": ""},
+        {"label": "= invoiced sales", "col": "SALES_NET", "op": "=", "source": "SCOPE='TOTAL'", "note": ""}
+      ],
+      "excludes": [
+        {"label": "Go-live migration invoices", "row_filter": "OINV.DocDate == 2024-09-30", "why": "Oil carries 11,078 invoices worth ₹74.74 Cr of migrated opening balance; leaving them in inflates SALES_NET ~8% and silently shrinks every ratio. Mart and Bev have none."},
+        {"label": "Cancelled invoices", "row_filter": "OINV.CANCELED != 'N'", "why": "C-0021"}
+      ],
+      "sql_lines": [294, 312],
+      "caveats": ["C-0021", "RN-SALES-IS-NOT-TURNOVER"],
+      "check": {
+        "method": "THE STRONGEST CROSS-SECTION CHECK IN THIS SECTION. transporter.sql defines its dispatch value with exactly the same universe (OINV, CANCELED='N', DocDate <= as-of, DocDate <> 2024-09-30, DocTotal - VatSum) but was written by a different agent in a different file with a completely different query shape, and publishes it in LAKHS as DISP_VAL_L on its own SCOPE='TOTAL' row. Multiply by 1e5 and compare. Any divergence beyond the lakh-rounding floor (~₹500) means one of the two files has drifted on the cancelled or migration filter — which is precisely the failure this catches.",
+        "recipe": "tr = [r for r in slice('transporter',co)['summary'] if r['SCOPE']=='TOTAL'][0]; alt = tr['DISP_VAL_L'] * 1e5",
+        "measured": {"oil": "alt 9256036000.00 vs 9256036260.99 — delta ₹261, 2.8e-08", "mart": "alt 3242368000.00 vs 3242367733.61 — delta ₹266, 8.2e-08", "bev": "alt 217888000.00 vs 217888002.00 — delta ₹2, 9.2e-09"}
+      },
+      "drill": {"page": "transporter.html", "params": {"co": "<company>"}},
+      "live": {"oil": 9256036260.99, "mart": 3242367733.61, "bev": 217888002.0}
+    },
+    {
+      "id": "rn-cost-pct-sales",
+      "label": "Returns at cost, per rupee invoiced",
+      "unit": "pct",
+      "column": "RET_COST_PCT_OF_SALES",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "RET_STOCK_COST / SALES_NET x 100. Inventory COST over sales REVENUE — unlike over unlike. It is the right way to size the stock coming back and the WRONG number to quote as 'x% of our sales came back', which would be a revenue ratio and larger by the gross margin.",
+      "terms": [
+        {"label": "Stock value handed back", "col": "RET_STOCK_COST", "op": "+", "source": "SCOPE='TOTAL'", "note": "numerator"},
+        {"label": "divided by invoiced sales", "col": "SALES_NET", "op": "-", "source": "SCOPE='TOTAL'", "note": "denominator, ex-GST ex-migration ex-cancelled"},
+        {"label": "= return cost per rupee invoiced", "col": "RET_COST_PCT_OF_SALES", "op": "=", "source": "SCOPE='TOTAL'", "note": "external 0.6748 vs intercompany 1.6418 in Oil — the Oil→Mart flow returns 2.4x more per rupee than real customers do"}
+      ],
+      "excludes": [],
+      "sql_lines": [444, 445],
+      "caveats": ["RN-COST-OVER-REVENUE", "RN-ZERO-VALUATION", "RN-SALES-IS-NOT-TURNOVER"],
+      "check": {
+        "method": "Recompute the ratio with an INDEPENDENT denominator: rn-stock-cost divided by transporter's DISP_VAL_L x 1e5. That replaces the whole sales side with another file's implementation of the same definition, so a drift in the migration or cancelled filter moves the check and not the KPI.",
+        "recipe": "tr=[r for r in slice('transporter',co)['summary'] if r['SCOPE']=='TOTAL'][0]; alt = TOTAL['RET_STOCK_COST'] / (tr['DISP_VAL_L']*1e5) * 100",
+        "measured": {"oil": "alt 0.940708% vs 0.9407% (delta 8e-06 pp)", "mart": "alt 1.235559% vs 1.2356% (delta -4e-05 pp)", "bev": "alt 0.119064% vs 0.1191% (delta -4e-05 pp)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "scope": "MONTH"}},
+      "live": {"oil": 0.9407, "mart": 1.2356, "bev": 0.1191}
+    },
+    {
+      "id": "rn-cn-pct-sales",
+      "label": "Credit notes on returns, per rupee invoiced",
+      "unit": "pct",
+      "column": "CN_PCT_OF_SALES",
+      "row_filter": "r.get('SCOPE')=='TOTAL'",
+      "agg": "first",
+      "formula": "CN_NET / SALES_NET x 100. Read the name literally: this counts ONLY credit notes raised against a RETURN NOTE (RIN1.BaseType=16). It is NOT 'all sales returns as a % of sales' — all Oil credit notes together are about 5.1% of Oil sales against the 0.91% this column shows.",
+      "terms": [
+        {"label": "Credit notes on returns", "col": "CN_NET", "op": "+", "source": "SCOPE='TOTAL'", "note": "numerator"},
+        {"label": "divided by invoiced sales", "col": "SALES_NET", "op": "-", "source": "SCOPE='TOTAL'", "note": "denominator"},
+        {"label": "= credit-note rate on returns", "col": "CN_PCT_OF_SALES", "op": "=", "source": "SCOPE='TOTAL'", "note": ""}
+      ],
+      "excludes": [
+        {"label": "Credit notes on invoices and standalone notes", "row_filter": "RIN1.BaseType in (13, -1)", "why": "excluded by definition; Oil holds ₹21.91 Cr and ₹16.32 Cr of them respectively"}
+      ],
+      "sql_lines": [444, 445],
+      "caveats": ["RN-CN-PCT-IS-NARROW", "RN-SALES-IS-NOT-TURNOVER"],
+      "check": {
+        "method": "Recompute with the independent transporter denominator, same as rn-cost-pct-sales.",
+        "recipe": "tr=[r for r in slice('transporter',co)['summary'] if r['SCOPE']=='TOTAL'][0]; alt = TOTAL['CN_NET'] / (tr['DISP_VAL_L']*1e5) * 100",
+        "measured": {"oil": "alt 0.913650% vs 0.9136% (delta 5e-05 pp)", "mart": "alt 0.962668% vs 0.9627% (delta -3e-05 pp)", "bev": "alt 0.541306% vs 0.5413% (delta 6e-06 pp)"}
+      },
+      "drill": {"page": "return-note.html", "params": {"co": "<company>", "scope": "MONTH"}},
+      "live": {"oil": 0.9136, "mart": 0.9627, "bev": 0.5413}
+    }
+  ],
+
+  "columns": [
+    {"col": "SCOPE", "label": "scope", "unit": "text", "meaning": "Which facet this row belongs to: TOTAL / CLASS / CREDIT_NOTE / NO_CN_REASON / MONTH / CUSTOMER. THE row filter for everything. Six populations stacked in one array.", "link": "none"},
+    {"col": "GRP_KEY", "label": "key", "unit": "text", "meaning": "The group identifier within the scope. 'ALL' on TOTAL; EXTERNAL/BRANCH/INTERCOMPANY on CLASS; HAS_CREDIT_NOTE/NO_CREDIT_NOTE on CREDIT_NOTE; the reason code on NO_CN_REASON; 'YYYY-MM' on MONTH; a CardCode on CUSTOMER — the only scope where it is a link target.", "link": "party"},
+    {"col": "GRP_LABEL", "label": "group", "unit": "text", "meaning": "Human label. Identical to GRP_KEY on every scope except CUSTOMER, where it is 'CARDNAME [PARTY_CLASS]' — the class is baked into the string, so parse it out rather than colouring by name.", "link": "none"},
+    {"col": "SORT_KEY", "label": "sort", "unit": "text", "meaning": "Scope ordinal prefix ('1'..'6') used only for the server-side ORDER BY. Never render it; never sort a chart by it.", "link": "none"},
+    {"col": "RET_DOCS", "label": "return notes", "unit": "count", "meaning": "Live ORDN headers in this group. CANCELED='N' only — the cancelled original and its auto-generated mirror are both out.", "link": "none"},
+    {"col": "RET_DOCS_ZERO_VALUE", "label": "booked at zero value", "unit": "count", "meaning": "Of RET_DOCS, how many have DocTotal exactly 0 — a pure stock-movement note with the money settled elsewhere. NOT the same as 'SAP valued the stock at nil' (that is STOCK_COST=0 in the detail).", "link": "none"},
+    {"col": "RET_DOCS_OPEN", "label": "DocStatus open", "unit": "count", "meaning": "A DIAGNOSTIC ONLY. C-0019: DocStatus='O' is unreliable at JIVO and measures nothing outstanding here. Oil shows 40 open of 1817 and 38 of them are uncredited, which is coincidence, not signal.", "link": "none"},
+    {"col": "RET_DOCS_FROM_DELIVERY", "label": "linked to a delivery", "unit": "count", "meaning": "Returns citing a base delivery (RDN1.BaseType=15). BaseType=13 (invoice) is ZERO rows in all three books — returns never point at an invoice. At JIVO delivery-linked and credit-noted are mutually exclusive, so on the HAS_CREDIT_NOTE row this is 0 and this column is effectively a chart of uncredited returns.", "link": "none"},
+    {"col": "RET_QTY_PCS", "label": "pieces returned", "unit": "count", "meaning": "SUM(RDN1.Quantity) on PCS and blank-UoM lines. SINGLE BOTTLES, never cartons (C-0001). The honest size measure where stock cost is nil.", "link": "none"},
+    {"col": "RET_QTY_OTHER_UOM", "label": "other-UoM quantity", "unit": "count", "meaning": "Quantity on SET/KGS/NOS/LTR/MTR/DRM/GMS lines, deliberately kept apart because adding mixed units is meaningless. In Bev, 242,950.5 of the 245,350.5 (99%) is GRAMS on one raw-material job-worker document.", "link": "none"},
+    {"col": "RET_NET", "label": "return value ex-GST", "unit": "INR", "meaning": "ORDN.DocTotal - ORDN.VatSum. Rupees. Understates the return badly — see RET_GROSS.", "link": "none"},
+    {"col": "RET_GST", "label": "GST on returns", "unit": "INR", "meaning": "ORDN.VatSum. Rupees.", "link": "none"},
+    {"col": "RET_GROSS", "label": "header value", "unit": "INR", "meaning": "ORDN.DocTotal, GST-inclusive, rupees. NOT the size of the return: 61% of Oil's, 34% of Mart's and 83% of Bev's live returns carry DocTotal = 0. Present it beside RET_STOCK_COST or not at all.", "link": "none"},
+    {"col": "RET_STOCK_COST", "label": "stock value handed back", "unit": "INR", "meaning": "SUM(JDT1.Debit) on the return's own journal (ORDN.TransId). Every debit lands on a 1103xxx inventory account and every credit on 5000xxx COGS, so this is exactly WHAT SAP PUT BACK INTO INVENTORY — never 'what the returned goods were worth'. Rupees, no suffix.", "link": "gl"},
+    {"col": "RET_DOCS_NO_CN", "label": "no credit note", "unit": "count", "meaning": "Live returns with no LIVE credit note linked in SAP. A work list to check, not a proven loss — a customer may have been credited by a standalone note this query cannot attribute.", "link": "none"},
+    {"col": "RET_DOCS_NO_CN_BILLED", "label": "billed and uncredited", "unit": "count", "meaning": "The actionable subset: the base delivery WAS consumed by a live invoice, so the customer was definitely billed for goods that came back. Counting all of RET_DOCS_NO_CN as missing credits overstates the exception ~2x in Oil.", "link": "none"},
+    {"col": "RET_QTY_PCS_NO_CN", "label": "pieces, uncredited", "unit": "count", "meaning": "Pieces on the uncredited returns. Oil 158,728 of 395,231 = 40.2% of everything returned. The piece view is essential wherever stock cost is nil.", "link": "none"},
+    {"col": "RET_STOCK_COST_NO_CN", "label": "uncredited, at cost", "unit": "INR", "meaning": "Stock cost of RET_DOCS_NO_CN. Rupees. WARNING: this name does not match the board's money-column regex (it ends _NO_CN, not a money suffix) — it must be given an explicit money formatter or it renders as a bare integer beside ₹ figures.", "link": "none"},
+    {"col": "CN_DOCS", "label": "credit notes", "unit": "count", "meaning": "COUNT(DISTINCT credit note) computed INSIDE this group. Correct for the group and WRONG to add up: Oil's 23 MONTH rows sum to 2518 against a TOTAL of 2517, because one credit note credits returns dated in two different months and is rightly counted in both. It is 0 on every NO_CN_REASON row by construction.", "link": "none"},
+    {"col": "CN_NET", "label": "credited, ex-GST", "unit": "INR", "meaning": "SUM(RIN1.LineTotal) at LINE level over live credit-note lines with BaseType=16, rupees. Line level because the link is many-to-many both ways (one Oil return has 82 credit notes). NOT all credit notes — only those raised against a return note.", "link": "none"},
+    {"col": "SALES_NET", "label": "invoiced sales", "unit": "INR", "meaning": "OINV.DocTotal - VatSum, live, ex-2024-09-30-migration, rupees — the denominator only. NULL on every CREDIT_NOTE and NO_CN_REASON row. On the CLASS BRANCH row it can be large (Oil ₹73.20 Cr) with zero returns beside it.", "link": "none"},
+    {"col": "CN_PCT_OF_SALES", "label": "credit-note rate", "unit": "pct", "meaning": "CN_NET / SALES_NET x 100, 0-100 not 0-1. Counts ONLY credit notes raised against a return note — all Oil credit notes together are ~5.1% of sales against the 0.91% here. NULL wherever SALES_NET is NULL or zero.", "link": "none"},
+    {"col": "RET_COST_PCT_OF_SALES", "label": "return cost rate", "unit": "pct", "meaning": "RET_STOCK_COST / SALES_NET x 100, 0-100. Cost over revenue — unlike over unlike. Right for sizing the stock coming back, wrong as 'x% of our sales came back'. NULL wherever SALES_NET is NULL or zero (4 Oil and 2 Bev CUSTOMER rows in this snapshot have returns and no invoiced sales at all).", "link": "none"},
+
+    {"col": "DOC_ENTRY", "label": "SAP key", "unit": "text", "meaning": "DETAIL. ORDN.DocEntry — the internal key. Pair it with ObjType 16 to open the document.", "link": "document"},
+    {"col": "DOC_NUM", "label": "return note no", "unit": "text", "meaning": "DETAIL. The human-facing document number operators quote.", "link": "document"},
+    {"col": "DOC_DATE", "label": "dated", "unit": "date", "meaning": "DETAIL. ORDN.DocDate as 'YYYY-MM-DD'.", "link": "none"},
+    {"col": "DOC_MONTH", "label": "month", "unit": "text", "meaning": "DETAIL. 'YYYY-MM' of DOC_DATE; joins to the summary's MONTH scope GRP_KEY.", "link": "none"},
+    {"col": "AGE_DAYS", "label": "age", "unit": "days", "meaning": "DETAIL. Days from DOC_DATE to the as-of date. Age of the DOCUMENT, not of an outstanding balance — nothing here is outstanding.", "link": "none"},
+    {"col": "CANCEL_STATUS", "label": "state", "unit": "text", "meaning": "DETAIL. LIVE / CANCELLED / CANCELLATION_DOC, decoded from the three-valued ORDN.CANCELED (C-0021). Filter to LIVE for anything the summary reports; filtering '!= CANCELLED' leaves the mirrors in and double-counts.", "link": "none"},
+    {"col": "DOC_STATUS", "label": "SAP status", "unit": "text", "meaning": "DETAIL. 'O' or 'C'. Diagnostic only — C-0019.", "link": "none"},
+    {"col": "CARD_CODE", "label": "customer code", "unit": "text", "meaning": "DETAIL. OCRD.CardCode. The same code is a DIFFERENT party in a different book — never carry one across companies.", "link": "party"},
+    {"col": "CARD_NAME", "label": "customer", "unit": "text", "meaning": "DETAIL. OCRD.CardName, falling back to the header name (the fallback never fires today — every return's CardCode resolves).", "link": "party"},
+    {"col": "CUSTOMER_GROUP", "label": "card group", "unit": "text", "meaning": "DETAIL. OCRG.GroupName. Do NOT classify on this alone — exactly 0 Oil returns sit in a '%BRANCH%' group, yet CUSTA000606 JIVO MART PVT LTD (group 'DELHI') is 477 returns.", "link": "none"},
+    {"col": "PARTY_CLASS", "label": "class", "unit": "text", "meaning": "DETAIL. EXTERNAL / BRANCH / INTERCOMPANY, decided group-name THEN card-name ('%JIVO%'), never from a hard-coded code list. C-0005 / C-0020.", "link": "none"},
+    {"col": "BRANCH_ID", "label": "branch id", "unit": "text", "meaning": "DETAIL. ORDN.BPLId — the SAP business place.", "link": "none"},
+    {"col": "BRANCH_NAME", "label": "branch", "unit": "text", "meaning": "DETAIL. ORDN.BPLName. CASE IS INCONSISTENT in Bev ('DELHI' and 'Delhi', 'PUNJAB' and 'Punjab') — upper-case before grouping or one branch becomes two bars.", "link": "none"},
+    {"col": "WAREHOUSES", "label": "warehouses", "unit": "text", "meaning": "DETAIL. Comma-joined distinct RDN1.WhsCode. Multi-valued — split before faceting.", "link": "none"},
+    {"col": "NUM_LINES", "label": "lines", "unit": "count", "meaning": "DETAIL. RDN1 line count.", "link": "none"},
+    {"col": "NUM_ITEMS", "label": "items", "unit": "count", "meaning": "DETAIL. Distinct ItemCode count.", "link": "none"},
+    {"col": "QTY_PCS", "label": "pieces", "unit": "count", "meaning": "DETAIL. Per-document PCS/blank-UoM quantity. Rolls up to RET_QTY_PCS.", "link": "none"},
+    {"col": "QTY_OTHER_UOM", "label": "other-UoM qty", "unit": "count", "meaning": "DETAIL. Never add to QTY_PCS.", "link": "none"},
+    {"col": "NET_AMT", "label": "value ex-GST", "unit": "INR", "meaning": "DETAIL. Rupees. Zero on most documents.", "link": "none"},
+    {"col": "GST_AMT", "label": "GST", "unit": "INR", "meaning": "DETAIL. Rupees.", "link": "none"},
+    {"col": "GROSS_AMT", "label": "header value", "unit": "INR", "meaning": "DETAIL. ORDN.DocTotal, rupees. Zero on 60.8% of Oil / 33.5% of Mart / 83.2% of Bev live returns.", "link": "none"},
+    {"col": "STOCK_COST", "label": "stock value back", "unit": "INR", "meaning": "DETAIL. SUM(JDT1.Debit) for this document. STOCK_COST = 0 means SAP costed the receipt at nil (the item's warehouse moving-average cost is nil), NOT that no goods came back — 133 of Bev's 161 live returns, carrying 148,894 of 170,476 pieces, are exactly this.", "link": "gl"},
+    {"col": "REASON", "label": "comments", "unit": "text", "meaning": "DETAIL. ORDN.Comments VERBATIM and deliberately unparsed. 414 Oil returns type an invoice number in here in at least three incompatible formats — the missing structural invoice link lives in this free text.", "link": "none"},
+    {"col": "CUSTOMER_REF", "label": "their ref", "unit": "text", "meaning": "DETAIL. ORDN.NumAtCard.", "link": "none"},
+    {"col": "BASE_DLN_COUNT", "label": "base deliveries", "unit": "count", "meaning": "DETAIL. Distinct base deliveries cited (RDN1.BaseType=15). Oil 2, Mart 8, Bev 0 returns cite more than one.", "link": "none"},
+    {"col": "BASE_DLN_DOCNUMS", "label": "delivery nos", "unit": "text", "meaning": "DETAIL. Comma-joined ODLN.DocNum of the base deliveries.", "link": "document"},
+    {"col": "BASE_DLN_INVOICED", "label": "delivery invoiced", "unit": "count", "meaning": "DETAIL. 1 if ANY cited delivery was consumed by a live invoice (MAX, not ALL) — 3 Mart returns are rounded the generous way by this. ODLN.DocStatus is useless for the same question: every base delivery reads 'C' closed, including the never-invoiced ones, because the return itself closed them.", "link": "none"},
+    {"col": "CN_COUNT", "label": "credit notes", "unit": "count", "meaning": "DETAIL. Distinct live credit notes against this return. One Oil return has 82.", "link": "none"},
+    {"col": "CN_DOCNUMS", "label": "credit note nos", "unit": "text", "meaning": "DETAIL. Comma-joined, TRUNCATED TO 200 CHARACTERS — never count the commas to recover CN_COUNT and never union these across rows to rebuild CN_DOCS.", "link": "document"},
+    {"col": "CN_FIRST_DATE", "label": "first credited", "unit": "date", "meaning": "DETAIL. Earliest credit-note date. Empty string, not null, when uncredited.", "link": "none"},
+    {"col": "CN_NET", "label": "credited ex-GST", "unit": "INR", "meaning": "DETAIL. Rupees.", "link": "none"},
+    {"col": "CN_LAG_DAYS", "label": "days to credit", "unit": "days", "meaning": "DETAIL. DOC_DATE to CN_FIRST_DATE. NULL on every uncredited return — and therefore NULL on 100% of Mart's slice, because Mart's register is truncated inside rank 1 and contains no credited return at all.", "link": "none"},
+    {"col": "FLAG_NO_CREDIT_NOTE", "label": "uncredited", "unit": "text", "meaning": "DETAIL. 'Y' / 'N'. Computed for LIVE documents only — a cancelled return is always 'N', which is not the same as 'credited'.", "link": "none"},
+    {"col": "NO_CN_REASON", "label": "why uncredited", "unit": "text", "meaning": "DETAIL. FROM_DELIVERY_INVOICED / FROM_DELIVERY_UNBILLED / STANDALONE_NO_LINK, or empty when the question does not apply. Joins to the summary's NO_CN_REASON scope.", "link": "none"},
+    {"col": "EXC_RANK", "label": "exception rank", "unit": "count", "meaning": "DETAIL. 1 = billed, uncredited (ACT) · 2 = no base link, uncredited (the work list) · 3 = unbilled, uncredited (no credit due) · 4 = everything else. THE 500-ROW CAP EATS THE HIGHEST RANKS FIRST — a rank is a complete population iff a strictly higher rank is also present in the array, or the array is shorter than 500.", "link": "none"}
+  ],
+
+  "drilldowns": ["party.html", "document.html", "derivation.html", "receivables.html", "methodology.html", "gl-account.html"],
+  "drilldown_notes": {
+    "party.html": "from CUSTOMER-scope GRP_KEY, and from every detail row's CARD_CODE",
+    "document.html": "from detail DOC_ENTRY with type=16 (A/R Return); BASE_DLN_DOCNUMS reaches the delivery (type 15) and CN_DOCNUMS the credit note (type 14), both by DocNum not DocEntry, so document.html must accept a docnum lookup or these render as plain text",
+    "receivables.html": "the natural next question for the billed-and-uncredited work list: is the invoice the customer was billed on still sitting open in customer-ageing? Link by CARD_CODE.",
+    "gl-account.html": "RET_STOCK_COST lands on 1103xxx inventory against 5000xxx COGS, but THIS SECTION CARRIES NO ACCOUNT CODE COLUMN. The link can only be a static, methodology-page reference to the account family — do not synthesise a per-row GL link."
+  },
+
+  "charts": [
+    {"type": "waterfall", "title": "Where the returned stock went", "x": "GRP_KEY", "y": "RET_STOCK_COST", "series": "SCOPE",
+     "why": "Starts at RET_STOCK_COST (TOTAL), subtracts the HAS_CREDIT_NOTE bar, then breaks the remainder into the three NO_CN_REASON buckets and lands on the work list. It is the section's whole argument drawn once: that 'uncredited' is three different things and only one of them is an exception. In Oil it shows ₹8.70 Cr → ₹1.52 Cr uncredited → only ₹3.18 L actually actionable, which no table communicates."},
+    {"type": "stackedBars", "title": "Stock returned each month, credited versus not", "x": "GRP_KEY", "y": "RET_STOCK_COST", "series": "credited|uncredited",
+     "why": "MONTH rows carry both RET_STOCK_COST and RET_STOCK_COST_NO_CN, so the credited part is the difference and the stack is genuinely additive. It separates Oil's story from Mart's at a glance: Oil's uncredited band is a 2024-10..2025-01 slab that stops, Mart's runs through every month to 2026-08. A table of 23 rows hides that shape completely."},
+    {"type": "lineArea", "title": "Returns per rupee invoiced, month by month", "x": "GRP_KEY", "y": "RET_COST_PCT_OF_SALES", "series": "CN_PCT_OF_SALES",
+     "why": "Absolute return cost tracks how big the month was; this normalises it. Two series on one axis — cost rate and credit-note rate — because when they diverge the gap IS the credit-note backlog. Both are already percentages on the MONTH rows, so nothing is recomputed."},
+    {"type": "pareto", "title": "Which customers the returns come from", "x": "GRP_LABEL", "y": "RET_STOCK_COST", "series": "cumulative %",
+     "why": "Bars plus a cumulative line over the CUSTOMER scope. It answers 'how concentrated is this?' in one glance: in Oil one card (CUSTA000606, its own Mart book) is 57.6% and 11 cards reach 80%; in Mart 6 do. The cumulative line must be drawn against the TOTAL row, not against the top-40 sum, or it will run to 100% and lie about coverage."},
+    {"type": "scatter", "title": "Returns against sales, one dot per customer", "x": "SALES_NET", "y": "RET_STOCK_COST", "series": "RET_DOCS_NO_CN",
+     "why": "Finds the customer who returns a lot relative to what they actually buy — the diagonal is the company-average rate, and anything well above it is worth a call. Marking each dot by RET_DOCS_NO_CN puts the credit-note gap on the same picture. The 4 Oil and 2 Bev customers with returns and SALES_NET = 0 cannot sit on this plot at all and must go in a labelled gutter, never at x=0."},
+    {"type": "heatmap", "title": "Uncredited returns by month and reason", "x": "DOC_MONTH", "y": "NO_CN_REASON", "series": "count",
+     "why": "The summary crosses month with nothing and reason with nothing, so this is the only place the two meet — built from the DETAIL rows, which is legitimate because the uncredited population (ranks 1-3) survives the cap intact wherever a rank-4 row is present. It shows Oil's 207-of-212 go-live slab as a solid block in four cells and Mart's as an even wash. Empty for Mart (see empty_states)."},
+    {"type": "meter", "title": "How much of this section is value-blind", "x": "RET_DOCS_ZERO_VALUE", "y": "RET_DOCS", "series": "none",
+     "why": "One arc showing RET_DOCS_ZERO_VALUE over RET_DOCS — 60.8% Oil, 33.5% Mart, 83.2% Bev. It is the honesty gauge for the whole page: the higher it reads, the less any DocTotal-based figure on screen means, and it belongs next to RET_GROSS wherever RET_GROSS is shown."},
+    {"type": "hbars", "title": "Pieces back versus rupees booked, by class", "x": "GRP_LABEL", "y": "RET_QTY_PCS|RET_STOCK_COST", "series": "CLASS",
+     "why": "Two paired bars per class on independent scales — pieces on one, stock cost on the other. Where they disagree, SAP costed real goods at nil. This is the only chart that makes the Bev blind spot visible (170,476 pieces back, ₹2.59 L costed, 87.3% of the pieces valued at zero) instead of leaving a reader to conclude Bev barely has returns."}
+  ],
+
+  "traps": [
+    "FACETED: the summary array stacks six populations. The company total is the single row with SCOPE=='TOTAL' (GRP_KEY=='ALL'). Summing all 72 rows counts every return about four times over (TOTAL + CLASS + CREDIT_NOTE + MONTH, plus partial CUSTOMER overlap). Column that causes it: SCOPE.",
+    "NO_CN_REASON is a partition of the NO_CREDIT_NOTE row, NOT of TOTAL. Its three RET_DOCS sum to RET_DOCS_NO_CN (421/1370/60), never to RET_DOCS. Adding it to the CLASS rows to 'get the total' double-counts the uncredited population. Column: SCOPE + GRP_KEY.",
+    "CN_DOCS IS NOT ADDITIVE. It is COUNT(DISTINCT credit note) computed inside each group. Oil's 23 MONTH rows sum to 2518 against a TOTAL of 2517 — verified live in this snapshot — because one credit note credits returns dated in two different months. Every other measure is additive. Column: CN_DOCS.",
+    "RET_GROSS IS NOT THE SIZE OF THE RETURN. 1104 of Oil's 1817, 601 of Mart's 1793 and 134 of Bev's 161 live returns carry DocTotal = 0; the note is a stock-movement document and the money is settled on a separate credit note. Cost/gross runs 2.52x in Oil and 2.93x in Mart. Column: RET_GROSS / RET_DOCS_ZERO_VALUE.",
+    "RET_STOCK_COST IS 'WHAT SAP PUT BACK INTO INVENTORY', NEVER 'WHAT THE GOODS WERE WORTH'. Computed live from Bev's complete register: 133 of 161 live returns carrying 148,894 of 170,476 pieces (87.3%) have STOCK_COST = 0, because the item's warehouse moving-average cost is nil. Bev's ₹2.59 L is exact and covers 13% of what came back. Mart has the same problem at roughly 27% by pieces per the notes — NOT recomputable from data.json because Mart's detail is capped. Column: RET_STOCK_COST vs RET_QTY_PCS.",
+    "BEV'S RET_STOCK_COST IS 54% ONE JOB-WORKER DOCUMENT. DocNum 1608258003, 2025-08-08, CUSTA001061 BHARTI MACHINERY TOOLS, ₹1,40,113 of ₹2,59,427 — ORDN is occasionally used for RAW MATERIAL returns from job-workers, not customer returns (Oil 3 such documents, Mart 0, Bev 1). It is also why Bev's top CUSTOMER row shows RET_QTY_PCS = 0 and SALES_NET = 0. Verified live in this snapshot. Column: RET_STOCK_COST on the CUSTOMER scope.",
+    "NEVER ADD RET_QTY_PCS AND RET_QTY_OTHER_UOM. RDN1 mixes PCS/SET/KGS/NOS/LTR/MTR/DRM/GMS. Bev's RET_QTY_OTHER_UOM is 245,350.5 of which 242,950.5 (99%) is GRAMS on that one raw-material document. Column: RET_QTY_OTHER_UOM.",
+    "'NO CREDIT NOTE' MEANS 'NO CREDIT NOTE LINKED IN SAP' — a work list, not a loss. 2723 of Oil's 6147, 975 of Mart's 4384 and 161 of Bev's 399 live credit notes carry no base document on any line, so a credited customer can still land here. A ±30-day proximity probe put roughly half of Oil's and 40% of Mart's billed-uncredited returns as plausibly credited but never linked (INFERRED, deliberately not a column). Structural false positives are separately measured at 4 of Oil's 212 and 3 of Mart's 913. Column: RET_DOCS_NO_CN.",
+    "COUNTING ALL OF RET_DOCS_NO_CN AS MISSING CREDITS OVERSTATES THE EXCEPTION ~2x IN OIL (421 against an actionable 212). FROM_DELIVERY_UNBILLED means no credit is due; STANDALONE_NO_LINK is unanswerable from document structure. Only RET_DOCS_NO_CN_BILLED is actionable. Column: RET_DOCS_NO_CN vs RET_DOCS_NO_CN_BILLED.",
+    "RET_DOCS_OPEN MEASURES NOTHING (C-0019). DocStatus='O' is unreliable at JIVO; it is published as a labelled diagnostic. Nothing in this section is outstanding — a return note has no balance. Column: RET_DOCS_OPEN.",
+    "THE CLASS BRANCH ROW CAN CARRY SALES WITH ZERO RETURNS. Oil's BRANCH row is RET_DOCS = 0 against SALES_NET = ₹73.20 Cr — a FULL OUTER JOIN between the return side and the sales side, not a fault. Rendered as a returns row it is a row of zeros; rendered as '0% return rate' it is correct but reads like good news about a book that simply has no branch returns. Column: SALES_NET on SCOPE='CLASS'.",
+    "A MONTH ROW CAN EXIST WITH ZERO RETURNS. Mart's 2024-12 and Bev's 2026-05 have RET_DOCS = 0 and a real SALES_NET, for the same FULL OUTER JOIN reason. A monthly bar chart must draw them as a genuine zero, not drop the month and imply continuity. Column: RET_DOCS on SCOPE='MONTH'.",
+    "SALES_NET, CN_PCT_OF_SALES AND RET_COST_PCT_OF_SALES ARE NULL ON EVERY CREDIT_NOTE AND NO_CN_REASON ROW, and NULL on any CUSTOMER row with no invoiced sales (4 in Oil, 2 in Bev in this snapshot). Coercing None to 0 and summing produces a confident ₹0 sales figure. Columns: SALES_NET, CN_PCT_OF_SALES, RET_COST_PCT_OF_SALES.",
+    "CN_PCT_OF_SALES IS NOT 'SALES RETURNS AS A % OF SALES'. It counts only credit notes raised against a RETURN NOTE (BaseType=16). All Oil credit notes together are about 5.1% of Oil sales against the 0.91% this column shows — invoice-based (₹21.91 Cr) and standalone (₹16.32 Cr) notes are outside it by definition. Column: CN_PCT_OF_SALES.",
+    "RET_COST_PCT_OF_SALES IS COST OVER REVENUE — unlike over unlike. Right for sizing the stock coming back, wrong quoted as 'x% of our sales came back', which is a revenue ratio and larger by the gross margin. It also inherits the zero-valuation blind spot. Column: RET_COST_PCT_OF_SALES.",
+    "INTERCOMPANY IS 57.6% OF OIL'S RETURN COST AND A GROUP-NAME TEST ALONE FINDS NONE OF IT. Exactly 0 Oil returns sit in a '%BRANCH%' card group, yet CUSTA000606 JIVO MART PVT LTD — card group 'DELHI' — is 477 of 1817 returns and ₹5.02 Cr at cost. Classification is group-name THEN card-name ('%JIVO%'), never a hard-coded code list, because the same CardCode is a different party in a different book. C-0005 / C-0020. Column: PARTY_CLASS / GRP_KEY on SCOPE='CLASS'.",
+    "THE DETAIL ARRAY IS CAPPED AT 500 AND TRUNCATED BY EXC_RANK — any total computed from it is wrong for Oil and Mart. Live shape: Oil 500 rows (ranks 1/2/3 complete at 212/115/94, rank 4 truncated to 79 of ~1396), Mart 500 rows ALL rank 1 (500 of a true 913 — nothing in Mart's register is a complete population), Bev 185 rows (the entire register: 161 live + 12 cancelled + 12 mirrors). Completeness rule: a rank is complete iff a strictly higher rank is present in the array, or len(detail) < 500. Column: EXC_RANK.",
+    "CANCELED IS THREE-VALUED (C-0021). The summary counts 'N' only. The detail keeps all three and decodes them into CANCEL_STATUS: filtering \"!= 'CANCELLED'\" leaves the CANCELLATION_DOC mirrors in and double-counts (Oil 9 mirrors and 8 cancelled originals survive in the capped slice; Bev's complete register has 12 of each). Column: CANCEL_STATUS.",
+    "DELIVERY-LINKED AND CREDIT-NOTED ARE MUTUALLY EXCLUSIVE AT JIVO. All 306 of Oil's delivery-based returns land in NO_CREDIT_NOTE and the HAS_CREDIT_NOTE row shows RET_DOCS_FROM_DELIVERY = 0. So any chart of 'returns with a base link' is, entirely and only, a chart of uncredited returns. Column: RET_DOCS_FROM_DELIVERY.",
+    "RET_STOCK_COST_NO_CN DOES NOT MATCH THE BOARD'S MONEY-COLUMN REGEX (it ends _NO_CN). v1 renders it correctly only because the KPI calls money() explicitly. Put it in a table without an explicit formatter and ₹1.52 Cr prints as the bare integer 15217213. Column: RET_STOCK_COST_NO_CN.",
+    "DETAIL MONEY IS ROUNDED PER DOCUMENT, SUMMARY MONEY ONCE AT THE END. Oil's uncredited cost is ₹15,217,213.26 from the detail against ₹15,217,213.18 from the summary — 8 paise over 421 documents. A check must tolerate a sub-rupee delta or it will cry wolf on every build. Column: STOCK_COST vs RET_STOCK_COST_NO_CN.",
+    "BRANCH_NAME CASE IS INCONSISTENT IN THE BEV DETAIL ('DELHI' and 'Delhi', 'PUNJAB' and 'Punjab'). Upper-case before grouping or one branch splits into two bars. Column: BRANCH_NAME.",
+    "CN_DOCNUMS IS TRUNCATED TO 200 CHARACTERS. Never count its commas to recover CN_COUNT, and never union it across rows to rebuild CN_DOCS — one Oil return is credited by 82 separate notes and the list is cut long before it lists them. Column: CN_DOCNUMS.",
+    "DATA.JSON MOVES UNDER YOU. The VPS live-refresh cron rewrites site/data.json every 2 minutes; SALES_NET moved ~0.04% between two reads while this spec was written. Every live figure here is from the frozen 2026-08-22T19:05:02+05:30 build. Any regression test must pin generated_at, not compare against a hard-coded number."
+  ],
+
+  "empty_states": [
+    "TOTAL row has RET_DOCS == 0 (a book before its first return note, verified at as-of 2024-10-01 in the adversarial review): every SUM-derived column comes back NULL, not 0. Render 'no return notes in this book as at <as_of>' — never ₹0 and never a bare em dash that reads as nil.",
+    "SALES_NET is None or 0 on the row being rendered — true on EVERY CREDIT_NOTE and NO_CN_REASON row by construction, and on 4 Oil / 2 Bev CUSTOMER rows that have returns and no invoiced sales at all. Any ratio cell must render empty('no invoiced sales for this row — a ratio cannot be formed'), never 0.00%.",
+    "A CLASS or CUSTOMER row has RET_DOCS > 0 but RET_STOCK_COST == 0 (Bev's BRANCH row: 1 document, 4,800 pieces, ₹0). Render 'SAP valued this at nil' with the piece count beside it — a bare ₹0 says 'nothing came back', which is false.",
+    "Any panel that totals the DETAIL array for Oil or Mart: render empty('the register is capped at 500 rows and truncated by exception rank — this total cannot be formed from it') unless the panel is restricted to a rank proved complete by the higher-rank-present rule.",
+    "The month-by-reason heatmap for Mart: its register is truncated inside rank 1, so the reason axis has exactly one populated value and the picture would be a solid stripe implying Mart has only one kind of uncredited return. Render empty('Mart's register is the 500 largest billed-uncredited returns of 913 — the reason split is in the summary, not here') and point at the NO_CN_REASON facet.",
+    "The credit-note lag panel for Mart: CN_LAG_DAYS is null on 100% of Mart's 500 detail rows because no credited return survived the cap. Render empty('no credited return is inside Mart's register slice') — never a median of 0 days. Oil's 62 lag values are a sample of ~1396 credited returns and must be labelled a sample; only Bev's 101 are the complete population.",
+    "A NO_CN_REASON row is absent because that bucket is empty in this book (the GROUP BY simply omits it). A KPI reading that row must render empty('no returns in this category') rather than falling back to 0 — an absent row and a zero row mean different things.",
+    "sections['return-note'].errors is non-empty, or a company key is missing from summary: render the whole section as failed with the error text and the last-good generated_at. Do not render the other two books as if the third had no returns.",
+    "The CUSTOMER pareto when the top-40 rows cover materially less than the TOTAL (Oil: 95.8%): draw the shortfall as a labelled 'all other customers' remainder bar. Omitting it makes the cumulative line reach 100% and silently claims the top 40 are everything."
+  ],
+
+  "corrections_applied": {
+    "C-0001": "quantities are PIECES (single bottles), never cartons — RET_QTY_PCS and QTY_PCS",
+    "C-0005": "the 23 intercompany group CardCodes get their own CLASS row, named, never dropped and never folded into EXTERNAL",
+    "C-0019": "DocStatus='O' is unreliable — RET_DOCS_OPEN / DOC_STATUS are labelled diagnostics and drive no figure",
+    "C-0020": "intercompany hides outside BRANCH groups — CUSTA000606 sits in card group 'DELHI', so PARTY_CLASS matches CardName too",
+    "C-0021": "CANCELED is three-valued N/Y/C — the summary keeps 'N' only, the detail decodes all three into CANCEL_STATUS"
+  },
+  "section_caveat_ids": {
+    "RN-GROSS-IS-NOT-SIZE": "RET_GROSS is zero on most return notes; RET_STOCK_COST is the size measure",
+    "RN-ZERO-VALUATION": "RET_STOCK_COST is what SAP put back into inventory; it is nil wherever the item's warehouse moving-average cost is nil (87.3% of Bev's returned pieces)",
+    "RN-RAW-MATERIAL-DOCS": "ORDN is occasionally used for raw-material returns from job-workers — one such document is 54% of Bev's measured return cost",
+    "RN-MIXED-UOM": "RDN1 mixes units of measure; RET_QTY_PCS and RET_QTY_OTHER_UOM must never be added",
+    "RN-WORK-LIST-NOT-LOSS": "'no credit note' means no credit note LINKED in SAP — a work list to check, never a proven loss",
+    "RN-CN-PCT-IS-NARROW": "CN_PCT_OF_SALES counts only credit notes raised against a return note, not all sales returns",
+    "RN-COST-OVER-REVENUE": "RET_COST_PCT_OF_SALES is inventory cost over sales revenue — unlike over unlike",
+    "RN-SALES-IS-NOT-TURNOVER": "SALES_NET is invoices before credit notes, deliberately not JIVO turnover",
+    "RN-MULTI-DELIVERY-MAX": "DLV_INVOICED takes MAX across cited deliveries — 3 Mart returns round the generous way",
+    "RN-FREETEXT-INVOICE-REF": "414 Oil returns carry the invoice number in free-text Comments in three incompatible formats; it is never parsed",
+    "RN-DETAIL-CAP": "the detail register is capped at 500 and truncated by EXC_RANK — Oil ranks 1-3 complete, Mart nothing complete, Bev whole"
+  },
+  "sql": {
+    "summary": "pipeline/sql/return-note.sql (507 lines; header comment lines 1-200, executable WITH ... LIMIT 200 on lines 201-507)",
+    "detail": "pipeline/sql/return-note-detail.sql (215 lines; header 1-71, executable 72-215)",
+    "notes": "pipeline/notes/return-note.md (656 lines, includes the 2026-08-21 adversarial review: ten attacks, zero wrong numbers, two claims about the numbers retracted)"
+  }
+}

@@ -1,0 +1,7029 @@
+{
+ "alerts": [],
+ "as_of": "2026-08-22",
+ "audit_summary": {
+  "corrections_unverified": [],
+  "cross_section_ok": true,
+  "kpi_checks_failing": 1,
+  "kpi_checks_total": 567,
+  "rollup_disagreements": 0
+ },
+ "build_seconds": 39.9,
+ "companies": [
+  {
+   "key": "oil",
+   "label": "JIVO Wellness (Oil)",
+   "schema": "JIVO_OIL_HANADB"
+  },
+  {
+   "key": "mart",
+   "label": "JIVO Mart",
+   "schema": "JIVO_MART_HANADB"
+  },
+  {
+   "key": "bev",
+   "label": "JIVO Beverages",
+   "schema": "JIVO_BEVERAGES_HANADB"
+  }
+ ],
+ "generated_at": "2026-08-22T22:48:02+05:30",
+ "history_points": 2,
+ "kpis": {
+  "bev": {
+   "ap-book-open": {
+    "check": {
+     "alt_value": 21593618.99,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Whole-book credit-adjusted payable (trade + group)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 21593618.99
+   },
+   "ap-book-payable": {
+    "check": {
+     "alt_value": 22194726.49,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Ledger payable, whole book",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 22194726.49
+   },
+   "ap-group-open": {
+    "check": {
+     "alt_value": 7858127.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed to JIVO's own branches and group companies",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 7858127.0
+   },
+   "ap-migrated-open": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Go-live opening bills still unpaid",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "ap-oldest-bill-days": {
+    "check": {
+     "alt_value": 599,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest unpaid trade bill, by due date",
+    "section": "vendor-ageing",
+    "unit": "days",
+    "value": 599.0
+   },
+   "ap-trade-advance": {
+    "check": {
+     "alt_value": 15367180.56,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Advances sitting with trade suppliers",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 15367180.56
+   },
+   "ap-trade-credit-applied": {
+    "check": {
+     "alt_value": 13504492.39,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Settled in the ledger, never matched to a bill",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 13504492.39
+   },
+   "ap-trade-open": {
+    "check": {
+     "alt_value": 13735491.99,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "JIVO owes external suppliers (credit-adjusted)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 13735491.99
+   },
+   "ap-trade-overdue-61p": {
+    "check": {
+     "alt_value": 4680842.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Overdue to pay, 61 days and over",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 4680842.0
+   },
+   "ap-trade-overdue-share": {
+    "check": {
+     "alt_value": 34.0784,
+     "delta_pct": 0.0001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of the trade payable that is 61 d + overdue",
+    "section": "vendor-ageing",
+    "unit": "pct",
+    "value": 34.078444393603405
+   },
+   "ap-trade-raw-open": {
+    "check": {
+     "alt_value": 27239984.38,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What SAP calls open, on trade suppliers",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 27239984.38
+   },
+   "ap-trade-vendors-owed": {
+    "check": {
+     "alt_value": 75,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade suppliers actually owed money",
+    "section": "vendor-ageing",
+    "unit": "count",
+    "value": 75.0
+   },
+   "ap-unapplied-pay-diag": {
+    "check": {
+     "alt_value": 27451585.77,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor payments SAP never matched to a bill (diagnostic - NEVER subtract)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 27451585.77
+   },
+   "ap-unbacked-credit": {
+    "check": {
+     "alt_value": 601107.5,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Owed per the ledger with no open bill to explain it",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 601107.5
+   },
+   "ar-book-open-total": {
+    "check": {
+     "alt_value": 48116394.06,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Whole customer book, JIVO's own accounts included",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 48116394.06
+   },
+   "ar-migrated-open": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Pre-SAP opening balances still open",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "ar-nontrade-open": {
+    "check": {
+     "alt_value": 9691634.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "JIVO's own accounts sitting in 'debtors' (branch + intercompany + staff)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 9691634.0
+   },
+   "ar-oldest-item-days": {
+    "check": {
+     "alt_value": 676,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Age of the oldest item still carrying money",
+    "section": "customer-ageing",
+    "unit": "days",
+    "value": 676.0
+   },
+   "ar-open-credit-notes": {
+    "check": {
+     "alt_value": 508327.05,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Open sales credit notes",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 508327.05
+   },
+   "ar-overdue-60p-share": {
+    "check": {
+     "alt_value": 83.24,
+     "delta_pct": 0.001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of the trade book more than 60 days overdue",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 83.24085305947385
+   },
+   "ar-sap-overstatement-share": {
+    "check": {
+     "alt_value": 23.09,
+     "delta_pct": 0.0021,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "How much of SAP's open A/R is not really owed",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 23.090479717610705
+   },
+   "ar-top-customer-share": {
+    "check": {
+     "alt_value": 82.43,
+     "delta_pct": 0.0051,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Largest single customer as a share of the trade book",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 82.43417512702615
+   },
+   "ar-trade-advances-held": {
+    "check": {
+     "alt_value": 3194942.58,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer money JIVO is holding (credit balances)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 3194942.58
+   },
+   "ar-trade-credit-applied": {
+    "check": {
+     "alt_value": 11536232.96,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Banked or credited, never matched to an invoice",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 11536232.96
+   },
+   "ar-trade-eff-customers": {
+    "check": {
+     "alt_value": 188,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customers who actually carry the receivable",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 188.0
+   },
+   "ar-trade-eff-invoices": {
+    "check": {
+     "alt_value": 452,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices that actually carry the receivable",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 452.0
+   },
+   "ar-trade-ledger-debit": {
+    "check": {
+     "alt_value": 38470138.06,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade ledger debit (OCRD ground truth)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 38470138.06
+   },
+   "ar-trade-notdue": {
+    "check": {
+     "alt_value": 561052.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Not yet due",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 561052.0
+   },
+   "ar-trade-open": {
+    "check": {
+     "alt_value": 38424760.06,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customers owe JIVO (real, external, credit-adjusted)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 38424760.06
+   },
+   "ar-trade-overdue-60p": {
+    "check": {
+     "alt_value": 31985098.06,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Overdue more than 60 days \u2014 the collection list",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 31985098.06
+   },
+   "ar-trade-raw-open": {
+    "check": {
+     "alt_value": 49960993.02,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What SAP shows as open (the wrong number, shown on purpose)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 49960993.02
+   },
+   "ar-trade-sap-open-invoices": {
+    "check": {
+     "alt_value": 796,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices SAP still flags open (the struck-through count)",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 796.0
+   },
+   "ar-trade-unbacked-debit": {
+    "check": {
+     "alt_value": 45378.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade debit backed by no open invoice (cannot be aged)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 45378.0
+   },
+   "ar-unapplied-receipts": {
+    "check": {
+     "alt_value": 11955727.75,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer cash banked and never knocked off an invoice",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 11955727.75
+   },
+   "bank-borrowings-gross": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed to the banks (gross drawn)",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "bank-borrowings-net": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed to the banks, net of facilities in credit",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": -3558000.0
+   },
+   "bank-cancelled-churn-12m": {
+    "check": {
+     "alt_value": 29907000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cancelled payment churn removed",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 29907000.0
+   },
+   "bank-cash-and-bank-headline": {
+    "check": {
+     "alt_value": 4483000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "\"Cash and bank\" as the column defines it",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 4483000.0
+   },
+   "bank-cc-od-drawn": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Drawn on cash credit and overdraft",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "bank-dormant-accounts": {
+    "check": {
+     "alt_value": 1,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dormant accounts still carrying a balance",
+    "section": "bank-accounts",
+    "unit": "count",
+    "value": 1.0
+   },
+   "bank-dormant-money": {
+    "check": {
+     "alt_value": 108000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Sitting in accounts nobody has touched in 90 days",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 108000.0
+   },
+   "bank-est-annual-interest": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Estimated interest run-rate on today's debt",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "bank-facility-funded-share": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Share of payments made from a borrowed facility",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": null
+   },
+   "bank-fixed-deposits": {
+    "check": {
+     "alt_value": 108000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Held in fixed deposits",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 108000.0
+   },
+   "bank-interco-in-12m": {
+    "check": {
+     "alt_value": 4045000,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Received from JIVO group and branches",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 4045000.0000000005
+   },
+   "bank-interco-out-share": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Share of payments out that went to JIVO itself",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 0.0
+   },
+   "bank-liquid-now": {
+    "check": {
+     "alt_value": 4483000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "In current accounts, wallets and hand",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 4483000.0
+   },
+   "bank-manual-je-share": {
+    "check": {
+     "alt_value": 1.4,
+     "delta_pct": 1.9694,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of bank lines keyed by hand",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 1.4275715500141686
+   },
+   "bank-net-12m": {
+    "check": {
+     "alt_value": 3650000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net movement through the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 3650000.0
+   },
+   "bank-net-position": {
+    "check": {
+     "alt_value": 4591000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net bank position",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 4591000.0
+   },
+   "bank-oldest-quiet-days": {
+    "check": {
+     "alt_value": 144,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Longest a balance has sat untouched",
+    "section": "bank-accounts",
+    "unit": "days",
+    "value": 144.0
+   },
+   "bank-overdrawn-amount": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Asset accounts sitting in credit",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": null
+   },
+   "bank-payments-12m": {
+    "check": {
+     "alt_value": 224774000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money out of the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 224774000.0
+   },
+   "bank-receipts-12m": {
+    "check": {
+     "alt_value": 228425000,
+     "delta_pct": 0.0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Money into the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 228425000.00000003
+   },
+   "bank-top1-out-share": {
+    "check": {
+     "alt_value": 45.3,
+     "delta_pct": 0.0838,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of payments leaving through one account",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 45.33798393052577
+   },
+   "cash-sale-ar-control-gl-net": {
+    "check": {
+     "alt_value": -1086454,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net movement on 1101014 Sundry Debtors Cash Sale",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": -1086454.0
+   },
+   "cash-sale-avg-ticket": {
+    "check": {
+     "alt_value": 16085.42,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Average cash-sale invoice",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 16085.419014084508
+   },
+   "cash-sale-card-count": {
+    "check": {
+     "alt_value": 5,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts that define \u2018cash sale\u2019 in this book",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 5.0
+   },
+   "cash-sale-gross": {
+    "check": {
+     "alt_value": 4568259,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash sales, gross of GST",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 4568259.0
+   },
+   "cash-sale-invoice-count": {
+    "check": {
+     "alt_value": 284,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash-sale invoices",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 284.0
+   },
+   "cash-sale-ledger-balance": {
+    "check": {
+     "alt_value": -1086454,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What the cash-sale accounts actually owe",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": -1086454.0
+   },
+   "cash-sale-migrated-openings": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Go-live opening balances on cash cards (not sales)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-open-diagnostic": {
+    "check": {
+     "alt_value": 4367346,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash-sale invoices SAP still calls open (diagnostic \u2014 NOT a receivable)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 4367346.0
+   },
+   "cash-sale-open-overstatement": {
+    "check": {
+     "alt_value": 5453800,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Overstatement if you read \u2018open\u2019 as a receivable",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 5453800.0
+   },
+   "cash-sale-returns": {
+    "check": {
+     "alt_value": 5270,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns against cash sales",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 5270.0
+   },
+   "cash-sale-turnover-net": {
+    "check": {
+     "alt_value": 4311886.24,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash sales, net of GST",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 4311886.24
+   },
+   "cash-sale-unapplied-receipts": {
+    "check": {
+     "alt_value": 5786550,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money in from these accounts, never applied to an invoice",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 5786550.0
+   },
+   "cash-tender-external": {
+    "check": {
+     "alt_value": 47099680.01,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Physical cash tendered by customers (a DIFFERENT population)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 47099680.01
+   },
+   "cash-tender-group": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Cash tendered by JIVO group / branch cards (not trade)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-tender-receipt-count": {
+    "check": {
+     "alt_value": 1298,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer receipts carrying cash",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 1298.0
+   },
+   "cash-till-gl-in": {
+    "check": {
+     "alt_value": 51391222.01,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash into the tills (all time, G/L)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 51391222.01
+   },
+   "cash-till-gl-net": {
+    "check": {
+     "alt_value": 232053.01,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash still sitting in the tills",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 232053.0099999979
+   },
+   "cash-till-gl-out": {
+    "check": {
+     "alt_value": 51159169.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash out of the tills (all time, G/L)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 51159169.0
+   },
+   "gret-credit-lag-max-days": {
+    "check": {
+     "alt_value": 12,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Slowest credit note",
+    "section": "goods-return",
+    "unit": "days",
+    "value": 12.0
+   },
+   "gret-credit-shortfall-ext": {
+    "check": {
+     "alt_value": 689027.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credited for less than we sent back",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 689027.0
+   },
+   "gret-grpo-item-net": {
+    "check": {
+     "alt_value": 190041730.18,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Item goods received (the denominator)",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 190041730.18
+   },
+   "gret-internal-writeoff-gross": {
+    "check": {
+     "alt_value": 1957750.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Written off as physical shortage",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 1957750.0
+   },
+   "gret-nontrade-gross": {
+    "check": {
+     "alt_value": 1957750.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Returns that are not a supplier at all",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 1957750.0
+   },
+   "gret-oldest-uncredited-ext-days": {
+    "check": {
+     "alt_value": 380,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest uncredited supplier return",
+    "section": "goods-return",
+    "unit": "days",
+    "value": 380.0
+   },
+   "gret-open-docs": {
+    "check": {
+     "alt_value": 3,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns still flagged open in SAP",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 3.0
+   },
+   "gret-return-rate-pct": {
+    "check": {
+     "alt_value": 2.1837,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of goods received that came back",
+    "section": "goods-return",
+    "unit": "pct",
+    "value": 2.1837
+   },
+   "gret-returned-docs": {
+    "check": {
+     "alt_value": 19,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods return documents",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 19.0
+   },
+   "gret-returned-gross": {
+    "check": {
+     "alt_value": 4872674.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock sent back to vendors",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 4872674.0
+   },
+   "gret-returned-net": {
+    "check": {
+     "alt_value": 4149869.34,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock sent back, net of GST",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 4149869.34
+   },
+   "gret-uncredited-all-gross": {
+    "check": {
+     "alt_value": 2125711.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Uncredited returns, all parties",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 2125711.0
+   },
+   "gret-uncredited-ext-docs": {
+    "check": {
+     "alt_value": 3,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Supplier returns with no credit note",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 3.0
+   },
+   "gret-uncredited-ext-gross": {
+    "check": {
+     "alt_value": 167961.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returned to a supplier, never credited",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 167961.0
+   },
+   "grpo-closed-nobill-gross": {
+    "check": {
+     "alt_value": 3503177.4,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Receipts closed without a bill ever being booked",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 3503177.4
+   },
+   "grpo-inv-lag-avg-days": {
+    "check": {
+     "alt_value": 13.03,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Average wait from goods in to bill booked",
+    "section": "grpo",
+    "unit": "days",
+    "value": 13.03
+   },
+   "grpo-oldest-unbilled-days": {
+    "check": {
+     "alt_value": 687,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest receipt still without a bill",
+    "section": "grpo",
+    "unit": "days",
+    "value": 687.0
+   },
+   "grpo-received-external": {
+    "check": {
+     "alt_value": 209725071.14,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods received from outside suppliers",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 209725071.14
+   },
+   "grpo-sameday-billing-pct": {
+    "check": {
+     "alt_value": 21.23,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor bill booked on the day the goods arrived",
+    "section": "grpo",
+    "unit": "pct",
+    "value": 21.23
+   },
+   "grpo-ub-90plus-docs-external": {
+    "check": {
+     "alt_value": 22,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Outside receipts unbilled over 90 days",
+    "section": "grpo",
+    "unit": "count",
+    "value": 22.0
+   },
+   "grpo-ub-90plus-external": {
+    "check": {
+     "alt_value": 3536783.09,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unbilled more than 90 days (outside suppliers)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 3536783.09
+   },
+   "grpo-ub-zeroqty-gross": {
+    "check": {
+     "alt_value": 1234737.92,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unbilled service lines that will never clear themselves",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 1234737.92
+   },
+   "grpo-unbilled-docs-external": {
+    "check": {
+     "alt_value": 227,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Outside receipts waiting for a bill",
+    "section": "grpo",
+    "unit": "count",
+    "value": 227.0
+   },
+   "grpo-unbilled-external": {
+    "check": {
+     "alt_value": 15644977.48,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods in, no vendor bill (outside suppliers)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 15644977.48
+   },
+   "grpo-unbilled-internal": {
+    "check": {
+     "alt_value": 28462601.68,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the unbilled, the part on JIVO's own cards",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 28462601.679999996
+   },
+   "grpo-unbilled-rate-pct": {
+    "check": {
+     "alt_value": 7.46,
+     "delta_pct": -0.0033,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of outside receipts still unbilled",
+    "section": "grpo",
+    "unit": "pct",
+    "value": 7.459755476519231
+   },
+   "grpo-unbilled-total": {
+    "check": {
+     "alt_value": 44107579.16,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods in, no vendor bill (every card, JIVO's own included)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 44107579.16
+   },
+   "oi-365plus-shown": {
+    "check": {
+     "alt_value": 18548049.62,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the shown list, more than a year past due",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 18548049.62
+   },
+   "oi-ap-inv-open": {
+    "check": {
+     "alt_value": 35098111.38,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor bills still open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 35098111.38
+   },
+   "oi-ar-inv-open": {
+    "check": {
+     "alt_value": 63506376.02,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer invoices still open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 63506376.02
+   },
+   "oi-coverage-pct": {
+    "check": {
+     "alt_value": 98.0714,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of the open value the shown list actually carries",
+    "section": "open-item-list",
+    "unit": "pct",
+    "value": 98.07140354789394
+   },
+   "oi-docs-open": {
+    "check": {
+     "alt_value": 2212,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Documents SAP has not closed",
+    "section": "open-item-list",
+    "unit": "count",
+    "value": 2212.0
+   },
+   "oi-face-value": {
+    "check": {
+     "alt_value": 142302895.3,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Face value of what SAP calls open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 142302895.3
+   },
+   "oi-fx-open-shown": {
+    "check": {
+     "alt_value": 1350280.75,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the shown list, booked in foreign currency",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 1350280.75
+   },
+   "oi-group-open-shown": {
+    "check": {
+     "alt_value": 16178706.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the shown list, JIVO's own branches and group companies",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 16178706.0
+   },
+   "oi-ledger-net": {
+    "check": {
+     "alt_value": 38766911.85,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What those parties' ledgers actually net to",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 38766911.85
+   },
+   "oi-migrated-open": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Still open from the go-live opening balances",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "oi-oitr-settled-docs": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "SAP's own reconciliation says settled, the document still reads open",
+    "section": "open-item-list",
+    "unit": "count",
+    "value": 0.0
+   },
+   "oi-open-cn-ap": {
+    "check": {
+     "alt_value": 167560.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes owed to JIVO by vendors",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 167560.0
+   },
+   "oi-open-cn-ar": {
+    "check": {
+     "alt_value": 622143.05,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes owed back to customers",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 622143.05
+   },
+   "oi-open-net": {
+    "check": {
+     "alt_value": 40086620.29,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net position across every open document",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 40086620.29
+   },
+   "oi-stale-gap": {
+    "check": {
+     "alt_value": 1319708.43,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "How much the open documents overstate the ledger",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 1319708.43
+   },
+   "oi-unapplied-in": {
+    "check": {
+     "alt_value": 15387883.07,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money received and never applied to a bill",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 15387883.07
+   },
+   "oi-unapplied-out": {
+    "check": {
+     "alt_value": 27520821.77,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money paid out and never applied to a bill",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 27520821.77
+   },
+   "oi-worst-days-overdue": {
+    "check": {
+     "alt_value": 684,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest thing on the list, in days past due",
+    "section": "open-item-list",
+    "unit": "days",
+    "value": 684.0
+   },
+   "prov-accounts-carrying": {
+    "check": {
+     "alt_value": 10,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts carrying a balance",
+    "section": "provisions",
+    "unit": "count",
+    "value": 10.0
+   },
+   "prov-aged-365p": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Standing more than a year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 5964000.0
+   },
+   "prov-aged-365p-ex-migrated": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Genuinely old, excluding the migration",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "prov-created-fytd": {
+    "check": {
+     "alt_value": 22168000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Provided this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 22168000.0
+   },
+   "prov-dormant-standing": {
+    "check": {
+     "alt_value": 139000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Standing on accounts nobody has touched in 90 days",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 139000.0
+   },
+   "prov-manual-je-share": {
+    "check": {
+     "alt_value": 99.5,
+     "delta_pct": -0.0274,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of provision movement posted by hand",
+    "section": "provisions",
+    "unit": "pct",
+    "value": 99.47278672032193
+   },
+   "prov-migrated-opening": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Of that, the go-live opening balance",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "prov-net-fytd": {
+    "check": {
+     "alt_value": 3055000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net movement this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 3055000.0
+   },
+   "prov-net-position": {
+    "check": {
+     "alt_value": 5449000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net position of the register",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 5449000.0
+   },
+   "prov-never-reversed": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Never once reversed",
+    "section": "provisions",
+    "unit": "INR",
+    "value": null
+   },
+   "prov-oldest-days": {
+    "check": {
+     "alt_value": 144,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest un-reversed provision",
+    "section": "provisions",
+    "unit": "days",
+    "value": 144.0
+   },
+   "prov-over-reversed": {
+    "check": {
+     "alt_value": 515000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Over-reversed (debit balances)",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 515000.0
+   },
+   "prov-over-reversed-count": {
+    "check": {
+     "alt_value": 5,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts sitting in debit",
+    "section": "provisions",
+    "unit": "count",
+    "value": 5.0
+   },
+   "prov-reversed-fytd": {
+    "check": {
+     "alt_value": 19113000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Reversed or utilised this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 19113000.0
+   },
+   "prov-standing": {
+    "check": {
+     "alt_value": 5964000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Still provided for",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 5964000.0
+   },
+   "prov-top1-share": {
+    "check": {
+     "alt_value": 41.8,
+     "delta_pct": -0.0382,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share held by the single largest account",
+    "section": "provisions",
+    "unit": "pct",
+    "value": 41.78403755868544
+   },
+   "reco-90plus-bank-only": {
+    "check": {
+     "alt_value": 2809000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "90-day-plus unagreed, banks and facilities only (no cash, no wallets)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 2809000.0
+   },
+   "reco-90plus-exceptions": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "The real exception list: 90-day-plus items on accounts JIVO does reconcile",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "reco-90plus-gross": {
+    "check": {
+     "alt_value": 81266000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unagreed items older than 90 days (gross movement)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 81266000.0
+   },
+   "reco-90plus-payments": {
+    "check": {
+     "alt_value": 40466000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money out, unagreed for more than 90 days",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 40466000.0
+   },
+   "reco-coverage-pct": {
+    "check": {
+     "alt_value": 11.1,
+     "delta_pct": 0.1001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Bank / cash accounts ever reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 11.11111111111111
+   },
+   "reco-coverage-pct-active": {
+    "check": {
+     "alt_value": 33.3,
+     "delta_pct": 0.1001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the accounts that actually move, share ever reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 33.33333333333333
+   },
+   "reco-days-since-last": {
+    "check": {
+     "alt_value": 83,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Days since the most recent reconciliation anywhere in this book",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 83.0
+   },
+   "reco-days-since-worst": {
+    "check": {
+     "alt_value": 83,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Longest a once-reconciled account has been left",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 83.0
+   },
+   "reco-events-n": {
+    "check": {
+     "alt_value": 51,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Reconciliations SAP has on record, ever",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 51.0
+   },
+   "reco-gap-at-last-recon-internal": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Gap at the last reconciliation - book balance vs BOOK-DERIVED agreed balance (NOT per bank statement)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "reco-keying-lag-days": {
+    "check": {
+     "alt_value": 5,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Median days from statement date to the day it was keyed",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 5.0
+   },
+   "reco-lines-agreed-pct": {
+    "check": {
+     "alt_value": 63.3,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of bank ledger lines externally reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 63.3
+   },
+   "reco-never-reconciled-n": {
+    "check": {
+     "alt_value": 4,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Live accounts never reconciled once",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 4.0
+   },
+   "reco-never-throughput": {
+    "check": {
+     "alt_value": 105359000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money that has moved through accounts nobody has ever reconciled",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 105359000.0
+   },
+   "reco-oldest-unrec-days": {
+    "check": {
+     "alt_value": 687,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Age of the oldest unagreed item",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 687.0
+   },
+   "reco-stale-pre-recon-n": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Items that should already have cleared and did not",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 0.0
+   },
+   "reco-statement-lines-loaded": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Bank statement lines ever loaded into SAP",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 0.0
+   },
+   "reco-tieout-internal": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Tie-out between the two sides SAP stores (internal, NOT bank vs books)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "reco-unagreed-balance": {
+    "check": {
+     "alt_value": -4235000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Book balance no reconciliation has ever agreed",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": -4235000.0
+   },
+   "reco-unrec-lines-n": {
+    "check": {
+     "alt_value": 2470,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Ledger items nobody has agreed",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 2470.0
+   },
+   "rn-billed-uncredited-cost": {
+    "check": {
+     "alt_value": 207.78,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock cost of the work list",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 207.78
+   },
+   "rn-billed-uncredited-docs": {
+    "check": {
+     "alt_value": 3,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Billed, goods came back, never credited",
+    "section": "return-note",
+    "unit": "count",
+    "value": 3.0
+   },
+   "rn-cn-net": {
+    "check": {
+     "alt_value": 1179435.25,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes raised against returns",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 1179435.25
+   },
+   "rn-cn-pct-sales": {
+    "check": {
+     "alt_value": 0.5413,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes on returns, per rupee invoiced",
+    "section": "return-note",
+    "unit": "pct",
+    "value": 0.5413
+   },
+   "rn-cost-pct-sales": {
+    "check": {
+     "alt_value": 0.1191,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns at cost, per rupee invoiced",
+    "section": "return-note",
+    "unit": "pct",
+    "value": 0.1191
+   },
+   "rn-docs": {
+    "check": {
+     "alt_value": 161,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Live return notes",
+    "section": "return-note",
+    "unit": "count",
+    "value": 161.0
+   },
+   "rn-external-cost": {
+    "check": {
+     "alt_value": 241086.47,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "External customer returns, at cost",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 241086.47
+   },
+   "rn-gross": {
+    "check": {
+     "alt_value": 354166.87,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Header value of returns",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 354166.87
+   },
+   "rn-interco-cost": {
+    "check": {
+     "alt_value": 18340.19,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Intercompany returns, at cost",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 18340.19
+   },
+   "rn-qty-pcs": {
+    "check": {
+     "alt_value": 170476.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Pieces returned",
+    "section": "return-note",
+    "unit": "count",
+    "value": 170476.0
+   },
+   "rn-sales-net": {
+    "check": {
+     "alt_value": 217888002.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoiced sales (the denominator)",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 217888002.0
+   },
+   "rn-standalone-cost": {
+    "check": {
+     "alt_value": 627.5,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Uncredited with no base link at all",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 627.5
+   },
+   "rn-stock-cost": {
+    "check": {
+     "alt_value": 259426.66,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock value handed back",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 259426.66
+   },
+   "rn-uncredited-cost": {
+    "check": {
+     "alt_value": 189198.63,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returned, never credited",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 189198.63
+   },
+   "rn-uncredited-docs": {
+    "check": {
+     "alt_value": 60,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns with no credit note",
+    "section": "return-note",
+    "unit": "count",
+    "value": 60.0
+   },
+   "rn-zero-value-docs": {
+    "check": {
+     "alt_value": 134,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Return notes booked at zero value",
+    "section": "return-note",
+    "unit": "count",
+    "value": 134.0
+   },
+   "trn-bilty-coverage": {
+    "check": {
+     "alt_value": 84.562,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatches carrying a lorry receipt (bilty) number",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 84.56199587319452
+   },
+   "trn-boe-mistaken-for-lr": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Documents in the field everyone mistakes for the LR number",
+    "section": "transporter",
+    "unit": "count",
+    "value": 0.0
+   },
+   "trn-dispatch-docs": {
+    "check": {
+     "alt_value": 5331,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatch invoices in scope",
+    "section": "transporter",
+    "unit": "count",
+    "value": 5331.0
+   },
+   "trn-dispatch-value": {
+    "check": {
+     "alt_value": 217888000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods dispatched (net of GST, all parties)",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 217888000.0
+   },
+   "trn-ext-dispatch-value": {
+    "check": {
+     "alt_value": 207200000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched to outside customers",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 207200000.0
+   },
+   "trn-external-share": {
+    "check": {
+     "alt_value": 95.0947,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of dispatch value that is real outside trade",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 95.09472756645616
+   },
+   "trn-freight-never-named": {
+    "check": {
+     "alt_value": 162000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight paid to carriers never named on any dispatch",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 162000.0
+   },
+   "trn-freight-outside-group": {
+    "check": {
+     "alt_value": 3437000.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Freight from carriers filed OUTSIDE the transporter supplier group",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 3437000.0
+   },
+   "trn-freight-share": {
+    "check": {
+     "alt_value": 9.3185,
+     "delta_pct": 0.0005,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight billed per Rs 100 of goods dispatched",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 9.318548979292112
+   },
+   "trn-freight-spend": {
+    "check": {
+     "alt_value": 20304000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight billed by carriers (A/P, net of GST and credit notes)",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 20304000.0
+   },
+   "trn-group-dispatch-value": {
+    "check": {
+     "alt_value": 10688000.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Dispatched to JIVO's own branches and group companies",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 10688000.0
+   },
+   "trn-name-field-fill": {
+    "check": {
+     "alt_value": 80.1163,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices with anything typed in the transporter field",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 80.11630088163571
+   },
+   "trn-name-variants": {
+    "check": {
+     "alt_value": 147,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Distinct spellings typed into the transporter field",
+    "section": "transporter",
+    "unit": "count",
+    "value": 147.0
+   },
+   "trn-ownfleet-value": {
+    "check": {
+     "alt_value": 10890000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Moved on JIVO's own trucks or collected by the customer",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 10890000.0
+   },
+   "trn-third-party-value": {
+    "check": {
+     "alt_value": 183070000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched under a named third-party carrier",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 183070000.0
+   },
+   "trn-top-carrier-value": {
+    "check": {
+     "alt_value": 102805000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods moved by the single largest carrier",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 102805000.0
+   },
+   "trn-unmatched-carrier-value": {
+    "check": {
+     "alt_value": 8016000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods moved by carriers with no freight vendor card matched",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 8016000.0
+   },
+   "trn-unnamed-value": {
+    "check": {
+     "alt_value": 23489000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched with no transporter recorded",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 23489000.0
+   },
+   "trn-vehicle-coverage": {
+    "check": {
+     "alt_value": 79.6661,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatches carrying a vehicle number (e-way bill Part B)",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 79.6661039204652
+   }
+  },
+  "mart": {
+   "ap-book-open": {
+    "check": {
+     "alt_value": 291931525.92,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Whole-book credit-adjusted payable (trade + group)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 291931525.92
+   },
+   "ap-book-payable": {
+    "check": {
+     "alt_value": 292243162.27,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Ledger payable, whole book",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 292243162.27
+   },
+   "ap-group-open": {
+    "check": {
+     "alt_value": 275992335.76,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed to JIVO's own branches and group companies",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 275992335.76
+   },
+   "ap-migrated-open": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Go-live opening bills still unpaid",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "ap-oldest-bill-days": {
+    "check": {
+     "alt_value": 590,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest unpaid trade bill, by due date",
+    "section": "vendor-ageing",
+    "unit": "days",
+    "value": 590.0
+   },
+   "ap-trade-advance": {
+    "check": {
+     "alt_value": 4387874.42,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Advances sitting with trade suppliers",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 4387874.42
+   },
+   "ap-trade-credit-applied": {
+    "check": {
+     "alt_value": 64089549.23,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Settled in the ledger, never matched to a bill",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 64089549.23
+   },
+   "ap-trade-open": {
+    "check": {
+     "alt_value": 15939190.16,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "JIVO owes external suppliers (credit-adjusted)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 15939190.16
+   },
+   "ap-trade-overdue-61p": {
+    "check": {
+     "alt_value": 4559490.4,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Overdue to pay, 61 days and over",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 4559490.4
+   },
+   "ap-trade-overdue-share": {
+    "check": {
+     "alt_value": 28.6055,
+     "delta_pct": 0.0001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of the trade payable that is 61 d + overdue",
+    "section": "vendor-ageing",
+    "unit": "pct",
+    "value": 28.605533620159783
+   },
+   "ap-trade-raw-open": {
+    "check": {
+     "alt_value": 80028739.39,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What SAP calls open, on trade suppliers",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 80028739.39
+   },
+   "ap-trade-vendors-owed": {
+    "check": {
+     "alt_value": 31,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade suppliers actually owed money",
+    "section": "vendor-ageing",
+    "unit": "count",
+    "value": 31.0
+   },
+   "ap-unapplied-pay-diag": {
+    "check": {
+     "alt_value": 1856127470.61,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor payments SAP never matched to a bill (diagnostic - NEVER subtract)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 1856127470.61
+   },
+   "ap-unbacked-credit": {
+    "check": {
+     "alt_value": 311636.35,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Owed per the ledger with no open bill to explain it",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 311636.35
+   },
+   "ar-book-open-total": {
+    "check": {
+     "alt_value": 168576243.67,
+     "delta_pct": 0.2647,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Whole customer book, JIVO's own accounts included",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 169022493.67
+   },
+   "ar-migrated-open": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Pre-SAP opening balances still open",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "ar-nontrade-open": {
+    "check": {
+     "alt_value": 65618459.87,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "JIVO's own accounts sitting in 'debtors' (branch + intercompany + staff)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 65618459.87
+   },
+   "ar-oldest-item-days": {
+    "check": {
+     "alt_value": 479,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Age of the oldest item still carrying money",
+    "section": "customer-ageing",
+    "unit": "days",
+    "value": 479.0
+   },
+   "ar-open-credit-notes": {
+    "check": {
+     "alt_value": 115841909.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Open sales credit notes",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 115841909.0
+   },
+   "ar-overdue-60p-share": {
+    "check": {
+     "alt_value": 2.93,
+     "delta_pct": -0.5108,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Share of the trade book more than 60 days overdue",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 2.9150327208995206
+   },
+   "ar-sap-overstatement-share": {
+    "check": {
+     "alt_value": 90.96,
+     "delta_pct": -0.0366,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "How much of SAP's open A/R is not really owed",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 90.92672110861088
+   },
+   "ar-top-customer-share": {
+    "check": {
+     "alt_value": 88.2,
+     "delta_pct": -0.4273,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Largest single customer as a share of the trade book",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 87.82308910273866
+   },
+   "ar-trade-advances-held": {
+    "check": {
+     "alt_value": 3570360.68,
+     "delta_pct": -178.4022,
+     "method": "disagreeing",
+     "ok": false
+    },
+    "label": "Customer money JIVO is holding (credit balances)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": -2799240.68
+   },
+   "ar-trade-credit-applied": {
+    "check": {
+     "alt_value": 1035479375.04,
+     "delta_pct": 0.0745,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Banked or credited, never matched to an invoice",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 1036250495.04
+   },
+   "ar-trade-eff-customers": {
+    "check": {
+     "alt_value": 24,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customers who actually carry the receivable",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 24.0
+   },
+   "ar-trade-eff-invoices": {
+    "check": {
+     "alt_value": 741,
+     "delta_pct": 0.135,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices that actually carry the receivable",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 742.0
+   },
+   "ar-trade-ledger-debit": {
+    "check": {
+     "alt_value": 104266949.78,
+     "delta_pct": 0.428,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade ledger debit (OCRD ground truth)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 104713199.78
+   },
+   "ar-trade-notdue": {
+    "check": {
+     "alt_value": 11471035.68,
+     "delta_pct": 3.8902,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Not yet due",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 11917285.68
+   },
+   "ar-trade-open": {
+    "check": {
+     "alt_value": 102957783.8,
+     "delta_pct": 0.4334,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customers owe JIVO (real, external, credit-adjusted)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 103404033.8
+   },
+   "ar-trade-overdue-60p": {
+    "check": {
+     "alt_value": 3014261.42,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Overdue more than 60 days \u2014 the collection list",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 3014261.42
+   },
+   "ar-trade-raw-open": {
+    "check": {
+     "alt_value": 1138437158.84,
+     "delta_pct": 0.1069,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What SAP shows as open (the wrong number, shown on purpose)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 1139654528.84
+   },
+   "ar-trade-sap-open-invoices": {
+    "check": {
+     "alt_value": 4049,
+     "delta_pct": 0.0741,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices SAP still flags open (the struck-through count)",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 4052.0
+   },
+   "ar-trade-unbacked-debit": {
+    "check": {
+     "alt_value": 1309165.98,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade debit backed by no open invoice (cannot be aged)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 1309165.98
+   },
+   "ar-unapplied-receipts": {
+    "check": {
+     "alt_value": 897875617.62,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer cash banked and never knocked off an invoice",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 897875617.62
+   },
+   "bank-borrowings-gross": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed to the banks (gross drawn)",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "bank-borrowings-net": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed to the banks, net of facilities in credit",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": -9357000.0
+   },
+   "bank-cancelled-churn-12m": {
+    "check": {
+     "alt_value": 493342000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cancelled payment churn removed",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 493342000.0
+   },
+   "bank-cash-and-bank-headline": {
+    "check": {
+     "alt_value": 9523000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "\"Cash and bank\" as the column defines it",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 9523000.0
+   },
+   "bank-cc-od-drawn": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Drawn on cash credit and overdraft",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "bank-dormant-accounts": {
+    "check": {
+     "alt_value": 1,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dormant accounts still carrying a balance",
+    "section": "bank-accounts",
+    "unit": "count",
+    "value": 1.0
+   },
+   "bank-dormant-money": {
+    "check": {
+     "alt_value": 142000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Sitting in accounts nobody has touched in 90 days",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 142000.0
+   },
+   "bank-est-annual-interest": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Estimated interest run-rate on today's debt",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "bank-facility-funded-share": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Share of payments made from a borrowed facility",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 0.0
+   },
+   "bank-fixed-deposits": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Held in fixed deposits",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "bank-interco-in-12m": {
+    "check": {
+     "alt_value": 1500000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Received from JIVO group and branches",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 1500000.0
+   },
+   "bank-interco-out-share": {
+    "check": {
+     "alt_value": 87.6,
+     "delta_pct": -0.0283,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of payments out that went to JIVO itself",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 87.57521989383453
+   },
+   "bank-liquid-now": {
+    "check": {
+     "alt_value": 9523000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "In current accounts, wallets and hand",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 9523000.0
+   },
+   "bank-manual-je-share": {
+    "check": {
+     "alt_value": 0.1,
+     "delta_pct": 42.9879,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of bank lines keyed by hand",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 0.14298791221687596
+   },
+   "bank-net-12m": {
+    "check": {
+     "alt_value": 6067000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net movement through the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 6067000.0
+   },
+   "bank-net-position": {
+    "check": {
+     "alt_value": 9523000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net bank position",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 9523000.0
+   },
+   "bank-oldest-quiet-days": {
+    "check": {
+     "alt_value": 115,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Longest a balance has sat untouched",
+    "section": "bank-accounts",
+    "unit": "days",
+    "value": 115.0
+   },
+   "bank-overdrawn-amount": {
+    "check": {
+     "alt_value": 290000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Asset accounts sitting in credit",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 290000.0
+   },
+   "bank-payments-12m": {
+    "check": {
+     "alt_value": 1894778000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money out of the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 1894778000.0
+   },
+   "bank-receipts-12m": {
+    "check": {
+     "alt_value": 1900847000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Money into the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 1900847000.0
+   },
+   "bank-top1-out-share": {
+    "check": {
+     "alt_value": 64.8,
+     "delta_pct": -0.0567,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of payments leaving through one account",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 64.76325986474404
+   },
+   "cash-sale-ar-control-gl-net": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net movement on 1101014 Sundry Debtors Cash Sale",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-avg-ticket": {
+    "check": {
+     "alt_value": null,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Average cash-sale invoice",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-card-count": {
+    "check": {
+     "alt_value": 3,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts that define \u2018cash sale\u2019 in this book",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 3.0
+   },
+   "cash-sale-gross": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Cash sales, gross of GST",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-invoice-count": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Cash-sale invoices",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 0.0
+   },
+   "cash-sale-ledger-balance": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "What the cash-sale accounts actually owe",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-migrated-openings": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Go-live opening balances on cash cards (not sales)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-open-diagnostic": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Cash-sale invoices SAP still calls open (diagnostic \u2014 NOT a receivable)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-open-overstatement": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Overstatement if you read \u2018open\u2019 as a receivable",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-returns": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Returns against cash sales",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-turnover-net": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Cash sales, net of GST",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-sale-unapplied-receipts": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Money in from these accounts, never applied to an invoice",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-tender-external": {
+    "check": {
+     "alt_value": 14241306.63,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Physical cash tendered by customers (a DIFFERENT population)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 14241306.63
+   },
+   "cash-tender-group": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Cash tendered by JIVO group / branch cards (not trade)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "cash-tender-receipt-count": {
+    "check": {
+     "alt_value": 2081,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer receipts carrying cash",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 2081.0
+   },
+   "cash-till-gl-in": {
+    "check": {
+     "alt_value": 29703569.01,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash into the tills (all time, G/L)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 29703569.009999998
+   },
+   "cash-till-gl-net": {
+    "check": {
+     "alt_value": 2.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash still sitting in the tills",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 2.0
+   },
+   "cash-till-gl-out": {
+    "check": {
+     "alt_value": 29703567.01,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash out of the tills (all time, G/L)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 29703567.009999998
+   },
+   "gret-credit-lag-max-days": {
+    "check": {
+     "alt_value": 189,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Slowest credit note",
+    "section": "goods-return",
+    "unit": "days",
+    "value": 189.0
+   },
+   "gret-credit-shortfall-ext": {
+    "check": {
+     "alt_value": null,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Credited for less than we sent back",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": null
+   },
+   "gret-grpo-item-net": {
+    "check": {
+     "alt_value": 2793966527.93,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Item goods received (the denominator)",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 2793966527.93
+   },
+   "gret-internal-writeoff-gross": {
+    "check": {
+     "alt_value": null,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Written off as physical shortage",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": null
+   },
+   "gret-nontrade-gross": {
+    "check": {
+     "alt_value": 12326714.52,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Returns that are not a supplier at all",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 12326714.52
+   },
+   "gret-oldest-uncredited-ext-days": {
+    "check": {
+     "alt_value": 351,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest uncredited supplier return",
+    "section": "goods-return",
+    "unit": "days",
+    "value": 351.0
+   },
+   "gret-open-docs": {
+    "check": {
+     "alt_value": 16,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns still flagged open in SAP",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 16.0
+   },
+   "gret-return-rate-pct": {
+    "check": {
+     "alt_value": 0.4246,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of goods received that came back",
+    "section": "goods-return",
+    "unit": "pct",
+    "value": 0.4246
+   },
+   "gret-returned-docs": {
+    "check": {
+     "alt_value": 49,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods return documents",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 49.0
+   },
+   "gret-returned-gross": {
+    "check": {
+     "alt_value": 12549896.52,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock sent back to vendors",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 12549896.52
+   },
+   "gret-returned-net": {
+    "check": {
+     "alt_value": 11863242.32,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock sent back, net of GST",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 11863242.32
+   },
+   "gret-uncredited-all-gross": {
+    "check": {
+     "alt_value": 3519206.18,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Uncredited returns, all parties",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 3519206.18
+   },
+   "gret-uncredited-ext-docs": {
+    "check": {
+     "alt_value": 3,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Supplier returns with no credit note",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 3.0
+   },
+   "gret-uncredited-ext-gross": {
+    "check": {
+     "alt_value": 223182.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returned to a supplier, never credited",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 223182.0
+   },
+   "grpo-closed-nobill-gross": {
+    "check": {
+     "alt_value": 4151699.64,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Receipts closed without a bill ever being booked",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 4151699.64
+   },
+   "grpo-inv-lag-avg-days": {
+    "check": {
+     "alt_value": 1.48,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Average wait from goods in to bill booked",
+    "section": "grpo",
+    "unit": "days",
+    "value": 1.48
+   },
+   "grpo-oldest-unbilled-days": {
+    "check": {
+     "alt_value": 343,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest receipt still without a bill",
+    "section": "grpo",
+    "unit": "days",
+    "value": 343.0
+   },
+   "grpo-received-external": {
+    "check": {
+     "alt_value": 51752167.71,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods received from outside suppliers",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 51752167.71
+   },
+   "grpo-sameday-billing-pct": {
+    "check": {
+     "alt_value": 84.15,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor bill booked on the day the goods arrived",
+    "section": "grpo",
+    "unit": "pct",
+    "value": 84.15
+   },
+   "grpo-ub-90plus-docs-external": {
+    "check": {
+     "alt_value": 3,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Outside receipts unbilled over 90 days",
+    "section": "grpo",
+    "unit": "count",
+    "value": 3.0
+   },
+   "grpo-ub-90plus-external": {
+    "check": {
+     "alt_value": 138605.51,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unbilled more than 90 days (outside suppliers)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 138605.51
+   },
+   "grpo-ub-zeroqty-gross": {
+    "check": {
+     "alt_value": 1466515.78,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unbilled service lines that will never clear themselves",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 1466515.78
+   },
+   "grpo-unbilled-docs-external": {
+    "check": {
+     "alt_value": 31,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Outside receipts waiting for a bill",
+    "section": "grpo",
+    "unit": "count",
+    "value": 31.0
+   },
+   "grpo-unbilled-external": {
+    "check": {
+     "alt_value": 1605121.28,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods in, no vendor bill (outside suppliers)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 1605121.28
+   },
+   "grpo-unbilled-internal": {
+    "check": {
+     "alt_value": 18054130.5,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the unbilled, the part on JIVO's own cards",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 18054130.5
+   },
+   "grpo-unbilled-rate-pct": {
+    "check": {
+     "alt_value": 3.102,
+     "delta_pct": -0.0144,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of outside receipts still unbilled",
+    "section": "grpo",
+    "unit": "pct",
+    "value": 3.101553714608644
+   },
+   "grpo-unbilled-total": {
+    "check": {
+     "alt_value": 19659251.78,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods in, no vendor bill (every card, JIVO's own included)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 19659251.78
+   },
+   "oi-365plus-shown": {
+    "check": {
+     "alt_value": 757116175.8,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the shown list, more than a year past due",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 757116175.8
+   },
+   "oi-ap-inv-open": {
+    "check": {
+     "alt_value": 2196096119.28,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor bills still open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 2196096119.28
+   },
+   "oi-ar-inv-open": {
+    "check": {
+     "alt_value": 1299229356.71,
+     "delta_pct": 0.0937,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer invoices still open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 1300446726.71
+   },
+   "oi-coverage-pct": {
+    "check": {
+     "alt_value": 81.4111,
+     "delta_pct": -0.0187,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of the open value the shown list actually carries",
+    "section": "open-item-list",
+    "unit": "pct",
+    "value": 81.39589140866327
+   },
+   "oi-docs-open": {
+    "check": {
+     "alt_value": 10105,
+     "delta_pct": 0.0297,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Documents SAP has not closed",
+    "section": "open-item-list",
+    "unit": "count",
+    "value": 10108.0
+   },
+   "oi-face-value": {
+    "check": {
+     "alt_value": 6522251561.67,
+     "delta_pct": 0.0187,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Face value of what SAP calls open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 6523468931.67
+   },
+   "oi-fx-open-shown": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Of the shown list, booked in foreign currency",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": null
+   },
+   "oi-group-open-shown": {
+    "check": {
+     "alt_value": 3622892283.28,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the shown list, JIVO's own branches and group companies",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 3622892283.28
+   },
+   "oi-ledger-net": {
+    "check": {
+     "alt_value": -93910521.25,
+     "delta_pct": 1.2963,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "What those parties' ledgers actually net to",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": -92693151.25
+   },
+   "oi-migrated-open": {
+    "check": {
+     "alt_value": 0.0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Still open from the go-live opening balances",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "oi-oitr-settled-docs": {
+    "check": {
+     "alt_value": 6,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "SAP's own reconciliation says settled, the document still reads open",
+    "section": "open-item-list",
+    "unit": "count",
+    "value": 6.0
+   },
+   "oi-open-cn-ap": {
+    "check": {
+     "alt_value": 155248836.48,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes owed to JIVO by vendors",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 155248836.48
+   },
+   "oi-open-cn-ar": {
+    "check": {
+     "alt_value": 115894469.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes owed back to customers",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 115894469.0
+   },
+   "oi-open-net": {
+    "check": {
+     "alt_value": 98961765.93,
+     "delta_pct": 1.2301,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net position across every open document",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 100179135.93
+   },
+   "oi-stale-gap": {
+    "check": {
+     "alt_value": 192872287.18,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "How much the open documents overstate the ledger",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 192872287.18
+   },
+   "oi-unapplied-in": {
+    "check": {
+     "alt_value": 899654309.59,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money received and never applied to a bill",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 899654309.59
+   },
+   "oi-unapplied-out": {
+    "check": {
+     "alt_value": 1856128470.61,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money paid out and never applied to a bill",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 1856128470.61
+   },
+   "oi-worst-days-overdue": {
+    "check": {
+     "alt_value": 598,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest thing on the list, in days past due",
+    "section": "open-item-list",
+    "unit": "days",
+    "value": 598.0
+   },
+   "prov-accounts-carrying": {
+    "check": {
+     "alt_value": 9,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts carrying a balance",
+    "section": "provisions",
+    "unit": "count",
+    "value": 9.0
+   },
+   "prov-aged-365p": {
+    "check": {
+     "alt_value": 70000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Standing more than a year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 70000.0
+   },
+   "prov-aged-365p-ex-migrated": {
+    "check": {
+     "alt_value": 70000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Genuinely old, excluding the migration",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 70000.0
+   },
+   "prov-created-fytd": {
+    "check": {
+     "alt_value": 91310000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Provided this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 91310000.0
+   },
+   "prov-dormant-standing": {
+    "check": {
+     "alt_value": 123000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Standing on accounts nobody has touched in 90 days",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 123000.0
+   },
+   "prov-manual-je-share": {
+    "check": {
+     "alt_value": 99.2,
+     "delta_pct": -0.0317,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of provision movement posted by hand",
+    "section": "provisions",
+    "unit": "pct",
+    "value": 99.16858248798718
+   },
+   "prov-migrated-opening": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Of that, the go-live opening balance",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "prov-net-fytd": {
+    "check": {
+     "alt_value": 15736000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net movement this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 15736000.0
+   },
+   "prov-net-position": {
+    "check": {
+     "alt_value": 35797000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net position of the register",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 35797000.0
+   },
+   "prov-never-reversed": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Never once reversed",
+    "section": "provisions",
+    "unit": "INR",
+    "value": null
+   },
+   "prov-oldest-days": {
+    "check": {
+     "alt_value": 599,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest un-reversed provision",
+    "section": "provisions",
+    "unit": "days",
+    "value": 599.0
+   },
+   "prov-over-reversed": {
+    "check": {
+     "alt_value": 1663000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Over-reversed (debit balances)",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 1663000.0
+   },
+   "prov-over-reversed-count": {
+    "check": {
+     "alt_value": 7,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts sitting in debit",
+    "section": "provisions",
+    "unit": "count",
+    "value": 7.0
+   },
+   "prov-reversed-fytd": {
+    "check": {
+     "alt_value": 75574000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Reversed or utilised this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 75574000.0
+   },
+   "prov-standing": {
+    "check": {
+     "alt_value": 37460000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Still provided for",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 37460000.0
+   },
+   "prov-top1-share": {
+    "check": {
+     "alt_value": 71.9,
+     "delta_pct": -0.0139,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share held by the single largest account",
+    "section": "provisions",
+    "unit": "pct",
+    "value": 71.89001601708489
+   },
+   "reco-90plus-bank-only": {
+    "check": {
+     "alt_value": 657608000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "90-day-plus unagreed, banks and facilities only (no cash, no wallets)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 657608000.0
+   },
+   "reco-90plus-exceptions": {
+    "check": {
+     "alt_value": 29077000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "The real exception list: 90-day-plus items on accounts JIVO does reconcile",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 29077000.0
+   },
+   "reco-90plus-gross": {
+    "check": {
+     "alt_value": 747370000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unagreed items older than 90 days (gross movement)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 747370000.0
+   },
+   "reco-90plus-payments": {
+    "check": {
+     "alt_value": 372326000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money out, unagreed for more than 90 days",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 372326000.0
+   },
+   "reco-coverage-pct": {
+    "check": {
+     "alt_value": 4.5,
+     "delta_pct": 1.0101,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Bank / cash accounts ever reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 4.545454545454546
+   },
+   "reco-coverage-pct-active": {
+    "check": {
+     "alt_value": 16.7,
+     "delta_pct": -0.1996,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the accounts that actually move, share ever reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 16.666666666666664
+   },
+   "reco-days-since-last": {
+    "check": {
+     "alt_value": 83,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Days since the most recent reconciliation anywhere in this book",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 83.0
+   },
+   "reco-days-since-worst": {
+    "check": {
+     "alt_value": 295,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Longest a once-reconciled account has been left",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 295.0
+   },
+   "reco-events-n": {
+    "check": {
+     "alt_value": 7,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Reconciliations SAP has on record, ever",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 7.0
+   },
+   "reco-gap-at-last-recon-internal": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Gap at the last reconciliation - book balance vs BOOK-DERIVED agreed balance (NOT per bank statement)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "reco-keying-lag-days": {
+    "check": {
+     "alt_value": 13,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Median days from statement date to the day it was keyed",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 13.0
+   },
+   "reco-lines-agreed-pct": {
+    "check": {
+     "alt_value": 39.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of bank ledger lines externally reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 39.0
+   },
+   "reco-never-reconciled-n": {
+    "check": {
+     "alt_value": 10,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Live accounts never reconciled once",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 10.0
+   },
+   "reco-never-throughput": {
+    "check": {
+     "alt_value": 1453074000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money that has moved through accounts nobody has ever reconciled",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 1453074000.0
+   },
+   "reco-oldest-unrec-days": {
+    "check": {
+     "alt_value": 599,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Age of the oldest unagreed item",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 599.0
+   },
+   "reco-stale-pre-recon-n": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Items that should already have cleared and did not",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 0.0
+   },
+   "reco-statement-lines-loaded": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Bank statement lines ever loaded into SAP",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 0.0
+   },
+   "reco-tieout-internal": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Tie-out between the two sides SAP stores (internal, NOT bank vs books)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "reco-unagreed-balance": {
+    "check": {
+     "alt_value": -12533000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Book balance no reconciliation has ever agreed",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": -12533000.0
+   },
+   "reco-unrec-lines-n": {
+    "check": {
+     "alt_value": 9510,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Ledger items nobody has agreed",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 9510.0
+   },
+   "rn-billed-uncredited-cost": {
+    "check": {
+     "alt_value": 1845085.71,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock cost of the work list",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 1845085.71
+   },
+   "rn-billed-uncredited-docs": {
+    "check": {
+     "alt_value": 913,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Billed, goods came back, never credited",
+    "section": "return-note",
+    "unit": "count",
+    "value": 913.0
+   },
+   "rn-cn-net": {
+    "check": {
+     "alt_value": 31213325.58,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes raised against returns",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 31213325.58
+   },
+   "rn-cn-pct-sales": {
+    "check": {
+     "alt_value": 0.9627,
+     "delta_pct": -0.0415,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes on returns, per rupee invoiced",
+    "section": "return-note",
+    "unit": "pct",
+    "value": 0.9622999999999999
+   },
+   "rn-cost-pct-sales": {
+    "check": {
+     "alt_value": 1.2356,
+     "delta_pct": -0.0324,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns at cost, per rupee invoiced",
+    "section": "return-note",
+    "unit": "pct",
+    "value": 1.2352
+   },
+   "rn-docs": {
+    "check": {
+     "alt_value": 1793,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Live return notes",
+    "section": "return-note",
+    "unit": "count",
+    "value": 1793.0
+   },
+   "rn-external-cost": {
+    "check": {
+     "alt_value": 39906816.05,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "External customer returns, at cost",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 39906816.05
+   },
+   "rn-gross": {
+    "check": {
+     "alt_value": 13686590.14,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Header value of returns",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 13686590.14
+   },
+   "rn-interco-cost": {
+    "check": {
+     "alt_value": 157145.53,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Intercompany returns, at cost",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 157145.53
+   },
+   "rn-qty-pcs": {
+    "check": {
+     "alt_value": 137439.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Pieces returned",
+    "section": "return-note",
+    "unit": "count",
+    "value": 137439.0
+   },
+   "rn-sales-net": {
+    "check": {
+     "alt_value": 3242367733.61,
+     "delta_pct": 0.0358,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoiced sales (the denominator)",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 3243527133.61
+   },
+   "rn-standalone-cost": {
+    "check": {
+     "alt_value": 3003825.69,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Uncredited with no base link at all",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 3003825.69
+   },
+   "rn-stock-cost": {
+    "check": {
+     "alt_value": 40063961.58,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock value handed back",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 40063961.58
+   },
+   "rn-uncredited-cost": {
+    "check": {
+     "alt_value": 14382091.18,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returned, never credited",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 14382091.18
+   },
+   "rn-uncredited-docs": {
+    "check": {
+     "alt_value": 1370,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns with no credit note",
+    "section": "return-note",
+    "unit": "count",
+    "value": 1370.0
+   },
+   "rn-zero-value-docs": {
+    "check": {
+     "alt_value": 601,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Return notes booked at zero value",
+    "section": "return-note",
+    "unit": "count",
+    "value": 601.0
+   },
+   "trn-bilty-coverage": {
+    "check": {
+     "alt_value": 3.8911,
+     "delta_pct": -0.0013,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatches carrying a lorry receipt (bilty) number",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 3.8910505836575875
+   },
+   "trn-boe-mistaken-for-lr": {
+    "check": {
+     "alt_value": 1,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Documents in the field everyone mistakes for the LR number",
+    "section": "transporter",
+    "unit": "count",
+    "value": 1.0
+   },
+   "trn-dispatch-docs": {
+    "check": {
+     "alt_value": 25186,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatch invoices in scope",
+    "section": "transporter",
+    "unit": "count",
+    "value": 25186.0
+   },
+   "trn-dispatch-value": {
+    "check": {
+     "alt_value": 3243527000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods dispatched (net of GST, all parties)",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 3243527000.0
+   },
+   "trn-ext-dispatch-value": {
+    "check": {
+     "alt_value": 3107440000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched to outside customers",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 3107440000.0
+   },
+   "trn-external-share": {
+    "check": {
+     "alt_value": 95.8044,
+     "delta_pct": -0.0001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of dispatch value that is real outside trade",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 95.80435125096847
+   },
+   "trn-freight-never-named": {
+    "check": {
+     "alt_value": 21160000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight paid to carriers never named on any dispatch",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 21160000.0
+   },
+   "trn-freight-outside-group": {
+    "check": {
+     "alt_value": 3363000.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Freight from carriers filed OUTSIDE the transporter supplier group",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 3363000.0
+   },
+   "trn-freight-share": {
+    "check": {
+     "alt_value": 1.0042,
+     "delta_pct": 0.0046,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight billed per Rs 100 of goods dispatched",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 1.0042463034838311
+   },
+   "trn-freight-spend": {
+    "check": {
+     "alt_value": 32573000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight billed by carriers (A/P, net of GST and credit notes)",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 32573000.0
+   },
+   "trn-group-dispatch-value": {
+    "check": {
+     "alt_value": 136087000.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Dispatched to JIVO's own branches and group companies",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 136087000.0
+   },
+   "trn-name-field-fill": {
+    "check": {
+     "alt_value": 3.895,
+     "delta_pct": 0.0005,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices with anything typed in the transporter field",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 3.8950210434368295
+   },
+   "trn-name-variants": {
+    "check": {
+     "alt_value": 31,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Distinct spellings typed into the transporter field",
+    "section": "transporter",
+    "unit": "count",
+    "value": 31.0
+   },
+   "trn-ownfleet-value": {
+    "check": {
+     "alt_value": 225403000.0,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Moved on JIVO's own trucks or collected by the customer",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 225403000.00000003
+   },
+   "trn-third-party-value": {
+    "check": {
+     "alt_value": 533789000.0,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched under a named third-party carrier",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 533789000.00000006
+   },
+   "trn-top-carrier-value": {
+    "check": {
+     "alt_value": 218170000.0,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods moved by the single largest carrier",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 218169999.99999997
+   },
+   "trn-unmatched-carrier-value": {
+    "check": {
+     "alt_value": 99438000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods moved by carriers with no freight vendor card matched",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 99438000.0
+   },
+   "trn-unnamed-value": {
+    "check": {
+     "alt_value": 2484335000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched with no transporter recorded",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 2484335000.0
+   },
+   "trn-vehicle-coverage": {
+    "check": {
+     "alt_value": 3.9506,
+     "delta_pct": 0.0002,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatches carrying a vehicle number (e-way bill Part B)",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 3.9506074803462243
+   }
+  },
+  "oil": {
+   "ap-book-open": {
+    "check": {
+     "alt_value": 1025090931.98,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Whole-book credit-adjusted payable (trade + group)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 1025090931.98
+   },
+   "ap-book-payable": {
+    "check": {
+     "alt_value": 1032034358.72,
+     "delta_pct": 0.0065,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Ledger payable, whole book",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 1032101054.72
+   },
+   "ap-group-open": {
+    "check": {
+     "alt_value": 798306959.8,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed to JIVO's own branches and group companies",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 798306959.8
+   },
+   "ap-migrated-open": {
+    "check": {
+     "alt_value": 2584492.58,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Go-live opening bills still unpaid",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 2584492.58
+   },
+   "ap-oldest-bill-days": {
+    "check": {
+     "alt_value": 3189,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest unpaid trade bill, by due date",
+    "section": "vendor-ageing",
+    "unit": "days",
+    "value": 3189.0
+   },
+   "ap-trade-advance": {
+    "check": {
+     "alt_value": 84171019.07,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Advances sitting with trade suppliers",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 84171019.07
+   },
+   "ap-trade-credit-applied": {
+    "check": {
+     "alt_value": 2012445151.89,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Settled in the ledger, never matched to a bill",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 2012445151.89
+   },
+   "ap-trade-open": {
+    "check": {
+     "alt_value": 226783972.18,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "JIVO owes external suppliers (credit-adjusted)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 226783972.18
+   },
+   "ap-trade-overdue-61p": {
+    "check": {
+     "alt_value": 200583776.96,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Overdue to pay, 61 days and over",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 200583776.96
+   },
+   "ap-trade-overdue-share": {
+    "check": {
+     "alt_value": 88.4471,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of the trade payable that is 61 d + overdue",
+    "section": "vendor-ageing",
+    "unit": "pct",
+    "value": 88.44706926678015
+   },
+   "ap-trade-raw-open": {
+    "check": {
+     "alt_value": 2239229124.07,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What SAP calls open, on trade suppliers",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 2239229124.07
+   },
+   "ap-trade-vendors-owed": {
+    "check": {
+     "alt_value": 256,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade suppliers actually owed money",
+    "section": "vendor-ageing",
+    "unit": "count",
+    "value": 256.0
+   },
+   "ap-unapplied-pay-diag": {
+    "check": {
+     "alt_value": 20177122474.13,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor payments SAP never matched to a bill (diagnostic - NEVER subtract)",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 20177122474.13
+   },
+   "ap-unbacked-credit": {
+    "check": {
+     "alt_value": 6943426.74,
+     "delta_pct": 0.9606,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed per the ledger with no open bill to explain it",
+    "section": "vendor-ageing",
+    "unit": "INR",
+    "value": 7010122.74
+   },
+   "ar-book-open-total": {
+    "check": {
+     "alt_value": 1105231656.13,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Whole customer book, JIVO's own accounts included",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 1105231656.13
+   },
+   "ar-migrated-open": {
+    "check": {
+     "alt_value": 10655574.47,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Pre-SAP opening balances still open",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 10655574.47
+   },
+   "ar-nontrade-open": {
+    "check": {
+     "alt_value": 1031682593.67,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "JIVO's own accounts sitting in 'debtors' (branch + intercompany + staff)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 1031682593.67
+   },
+   "ar-oldest-item-days": {
+    "check": {
+     "alt_value": 2445,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Age of the oldest item still carrying money",
+    "section": "customer-ageing",
+    "unit": "days",
+    "value": 2445.0
+   },
+   "ar-open-credit-notes": {
+    "check": {
+     "alt_value": 11856063.13,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Open sales credit notes",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 11856063.13
+   },
+   "ar-overdue-60p-share": {
+    "check": {
+     "alt_value": 38.56,
+     "delta_pct": -0.0074,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of the trade book more than 60 days overdue",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 38.55714892568093
+   },
+   "ar-sap-overstatement-share": {
+    "check": {
+     "alt_value": 90.3,
+     "delta_pct": 0.0047,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "How much of SAP's open A/R is not really owed",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 90.30426839002443
+   },
+   "ar-top-customer-share": {
+    "check": {
+     "alt_value": 27.11,
+     "delta_pct": -0.0117,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Largest single customer as a share of the trade book",
+    "section": "customer-ageing",
+    "unit": "pct",
+    "value": 27.106832977146446
+   },
+   "ar-trade-advances-held": {
+    "check": {
+     "alt_value": 13376844.86,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer money JIVO is holding (credit balances)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 13376844.86
+   },
+   "ar-trade-credit-applied": {
+    "check": {
+     "alt_value": 685022496.94,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Banked or credited, never matched to an invoice",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 685022496.94
+   },
+   "ar-trade-eff-customers": {
+    "check": {
+     "alt_value": 89,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customers who actually carry the receivable",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 89.0
+   },
+   "ar-trade-eff-invoices": {
+    "check": {
+     "alt_value": 1325,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices that actually carry the receivable",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 1325.0
+   },
+   "ar-trade-ledger-debit": {
+    "check": {
+     "alt_value": 80056550.48,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade ledger debit (OCRD ground truth)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 80056550.48
+   },
+   "ar-trade-notdue": {
+    "check": {
+     "alt_value": 22740511.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Not yet due",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 22740511.0
+   },
+   "ar-trade-open": {
+    "check": {
+     "alt_value": 73549062.47,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customers owe JIVO (real, external, credit-adjusted)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 73549062.47
+   },
+   "ar-trade-overdue-60p": {
+    "check": {
+     "alt_value": 28358421.55,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Overdue more than 60 days \u2014 the collection list",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 28358421.55
+   },
+   "ar-trade-raw-open": {
+    "check": {
+     "alt_value": 758571559.41,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What SAP shows as open (the wrong number, shown on purpose)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 758571559.41
+   },
+   "ar-trade-sap-open-invoices": {
+    "check": {
+     "alt_value": 11499,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices SAP still flags open (the struck-through count)",
+    "section": "customer-ageing",
+    "unit": "count",
+    "value": 11499.0
+   },
+   "ar-trade-unbacked-debit": {
+    "check": {
+     "alt_value": 6507488.01,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Trade debit backed by no open invoice (cannot be aged)",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 6507488.01
+   },
+   "ar-unapplied-receipts": {
+    "check": {
+     "alt_value": 662153999.71,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer cash banked and never knocked off an invoice",
+    "section": "customer-ageing",
+    "unit": "INR",
+    "value": 662153999.71
+   },
+   "bank-borrowings-gross": {
+    "check": {
+     "alt_value": 859450000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Owed to the banks (gross drawn)",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 859450000.0
+   },
+   "bank-borrowings-net": {
+    "check": {
+     "alt_value": 710331000,
+     "delta_pct": 20.934,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Owed to the banks, net of facilities in credit",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 859032000.0
+   },
+   "bank-cancelled-churn-12m": {
+    "check": {
+     "alt_value": 1494037000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cancelled payment churn removed",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 1494037000.0
+   },
+   "bank-cash-and-bank-headline": {
+    "check": {
+     "alt_value": -376506000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "\"Cash and bank\" as the column defines it",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": -376506000.0
+   },
+   "bank-cc-od-drawn": {
+    "check": {
+     "alt_value": 376004000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Drawn on cash credit and overdraft",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 376004000.0
+   },
+   "bank-dormant-accounts": {
+    "check": {
+     "alt_value": 24,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dormant accounts still carrying a balance",
+    "section": "bank-accounts",
+    "unit": "count",
+    "value": 24.0
+   },
+   "bank-dormant-money": {
+    "check": {
+     "alt_value": 111467000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Sitting in accounts nobody has touched in 90 days",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 111467000.0
+   },
+   "bank-est-annual-interest": {
+    "check": {
+     "alt_value": 72797000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Estimated interest run-rate on today's debt",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 72797000.0
+   },
+   "bank-facility-funded-share": {
+    "check": {
+     "alt_value": 94.1,
+     "delta_pct": 0.033,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of payments made from a borrowed facility",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 94.13109452628787
+   },
+   "bank-fixed-deposits": {
+    "check": {
+     "alt_value": 111334000,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Held in fixed deposits",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 111333999.99999999
+   },
+   "bank-interco-in-12m": {
+    "check": {
+     "alt_value": 1653111000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Received from JIVO group and branches",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 1653111000.0
+   },
+   "bank-interco-out-share": {
+    "check": {
+     "alt_value": 0.1,
+     "delta_pct": 0.4478,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of payments out that went to JIVO itself",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 0.10044781752942963
+   },
+   "bank-liquid-now": {
+    "check": {
+     "alt_value": -502000,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "In current accounts, wallets and hand",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": -501999.9999999999
+   },
+   "bank-manual-je-share": {
+    "check": {
+     "alt_value": 5.4,
+     "delta_pct": 0.6945,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of bank lines keyed by hand",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 5.4375028497606195
+   },
+   "bank-net-12m": {
+    "check": {
+     "alt_value": -133225000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net movement through the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": -133225000.0
+   },
+   "bank-net-position": {
+    "check": {
+     "alt_value": -748618000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net bank position",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": -748618000.0
+   },
+   "bank-oldest-quiet-days": {
+    "check": {
+     "alt_value": 691,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Longest a balance has sat untouched",
+    "section": "bank-accounts",
+    "unit": "days",
+    "value": 691.0
+   },
+   "bank-overdrawn-amount": {
+    "check": {
+     "alt_value": 1065000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Asset accounts sitting in credit",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 1065000.0
+   },
+   "bank-payments-12m": {
+    "check": {
+     "alt_value": 8790634000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money out of the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 8790634000.0
+   },
+   "bank-receipts-12m": {
+    "check": {
+     "alt_value": 8657406000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Money into the banks, 12 months",
+    "section": "bank-accounts",
+    "unit": "INR",
+    "value": 8657406000.0
+   },
+   "bank-top1-out-share": {
+    "check": {
+     "alt_value": 39.0,
+     "delta_pct": 0.0788,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of payments leaving through one account",
+    "section": "bank-accounts",
+    "unit": "pct",
+    "value": 39.03072292624173
+   },
+   "cash-sale-ar-control-gl-net": {
+    "check": {
+     "alt_value": 8901.14,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net movement on 1101014 Sundry Debtors Cash Sale",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 8901.14000000013
+   },
+   "cash-sale-avg-ticket": {
+    "check": {
+     "alt_value": 1314.07,
+     "delta_pct": -0.0002,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Average cash-sale invoice",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 1314.0673339399455
+   },
+   "cash-sale-card-count": {
+    "check": {
+     "alt_value": 6,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts that define \u2018cash sale\u2019 in this book",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 6.0
+   },
+   "cash-sale-gross": {
+    "check": {
+     "alt_value": 1444160,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash sales, gross of GST",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 1444160.0
+   },
+   "cash-sale-invoice-count": {
+    "check": {
+     "alt_value": 1099,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash-sale invoices",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 1099.0
+   },
+   "cash-sale-ledger-balance": {
+    "check": {
+     "alt_value": 10185.83,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What the cash-sale accounts actually owe",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 10185.83
+   },
+   "cash-sale-migrated-openings": {
+    "check": {
+     "alt_value": 2441924,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Go-live opening balances on cash cards (not sales)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 2441924.0
+   },
+   "cash-sale-open-diagnostic": {
+    "check": {
+     "alt_value": 336554.7,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash-sale invoices SAP still calls open (diagnostic \u2014 NOT a receivable)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 336554.7
+   },
+   "cash-sale-open-overstatement": {
+    "check": {
+     "alt_value": 326368.87,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Overstatement if you read \u2018open\u2019 as a receivable",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 326368.87
+   },
+   "cash-sale-returns": {
+    "check": {
+     "alt_value": 180,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns against cash sales",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 180.0
+   },
+   "cash-sale-turnover-net": {
+    "check": {
+     "alt_value": 1363916.22,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash sales, net of GST",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 1363916.22
+   },
+   "cash-sale-unapplied-receipts": {
+    "check": {
+     "alt_value": 380985.86,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money in from these accounts, never applied to an invoice",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 380985.86
+   },
+   "cash-tender-external": {
+    "check": {
+     "alt_value": 8150884.75,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Physical cash tendered by customers (a DIFFERENT population)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 8150884.75
+   },
+   "cash-tender-group": {
+    "check": {
+     "alt_value": 147000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash tendered by JIVO group / branch cards (not trade)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 147000.0
+   },
+   "cash-tender-receipt-count": {
+    "check": {
+     "alt_value": 1070,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer receipts carrying cash",
+    "section": "cash-sale",
+    "unit": "count",
+    "value": 1070.0
+   },
+   "cash-till-gl-in": {
+    "check": {
+     "alt_value": 14881804.38,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash into the tills (all time, G/L)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 14881804.38
+   },
+   "cash-till-gl-net": {
+    "check": {
+     "alt_value": -1011603.85,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash still sitting in the tills",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": -1011603.8499999996
+   },
+   "cash-till-gl-out": {
+    "check": {
+     "alt_value": 15893408.23,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Cash out of the tills (all time, G/L)",
+    "section": "cash-sale",
+    "unit": "INR",
+    "value": 15893408.23
+   },
+   "gret-credit-lag-max-days": {
+    "check": {
+     "alt_value": 114,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Slowest credit note",
+    "section": "goods-return",
+    "unit": "days",
+    "value": 114.0
+   },
+   "gret-credit-shortfall-ext": {
+    "check": {
+     "alt_value": 42180.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credited for less than we sent back",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 42180.0
+   },
+   "gret-grpo-item-net": {
+    "check": {
+     "alt_value": 7462222486.32,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Item goods received (the denominator)",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 7462222486.32
+   },
+   "gret-internal-writeoff-gross": {
+    "check": {
+     "alt_value": 675937.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Written off as physical shortage",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 675937.0
+   },
+   "gret-nontrade-gross": {
+    "check": {
+     "alt_value": 675937.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Returns that are not a supplier at all",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 675937.0
+   },
+   "gret-oldest-uncredited-ext-days": {
+    "check": {
+     "alt_value": 578,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest uncredited supplier return",
+    "section": "goods-return",
+    "unit": "days",
+    "value": 578.0
+   },
+   "gret-open-docs": {
+    "check": {
+     "alt_value": 8,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns still flagged open in SAP",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 8.0
+   },
+   "gret-return-rate-pct": {
+    "check": {
+     "alt_value": 0.0868,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of goods received that came back",
+    "section": "goods-return",
+    "unit": "pct",
+    "value": 0.0868
+   },
+   "gret-returned-docs": {
+    "check": {
+     "alt_value": 103,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods return documents",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 103.0
+   },
+   "gret-returned-gross": {
+    "check": {
+     "alt_value": 7461309.34,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock sent back to vendors",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 7461309.34
+   },
+   "gret-returned-net": {
+    "check": {
+     "alt_value": 6476726.51,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock sent back, net of GST",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 6476726.51
+   },
+   "gret-uncredited-all-gross": {
+    "check": {
+     "alt_value": 1330874.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Uncredited returns, all parties",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 1330874.0
+   },
+   "gret-uncredited-ext-docs": {
+    "check": {
+     "alt_value": 10,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Supplier returns with no credit note",
+    "section": "goods-return",
+    "unit": "count",
+    "value": 10.0
+   },
+   "gret-uncredited-ext-gross": {
+    "check": {
+     "alt_value": 654937.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returned to a supplier, never credited",
+    "section": "goods-return",
+    "unit": "INR",
+    "value": 654937.0
+   },
+   "grpo-closed-nobill-gross": {
+    "check": {
+     "alt_value": 5991356.27,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Receipts closed without a bill ever being booked",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 5991356.27
+   },
+   "grpo-inv-lag-avg-days": {
+    "check": {
+     "alt_value": 14.09,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Average wait from goods in to bill booked",
+    "section": "grpo",
+    "unit": "days",
+    "value": 14.09
+   },
+   "grpo-oldest-unbilled-days": {
+    "check": {
+     "alt_value": 663,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest receipt still without a bill",
+    "section": "grpo",
+    "unit": "days",
+    "value": 663.0
+   },
+   "grpo-received-external": {
+    "check": {
+     "alt_value": 7253916120.84,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods received from outside suppliers",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 7253916120.84
+   },
+   "grpo-sameday-billing-pct": {
+    "check": {
+     "alt_value": 51.48,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor bill booked on the day the goods arrived",
+    "section": "grpo",
+    "unit": "pct",
+    "value": 51.47999999999999
+   },
+   "grpo-ub-90plus-docs-external": {
+    "check": {
+     "alt_value": 36,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Outside receipts unbilled over 90 days",
+    "section": "grpo",
+    "unit": "count",
+    "value": 36.0
+   },
+   "grpo-ub-90plus-external": {
+    "check": {
+     "alt_value": 293525.05,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unbilled more than 90 days (outside suppliers)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 293525.05
+   },
+   "grpo-ub-zeroqty-gross": {
+    "check": {
+     "alt_value": 1673571.67,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unbilled service lines that will never clear themselves",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 1673571.67
+   },
+   "grpo-unbilled-docs-external": {
+    "check": {
+     "alt_value": 313,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Outside receipts waiting for a bill",
+    "section": "grpo",
+    "unit": "count",
+    "value": 313.0
+   },
+   "grpo-unbilled-external": {
+    "check": {
+     "alt_value": 64801676.11,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods in, no vendor bill (outside suppliers)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 64801676.11
+   },
+   "grpo-unbilled-internal": {
+    "check": {
+     "alt_value": 2016.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the unbilled, the part on JIVO's own cards",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 2016.0
+   },
+   "grpo-unbilled-rate-pct": {
+    "check": {
+     "alt_value": 0.893,
+     "delta_pct": 0.0374,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of outside receipts still unbilled",
+    "section": "grpo",
+    "unit": "pct",
+    "value": 0.8933336839094301
+   },
+   "grpo-unbilled-total": {
+    "check": {
+     "alt_value": 64803692.11,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods in, no vendor bill (every card, JIVO's own included)",
+    "section": "grpo",
+    "unit": "INR",
+    "value": 64803692.11
+   },
+   "oi-365plus-shown": {
+    "check": {
+     "alt_value": 22150122490.82,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the shown list, more than a year past due",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 22150122490.82
+   },
+   "oi-ap-inv-open": {
+    "check": {
+     "alt_value": 3107075765.73,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Vendor bills still open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 3107075765.73
+   },
+   "oi-ar-inv-open": {
+    "check": {
+     "alt_value": 1825743008.07,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Customer invoices still open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 1825743008.07
+   },
+   "oi-coverage-pct": {
+    "check": {
+     "alt_value": 97.4116,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of the open value the shown list actually carries",
+    "section": "open-item-list",
+    "unit": "pct",
+    "value": 97.411579160945
+   },
+   "oi-docs-open": {
+    "check": {
+     "alt_value": 23240,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Documents SAP has not closed",
+    "section": "open-item-list",
+    "unit": "count",
+    "value": 23240.0
+   },
+   "oi-face-value": {
+    "check": {
+     "alt_value": 25866962370.17,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Face value of what SAP calls open",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 25866962370.17
+   },
+   "oi-fx-open-shown": {
+    "check": {
+     "alt_value": 21037837351.22,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the shown list, booked in foreign currency",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 21037837351.22
+   },
+   "oi-group-open-shown": {
+    "check": {
+     "alt_value": 1704936004.45,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the shown list, JIVO's own branches and group companies",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 1704936004.45
+   },
+   "oi-ledger-net": {
+    "check": {
+     "alt_value": 128919661.96,
+     "delta_pct": -0.0517,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "What those parties' ledgers actually net to",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 128852965.96
+   },
+   "oi-migrated-open": {
+    "check": {
+     "alt_value": 19824875948.08,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Still open from the go-live opening balances",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 19824875948.08
+   },
+   "oi-oitr-settled-docs": {
+    "check": {
+     "alt_value": 81,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "SAP's own reconciliation says settled, the document still reads open",
+    "section": "open-item-list",
+    "unit": "count",
+    "value": 81.0
+   },
+   "oi-open-cn-ap": {
+    "check": {
+     "alt_value": 3401633.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes owed to JIVO by vendors",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 3401633.0
+   },
+   "oi-open-cn-ar": {
+    "check": {
+     "alt_value": 12394248.13,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes owed back to customers",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 12394248.13
+   },
+   "oi-open-net": {
+    "check": {
+     "alt_value": 18150743316.23,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Net position across every open document",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 18150743316.23
+   },
+   "oi-stale-gap": {
+    "check": {
+     "alt_value": 18021823654.28,
+     "delta_pct": 0.0004,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "How much the open documents overstate the ledger",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 18021890350.28
+   },
+   "oi-unapplied-in": {
+    "check": {
+     "alt_value": 738639513.11,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money received and never applied to a bill",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 738639513.11
+   },
+   "oi-unapplied-out": {
+    "check": {
+     "alt_value": 20179708202.13,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money paid out and never applied to a bill",
+    "section": "open-item-list",
+    "unit": "INR",
+    "value": 20179708202.13
+   },
+   "oi-worst-days-overdue": {
+    "check": {
+     "alt_value": 2376,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest thing on the list, in days past due",
+    "section": "open-item-list",
+    "unit": "days",
+    "value": 2376.0
+   },
+   "prov-accounts-carrying": {
+    "check": {
+     "alt_value": 20,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts carrying a balance",
+    "section": "provisions",
+    "unit": "count",
+    "value": 20.0
+   },
+   "prov-aged-365p": {
+    "check": {
+     "alt_value": 15971000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Standing more than a year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 15971000.0
+   },
+   "prov-aged-365p-ex-migrated": {
+    "check": {
+     "alt_value": 749000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Genuinely old, excluding the migration",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 749000.0
+   },
+   "prov-created-fytd": {
+    "check": {
+     "alt_value": 167504000,
+     "delta_pct": 0.04,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Provided this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 167571000.0
+   },
+   "prov-dormant-standing": {
+    "check": {
+     "alt_value": 17302000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Standing on accounts nobody has touched in 90 days",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 17302000.0
+   },
+   "prov-manual-je-share": {
+    "check": {
+     "alt_value": 76.0,
+     "delta_pct": 0.0007,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of provision movement posted by hand",
+    "section": "provisions",
+    "unit": "pct",
+    "value": 76.00050860458911
+   },
+   "prov-migrated-opening": {
+    "check": {
+     "alt_value": 15222000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of that, the go-live opening balance",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 15222000.0
+   },
+   "prov-net-fytd": {
+    "check": {
+     "alt_value": -13223000,
+     "delta_pct": 0.5067,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net movement this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": -13156000.0
+   },
+   "prov-net-position": {
+    "check": {
+     "alt_value": 46216000,
+     "delta_pct": 0.145,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Net position of the register",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 46283000.0
+   },
+   "prov-never-reversed": {
+    "check": {
+     "alt_value": 15679000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Never once reversed",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 15679000.0
+   },
+   "prov-oldest-days": {
+    "check": {
+     "alt_value": 691,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Oldest un-reversed provision",
+    "section": "provisions",
+    "unit": "days",
+    "value": 691.0
+   },
+   "prov-over-reversed": {
+    "check": {
+     "alt_value": 13685000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Over-reversed (debit balances)",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 13685000.0
+   },
+   "prov-over-reversed-count": {
+    "check": {
+     "alt_value": 8,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Accounts sitting in debit",
+    "section": "provisions",
+    "unit": "count",
+    "value": 8.0
+   },
+   "prov-reversed-fytd": {
+    "check": {
+     "alt_value": 180727000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Reversed or utilised this financial year",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 180727000.0
+   },
+   "prov-standing": {
+    "check": {
+     "alt_value": 59901000,
+     "delta_pct": 0.1119,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Still provided for",
+    "section": "provisions",
+    "unit": "INR",
+    "value": 59968000.0
+   },
+   "prov-top1-share": {
+    "check": {
+     "alt_value": 38.7,
+     "delta_pct": -0.231,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share held by the single largest account",
+    "section": "provisions",
+    "unit": "pct",
+    "value": 38.61059231590181
+   },
+   "reco-90plus-bank-only": {
+    "check": {
+     "alt_value": 1874221000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "90-day-plus unagreed, banks and facilities only (no cash, no wallets)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 1874221000.0
+   },
+   "reco-90plus-exceptions": {
+    "check": {
+     "alt_value": 167818000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "The real exception list: 90-day-plus items on accounts JIVO does reconcile",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 167818000.0
+   },
+   "reco-90plus-gross": {
+    "check": {
+     "alt_value": 1946468000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Unagreed items older than 90 days (gross movement)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 1946468000.0
+   },
+   "reco-90plus-payments": {
+    "check": {
+     "alt_value": 1010322000,
+     "delta_pct": -0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money out, unagreed for more than 90 days",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 1010321999.9999999
+   },
+   "reco-coverage-pct": {
+    "check": {
+     "alt_value": 27.1,
+     "delta_pct": 0.1581,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Bank / cash accounts ever reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 27.142857142857142
+   },
+   "reco-coverage-pct-active": {
+    "check": {
+     "alt_value": 28.8,
+     "delta_pct": -0.0421,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Of the accounts that actually move, share ever reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 28.78787878787879
+   },
+   "reco-days-since-last": {
+    "check": {
+     "alt_value": 53,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Days since the most recent reconciliation anywhere in this book",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 53.0
+   },
+   "reco-days-since-worst": {
+    "check": {
+     "alt_value": 537,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Longest a once-reconciled account has been left",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 537.0
+   },
+   "reco-events-n": {
+    "check": {
+     "alt_value": 201,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Reconciliations SAP has on record, ever",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 201.0
+   },
+   "reco-gap-at-last-recon-internal": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Gap at the last reconciliation - book balance vs BOOK-DERIVED agreed balance (NOT per bank statement)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "reco-keying-lag-days": {
+    "check": {
+     "alt_value": 6,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Median days from statement date to the day it was keyed",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 6.0
+   },
+   "reco-lines-agreed-pct": {
+    "check": {
+     "alt_value": 78.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of bank ledger lines externally reconciled",
+    "section": "bank-reco",
+    "unit": "pct",
+    "value": 78.0
+   },
+   "reco-never-reconciled-n": {
+    "check": {
+     "alt_value": 47,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Live accounts never reconciled once",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 47.0
+   },
+   "reco-never-throughput": {
+    "check": {
+     "alt_value": 2854966000,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Money that has moved through accounts nobody has ever reconciled",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 2854966000.0
+   },
+   "reco-oldest-unrec-days": {
+    "check": {
+     "alt_value": 691,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Age of the oldest unagreed item",
+    "section": "bank-reco",
+    "unit": "days",
+    "value": 691.0
+   },
+   "reco-stale-pre-recon-n": {
+    "check": {
+     "alt_value": 2,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Items that should already have cleared and did not",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 2.0
+   },
+   "reco-statement-lines-loaded": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Bank statement lines ever loaded into SAP",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 0.0
+   },
+   "reco-tieout-internal": {
+    "check": {
+     "alt_value": 0,
+     "delta_pct": null,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Tie-out between the two sides SAP stores (internal, NOT bank vs books)",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": 0.0
+   },
+   "reco-unagreed-balance": {
+    "check": {
+     "alt_value": -163058000,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Book balance no reconciliation has ever agreed",
+    "section": "bank-reco",
+    "unit": "INR",
+    "value": -163058000.0
+   },
+   "reco-unrec-lines-n": {
+    "check": {
+     "alt_value": 6800,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Ledger items nobody has agreed",
+    "section": "bank-reco",
+    "unit": "count",
+    "value": 6800.0
+   },
+   "rn-billed-uncredited-cost": {
+    "check": {
+     "alt_value": 318317.73,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock cost of the work list",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 318317.73
+   },
+   "rn-billed-uncredited-docs": {
+    "check": {
+     "alt_value": 212,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Billed, goods came back, never credited",
+    "section": "return-note",
+    "unit": "count",
+    "value": 212.0
+   },
+   "rn-cn-net": {
+    "check": {
+     "alt_value": 84567730.63,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes raised against returns",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 84567730.63
+   },
+   "rn-cn-pct-sales": {
+    "check": {
+     "alt_value": 0.9136,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Credit notes on returns, per rupee invoiced",
+    "section": "return-note",
+    "unit": "pct",
+    "value": 0.9136
+   },
+   "rn-cost-pct-sales": {
+    "check": {
+     "alt_value": 0.9407,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns at cost, per rupee invoiced",
+    "section": "return-note",
+    "unit": "pct",
+    "value": 0.9407
+   },
+   "rn-docs": {
+    "check": {
+     "alt_value": 1817,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Live return notes",
+    "section": "return-note",
+    "unit": "count",
+    "value": 1817.0
+   },
+   "rn-external-cost": {
+    "check": {
+     "alt_value": 36895391.8,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "External customer returns, at cost",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 36895391.8
+   },
+   "rn-gross": {
+    "check": {
+     "alt_value": 34518207.41,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Header value of returns",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 34518207.41
+   },
+   "rn-interco-cost": {
+    "check": {
+     "alt_value": 50179394.02,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Intercompany returns, at cost",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 50179394.02
+   },
+   "rn-qty-pcs": {
+    "check": {
+     "alt_value": 395231.21,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Pieces returned",
+    "section": "return-note",
+    "unit": "count",
+    "value": 395231.21
+   },
+   "rn-sales-net": {
+    "check": {
+     "alt_value": 9256036260.99,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoiced sales (the denominator)",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 9256036260.99
+   },
+   "rn-standalone-cost": {
+    "check": {
+     "alt_value": 8490503.51,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Uncredited with no base link at all",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 8490503.51
+   },
+   "rn-stock-cost": {
+    "check": {
+     "alt_value": 87074785.82,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Stock value handed back",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 87074785.82
+   },
+   "rn-uncredited-cost": {
+    "check": {
+     "alt_value": 15217213.18,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returned, never credited",
+    "section": "return-note",
+    "unit": "INR",
+    "value": 15217213.18
+   },
+   "rn-uncredited-docs": {
+    "check": {
+     "alt_value": 421,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Returns with no credit note",
+    "section": "return-note",
+    "unit": "count",
+    "value": 421.0
+   },
+   "rn-zero-value-docs": {
+    "check": {
+     "alt_value": 1104,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Return notes booked at zero value",
+    "section": "return-note",
+    "unit": "count",
+    "value": 1104.0
+   },
+   "trn-bilty-coverage": {
+    "check": {
+     "alt_value": 48.5878,
+     "delta_pct": 0.0001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatches carrying a lorry receipt (bilty) number",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 48.58783364369956
+   },
+   "trn-boe-mistaken-for-lr": {
+    "check": {
+     "alt_value": 39,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Documents in the field everyone mistakes for the LR number",
+    "section": "transporter",
+    "unit": "count",
+    "value": 39.0
+   },
+   "trn-dispatch-docs": {
+    "check": {
+     "alt_value": 19332,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatch invoices in scope",
+    "section": "transporter",
+    "unit": "count",
+    "value": 19332.0
+   },
+   "trn-dispatch-value": {
+    "check": {
+     "alt_value": 9256036000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods dispatched (net of GST, all parties)",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 9256036000.0
+   },
+   "trn-ext-dispatch-value": {
+    "check": {
+     "alt_value": 5467704000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched to outside customers",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 5467704000.0
+   },
+   "trn-external-share": {
+    "check": {
+     "alt_value": 59.0718,
+     "delta_pct": -0.0001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Share of dispatch value that is real outside trade",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 59.07176679088111
+   },
+   "trn-freight-never-named": {
+    "check": {
+     "alt_value": 14837000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight paid to carriers never named on any dispatch",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 14837000.0
+   },
+   "trn-freight-outside-group": {
+    "check": {
+     "alt_value": 126008000.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Freight from carriers filed OUTSIDE the transporter supplier group",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 126008000.0
+   },
+   "trn-freight-share": {
+    "check": {
+     "alt_value": 1.9469,
+     "delta_pct": 0.0001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight billed per Rs 100 of goods dispatched",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 1.946902540137052
+   },
+   "trn-freight-spend": {
+    "check": {
+     "alt_value": 180206000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Freight billed by carriers (A/P, net of GST and credit notes)",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 180206000.0
+   },
+   "trn-group-dispatch-value": {
+    "check": {
+     "alt_value": 3788332000.0,
+     "delta_pct": 0,
+     "method": "uncorroborated",
+     "ok": null
+    },
+    "label": "Dispatched to JIVO's own branches and group companies",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 3788332000.0
+   },
+   "trn-name-field-fill": {
+    "check": {
+     "alt_value": 46.9584,
+     "delta_pct": 0.0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Invoices with anything typed in the transporter field",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 46.95841092489137
+   },
+   "trn-name-variants": {
+    "check": {
+     "alt_value": 234,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Distinct spellings typed into the transporter field",
+    "section": "transporter",
+    "unit": "count",
+    "value": 234.0
+   },
+   "trn-ownfleet-value": {
+    "check": {
+     "alt_value": 836974000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Moved on JIVO's own trucks or collected by the customer",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 836974000.0
+   },
+   "trn-third-party-value": {
+    "check": {
+     "alt_value": 6025719000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched under a named third-party carrier",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 6025719000.0
+   },
+   "trn-top-carrier-value": {
+    "check": {
+     "alt_value": 1368610000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods moved by the single largest carrier",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 1368610000.0
+   },
+   "trn-unmatched-carrier-value": {
+    "check": {
+     "alt_value": 346193000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Goods moved by carriers with no freight vendor card matched",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 346193000.0
+   },
+   "trn-unnamed-value": {
+    "check": {
+     "alt_value": 2172098000.0,
+     "delta_pct": 0,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatched with no transporter recorded",
+    "section": "transporter",
+    "unit": "INR",
+    "value": 2172098000.0
+   },
+   "trn-vehicle-coverage": {
+    "check": {
+     "alt_value": 45.3186,
+     "delta_pct": 0.0001,
+     "method": "independent",
+     "ok": true
+    },
+    "label": "Dispatches carrying a vehicle number (e-way bill Part B)",
+    "section": "transporter",
+    "unit": "pct",
+    "value": 45.31864266501138
+   }
+  }
+ },
+ "sections": {
+  "bank-accounts": {
+   "error": null,
+   "rows": {
+    "bev": 18,
+    "mart": 44,
+    "oil": 70
+   },
+   "seconds": {
+    "bev": 0.4,
+    "mart": 0.6,
+    "oil": 0.8
+   },
+   "status": "ok"
+  },
+  "bank-reco": {
+   "error": null,
+   "rows": {
+    "bev": 19,
+    "mart": 45,
+    "oil": 71
+   },
+   "seconds": {
+    "bev": 1.0,
+    "mart": 0.9,
+    "oil": 1.0
+   },
+   "status": "ok"
+  },
+  "budget-heads": {
+   "error": null,
+   "rows": {
+    "bev": 25,
+    "mart": 0,
+    "oil": 49
+   },
+   "seconds": {
+    "bev": null,
+    "mart": null,
+    "oil": null
+   },
+   "status": "ok"
+  },
+  "cash-sale": {
+   "error": null,
+   "rows": {
+    "bev": 64,
+    "mart": 31,
+    "oil": 76
+   },
+   "seconds": {
+    "bev": 0.5,
+    "mart": 0.4,
+    "oil": 0.5
+   },
+   "status": "ok"
+  },
+  "customer-ageing": {
+   "error": null,
+   "rows": {
+    "bev": 5,
+    "mart": 5,
+    "oil": 5
+   },
+   "seconds": {
+    "bev": 1.1,
+    "mart": 1.1,
+    "oil": 1.6
+   },
+   "status": "ok"
+  },
+  "factory-indirect": {
+   "error": null,
+   "rows": {
+    "bev": 38,
+    "mart": 38,
+    "oil": 43
+   },
+   "seconds": {
+    "bev": 1.0,
+    "mart": 1.0,
+    "oil": 0.9
+   },
+   "status": "ok"
+  },
+  "goods-return": {
+   "error": null,
+   "rows": {
+    "bev": 38,
+    "mart": 28,
+    "oil": 61
+   },
+   "seconds": {
+    "bev": 0.9,
+    "mart": 0.9,
+    "oil": 1.0
+   },
+   "status": "ok"
+  },
+  "grpo": {
+   "error": null,
+   "rows": {
+    "bev": 151,
+    "mart": 93,
+    "oil": 185
+   },
+   "seconds": {
+    "bev": 1.5,
+    "mart": 1.3,
+    "oil": 2.3
+   },
+   "status": "ok"
+  },
+  "open-item-list": {
+   "error": null,
+   "rows": {
+    "bev": 1096,
+    "mart": 2188,
+    "oil": 2168
+   },
+   "seconds": {
+    "bev": 1.2,
+    "mart": 2.5,
+    "oil": 3.1
+   },
+   "status": "ok"
+  },
+  "provisions": {
+   "error": null,
+   "rows": {
+    "bev": 39,
+    "mart": 40,
+    "oil": 53
+   },
+   "seconds": {
+    "bev": 0.5,
+    "mart": 0.6,
+    "oil": 0.7
+   },
+   "status": "ok"
+  },
+  "return-note": {
+   "error": null,
+   "rows": {
+    "bev": 72,
+    "mart": 70,
+    "oil": 72
+   },
+   "seconds": {
+    "bev": 1.0,
+    "mart": 1.3,
+    "oil": 1.3
+   },
+   "status": "ok"
+  },
+  "transporter": {
+   "error": null,
+   "rows": {
+    "bev": 107,
+    "mart": 82,
+    "oil": 107
+   },
+   "seconds": {
+    "bev": 1.2,
+    "mart": 1.2,
+    "oil": 1.5
+   },
+   "status": "ok"
+  },
+  "vendor-ageing": {
+   "error": null,
+   "rows": {
+    "bev": 164,
+    "mart": 88,
+    "oil": 644
+   },
+   "seconds": {
+    "bev": 0.6,
+    "mart": 0.4,
+    "oil": 1.0
+   },
+   "status": "ok"
+  }
+ },
+ "stale": false,
+ "stale_reason": null
+}

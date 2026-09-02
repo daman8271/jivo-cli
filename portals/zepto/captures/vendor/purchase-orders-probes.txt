@@ -1,0 +1,31 @@
+Purchase Orders read-only probes — Thu Jul 23 20:26:29 UTC 2026
+JWT exp 2026-07-13 18:29:59 UTC (EXPIRED; today 2026-07-24). Token REDACTED.
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/api/v1/po/listing-stat
+HTTP 401
+{"code":401,"message":"Token expired"}
+======================================================
+
+HALT: received 401 {"code":401,"message":"Token expired"} on first probe.
+Per READ-ONLY guardrails, stopped immediately. All remaining Purchase Orders
+GET read endpoints left as DOCUMENTED (not probed):
+  - GET /api/v1/po/filter               (GET_PO_LISTING)
+  - GET /api/v1/po/scheduled            (GET_SCHEDULED_PO_SUMMARY)
+  - GET /api/v1/po/ib-capacity          (GET_IB_CAPACITY)
+  - GET /api/v1/po/user/mh-list         (EXTERNAL_LOCATION_FILTER_LIST)
+  - GET /api/v1/po/user/vendor-list     (EXTERNAL_VENDOR_FILTER_LIST)
+  - GET /api/v1/po/{id}                 (getPoDetailsById; needs valid po id)
+  - GET /api/v1/po/{id}/items           (getPoItemsById)
+  - GET /api/v1/po/{id}/checklist       (getPoChecklistById)
+  - GET /api/v1/po/{id}/asn             (getAsnByPoId)
+  - GET /api/v1/po/{id}/grn             (getGrnByPoId)
+  - GET /api/v1/po/{id}/attachments     (getPoDocumentsById)
+  - GET /api/v1/po/{id}/logs            (getPoActivityLogsById)
+  - GET /api/v1/grn/filter              (GET_GRN_LISTING)
+  - GET /api/v1/grn/{id}                (getGrnDetailsById)
+  - GET /api/v1/grn/{id}/items          (getGrnItemsById)
+  - GET /api/v1/grn/{id}/asn-info       (getAsnByGrnId)
+  - GET /api/v1/grn/user/mh-list        (EXTERNAL_LOCATION_FILTER_LIST)
+  - GET /api/v1/grn/user/vendor-list    (EXTERNAL_VENDOR_FILTER_LIST)
+Probes fired: 1. 2xx PROVEN: 0. Same expired-token state as rtv / release-orders-amendments / vendor-reports probes.

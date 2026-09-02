@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkcoe=self.webpackChunkcoe||[]).push([[278],{95278:(e,s,c)=>{c.r(s),c.d(s,{default:()=>t});c(60954);var n=c(86421),r=c(74848);const t=function(){return(0,r.jsx)("span",{style:{cursor:"pointer"},children:(0,r.jsx)(n.A,{})})}}}]);

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Daily refresh for the JIVO Accounts Board.
+
+  NOT INSTALLED BY DEFAULT — this file is inert until you load it. It rebuilds
+  data.json from live SAP and redeploys a PUBLIC page every morning, so enabling
+  it is a deliberate choice, not a side effect.
+
+  Enable:
+    cp accounts-dashboard/pipeline/com.jivo.accounts-board-refresh.plist ~/Library/LaunchAgents/
+    launchctl load ~/Library/LaunchAgents/com.jivo.accounts-board-refresh.plist
+  Disable:
+    launchctl unload ~/Library/LaunchAgents/com.jivo.accounts-board-refresh.plist
+
+  Runs 09:15 IST, after the overnight SAP postings settle. Only fires when this
+  Mac is awake. The always-on VPS is the better long-term home — see README.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.jivo.accounts-board-refresh</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/damanpreetsingh/jivo-cli/accounts-dashboard/pipeline/refresh.sh</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key><integer>9</integer>
+    <key>Minute</key><integer>15</integer>
+  </dict>
+
+  <!-- If the Mac was asleep at 09:15, run once on wake rather than skipping the day. -->
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/damanpreetsingh/jivo-cli/accounts-dashboard/pipeline/refresh.launchd.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/damanpreetsingh/jivo-cli/accounts-dashboard/pipeline/refresh.launchd.log</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/Users/damanpreetsingh/.hermes/node/bin:/usr/bin:/bin</string>
+  </dict>
+</dict>
+</plist>

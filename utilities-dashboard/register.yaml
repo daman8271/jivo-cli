@@ -1,0 +1,58 @@
+# JIVO Utilities Register — the recurring-obligation calendar.
+#
+# This file is the BACKBONE of the utilities chase board. It is the one thing
+# SAP does not know: which connections exist, when each bills, when each is due,
+# and which budget it belongs to.
+#
+# Captured from a scan of the Accounts master sheet (see meta.source_document).
+# BILL DAY / DUE DAY are DAYS OF THE MONTH, not dates — every row recurs monthly.
+#
+# `vendor`  = the SAP vendor CardCode a booked bill lands on (JIVO_OIL_HANADB).
+# `match`   = how confidently a SAP posting can be tied back to THIS connection:
+#               sole      -> this vendor card serves only this connection. Certain.
+#               shared    -> the card serves several rows here. A posting must be
+#                            disambiguated by amount history + date window, and the
+#                            result is a GUESS the operator confirms.
+#               reimbursed-> booked to a person's imprest card, not the utility's.
+#               unmapped  -> no vendor card identified yet.
+meta:
+  company: JIVO_OIL_HANADB
+  company_label: JIVO Wellness (Oil)
+  source_document: "DocScanner 22 Aug 2026 3-11 pm.pdf"
+  captured: 2026-08-22
+  rows_on_sheet: 47
+  rows_captured: 27
+  rows_missing: "1-14, 24-29"      # not in the scan; drop them in when available
+  currency: INR
+
+bills:
+  # ---- billed on the 1st, due the 15th -------------------------------------
+  - {id: elec-j3190-2f,        sno: 15, source: MAIL,      connection: "100165409",       sap_ledger: null,           category: ELECTRICITY,        premises: "J-3/190, 2nd Floor",                              bill_day: 1,  due_day: 15,   budget: Backoffice,     vendor: VENDA000222, match: shared}
+  - {id: elec-j3190-nehru-3f,  sno: 16, source: MAIL,      connection: "100152221",       sap_ledger: null,           category: ELECTRICITY,        premises: "J-3/190, Nehru Market Rajouri Garden, 3rd Floor", bill_day: 1,  due_day: 15,   budget: Backoffice,     vendor: VENDA000222, match: shared}
+  - {id: elec-j3190-rg,        sno: 17, source: MAIL,      connection: "102857584",       sap_ledger: null,           category: ELECTRICITY,        premises: "J-3/190, Rajouri Garden",                         bill_day: 1,  due_day: 15,   budget: Backoffice,     vendor: VENDA000222, match: shared}
+  - {id: net-netplus-factory,  sno: 18, source: FACTORY,   connection: null,              sap_ledger: null,           category: INTERNET,           premises: "Netplus Broadband Services Private Limited",      bill_day: 1,  due_day: 15,   budget: Factory Common, vendor: VENDA000139, match: sole}
+  # ---- billed on the 1st, no due day recorded on the sheet ------------------
+  - {id: rent-arvind-tuli,     sno: 19, source: MAYAPURI,  connection: null,              sap_ledger: null,           category: RENT,               premises: "Arvind Tuli Mayapuri Rent",                       bill_day: 1,  due_day: null, budget: Backoffice,     vendor: VENDA000491, match: sole}
+  - {id: rent-geeta-gupta,     sno: 20, source: MAIL,      connection: null,              sap_ledger: null,           category: RENT,               premises: "Geeta Gupta",                                     bill_day: 1,  due_day: null, budget: Factory Common, vendor: VENDA000869, match: sole}
+  - {id: rent-amit-sain-tuli,  sno: 21, source: MAYAPURI,  connection: null,              sap_ledger: null,           category: RENT,               premises: "Amit Sain Tuli",                                  bill_day: 1,  due_day: null, budget: ECOM,           vendor: VENDA001499, match: sole}
+  - {id: rentelec-chotwani,    sno: 22, source: ACCOUNTS,  connection: null,              sap_ledger: null,           category: RENT_AND_ELECTRICITY, premises: "Anil Chotwani",                                 bill_day: 1,  due_day: null, budget: Factory,        vendor: VENDA001466, match: sole}
+  - {id: rentelec-ramakrishna, sno: 23, source: FACTORY,   connection: null,              sap_ledger: null,           category: RENT_AND_ELECTRICITY, premises: "Rama Krishna Buildwell Private Limited Vend",   bill_day: 1,  due_day: null, budget: Factory Common, vendor: VENDA000126, match: sole}
+  # ---- mid-month ------------------------------------------------------------
+  - {id: net-d38-rg,           sno: 30, source: null,      connection: null,              sap_ledger: null,           category: INTERNET,           premises: "D-38 Rajouri Garden (started Jan 2026)",          bill_day: 3,  due_day: 22,   budget: Backoffice,     vendor: null,        match: unmapped}
+  - {id: tel-gurpreet,         sno: 31, source: MAIL,      connection: "9871193711",      sap_ledger: null,           category: TELEPHONE,          premises: "Gurpreet Sir",                                    bill_day: 6,  due_day: 16,   budget: Backoffice,     vendor: ORGV000001,  match: reimbursed}
+  - {id: net-j3190-office,     sno: 32, source: UNMEET SIR, connection: "01112032329",    sap_ledger: UNMEET SIR,     category: INTERNET,           premises: "J-3/190 Office",                                  bill_day: 6,  due_day: 16,   budget: Backoffice,     vendor: VENDA000210, match: shared}
+  - {id: tel-bharti-airtel,    sno: 33, source: UNMEET SIR, connection: "1-5146477270111", sap_ledger: UNMEET SIR,    category: TELEPHONE,          premises: "Bharti Airtel (corporate account)",               bill_day: 7,  due_day: 16,   budget: Backoffice,     vendor: VENDA000210, match: shared}
+  - {id: tel-balvinder-kaur,   sno: 34, source: MAIL,      connection: "9810738738",      sap_ledger: UNMEET SIR,     category: TELEPHONE,          premises: "Balvinder Kaur",                                  bill_day: 9,  due_day: 19,   budget: Backoffice,     vendor: ORGV000134,  match: reimbursed}
+  - {id: tel-charanjeet-mam,   sno: 35, source: MAIL,      connection: "9810221711",      sap_ledger: UNMEET SIR,     category: TELEPHONE,          premises: "Charanjeet Mam",                                  bill_day: 9,  due_day: 19,   budget: Backoffice,     vendor: ORGV000139,  match: reimbursed}
+  - {id: tel-gagan,            sno: 36, source: MAIL,      connection: "9818008683",      sap_ledger: GAGAN SIR,      category: TELEPHONE,          premises: "Gagan Sir",                                       bill_day: 9,  due_day: 19,   budget: Backoffice,     vendor: ORGV000003,  match: reimbursed}
+  - {id: net-mayapuri-bsmt,    sno: 37, source: UNMEET SIR, connection: "01112525849",    sap_ledger: null,           category: INTERNET,           premises: "Mayapuri Basement",                               bill_day: 12, due_day: 22,   budget: Backoffice,     vendor: VENDA000210, match: shared, note: "connection number partly obscured by a pen mark on the scan — verify"}
+  - {id: tel-sharanjeet-kaur,  sno: 38, source: SHARANJEET MAM, connection: "9910557187", sap_ledger: UNMEET SIR,     category: TELEPHONE,          premises: "Sharanjeet Kaur",                                 bill_day: 18, due_day: null, budget: Backoffice,     vendor: ORGV000294,  match: reimbursed}
+  - {id: tel-bhupinder,        sno: 39, source: GINNI SIR, connection: "9875987598",      sap_ledger: BHUPINDER SIR,  category: TELEPHONE,          premises: "Bhupinder Sir",                                   bill_day: 21, due_day: 31,   budget: Backoffice,     vendor: ORGV000107,  match: reimbursed}
+  - {id: elec-gannaur-bsa,     sno: 40, source: WEBSITE,   connection: "8940397569",      sap_ledger: null,           category: ELECTRICITY,        premises: "Gannaur Bhakharpur, BSA",                         bill_day: 23, due_day: 30,   budget: Factory,        vendor: VENDA000521, match: shared}
+  - {id: elec-a351-mayapuri,   sno: 41, source: MAIL,      connection: "153730722",       sap_ledger: null,           category: ELECTRICITY,        premises: "A/35/1, 2nd Floor, Mayapuri Phase I",             bill_day: 24, due_day: 8,    budget: Backoffice,     vendor: VENDA000222, match: shared}
+  - {id: tel-nirmal-mam,       sno: 42, source: MAIL,      connection: "9910113043",      sap_ledger: NIRMAL MAM,     category: TELEPHONE,          premises: "Nirmal Mam",                                      bill_day: 24, due_day: 3,    budget: Backoffice,     vendor: ORGV000004,  match: reimbursed}
+  - {id: tel-arvinder,         sno: 43, source: MAIL,      connection: "9910112433",      sap_ledger: ARVINDER SIR,   category: TELEPHONE,          premises: "Arvinder Sir",                                    bill_day: 24, due_day: 3,    budget: Backoffice,     vendor: ORGV000019,  match: reimbursed}
+  - {id: elec-j3190-1f,        sno: 44, source: PARAM SIR, connection: "102946930",       sap_ledger: ARVINDER SIR,   category: ELECTRICITY,        premises: "J-3/190, 1st Floor",                              bill_day: 25, due_day: 10,   budget: Backoffice,     vendor: VENDA000222, match: shared}
+  - {id: net-airtel-ll-j3190,  sno: 45, source: MAIL,      connection: "01145584711",     sap_ledger: UNMEET SIR,     category: INTERNET,           premises: "Airtel Landline J-3/190, 2nd Floor, Rajouri Garden", bill_day: 27, due_day: 6, budget: Backoffice,   vendor: VENDA000210, match: shared}
+  - {id: net-mayapuri-2f,      sno: 46, source: UNMEET SIR, connection: "01117574490",    sap_ledger: UNMEET SIR,     category: INTERNET,           premises: "Mayapuri 2nd Floor",                              bill_day: 27, due_day: 7,    budget: Backoffice,     vendor: VENDA000210, match: shared}
+  - {id: elec-gannaur-factory, sno: 47, source: WEBSITE,   connection: "1721833122",      sap_ledger: null,           category: ELECTRICITY,        premises: "Gannaur Bhakharpur, Factory",                     bill_day: 17, bill_day_to: 21, due_day: 28, budget: Factory, vendor: VENDA000521, match: shared}

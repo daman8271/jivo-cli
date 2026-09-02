@@ -1,0 +1,64 @@
+# Ledger (Recon & Upload) — read-only probe transcript
+# Section slug: ledger | lane: vendor | host: fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token exp = epoch 1783967399 = Mon Jul 13 2026; probe run 2026-07-24 (epoch ~1784838767) -> EXPIRED by ~10 days.
+# Rules: curl -s -X GET only, read-only allowlist, cap 8, ~1 req/s, STOP on any 401/403/429/WAF.
+# Result: 6 probes fired, all HTTP 404 (bifrost "path not found"); NONE 2xx -> 0 endpoints promoted to PROVEN.
+# 404 is not a stop condition, so the run continued to the self-imposed 6-probe cutoff.
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/vendor/api/v1/ledger-recon/working/closing-balances
+# const GET_CLOSING_BALANCES — recon working closing balances (pure read; matches "balance"/"ledger" allowlist, no deny words)
+# Headers: authorization: <jwt-REDACTED>, accept: application/json, normal desktop Chrome User-Agent
+HTTP 404
+{"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/ledger-recon/working/closing-balances","code":404}
+# Bifrost gateway stripped the `vendor/` service prefix and found no upstream route. Not 2xx -> NOT PROVEN. Continue.
+
+======================================================
+
+### PROBE 2: GET https://fcc.zepto.co.in/vendor/api/v1/ledger-recon/external-view/status
+# const GET_EXTERNAL_VIEW_STATUS — external-view toggle status (pure read; matches "status"/"view" allowlist)
+HTTP 404
+{"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/ledger-recon/external-view/status","code":404}
+# Same bifrost path-not-found shape. Not 2xx -> NOT PROVEN. Continue.
+
+======================================================
+
+### PROBE 3: GET https://fcc.zepto.co.in/vendor/api/v1/ledger-upload/list?offset=0&limit=5
+# const GET_LEDGER_UPLOADS — ledger-upload list (pure read; matches "list" allowlist)
+HTTP 404
+{"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/ledger-upload/list","code":404}
+# Not 2xx -> NOT PROVEN. Continue.
+
+======================================================
+
+### PROBE 4: GET https://fcc.zepto.co.in/vendor/api/v1/ledger-upload/summary
+# const GET_LEDGER_SUMMARY — ledger-upload summary (pure read; matches "summary" allowlist)
+HTTP 404
+{"message":"no Route matched with those values","request_id":"67d81c6ffdfd9a451c0870485c4ceb2a"}
+# Kong-gateway "no Route matched" (upstream not mounted for this path/method). Not 2xx -> NOT PROVEN. Continue.
+
+======================================================
+
+### PROBE 5: GET https://fcc.zepto.co.in/vendor/api/v1/ledger-upload/vendor?offset=0&limit=5
+# const GET_VENDOR_LEDGER_LISTING — vendor's own ledger listing (pure read; matches "list"/"vendor"/"ledger" allowlist)
+HTTP 404
+{"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/ledger-upload/vendor","code":404}
+# Not 2xx -> NOT PROVEN. Continue.
+
+======================================================
+
+### PROBE 6: GET https://fcc.zepto.co.in/vendor/api/v1/ledger-recon/recon-user-data
+# const GET_RECON_USER_DATA — recon user data (pure read; matches "user"/"data" allowlist)
+HTTP 404
+{"code":404,"message":"Provided api path is not found in bifrost - Api path not found: /api/v1/ledger-recon/recon-user-data"}
+# Not 2xx -> NOT PROVEN. Stopped here (6 of 8 cap used; no live 2xx obtainable on an expired token).
+
+======================================================
+# SUMMARY
+# Probes fired: 6 (GET only). 2xx: 0. 401/403/429/WAF: 0 (all clean 404 path-not-found).
+# PROVEN upgrades: 0. All ledger endpoints remain "documented (not probed to 2xx)".
+# Note: unlike the invoicing probe (which 401'd on contractservice), the fcc bifrost/kong gateway
+# returned 404 "path not found" for the vendor/ ledger routes without reaching an auth check — the
+# `vendor/` prefix appears to be rewritten and these upstreams are not mounted on the public edge for
+# an unauthenticated/expired session. A fresh JWT + live SPA session would be needed to confirm 2xx.

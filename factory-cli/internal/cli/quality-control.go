@@ -37,6 +37,7 @@ func newQualityControlCmd(flags *rootFlags) *cobra.Command {
 	cmd.AddCommand(newQualityControlProductionQcCmd(flags))
 	cmd.AddCommand(newQualityControlProductionQcCountsCmd(flags))
 	cmd.AddCommand(newQualityControlProductionQcPendingCmd(flags))
+	cmd.AddCommand(newQualityControlProductionQcRunSessionsCmd(flags))
 	cmd.AddCommand(newQualityControlQcArrivalSlipGetCmd(flags))
 	cmd.AddCommand(newQualityControlQcInspectionGetCmd(flags))
 	cmd.AddCommand(newQualityControlQcInspectionsDecisionChangedCmd(flags))

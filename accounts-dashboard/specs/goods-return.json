@@ -1,0 +1,546 @@
+{
+  "section": "goods-return",
+  "title": "Goods Return",
+  "tables": "ORPD RPD1",
+  "blurb": "We sent stock back to a supplier — did we ever get the money back on paper, or is it still parked in GRNI with nobody billed?",
+  "grain": "SUMMARY: one row per (SCOPE, GRP_KEY) — five stacked partitions of the SAME set of live goods-return documents (TOTAL 1 row; CLASS <=4; CREDIT_NOTE 2; MONTH <=36; VENDOR <=~40), each carrying the same 13 measure columns, hard-capped at 200 rows. DETAIL: one row per goods-return DOCUMENT (ORPD header, ObjType 21) dated on or before as_of, cancelled documents INCLUDED and decoded in CANCEL_STATUS, capped at 500 rows. Oil 61/117, Mart 28/59, Bev 38/33 at the pinned build.",
+  "faceted": true,
+  "faceting": {
+    "column": "SCOPE",
+    "total_row": "SCOPE == 'TOTAL' and GRP_KEY == 'ALL' (exactly one row per company; SORT_KEY == '1')",
+    "scopes": ["TOTAL", "CLASS", "CREDIT_NOTE", "MONTH", "VENDOR"],
+    "why_summing_is_wrong": "All five scopes re-partition the same live documents, so a total over the whole table is ~5x the truth. Oil: TOTAL RET_GROSS 7,461,309.34 but the 61-row table sums to 37,306,546.70.",
+    "folds_back": "Within a scope the partition is exact and VERIFIED on this build: CLASS, CREDIT_NOTE, MONTH and VENDOR each re-sum to the TOTAL row on all 9 return measures (RET_DOCS, RET_NET, RET_GST, RET_GROSS, RET_DOCS_OPEN, RET_DOCS_NO_CN, RET_GROSS_NO_CN, RET_NOCN_EXT_DOCS, RET_NOCN_EXT_GROSS) in all three books, delta 0.00.",
+    "does_not_fold_back": "GRPO_DOCS, GRPO_NET and RET_PCT_OF_GRPO. They fold back on CLASS and MONTH only. On VENDOR the GRPO side is a LEFT JOIN restricted to cards that had a return (Oil VENDOR GRPO_NET sums to 375,417,913.69 against a TOTAL of 7,462,222,486.32 — 5% of it). On CREDIT_NOTE all three are NULL by design."
+  },
+  "kpis": [
+    {
+      "id": "gret-returned-gross",
+      "label": "Stock sent back to vendors",
+      "unit": "INR",
+      "column": "RET_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM(ORPD.DocTotal) over live returns dated <= as_of = RET_GROSS  (GST-inclusive; RET_NET + RET_GST = RET_GROSS)",
+      "terms": [
+        {"label": "Return net of GST", "col": "RET_NET", "op": "+", "source": "ORPD", "note": "SUM(DocTotal - VatSum), header-level, not line-level"},
+        {"label": "GST on returns", "col": "RET_GST", "op": "+", "source": "ORPD", "note": "SUM(VatSum)"},
+        {"label": "Returned, GST-inclusive", "col": "RET_GROSS", "op": "=", "source": "ORPD", "note": "SUM(DocTotal) — the posted document figure"}
+      ],
+      "excludes": [
+        {"label": "Cancelled originals (CANCELED='Y')", "row_filter": "r.get('CANCEL_STATUS')=='CANCELLED'", "why": "C-0021"},
+        {"label": "Cancellation mirrors (CANCELED='C')", "row_filter": "r.get('CANCEL_STATUS')=='CANCELLATION_DOC'", "why": "C-0021 — 'Y' and 'C' are numerically identical twins; filtering '<> Y' alone double-counts every cancellation"},
+        {"label": "Documents dated after as_of", "row_filter": "r.get('DOC_DATE') > as_of", "why": "position date bound"}
+      ],
+      "sql_lines": [62, 79],
+      "caveats": ["C-0021", "C-0020"],
+      "check": {
+        "method": "Enumerate the register instead of aggregating it: the summary comes from goods-return.sql's R_TOT CTE (HANA SUM over a CTE chain); the detail comes from a different query file (goods-return-detail.sql) that emits one row per header with no aggregation over documents. Sum the live detail rows and compare.",
+        "recipe": "abs(sum(float(r['GROSS_AMT']) for r in detail if r['CANCEL_STATUS']=='LIVE') - TOTAL['RET_GROSS']) < 1.0   # third route: sum(CLASS RET_GROSS) and sum(CREDIT_NOTE RET_GROSS) must both equal it too",
+        "verified": "oil delta 0.00, mart delta 0.00, bev delta 0.00 on the pinned build"
+      },
+      "drill": {"page": "goods-return.html", "params": {"co": "<company>", "scope": "VENDOR"}},
+      "live": {"oil": 7461309.34, "mart": 12549896.52, "bev": 4872674.0}
+    },
+    {
+      "id": "gret-returned-net",
+      "label": "Stock sent back, net of GST",
+      "unit": "INR",
+      "column": "RET_NET",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM(ORPD.DocTotal - ORPD.VatSum) = RET_NET — the numerator of the return rate",
+      "terms": [
+        {"label": "Gross returned", "col": "RET_GROSS", "op": "+", "source": "ORPD", "note": "SUM(DocTotal)"},
+        {"label": "GST on returns", "col": "RET_GST", "op": "-", "source": "ORPD", "note": "SUM(VatSum)"},
+        {"label": "Net returned", "col": "RET_NET", "op": "=", "source": "ORPD", "note": "matched against GRPO_NET, which is net on the same basis"}
+      ],
+      "excludes": [
+        {"label": "Cancelled + cancellation mirror", "row_filter": "r.get('CANCEL_STATUS')!='LIVE'", "why": "C-0021"}
+      ],
+      "sql_lines": [108, 117],
+      "caveats": ["C-0021"],
+      "check": {
+        "method": "Line-level money instead of header-level money. The shipped figure is the ORPD header; RPD1 lines carry their own LineTotal/VatSum. Summing lines is a physically different path through the same documents and was measured during the adversarial review.",
+        "recipe": "sum(float(r['NET_AMT']) for r in detail if r['CANCEL_STATUS']=='LIVE') == TOTAL['RET_NET'] within Rs 0.05; the notes record the RPD1 line route agreeing with the header to Rs 8.47 (oil) / Rs 9.57 (mart) / Rs 1.32 (bev) — document rounding, header wins",
+        "verified": "oil +0.01, mart -0.02, bev 0.00"
+      },
+      "drill": {"page": "derivation.html", "params": {"k": "gret-returned-net", "co": "<company>"}},
+      "live": {"oil": 6476726.51, "mart": 11863242.32, "bev": 4149869.34}
+    },
+    {
+      "id": "gret-returned-docs",
+      "label": "Goods return documents",
+      "unit": "count",
+      "column": "RET_DOCS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "COUNT(ORPD rows where CANCELED='N' and DocDate <= as_of)",
+      "terms": [
+        {"label": "Live return documents", "col": "RET_DOCS", "op": "=", "source": "ORPD", "note": "one per document, never per line"}
+      ],
+      "excludes": [
+        {"label": "Cancelled + cancellation mirror", "row_filter": "r.get('CANCEL_STATUS')!='LIVE'", "why": "C-0021 — Oil 117 detail rows = 103 live + 7 cancelled + 7 mirrors"}
+      ],
+      "sql_lines": [108, 117],
+      "caveats": ["C-0021"],
+      "check": {
+        "method": "Count the register rows the pipeline actually shipped, from the other query file, and separately confirm the cancelled pairs balance (a 'Y' must have a matching 'C', otherwise the three-value decode is broken).",
+        "recipe": "len([r for r in detail if r['CANCEL_STATUS']=='LIVE']) == TOTAL['RET_DOCS'] and sum(1 for r in detail if r['CANCEL_STATUS']=='CANCELLED') == sum(1 for r in detail if r['CANCEL_STATUS']=='CANCELLATION_DOC')",
+        "verified": "oil 103 (7/7 cancelled pairs), mart 49 (5/5), bev 19 (7/7)"
+      },
+      "drill": {"page": "goods-return.html", "params": {"co": "<company>", "view": "register"}},
+      "live": {"oil": 103, "mart": 49, "bev": 19}
+    },
+    {
+      "id": "gret-grpo-item-net",
+      "label": "Item goods received (the denominator)",
+      "unit": "INR",
+      "column": "GRPO_NET",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM(OPDN.DocTotal - OPDN.VatSum) where DocType='I' and CANCELED='N' and DocDate <= as_of",
+      "terms": [
+        {"label": "Item GRPO net", "col": "GRPO_NET", "op": "=", "source": "OPDN", "note": "DocType='I' only — service receipts (freight, job work, imprest) can never come back on a goods return"},
+        {"label": "Item GRPO documents", "col": "GRPO_DOCS", "op": "+", "source": "OPDN", "note": "context only, not a money term"}
+      ],
+      "excludes": [
+        {"label": "Service receipts (OPDN.DocType='S')", "row_filter": "OPDN.DocType != 'I'", "why": "defect D1 in notes/goods-return.md — 72% of Beverages' GRPO documents and 10% of its money were service receipts; leaving them in understated the return rate from 2.21% to 1.99%"},
+        {"label": "Cancelled + cancellation mirror GRPOs", "row_filter": "OPDN.CANCELED != 'N'", "why": "C-0021 — Oil OPDN carries 473 'Y' and 473 identical 'C' rows worth Rs 94.63 Cr each"}
+      ],
+      "sql_lines": [91, 106],
+      "caveats": ["C-0021", "C-0020"],
+      "check": {
+        "method": "Bound it against the grpo section, which reads the same OPDN table by a completely different route (line-level PDN1 money, all DocTypes). The two are deliberately NOT equal — this figure must be strictly smaller by exactly the service-receipt value — and the BRANCH / INTERCOMPANY / INTERNAL_ADJ classes, which carry no service receipts, must agree to a few rupees.",
+        "recipe": "gr_TOTAL['GRPO_NET'] < grpo_TOTAL['GRPO_NET'] and abs(gr_CLASS['BRANCH']['GRPO_NET'] - grpo_CLASS['BRANCH']['GRPO_NET']) < 5.0",
+        "verified": "oil 7,462,222,486.32 < 7,519,891,389.00 and BRANCH 582,761,456.04 vs 582,761,455.84 (delta 0.20); mart 2,793,966,527.93 < 2,797,361,430.19, BRANCH delta 0.48; bev 190,041,730.18 < 210,555,968.45, BRANCH delta 0.53"
+      },
+      "drill": {"page": "grpo.html", "params": {"co": "<company>"}},
+      "live": {"oil": 7462222486.32, "mart": 2793966527.93, "bev": 190041730.18}
+    },
+    {
+      "id": "gret-return-rate-pct",
+      "label": "Share of goods received that came back",
+      "unit": "pct",
+      "column": "RET_PCT_OF_GRPO",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "RET_NET / GRPO_NET * 100 = RET_PCT_OF_GRPO  (both net of GST, both item-only, both live-only)",
+      "terms": [
+        {"label": "Net value returned", "col": "RET_NET", "op": "+", "source": "ORPD", "note": "numerator"},
+        {"label": "Net item goods received", "col": "GRPO_NET", "op": "-", "source": "OPDN", "note": "denominator, DocType='I' only"},
+        {"label": "Return rate", "col": "RET_PCT_OF_GRPO", "op": "=", "source": "derived", "note": "4 decimal places; a generic integer formatter renders Oil's 0.0868% as '0'"}
+      ],
+      "excludes": [
+        {"label": "Service GRPO from the denominator", "row_filter": "OPDN.DocType != 'I'", "why": "defect D1"},
+        {"label": "Cancelled documents on both sides", "row_filter": "CANCELED != 'N'", "why": "C-0021"}
+      ],
+      "sql_lines": [160, 167],
+      "caveats": ["C-0021", "C-0022", "C-0020"],
+      "check": {
+        "method": "Rebuild the ratio from the CLASS scope, which is computed by a different pair of CTEs (R_CLS / G_CLS joined FULL OUTER on party class) than the TOTAL row (R_TOT / G_TOT joined CROSS). A weighted re-aggregation of four independently-grouped rows must land on the same number; if the class join ever drops or duplicates a bucket, this diverges immediately.",
+        "recipe": "sum(float(r['RET_NET']) for r in CLASS_rows) / sum(float(r['GRPO_NET']) for r in CLASS_rows) * 100 == TOTAL['RET_PCT_OF_GRPO'] within 0.0005 pp; repeat with MONTH_rows for a third route",
+        "verified": "oil 0.0868 (CLASS 0.0868, MONTH 0.0868), mart 0.4246 (CLASS 0.4246), bev 2.1837 (CLASS 2.1837, MONTH 2.1837)"
+      },
+      "drill": {"page": "grpo.html", "params": {"co": "<company>"}},
+      "live": {"oil": 0.0868, "mart": 0.4246, "bev": 2.1837}
+    },
+    {
+      "id": "gret-uncredited-ext-gross",
+      "label": "Returned to a supplier, never credited",
+      "unit": "INR",
+      "column": "RET_NOCN_EXT_GROSS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM(ORPD.DocTotal) over live returns to an EXTERNAL party with no live A/P credit note dated <= as_of = RET_NOCN_EXT_GROSS. This is the headline: money a supplier could still be billed for.",
+      "terms": [
+        {"label": "All returns with no credit note", "col": "RET_GROSS_NO_CN", "op": "+", "source": "ORPD + RPD1 + ORPC", "note": "every live return with no live linked ORPC"},
+        {"label": "less branch / intercompany / stock write-off", "col": "RET_GROSS_NO_CN (CLASS rows != EXTERNAL)", "op": "-", "source": "OCRD + OCRG", "note": "these can never attract a supplier credit note by construction"},
+        {"label": "Recoverable from a supplier", "col": "RET_NOCN_EXT_GROSS", "op": "=", "source": "derived", "note": "identical to CLASS='EXTERNAL' RET_GROSS_NO_CN"}
+      ],
+      "excludes": [
+        {"label": "STOCK GOODS ISSUE write-off (INTERNAL_ADJ)", "row_filter": "r.get('PARTY_CLASS')=='INTERNAL_ADJ'", "why": "dummy vendor card for physical shortage; its journal is DR STOCK SHORT AND EXCESS / CR stock — no supplier is involved. Oil Rs 6,75,937 on 9 docs, Bev Rs 19,57,750 on 4 docs"},
+        {"label": "Intercompany", "row_filter": "r.get('PARTY_CLASS')=='INTERCOMPANY'", "why": "C-0020 — Mart's VENDA000001 JIVO WELLNESS PVT LTD sits in group PURCHASE, so only the CardName test catches it; it is Rs 32,96,024 of Mart's Rs 35,19,206"},
+        {"label": "Branch", "row_filter": "r.get('PARTY_CLASS')=='BRANCH'", "why": "C-0020 — JIVO's own GST registrations appear as BRANCH VENDOR group cards"}
+      ],
+      "sql_lines": [114, 115],
+      "caveats": ["C-0021", "C-0020", "C-0019", "C-0005"],
+      "check": {
+        "method": "Two independent routes. (1) Recompute from the detail register: sum GROSS_AMT over live rows whose FLAG_NO_CREDIT_NOTE is 'Y' and PARTY_CLASS is 'EXTERNAL' — that flag is computed in goods-return-detail.sql from its own CN CTE, a separate query file with its own ORPC join. (2) A within-summary subtraction that never touches the RET_NOCN_EXT_* columns at all: TOTAL RET_GROSS_NO_CN minus the RET_GROSS_NO_CN of every non-EXTERNAL CLASS row.",
+        "recipe": "alt1 = sum(float(r['GROSS_AMT']) for r in detail if r['CANCEL_STATUS']=='LIVE' and r['FLAG_NO_CREDIT_NOTE']=='Y' and r['PARTY_CLASS']=='EXTERNAL');  alt2 = TOTAL['RET_GROSS_NO_CN'] - sum(float(c['RET_GROSS_NO_CN']) for c in CLASS_rows if c['GRP_KEY']!='EXTERNAL');  both == TOTAL['RET_NOCN_EXT_GROSS']",
+        "verified": "oil alt1 654937.00 alt2 654937.00; mart 223182.00 / 223182.00; bev 167961.00 / 167961.00 — all deltas 0.00"
+      },
+      "drill": {"page": "goods-return.html", "params": {"co": "<company>", "filter": "uncredited-external"}},
+      "live": {"oil": 654937.0, "mart": 223182.0, "bev": 167961.0}
+    },
+    {
+      "id": "gret-uncredited-ext-docs",
+      "label": "Supplier returns with no credit note",
+      "unit": "count",
+      "column": "RET_NOCN_EXT_DOCS",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "COUNT(live returns where PARTY_CLASS='EXTERNAL' and no live ORPC linked at or before as_of)",
+      "terms": [
+        {"label": "Uncredited supplier returns", "col": "RET_NOCN_EXT_DOCS", "op": "=", "source": "ORPD + RPD1 + ORPC", "note": "each one is a document a human has to chase"}
+      ],
+      "excludes": [
+        {"label": "Non-external classes", "row_filter": "r.get('PARTY_CLASS') != 'EXTERNAL'", "why": "C-0020"}
+      ],
+      "sql_lines": [114, 115],
+      "caveats": ["C-0021", "C-0020"],
+      "check": {
+        "method": "Count them in the detail register and also list them, so the KPI and the drill-down table can never disagree about which documents they are.",
+        "recipe": "len([r for r in detail if r['CANCEL_STATUS']=='LIVE' and r['FLAG_NO_CREDIT_NOTE']=='Y' and r['PARTY_CLASS']=='EXTERNAL']) == TOTAL['RET_NOCN_EXT_DOCS']",
+        "verified": "oil 10, mart 3, bev 3 — exact"
+      },
+      "drill": {"page": "goods-return.html", "params": {"co": "<company>", "filter": "uncredited-external"}},
+      "live": {"oil": 10, "mart": 3, "bev": 3}
+    },
+    {
+      "id": "gret-uncredited-all-gross",
+      "label": "Uncredited returns, all parties",
+      "unit": "INR",
+      "column": "RET_GROSS_NO_CN",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "SUM(ORPD.DocTotal) over live returns with no live linked A/P credit note = RET_GROSS_NO_CN. Deliberately NOT the headline — most of it is internal.",
+      "terms": [
+        {"label": "Recoverable from a supplier", "col": "RET_NOCN_EXT_GROSS", "op": "+", "source": "derived", "note": "the part that is a real claim"},
+        {"label": "Branch / intercompany / stock write-off", "col": "RET_GROSS_NO_CN - RET_NOCN_EXT_GROSS", "op": "+", "source": "derived", "note": "Bev: Rs 19,57,750 of Rs 21,25,711 is the STOCK GOODS ISSUE card — the headline would be 12.7x the truth"},
+        {"label": "All uncredited returns", "col": "RET_GROSS_NO_CN", "op": "=", "source": "ORPD", "note": "kept unchanged so the CLASS rows still fold back to TOTAL"}
+      ],
+      "excludes": [
+        {"label": "Returns with a live linked credit note", "row_filter": "r.get('CN_COUNT',0) > 0", "why": "recovered on paper"},
+        {"label": "Credit notes dated after as_of", "row_filter": "ORPC.DocDate > as_of", "why": "defect D3 — without the bound a month-end position silently borrows a credit note raised later (Oil @2025-12-31 moved 6 docs Rs 6,02,832 -> 7 docs Rs 7,14,164)"},
+        {"label": "Cancelled credit notes", "row_filter": "ORPC.CANCELED != 'N'", "why": "C-0021 — a cancelled CN is not a recovery"}
+      ],
+      "sql_lines": [80, 90],
+      "caveats": ["C-0021", "C-0019"],
+      "check": {
+        "method": "The CREDIT_NOTE scope groups the same documents by HAS_CN and reports their plain RET_GROSS. The NO_CREDIT_NOTE row's plain gross must equal the TOTAL row's conditional RET_GROSS_NO_CN — two different SQL expressions (an unconditional SUM inside a GROUP BY versus a SUM(CASE WHEN HAS_CN=0 ...)) over the same population.",
+        "recipe": "CREDIT_NOTE_rows['NO_CREDIT_NOTE']['RET_GROSS'] == TOTAL['RET_GROSS_NO_CN'] and CREDIT_NOTE_rows['HAS_CREDIT_NOTE']['RET_GROSS_NO_CN'] == 0",
+        "verified": "oil 1,330,874 == 1,330,874; mart 3,519,206.18 == 3,519,206.18; bev 2,125,711 == 2,125,711"
+      },
+      "drill": {"page": "goods-return.html", "params": {"co": "<company>", "scope": "CREDIT_NOTE"}},
+      "live": {"oil": 1330874.0, "mart": 3519206.18, "bev": 2125711.0}
+    },
+    {
+      "id": "gret-internal-writeoff-gross",
+      "label": "Written off as physical shortage",
+      "unit": "INR",
+      "column": "RET_GROSS",
+      "row_filter": "r.get('SCOPE')=='CLASS' and r.get('GRP_KEY')=='INTERNAL_ADJ'",
+      "agg": "first",
+      "formula": "SUM(ORPD.DocTotal) over live returns booked to a card whose name starts 'STOCK GOODS' — a dummy vendor used to write off physical shortage, never a claim on a supplier",
+      "terms": [
+        {"label": "Stock write-off returns", "col": "RET_GROSS", "op": "=", "source": "ORPD + OCRD", "note": "Oil VENDA001613 STOCK GOODS ISSUE, Bev VENDA001307 STOCK GOODS ISSUE"}
+      ],
+      "excludes": [
+        {"label": "Every other party class", "row_filter": "r.get('PARTY_CLASS') != 'INTERNAL_ADJ'", "why": "this KPI exists precisely to be subtracted from the uncredited headline"}
+      ],
+      "sql_lines": [119, 128],
+      "caveats": ["C-0021"],
+      "check": {
+        "method": "Rebuild the class from the detail register by matching the card NAME rather than trusting the summary's PARTY_CLASS, and confirm every such document is also uncredited (a write-off can never attract a credit note, so if one ever does, the classification is wrong).",
+        "recipe": "wo = [r for r in detail if r['CANCEL_STATUS']=='LIVE' and str(r['CARD_NAME']).upper().startswith('STOCK GOODS')];  sum(float(r['GROSS_AMT']) for r in wo) == CLASS['INTERNAL_ADJ']['RET_GROSS'] and all(r['CN_COUNT']==0 for r in wo)",
+        "verified": "oil 675,937.00 on 9 docs, all CN_COUNT 0; bev 1,957,750.00 on 4 docs, all CN_COUNT 0; mart has no such card"
+      },
+      "drill": {"page": "party.html", "params": {"co": "<company>", "card": "<VENDA001613 oil | VENDA001307 bev>"}},
+      "live": {"oil": 675937.0, "mart": null, "bev": 1957750.0}
+    },
+    {
+      "id": "gret-nontrade-gross",
+      "label": "Returns that are not a supplier at all",
+      "unit": "INR",
+      "column": "RET_GROSS",
+      "row_filter": "r.get('SCOPE')=='CLASS' and r.get('GRP_KEY') in ('BRANCH','INTERCOMPANY','INTERNAL_ADJ')",
+      "agg": "sum",
+      "formula": "RET_GROSS(BRANCH) + RET_GROSS(INTERCOMPANY) + RET_GROSS(INTERNAL_ADJ). As a share of the total: Oil 9.06%, Mart 98.22%, Bev 40.18% — Mart's goods-return section is almost entirely stock going back to Oil.",
+      "terms": [
+        {"label": "Branch", "col": "RET_GROSS", "op": "+", "source": "OCRG.GroupName LIKE '%BRANCH%'", "note": "zero live returns in all three books today"},
+        {"label": "Intercompany", "col": "RET_GROSS", "op": "+", "source": "OCRD.CardName LIKE '%JIVO%'", "note": "C-0020 — the group test alone misses Mart's biggest card"},
+        {"label": "Stock write-off", "col": "RET_GROSS", "op": "+", "source": "OCRD.CardName LIKE 'STOCK GOODS%'", "note": ""},
+        {"label": "Not a supplier", "col": "RET_GROSS", "op": "=", "source": "derived", "note": "TOTAL RET_GROSS minus the EXTERNAL class row"}
+      ],
+      "excludes": [
+        {"label": "EXTERNAL", "row_filter": "r.get('GRP_KEY')=='EXTERNAL'", "why": "that is the trade figure this one is the complement of"}
+      ],
+      "sql_lines": [68, 71],
+      "caveats": ["C-0020", "C-0005", "C-0021"],
+      "check": {
+        "method": "Complement arithmetic against the EXTERNAL row, plus a re-classification from the detail register using the raw CardName / VendorGroup strings rather than the summary's precomputed PARTY_CLASS. If the CASE order in the two SQL files ever drifts apart, this catches it.",
+        "recipe": "TOTAL['RET_GROSS'] - CLASS['EXTERNAL']['RET_GROSS'] == sum(non-external CLASS RET_GROSS) == sum(float(r['GROSS_AMT']) for r in detail if r['CANCEL_STATUS']=='LIVE' and r['PARTY_CLASS']!='EXTERNAL')",
+        "verified": "oil 675,937.00, mart 12,326,714.52, bev 1,957,750.00 — all three routes identical"
+      },
+      "drill": {"page": "goods-return.html", "params": {"co": "<company>", "scope": "CLASS"}},
+      "live": {"oil": 675937.0, "mart": 12326714.52, "bev": 1957750.0}
+    },
+    {
+      "id": "gret-open-docs",
+      "label": "Returns still flagged open in SAP",
+      "unit": "count",
+      "column": "RET_DOCS_OPEN",
+      "row_filter": "r.get('SCOPE')=='TOTAL' and r.get('GRP_KEY')=='ALL'",
+      "agg": "first",
+      "formula": "COUNT(live returns where ORPD.DocStatus='O'). Shown as context only — DocStatus is NOT the uncredited measure at JIVO.",
+      "terms": [
+        {"label": "Open return documents", "col": "RET_DOCS_OPEN", "op": "=", "source": "ORPD.DocStatus", "note": "a document count, never money — despite the column name ending in OPEN"}
+      ],
+      "excludes": [
+        {"label": "Cancelled + cancellation mirror", "row_filter": "r.get('CANCEL_STATUS')!='LIVE'", "why": "C-0021"}
+      ],
+      "sql_lines": [111, 111],
+      "caveats": ["C-0019", "C-0021"],
+      "check": {
+        "method": "Count from the detail register, then prove the C-0019 divergence explicitly: cross-tabulate DOC_STATUS against the credit-note link. If DocStatus were a proxy for 'uncredited', the off-diagonal cells would be empty. They are not, and the check should report the count so the page can say so.",
+        "recipe": "sum(1 for r in detail if r['CANCEL_STATUS']=='LIVE' and r['DOC_STATUS']=='O') == TOTAL['RET_DOCS_OPEN']; also report closed_but_uncredited = sum(1 for r in detail if r['CANCEL_STATUS']=='LIVE' and r['DOC_STATUS']=='C' and r['CN_COUNT']==0) and open_but_credited = sum(1 for r in detail if r['CANCEL_STATUS']=='LIVE' and r['DOC_STATUS']=='O' and r['CN_COUNT']>0)",
+        "verified": "oil 8 open (12 closed-but-uncredited, 1 open-but-credited); mart 16; bev 3 — the count matches, and the off-diagonal is non-empty, which is the point"
+      },
+      "drill": {"page": "goods-return.html", "params": {"co": "<company>", "view": "register", "status": "O"}},
+      "live": {"oil": 8, "mart": 16, "bev": 3}
+    },
+    {
+      "id": "gret-credit-lag-max-days",
+      "label": "Slowest credit note",
+      "unit": "days",
+      "column": "CN_LAG_DAYS",
+      "row_filter": "r.get('CANCEL_STATUS')=='LIVE' and r.get('CN_LAG_DAYS') is not None",
+      "agg": "max",
+      "formula": "MAX(DAYS_BETWEEN(ORPD.DocDate, MIN(ORPC.DocDate))) over live credited returns. Median for context: Oil 0, Mart 87, Bev 0 days.",
+      "terms": [
+        {"label": "Return date", "col": "DOC_DATE", "op": "-", "source": "ORPD", "note": ""},
+        {"label": "First linked credit note date", "col": "CN_FIRST_DATE", "op": "+", "source": "ORPC", "note": "MIN over de-duplicated live CNs dated <= as_of"},
+        {"label": "Days to credit", "col": "CN_LAG_DAYS", "op": "=", "source": "derived", "note": "can be NEGATIVE — Oil has 5 returns whose credit note predates them (min -36), Bev 1 (-42)"}
+      ],
+      "excludes": [
+        {"label": "Uncredited returns", "row_filter": "r.get('CN_LAG_DAYS') is None", "why": "no credit note means no lag — they belong to gret-uncredited-ext-gross, not to an infinite lag"},
+        {"label": "Cancelled documents", "row_filter": "r.get('CANCEL_STATUS')!='LIVE'", "why": "C-0021"}
+      ],
+      "sql_lines": [84, 99],
+      "caveats": ["C-0021"],
+      "check": {
+        "method": "Do not trust the precomputed CN_LAG_DAYS column: recompute the lag in Python from the two date strings the same rows carry (DOC_DATE and CN_FIRST_DATE), which bypasses HANA's DAYS_BETWEEN entirely. Separately assert the population size equals RET_DOCS - RET_DOCS_NO_CN, so a lag distribution can never be built on a partial join.",
+        "recipe": "max((date(r['CN_FIRST_DATE']) - date(r['DOC_DATE'])).days for r in detail if r['CANCEL_STATUS']=='LIVE' and r['CN_FIRST_DATE']) == KPI  and  len([r for r in detail if r['CANCEL_STATUS']=='LIVE' and r['CN_LAG_DAYS'] is not None]) == TOTAL['RET_DOCS'] - TOTAL['RET_DOCS_NO_CN']",
+        "verified": "oil max 114 over 84 rows (= 103-19); mart 189 over 33 (= 49-16); bev 12 over 12 (= 19-7)"
+      },
+      "drill": {"page": "goods-return.html", "params": {"co": "<company>", "view": "register", "sort": "CN_LAG_DAYS"}},
+      "live": {"oil": 114, "mart": 189, "bev": 12}
+    },
+    {
+      "id": "gret-oldest-uncredited-ext-days",
+      "label": "Oldest uncredited supplier return",
+      "unit": "days",
+      "column": "AGE_DAYS",
+      "row_filter": "r.get('CANCEL_STATUS')=='LIVE' and r.get('FLAG_NO_CREDIT_NOTE')=='Y' and r.get('PARTY_CLASS')=='EXTERNAL'",
+      "agg": "max",
+      "formula": "MAX(DAYS_BETWEEN(ORPD.DocDate, as_of)) over live external returns with no credit note",
+      "terms": [
+        {"label": "Age of each uncredited supplier return", "col": "AGE_DAYS", "op": "=", "source": "ORPD.DocDate vs as_of", "note": "Oil's oldest is DocNum 125216500, MEDIA GRAPHIC PRINTS, 2025-01-21, Rs 8,614"}
+      ],
+      "excludes": [
+        {"label": "Credited returns", "row_filter": "r.get('FLAG_NO_CREDIT_NOTE')=='N'", "why": "already recovered on paper"},
+        {"label": "Non-external classes", "row_filter": "r.get('PARTY_CLASS')!='EXTERNAL'", "why": "C-0020 — an intercompany or write-off return has no supplier to chase"}
+      ],
+      "sql_lines": [105, 105],
+      "caveats": ["C-0021", "C-0020"],
+      "check": {
+        "method": "Recompute from the date string against the manifest's as_of rather than reading the AGE_DAYS column, and confirm the population size matches the summary's RET_NOCN_EXT_DOCS. This catches both a stale AGE_DAYS (if the pipeline ever caches detail rows across builds) and a classification drift between the two SQL files.",
+        "recipe": "unc = [r for r in detail if r['CANCEL_STATUS']=='LIVE' and r['FLAG_NO_CREDIT_NOTE']=='Y' and r['PARTY_CLASS']=='EXTERNAL'];  (date(as_of) - min(date(r['DOC_DATE']) for r in unc)).days == KPI  and  len(unc) == TOTAL['RET_NOCN_EXT_DOCS']",
+        "verified": "oil 578 (2025-01-21, 10 docs), mart 351 (2025-09-05, 3 docs), bev 380 (2025-08-07, 3 docs) — recomputed dates match AGE_DAYS exactly"
+      },
+      "drill": {"page": "document.html", "params": {"co": "<company>", "type": "21", "entry": "<DOC_ENTRY of the oldest uncredited external return>"}},
+      "live": {"oil": 578, "mart": 351, "bev": 380}
+    },
+    {
+      "id": "gret-credit-shortfall-ext",
+      "label": "Credited for less than we sent back",
+      "unit": "INR",
+      "column": "GROSS_AMT",
+      "row_filter": "r.get('CANCEL_STATUS')=='LIVE' and r.get('PARTY_CLASS')=='EXTERNAL' and r.get('CN_COUNT')==1 and (float(r.get('GROSS_AMT') or 0) - float(r.get('CN_GROSS') or 0)) >= 1",
+      "agg": "sum",
+      "formula": "SUM(GROSS_AMT - CN_GROSS) over live external returns with exactly one linked live credit note, where the shortfall is at least Rs 1. Bev is one document: DocNum 2125048002, A.J.SHRINK WRAP, Rs 9,25,384 returned against a Rs 2,36,357 credit note.",
+      "terms": [
+        {"label": "Return value", "col": "GROSS_AMT", "op": "+", "source": "ORPD", "note": "DocTotal of the return"},
+        {"label": "Credit note value", "col": "CN_GROSS", "op": "-", "source": "ORPC", "note": "DocTotal of the linked credit note — the WHOLE credit note, not the part applied to this return"},
+        {"label": "Shortfall", "col": "GROSS_AMT - CN_GROSS", "op": "=", "source": "derived", "note": "only meaningful while the return-to-CN link is 1:1"}
+      ],
+      "excludes": [
+        {"label": "Returns with 0 or >1 credit notes", "row_filter": "r.get('CN_COUNT') != 1", "why": "with 0 the shortfall is the whole return (gret-uncredited-ext-gross); with >1 CN_GROSS is a sum of full credit notes and the difference is meaningless"},
+        {"label": "Non-external classes", "row_filter": "r.get('PARTY_CLASS')!='EXTERNAL'", "why": "C-0020 — Mart's 7 intercompany shortfalls totalling Rs 43,908 are an internal settlement question, not a supplier claim"},
+        {"label": "Sub-rupee rounding", "row_filter": "gap < 1", "why": "Oil has one Rs 1.00 rounding gap that is not a finding"}
+      ],
+      "sql_lines": [85, 99],
+      "caveats": ["C-0021", "C-0020"],
+      "check": {
+        "method": "Prove the 1:1 assumption before trusting the number, then prove the number. Build a map from every CN_DOCNUM to the returns that cite it: if any credit note appears against more than one return, or any return cites more than one credit note, the KPI must refuse to render rather than report a wrong shortfall. Then re-derive the aggregate the other way: total credited return value minus total linked credit-note value, across the same population.",
+        "recipe": "cn_map = defaultdict(list); [cn_map[n].append(r) for r in detail if r['CANCEL_STATUS']=='LIVE' for n in str(r['CN_DOCNUMS']).split(',') if n.strip()];  assert max((len(v) for v in cn_map.values()), default=0) == 1 and all(r['CN_COUNT'] <= 1 for r in detail);  pop = [r for r in detail if r['CANCEL_STATUS']=='LIVE' and r['PARTY_CLASS']=='EXTERNAL' and r['CN_COUNT']==1];  sum(float(r['GROSS_AMT']) for r in pop) - sum(float(r['CN_GROSS']) for r in pop) == KPI within Rs 2",
+        "verified": "1:1 holds in all three books on this build (oil 84 CNs/84 returns, mart 33/33, bev 12/12). oil shortfall Rs 42,180 on 2 docs (Rs 42,179 real + Rs 1 rounding), bev Rs 6,89,027 on 1 doc, mart has no credited external return at all"
+      },
+      "drill": {"page": "document.html", "params": {"co": "<company>", "type": "21", "entry": "<DOC_ENTRY>"}},
+      "live": {"oil": 42180.0, "mart": null, "bev": 689027.0}
+    }
+  ],
+  "columns": [
+    {"col": "SCOPE", "label": "Scope", "unit": "text", "meaning": "Which of the five stacked partitions this row belongs to: TOTAL, CLASS, CREDIT_NOTE, MONTH, VENDOR. It is a discriminator, not a dimension — rows from different scopes describe the SAME documents and must never be summed together.", "link": "none"},
+    {"col": "GRP_KEY", "label": "Key", "unit": "text", "meaning": "The partition key within the scope: 'ALL' for TOTAL; a party class for CLASS; HAS_CREDIT_NOTE / NO_CREDIT_NOTE for CREDIT_NOTE; 'YYYY-MM' for MONTH; the vendor CardCode for VENDOR.", "link": "party"},
+    {"col": "GRP_LABEL", "label": "Label", "unit": "text", "meaning": "Display label. On VENDOR rows only, it is 'CardName [PARTY_CLASS]' — the party class is embedded in this string and appears in no column of its own on that scope.", "link": "none"},
+    {"col": "SORT_KEY", "label": "Sort key", "unit": "text", "meaning": "Scope-prefixed ordering token: '1' TOTAL, '2'+class, '3'+key, '4'+YYYY-MM, plain '5' for every VENDOR row (vendors are then ordered by RET_GROSS descending by the outer ORDER BY). Do not use it as an identifier.", "link": "none"},
+    {"col": "RET_DOCS", "label": "Return documents", "unit": "count", "meaning": "Count of LIVE goods-return headers (ORPD, CANCELED='N') dated on or before as_of. Documents, not lines.", "link": "none"},
+    {"col": "RET_NET", "label": "Returned, net of GST", "unit": "INR", "meaning": "SUM(ORPD.DocTotal - ORPD.VatSum), header-level. Raw rupees — no _L/_CR scaling anywhere in this section.", "link": "none"},
+    {"col": "RET_GST", "label": "GST on returns", "unit": "INR", "meaning": "SUM(ORPD.VatSum).", "link": "none"},
+    {"col": "RET_GROSS", "label": "Returned, GST-inclusive", "unit": "INR", "meaning": "SUM(ORPD.DocTotal) — the figure the ledger actually posted.", "link": "none"},
+    {"col": "RET_DOCS_OPEN", "label": "Still open in SAP", "unit": "count", "meaning": "Count of live returns with DocStatus='O'. A COUNT, not money — but the name ends in 'OPEN', which v1's isMoneyCol() matches, so a generic table formatter renders it as '₹8'. C-0019: it is also not a proxy for uncredited; Oil has 12 CLOSED returns worth Rs 11.45 L with no credit note and 1 OPEN return that has one.", "link": "none"},
+    {"col": "RET_DOCS_NO_CN", "label": "Returns with no credit note", "unit": "count", "meaning": "Count of live returns with no live linked A/P credit note dated on or before as_of. All parties, including internal ones.", "link": "none"},
+    {"col": "RET_GROSS_NO_CN", "label": "Uncredited value, all parties", "unit": "INR", "meaning": "SUM(ORPD.DocTotal) over those returns. NOT a supplier claim — in Beverages 92% of it is the STOCK GOODS ISSUE write-off. The name ends in '_CN', which v1's isMoneyCol() does NOT match, so it prints as a bare integer unless formatted explicitly.", "link": "none"},
+    {"col": "GRPO_DOCS", "label": "Item GRPO documents", "unit": "count", "meaning": "Count of live ITEM goods receipts (OPDN, DocType='I'). NULL on CREDIT_NOTE rows. On VENDOR rows it covers only cards that also had a return, so it does not sum to the TOTAL.", "link": "none"},
+    {"col": "GRPO_NET", "label": "Item goods received, net", "unit": "INR", "meaning": "SUM(OPDN.DocTotal - OPDN.VatSum) for DocType='I' only. This is NOT the same figure as the grpo section's GRPO_NET, which is line-level and includes service receipts.", "link": "none"},
+    {"col": "RET_PCT_OF_GRPO", "label": "Return rate", "unit": "pct", "meaning": "RET_NET / GRPO_NET * 100, four decimals, already multiplied by 100. NULL where GRPO_NET is 0 or absent. Meaningful on TOTAL, CLASS and (with a timing caveat) MONTH; meaningless on VENDOR, where it reaches 2,867.52% for BEE HIVE FARMS.", "link": "none"},
+    {"col": "RET_NOCN_EXT_DOCS", "label": "Uncredited supplier returns", "unit": "count", "meaning": "Count of live EXTERNAL-party returns with no live credit note — the documents Accounts can actually chase.", "link": "none"},
+    {"col": "RET_NOCN_EXT_GROSS", "label": "Uncredited supplier value", "unit": "INR", "meaning": "The headline. SUM(ORPD.DocTotal) over live EXTERNAL returns with no live credit note. Equals CLASS='EXTERNAL' RET_GROSS_NO_CN by construction.", "link": "none"},
+
+    {"col": "DOC_ENTRY", "label": "SAP DocEntry", "unit": "text", "meaning": "detail. ORPD primary key — the only key that can address the document. Print as-is, never grouped.", "link": "document"},
+    {"col": "DOC_NUM", "label": "Document number", "unit": "text", "meaning": "detail. The number a human reads out in SAP. An identifier, not a quantity — Indian grouping makes it unsearchable.", "link": "document"},
+    {"col": "DOC_DATE", "label": "Return date", "unit": "date", "meaning": "detail. ORPD.DocDate as YYYY-MM-DD.", "link": "none"},
+    {"col": "DOC_MONTH", "label": "Month", "unit": "text", "meaning": "detail. YYYY-MM of the return date; joins to the summary's MONTH scope GRP_KEY.", "link": "none"},
+    {"col": "AGE_DAYS", "label": "Age", "unit": "days", "meaning": "detail. Days from the return date to as_of. Computed at build time — it is not live in the browser.", "link": "none"},
+    {"col": "CANCEL_STATUS", "label": "Cancellation status", "unit": "text", "meaning": "detail. Decoded ORPD.CANCELED: LIVE ('N'), CANCELLED ('Y', the cancelled original), CANCELLATION_DOC ('C', the auto-generated mirror). The detail deliberately keeps all three; every summary figure is 'N' only. Filter to LIVE before summing anything.", "link": "none"},
+    {"col": "DOC_STATUS", "label": "SAP status", "unit": "text", "meaning": "detail. 'O' open / 'C' closed. Unreliable as a business signal (C-0019) — use CN_COUNT / FLAG_NO_CREDIT_NOTE for whether the money came back.", "link": "none"},
+    {"col": "CARD_CODE", "label": "Vendor code", "unit": "text", "meaning": "detail. OCRD.CardCode. NOT portable across books — VENDA000942 is PIONEER PET in Oil and JIVO MART PVT LTD - DL in Mart.", "link": "party"},
+    {"col": "CARD_NAME", "label": "Vendor", "unit": "text", "meaning": "detail. OCRD.CardName, falling back to the document's own CardName.", "link": "party"},
+    {"col": "VENDOR_GROUP", "label": "Vendor group", "unit": "text", "meaning": "detail. OCRG.GroupName. Not sufficient for classification on its own — Mart's intercompany card sits in group PURCHASE.", "link": "none"},
+    {"col": "PARTY_CLASS", "label": "Party class", "unit": "text", "meaning": "detail + CLASS scope. EXTERNAL / BRANCH / INTERCOMPANY / INTERNAL_ADJ, decided by group name then card name in that order. BRANCH is tested first, so Beverages' JIVO WELLNESS PVT LTD - PB reads BRANCH rather than INTERCOMPANY — the split is not comparable across books, only EXTERNAL vs not-EXTERNAL is.", "link": "none"},
+    {"col": "BRANCH_ID", "label": "Branch id", "unit": "text", "meaning": "detail. ORPD.BPLId — the GST registration the return was raised under.", "link": "none"},
+    {"col": "BRANCH_NAME", "label": "Branch", "unit": "text", "meaning": "detail. Oil is 100% FACTORY; Mart splits DELHI 44 / HARYANA 5; Bev is 100% FACTORY.", "link": "none"},
+    {"col": "WAREHOUSES", "label": "Warehouses", "unit": "text", "meaning": "detail. Comma-joined distinct RPD1.WhsCode. Oil is dominated by BH-PM (78 of 103).", "link": "none"},
+    {"col": "NUM_LINES", "label": "Lines", "unit": "count", "meaning": "detail. COUNT of RPD1 rows on the document.", "link": "none"},
+    {"col": "NUM_ITEMS", "label": "Distinct items", "unit": "count", "meaning": "detail. COUNT(DISTINCT ItemCode).", "link": "none"},
+    {"col": "TOTAL_QTY", "label": "Quantity", "unit": "count", "meaning": "detail. SUM(RPD1.Quantity) in PIECES (C-0001), added across MIXED units of measure. Beverages' 22,575,538 is not a volume and not a tonnage — it is a size hint only. Never convert it.", "link": "none"},
+    {"col": "NET_AMT", "label": "Net", "unit": "INR", "meaning": "detail. DocTotal - VatSum for this one document.", "link": "none"},
+    {"col": "GST_AMT", "label": "GST", "unit": "INR", "meaning": "detail. VatSum for this one document.", "link": "none"},
+    {"col": "GROSS_AMT", "label": "Gross", "unit": "INR", "meaning": "detail. DocTotal for this one document. Summing this straight down the file over-counts by the cancelled pairs.", "link": "none"},
+    {"col": "REASON", "label": "Reason", "unit": "text", "meaning": "detail. ORPD.Comments, free text keyed by the operator ('PHYSICAL SHORT', 'DUE TO QUALITY REJECT', 'PURCHASE RETURN'). Can arrive as the literal string 'None'. Not a controlled vocabulary — do not chart it as a category.", "link": "none"},
+    {"col": "VENDOR_REF", "label": "Vendor ref", "unit": "text", "meaning": "detail. ORPD.NumAtCard — the vendor's own document reference. Can arrive as the literal string 'None'.", "link": "none"},
+    {"col": "BASE_GRPO_COUNT", "label": "Base GRPOs", "unit": "count", "meaning": "detail. How many GRPOs the return was copied from (RPD1.BaseType=20). Almost always 0: Oil 100 of 103 returns are standalone, Mart 48 of 49, Bev 19 of 19. There is no usable goods-in-to-goods-back chain at JIVO.", "link": "none"},
+    {"col": "BASE_GRPO_DOCNUMS", "label": "Base GRPO numbers", "unit": "text", "meaning": "detail. Comma-joined OPDN.DocNum — DocNum, not DocEntry, so it cannot be turned into a document.html link without a lookup.", "link": "none"},
+    {"col": "CN_COUNT", "label": "Credit notes", "unit": "count", "meaning": "detail. Count of distinct LIVE A/P credit notes (ORPC) linked via RPD1.TargetType=19 and dated on or before as_of. 0 means genuinely unrecovered as far as SAP's links go.", "link": "none"},
+    {"col": "CN_DOCNUMS", "label": "Credit note numbers", "unit": "text", "meaning": "detail. Comma-joined ORPC.DocNum — again DocNum, not DocEntry.", "link": "document"},
+    {"col": "CN_FIRST_DATE", "label": "First credit note date", "unit": "date", "meaning": "detail. MIN(ORPC.DocDate) among the linked live credit notes. Empty string when there is none.", "link": "none"},
+    {"col": "CN_GROSS", "label": "Credit note value", "unit": "INR", "meaning": "detail. SUM of the FULL DocTotal of each linked credit note — not the amount applied to this return. Equal to GROSS_AMT on all but 9 live documents across the three books.", "link": "none"},
+    {"col": "CN_LAG_DAYS", "label": "Days to credit", "unit": "days", "meaning": "detail. Days from the return date to the first credit note. NULL when uncredited, and NEGATIVE when the credit note predates the return (Oil 5 documents, min -36; Bev 1, -42).", "link": "none"},
+    {"col": "FLAG_NO_CREDIT_NOTE", "label": "Never credited", "unit": "text", "meaning": "detail. 'Y' only when the document is LIVE and has no live linked credit note; every cancelled row reads 'N'. Counting FLAG='Y' over the whole file therefore gives the right answer without a CANCEL_STATUS filter — but nothing else in the file does.", "link": "none"}
+  ],
+  "drilldowns": ["party.html", "document.html", "goods-return.html", "grpo.html", "derivation.html", "methodology.html"],
+  "charts": [
+    {
+      "type": "waterfall",
+      "title": "From everything returned to what a supplier still owes",
+      "x": "GRP_KEY",
+      "y": "RET_GROSS",
+      "series": "SCOPE",
+      "why": "This is the correction, drawn. Total returned -> less branch/intercompany -> less stock write-off -> external returns -> less already credited -> uncredited supplier exposure. It closes exactly in all three books (Oil 74.61 L - 6.76 L = 67.85 L - 61.30 L = 6.55 L), and it is the only view that makes Mart's 98.22% intercompany and Beverages' 40.18% write-off impossible to read past. A table of the same rows lets a reader take RET_GROSS_NO_CN as the claim; this chart cannot."
+    },
+    {
+      "type": "lineArea",
+      "title": "Returned value by month, with the return rate behind it",
+      "x": "GRP_KEY",
+      "y": "RET_GROSS",
+      "series": "RET_PCT_OF_GRPO",
+      "why": "Area for the money, a second line for the rate against that month's item GRPO. It teaches that the two do not move together: Beverages' 2026-05 rate of 20.07% is two documents against a 87.31 L month, while its biggest-money month is a different one. Reading the rate column in a table invites treating those spikes as a quality collapse."
+    },
+    {
+      "type": "pareto",
+      "title": "Who we send stock back to",
+      "x": "GRP_LABEL",
+      "y": "RET_GROSS",
+      "series": "PARTY_CLASS",
+      "why": "Bars plus cumulative %. Oil's 31 vendor rows collapse to four names for 50% of the value; Mart is one intercompany card for 98%; Beverages is S.N. INDUSTRIES plus the write-off card for 72%. The cumulative line answers 'how many phone calls is this' in one glance, which a 31-row table does not."
+    },
+    {
+      "type": "scatter",
+      "title": "Uncredited supplier returns: how old, how big",
+      "x": "AGE_DAYS",
+      "y": "GROSS_AMT",
+      "series": "CARD_NAME",
+      "why": "One dot per live external return with no credit note, each linking to its document. It separates the four Oil returns under 35 days old (still normal) from the six over 300 days (Rs 6.03 L that nobody is chasing), and it puts Oil's Rs 4.60 L NATIONAL TIN return at 388 days in the top-right corner where it belongs. A sorted table shows one ordering; this shows both at once."
+    },
+    {
+      "type": "donut",
+      "title": "Is this a supplier return at all?",
+      "x": "GRP_KEY",
+      "y": "RET_GROSS",
+      "series": "GRP_KEY",
+      "why": "CLASS scope only. Four segments, EXTERNAL against BRANCH / INTERCOMPANY / INTERNAL_ADJ. The whole reason this section's headline is RET_NOCN_EXT_GROSS and not RET_GROSS_NO_CN is that this split is invisible in the raw totals — Mart's slice is 1.8% external and Beverages' is 59.8%."
+    },
+    {
+      "type": "stackedBars",
+      "title": "How long a credit note takes",
+      "x": "lag_bucket",
+      "y": "doc_count",
+      "series": "PARTY_CLASS",
+      "why": "Buckets built from the detail: credit note before the return (negative lag), same day, 1-30, 31-90, 91+, never. Oil and Beverages are same-day-or-never; Mart's median is 87 days. It also surfaces the negative-lag documents, which no summary column exposes and which a naive 'days to credit' average silently absorbs."
+    },
+    {
+      "type": "heatmap",
+      "title": "Month by party class",
+      "x": "DOC_MONTH",
+      "y": "PARTY_CLASS",
+      "series": "GROSS_AMT",
+      "why": "Built from the live detail rows, because the summary's MONTH scope is not crossed with class. It shows that Beverages' stock write-offs cluster (2025-04 and 2026-05) rather than trickling, and that Mart's external returns are three documents in two months of 2025 while its intercompany flow is continuous. Two separate charts cannot show that interaction."
+    },
+    {
+      "type": "meter",
+      "title": "Supplier returns recovered on paper",
+      "x": "PARTY_CLASS",
+      "y": "RET_GROSS",
+      "series": "CN_COUNT",
+      "why": "One figure with its own denominator: credited external gross over total external gross — Oil 90.3%, Mart 0%, Beverages 94.2%. Mart's zero is the finding: all three of its external returns are uncredited, so the book has never once completed the cycle. A KPI card would print 0% next to Rs 2.23 L and read like a rounding artefact; a meter against a visible full bar does not."
+    }
+  ],
+  "traps": [
+    "SCOPE — summing the whole summary table multiplies by ~5. Oil's 61 rows add to Rs 3,73,06,546.70 against a real total of Rs 74,61,309.34. Always filter to one scope; the grand total is the single row where SCOPE='TOTAL' and GRP_KEY='ALL'.",
+    "GRPO_DOCS / GRPO_NET / RET_PCT_OF_GRPO on VENDOR rows — the GRPO side is LEFT JOINed to cards that had a return, so it covers 5% of Oil's receipts (Rs 37.54 Cr of Rs 746.22 Cr). Summing the vendor column gives a denominator that is not the company's.",
+    "GRPO_DOCS / GRPO_NET / RET_PCT_OF_GRPO on CREDIT_NOTE rows — all three are NULL by design, because splitting returns by whether they were credited says nothing about goods received. A formatter that coerces NULL to 0 prints a 0.000% return rate that looks like a real reading.",
+    "RET_PCT_OF_GRPO on VENDOR rows is not a return rate — BEE HIVE FARMS reads 2,867.52%, EG KANTAWALLA 87.86%, A.J.SHRINK WRAP 93.62%, A A ENTERPRISES 33.55%. Goods are received on one card and returned on another, or received before the SAP window. Two Oil/Bev cards (STOCK GOODS ISSUE, M M OVERSEAS) divide by zero GRPO and come back NULL.",
+    "RET_GROSS_NO_CN is not a supplier claim. Beverages: Rs 21,25,711 uncredited of which Rs 19,57,750 is the STOCK GOODS ISSUE write-off — the headline would be 12.7x the recoverable Rs 1,67,961. Mart: Rs 35,19,206 of which Rs 32,96,024 is intercompany. Lead with RET_NOCN_EXT_GROSS and name the remainder.",
+    "CANCEL_STATUS in the detail — the register deliberately keeps cancelled documents. Oil 117 rows = 103 LIVE + 7 CANCELLED + 7 CANCELLATION_DOC (Mart 49+5+5, Bev 19+7+7). Summing GROSS_AMT down the file over-counts by the cancelled pairs. Only FLAG_NO_CREDIT_NOTE is safe to count unfiltered.",
+    "CANCELED is three-valued (C-0021). 'Y' and 'C' are numerically identical twins — Oil ORPD 7 docs Rs 9,37,728 each, OPDN 473 docs Rs 94.63 Cr each. A '<> Y' filter double-counts every cancellation. The SQL keeps only 'N', on ORPD, OPDN and ORPC.",
+    "DOC_STATUS / RET_DOCS_OPEN (C-0019) — Oil has 12 CLOSED returns worth Rs 11.45 L with no credit note at all, and 1 OPEN return that has one. 'Open' does not mean 'uncredited' and 'closed' does not mean 'recovered'. The uncredited measure is the ORPC document link, never DocStatus.",
+    "RET_DOCS_OPEN is a count whose name ends in 'OPEN', which v1's isMoneyCol() matches — a generic table renders Oil's 8 as '₹8'. RET_GROSS_NO_CN ends in '_CN', which isMoneyCol() does NOT match, so real money renders as a bare integer beside formatted money. RET_PCT_OF_GRPO carries four decimals and an integer formatter turns Oil's 0.0868% into '0'. All three must be formatted explicitly.",
+    "The MONTH ratio mixes goods received in month M with goods returned in month M — different physical goods (the C-0022 shape of problem). Beverages 2026-05 reads 20.07% off two documents and 2025-04 reads 11.49%. The ratio is only stable at TOTAL and CLASS.",
+    "MONTH rows exist for months with a GRPO and no return (Oil 1 of 23, Mart 8 of 20, Bev 10 of 23), because the month join is FULL OUTER. Those zeros are real for returns but the row is not evidence that the month was examined for anything else.",
+    "This section's GRPO_NET is not the grpo section's GRPO_NET. Here it is header-level and item-only (DocType='I'); there it is line-level and all doc types. Oil Rs 746.22 Cr versus Rs 752.0 Cr, Beverages Rs 19.00 Cr versus Rs 21.06 Cr. Quoting one as the other is a silent 1-10% error.",
+    "The grpo section's RETURNED_DOCS / RETURNED_GROSS is NOT this section's number and must never be used to cross-check it. It counts GRPO lines a return was copied from, and 100 of Oil's 103 returns are standalone (BASE_GRPO_COUNT=0), so it is near-empty by construction.",
+    "CN_GROSS is the credit note's whole DocTotal, not the amount applied to this return. The return-to-credit-note link happens to be 1:1 in all three books on this build, which is what makes a shortfall computable — it is not structural, and the SQL is written for fan-out. Any shortfall logic must assert 1:1 first and refuse to render otherwise.",
+    "CN_LAG_DAYS can be negative — the credit note is dated before the return (Oil 5 documents, min -36; Bev 1, -42). A duration chart that clamps at zero, or an average that treats them as same-day, hides a dating problem in the books.",
+    "TOTAL_QTY sums RPD1.Quantity in PIECES (C-0001) across mixed units of measure. Beverages' 22,575,538 against Mart's 42,260 is a unit artefact, not a volume difference. It is a size hint; never convert it to tonnes or cartons.",
+    "The BRANCH / INTERCOMPANY split is not comparable across books — BRANCH is tested first in the CASE, so Beverages' JIVO WELLNESS PVT LTD - PB lands in BRANCH. Only 'EXTERNAL versus not' is portable.",
+    "A CLASS row that is absent is a structural nil, not a zero: Mart has no INTERNAL_ADJ (no STOCK GOODS card exists in that book) and Beverages has no INTERCOMPANY. Rendering '₹0' claims the card exists and had no activity.",
+    "VENDOR rows carry the party class only inside GRP_LABEL as a '[CLASS]' suffix — there is no PARTY_CLASS column on that scope. Filtering vendors to external requires parsing the label or joining CARD_CODE to the detail.",
+    "CN_DOCNUMS and BASE_GRPO_DOCNUMS hold DocNum, not DocEntry. document.html is addressed by DocEntry, so a credit note or base GRPO named in the register cannot be linked without a lookup that this section's data does not provide.",
+    "13 of Oil's 31 goods-return vendor cards, 6 of 9 in Beverages and 1 of 2 in Mart do not appear in the vendor-ageing section (they have no open balance), so party.html must resolve from parties.<company>.json and not from vendor-ageing rows, or those links 404.",
+    "'No credit note' means no LINKED credit note. A credit note raised standalone or copied from the A/P invoice is invisible to SAP's link. An amount-and-date sweep found Oil return 2126076512 (Rs 13,806, 2.1% of its headline) and Mart return 1025214702 (Rs 79,134, 35% of its headline) probably already recovered that way. Stated on the page, not netted off — an amount match is a hint, not a link.",
+    "Four Oil returns have no journal entry at all (TransId NULL, Rs 22,207 combined), and the GL moves stock at moving-average cost while the document moves at return price, so the register and the GRNI account can never tie 1:1. The GL is corroboration for this section, not a reconciliation.",
+    "data.json is rebuilt every ~2 minutes and the denominator moves intraday: Mart's return rate read 0.4250% at 18:58 IST and 0.4246% at 19:05 IST on 2026-08-22 because Rs 28.8 L of GRPO landed in between. Every figure here is stamped to one build, never quoted as a standing number."
+  ],
+  "empty_states": [
+    "manifest.sections['goods-return'].status != 'ok' — render the section as failed with the error string; never fall through to zeros.",
+    "A book with no live returns (TOTAL RET_DOCS == 0) — the whole KPI row renders 'No goods returns in this book', not ₹0. The TOTAL row still exists in that case: the SQL wraps R_TOT/G_TOT in IFNULL specifically so an empty book emits one clean 0 row rather than NULLs (defect D4), which is exactly the case where a confident zero would look real.",
+    "CREDIT_NOTE-scope rows: GRPO_DOCS, GRPO_NET and RET_PCT_OF_GRPO are NULL — render empty('no GRPO denominator applies to the credit-note split'), never 0 or 0.000%.",
+    "VENDOR rows with GRPO_NET == 0 (Oil VENDA001613 STOCK GOODS ISSUE, VENDA000794 M M OVERSEAS; Bev VENDA001307) — RET_PCT_OF_GRPO is NULL. Render empty('no item GRPO on this card'), never 0% and never an infinite rate.",
+    "A CLASS row that is absent entirely — Mart INTERNAL_ADJ, Beverages INTERCOMPANY. Render empty('no such party class exists in this book'), never a ₹0 row, and never synthesise the missing bucket to make the four classes line up across books.",
+    "gret-internal-writeoff-gross for Mart — no STOCK GOODS card exists in that book, so the value is not computed. Render empty('Mart has no stock write-off card').",
+    "gret-credit-shortfall-ext for Mart — the population is empty: all 3 of Mart's external returns are uncredited, so there is no credited external return to compare against. Render empty('no credited supplier return in this book yet'), never ₹0, which would read as 'every credit note matched'.",
+    "gret-credit-lag-max-days when RET_DOCS == RET_DOCS_NO_CN (no credited returns) — render empty('nothing has been credited yet'), never 0 days.",
+    "gret-oldest-uncredited-ext-days when RET_NOCN_EXT_DOCS == 0 — render empty('nothing external is uncredited'), never 0 days, which reads as 'credited today'.",
+    "The shortfall KPI when the 1:1 assertion fails (any credit note cited by more than one return, or any return with CN_COUNT > 1) — render empty('a credit note now covers more than one return; the shortfall cannot be attributed'), and do not fall back to the aggregate difference.",
+    "Any MONTH bar where GRPO_NET is 0 or absent — draw the money bar and omit the rate mark rather than plotting 0%.",
+    "A vendor card that resolves to no party page — render the name as plain text with a note, not a dead link."
+  ],
+  "provenance": {
+    "data_source": "site/data.json pinned snapshot, generated_at 2026-08-22T19:05:02+05:30, as_of 2026-08-22, data_sha256 02737049b8e358714467a8c8429b5d1f928ac1cbe1748ff3105962717b1db3ce",
+    "note": "The file was regenerating during this inventory (18:50:32 -> 18:58:48 -> 19:05:02). Every 'live' value in this spec was computed from the single 19:05:02 snapshot so the figures are mutually consistent. SAP was never queried; read-only throughout.",
+    "row_counts": {"summary": {"oil": 61, "mart": 28, "bev": 38}, "detail": {"oil": 117, "mart": 59, "bev": 33}},
+    "caps": {"summary": 200, "detail": 500, "headroom": "largest book uses 61 of 200 summary and 117 of 500 detail rows; nothing is being truncated"}
+  }
+}

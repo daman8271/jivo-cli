@@ -1,0 +1,1284 @@
+{
+  "section": "cash-sale",
+  "title": "Cash Sale",
+  "tables": "OINV ORIN ORCT OCRD OCRG OACT OBPL OWHS INV1 RIN1 JDT1 (v1's footer lineage string says 'OINV · ORCT · OCTG'; OCTG is NOT read — see traps)",
+  "blurb": "What JIVO sold over the counter for cash rather than on credit, what those counter accounts actually owe today, and — kept deliberately apart — how much physical cash customers handed over against ordinary credit sales.",
+  "grain": "One summary row per (SECTION, ROW_KEY); that pair is unique and checked. There is NO detail array — site/data.json carries `detail: {}` for all three companies, so this section has zero document-level rows (171 summary rows total: oil 76, mart 31, bev 64). A summary row means a different thing per SECTION: 1_SCOPE = one cash-sale customer card; 2_MONTH = one DocDate month of the register (plus a separate '(opening)' row for the 2024-09-30 migration); 3_BRANCH = one GST branch (OINV.BPLId); 4_WAREHOUSE = one dominant stock warehouse bucket; 5_CUSTOMER = one cash-sale card that has real documents; 6_TENDER_MONTH = one month of physical cash tendered on customer receipts; 7_GL_CASH = one G/L account (three cash tills + the 1101014 A/R control); 9_TOTAL = four grand totals over FOUR DIFFERENT POPULATIONS.",
+  "faceted": true,
+  "kpis": [
+    {
+      "id": "cash-sale-turnover-net",
+      "label": "Cash sales, net of GST",
+      "unit": "INR",
+      "column": "TURNOVER_NET_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "INV_NET_INR − CN_NET_INR = TURNOVER_NET_INR, where INV_NET = DocTotal − VatSum on OINV and CN_NET the same on ORIN; CANCELED='N'; migrated 2024-09-30 openings excluded",
+      "terms": [
+        {
+          "label": "Cash-sale invoices, net of GST",
+          "col": "INV_NET_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": "DocTotal − VatSum. Oil 1,364,087.65 · Mart 0 · Bev 4,316,492.62"
+        },
+        {
+          "label": "Credit notes against them, net of GST",
+          "col": "CN_NET_INR",
+          "op": "-",
+          "source": "ORIN",
+          "note": "Oil 171.43 (1 note) · Mart 0 · Bev 4,606.38 (3 notes)"
+        },
+        {
+          "label": "JIVO turnover",
+          "col": "TURNOVER_NET_INR",
+          "op": "=",
+          "source": "OINV − ORIN",
+          "note": "the settled JIVO definition: invoices net of GST minus returns"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Migrated go-live openings (DocDate = 2024-09-30)",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='B'",
+          "why": "T4 — opening balances, not sales. Oil ₹24,41,924 on 35 documents, all on CUSTA000238 CASH SALE DL, VatSum 0, no warehouse on the lines. Mart 0, Bev 0."
+        },
+        {
+          "label": "Cancelled documents",
+          "row_filter": "CANCELED != 'N'",
+          "why": "C-0021 — CANCELED is three-valued N/Y/C; '<> Y' would inflate Oil by ₹29,885"
+        },
+        {
+          "label": "Branch / intercompany / JIVO-named cards",
+          "row_filter": "scope CTE bars OCRG.GroupName LIKE '%BRANCH%', the per-book C-0005 CardCodes, and CardName LIKE '%JIVO%'",
+          "why": "C-0005 / T8 — verified to remove nothing: no group card is a cash-sale card in any book, so the register is 100% external"
+        },
+        {
+          "label": "METRO CASH & CARRY, CASHEW, CASH PURCHASE HR, ONE97 CASH BACK",
+          "row_filter": "CardName LIKE '%CASH & CARRY%' barred; CardType='C' only",
+          "why": "T1 — naive '%CASH%' matching pulls in a ₹66.4 L credit customer"
+        }
+      ],
+      "sql_lines": [
+        405,
+        422
+      ],
+      "caveats": [
+        "C-0005",
+        "C-0021",
+        "T1",
+        "T4",
+        "T8"
+      ],
+      "check": {
+        "method": "Recompose the headline from four independent GROUP BYs that the SQL computes in separate UNION branches, one of which (4_WAREHOUSE) reaches the number through the document LINE tables INV1/RIN1 rather than the header. All four must agree with 9_TOTAL A within ₹0.05 (each row is ROUNDed to 2 dp independently, so exact equality is wrong to demand). The documented one-time fourth route, not reproducible from data.json, is Σ INV1.LineTotal per document vs DocTotal − VatSum — it agreed to 0.0003 (Oil) and 0.0027 (Bev) rupees.",
+        "recipe": "A = row(9_TOTAL,A).TURNOVER_NET_INR; M = sum(r['TURNOVER_NET_INR'] for r in rows if r['SECTION']=='2_MONTH' and not r['ROW_KEY'].endswith('(opening)')); B = sum(... if r['SECTION']=='3_BRANCH'); W = sum(... if r['SECTION']=='4_WAREHOUSE'); C = sum(... if r['SECTION']=='5_CUSTOMER'); assert max(abs(A-x) for x in (M,B,W,C)) <= 0.05. Repeat identically on INV_CNT with exact equality. LIVE: oil A=1363916.22 M=B=W=C=1363916.22 (δ 0.00); bev A=4311886.24 M=4311886.23 B=4311886.24 W=4311886.23 C=4311886.23 (δ 0.01); mart all 0."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "5_CUSTOMER"
+        }
+      },
+      "live": {
+        "oil": 1363916.22,
+        "mart": 0,
+        "bev": 4311886.24
+      }
+    },
+    {
+      "id": "cash-sale-gross",
+      "label": "Cash sales, gross of GST",
+      "unit": "INR",
+      "column": "INV_GROSS_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "OINV.DocTotal summed over the register (invoices only; credit notes are carried separately in CN_GROSS_INR)",
+      "terms": [
+        {
+          "label": "Invoice DocTotal",
+          "col": "INV_GROSS_INR",
+          "op": "=",
+          "source": "OINV",
+          "note": "tax-inclusive; the GST inside it is INV_GROSS_INR − INV_NET_INR = oil ₹80,072.35 · bev ₹2,51,766.38"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Migrated openings",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='B'",
+          "why": "T4"
+        }
+      ],
+      "sql_lines": [
+        405,
+        422
+      ],
+      "caveats": [
+        "C-0021",
+        "T4"
+      ],
+      "check": {
+        "method": "Same four-facet recomposition as the turnover KPI but on INV_GROSS_INR, plus the internal identity INV_GROSS_INR − INV_NET_INR must be a plausible GST rate (5–18%) for a book that has invoices.",
+        "recipe": "assert abs(row(9_TOTAL,A).INV_GROSS_INR - sum(r['INV_GROSS_INR'] for r in rows if r['SECTION']=='5_CUSTOMER')) <= 0.05; g=row.INV_GROSS_INR; n=row.INV_NET_INR; if g: assert 0.03 <= (g-n)/n <= 0.20. LIVE: oil 1444160 vs 1444160 (δ0), implied GST 5.87%; bev 4568259 vs 4568259, implied GST 5.83%; mart 0 (rate check skipped)."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "2_MONTH"
+        }
+      },
+      "live": {
+        "oil": 1444160,
+        "mart": 0,
+        "bev": 4568259
+      }
+    },
+    {
+      "id": "cash-sale-invoice-count",
+      "label": "Cash-sale invoices",
+      "unit": "count",
+      "column": "INV_CNT",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "count of OINV rows on cash-sale cards, CANCELED='N', DocDate <= as-of, excluding the 2024-09-30 openings",
+      "terms": [
+        {
+          "label": "Invoices",
+          "col": "INV_CNT",
+          "op": "=",
+          "source": "OINV",
+          "note": "INV_CNT means invoices in EVERY facet since the D6 fix — receipt and JDT1 counts moved to TXN_CNT"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "35 migrated openings (Oil)",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='B'",
+          "why": "T4"
+        }
+      ],
+      "sql_lines": [
+        405,
+        422
+      ],
+      "caveats": [
+        "C-0021",
+        "T4"
+      ],
+      "check": {
+        "method": "Exact integer equality across the four facets — counts cannot round, so any drift is a genuine fan-out or a missing bucket, which is precisely what the 4_WAREHOUSE join to INV1/RIN1 could cause if dwhs ever emitted more than one row per document.",
+        "recipe": "A = row(9_TOTAL,A).INV_CNT; assert A == sum(INV_CNT over 2_MONTH excluding '(opening)') == sum(over 3_BRANCH) == sum(over 4_WAREHOUSE) == sum(over 5_CUSTOMER). LIVE: oil 1099 == 1099 == 1099 == 1099 == 1099; bev 284 four ways; mart 0 four ways."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "2_MONTH"
+        }
+      },
+      "live": {
+        "oil": 1099,
+        "mart": 0,
+        "bev": 284
+      }
+    },
+    {
+      "id": "cash-sale-returns",
+      "label": "Returns against cash sales",
+      "unit": "INR",
+      "column": "CN_GROSS_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "ORIN.DocTotal on cash-sale cards, CANCELED='N', excluding 2024-09-30",
+      "terms": [
+        {
+          "label": "Credit notes, gross",
+          "col": "CN_GROSS_INR",
+          "op": "=",
+          "source": "ORIN",
+          "note": "Oil 1 note ₹180 · Mart 0 · Bev 3 notes ₹5,270"
+        },
+        {
+          "label": "Credit notes, net of GST",
+          "col": "CN_NET_INR",
+          "op": "+",
+          "source": "ORIN",
+          "note": "the figure actually deducted from turnover"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Migrated openings",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='B'",
+          "why": "T4"
+        }
+      ],
+      "sql_lines": [
+        405,
+        422
+      ],
+      "caveats": [
+        "C-0021"
+      ],
+      "check": {
+        "method": "Facet recomposition, and a sign/shape test: any facet row whose CN_NET_INR exceeds its INV_NET_INR produces a NEGATIVE TURNOVER_NET_INR, which is legitimate but must be surfaced, never clipped to zero.",
+        "recipe": "assert abs(row(9_TOTAL,A).CN_GROSS_INR - sum(r['CN_GROSS_INR'] for r in rows if r['SECTION']=='5_CUSTOMER')) <= 0.05; neg = [r['ROW_KEY'] for r in rows if r['SECTION'] in ('2_MONTH','4_WAREHOUSE') and r['TURNOVER_NET_INR'] < 0]. LIVE: oil 180 vs 180, neg=[]; bev 5270 vs 5270, neg=['2025-01' (−₹2,337.77), 'DL-FG' (−₹2,250)]; mart 0."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "5_CUSTOMER"
+        }
+      },
+      "live": {
+        "oil": 180,
+        "mart": 0,
+        "bev": 5270
+      }
+    },
+    {
+      "id": "cash-sale-avg-ticket",
+      "label": "Average cash-sale invoice",
+      "unit": "INR",
+      "column": "INV_GROSS_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "INV_GROSS_INR ÷ INV_CNT",
+      "terms": [
+        {
+          "label": "Invoice value, gross",
+          "col": "INV_GROSS_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": ""
+        },
+        {
+          "label": "Invoices",
+          "col": "INV_CNT",
+          "op": "=",
+          "source": "OINV",
+          "note": "divisor; nil when the book has no cash-sale invoices"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Migrated openings",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='B'",
+          "why": "T4 — including them would put Oil's average at ₹3,422 instead of ₹1,314"
+        }
+      ],
+      "sql_lines": [
+        405,
+        422
+      ],
+      "caveats": [
+        "T4"
+      ],
+      "check": {
+        "method": "Recompute per card from 5_CUSTOMER and check the weighted mean returns the headline; the per-card spread is the point of the KPI, not the mean. A counter card should sit in the hundreds-to-low-thousands; a card averaging tens of thousands is wholesale being billed through a counter account.",
+        "recipe": "per = {r['ROW_KEY']: r['INV_GROSS_INR']/r['INV_CNT'] for r in rows if r['SECTION']=='5_CUSTOMER' and r['INV_CNT']}; assert abs(sum(r['INV_GROSS_INR'] for r in 5_CUSTOMER)/sum(r['INV_CNT'] for r in 5_CUSTOMER) - headline) <= 0.01. LIVE: oil 1314.07 — HARPREET ₹1,014 on 1,012 invoices, KAMALJEET ₹4,952 on 84, KAMALPREET ₹490 on 3; bev 16085.42 — CASH SALE DL ₹44,449 on 98 invoices vs HARPREET ₹612 on 100 and KAMALJEET ₹1,553 on 83. Bev's counter card is not behaving like a counter."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "5_CUSTOMER"
+        }
+      },
+      "live": {
+        "oil": 1314.07,
+        "mart": null,
+        "bev": 16085.42
+      }
+    },
+    {
+      "id": "cash-sale-ledger-balance",
+      "label": "What the cash-sale accounts actually owe",
+      "unit": "INR",
+      "column": "LEDGER_BAL_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "Σ OCRD.Balance over every card in the 1_SCOPE set. Positive = DEBIT (they owe JIVO); negative = CREDIT (JIVO holds their money). This is ground truth — OPEN_INR is not.",
+      "terms": [
+        {
+          "label": "OCRD.Balance per cash-sale card",
+          "col": "LEDGER_BAL_INR",
+          "op": "=",
+          "source": "OCRD",
+          "note": "oil: HARPREET +13,711.14, CASH SALE DL +2, KAMALPREET −4,812, KAMALJEET +1,284.70, CASH SALE PB 0, ONLINE 0. bev: CASH SALE DL −1,097,839, CASH SALE FACTORY +7,039, HARPREET +4,346, two at 0."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Nothing",
+          "row_filter": "None",
+          "why": "every scope card counts, including the two on other control accounts and the STAFF-classified one"
+        }
+      ],
+      "sql_lines": [
+        419,
+        420
+      ],
+      "caveats": [
+        "C-0019",
+        "C-0023",
+        "T6",
+        "T3"
+      ],
+      "check": {
+        "method": "TWO independent routes, both from outside this KPI's own SQL branch. (1) The G/L: JDT1 debits minus credits on account 1101014 SUNDRY DEBTORS CASH SALE must equal the sum of OCRD.Balance over exactly the scope cards whose control account IS 1101014 — posting history versus the master-data balance field, two different tables. (2) A different SQL FILE: customer-ageing-detail emits OCRD_BALANCE per card; sum it over the cash-sale scope CardCodes.",
+        "recipe": "route1: gl = row(7_GL_CASH,'1101014').GL_DEBIT_INR - .GL_CREDIT_INR; cards14 = sum(r['LEDGER_BAL_INR'] for r in rows if r['SECTION']=='1_SCOPE' and 'ctrl 1101014' in r['ROW_NOTE']); assert abs(gl - cards14) <= 0.05.  route2: codes = {r['ROW_KEY'] for r in rows if r['SECTION']=='1_SCOPE'}; alt = sum(x['OCRD_BALANCE'] or 0 for x in slice('customer-ageing',co).detail if x['CARD_CODE'] in codes); assert abs(alt - headline) <= 0.05 (cards absent from customer-ageing must have LEDGER_BAL_INR == 0 in 1_SCOPE, else the route is invalid). LIVE route1: oil 3,592,328 − 3,583,426.86 = 8,901.14 vs 8,901.14 EXACT (the ₹1,284.70 gap to the ₹10,185.83 headline is KAMALJEET, who posts to 1101008 CALL CENTRE — expected, see T3); bev −1,086,454 vs −1,086,454 EXACT; mart 0 vs 0. LIVE route2: oil 10,185.84 vs 10,185.83 (δ ₹0.01, 5 of 6 cards present, the absent CUSTA000250 carries 0); bev −1,086,454.00 vs −1,086,454 EXACT; mart 0 vs 0 (no cards present, all balances nil)."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "1_SCOPE"
+        }
+      },
+      "live": {
+        "oil": 10185.83,
+        "mart": 0,
+        "bev": -1086454
+      }
+    },
+    {
+      "id": "cash-sale-open-diagnostic",
+      "label": "Cash-sale invoices SAP still calls open (diagnostic — NOT a receivable)",
+      "unit": "INR",
+      "column": "OPEN_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "Σ (OINV.DocTotal − OINV.PaidToDate) where DocStatus='O'. Cash-sale invoices stay 'O' forever because settlement is a lump on-account receipt that is never internally applied — JDT1.IntrnMatch = 0 on 100% of the 1101014 lines (Oil 1,295/1,295, Bev 336/336).",
+      "terms": [
+        {
+          "label": "Open invoice residue",
+          "col": "OPEN_INR",
+          "op": "=",
+          "source": "OINV",
+          "note": "never present this without LEDGER_BAL_INR beside it"
+        },
+        {
+          "label": "Open invoice count",
+          "col": "OPEN_CNT",
+          "op": "+",
+          "source": "OINV",
+          "note": "oil 259 · mart 0 · bev 104"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "The one ₹2 open migrated opening (Oil)",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='B'",
+          "why": "T4 — it lives in 9_TOTAL B, OPEN_CNT 1 / OPEN_INR 2"
+        }
+      ],
+      "sql_lines": [
+        417,
+        418
+      ],
+      "caveats": [
+        "C-0019",
+        "T6"
+      ],
+      "check": {
+        "method": "A different SQL file with a different open-item definition: customer-ageing-detail's RAW_OPEN and N_OPEN_INV per card, summed over the cash-sale scope, must equal 9_TOTAL A + 9_TOTAL B (customer-ageing does not carve out the migrated opening, so the B row has to be added back for the populations to match). Do NOT use open-item-list for this — it is a truncated population (see traps).",
+        "recipe": "codes = {r['ROW_KEY'] for r in rows if r['SECTION']=='1_SCOPE'}; det = [x for x in slice('customer-ageing',co).detail if x['CARD_CODE'] in codes]; assert abs(sum(x['RAW_OPEN'] or 0 for x in det) - (A.OPEN_INR + B.OPEN_INR)) <= 0.05; assert sum(int(x['N_OPEN_INV'] or 0) for x in det) == A.OPEN_CNT + B.OPEN_CNT. LIVE: oil 336,556.70 vs 336,554.70 + 2 = 336,556.70 EXACT and 260 == 259 + 1 EXACT; bev 4,367,346 vs 4,367,346 + 0 EXACT and 104 == 104; mart 0 vs 0."
+      },
+      "drill": {
+        "page": "receivables.html",
+        "params": {
+          "cards": "1_SCOPE CardCodes"
+        }
+      },
+      "live": {
+        "oil": 336554.7,
+        "mart": 0,
+        "bev": 4367346
+      }
+    },
+    {
+      "id": "cash-sale-unapplied-receipts",
+      "label": "Money in from these accounts, never applied to an invoice",
+      "unit": "INR",
+      "column": "UNAPPLIED_RCT_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "Σ ORCT.OpenBal on the cash-sale cards, Canceled='N', DocDate <= as-of. This is why the invoices read open. It is ALREADY inside OCRD.Balance — never subtract it from LEDGER_BAL_INR.",
+      "terms": [
+        {
+          "label": "Unapplied receipt balance",
+          "col": "UNAPPLIED_RCT_INR",
+          "op": "=",
+          "source": "ORCT",
+          "note": "oil: HARPREET 317,953.86 + CASH SALE PB 56,750 + KAMALPREET 6,282 = 380,985.86. bev: all 5,786,550 on CASH SALE DL."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Cancelled receipts",
+          "row_filter": "ORCT.Canceled != 'N'",
+          "why": "T5 — excludes ₹2,84,090 (Oil) and ₹3,56,122 (Bev)"
+        }
+      ],
+      "sql_lines": [
+        179,
+        187
+      ],
+      "caveats": [
+        "T6",
+        "T5"
+      ],
+      "check": {
+        "method": "Recompose from 1_SCOPE (a per-card correlated subquery in a different UNION branch), then a partial cross-file confirmation against open-item-list's AR_RCT rows for the same cards — valid as a LOWER BOUND ONLY, because open-item-list drops every item under ₹10,000 and then caps at the top 1,500 / top 400 per doctype. A shortfall there is not a failure.",
+        "recipe": "assert abs(A.UNAPPLIED_RCT_INR - sum(r['UNAPPLIED_RCT_INR'] for r in rows if r['SECTION']=='1_SCOPE')) <= 0.05; bound = sum(x['OPEN_AMT'] for x in slice('open-item-list',co).summary if x['DOCTYPE']=='AR_RCT' and x['CARD_CODE'] in codes); assert bound <= A.UNAPPLIED_RCT_INR + 0.05. LIVE: oil 380,985.86 vs 380,985.86 EXACT, open-item bound 0 (all Oil cash receipts are under the ₹10,000 floor — vacuous, report as 'not covered'); bev 5,786,550 vs 5,786,550 EXACT, open-item bound 5,786,550 over 15 AR_RCT rows — 100% covered and EXACT; mart 0/0/0."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "1_SCOPE"
+        }
+      },
+      "live": {
+        "oil": 380985.86,
+        "mart": 0,
+        "bev": 5786550
+      }
+    },
+    {
+      "id": "cash-sale-open-overstatement",
+      "label": "Overstatement if you read ‘open’ as a receivable",
+      "unit": "INR",
+      "column": "OPEN_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='A'",
+      "agg": "first",
+      "formula": "OPEN_INR − LEDGER_BAL_INR = the money a naive reading of DocStatus would invent",
+      "terms": [
+        {
+          "label": "SAP-open invoice residue",
+          "col": "OPEN_INR",
+          "op": "+",
+          "source": "OINV",
+          "note": "what a DocStatus='O' report shows"
+        },
+        {
+          "label": "What the cards actually owe",
+          "col": "LEDGER_BAL_INR",
+          "op": "-",
+          "source": "OCRD",
+          "note": "ground truth, C-0019"
+        },
+        {
+          "label": "Phantom receivable",
+          "col": "(derived)",
+          "op": "=",
+          "source": "OINV − OCRD",
+          "note": "oil ₹3,26,368.87 (33.0× the real balance) · bev ₹54,53,800 (the real balance is a CREDIT of ₹10.86 L, so the true figure is not merely smaller, it is the opposite sign)"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Migrated openings",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='B'",
+          "why": "T4"
+        }
+      ],
+      "sql_lines": [
+        417,
+        420
+      ],
+      "caveats": [
+        "C-0019",
+        "T6"
+      ],
+      "check": {
+        "method": "This KPI exists to make a known defect visible, so its check is that BOTH inputs pass their own independent checks (cash-sale-open-diagnostic against customer-ageing RAW_OPEN, cash-sale-ledger-balance against the 1101014 G/L). Additionally assert the arithmetic that must NOT hold, as a regression guard: OPEN_INR − UNAPPLIED_RCT_INR must NOT equal LEDGER_BAL_INR — if a future edit makes it tie, someone has started netting receipts off the balance and is double-counting.",
+        "recipe": "assert checks_pass('cash-sale-open-diagnostic') and checks_pass('cash-sale-ledger-balance'); v = A.OPEN_INR - A.LEDGER_BAL_INR; guard = A.OPEN_INR - A.UNAPPLIED_RCT_INR; if A.INV_CNT: assert abs(guard - A.LEDGER_BAL_INR) > 1.0. LIVE: oil v=326,368.87, guard=−44,431.16 vs a real +10,185.83 (differs by ₹54,617 — guard correctly fails to tie); bev v=5,453,800, guard=−1,419,204 vs a real −1,086,454 (differs by ₹3,32,750); mart v=0, guard skipped (no invoices)."
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "cash-sale-open-overstatement"
+        }
+      },
+      "live": {
+        "oil": 326368.87,
+        "mart": 0,
+        "bev": 5453800
+      }
+    },
+    {
+      "id": "cash-sale-migrated-openings",
+      "label": "Go-live opening balances on cash cards (not sales)",
+      "unit": "INR",
+      "column": "INV_GROSS_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='B'",
+      "agg": "first",
+      "formula": "Σ OINV.DocTotal where DocDate = 2024-09-30 on cash-sale cards — carried as its own total row so the exclusion is visible rather than silent",
+      "terms": [
+        {
+          "label": "Opening documents, gross",
+          "col": "INV_GROSS_INR",
+          "op": "=",
+          "source": "OINV",
+          "note": "oil ₹24,41,924 on 35 documents, all CUSTA000238 CASH SALE DL, VatSum 0, no warehouse on the lines"
+        },
+        {
+          "label": "Opening document count",
+          "col": "INV_CNT",
+          "op": "+",
+          "source": "OINV",
+          "note": "oil 35 · mart 0 · bev 0"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Nothing — this row IS the exclusion",
+          "row_filter": "None",
+          "why": "T4"
+        }
+      ],
+      "sql_lines": [
+        425,
+        441
+      ],
+      "caveats": [
+        "T4"
+      ],
+      "check": {
+        "method": "The 2_MONTH facet keeps the openings under their own ROW_KEY suffixed '(opening)', so the '(opening)' rows must reproduce 9_TOTAL B exactly, and the register's own facets must contain none of them — which is the very defect (D1) that made Oil's customer table read 2.8× the headline before the fix. Also assert the ROW_NOTE names the contributing cards.",
+        "recipe": "op = [r for r in rows if r['SECTION']=='2_MONTH' and r['ROW_KEY'].endswith('(opening)')]; assert abs(sum(r['INV_GROSS_INR'] for r in op) - B.INV_GROSS_INR) <= 0.05 and sum(r['INV_CNT'] for r in op) == B.INV_CNT; assert abs((A.INV_GROSS_INR + B.INV_GROSS_INR) - sum(r['INV_GROSS_INR'] for r in rows if r['SECTION']=='2_MONTH')) <= 0.05; assert 'Cards:' in B.ROW_NOTE. LIVE: oil 2,441,924 / 35 vs 2,441,924 / 35 EXACT, all-month total 3,886,084 == 1,444,160 + 2,441,924 EXACT, ROW_NOTE names CUSTA000238; mart & bev 0 with ROW_NOTE 'Cards: none'."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "2_MONTH",
+          "row": "2024-09 (opening)"
+        }
+      },
+      "live": {
+        "oil": 2441924,
+        "mart": 0,
+        "bev": 0
+      }
+    },
+    {
+      "id": "cash-sale-card-count",
+      "label": "Accounts that define ‘cash sale’ in this book",
+      "unit": "count",
+      "column": "ROW_KEY",
+      "row_filter": "r.get('SECTION')=='1_SCOPE'",
+      "agg": "sum",
+      "formula": "count of 1_SCOPE rows = customer cards whose control account is 1101014 SUNDRY DEBTORS CASH SALE, OR whose master CardName contains 'CASH SALE'; barring '%CASH & CARRY%', BRANCH groups, the per-book C-0005 codes and '%JIVO%'",
+      "terms": [
+        {
+          "label": "Cash-sale cards",
+          "col": "ROW_KEY",
+          "op": "=",
+          "source": "OCRD + OACT + OCRG",
+          "note": "oil 6 (4 on 1101014, CUSTA000250 on 1101005 E-COM, CUSTA001015 on 1101008 CALL CENTRE) · mart 3 (2 on 1101014, 2 of the 3 flagged validFor=N) · bev 5 (4 on 1101014, CUSTA000250 on 1101005)"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "METRO CASH & CARRY and friends",
+          "row_filter": "UPPER(CardName) LIKE '%CASH & CARRY%'",
+          "why": "T1"
+        },
+        {
+          "label": "Vendor cards named CASH",
+          "row_filter": "CardType != 'C'",
+          "why": "T1 — two CASH-named VENDOR cards are excluded by CardType"
+        }
+      ],
+      "sql_lines": [
+        159,
+        178
+      ],
+      "caveats": [
+        "C-0005",
+        "T1",
+        "T2",
+        "T3",
+        "T8"
+      ],
+      "check": {
+        "method": "The scope is the definition, so the check is that it is DERIVED, not drifting: every card in 1_SCOPE must also appear as the master (not snapshot) label used by 5_CUSTOMER, and every 5_CUSTOMER / 2_MONTH document must belong to a 1_SCOPE card. Independently, the note records a JDT1 sweep of 1101014 grouped by ShortName that returns exactly this card list and nobody else — re-runnable but not from data.json.",
+        "recipe": "scope = {r['ROW_KEY'] for r in rows if r['SECTION']=='1_SCOPE'}; cust = {r['ROW_KEY'] for r in rows if r['SECTION']=='5_CUSTOMER'}; assert cust <= scope; assert all(r['ROW_LABEL'] == next(s['ROW_LABEL'] for s in scope_rows if s['ROW_KEY']==r['ROW_KEY']) for r in 5_CUSTOMER rows). LIVE: oil scope 6 ⊇ cust 3 (CUSTA000250 and CUSTA000893 have no invoices; CUSTA000238 has only migrated openings); bev scope 5 ⊇ cust 4; mart scope 3 ⊇ cust 0. Labels agree in all three books."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "1_SCOPE"
+        }
+      },
+      "live": {
+        "oil": 6,
+        "mart": 3,
+        "bev": 5
+      }
+    },
+    {
+      "id": "cash-tender-external",
+      "label": "Physical cash tendered by customers (a DIFFERENT population)",
+      "unit": "INR",
+      "column": "CASH_TENDER_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='C'",
+      "agg": "first",
+      "formula": "Σ ORCT.CashSum where DocType='C' (customer receipt), Canceled='N', CashSum > 0, DocDate <= as-of, party classified EXTERNAL. This is cash COLLECTED against ordinary credit sales by route salesmen — it is NOT the cash-sale register and must never be added to it.",
+      "terms": [
+        {
+          "label": "Cash on customer receipts",
+          "col": "CASH_TENDER_INR",
+          "op": "=",
+          "source": "ORCT",
+          "note": "oil ₹81.51 L · mart ₹1.42 Cr · bev ₹4.71 Cr"
+        },
+        {
+          "label": "Receipts carrying cash",
+          "col": "TXN_CNT",
+          "op": "+",
+          "source": "ORCT",
+          "note": "oil 1,070 · mart 2,081 · bev 1,298 — counts receipts with ANY positive CashSum, float dust included"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Till-to-till transfers (ORCT.DocType='A')",
+          "row_filter": "r.DocType != 'C'",
+          "why": "T7 — would double-count: Mart ₹1,43,12,721 · Oil ₹41,03,144 · Bev ₹8,56,190"
+        },
+        {
+          "label": "Cancelled receipts",
+          "row_filter": "ORCT.Canceled != 'N'",
+          "why": "T5 — Oil ₹2,84,090 (16 receipts) · Bev ₹3,56,122 (11)"
+        },
+        {
+          "label": "Group / branch payers",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='D'",
+          "why": "C-0005 / T8 — broken out as 9_TOTAL D, never silently folded in. Oil carried ₹1,47,000 of cash from CUSTA000606 JIVO MART PVT LTD before the fix."
+        },
+        {
+          "label": "Vendor cash refunds (DocType='S')",
+          "row_filter": "r.DocType != 'C'",
+          "why": "T7 — Oil ₹1,35,686.26"
+        }
+      ],
+      "sql_lines": [
+        444,
+        451
+      ],
+      "caveats": [
+        "C-0005",
+        "T5",
+        "T7",
+        "T8"
+      ],
+      "check": {
+        "method": "Two routes. (1) The 6_TENDER_MONTH facet is a separate UNION branch with its own GROUP BY over the same tender CTE — its sum must reproduce 9_TOTAL C within ₹0.05 and its TXN_CNT exactly. (2) A genuinely different table: every rupee of cash tendered must have landed in a cash till, so C + D must be ≤ the all-time JDT1 debits on the 7_GL_CASH 'CASH TILL' accounts. Report the headroom — the note decomposes Oil's till debits line by line and every rupee of the gap is a documented exclusion (DocType A, storno reversals, cancelled receipts, DocType S).",
+        "recipe": "tm = [r for r in rows if r['SECTION']=='6_TENDER_MONTH']; assert abs(sum(r['CASH_TENDER_INR'] for r in tm) - C.CASH_TENDER_INR) <= 0.05 and sum(r['TXN_CNT'] for r in tm) == C.TXN_CNT; tillsIn = sum(r['GL_DEBIT_INR'] for r in rows if r['SECTION']=='7_GL_CASH' and r['ROW_NOTE']=='CASH TILL'); assert C.CASH_TENDER_INR + D.CASH_TENDER_INR <= tillsIn + 0.05. LIVE route1: oil 8,150,884.72 vs 8,150,884.75 (δ ₹0.03) and 1070 == 1070; mart 14,241,306.62 vs 14,241,306.63 (δ ₹0.01) and 2081 == 2081; bev 47,099,680.00 vs 47,099,680.01 (δ ₹0.01) and 1298 == 1298. LIVE route2: oil 8,297,884.75 ≤ 14,881,804.38 (55.8% covered); mart 14,241,306.63 ≤ 29,703,569.01 (47.9%); bev 47,099,680.01 ≤ 51,391,222.01 (91.6%)."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "6_TENDER_MONTH"
+        }
+      },
+      "live": {
+        "oil": 8150884.75,
+        "mart": 14241306.63,
+        "bev": 47099680.01
+      }
+    },
+    {
+      "id": "cash-tender-group",
+      "label": "Cash tendered by JIVO group / branch cards (not trade)",
+      "unit": "INR",
+      "column": "CASH_TENDER_INR",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='D'",
+      "agg": "first",
+      "formula": "the same ORCT.CashSum population as 9_TOTAL C but where the payer is a BRANCH group, a per-book C-0005 CardCode, or a CardName containing 'JIVO'",
+      "terms": [
+        {
+          "label": "Group cash",
+          "col": "CASH_TENDER_INR",
+          "op": "=",
+          "source": "ORCT + OCRD + OCRG",
+          "note": "oil ₹1,47,000 over 6 receipts (CUSTA000606 JIVO MART PVT LTD) · mart ₹0 over 0 · bev ₹0.00 over 2 receipts"
+        },
+        {
+          "label": "Receipts",
+          "col": "TXN_CNT",
+          "op": "+",
+          "source": "ORCT",
+          "note": "Bev's 2 receipts total below ₹0.01 — a count without money, see traps"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "External payers",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='C'",
+          "why": "C is the complement of D over the same tender CTE"
+        }
+      ],
+      "sql_lines": [
+        454,
+        461
+      ],
+      "caveats": [
+        "C-0005",
+        "T8"
+      ],
+      "check": {
+        "method": "C and D partition the same CTE by construction, so no arithmetic check separates them; the only independent evidence is the JDT1 TransType=24 decomposition of the till debits recorded in the note (one-time, not reproducible from data.json). What IS continuously checkable is the partition property and the classifier's per-book correctness — C-0005 codes are per company (CUSTA001099 is a group card in Oil but HK TRADERS, an ordinary customer, in Beverages), so a flat 23-code list would move real trade cash into D.",
+        "recipe": "assert (C.TXN_CNT + D.TXN_CNT) == total receipts in the tender CTE (not emitted — assert instead that both rows exist and neither is null); assert D.CASH_TENDER_INR >= 0; flag when D.TXN_CNT > 0 and D.CASH_TENDER_INR == 0. LIVE: oil D = ₹1,47,000 / 6, C+D = ₹82,97,884.75 (unchanged from the 2026-08-21 review, so the classifier is stable); mart D = ₹0 / 0; bev D = ₹0.00 / 2 — FLAGGED, render as '2 receipts, value below ₹0.01', never as '₹0'. NOT CONTINUOUSLY VERIFIABLE by a second route from data.json; state that on the derivation page rather than showing a green dot."
+      },
+      "drill": {
+        "page": "derivation.html",
+        "params": {
+          "k": "cash-tender-group"
+        }
+      },
+      "live": {
+        "oil": 147000,
+        "mart": 0,
+        "bev": 0
+      }
+    },
+    {
+      "id": "cash-tender-receipt-count",
+      "label": "Customer receipts carrying cash",
+      "unit": "count",
+      "column": "TXN_CNT",
+      "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='C'",
+      "agg": "first",
+      "formula": "count of ORCT rows with DocType='C', Canceled='N', CashSum > 0, external payer",
+      "terms": [
+        {
+          "label": "Receipts",
+          "col": "TXN_CNT",
+          "op": "=",
+          "source": "ORCT",
+          "note": "a count of receipts FLAGGED with cash, not a count of cash — see the float-dust trap"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Group payers",
+          "row_filter": "r.get('SECTION')=='9_TOTAL' and r.get('SORT_KEY')=='D'",
+          "why": "T8"
+        },
+        {
+          "label": "DocType A / S and cancelled",
+          "row_filter": "see cash-tender-external",
+          "why": "T5, T7"
+        }
+      ],
+      "sql_lines": [
+        444,
+        451
+      ],
+      "caveats": [
+        "T5",
+        "T7",
+        "T8"
+      ],
+      "check": {
+        "method": "Exact integer recomposition from 6_TENDER_MONTH, plus a dust audit: list the months where TXN_CNT > 0 but CASH_TENDER_INR rounds to 0, because those receipts inflate the count while contributing nothing to the money.",
+        "recipe": "assert sum(r['TXN_CNT'] for r in 6_TENDER_MONTH) == C.TXN_CNT; dust = [(r['ROW_KEY'], r['TXN_CNT']) for r in 6_TENDER_MONTH if r['TXN_CNT'] > 0 and r['CASH_TENDER_INR'] == 0]. LIVE: oil 1070 == 1070, dust = [('2025-09', 26), ('2026-08', 7)] — 33 of 1,070 receipts (3.1%) carry no money; mart 2081 == 2081, dust = []; bev 1298 == 1298, dust = []."
+      },
+      "drill": {
+        "page": "cash-sale.html",
+        "params": {
+          "facet": "6_TENDER_MONTH"
+        }
+      },
+      "live": {
+        "oil": 1070,
+        "mart": 2081,
+        "bev": 1298
+      }
+    },
+    {
+      "id": "cash-sale-ar-control-gl-net",
+      "label": "Net movement on 1101014 Sundry Debtors Cash Sale",
+      "unit": "INR",
+      "column": "GL_DEBIT_INR",
+      "row_filter": "r.get('SECTION')=='7_GL_CASH' and r.get('ROW_NOTE')=='AR CONTROL' and r.get('ROW_KEY')=='1101014'",
+      "agg": "first",
+      "formula": "GL_DEBIT_INR − GL_CREDIT_INR on JDT1 lines for account 1101014, RefDate <= as-of, all TransTypes",
+      "terms": [
+        {
+          "label": "Debits to the control account",
+          "col": "GL_DEBIT_INR",
+          "op": "+",
+          "source": "JDT1",
+          "note": "oil ₹35,92,328 · mart ₹0 (account exists, zero lines) · bev ₹50,78,919"
+        },
+        {
+          "label": "Credits",
+          "col": "GL_CREDIT_INR",
+          "op": "-",
+          "source": "JDT1",
+          "note": "oil ₹35,83,426.86 · bev ₹61,65,373"
+        },
+        {
+          "label": "JDT1 lines",
+          "col": "TXN_CNT",
+          "op": "+",
+          "source": "JDT1",
+          "note": "oil 1,300 · mart 0 · bev 336"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Cards on other control accounts",
+          "row_filter": "'ctrl 1101014' not in r['ROW_NOTE']",
+          "why": "T3 — Oil CUSTA001015 posts to 1101008 CALL CENTRE (₹1,284.70) and CUSTA000250 to 1101005 E-COM, so this account does NOT cover the whole register"
+        }
+      ],
+      "sql_lines": [
+        394,
+        402
+      ],
+      "caveats": [
+        "T3",
+        "T6"
+      ],
+      "check": {
+        "method": "Master data versus posting history: the net must equal Σ OCRD.Balance over exactly the 1_SCOPE cards whose ROW_NOTE says 'ctrl 1101014'. The two come from different tables (OCRD master field vs JDT1 journal lines) and are computed in different UNION branches. A mismatch means either a card moved control account or someone posted to 1101014 from outside the cash-sale cards — the note's JDT1 ShortName sweep proves nobody currently does.",
+        "recipe": "net = row(7_GL_CASH,'1101014').GL_DEBIT_INR - .GL_CREDIT_INR; cards14 = sum(r['LEDGER_BAL_INR'] for r in rows if r['SECTION']=='1_SCOPE' and 'ctrl 1101014' in r['ROW_NOTE']); assert abs(net - cards14) <= 0.05; also assert (headline_ledger_balance - net) == Σ balances of the off-1101014 scope cards. LIVE: oil 8,901.14 vs 8,901.14 EXACT, and 10,185.83 − 8,901.14 = 1,284.69 ≈ KAMALJEET's ₹1,284.70 EXACT to a paisa; bev −1,086,454 vs −1,086,454 EXACT; mart 0 vs 0 with 0 lines (render as 'account exists, never posted to', not '₹0 movement')."
+      },
+      "drill": {
+        "page": "gl-account.html",
+        "params": {
+          "acct": "1101014"
+        }
+      },
+      "live": {
+        "oil": 8901.14,
+        "mart": 0,
+        "bev": -1086454
+      }
+    },
+    {
+      "id": "cash-till-gl-in",
+      "label": "Cash into the tills (all time, G/L)",
+      "unit": "INR",
+      "column": "GL_DEBIT_INR",
+      "row_filter": "r.get('SECTION')=='7_GL_CASH' and r.get('ROW_NOTE')=='CASH TILL'",
+      "agg": "sum",
+      "formula": "Σ JDT1.Debit over the postable children of the non-postable parent account CASH IN HAND (1105001 CASH SALE, 1105002 CASH IN HAND, 1105003 CASH SALE MAYAPURI), RefDate <= as-of, all TransTypes",
+      "terms": [
+        {
+          "label": "Till debits",
+          "col": "GL_DEBIT_INR",
+          "op": "=",
+          "source": "JDT1 + OACT",
+          "note": "oil ₹1,48,81,804.38 · mart ₹2,97,03,569.01 · bev ₹5,13,91,222.01"
+        },
+        {
+          "label": "JDT1 lines",
+          "col": "TXN_CNT",
+          "op": "+",
+          "source": "JDT1",
+          "note": "oil 1,547 · mart 3,004 · bev 1,691"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Nothing — all TransTypes",
+          "row_filter": "None",
+          "why": "the LEFT JOIN keeps an account with no lines reporting at zero (T10); this is gross movement, not the receipt route only"
+        }
+      ],
+      "sql_lines": [
+        244,
+        255
+      ],
+      "caveats": [
+        "T10"
+      ],
+      "check": {
+        "method": "It is the denominator of the tender coverage check, so the meaningful test is directional: till debits must be >= cash tendered (C + D), and the accounts must be the same three in every book (the parent-child resolution is by NAME, so a renamed parent would silently empty the set).",
+        "recipe": "till = [r for r in rows if r['SECTION']=='7_GL_CASH' and r['ROW_NOTE']=='CASH TILL']; assert len(till) == 3; assert sum(r['GL_DEBIT_INR'] for r in till) >= C.CASH_TENDER_INR + D.CASH_TENDER_INR - 0.05. LIVE: oil 3 accounts, 14,881,804.38 >= 8,297,884.75; mart 3, 29,703,569.01 >= 14,241,306.63; bev 3, 51,391,222.01 >= 47,099,680.01. All three books resolve the same three account codes."
+      },
+      "drill": {
+        "page": "banks.html",
+        "params": {
+          "category": "CASH_IN_HAND"
+        }
+      },
+      "live": {
+        "oil": 14881804.38,
+        "mart": 29703569.01,
+        "bev": 51391222.01
+      }
+    },
+    {
+      "id": "cash-till-gl-out",
+      "label": "Cash out of the tills (all time, G/L)",
+      "unit": "INR",
+      "column": "GL_CREDIT_INR",
+      "row_filter": "r.get('SECTION')=='7_GL_CASH' and r.get('ROW_NOTE')=='CASH TILL'",
+      "agg": "sum",
+      "formula": "Σ JDT1.Credit over the same three till accounts",
+      "terms": [
+        {
+          "label": "Till credits",
+          "col": "GL_CREDIT_INR",
+          "op": "=",
+          "source": "JDT1 + OACT",
+          "note": "oil ₹1,58,93,408.23 · mart ₹2,97,03,567.01 · bev ₹5,11,59,169"
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Nothing",
+          "row_filter": "None",
+          "why": "gross movement"
+        }
+      ],
+      "sql_lines": [
+        394,
+        402
+      ],
+      "caveats": [
+        "T10"
+      ],
+      "check": {
+        "method": "Paired with cash-till-gl-in; the pair's difference is checked against a different SQL file (bank-accounts) — see cash-till-gl-net.",
+        "recipe": "assert every till row has GL_CREDIT_INR >= 0 and (GL_DEBIT_INR > 0 or GL_CREDIT_INR > 0 or TXN_CNT == 0). LIVE: oil 15,893,408.23; mart 29,703,567.01; bev 51,159,169.00. Bev 1105002 CASH IN HAND is 0/0 with TXN_CNT 0 — exists, never posted to."
+      },
+      "drill": {
+        "page": "banks.html",
+        "params": {
+          "category": "CASH_IN_HAND"
+        }
+      },
+      "live": {
+        "oil": 15893408.23,
+        "mart": 29703567.01,
+        "bev": 51159169.0
+      }
+    },
+    {
+      "id": "cash-till-gl-net",
+      "label": "Cash still sitting in the tills",
+      "unit": "INR",
+      "column": "GL_DEBIT_INR",
+      "row_filter": "r.get('SECTION')=='7_GL_CASH' and r.get('ROW_NOTE')=='CASH TILL'",
+      "agg": "sum",
+      "formula": "Σ GL_DEBIT_INR − Σ GL_CREDIT_INR over the three CASH TILL accounts = cash-till-gl-in − cash-till-gl-out",
+      "terms": [
+        {
+          "label": "Cash in",
+          "col": "GL_DEBIT_INR",
+          "op": "+",
+          "source": "JDT1",
+          "note": "KPI cash-till-gl-in"
+        },
+        {
+          "label": "Cash out",
+          "col": "GL_CREDIT_INR",
+          "op": "-",
+          "source": "JDT1",
+          "note": "KPI cash-till-gl-out"
+        },
+        {
+          "label": "Cash on hand per the books",
+          "col": "(derived)",
+          "op": "=",
+          "source": "JDT1",
+          "note": "oil MINUS ₹10,11,603.85 · mart ₹2.00 · bev ₹2,32,053.01. A till cannot hold negative cash — Oil's 1105001 CASH SALE is ₹10.23 L in CREDIT."
+        }
+      ],
+      "excludes": [
+        {
+          "label": "Nothing",
+          "row_filter": "None",
+          "why": "see caveats — this is movement to as-of, which happens to equal the account balance because the go-live opening is itself a JDT1 line"
+        }
+      ],
+      "sql_lines": [
+        394,
+        402
+      ],
+      "caveats": [
+        "T10",
+        "T11"
+      ],
+      "check": {
+        "method": "A different SQL FILE entirely: bank-accounts.sql reports the same three accounts from the OACT side as CATEGORY='CASH_IN_HAND' with BALANCE_L / CURRTOTAL_TODAY_L in LAKHS. Scale by 1e5 and compare per account and in total. This is account balance versus journal movement — two genuinely different reads of the same G/L, and it is what proves Oil's negative till is real rather than a query artefact.",
+        "recipe": "mine = {r['ROW_KEY']: r['GL_DEBIT_INR'] - r['GL_CREDIT_INR'] for r in rows if r['SECTION']=='7_GL_CASH' and r['ROW_NOTE']=='CASH TILL'}; theirs = {x['GL_ACCT_CODE']: (x['BALANCE_L'] or 0) * 1e5 for x in slice('bank-accounts',co).summary if x['CATEGORY']=='CASH_IN_HAND'}; assert set(mine) == set(theirs); assert all(abs(mine[a] - theirs[a]) <= 500 for a in mine)  # bank-accounts rounds to 2 dp in LAKHS, so the tolerance is ₹500, not ₹0.05; also assert abs(sum(mine.values()) - (TOT_CASH_IN_HAND_L * 1e5)) <= 1500. LIVE oil: 1105001 mine −1,023,420 vs theirs −1,023,000 (₹420, inside the lakh-rounding band) · 1105003 mine +11,816.15 vs +12,000 · 1105002 0 vs 0 · total mine −1,011,603.85 vs TOT_CASH_IN_HAND_L −10.12 L = −1,012,000. bev: mine 232,053.01 vs TOT 2.32 L = 232,000. mart: mine 2.00 vs TOT 0. All three agree inside the rounding band."
+      },
+      "drill": {
+        "page": "banks.html",
+        "params": {
+          "category": "CASH_IN_HAND"
+        }
+      },
+      "live": {
+        "oil": -1011603.85,
+        "mart": 2.0,
+        "bev": 232053.01
+      }
+    }
+  ],
+  "columns": [
+    {
+      "col": "SECTION",
+      "label": "Cut",
+      "unit": "text",
+      "meaning": "Which of the eight cuts this row belongs to. Rows from different SECTIONs are DIFFERENT VIEWS OF THE SAME MONEY (or, for 6_/7_/9_C/9_D, of entirely different money). Slice on it; never sum across it.",
+      "link": "none"
+    },
+    {
+      "col": "SORT_KEY",
+      "label": "Sort key",
+      "unit": "text",
+      "meaning": "Presentation order inside a SECTION. For 9_TOTAL it is the population selector A/B/C/D and is the only reliable way to pick the right total row. For 2_MONTH it is 'YYYY-MM|REAL' or 'YYYY-MM|MIGRATED_OPENING'.",
+      "link": "none"
+    },
+    {
+      "col": "ROW_KEY",
+      "label": "Key",
+      "unit": "text",
+      "meaning": "The identity of the row inside its SECTION, unique per (SECTION, ROW_KEY). It is a CardCode in 1_SCOPE/5_CUSTOMER, a BPLId in 3_BRANCH, a WhsCode (or the synthetic '(multi-warehouse)' / '(no stock warehouse)') in 4_WAREHOUSE, 'YYYY-MM' possibly suffixed ' (opening)' in 2_MONTH, 'YYYY-MM' in 6_TENDER_MONTH, an AcctCode in 7_GL_CASH, and a population name in 9_TOTAL.",
+      "link": "party|gl|none"
+    },
+    {
+      "col": "ROW_LABEL",
+      "label": "Name",
+      "unit": "text",
+      "meaning": "The human name, always taken from MASTER data (OCRD.CardName, OBPL.BPLName, OWHS.WhsName, OACT.AcctName) never from the per-document snapshot — OINV.CardName and OINV.BPLName drift (CUSTA001015 was renamed twice; Bev branch 2 is stored as both 'FACTORY' and 'Factory').",
+      "link": "none"
+    },
+    {
+      "col": "ROW_NOTE",
+      "label": "Note",
+      "unit": "text",
+      "meaning": "Load-bearing, not decoration. On 1_SCOPE it carries 'ctrl <account> | grp <group> | active <Y/N>' — the control-account substring is the only way to know which cards the 1101014 G/L check covers. On 7_GL_CASH it is the role, exactly 'CASH TILL' or 'AR CONTROL'. On 9_TOTAL B it names the contributing CardCodes. On 9_TOTAL A it states in words that OPEN_INR is not a receivable.",
+      "link": "none"
+    },
+    {
+      "col": "INV_CNT",
+      "label": "Invoices",
+      "unit": "count",
+      "meaning": "OINV documents only. Since the D6 fix it means invoices in every facet — receipt counts and JDT1 line counts live in TXN_CNT. Zero on 6_TENDER_MONTH, 7_GL_CASH and 9_TOTAL C/D by construction, not because nothing happened.",
+      "link": "none"
+    },
+    {
+      "col": "INV_GROSS_INR",
+      "label": "Invoiced, gross",
+      "unit": "INR",
+      "meaning": "OINV.DocTotal, tax-inclusive, in rupees unscaled.",
+      "link": "none"
+    },
+    {
+      "col": "INV_NET_INR",
+      "label": "Invoiced, net of GST",
+      "unit": "INR",
+      "meaning": "OINV.DocTotal − OINV.VatSum. The JIVO sales base.",
+      "link": "none"
+    },
+    {
+      "col": "CN_CNT",
+      "label": "Credit notes",
+      "unit": "count",
+      "meaning": "ORIN documents. Tiny everywhere (Oil 1, Bev 3, Mart 0) — a zero here is real, not missing data.",
+      "link": "none"
+    },
+    {
+      "col": "CN_GROSS_INR",
+      "label": "Returns, gross",
+      "unit": "INR",
+      "meaning": "ORIN.DocTotal.",
+      "link": "none"
+    },
+    {
+      "col": "CN_NET_INR",
+      "label": "Returns, net of GST",
+      "unit": "INR",
+      "meaning": "ORIN.DocTotal − ORIN.VatSum — the figure actually subtracted from turnover.",
+      "link": "none"
+    },
+    {
+      "col": "TURNOVER_NET_INR",
+      "label": "Cash sales",
+      "unit": "INR",
+      "meaning": "INV_NET_INR − CN_NET_INR. CAN BE NEGATIVE where a bucket holds only credit notes (Bev month 2025-01 = −₹2,337.77; Bev warehouse DL-FG = −₹2,250). Zero on the tender and G/L facets by construction.",
+      "link": "none"
+    },
+    {
+      "col": "OPEN_CNT",
+      "label": "Open invoices",
+      "unit": "count",
+      "meaning": "Invoices SAP still marks DocStatus='O'. Not 'unpaid' — see OPEN_INR.",
+      "link": "none"
+    },
+    {
+      "col": "OPEN_INR",
+      "label": "SAP-open residue",
+      "unit": "INR",
+      "meaning": "DocTotal − PaidToDate on DocStatus='O' invoices. THIS IS NOT A RECEIVABLE. Cash-sale invoices never close because settlement is a lump on-account receipt that is never internally applied (JDT1.IntrnMatch = 0 on 100% of the 1101014 lines). Oil shows ₹3.37 L 'open' against ₹10,186 actually owed; Bev shows ₹43.67 L against a CREDIT balance of ₹10.86 L.",
+      "link": "none"
+    },
+    {
+      "col": "UNAPPLIED_RCT_INR",
+      "label": "Receipts never applied",
+      "unit": "INR",
+      "meaning": "Σ ORCT.OpenBal on the same cards — money already received and already inside OCRD.Balance. Never subtract it from LEDGER_BAL_INR; that double-counts. Populated on 1_SCOPE, 5_CUSTOMER and 9_TOTAL A only.",
+      "link": "none"
+    },
+    {
+      "col": "LEDGER_BAL_INR",
+      "label": "Actually owed",
+      "unit": "INR",
+      "meaning": "OCRD.Balance. Ground truth. Positive = DEBIT, the card owes JIVO; negative = CREDIT, JIVO holds their money. Populated on 1_SCOPE, 5_CUSTOMER and 9_TOTAL A only.",
+      "link": "party"
+    },
+    {
+      "col": "TXN_CNT",
+      "label": "Transactions",
+      "unit": "count",
+      "meaning": "OVERLOADED BY DESIGN: receipts on 6_TENDER_MONTH and 9_TOTAL C/D, JDT1 line count on 7_GL_CASH. Never total it across facets. On the tender facets it counts receipts with ANY positive ORCT.CashSum, float dust included — Oil 2025-09 has 26 such receipts totalling ₹0.00.",
+      "link": "none"
+    },
+    {
+      "col": "CASH_TENDER_INR",
+      "label": "Cash tendered",
+      "unit": "INR",
+      "meaning": "ORCT.CashSum on customer receipts (DocType='C'). A DIFFERENT POPULATION from the register: physical cash collected against ordinary credit sales, mostly by route salesmen. On 5_CUSTOMER it is the cash that card has ever tendered — unrelated to that card's invoices, and it is NOT part of any turnover column.",
+      "link": "none"
+    },
+    {
+      "col": "GL_DEBIT_INR",
+      "label": "G/L debits",
+      "unit": "INR",
+      "meaning": "Σ JDT1.Debit on this account, all TransTypes, RefDate <= as-of. Populated on 7_GL_CASH only. Movement, not the account's balance — although for the three till accounts the net happens to equal the balance, confirmed against bank-accounts.",
+      "link": "gl"
+    },
+    {
+      "col": "GL_CREDIT_INR",
+      "label": "G/L credits",
+      "unit": "INR",
+      "meaning": "Σ JDT1.Credit on this account, same basis.",
+      "link": "gl"
+    }
+  ],
+  "drilldowns": [
+    "party.html",
+    "gl-account.html",
+    "receivables.html",
+    "banks.html",
+    "derivation.html",
+    "methodology.html"
+  ],
+  "charts": [
+    {
+      "type": "waterfall",
+      "title": "How the cash-sale figure is built",
+      "x": "term",
+      "y": "amount",
+      "series": "9_TOTAL A",
+      "why": "Draws the definition instead of asserting it: invoices gross → less GST → less returns → turnover, with the excluded migrated openings shown as a detached, greyed step so the reader sees the ₹24.42 L that is deliberately not in the number. Oil: 14,44,160 − 80,072 GST − 171 returns = 13,63,916, alongside an excluded 24,41,924. A table shows the five figures; only the waterfall shows that the exclusion is bigger than the answer."
+    },
+    {
+      "type": "hbars",
+      "title": "‘Open’ is not ‘owed’",
+      "x": "amount",
+      "y": "measure",
+      "series": "OPEN_INR / UNAPPLIED_RCT_INR / LEDGER_BAL_INR",
+      "why": "Three bars on one scale from 9_TOTAL A, deliberately NOT a waterfall — they do not net, and drawing them as an arithmetic chain would be the exact double-count the SQL forbids. Bev reads ₹43.67 L open, ₹57.87 L of receipts never applied, and a real balance of MINUS ₹10.86 L: three bars make the sign flip unmissable, where a table row lets the eye stop at the first number. This is the chart that kills v1's red ‘Still unpaid’ tile."
+    },
+    {
+      "type": "lineArea",
+      "title": "Cash sales by month",
+      "x": "ROW_KEY",
+      "y": "TURNOVER_NET_INR",
+      "series": "2_MONTH (REAL only)",
+      "why": "Plotted on a real date axis so absent months read as gaps, not as continuity. Bev has no cash-sale rows for 2025-12 or 2026-01..04, spikes to ₹8.54 L in 2026-05 and ₹32.53 L in 2026-06, then STOPS — no 2026-07, no 2026-08. Ranked bars or an index axis would hide both the hole and the stop, which are the two things worth asking about."
+    },
+    {
+      "type": "lineArea",
+      "title": "Two different cash numbers, same axis",
+      "x": "month",
+      "y": "INR",
+      "series": "register turnover vs cash tendered",
+      "why": "The single most misread thing in this section. Overlaying 2_MONTH turnover and 6_TENDER_MONTH cash on one time axis shows they are not the same money and not even the same order of magnitude — Mart's register line is flat zero for 23 months while its tender line runs ₹4.5–13 L a month to ₹1.42 Cr. Anyone who sees this once stops adding A to C."
+    },
+    {
+      "type": "pareto",
+      "title": "Which counter account the money comes through",
+      "x": "ROW_LABEL",
+      "y": "TURNOVER_NET_INR",
+      "series": "5_CUSTOMER",
+      "why": "Concentration, with the cumulative line. Bev: CASH SALE DL alone is 95.8% of ₹43.12 L. Oil: HARPREET 71.4%, KAMALJEET 28.5%. A three-row table shows the same numbers; the cumulative line shows that ‘cash sales’ in Beverages is effectively one account, which is what makes the next chart worth drawing."
+    },
+    {
+      "type": "scatter",
+      "title": "Counter sale or wholesale wearing a counter card?",
+      "x": "INV_CNT",
+      "y": "average invoice value",
+      "series": "5_CUSTOMER",
+      "why": "Plots invoice count against average ticket per card, bubble-sized by turnover. Oil's cards cluster where a counter belongs — 1,012 invoices at ₹1,014 each. Bev's CASH SALE DL sits alone at 98 invoices averaging ₹44,449. No table column says ‘this card is not behaving like a counter’; the position on this chart does. Flagged as an open question in the section note, not as a finding."
+    },
+    {
+      "type": "treemap",
+      "title": "Which godown the counter sells out of",
+      "x": "ROW_LABEL",
+      "y": "TURNOVER_NET_INR",
+      "series": "4_WAREHOUSE",
+      "why": "Ten Oil buckets and six Bev buckets, area-proportional, so the long tail is visible without a scroll — Oil's BH-FG (₹4.01 L) and DL-J3 (₹3.89 L) against seven buckets under ₹1 L. Negative and synthetic buckets cannot be tiled and are listed beside it instead: Bev DL-FG −₹2,250 (credit notes only) and the '(multi-warehouse)' bucket (Oil 14 docs ₹21,470, Bev 2 docs ₹2,883), which is a bucket rather than an apportionment."
+    },
+    {
+      "type": "meter",
+      "title": "How much of the till movement the receipt route explains",
+      "x": "coverage",
+      "y": "pct",
+      "series": "(9_TOTAL C + D) / Σ CASH TILL GL_DEBIT_INR",
+      "why": "Turns the cross-check into something a reader can see the strength of: Bev 91.6%, Oil 55.8%, Mart 47.9%. A green tick claiming ‘verified’ would be dishonest at 47.9% — the meter says how much of the G/L the ORCT route actually accounts for, and the uncovered part is named (till-to-till transfers, storno reversals, cancelled receipts, vendor refunds), so a low reading is informative rather than alarming."
+    }
+  ],
+  "traps": [
+    "FACETED — summing every row multiplies the register by about six. The register total is the single row where SECTION == '9_TOTAL' AND SORT_KEY == 'A' (ROW_KEY 'CASH_SALE_INVOICES'). SORT_KEY, not position: never take rows[0] of the 9_TOTAL group.",
+    "There are FOUR 9_TOTAL rows and they are FOUR DIFFERENT POPULATIONS. A = cash-sale invoices, B = migrated go-live openings, C = physical cash tendered by external customers, D = the same cash from group/branch cards. A + C is invoices plus receipts and means nothing. Never donut, stack or total them together.",
+    "2_MONTH contains the migrated openings under ROW_KEY '2024-09 (opening)'. Summing 2_MONTH unfiltered gives Oil ₹38,86,084 gross against a ₹14,44,160 headline (2.7×). Filter on SORT_KEY not ending '|MIGRATED_OPENING' (or ROW_KEY not ending ' (opening)'). This exact bug was live in 3_BRANCH/4_WAREHOUSE/5_CUSTOMER until the D1 fix.",
+    "OPEN_INR is NOT a receivable (C-0019, trap T6). Cash-sale invoices stay DocStatus='O' forever — JDT1.IntrnMatch = 0 on 100% of the 1101014 lines. Oil: ₹3,36,555 'open' against ₹10,186 actually owed, 33×. Bev: ₹43,67,346 'open' against a CREDIT balance of ₹10,86,454 — the sign is wrong, not just the size. LEDGER_BAL_INR is the only figure that answers 'what do they owe'.",
+    "Never subtract UNAPPLIED_RCT_INR from LEDGER_BAL_INR — the receipt is already inside OCRD.Balance. They also do not tie: Oil OPEN − UNAPPLIED = −₹44,431 against a real +₹10,186; Bev −₹14,19,204 against a real −₹10,86,454. If a future build makes them tie, someone has started double-counting.",
+    "LIVE v1 BUG, do not carry forward: site/index.html renders a red KPI 'Still unpaid — a cash sale should not carry a balance' straight off OPEN_INR. On Beverages that publishes ₹43.67 L as unpaid for an account that is ₹10.86 L in credit. v1 shows neither UNAPPLIED_RCT_INR nor LEDGER_BAL_INR anywhere on the page.",
+    "LIVE v1 BUG: v1's '7_GL_CASH — Cross-check against the cash ledger' table is configured with cols ['ROW_LABEL','ROW_NOTE','INV_CNT','TURNOVER_NET_INR']. Those two measures are structurally 0 on every 7_GL_CASH row. The cross-check panel renders four rows of zeros. The populated columns are TXN_CNT, GL_DEBIT_INR and GL_CREDIT_INR.",
+    "LIVE v1 BUG: v1 renders no tender block at all — 6_TENDER_MONTH and 9_TOTAL C/D are absent from the page, so ₹4.71 Cr (Bev) and ₹1.42 Cr (Mart) of physical cash are invisible, and Mart's page reads 'Cash sales ₹0' as though Mart handles no cash. 9_TOTAL B (Oil's ₹24.42 L of openings) is also never shown.",
+    "TXN_CNT is overloaded: receipts on 6_TENDER_MONTH and 9_TOTAL C/D, JDT1 line count on 7_GL_CASH. Totalling the column across the section is meaningless (Oil would read 1,076 receipts + 2,847 journal lines as one number).",
+    "TXN_CNT on the tender facets counts receipts with ANY positive ORCT.CashSum, including sub-paise float residue. Oil 2025-09 = 26 receipts totalling ₹0.00, Oil 2026-08 = 7 receipts ₹0.00, Bev 9_TOTAL D = 2 receipts ₹0.00. A count of cash receipts is not a count of cash, and ₹0.00 beside a non-zero count must never render as 'no cash'.",
+    "GL_DEBIT_INR / GL_CREDIT_INR are all-time JDT1 movement to the as-of date across ALL TransTypes, not the receipt route and not, on its face, an account balance. Oil's three tills net to MINUS ₹10,11,604. That is confirmed independently by bank-accounts (TOT_CASH_IN_HAND_L = −10.12 L, 1105001 BALANCE_L = −10.23 L), so it is real, not a query artefact — but a till cannot physically hold negative cash. Present it as a flagged G/L position, never as 'cash in hand'.",
+    "The cash-sale scope is NOT a subset of the receivables TRADE population. Oil CUSTA000886 KAMALPREET SINGH (CASH SALE) is ACCT_KIND 'STAFF' with IS_EXCLUDED = 1 in customer-ageing, yet sits inside the cash-sale register. Cash-sale turnover therefore cannot be reconciled against the receivables TRADE headline.",
+    "Two cash-sale cards do not post to 1101014 (Oil CUSTA001015 → 1101008 CALL CENTRE, CUSTA000250 → 1101005 E-COM; Bev CUSTA000250 → 1101005). The 1101014 G/L check therefore covers only the on-1101014 subset. Oil's ₹1,284.69 gap between the G/L net and the headline balance is exactly KAMALJEET's balance — expected, not a break. Read the 'ctrl <account>' substring in 1_SCOPE.ROW_NOTE before asserting the check.",
+    "Do NOT cross-check this section against open-item-list. That query keeps only items with OPEN_AMT >= ₹10,000 and then caps at the top 1,500 by size or top 400 per doctype (open-item-list.sql lines 412 and 419). Oil returns ZERO open-item rows for the cash-sale cards even though the register holds 259 open documents; Bev ties exactly only because its items are large. Use customer-ageing detail, which is complete per card.",
+    "TURNOVER_NET_INR can be negative in a bucket that holds only credit notes: Bev month 2025-01 = −₹2,337.77 and Bev warehouse DL-FG = −₹2,250 (INV_CNT 0, one credit note). Treemaps and donuts cannot render it; clip it out of those and list it beside them, never clamp it to zero.",
+    "2_MONTH is not zero-filled — an absent month means no documents, not a zero month. Bev jumps 2025-11 → 2026-05 and ends at 2026-06 with nothing in July or August 2026. Plot on a real date axis or the trend line lies.",
+    "OCTG is in v1's lineage string ('OINV · ORCT · OCTG') but cash-sale.sql never reads it. Payment terms were tested as the cash-sale marker and DISPROVEN: term −1 'ADVANCE/CASH/0 DAYS' is SAP's default bucket, 15,586 Oil invoices worth ₹925.91 Cr; term 10 'COD' is 39 invoices. So are POS fields (all 0/blank on 31,027 Oil invoices), OINV.DocType (only 'I'/'S'), and DocDueDate = DocDate (14,820 Oil invoices, ₹879 Cr, topped by intercompany). Do not reintroduce any of them.",
+    "Name-matching '%CASH%' is wrong: it catches CASHEW, METRO CASH & CARRY (a ₹66.4 L credit customer), CASH PURCHASE HR and ONE97 CASH BACK. Scope = control account 1101014 OR the phrase 'CASH SALE', barring '%CASH & CARRY%', with CardType = 'C'.",
+    "C-0021: CANCELED on OINV/ORIN is three-valued N / Y / C (C is the reversing document). Oil OINV = 1,129 N, 18 Y, 18 C at ₹29,885 each side — filtering '<> Y' inflates Oil by ₹29,885. ORCT spells the column 'Canceled' and carries only Y/N.",
+    "Labels come from master data, keys from ids. OINV.CardName and OINV.BPLName are per-document snapshots: CUSTA001015 was BALWINDER KAUR J/3 → KAMAL J3 PAYMENTS → KAMALJEET CASH SALE J3, and Bev branch 2 is stored as both 'FACTORY' (97 docs) and 'Factory' (7), which used to emit two rows keyed '2'. Group on BPLId / CardCode, label from OBPL / OCRD.",
+    "4_WAREHOUSE is a bucket, not an apportionment. A document touching more than one warehouse lands whole in the synthetic '(multi-warehouse)' row (Oil 14 docs ₹21,470; Bev 2 docs ₹2,883); nothing is split by value, so the facet still totals correctly but no single warehouse figure is a true value split.",
+    "Rounding: every row is ROUNDed to 2 dp independently while the 9_TOTAL row rounds the unrounded sum, so facet recompositions land up to about ₹0.03 away. Oil's LEDGER_BAL_INR is 10,185.83 on 9_TOTAL A but 10,185.84 by summing 1_SCOPE. Equality checks need a ±₹0.05 tolerance; anything tighter will show a permanent red dot.",
+    "The migrated-opening test is DocDate = 2024-09-30 exactly. A genuine cash sale ever back-dated to the go-live date would be silently misfiled into 9_TOTAL B and dropped from the headline. There is no SAP flag that distinguishes them.",
+    "Oil's CASH SALE PB (CUSTA000893) has ₹56,750 of journal-entry movement on 1101014 and zero invoices. It appears in 1_SCOPE and in no other facet, so its money exists only inside 7_GL_CASH. The register is an INVOICE register; not all 1101014 money is in it (Oil: ₹35,92,328 of G/L debits vs ₹34,64,703 of invoices on the 1101014 cards, the ₹1,22,245 gap itemised as ₹56,750 CASH SALE PB + ₹58,995 HARPREET + ₹6,500 KAMALPREET journal entries).",
+    "This section emits NO detail rows (data.json carries detail = {} for all three companies). Nothing on this page can drill to a document. Any 'see the invoices' affordance must say so; the deepest available drill is the party ledger via 1_SCOPE / 5_CUSTOMER CardCode and the G/L account via 7_GL_CASH ROW_KEY.",
+    "FOUR KPIs are DERIVED — their `live` value is NOT agg(column) and a page that renders the named column raw will publish the wrong number: cash-sale-ar-control-gl-net = GL_DEBIT_INR − GL_CREDIT_INR (raw column gives Oil ₹35,92,328 instead of ₹8,901.14); cash-till-gl-net = Σ GL_DEBIT_INR − Σ GL_CREDIT_INR (raw gives Oil ₹1,48,81,804 instead of −₹10,11,604); cash-sale-open-overstatement = OPEN_INR − LEDGER_BAL_INR; cash-sale-avg-ticket = INV_GROSS_INR ÷ INV_CNT; and cash-sale-card-count is COUNT(rows), not a sum of ROW_KEY. Read `formula`, never `column` alone. Every other KPI is agg(column) over row_filter and verified as such."
+  ],
+  "empty_states": [
+    "Mart's register is a VERIFIED ZERO, not a failure and not unknown: 9_TOTAL A is all zeros because Mart books no cash-sale documents at all, while three cash-sale cards exist (two flagged validFor = 'N') with nil balances and account 1101014 exists with zero JDT1 lines. Render '₹0' only with that sentence attached; the raw zero on its own is the exact 'confident zero' the contract bans. (Before the D4 fix this row came back all-NULL and v1 printed em dashes, reading as 'unknown'.)",
+    "Mart has no 2_MONTH, 3_BRANCH, 4_WAREHOUSE or 5_CUSTOMER rows at all (31 rows: 3 scope + 20 tender months + 4 G/L + 4 totals). Every register breakdown panel must render empty('Mart books no cash-sale invoices, so there is nothing to break down — but it did collect ₹1.42 Cr of physical cash, below') and link down to the tender block, never draw an axis with no bars.",
+    "9_TOTAL D with TXN_CNT > 0 and CASH_TENDER_INR == 0 (Beverages: 2 receipts, ₹0.00): render '2 receipts flagged as cash, total below ₹0.01', never '₹0' and never 'no group cash'.",
+    "6_TENDER_MONTH months with TXN_CNT > 0 and CASH_TENDER_INR == 0 (Oil 2025-09 n = 26, Oil 2026-08 n = 7): same treatment. On the month chart draw the point at zero but mark it, because a plain zero implies no receipts when there were 26.",
+    "7_GL_CASH rows with TXN_CNT == 0 (Mart 1101014, Bev 1105002 CASH IN HAND): render 'account exists, never posted to' rather than '₹0 movement' — the LEFT JOIN exists precisely so these rows appear instead of vanishing, and a bare zero throws that information away.",
+    "Any KPI whose 9_TOTAL row is missing from the slice (a partial build) renders not-computed with the missing SORT_KEY named. Never fall back to rows[0] of the 9_TOTAL group and never treat a missing row as zero.",
+    "cash-sale-avg-ticket is undefined when INV_CNT == 0 (Mart). Render 'no invoices to average', not '₹0'.",
+    "GST implied rate (INV_GROSS − INV_NET) / INV_NET is undefined for Mart; skip the check rather than reporting 0%.",
+    "cash-tender-group has no second route computable from data.json — C and D partition one CTE. Its check dot must render as 'single route' (grey), not green. Claiming verification there would be false.",
+    "The cash-tender coverage meter must show its own denominator: at Mart's 47.9% the check is weak, and the panel says which movements are outside the ORCT route rather than implying a failure.",
+    "If sections['cash-sale'].errors is non-empty for a company, or the company key is absent from summary, the whole page renders empty() with the pipeline error text and the generated_at stamp. Never a zero, never a dash.",
+    "Any document-level drill target renders empty('cash-sale emits no document-level rows — open the party ledger instead') with the party link, rather than an empty table with headers."
+  ]
+}

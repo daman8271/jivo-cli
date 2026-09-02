@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.jivo.gst-sync</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/damanpreetsingh/jivo-cli/portals/gst/fleet/gst-sync</string>
+    <string>--quiet</string>
+  </array>
+
+  <!-- Fires when this Mac comes online, which is the whole point. Three
+       triggers because macOS has no single "network is up" event:
+         RunAtLoad    - login / boot / after a reboot
+         WatchPaths   - /etc/resolv.conf is rewritten on every network change,
+                        so this catches wake-from-sleep and Wi-Fi switches
+         StartInterval- 15 min safety net, and it keeps the jars fresh through
+                        a long working session -->
+  <key>RunAtLoad</key>
+  <true/>
+  <key>WatchPaths</key>
+  <array>
+    <string>/etc/resolv.conf</string>
+    <string>/var/run/resolv.conf</string>
+  </array>
+  <key>StartInterval</key>
+  <integer>900</integer>
+
+  <!-- Never let a stuck ssh pile up copies of this. -->
+  <key>AbandonProcessGroup</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/damanpreetsingh/Library/Logs/jivo-gst-sync.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/damanpreetsingh/Library/Logs/jivo-gst-sync.log</string>
+
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <true/>
+</dict>
+</plist>

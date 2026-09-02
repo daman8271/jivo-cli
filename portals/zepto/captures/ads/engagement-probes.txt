@@ -1,0 +1,57 @@
+# Engagement (Survey, Rewards & Zepto Square) — read-only probe transcript
+# Section slug: engagement | lane: ads | hosts: auth-backend.zepto.co.in, fcc.zepto.co.in
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token payload: sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, exp Mon Jul 13 2026 18:29:59 UTC -> EXPIRED at run time (2026-07-24).
+# Rules: curl -s -X GET only, read-only allowlist, cap 8 probes, ~1 req/s, STOP on any 401/403/429/WAF.
+# Entity: Jivo Wellness Pvt. Ltd. — manufacturer_id 946950b7-1ce2-4bdf-a7c4-37499e3f5f34 ; ads brand_id b3550d5d-fc71-47b0-af4f-f221f909b936
+######################################################################
+
+## PROBE 1: GET https://auth-backend.zepto.co.in/api/v1/zepto-square/india-level-stats
+HTTP_STATUS: 400
+BODY: {"success":false,"timestamp":"...","error":{"message":"Missing clientId"}}
+NOTE: 400, NOT an auth reject (no 401/403/429). Token ACCEPTED by auth-backend; endpoint wants a clientId. Not a halt condition -> continue.
+
+## PROBE 2: GET .../zepto-square/india-level-stats?clientId=<manufacturer_id>
+HTTP_STATUS: 400
+BODY: {"success":false,"error":{"message":"Missing clientId"}}
+NOTE: clientId as query param ignored -> not a query param.
+
+## PROBE 3: GET .../zepto-square/india-level-stats?clientId=<brand_id>
+HTTP_STATUS: 400
+BODY: {"success":false,"error":{"message":"Missing clientId"}}
+
+## PROBE 4: GET .../zepto-square/city-leaderboard?clientId=<brand_id>
+HTTP_STATUS: 404
+BODY: 404 page not found
+NOTE: leaderboard path/param shape differs (needs the right clientId context / different route args). Not a halt condition.
+
+## PROBE 5: GET .../zepto-square/india-level-stats  [header clientId: <manufacturer_id>]
+HTTP_STATUS: 400
+BODY: {"success":false,"error":{"message":"Missing clientId"}}
+NOTE: header name "clientId" not recognised.
+
+## PROBE 6: GET .../zepto-square/india-level-stats  [header x-client-id: <manufacturer_id>]
+HTTP_STATUS: 400
+BODY: {"success":false,"error":{"message":"Invalid clientId"}}
+NOTE: KEY FINDING -> header is x-client-id. Error flipped Missing->Invalid, so the value (manufacturer_id) is wrong but the header name is correct. The zepto-square clientId is a Zepto Square-specific client identifier, NOT the manufacturer_id.
+
+## PROBE 7: GET .../zepto-square/india-level-stats  [header clientid: <manufacturer_id>]
+HTTP_STATUS: 400
+BODY: {"success":false,"error":{"message":"Missing clientId"}}
+NOTE: lowercase "clientid" not recognised; only x-client-id is read.
+
+## PROBE 8: GET .../zepto-square/india-level-stats  [header x-client-id: <brand_id>]
+HTTP_STATUS: 400
+BODY: {"success":false,"error":{"message":"Invalid clientId"}}
+NOTE: brand_id also rejected as Invalid. Correct Zepto Square clientId value unknown.
+
+######################################################################
+Result: 8/8 probes fired (cap reached), all on auth-backend.zepto.co.in zepto-square reads.
+- Token was ACCEPTED at every call (NO 401/403/429/WAF) -> auth-backend does NOT enforce token expiry
+  or WAF headers for these routes; consistent with the study's "one JWT, WAF not enforced" premise.
+- zepto-square stats reads require header `x-client-id: <zepto-square-clientId>`; neither manufacturer_id
+  nor brand_id is that value ("Invalid clientId"), so the correct client id remains to be captured.
+- No endpoint returned 2xx -> NOTHING upgraded to PROVEN. All 27 endpoints remain DOCUMENTED FROM BUNDLE.
+- fcc.zepto.co.in survey/rewards/smart-nudge reads were NOT probed (8-probe cap spent on auth-backend);
+  sibling ads-lane probes (brands-audiences, ads-campaigns) show fcc returns HTTP 429 for this expired
+  token, so those remain documented (not probed) as well.

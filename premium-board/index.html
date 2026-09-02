@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>JIVO — August, the full read</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#FAF7F0;color:#1C1A17;font-family:'Instrument Sans',system-ui,sans-serif;font-size:18px;
+line-height:1.6;padding:0 0 90px;overflow-x:hidden}
+.w{max-width:1120px;margin:0 auto;padding:0 24px}
+.red{color:#C8322F}.grn{color:#2E7D52}
+.card{background:#fff;border-radius:20px;padding:30px 28px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 12px 32px -12px rgba(0,0,0,.10)}
+.b{margin-top:56px}
+.b h2{font-size:14px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#A89F8E;margin-bottom:16px}
+.b h2 span{font-size:13.5px;color:#C2BAAB;font-weight:500;letter-spacing:0;text-transform:none;margin-left:10px}
+.top{padding:60px 0 8px;text-align:center}
+.kick{font-size:14.5px;color:#8A8378;font-weight:500}
+h1{font-size:clamp(32px,6vw,52px);line-height:1.09;font-weight:700;letter-spacing:-.03em;margin:14px 0 0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:12px;margin-top:34px}
+.k{background:#fff;border-radius:16px;padding:18px 16px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.05),0 12px 32px -12px rgba(0,0,0,.10)}
+.k .l{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:#A89F8E;font-weight:700}
+.k .v{font-size:27px;font-weight:700;letter-spacing:-.03em;margin-top:7px;line-height:1}
+.k .n{font-size:13px;color:#8A8378;margin-top:5px}
+.crv{width:100%;height:auto;display:block;max-width:640px;margin:0 auto}
+.ax{font-size:10px;fill:#A89F8E}
+.ckey{display:flex;gap:16px;flex-wrap:wrap;font-size:14.5px;color:#5C564D;margin-top:6px;justify-content:center}
+.ckey i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:3px}
+.pace{display:grid;gap:8px;margin-top:24px}
+.pl{display:grid;grid-template-columns:110px 1fr 50px;gap:12px;align-items:center}
+.pl .c{font-size:16px;font-weight:600}
+.pl .t{height:22px;border-radius:6px;background:#EFEAE0;overflow:hidden;display:flex}
+.pl .t .e{background:#CFC8B8}.pl .t .l{background:#C8322F}
+.pl .v{font-size:16px;font-weight:700;text-align:right;color:#C8322F}
+.tw{background:#fff;border-radius:20px;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 1px 3px rgba(0,0,0,.05),0 12px 32px -12px rgba(0,0,0,.10)}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:1180px}
+th{background:#F6F2EA;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#8A8378;font-weight:700;
+padding:12px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid #EDE8DE;position:sticky;top:0}
+th:first-child{text-align:left}th.aug{background:#EFE9DC;color:#5C564D}
+td{padding:12px 10px;text-align:right;border-bottom:1px solid #F4F0E8;white-space:nowrap;vertical-align:top}
+tr:last-child td{border-bottom:none}tr:hover td{background:#FDFBF6}
+td s{display:block;font-size:12px;color:#A89F8E;text-decoration:none;font-weight:400;margin-top:2px}
+td.who{text-align:left;min-width:130px}td.who b{font-size:15.5px;font-weight:600}
+td.n{font-variant-numeric:tabular-nums}td.aug{background:#FBF8F2}td.aug b{font-size:15.5px}
+td.sc{font-size:16.5px;font-weight:700}td.pv,td.tg{font-size:14px;font-weight:600}
+td.lk{font-weight:700;color:#C8322F;font-variant-numeric:tabular-nums}
+.good{color:#2E7D52}.bad{color:#C8322F}.ok{color:#D9812F}.mut{color:#A89F8E}
+.sq{display:inline-block;width:8px;height:20px;border-radius:2px;margin-right:2px;background:linear-gradient(to top,#8FA9CB var(--v),#EFEAE0 var(--v))}
+.tk{margin-top:13px;font-size:15px;color:#8A8378;line-height:1.6}.tk b{color:#5C564D;font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));gap:16px}
+.cal{border-radius:18px;padding:26px 24px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05),0 12px 32px -12px rgba(0,0,0,.10)}
+.cal.r{background:linear-gradient(160deg,#FDF3F2,#fff);border:1px solid #F3DCDA}
+.cal.g{background:linear-gradient(160deg,#F2F8F4,#fff);border:1px solid #DCE7DC}
+.cal h3{font-size:21px;font-weight:700;letter-spacing:-.02em;line-height:1.3;margin-bottom:9px}
+.cal p{font-size:16.5px;color:#5C564D;line-height:1.55}.cal p b{color:#1C1A17;font-weight:600}
+.ml{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05),0 12px 32px -12px rgba(0,0,0,.10)}
+.mr{display:grid;grid-template-columns:1fr auto auto;gap:14px;align-items:center;padding:14px 22px;border-bottom:1px solid #F0EBE1}
+.mr:last-child{border-bottom:none}
+.mr .n{font-size:16.5px;font-weight:600}.mr .n s{display:block;font-size:13.5px;color:#A89F8E;font-weight:400;text-decoration:none}
+.mr .p{font-size:15px;color:#8A8378;text-align:right;white-space:nowrap}.mr .p b{color:#C8322F;font-weight:600}
+.mr .a{font-size:18px;font-weight:700;color:#C8322F;text-align:right;min-width:64px}
+.mtot{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;padding:18px 22px;background:#1C1A17;color:#FAF7F0}
+.mtot .t{font-size:16px;color:#B5AC9C}.mtot .v{font-size:27px;font-weight:700;letter-spacing:-.02em}
+.d{background:#fff;border-radius:16px;padding:22px 24px;margin-bottom:12px;display:grid;grid-template-columns:auto 1fr;gap:17px;
+align-items:start;box-shadow:0 1px 3px rgba(0,0,0,.05),0 12px 32px -12px rgba(0,0,0,.10)}
+.d .i{width:31px;height:31px;border-radius:50%;background:#1C1A17;color:#FAF7F0;font-size:15px;font-weight:700;
+display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.d .t{font-size:19px;font-weight:600;letter-spacing:-.015em;line-height:1.35}
+.d .s{margin-top:6px;font-size:16px;color:#5C564D;line-height:1.55}.d .s b{color:#1C1A17;font-weight:600}
+.tgt{margin-top:56px;background:#1C1A17;color:#FAF7F0;border-radius:22px;padding:40px 28px;text-align:center}
+.tgt .l{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9C9384}
+.tgt .e{font-size:clamp(25px,5vw,40px);font-weight:700;letter-spacing:-.03em;margin:13px 0 11px;line-height:1.18}
+.tgt .s{font-size:17.5px;color:#B5AC9C}.tgt .s b{color:#FAF7F0;font-weight:600}
+.f{margin-top:50px;text-align:center;font-size:14.5px;color:#A89F8E;line-height:1.7}
+@media(max-width:600px){body{font-size:17px}.w{padding:0 18px}.top{padding:42px 0 0}
+.card{padding:24px 20px}.pl{grid-template-columns:84px 1fr 44px;gap:9px}.pl .c{font-size:14.5px}
+.mr{grid-template-columns:1fr auto}.mr .p{display:none}}
+</style></head><body><div class="w">
+
+<div class="top">
+  <div class="kick">JIVO Oil · 1–27 August 2026 · every number reconciled to the live /realise/ dashboard</div>
+  <h1>One man is behind.<br>Everyone is under on <span class="red">price</span>.</h1>
+  <div class="kpis">
+    <div class="k"><div class="l">Target</div><div class="v">28.06 L</div><div class="n">litres, person-level</div></div>
+    <div class="k"><div class="l">Done</div><div class="v">17.13 L</div><div class="n">61% of target</div></div>
+    <div class="k"><div class="l">Order in hand</div><div class="v">21.85 L</div><div class="n">139% with OIH</div></div>
+    <div class="k"><div class="l">Realise got</div><div class="v red">₹171.87</div><div class="n">target ₹188.46</div></div>
+    <div class="k"><div class="l">Price gap</div><div class="v red">₹2.84 Cr</div><div class="n">₹16.59 × 17.13 L</div></div>
+  </div>
+</div>
+
+<div class="b"><h2>How a JIVO month actually arrives <span>cumulative % billed, day by day</span></h2>
+<div class="card"><svg viewBox="0 0 520 175" class="crv"><line x1="40" y1="150" x2="500" y2="150" stroke="#E4DED2"/>
+<line x1="40" y1="30" x2="500" y2="30" stroke="#F0EBE1" stroke-dasharray="3 4"/><line x1="40" y1="90" x2="500" y2="90" stroke="#F0EBE1" stroke-dasharray="3 4"/>
+<rect x="407" y="20" width="73" height="130" fill="#C8322F" opacity=".07"/>
+<text x="34" y="34" class="ax" text-anchor="end">100%</text><text x="34" y="94" class="ax" text-anchor="end">50%</text>
+<text x="40" y="166" class="ax">day 1</text><text x="319" y="166" class="ax" text-anchor="middle">20</text>
+<text x="500" y="166" class="ax" text-anchor="end">31</text>
+<polyline points="40.0,150.0 55.2,148.2 70.3,146.0 85.5,142.4 100.7,139.7 115.9,135.4 131.0,135.4 146.2,131.3 161.4,128.0 176.6,125.2 191.7,121.4 206.9,119.6 222.1,113.0 237.2,113.0 252.4,108.8 267.6,101.4 282.8,98.4 297.9,92.8 313.1,89.0 328.3,88.6 343.4,88.6 358.6,85.9 373.8,82.0 389.0,75.4 404.1,69.5 419.3,67.6 434.5,65.9 449.7,65.9 464.8,60.7 480.0,30.0" fill="none" stroke="#B5AC9C" stroke-width="2"/>
+<polyline points="40.0,150.0 54.7,150.0 69.3,148.3 84.0,146.8 98.7,146.8 113.3,144.6 128.0,143.5 142.7,142.0 157.3,140.2 172.0,134.8 186.7,132.4 201.3,132.4 216.0,128.9 230.7,125.5 245.3,122.5 260.0,119.3 274.7,117.4 289.3,116.5 304.0,116.5 318.7,115.6 333.3,115.0 348.0,90.1 362.7,84.7 377.3,78.5 392.0,74.5 406.7,74.5 421.3,70.4 436.0,64.8 450.7,60.4 465.3,53.6 480.0,30.0" fill="none" stroke="#C8322F" stroke-width="2.6"/>
+<text x="443" y="16" class="ax" text-anchor="middle" fill="#C8322F">last 5 days</text></svg>
+
+<div class="ckey"><span><i style="background:#C8322F"></i>July</span><span><i style="background:#B5AC9C"></i>June</span></div>
+<div class="pace">
+  <div class="pl"><div class="c">ROI</div><div class="t"><div class="e" style="width:28%"></div><div class="l" style="width:72%"></div></div><div class="v">72%</div></div>
+  <div class="pl"><div class="c">MT</div><div class="t"><div class="e" style="width:58%"></div><div class="l" style="width:42%"></div></div><div class="v">42%</div></div>
+  <div class="pl"><div class="c">GT</div><div class="t"><div class="e" style="width:57%"></div><div class="l" style="width:43%"></div></div><div class="v">43%</div></div>
+  <div class="pl"><div class="c">E-commerce</div><div class="t"><div class="e" style="width:72%"></div><div class="l" style="width:28%"></div></div><div class="v">28%</div></div>
+  <div class="pl"><div class="c">HORECA</div><div class="t"><div class="e" style="width:79%"></div><div class="l" style="width:21%"></div></div><div class="v">21%</div></div>
+  <div class="pl"><div class="c">CSD</div><div class="t"><div class="e" style="width:100%"></div></div><div class="v" style="color:#A89F8E">0%</div></div>
+</div>
+<p class="tk" style="font-size:17px;color:#5C564D">July was only <b>29% billed by day 20</b> and <b>63% by day 26</b>. ROI does <b>72% of its month in the final five days</b>. Grey is days 1–26, red is the last five. <b>A percentage on day 27 is meaningless here unless it is compared to the man's own pattern.</b></p>
+</div></div>
+
+<div class="b"><h2>Every man, every month <span>litres on top, the realise he got underneath</span></h2>
+<div class="tw"><table><thead><tr>
+<th>Who</th><th>Apr</th><th>May</th><th>Jun</th><th>Jul</th><th class="aug">Aug 1–27</th>
+<th>His shape</th><th>Target</th><th>Volume</th><th>Order in hand</th><th>His price</th><th>Tgt ₹/L</th><th>Leak</th>
+</tr></thead><tbody>
+<tr><td class="who"><b>Sunny Ji</b></td><td class="n">131,816<s>₹185</s></td><td class="n">195,158<s>₹176</s></td><td class="n">108,373<s>₹183</s></td><td class="n">149,147<s>₹182</s></td>
+<td class="n aug"><b>62,253</b><s class="red">₹155</s></td>
+<td class="shp"><span class="sq" style="--v:63%"></span><span class="sq" style="--v:47%"></span><span class="sq" style="--v:66%"></span><span class="sq" style="--v:58%"></span><s>58% by d26</s></td>
+<td class="n">300,000<s>due 175,500</s></td>
+<td class="sc bad">35%<s>BEHIND</s></td>
+<td class="n">130,952<s>64% w/ OIH</s></td>
+<td class="pv bad">Down ₹26<s>his ₹182 normal</s></td>
+<td class="tg bad">₹220<s>never hit</s></td>
+<td class="lk">₹40L</td></tr>
+<tr><td class="who"><b>Happy</b></td><td class="n">60,468<s>₹270</s></td><td class="n">85,087<s>₹225</s></td><td class="n">34,726<s>₹225</s></td><td class="n">46,657<s>₹264</s></td>
+<td class="n aug"><b>7,700</b><s class="red">₹0</s></td>
+<td class="shp"><span class="sq" style="--v:3%"></span><span class="sq" style="--v:11%"></span><span class="sq" style="--v:33%"></span><span class="sq" style="--v:11%"></span><s>14% by d26</s></td>
+<td class="n">55,000<s>due 7,975</s></td>
+<td class="sc ok">97%<s>On pace</s></td>
+<td class="n">0<s>14% w/ OIH</s></td>
+<td class="pv bad">Collapsed<s>his ₹246 normal</s></td>
+<td class="tg bad">₹300<s>never hit</s></td>
+<td class="lk">₹23L</td></tr>
+<tr><td class="who"><b>Sachin Stephen</b></td><td class="n">17,358<s>₹215</s></td><td class="n">23,175<s>₹208</s></td><td class="n">25,822<s>₹209</s></td><td class="n">27,230<s>₹204</s></td>
+<td class="n aug"><b>29,769</b><s class="">₹210</s></td>
+<td class="shp"><span class="sq" style="--v:100%"></span><span class="sq" style="--v:100%"></span><span class="sq" style="--v:100%"></span><span class="sq" style="--v:100%"></span><s>100% by d26</s></td>
+<td class="n">30,809<s>due 30,809</s></td>
+<td class="sc ok">97%<s>On pace</s></td>
+<td class="n">34,957<s>210% w/ OIH</s></td>
+<td class="pv good">Normal<s>his ₹209 normal</s></td>
+<td class="tg good">₹150<s>hit before</s></td>
+<td class="lk">—</td></tr>
+<tr><td class="who"><b>Prabhu Sir</b></td><td class="n">677,741<s>₹208</s></td><td class="n">937,905<s>₹189</s></td><td class="n">1,089,970<s>₹188</s></td><td class="n">1,019,267<s>₹170</s></td>
+<td class="n aug"><b>1,055,497</b><s class="">₹176</s></td>
+<td class="shp"><span class="sq" style="--v:65%"></span><span class="sq" style="--v:85%"></span><span class="sq" style="--v:75%"></span><span class="sq" style="--v:65%"></span><s>72% by d26</s></td>
+<td class="n">1,285,000<s>due 931,625</s></td>
+<td class="sc good">113%<s>Ahead</s></td>
+<td class="n">1,658,484<s>211% w/ OIH</s></td>
+<td class="pv ok">Soft ₹12<s>his ₹189 normal</s></td>
+<td class="tg good">₹187<s>hit before</s></td>
+<td class="lk">₹113L</td></tr>
+<tr><td class="who"><b>Preshit</b></td><td class="n">3,007<s>₹342</s></td><td class="n">20,173<s>₹182</s></td><td class="n">35,508<s>₹198</s></td><td class="n">26,288<s>₹197</s></td>
+<td class="n aug"><b>24,414</b><s class="red">₹205</s></td>
+<td class="shp"><span class="sq" style="--v:58%"></span><span class="sq" style="--v:96%"></span><span class="sq" style="--v:96%"></span><span class="sq" style="--v:93%"></span><s>86% by d26</s></td>
+<td class="n">20,000<s>due 17,150</s></td>
+<td class="sc good">142%<s>Ahead</s></td>
+<td class="n">680<s>125% w/ OIH</s></td>
+<td class="pv bad">Down ₹25<s>his ₹230 normal</s></td>
+<td class="tg good">₹200<s>hit before</s></td>
+<td class="lk">—</td></tr>
+<tr><td class="who"><b>Raminder Ji</b></td><td class="n">137,460<s>₹192</s></td><td class="n">407,593<s>₹161</s></td><td class="n">246,679<s>₹169</s></td><td class="n">337,586<s>₹159</s></td>
+<td class="n aug"><b>159,053</b><s class="">₹160</s></td>
+<td class="shp"><span class="sq" style="--v:34%"></span><span class="sq" style="--v:59%"></span><span class="sq" style="--v:63%"></span><span class="sq" style="--v:57%"></span><s>53% by d26</s></td>
+<td class="n">195,000<s>due 103,838</s></td>
+<td class="sc good">153%<s>Ahead</s></td>
+<td class="n">167,422<s>167% w/ OIH</s></td>
+<td class="pv ok">Soft ₹10<s>his ₹170 normal</s></td>
+<td class="tg good">₹190<s>hit before</s></td>
+<td class="lk">₹47L</td></tr>
+<tr><td class="who"><b>Ravinder Chadha Ji</b></td><td class="n">34,863<s>₹222</s></td><td class="n">74,328<s>₹181</s></td><td class="n">43,253<s>₹195</s></td><td class="n">86,675<s>₹175</s></td>
+<td class="n aug"><b>70,519</b><s class="">₹193</s></td>
+<td class="shp"><span class="sq" style="--v:49%"></span><span class="sq" style="--v:72%"></span><span class="sq" style="--v:72%"></span><span class="sq" style="--v:73%"></span><s>66% by d26</s></td>
+<td class="n">50,000<s>due 33,250</s></td>
+<td class="sc good">212%<s>Ahead</s></td>
+<td class="n">25,603<s>192% w/ OIH</s></td>
+<td class="pv good">Normal<s>his ₹193 normal</s></td>
+<td class="tg good">₹218<s>hit before</s></td>
+<td class="lk">₹18L</td></tr>
+<tr><td class="who"><b>Tarun</b></td><td class="n">27,570<s>₹173</s></td><td class="n">983<s>₹322</s></td><td class="n">42,863<s>₹178</s></td><td class="n">56,502<s>₹160</s></td>
+<td class="n aug"><b>11,750</b><s class="">₹176</s></td>
+<td class="shp"><span class="sq" style="--v:98%"></span><span class="sq" style="--v:0%"></span><span class="sq" style="--v:82%"></span><span class="sq" style="--v:0%"></span><s>45% by d26</s></td>
+<td class="n">10,000<s>due 4,500</s></td>
+<td class="sc good">261%<s>Ahead</s></td>
+<td class="n">0<s>118% w/ OIH</s></td>
+<td class="pv good">Normal<s>his ₹170 normal</s></td>
+<td class="tg bad">₹200<s>never hit</s></td>
+<td class="lk">₹3L</td></tr>
+<tr><td class="who"><b>Prince</b></td><td class="n">152,823<s>₹214</s></td><td class="n">233,092<s>₹187</s></td><td class="n">210,483<s>₹179</s></td><td class="n">278,843<s>₹184</s></td>
+<td class="n aug"><b>157,124</b><s class="red">₹161</s></td>
+<td class="shp"><span class="sq" style="--v:31%"></span><span class="sq" style="--v:48%"></span><span class="sq" style="--v:66%"></span><span class="sq" style="--v:52%"></span><s>49% by d26</s></td>
+<td class="n">115,000<s>due 56,638</s></td>
+<td class="sc good">277%<s>Ahead</s></td>
+<td class="n">77,544<s>204% w/ OIH</s></td>
+<td class="pv bad">Down ₹29<s>his ₹191 normal</s></td>
+<td class="tg bad">₹238<s>never hit</s></td>
+<td class="lk">₹121L</td></tr>
+<tr><td class="who"><b>Tanjeet Ji</b></td><td class="n">76,703<s>₹180</s></td><td class="n">130,085<s>₹161</s></td><td class="n">59,169<s>₹158</s></td><td class="n">71,137<s>₹156</s></td>
+<td class="n aug"><b>70,572</b><s class="">₹158</s></td>
+<td class="shp"><span class="sq" style="--v:67%"></span><span class="sq" style="--v:72%"></span><span class="sq" style="--v:60%"></span><span class="sq" style="--v:32%"></span><s>58% by d26</s></td>
+<td class="n">40,000<s>due 23,100</s></td>
+<td class="sc good">306%<s>Ahead</s></td>
+<td class="n">22,305<s>232% w/ OIH</s></td>
+<td class="pv ok">Soft ₹6<s>his ₹164 normal</s></td>
+<td class="tg bad">₹220<s>never hit</s></td>
+<td class="lk">₹44L</td></tr>
+<tr><td class="who"><b>Nazim</b></td><td class="n">48,113<s>₹166</s></td><td class="n">55,377<s>₹196</s></td><td class="n">34,960<s>₹152</s></td><td class="n">42,041<s>₹177</s></td>
+<td class="n aug"><b>30,294</b><s class="red">₹149</s></td>
+<td class="shp"><span class="sq" style="--v:34%"></span><span class="sq" style="--v:44%"></span><span class="sq" style="--v:86%"></span><span class="sq" style="--v:29%"></span><s>48% by d26</s></td>
+<td class="n">20,000<s>due 9,650</s></td>
+<td class="sc good">314%<s>Ahead</s></td>
+<td class="n">12,445<s>214% w/ OIH</s></td>
+<td class="pv bad">Down ₹23<s>his ₹173 normal</s></td>
+<td class="tg bad">₹220<s>never hit</s></td>
+<td class="lk">₹21L</td></tr>
+<tr><td class="who"><b>Tejpal</b></td><td class="n">16,240<s>₹167</s></td><td class="n">15,723<s>₹161</s></td><td class="n">3,097<s>₹307</s></td><td class="n">47,122<s>₹153</s></td>
+<td class="n aug"><b>18,807</b><s class="red">₹145</s></td>
+<td class="shp"><span class="sq" style="--v:0%"></span><span class="sq" style="--v:100%"></span><span class="sq" style="--v:0%"></span><span class="sq" style="--v:79%"></span><s>45% by d26</s></td>
+<td class="n">0<s>due 0</s></td>
+<td class="sc mut">—<s>no target</s></td>
+<td class="n">54,728<s>—</s></td>
+<td class="pv bad">Down ₹52<s>his ₹197 normal</s></td>
+<td class="tg good">₹0<s>hit before</s></td>
+<td class="lk">—</td></tr>
+</tbody></table></div>
+<div class="tk"><b>His shape</b> = how much of each month he had billed by day 26 (Apr, May, Jun, Jul) — the taller the bar the earlier he bills.
+<b>Volume</b> = August against <b>his own</b> pace, not a company average. <b>His price</b> = August realise against his own four-month normal.
+<b>Tgt ₹/L</b> flags whether he has ever actually hit that realise in the last four months. <b>Leak</b> = (target ₹/L − got ₹/L) × litres billed.</div>
+</div>
+
+<div class="b"><h2>What that table says</h2>
+<div class="grid2">
+  <div class="cal r"><h3>Only Sunny ji is genuinely behind.</h3>
+    <p>35% of his own pace. He bills 58% by day 26 normally, so this is not a late-month pattern — it is a real gap. He has done <b>62,253 L against a 3,00,000 target</b>, and even with his 1,30,952 L order book he lands at <b>65%</b>. He is also <b>₹27 a litre below his own normal</b>. Volume and price, both.</p></div>
+  <div class="cal r"><h3>Happy is not a volume problem. He is a price collapse.</h3>
+    <p>He bills only <b>14% of his month by day 26</b> — the latest biller in the company — so on volume he is at <b>97% of his own pace</b>. But his 7,700 litres went out at <b>₹0 realise</b> against a four-month normal of <b>₹246</b>. That is not selling. Ask what those litres were.</p></div>
+  <div class="cal g"><h3>Ravinder Chadha ji is one of the best on the board.</h3>
+    <p><b>212% of his own pace</b>, and <b>141% of his full-month target already</b> with five days still to run. His realise, <b>₹193</b>, is above where he was in July. He covers HORECA nationally plus GT Uttar Pradesh and ROI Chhattisgarh — judging him on the Delhi line alone gets him badly wrong.</p></div>
+  <div class="cal g"><h3>Six men have already passed their full-month target.</h3>
+    <p>Tanjeet ji <b>306%</b> of pace · Nazim <b>314%</b> · Prince <b>277%</b> · Tarun <b>261%</b> · Ravinder Chadha ji <b>212%</b> · Raminder ji <b>153%</b>. With order books on top, Raminder ji reaches <b>167%</b> and Prabhu sir <b>212%</b> of target. The litres are not the problem this month.</p></div>
+  <div class="cal r"><h3>Most realise targets have never once been hit.</h3>
+    <p>Tanjeet ji is asked for <b>₹220</b> and his best month in four is <b>₹180</b>. Nazim, <b>₹220</b> asked, <b>₹196</b> best. Sunny ji, <b>₹220</b> asked, <b>₹185</b> best. A target nobody has ever reached does not create pressure — it gets ignored, and then the litre number is the only one anybody chases.</p></div>
+  <div class="cal g"><h3>Two men beat their price target.</h3>
+    <p>Sachin Stephen on CSD: <b>₹210 against ₹150</b>, and 97% of pace on a channel that bills evenly all month. Preshit: <b>₹205 against ₹200</b>. Whatever those two are doing on price is the thing to copy.</p></div>
+</div></div>
+
+<div class="b"><h2>The price leak, ranked <span>(target ₹/L − actual ₹/L) × litres billed</span></h2>
+<div class="ml"><div class="mr"><div class="n">Prince<s>157,124 L billed</s></div><div class="p">got <b>₹161</b> · want ₹238</div><div class="a">₹121L</div></div><div class="mr"><div class="n">Prabhu Sir<s>1,055,497 L billed</s></div><div class="p">got <b>₹176</b> · want ₹187</div><div class="a">₹113L</div></div><div class="mr"><div class="n">Raminder Ji<s>159,053 L billed</s></div><div class="p">got <b>₹160</b> · want ₹190</div><div class="a">₹47L</div></div><div class="mr"><div class="n">Tanjeet Ji<s>70,572 L billed</s></div><div class="p">got <b>₹158</b> · want ₹220</div><div class="a">₹44L</div></div><div class="mr"><div class="n">Sunny Ji<s>62,253 L billed</s></div><div class="p">got <b>₹155</b> · want ₹220</div><div class="a">₹40L</div></div><div class="mr"><div class="n">Happy<s>7,700 L billed</s></div><div class="p">got <b>₹0</b> · want ₹300</div><div class="a">₹23L</div></div><div class="mr"><div class="n">Nazim<s>30,294 L billed</s></div><div class="p">got <b>₹149</b> · want ₹220</div><div class="a">₹21L</div></div><div class="mr"><div class="n">Ravinder Chadha Ji<s>70,519 L billed</s></div><div class="p">got <b>₹193</b> · want ₹218</div><div class="a">₹18L</div></div><div class="mr"><div class="n">Tarun<s>11,750 L billed</s></div><div class="p">got <b>₹176</b> · want ₹200</div><div class="a">₹3L</div></div>
+
+<div class="mtot"><div class="t">Given away against target realise · 1–27 August</div><div class="v">₹4.32 Cr</div></div></div>
+<div class="tk">Measured against the target rate. Against each man's <b>own four-month normal</b> the leak is far smaller — the genuine deterioration is concentrated in <b>Happy</b> (₹246 → ₹0), <b>Sunny ji</b> (₹182 → ₹155) and <b>Prince</b> (₹191 → ₹161). The rest are selling at roughly the price they always sell at; their targets were simply set above it.</div>
+</div>
+
+<div class="b"><h2>What it did to the profit</h2>
+<div class="grid2">
+  <div class="cal"><h3>Premium profit fell 71%.</h3>
+    <p>June <b>₹5.37 Cr</b> at 24.97% margin. August <b>₹1.58 Cr</b> at 11.63%. Litres held — the margin did not. Olive alone went from <b>₹3.78 Cr</b> of profit to <b>₹39 lakh</b>.</p></div>
+  <div class="cal r"><h3>The 200-litre olive drum loses ₹18,000 every time it ships.</h3>
+    <p>It costs <b>₹58,227</b>. You sell it at <b>₹40,000</b>. Your 1-litre and 5-litre olive still earns 32–40% — the bulk price never moved when the cost did. Same on the 15-litre tin and the pomace drum.</p></div>
+</div></div>
+
+<div class="b"><h2>Do this</h2>
+<div class="d"><div class="i">1</div><div><div class="t">Put a price floor on the last five days.</div>
+<div class="s">This is when <b>43% of GT and 72% of ROI</b> bills — and it is when the discounting happens. Protect the biggest slice of the month before it goes out the door.</div></div></div>
+<div class="d"><div class="i">2</div><div><div class="t">Fix the bulk olive price today.</div>
+<div class="s">One decision. It stops a guaranteed loss on every drum, and it is most of the premium margin gap on its own.</div></div></div>
+<div class="d"><div class="i">3</div><div><div class="t">Two calls, not ten: Sunny ji and Happy.</div>
+<div class="s">Sunny ji on volume and price. Happy on price only — <b>his volume is fine for where he is in the month</b>. Everyone else is ahead of their own pace; pushing them harder only buys more cheap litres.</div></div></div>
+<div class="d"><div class="i">4</div><div><div class="t">Reset the realise targets to something reachable.</div>
+<div class="s">Set them off each man's best actual month, not a round number. <b>₹220 asked of someone whose best is ₹180</b> is why the whole team optimises for litres.</div></div></div>
+<div class="d"><div class="i">5</div><div><div class="t">Assign the 6.85 lakh litres that belong to nobody.</div>
+<div class="s">The dashboard carries a target of that size against "Other", with <b>5,362 litres done</b>. Nobody owns it, so nobody is chasing it.</div></div></div>
+<div class="d"><div class="i">6</div><div><div class="t">Set September targets. August has none in DSR.</div>
+<div class="s">117 people had one in June, 88 in July, <b>zero in August</b> — and attach a realise number to each, not just litres.</div></div></div>
+</div>
+
+<div class="tgt"><div class="l">The number for the last five days</div>
+<div class="e">Hold ₹188 a litre</div>
+<div class="s">You are at <b>₹171.87</b>. That gap on 17.13 lakh litres is <b>₹2.84 crore</b>.<br>The litres will come — they always do. <b>The price is the only thing still in your hands.</b></div></div>
+
+<div class="f">Live from the Control Panel <b>/realise/</b> Sales Person drill + SAP HANA · 27 August 2026<br>
+Ownership from the Control Panel's own TERRITORY_SHEET; my reproduction matches the dashboard on 11 of 12 people to the litre.<br>
+Profit figures derived from <code>INV1.StockPrice</code> net of credit notes — SAP's booked cost, not a GL reconciliation.</div>
+
+</div></body></html>

@@ -1,0 +1,58 @@
+<section id="recon">
+<h2><span class="num">10</span>Reconciliation — the team file vs SAP</h2>
+<p class="sub">A colleague's workbook, <code>budget 3 month.xlsx</code>, covering <b>May, June and July 2026</b>. Despite the filename it is not a budget: its "Budget" and "Sub Budget" columns are the names SAP gives <b>Dimension 3</b> and <b>Dimension 4</b>, so it is actuals by cost centre. It carries only Oil's cost centres — no ECOM, SUPPLY-C or HR/ADMIN (so not Mart), no JIVOS (so not Beverages) — and it is three months against the four on the rest of this page. Everything below compares it to a live SAP read at the same grain: <b>Oil · Dimension 3 × Dimension 4 × month · indirect expense 56xxxxx · net of credits · posting date</b>.</p>
+<div class="kpis" id="reconKpis"></div>
+<div class="callout ok"><h4>The definitions agree — the data does not</h4><p id="reconLead">—</p></div>
+
+<h3 style="font-size:16px;margin:34px 0 4px">The bridge — from their total to SAP's</h3>
+<p class="sub">Every rupee of the gap, attributed. Two cells carry almost all of it.</p>
+<div class="panel"><div id="bridge"></div></div>
+
+<h3 style="font-size:16px;margin:34px 0 4px">Where the two sources stand, cell by cell</h3>
+<p class="sub">All 45 Budget × Sub-Budget combinations. <span class="chip" style="color:#4ade80;border-color:#1c4b32">match</span> both sources identical every month · <span class="chip" style="color:#22d3ee;border-color:#14415c">timing</span> same three-month total, different months · <span class="chip" style="color:#9fb0c4">minor</span> under ₹50,000 apart · <span class="chip x">reclass / provision</span> explained below · <span class="chip" style="color:#f87171;border-color:#5c1f1f">disputed</span> materially different and unexplained.</p>
+<div class="controls">
+<span class="lab">Show</span>
+<button class="tg" data-rcls="all" aria-pressed="true">everything</button>
+<button class="tg" data-rcls="disputed" aria-pressed="false">disputed only</button>
+<button class="tg" data-rcls="match" aria-pressed="false">exact matches only</button>
+</div>
+<div class="tblwrap" id="reconTable"></div>
+
+<h3 style="font-size:16px;margin:34px 0 4px">The three differences that <i>are</i> explained</h3>
+<div class="grid2">
+<div class="panel"><dl class="defs">
+<dt>NPD 2 ↔ One Time Expense — ₹24.10 L, June</dt>
+<dd>A June journal moved ₹24,10,107 out of One Time Expense into NPD 2. SAP carries both sides; the workbook has neither. Net effect on the grand total: <b>₹14,339</b>. The cheapest of the three to settle — ask for June to be re-pulled.</dd>
+<dt>Sales Realise — the totals agree, the months do not</dt>
+<dd>Workbook ₹54,48,575, SAP ₹54,58,081 — <b>₹9,506 apart over three months</b>. But the workbook puts all of it in May while SAP has ₹0 in May, <b>+₹1.79 Cr in June and −₹1.24 Cr in July</b>. This is the Jivo Mart advertisement provision, posted and reversed repeatedly on 30 June and 1 July: journals 224430 and 224442 are duplicates of each other, 224444 and 224665 reverse them, 224431 reverses again and 224701 reverses the reversal. Six entries, one amount.</dd>
+<dt>Fourteen minor cells — ₹37,515 in total</dt>
+<dd>Rounding and single small entries. Not worth anyone's afternoon.</dd>
+</dl></div>
+<div class="panel"><dl class="defs">
+<dt style="color:var(--bad)">Factory — ₹1.39 Cr, unexplained</dt>
+<dd>The workbook shows ₹2,54,91,585, steady at ₹83–91 L a month. SAP's Factory is ₹29.7 L / ₹37.7 L / ₹48.4 L. I could not reproduce the workbook figure under <b>any</b> account scope, date basis or measure (see the tests below) — it is larger than Oil's <i>gross debits</i> on those accounts, so it is not a netting difference either.</dd>
+<dt style="color:var(--bad)">Delivery Bhakharpur — ₹45.07 L, unexplained</dt>
+<dd>Workbook ₹1,99,75,828 against SAP ₹1,54,68,814. This one cannot be a scope difference at all: that cost centre has postings in no account group except 56x, so there is nothing further I could have left out. The workbook is ₹45 L above everything SAP holds under it.</dd>
+<dt style="color:var(--bad)">"(blank)" / Short &amp; Excess — ₹16.82 L</dt>
+<dd>The workbook carries ₹16,75,611 against a cost centre it leaves blank, labelled Short &amp; Excess. SAP's unstamped indirect expense for the same three months is <b>−₹6,440</b>.</dd>
+</dl></div>
+</div>
+
+<h3 style="font-size:16px;margin:34px 0 4px">What I tested, and ruled out</h3>
+<p class="sub">Before calling anything unexplained. Every row is a hypothesis for why the two might differ, and the result of testing it.</p>
+<div class="tblwrap"><table><thead><tr><th>Hypothesis</th><th style="text-align:left">Test</th><th style="text-align:left">Result</th></tr></thead><tbody>
+<tr><td>Wider account scope — they include direct expense or purchases</td><td style="text-align:left">Re-ran at 51+56, 55+56 and the whole of drawer 5</td><td style="text-align:left"><span class="chip" style="color:#f87171;border-color:#5c1f1f">ruled out</span> 51+56 lands at ₹10.13 Cr, drawer 5 at ₹109 Cr; neither is ₹10.80 Cr, and neither fixes Del Bkhp</td></tr>
+<tr><td>Gross debits, not net of credits</td><td style="text-align:left">Re-ran on <code>SUM(Debit)</code> alone</td><td style="text-align:left"><span class="chip" style="color:#f87171;border-color:#5c1f1f">ruled out</span> ₹17.69 Cr — and their Factory still exceeds even gross</td></tr>
+<tr><td>Different date basis — document date, not posting date</td><td style="text-align:left">Re-ran on <code>TaxDate</code> instead of <code>RefDate</code></td><td style="text-align:left"><span class="chip" style="color:#f87171;border-color:#5c1f1f">ruled out</span> gap widens to ₹2.49 Cr</td></tr>
+<tr><td>Months shifted by one</td><td style="text-align:left">Compared their May/Jun/Jul against SAP's Apr/May/Jun</td><td style="text-align:left"><span class="chip" style="color:#f87171;border-color:#5c1f1f">ruled out</span> Salary Confidential ties to the rupee month for month with no shift</td></tr>
+<tr><td>Two companies consolidated — Oil plus Beverages</td><td style="text-align:left">Added Beverages at cost-centre level</td><td style="text-align:left"><span class="chip" style="color:#f87171;border-color:#5c1f1f">ruled out</span> Media Marketing and Interest get worse, Factory still short</td></tr>
+<tr><td>SAP spread the costs — cost distribution rules</td><td style="text-align:left">Read <code>OOCR</code> / <code>OCR1</code>: every Dimension-3 rule is <code>Direct = Y</code> at 100% to itself</td><td style="text-align:left"><span class="chip" style="color:#f87171;border-color:#5c1f1f">ruled out</span> no allocation exists, so SAP's own Cost Accounting report would return exactly these numbers</td></tr>
+</tbody></table></div>
+
+<div class="callout"><h4>Three questions that would close this in one round</h4>
+<p><b>1.</b> Which company database, and on what date was the workbook pulled? &nbsp; <b>2.</b> Which account range — the whole <code>5600000 INDIRECT EXPENSE</code> tree, or a hand-picked list? &nbsp; <b>3.</b> Which report generated it — SAP's Cost Accounting report, a Crystal layout, or a query export? Start with <b>Delivery Bhakharpur</b>: it holds nothing but 56x accounts, so whatever explains its ₹45 L almost certainly explains Factory's ₹1.39 Cr too.</p></div>
+
+<div class="callout bad"><h4>Which number to use in the meantime</h4>
+<p>SAP's. Not because the ledger is infallible, but because it is reproducible: the query is on this page, it runs against the live database, and SAP's own cost-accounting report returns the same figures since no distribution rule exists to move money between cost centres. The workbook could not be reconstructed from that ledger under six different readings. Until questions 1–3 are answered, treat its Factory and Delivery Bhakharpur lines as unverified rather than wrong — and note that <b>34 of the 45 cells agree to within ₹13,671 net</b>, so this is a dispute about two cells, not about the report.</p></div>
+</section>
+

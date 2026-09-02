@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkbrandverse=self.webpackChunkbrandverse||[]).push([[378],{7545(o,t,e){function n(o){return n="function"==typeof Symbol&&"symbol"==typeof Symbol.iterator?function(o){return typeof o}:function(o){return o&&"function"==typeof Symbol&&o.constructor===Symbol&&o!==Symbol.prototype?"symbol":typeof o},n(o)}e.d(t,{A:()=>n})}}]);

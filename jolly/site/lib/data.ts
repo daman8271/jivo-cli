@@ -1,0 +1,14 @@
+import fs from "fs"; import path from "path";
+import type { Day, Summary, Thread, Inputs } from "./types";
+const P = (f: string) => path.join(process.cwd(), "public", "data", f);
+const J = <T,>(f: string): T => JSON.parse(fs.readFileSync(P(f), "utf8"));
+export const getSummary = () => J<Summary>("summary.json");
+export const getInputs = () => J<Inputs>("inputs.json");
+export const getThreads = () => J<Thread[]>("whatsapp.json");
+export const getEvents = () => J<any[]>("events.json");
+export const getWaMeta = () => J<{ note: string; sent: number; assumed_replies: number }>("whatsapp-meta.json");
+export const getDay = (n: number) => J<Day>(`days/day-${String(n).padStart(2, "0")}.json`);
+export const getAllDays = () => Array.from({ length: 31 }, (_, i) => getDay(i + 1));
+export const fmt = (n: number) => Math.round(n).toLocaleString("en-IN");
+export const cr = (rs: number) => `₹${(rs / 1e7).toFixed(2)} Cr`;
+export const lakh = (rs: number) => `₹${(rs / 1e5).toFixed(1)} L`;

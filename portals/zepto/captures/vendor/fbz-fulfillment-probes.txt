@@ -1,0 +1,63 @@
+# Fulfilled-by-Zepto (Rebates, Debit Notes & Packaging) — read-only probe transcript
+# Section slug: fbz-fulfillment | lane: vendor
+# Hosts: financenew.zepto.co.in (n.sx base) for FBZ rebate + vendor-debit-note; fcc.zepto.co.in for packaging bag-barcode.
+# JWT: read from captures/vendor/23-sales-list.txt (authorization header, NO Bearer prefix). Token REDACTED below.
+# Token payload: sub 5116e7a0-cc01-4b7d-b098-810cb32dee02, emailId ecom1@jivo.in,
+#   roleName "External Super Ads Admin", iat 1783887610, exp 1783967399
+#   = exp Mon Jul 13 2026 18:29:59 UTC (23:59:59 IST) -> EXPIRED at probe time (run 2026-07-24).
+# Rules: curl -s -X GET only, read-only allowlist, cap 8 probes, ~1 req/s, STOP on any 401/403/429/WAF.
+#
+# BASE-URL RESOLUTION (from bundle captures/js/vendor/3539.64ab07c46b8741b5.js):
+#   The FBZ rebate + vendor-debit-note const map builds URLs as `${n.sx}api/v1/fbz/...`.
+#   n.sx resolves via the getter map `{...,sx:()=>b,...,Qw:()=>P,...}` where
+#     b = "https://financenew.zepto.co.in/"   (n.sx)
+#     P = "https://scpfin.zepto.co.in/"        (n.Qw — used by vendor-pv-margin, not this section)
+#   => FBZ rebate + vendor-debit-note live on financenew.zepto.co.in, NOT fcc (sections.json host was wrong).
+#   The packaging bag-barcode consts are bare strings ("api/v1/packaging/bag-barcode/*") on the
+#   default vendor host fcc.zepto.co.in (same host that serves PO/payment/reports).
+======================================================
+
+### PROBE 1: GET https://fcc.zepto.co.in/api/v1/fbz/rebate/fetch-all-vendor-codes
+# const GET_FBZ_REBATE_VENDOR_CODES — rebate vendor-code filter list (matches "fetch"/"list" allowlist,
+#   no path param, no body, no mutate/export keyword). First tried on fcc (sections.json's stated host).
+# Headers: authorization: <jwt-REDACTED>, accept: application/json, normal User-Agent.
+HTTP 404
+{"message":"no Route matched with those values","request_id":"eb9bb53cddb832700dc5302bd819674c"}
+# 404 = Kong gateway route not matched -> wrong host/base. Bundle says base is n.sx=financenew, not fcc.
+# Retried on the correct host below (still read-only, same endpoint).
+
+### PROBE 2: GET https://financenew.zepto.co.in/api/v1/fbz/rebate/fetch-all-vendor-codes
+# Same const on the correct n.sx base (financenew.zepto.co.in).
+HTTP 401
+{"code":"UNAUTHORIZED","status":401,"message":""}
+# Route MATCHED on financenew (401 auth failure, not 404) -> confirms FBZ rebate host = financenew.zepto.co.in.
+
+### PROBE 3: GET https://fcc.zepto.co.in/api/v1/packaging/bag-barcode/list
+# const ve — packaging bag-barcode listing (bare-string const, pure-GET read, "list" allowlist).
+# Packaging consts carry no n.sx prefix, so probed on the default vendor host fcc.zepto.co.in.
+HTTP 401
+{"message":"Token expired","code":401}
+# Route MATCHED on fcc (401 Token expired) -> confirms packaging bag-barcode host = fcc.zepto.co.in.
+
+======================================================
+HALT: received 401 on Probe 2 (financenew) and Probe 3 (fcc) — both route-matched, token expired.
+Per READ-ONLY guardrails, stopped after the 401s. Probes fired: 3. 2xx PROVEN: 0.
+All FBZ-Fulfillment endpoints remain DOCUMENTED (not probed) pending a fresh JWT.
+
+Host mapping now confirmed live (routes matched, only the token is stale):
+  - financenew.zepto.co.in  -> /api/v1/fbz/rebate/*  and  /api/v1/fbz/vendor-debit-note/*
+  - fcc.zepto.co.in         -> /api/v1/packaging/bag-barcode/*
+
+Remaining pure-GET reads left as DOCUMENTED (not probed) — would probe with a fresh token:
+  financenew.zepto.co.in:
+    - GET /api/v1/fbz/rebate/view-rebate-portal            (GET_ALL_FBZ_REBATE — main rebate listing)
+    - GET /api/v1/fbz/rebate/fetch-rebate-margin-details   (GET_REBATE_MARGIN_DETAILS)
+    - GET /api/v1/fbz/rebate/fetch-reports                 (DOWNLOAD_REPORT — report listing)
+    - GET /api/v1/fbz/vendor-debit-note/filter             (GET_DN_CN_REVIEW_LISTING)
+    - GET /api/v1/fbz/vendor-debit-note/status-config      (GET_DN_CN_REVIEW_STATUS)
+    - GET /api/v1/fbz/vendor-debit-note/batch-upload/list  (GET_DN_BATCH_UPLOAD_LISTING)
+    - GET /api/v1/fbz/vendor-debit-note/{id}               (getDNCNReviewDetails — needs a valid DN id)
+  fcc.zepto.co.in:
+    - GET /api/v1/packaging/bag-barcode/config             (const Se)
+Auth/base confirmed live by proven sibling flows (SALES/INVENTORY fcc /api/v1/reports*, ads
+fcc /ads-bff/api/v1) with identical `authorization: <jwt>` (no Bearer). Re-run with a fresh token.

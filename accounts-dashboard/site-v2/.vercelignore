@@ -1,0 +1,6 @@
+# data/ is NOT deployed — the /data/* rewrite in vercel.json proxies it from
+# the VPS (accounts-data-serve.py behind Traefik), where live-refresh.sh
+# republishes it every ~2 minutes with zero Vercel deploys. If these files
+# were uploaded, the static copies would shadow the rewrite and freeze the
+# board at deploy-time data (Vercel serves filesystem before rewrites).
+data

@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/sample.py", line 122, in <module>
+    main()
+    ~~~~^^
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/sample.py", line 63, in main
+    keys = [r[key] for r in q(f'SELECT "{key}" FROM "{sch}"."{T}" {W} ORDER BY {ORD} LIMIT {a.n}')]
+                            ~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/damanpreetsingh/jivo-cli/sap-b1/entry-vault/bin/common.py", line 52, in q
+    raise RuntimeError(f"hana-sql failed: {last}\nSQL: {sql[:400]}")
+RuntimeError: hana-sql failed: QUERY ERROR: SQL Error 260 - invalid column name: DocEntry: line 1 col 8 (at pos 7) (statement no: 0)
+SQL: SELECT "DocEntry" FROM "JIVO_OIL_HANADB"."OBNK"  ORDER BY "DocEntry" DESC LIMIT 2

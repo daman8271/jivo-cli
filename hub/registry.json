@@ -1,0 +1,400 @@
+{
+  "schema": 1,
+  "updated": "2026-08-25",
+  "note": "Index of every CLI in this checkout. Hosts, IPs and credentials never live here - the repo is public. `hub doctor` verifies what is actually installed; this file only says what SHOULD be.",
+  "clis": [
+    {
+      "name": "sapb1",
+      "bin": "sap-b1/cli/sapb1",
+      "win": "sap-b1/accounts-kit/sapb1.exe",
+      "lang": "go",
+      "system": "SAP Business One (3 companies: Oil, Mart, Beverages)",
+      "answers": "ledger balances, party statements, turnover and sales, A/R and A/P invoices, credit notes, sales and purchase orders, incoming and outgoing payments, stock items, document drafts",
+      "keywords": [
+        "sap",
+        "ledger",
+        "balance",
+        "turnover",
+        "sales",
+        "invoice",
+        "credit note",
+        "order",
+        "payment",
+        "vendor",
+        "customer",
+        "business partner",
+        "stock",
+        "item",
+        "draft",
+        "gst",
+        "tds",
+        "accounts",
+        "receivable",
+        "payable",
+        "outstanding"
+      ],
+      "writes": true,
+      "write_note": "The ONLY writable system. draft / post / patch / delete draft / add-draft. Every write previews, confirms and logs. See CLAUDE.md RULE 0.",
+      "doctor": "sap-b1/cli/sapb1 doctor",
+      "build": "cd sap-b1/cli && go build -o sapb1 ./cmd/sapb1",
+      "docs": [
+        "sap-b1/accounts-kit/ASK-EXAMPLES.md",
+        "sap-b1/cli/README.md",
+        "sap-b1/entry-vault/00-Entry-Atlas.md"
+      ],
+      "skills": [
+        "jivo-ap-draft",
+        "jivo-ap-service-draft",
+        "jivo-ap-credit-memo",
+        "jivo-outgoing-payment"
+      ]
+    },
+    {
+      "name": "hana-sql",
+      "bin": "hana-sql/hana-sql",
+      "lang": "go",
+      "system": "SAP HANA (the SAP B1 core database, direct SQL)",
+      "answers": "anything SAP that is too big or too joined for the Service Layer - journal lines (JDT1), ageing, cross-company sweeps, cost centres and dimensions, bulk profiling",
+      "keywords": [
+        "hana",
+        "sql",
+        "jdt1",
+        "oinv",
+        "opch",
+        "ocrd",
+        "journal",
+        "ageing",
+        "aging",
+        "dimension",
+        "cost centre",
+        "cost center",
+        "query",
+        "join",
+        "bulk"
+      ],
+      "writes": false,
+      "write_note": "Read-only by absence - no write path exists.",
+      "doctor": "hana-sql/hana-sql \"SELECT 1 FROM DUMMY\"",
+      "docs": [
+        "hana-sql/README.md"
+      ],
+      "skills": []
+    },
+    {
+      "name": "postsql",
+      "bin": "postsql/postsql",
+      "lang": "go",
+      "system": "Postgres (16 application databases behind the JIVO web apps)",
+      "answers": "raw reads under ecom / factory / oms / exim - the tables the app CLIs only expose through endpoints",
+      "keywords": [
+        "postgres",
+        "postgresql",
+        "sql",
+        "database",
+        "raw",
+        "table",
+        "schema",
+        "app data"
+      ],
+      "writes": false,
+      "write_note": "Read-only by absence.",
+      "doctor": "postsql/postsql list-databases",
+      "docs": [
+        "postsql/README.md"
+      ],
+      "skills": []
+    },
+    {
+      "name": "jivo",
+      "bin": "control-panel/cli/jivo/jivo",
+      "lang": "go",
+      "system": "Control Panel (the sales lens over SAP)",
+      "answers": "realise (Rs/L), OIH, sales targets vs actual, inventory and production feasibility, required credit limit, ageing with remarks, masterdata",
+      "keywords": [
+        "control panel",
+        "sales",
+        "realise",
+        "realize",
+        "rs/l",
+        "per litre",
+        "oih",
+        "target",
+        "credit limit",
+        "inventory",
+        "production",
+        "feasibility",
+        "aging",
+        "ageing",
+        "remarks"
+      ],
+      "writes": false,
+      "write_note": "Read-only. RULE 0 authorises writes to SAP only - Control Panel write endpoints exist but are NOT built and need the owner's sign-off.",
+      "doctor": "control-panel/cli/jivo/jivo doctor",
+      "docs": [
+        "control-panel/vault/SALES-LENS-DECODER.md",
+        "control-panel/cli/NEW-CLI-BUILD-LIST.md"
+      ],
+      "skills": [],
+      "caution": "The sales lens is NOT the accounts lens. realise = Rs/L not turnover; intercompany is INCLUDED; DONE/OIH are gross volume. Read the decoder before answering a sales question.",
+      "win": "control-panel/cli/jivo/jivo.exe",
+      "build": "cd control-panel/cli/jivo && go build -o jivo ./cmd/jivo"
+    },
+    {
+      "name": "gst-portal",
+      "bin": "portals/gst/cli/gst-portal",
+      "lang": "go",
+      "system": "GST portal (8 state logins)",
+      "answers": "filing status, returns, e-invoice enablement, branch address and PIN code from the registration profile (which SAP's OBPL does not carry)",
+      "keywords": [
+        "gst",
+        "gstin",
+        "return",
+        "filing",
+        "gstr",
+        "e-invoice",
+        "einvoice",
+        "portal",
+        "registration",
+        "branch address",
+        "pincode"
+      ],
+      "writes": false,
+      "write_note": "Read-only, enforced by a guard in the client.",
+      "doctor": "portals/gst/cli/gst-portal --help",
+      "docs": [
+        "portals/gst/README.md"
+      ],
+      "skills": []
+    },
+    {
+      "name": "dsr",
+      "bin": "dsr-cli/dsr",
+      "lang": "go",
+      "system": "DSR field-sales portal (SQL Server)",
+      "answers": "field sales activity, beat plans, targets and schemes, distributor coverage",
+      "keywords": [
+        "dsr",
+        "field sales",
+        "beat",
+        "scheme",
+        "target",
+        "distributor",
+        "coverage",
+        "salesman"
+      ],
+      "writes": false,
+      "write_note": "Read-only guard exists but is bypassable - DSR is deliberately kept off the MCP gateway.",
+      "doctor": "dsr-cli/dsr --help",
+      "docs": [
+        "dsr-cli/README.md"
+      ],
+      "skills": []
+    },
+    {
+      "name": "jmail",
+      "bin": "mail-cli/jmail",
+      "lang": "go",
+      "system": "JIVO mail",
+      "answers": "read a mailbox, find an approval thread, and print a thread to PDF for attaching to a SAP document",
+      "keywords": [
+        "mail",
+        "email",
+        "inbox",
+        "thread",
+        "approval",
+        "pdf",
+        "print",
+        "attachment"
+      ],
+      "writes": false,
+      "write_note": "Reads mail and writes PDFs to disk. Sends nothing.",
+      "doctor": "mail-cli/jmail --help",
+      "docs": [
+        "mail-cli/README.md"
+      ],
+      "skills": [
+        "jivo-outgoing-payment"
+      ],
+      "caution": "`jmail print <uid>` is how an approval mail becomes the PDF that goes ON a payment draft (C-0028)."
+    },
+    {
+      "name": "jsap-cli",
+      "bin": "jsap-cli/jsap-cli",
+      "lang": "python",
+      "system": "JSAP (budget register and approvals)",
+      "answers": "budget approvals, who approved what, pending approval queues, department and HOD structure",
+      "keywords": [
+        "jsap",
+        "budget",
+        "approval",
+        "approve",
+        "pending",
+        "hod",
+        "department",
+        "register"
+      ],
+      "writes": false,
+      "write_note": "Read-only by absence.",
+      "doctor": "jsap-cli/jsap-cli --help",
+      "docs": [
+        "jsap-cli/README.md"
+      ],
+      "skills": [],
+      "caution": "bud.jsBudgetTable DocEntry is a SAP DRAFT (ODRF), not OPCH - joining it to OPCH gives garbage."
+    },
+    {
+      "name": "exim",
+      "bin": "exim/exim",
+      "lang": "go",
+      "system": "EXIM (imports)",
+      "answers": "import shipments, purchase orders against imports, landed cost, customs documents",
+      "keywords": [
+        "exim",
+        "import",
+        "shipment",
+        "customs",
+        "landed cost",
+        "bill of entry",
+        "container"
+      ],
+      "writes": false,
+      "write_note": "Read-only, guarded wrapper.",
+      "doctor": "exim/exim --help",
+      "docs": [
+        "exim/OPERATOR-GUIDE.md",
+        "exim/INDEX.md"
+      ],
+      "skills": [],
+      "caution": "Its tokens expire every 24h - a `gateway_status up:true` can sit in front of a 401 for days."
+    },
+    {
+      "name": "factory-cli",
+      "bin": "factory-cli/jivo-factory-pp-cli",
+      "lang": "go",
+      "system": "Factory (production)",
+      "answers": "production plans and releases, line management and OEE, GRPO feed, marketplace settings",
+      "keywords": [
+        "factory",
+        "production",
+        "line",
+        "oee",
+        "plan",
+        "release",
+        "grpo",
+        "manufacturing",
+        "batch"
+      ],
+      "writes": false,
+      "write_note": "Read-only by absence.",
+      "doctor": "factory-cli/jivo-factory-pp-cli --help",
+      "docs": [
+        "factory-cli/DOMAIN-GUIDE-2026-08.md"
+      ],
+      "skills": [
+        "jivo-rescrape"
+      ],
+      "caution": "GET /marketplace/settings/ CREATES rows. marketplace is Mart-only; production-release-oil is Oil-only."
+    },
+    {
+      "name": "ecom-cli",
+      "bin": "ecom-cli/jivo-ecom-pp-cli",
+      "lang": "go",
+      "system": "E-commerce / quick-commerce",
+      "answers": "channel sales, platform distributors, listings, stock sync",
+      "keywords": [
+        "ecom",
+        "e-commerce",
+        "quick commerce",
+        "blinkit",
+        "zepto",
+        "amazon",
+        "flipkart",
+        "channel",
+        "listing",
+        "platform"
+      ],
+      "writes": false,
+      "write_note": "Read-only by absence.",
+      "doctor": "ecom-cli/jivo-ecom-pp-cli --help",
+      "docs": [
+        "ecom-cli/DOMAIN-GUIDE-2026-08.md",
+        "ecom-cli/OPERATOR-GUIDE.md"
+      ],
+      "skills": [
+        "jivo-rescrape"
+      ],
+      "caution": "ecom /api/sap/* is JIVO_MART only - never Oil, never group (C-0008)."
+    },
+    {
+      "name": "oms-cli",
+      "bin": "oms-cli/oms-pp-cli",
+      "lang": "go",
+      "system": "OMS (order management)",
+      "answers": "sales orders and quotations raised through OMS, order status",
+      "keywords": [
+        "oms",
+        "order",
+        "quotation",
+        "order management",
+        "sales order"
+      ],
+      "writes": false,
+      "write_note": "Read-only by absence.",
+      "doctor": "oms-cli/oms-pp-cli --help",
+      "docs": [
+        "oms-cli/DOMAIN-GUIDE-2026-08.md",
+        "oms-cli/SKILL.md"
+      ],
+      "skills": [],
+      "caution": "OMS raises orders into Oil and Beverages ONLY - Mart order count from OMS is always zero (C-0011). /api/hana/* needs branch=OIL|BEVERAGE (C-0010)."
+    },
+    {
+      "name": "acc",
+      "bin": "acc/acc.py",
+      "run": "python3 acc/acc.py",
+      "lang": "python",
+      "system": "Accounts batch (A/P drafts from GRPO)",
+      "answers": "scan the A/P backlog and send drafts in a batch instead of one bill at a time",
+      "keywords": [
+        "acc",
+        "batch",
+        "backlog",
+        "ap batch",
+        "bulk draft",
+        "grpo batch"
+      ],
+      "writes": true,
+      "write_note": "Writes through sapb1, so RULE 0 applies. `acc batch scan` is read-only; `acc batch send` creates drafts.",
+      "doctor": "python3 acc/acc.py --help",
+      "docs": [
+        "acc/BATCH.md",
+        "acc/README.md"
+      ],
+      "skills": [
+        "jivo-ap-draft"
+      ]
+    },
+    {
+      "name": "jivo-scrape",
+      "bin": "jivo-scraping-cli/bin/jivo-scrape",
+      "lang": "python",
+      "system": "E-com intel scraper archive",
+      "answers": "competitor and marketplace listing history, price observations over time",
+      "keywords": [
+        "scrape",
+        "intel",
+        "competitor",
+        "price",
+        "listing history",
+        "archive"
+      ],
+      "writes": false,
+      "write_note": "Reads its own archive. Touches no JIVO business system.",
+      "doctor": "jivo-scraping-cli/bin/jivo-scrape --help",
+      "docs": [
+        "jivo-scraping-cli/README.md"
+      ],
+      "skills": []
+    }
+  ]
+}
