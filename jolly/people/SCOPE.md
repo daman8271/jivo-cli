@@ -1,0 +1,285 @@
+---
+title: Scope — Oil only
+type: scope
+org: JIVO
+company: JIVO_OIL_HANADB (JIVO Wellness Pvt Ltd)
+decided_by: Daman
+decided: 2026-08-11
+status: active
+tags: [jivo/scope]
+---
+
+# Scope — Oil only
+
+**Decision (Daman, 11 Aug 2026): the pilot works on Oil. No Beverages.**
+
+Oil = `JIVO_OIL_HANADB` = **JIVO Wellness Pvt Ltd**. Beverages is the same legal
+entity but a separate set of books, and it is out. Mart is a different company
+and is out except where noted below.
+
+This note works the chain **step by step from first principles** — for each link,
+what the pilot needs, where it comes from, and who owns it. A step with no owner
+is a step that cannot run.
+
+---
+
+## Out of scope — settled, do not reopen
+
+**Decision (Daman, 29 Aug 2026): Kamalpreet Kaur's supply-chain brief is out.**
+
+> *"Let's leave her out for this. Do not consider her again and again. We are
+> doing some different shit."*
+
+This pilot is **not** a response to that brief, not a competitor to it, and not
+something to reconcile against it. Concretely:
+
+- **Do not raise it, cite it, or compare this pilot's scope to it.**
+- **Do not route any ask through it** — no "have they already been asked", no
+  goodwill/duplication argument. Ask the people this pilot needs, directly.
+- **Do not frame findings against it.** If a finding is true, it stands on its
+  own evidence.
+- Her card is parked at `people/_parked/`, the brief at `briefs/_parked/`.
+  Both kept so the work isn't lost, out of the live folders so they aren't noise.
+
+**Files in `findings/` dated 11 Aug still mention it.** Those are dated records
+of what was learned that day and are not rewritten — but they are **frozen
+history, not live instructions.** Nothing in them licenses raising it again.
+
+---
+
+## The chain, one link at a time
+
+### 1. Demand — what do we intend to sell?
+
+| | |
+|---|---|
+| **Needs** | the August monthly plan (99 Oil SKUs, 4,156 T) + the e-com Oil plan (2,083 T) + last 3 months' actual Oil sales |
+| **Sales history** | ✅ SAP, automatic, reliable |
+| **Trade plan** | ⚠️ [[Preshit Singh]] — **by hand, in Excel** |
+| **E-com plan** | ⚠️ [[Kamaldeep Singh]] — a *second* Excel file, pulled in by `VLOOKUP` |
+| **Owner** | [[Preshit Singh]], with [[Gurvinderjeet Singh]] authoring the workbook |
+
+> [!danger] This is the weakest link in the entire chain, and it is link one
+> The plan has **no system source**. It lives in `AUG MONTHLY PLANNING 2026.xlsx`
+> on a Windows account called `Jivo112`, in a `Downloads` folder. Its e-com
+> column is a `VLOOKUP` into a different Excel file on a different machine, and
+> a SKU missing from that file **silently becomes zero**.
+>
+> The workbook disagrees with itself: sheet `FINAL (2)` totals **4,156.4 T**,
+> sheet `FINAL` totals **4,389.9 T**, and its own pivot says **3,661.4 T**.
+>
+> **RULED (Daman, 2026-08-29): `FINAL (2)` = 4,156.4 T is the plan of record.**
+>
+> **RULED (Daman, 2026-08-29): E-COM IS IN SCOPE.** The 2,083.0 T e-com column is
+> ours. It is not a Mart question and not an open ruling — stop raising it.
+>
+> **RULED (Gurvinder veerji via Daman, 2026-08-29): the 200 LTR drums are filled
+> BY HAND.** No filling line, no line capacity, no bottle/cap/label BOM. They
+> consume a drum. `TOTAL PCS` on those rows (15,000 / 2,500 / 500) is a formula
+> artefact and must never be used.
+>
+> **RULED (Daman, 2026-08-29): pouch planning is taken from the pouch itself** —
+> the pouch's own pack figure, not the sheet's `PER LTRS` or `TOTAL PCS` column.
+>
+> **RULED (Daman, 2026-08-29): "15 L" in the sheet is a BUCKET — "any tin over
+> 12 L"** — not a fill. A tin named by net weight (12 / 13 / 15 KGS) is filled to
+> weight ÷ 910 litres; the 15 L is the container it goes into.
+>
+> **RULED (Daman, 2026-08-29): every tin runs at the SAME line speed**, whatever
+> its size. Tin line-time is driven by total tin PIECES, not by the size mix.
+>
+> **RULED (Daman, 2026-08-29) — the two tonnes, now correction [[C-0050]]:**
+> sale/planning side **1 T = 1,000 L**; purchase side **1 T = 1,000 kg**. Both are
+> correct. Oil is 910 g/L. This sheet is sale-side, and it is NOT mislabelled.
+> The 4,389.9 T and 3,661.4 T figures are dead — do not quote them, do not
+> reconcile to them, do not raise them as a discrepancy again. Demand for this
+> pilot is the August plan, not sales targets.
+>
+> **Everything downstream inherits this.** Fix the feed before building anything
+> clever on top of it.
+
+### 2. Stock floor — how much must we always hold?
+
+| | |
+|---|---|
+| **Rule** | 35% of the 3-month sales trend, per SKU, on both finished goods and packaging |
+| **Source** | derived from SAP sales history — automatic |
+| **Owner** | none needed |
+| **Status** | ✅ computable today |
+
+### 3. Finished-goods gap — what must we make?
+
+`gap = demand + 35% floor − Oil warehouse stock`
+
+| | |
+|---|---|
+| **Source** | SAP Oil warehouses, live |
+| **Owner** | [[Honey Factory]] holds the physical FG store (`BH-FG`, `BH-FGM`) |
+| **Status** | ✅ computable — **but only as accurate as step 1** |
+
+### 4. BOM explosion — what goes into each product?
+
+| | |
+|---|---|
+| **Source** | SAP `OITT` / `ITT1`, live |
+| **Status** | ✅ **verified present.** 36 mustard finished-goods BOMs found; the 1L 20-pc BOM resolves to 1 raw material + 6 packaging items |
+| **Trap** | one BOM carried a hidden 8th line of `Type=290` — a non-material component. Filter on type, don't assume every line is a material |
+
+### 5. Material requirement — what must we buy?
+
+`buy = exploded requirement − packaging stock − packaging's own 35% floor`
+
+| | |
+|---|---|
+| **Source** | SAP, automatic |
+| **Owner — oil** | ✅ [[Shunty Veerji]] |
+| **Owner — packaging** | ✅ **[[Ravinder Jivo]]** — PM Purchase incharge |
+| **Status** | ✅ both halves owned |
+
+> [!success] The packaging hole is filled — [[Ravinder Jivo]], added 11 Aug
+> `JWPL0695`, phone verified in SAP. He is the contact on **Shree Ram Janki
+> Corrugators** (cartons) and has raised **₹2.17 crore of packaging POs in six
+> months** — TPAC Packaging ×2 and CVS.
+
+> [!warning] But packaging buying is spread across six people
+> He is the **largest** packaging buyer, not the only one. **Kulbir Veer Ji**
+> holds the two carton-shaped vendors (Boxmasters India, Media Graphic Prints);
+> Ravinder Singh Chadda, Vishal, Gagandeep Singh and Kulpreet Singh each hold
+> others. A carton alert may need to reach Kulbir as well.
+>
+> And the production system says this matters more than we thought: **14 of 21
+> recorded line stoppages last month were packaging problems** — sticker issues
+> ×8, shrink ×3, bottle issues ×3 — against 6 machine faults.
+
+### 6. Timing — order now, or later?
+
+| | |
+|---|---|
+| **Needs** | lead time per material |
+| **Source** | ✅ **derivable from Oil purchase history** — verified. Mustard oil 12–50 days; cartons ~27 days |
+| **Owner** | [[Shunty Veerji]] for oil; nobody for packaging |
+| **Note** | the brief asks Procurement to supply lead times via a template. They do not need to — the data already has them. Worth saying so before anyone fills in a spreadsheet by hand |
+
+### 7. Feasibility — can we actually make it?
+
+> [!success] Solved — it was in the factory app all along
+> `ji.jivo.in` is the **factory app's** web UI — the system this repo already
+> covers as `factory-cli` / `fct_*`. **Rated speeds in bottles/hour have existed
+> since 5 Aug 2026.** Full recon:
+> [[../findings/2026-08-11-ji-production-mes|the factory app answers feasibility]].
+
+**Rated speed per line — this is the capacity number:**
+
+| Line | Bottles/hour |
+|---|---|
+| **JP Machine** | 5,400 |
+| **Clear Pack** | 4,800 (1 L) · 3,000 |
+| **Pouch Machine** | 2,400 · 1,800 |
+| **10 Head** | 2,100 (1 L) · 1,260 (2 L) · 900 (5 L) |
+| **6 Head** | 1,080 (1 L) · 720 (2 L) · 600 (5 L) |
+
+Plus **observed** output per run (cases per line per day) going back months, which
+already includes changeover and downtime — so the pilot can sanity-check the
+rated figure against reality instead of trusting it.
+
+| | |
+|---|---|
+| **Source** | `factory-cli` / `fct_*` → line-configs, runs, reports-analytics |
+| **Also there** | OEE, downtime Pareto, waste logs, line clearance, cost master, PET-bottle **blowing make-vs-buy** |
+| **Owner** | [[Gautam]] |
+| **Status** | ✅ **available** |
+
+> [!warning] Three traps
+> **OEE: median 46.2%** across 90 Oil runs (availability 95.7%). Do **not** quote
+> the per-run figures — the spread is 13.5%–73.2% and it is *not distinguishable*
+> whether that is real variation or operators picking the wrong named config.
+>
+> **Before 5 Aug, OEE read ~1%** because no rated speeds existed. Any OEE history
+> older than that is meaningless.
+>
+> **The workbook's "PROD. CAPACITY" column is not capacity.** It is
+> `planning ÷ 20` — demand per working day wearing a capacity label. Ignore it.
+
+### 8. Dispatch — get it out
+
+| | |
+|---|---|
+| **Owner** | [[Raju Veerji]] — HOD, Dispatch |
+| **Status** | ✅ owned |
+
+---
+
+## Who is in, for Oil
+
+| Person | Their link in the chain | In? |
+|---|---|---|
+| [[Preshit Singh]] | demand — the monthly plan, by hand in Excel | ✅ |
+| [[Gurvinderjeet Singh]] | authors the planning workbook; owns the process | ✅ |
+| [[Kamaldeep Singh]] | the e-com slice of Oil demand | ✅ |
+| [[Shunty Veerji]] | buys the oil — ₹28.77 Cr in 90 days | ✅ |
+| **[[Ravinder Jivo]]** | **buys the packaging — ₹2.17 Cr in 180 days** | ✅ |
+| [[Gurpreet Singh Gopi]] | tracks the oil | ✅ |
+| [[Gautam]] | makes it — 945 of 1,420 Oil production orders; owns the MES | ✅ |
+| [[Raju Veerji]] | responsible for production, owns dispatch, signs the factory's money | ✅ |
+| [[Honey Factory]] | holds the finished goods (`BH-FG`) | ✅ |
+| [[Ziyaul]] | SAP access — the gate everything passes through | ✅ |
+| [[Gagan PU]] | e-com warehouse — **Mart** | ❌ out |
+| [[Prince Bathinda]] | Mart FG storage — **Mart** | ❌ out |
+
+**Ten in, two out** (Daman, 11 Aug: *"Prince and Gagan are both for mart, out"*).
+
+Bosses parked at Daman's call — [[_parked/README|Avtar Vg and Prabhu]] are real
+and correctly identified, just not part of this.
+
+> [!question] The one open scope question
+> The Oil planning workbook has an **e-com column of 2,083 tonnes** — Oil product,
+> planned by [[Kamaldeep Singh]], but physically shipped out of **Mart's**
+> warehouses. Oil goods, Mart books.
+>
+> With Gagan out, **Kamal is in but the person who ships his plan is not.** So
+> either e-com planning stops at the plan and someone else picks it up, or the
+> e-com half needs a name. It is **half the plan by tonnage** — worth one question.
+
+---
+
+## What Oil-only still needs
+
+Two of the three blockers cleared today. **One remains, and it is link one.**
+
+🔴 **The plan is a spreadsheet.** No system source, three conflicting totals, and
+a `VLOOKUP` into another Excel file on another machine where a missing SKU
+silently becomes zero. Everything the pilot computes inherits this.
+
+Everything else is now either owned or available:
+
+| Was | Now |
+|---|---|
+| ~~Packaging has no owner~~ | ✅ [[Ravinder Jivo]] (with Kulbir Veer Ji on cartons) |
+| ~~Machine capacity exists nowhere~~ | ✅ `ji.jivo.in` MES — per line, per product, observed |
+
+**Still worth adding, if the pilot goes past planning:**
+
+| Who | Why |
+|---|---|
+| **Kulbir Veer Ji** | holds the two **carton** vendors (Boxmasters, Media Graphic Prints) that [[Ravinder Jivo]] does not |
+| **Lovpreet Singh** (`exim`) | keys in **all 25** of [[Shunty Veerji]]'s oil POs — Shunty has no SAP login |
+| **Pankaj**, **Shahrukh** | #3 and #4 on Oil production orders; Shahrukh is the **only JSAP account that can raise a request** |
+
+**Dropped:** Atul Sharma (Beverages) · Param Billing, Aqib (Mart) ·
+[[Prince Bathinda]], [[Gagan PU]] (Mart) · the two HODs, parked.
+
+---
+
+## The two things to do next
+
+1. **Get [[Preshit Singh]]'s plan on a reliable feed**, and get a ruling on which
+   sheet is the plan of record. Nothing downstream is trustworthy until this is.
+2. **Open `Plan vs Production` and `Procurement vs Planned`** in the MES. Those
+   two reports are, by name, most of what this pilot is supposed to produce.
+   Check what they already do before building them again.
+
+---
+
+## Links
+
+[[ROSTER]] · [[ORG-CHART]] · [[MISSING-PEOPLE]] · [[ASK-GURVINDERJEET]]

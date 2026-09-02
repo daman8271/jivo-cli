@@ -1,0 +1,971 @@
+module,path,method,cli_command,status,known_in_repo,row_count,notes
+Admin,/accounts/change-password/,POST,,not probed,no,,write-shaped path segment | registry:AUTH.CHANGE_PASSWORD
+Admin,/accounts/departments/,GET|POST,accounts departments,200,binary+spec,19,live | registry:ACCOUNTS.DEPARTMENTS
+Admin,/accounts/login/,POST,,not probed,no,,write-shaped path segment | registry:AUTH.LOGIN
+Admin,/accounts/logout/,UNRESOLVED,,not probed,no,,write-shaped path segment | registry:AUTH.LOGOUT | verb unresolved in bundle
+Admin,/accounts/me/,GET,accounts me,200,binary+spec,obj,live | registry:AUTH.ME
+Admin,/accounts/token/refresh/,POST,,not probed,no,,write-shaped path segment | registry:AUTH.REFRESH
+Admin,/accounts/users/,GET,accounts users,200,binary+spec,99,live | registry:ACCOUNTS.USERS
+Admin,/ai/assistant/chat/,POST,,not probed,no,,no GET evidence | registry:AI.ASSISTANT_CHAT
+Admin,/company/companies/,GET,company,200,binary+spec,3,live
+Admin,/docking-admin/partial-scan-requests/,POST,docking-admin partial-scan-requests,200,binary+spec,131,live | registry:DOCKING_ADMIN.PARTIAL_SCAN_REQUESTS
+Admin,/docking-admin/partial-scan-requests/by-sales-dispatch/{id}/,GET,,not probed,spec-only,,needs id | registry:DOCKING_ADMIN.PARTIAL_SCAN_REQUEST_BY_DISPATCH
+Admin,/docking-admin/partial-scan-requests/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:DOCKING_ADMIN.PARTIAL_SCAN_REQUEST_APPROVE
+Admin,/docking-admin/partial-scan-requests/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:DOCKING_ADMIN.PARTIAL_SCAN_REQUEST_REJECT
+Admin,/docking-admin/scan-skip-requests/,POST,docking-admin scan-skip-requests,200,binary+spec,49,live | registry:DOCKING_ADMIN.SCAN_SKIP_REQUESTS
+Admin,/docking-admin/scan-skip-requests/by-sales-dispatch/{id}/,GET,,not probed,spec-only,,needs id | registry:DOCKING_ADMIN.SCAN_SKIP_REQUEST_BY_DISPATCH
+Admin,/docking-admin/scan-skip-requests/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:DOCKING_ADMIN.SCAN_SKIP_REQUEST_APPROVE
+Admin,/docking-admin/scan-skip-requests/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:DOCKING_ADMIN.SCAN_SKIP_REQUEST_REJECT
+Barcode,/barcode/activity/,GET,,200,spec-only,866039,live | registry:BARCODE.ACTIVITY_LIST
+Barcode,/barcode/activity/recent/,GET,,200,spec-only,15,live | registry:BARCODE.ACTIVITY_RECENT
+Barcode,/barcode/boxes/,GET,barcode boxes,200,binary+spec,500,live | registry:BARCODE.BOXES
+Barcode,/barcode/boxes/generate/,POST,,not probed,no,,write-shaped path segment | registry:BARCODE.BOXES_GENERATE
+Barcode,/barcode/boxes/{id}/,GET,barcode box,not probed,binary+spec,,needs id | registry:BARCODE.BOX_DETAIL
+Barcode,/barcode/boxes/{id}/dismantle/,POST,,not probed,no,,needs id | registry:BARCODE.DISMANTLE_BOX
+Barcode,/barcode/boxes/{id}/history/,GET,barcode box-history,not probed,binary+spec,,needs id | registry:BARCODE.BOX_HISTORY
+Barcode,/barcode/boxes/{id}/void/,POST,,not probed,no,,needs id | registry:BARCODE.BOX_VOID
+Barcode,/barcode/dispatch/bills/lookup/,POST,,not probed,no,,no GET evidence | registry:BARCODE.DISPATCH_BILL_LOOKUP
+Barcode,/barcode/dispatch/reports/,GET,barcode dispatch-reports,200,binary+spec,133,live | registry:BARCODE.DISPATCH_REPORTS
+Barcode,/barcode/dispatch/reports/boxes/,GET,barcode dispatch-reports-boxes,200,binary+spec,1000,live | registry:BARCODE.DISPATCH_REPORT_BOXES
+Barcode,/barcode/dispatch/reports/pallets/,GET,barcode dispatch-reports-pallets,200,binary+spec,1000,live | registry:BARCODE.DISPATCH_REPORT_PALLETS
+Barcode,/barcode/dispatch/reports/rejected-scans/,GET,barcode dispatch-reports-rejected-scans,200,binary+spec,1000,live | registry:BARCODE.DISPATCH_REPORT_REJECTED_SCANS
+Barcode,/barcode/dispatch/reports/{id}/,GET,barcode dispatch-report-detail,not probed,binary+spec,,needs id | registry:BARCODE.DISPATCH_REPORT_DETAIL
+Barcode,/barcode/dispatch/sessions/,GET,barcode dispatch-sessions,TIMEOUT,binary+spec,,timeout (large payload) | registry:BARCODE.DISPATCH_SESSIONS
+Barcode,/barcode/dispatch/sessions/active/,GET,barcode dispatch-sessions-active,200,binary+spec,,live | registry:BARCODE.DISPATCH_SESSIONS_ACTIVE
+Barcode,/barcode/dispatch/sessions/closed/,GET,barcode dispatch-sessions-closed,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:BARCODE.DISPATCH_SESSIONS_CLOSED"
+Barcode,/barcode/dispatch/sessions/completed/,GET,barcode dispatch-sessions-completed,200,binary+spec,,live | registry:BARCODE.DISPATCH_SESSIONS_COMPLETED
+Barcode,/barcode/dispatch/sessions/from-bill/,POST,barcode dispatch-sessions-from-bill,not probed,binary+spec,,denylist:side-effect | registry:BARCODE.DISPATCH_SESSIONS_FROM_BILL
+Barcode,/barcode/dispatch/sessions/{id}/,GET,barcode dispatch-session,not probed,binary+spec,,needs id | registry:BARCODE.DISPATCH_SESSION_DETAIL
+Barcode,/barcode/dispatch/sessions/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:BARCODE.DISPATCH_SESSION_CANCEL
+Barcode,/barcode/dispatch/sessions/{id}/close/,POST,,not probed,no,,write-shaped path segment | registry:BARCODE.DISPATCH_SESSION_CLOSE
+Barcode,/barcode/dispatch/sessions/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:BARCODE.DISPATCH_SESSION_COMPLETE
+Barcode,/barcode/dispatch/sessions/{id}/dispatch/,UNRESOLVED,,not probed,no,,needs id | registry:BARCODE.DISPATCH_SESSION_DISPATCH | verb unresolved in bundle
+Barcode,/barcode/dispatch/sessions/{id}/retry-sap-sync/,POST,,not probed,no,,needs id | registry:BARCODE.DISPATCH_SESSION_RETRY_SAP_SYNC
+Barcode,/barcode/dispatch/sessions/{id}/sap-sync-logs/,GET,barcode dispatch-sap-sync-logs,not probed,binary+spec,,needs id | registry:BARCODE.DISPATCH_SESSION_SAP_SYNC_LOGS
+Barcode,/barcode/dispatch/sessions/{id}/scan-logs/,GET,barcode dispatch-scan-logs,not probed,binary+spec,,needs id | registry:BARCODE.DISPATCH_SESSION_SCAN_LOGS
+Barcode,/barcode/dispatch/sessions/{id}/scan/,UNRESOLVED,,not probed,no,,needs id | registry:BARCODE.DISPATCH_SESSION_SCAN | verb unresolved in bundle
+Barcode,/barcode/dispatch/sessions/{id}/scanned-boxes/{id}/,PATCH,,not probed,no,,needs id | registry:BARCODE.DISPATCH_SCANNED_BOX
+Barcode,/barcode/dispatch/sessions/{id}/scanned-boxes/{id}/remove/,POST,,not probed,no,,needs id | registry:BARCODE.DISPATCH_SCANNED_BOX_REMOVE
+Barcode,/barcode/dispatch/sessions/{id}/scans/,POST,,not probed,no,,needs id | registry:BARCODE.DISPATCH_SESSION_SCANS
+Barcode,/barcode/dispatch/settings/,GET|PATCH,,200,spec-only,obj,live | registry:BARCODE.DISPATCH_SETTINGS
+Barcode,/barcode/intercompany/dashboard/,GET,barcode intercompany-dashboard,200,binary+spec,obj,live | registry:BARCODE.INTERCOMPANY_DASHBOARD
+Barcode,/barcode/intercompany/scan/,POST,,not probed,no,,no GET evidence | registry:BARCODE.INTERCOMPANY_SCAN
+Barcode,/barcode/intercompany/trace/,GET,barcode intercompany-trace,400,binary+spec,,"routed; required query param missing: {""error"":""Search value is required.""} | registry:BARCODE.INTERCOMPANY_TRACE"
+Barcode,/barcode/intercompany/transfers/,GET|POST,barcode intercompany-transfers,200,binary+spec,,live | registry:BARCODE.INTERCOMPANY_TRANSFERS
+Barcode,/barcode/intercompany/transfers/{id}/,GET,barcode intercompany-transfer,not probed,binary+spec,,needs id | registry:BARCODE.INTERCOMPANY_TRANSFER_DETAIL
+Barcode,/barcode/intercompany/transfers/{id}/reverse/,POST,,not probed,no,,needs id | registry:BARCODE.INTERCOMPANY_TRANSFER_REVERSE
+Barcode,/barcode/intercompany/warehouses/,GET,,400,spec-only,,"routed; required query param missing: {""error"":""company_code is required.""} | registry:BARCODE.INTERCOMPANY_WAREHOUSES"
+Barcode,/barcode/items/oitm/,GET,barcode items-oitm,200,binary+spec,100,live | registry:BARCODE.OITM_ITEMS
+Barcode,/barcode/items/oitm/detail/,GET,barcode item-detail,400,binary+spec,,"routed; required query param missing: {""error"":""item_code is required.""} | registry:BARCODE.OITM_ITEM_DETAIL"
+Barcode,/barcode/lookup/{id}/,GET,barcode lookup,not probed,binary+spec,,needs id | registry:BARCODE.LOOKUP
+Barcode,/barcode/loose/,GET,barcode loose,200,binary+spec,500,live | registry:BARCODE.LOOSE
+Barcode,/barcode/loose/summary/,GET,,200,spec-only,49,live | registry:BARCODE.LOOSE_SUMMARY
+Barcode,/barcode/loose/{id}/,GET,barcode loose-item,not probed,binary+spec,,needs id | registry:BARCODE.LOOSE_DETAIL
+Barcode,/barcode/pallets/,GET,barcode pallets,200,binary+spec,500,live | registry:BARCODE.PALLETS
+Barcode,/barcode/pallets/create/,POST,,not probed,no,,write-shaped path segment | registry:BARCODE.PALLET_CREATE
+Barcode,/barcode/pallets/{id}/,DELETE|GET,barcode pallet,not probed,binary+spec,,needs id | registry:BARCODE.PALLET_DETAIL
+Barcode,/barcode/pallets/{id}/add-boxes/,POST,,not probed,no,,needs id | registry:BARCODE.PALLET_ADD_BOXES
+Barcode,/barcode/pallets/{id}/clear/,POST,,not probed,no,,needs id | registry:BARCODE.PALLET_CLEAR
+Barcode,/barcode/pallets/{id}/dismantle/,POST,,not probed,no,,needs id | registry:BARCODE.DISMANTLE_PALLET
+Barcode,/barcode/pallets/{id}/history/,GET,barcode pallet-history,not probed,binary+spec,,needs id | registry:BARCODE.PALLET_HISTORY
+Barcode,/barcode/pallets/{id}/move/,POST,,not probed,no,,needs id | registry:BARCODE.PALLET_MOVE
+Barcode,/barcode/pallets/{id}/reconcile/,POST,,not probed,no,,needs id | registry:BARCODE.PALLET_RECONCILE
+Barcode,/barcode/pallets/{id}/remove-boxes/,POST,,not probed,no,,needs id | registry:BARCODE.PALLET_REMOVE_BOXES
+Barcode,/barcode/pallets/{id}/split/,POST,,not probed,no,,needs id | registry:BARCODE.PALLET_SPLIT
+Barcode,/barcode/pallets/{id}/void/,POST,,not probed,no,,needs id | registry:BARCODE.PALLET_VOID
+Barcode,/barcode/print/box/{id}/,POST,,not probed,no,,needs id | registry:BARCODE.PRINT_BOX
+Barcode,/barcode/print/bulk/,POST,,not probed,no,,no GET evidence | registry:BARCODE.PRINT_BULK
+Barcode,/barcode/print/history/,GET,barcode print-history,200,binary+spec,500,live | registry:BARCODE.PRINT_HISTORY
+Barcode,/barcode/print/pallet/{id}/,POST,,not probed,no,,needs id | registry:BARCODE.PRINT_PALLET
+Barcode,/barcode/production-release-oil/,GET,barcode production-release-oil,200,binary+spec,100,live | registry:BARCODE.PRODUCTION_RELEASE_OIL
+Barcode,/barcode/production/{id}/create-pallet/,UNRESOLVED,,not probed,no,,needs id | registry:BARCODE.PRODUCTION_PALLET | verb unresolved in bundle
+Barcode,/barcode/production/{id}/generate-labels/,UNRESOLVED,,not probed,no,,needs id | registry:BARCODE.PRODUCTION_LABELS | verb unresolved in bundle
+Barcode,/barcode/repack/,POST,,not probed,no,,no GET evidence | registry:BARCODE.REPACK
+Barcode,/barcode/scan/,POST,,not probed,no,,no GET evidence | registry:BARCODE.SCAN
+Barcode,/barcode/scan/history/,GET,barcode scan-history,200,binary+spec,500,live | registry:BARCODE.SCAN_HISTORY
+Barcode,/barcode/transfers/box/,POST,,not probed,no,,no GET evidence | registry:BARCODE.TRANSFER_BOX
+Barcode,/barcode/verify-requests/,GET|POST,barcode verify-requests,200,binary+spec,2,live | registry:BARCODE.VERIFY_REQUESTS
+Barcode,/barcode/verify-requests/{id}/,GET,barcode verify-request,not probed,binary+spec,,needs id | registry:BARCODE.VERIFY_REQUEST_DETAIL
+Barcode,/barcode/verify-requests/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:BARCODE.VERIFY_REQUEST_CANCEL
+Barcode,/barcode/verify-requests/{id}/resolve/,POST,,not probed,no,,write-shaped path segment | registry:BARCODE.VERIFY_REQUEST_RESOLVE
+Barcode,/barcode/verify-requests/{id}/start/,POST,,not probed,no,,write-shaped path segment | registry:BARCODE.VERIFY_REQUEST_START
+Barcode,/barcode/voids/boxes/,GET,barcode voided-boxes,200,binary+spec,500,live | registry:BARCODE.VOIDED_BOXES
+Barcode,/barcode/voids/pallets/,GET,barcode voided-pallets,200,binary+spec,203,live | registry:BARCODE.VOIDED_PALLETS
+Daily Tasks,/activity-center/me/today/,GET,,200,spec-only,obj,live | registry:DAILY_TASKS.MY_TODAY
+Daily Tasks,/activity-center/users/today/,GET,,200,spec-only,obj,live | registry:DAILY_TASKS.TEAM_TODAY
+Dashboards,/dashboards/inventory-age/filter-options/,GET,dashboards inventory-age-filter-options,404,binary+spec,,SHIPPED CLI COMMAND IS DEAD - HTML 404. || DEAD: Django URL-resolver 404 (HTML)
+Dashboards,/dashboards/inventory-age/report/,GET,dashboards inventory-age-report,404,binary+spec,,"SHIPPED CLI COMMAND IS DEAD - HTML 404 (filter-options died by 2026-08-22, the report itself is dead now too). || DEAD: Django URL-resolver 404 (HTML)"
+Dashboards,/dashboards/sales-planning-requirement/analysis/,GET,dashboards sales-planning-requirement-analysis,200,binary+spec,obj,live | registry:SALES_PLANNING_REQUIREMENT.ANALYSIS
+Dashboards,/dashboards/sales-planning-requirement/refresh/,POST,,not probed,no,,write-shaped path segment | registry:SALES_PLANNING_REQUIREMENT.REFRESH
+Dashboards,/dashboards/sales-planning-requirement/report/,GET,dashboards sales-planning-requirement-report,200,binary+spec,294,"294 rows, forecast demand vs stock in hand, keyed to forecast_id 43 (AUGUST plan) as of 30 Aug - lags the September plan. || live | registry:SALES_PLANNING_REQUIREMENT.REPORT"
+Dashboards,/dashboards/sales-planning-requirement/status/,GET,dashboards sales-planning-requirement-status,200,binary+spec,obj,live | registry:SALES_PLANNING_REQUIREMENT.STATUS
+Dashboards,/dashboards/stock/,GET,dashboards stock,200,binary+spec,127893,"STORAGE OCCUPANCY: 127,893 item-warehouse rows across 58 warehouses (Oil). on_hand vs min_stock benchmark, health_ratio, movement_status. Mart 65,797 / Bev 95,387. min_stock is a BENCHMARK, not physical capacity. || live | registry:STOCK_DASHBOARD.LIST"
+Dashboards,/dashboards/stock/as-of/,GET,dashboards stock-as-of,400,binary+spec,,"routed; required query param missing: {""detail"":""Invalid query parameters."",""errors"":{""as_of_date"":[""This field is required.""]}} | registry:STOCK_DASHBOARD.AS_OF"
+Dashboards,/dashboards/stock/export/,GET,,200,spec-only,,live | registry:STOCK_DASHBOARD.EXPORT
+Dashboards,/dashboards/stock/{id}/warehouses/,GET,dashboards stock-benchmark-item-warehouses,not probed,binary+spec,,needs id | registry:STOCK_DASHBOARD.ITEM_DETAIL
+Dashboards,/non-moving-rm/item-groups/,GET,non-moving-rm item-groups,200,binary+spec,10,live | registry:NON_MOVING_RM.ITEM_GROUPS
+Dashboards,/non-moving-rm/report/,GET,non-moving-rm report,400,binary+spec,,"routed; required query param missing: {""detail"":""Invalid query parameters."",""errors"":{""age"":[""This field is required.""]}} | registry:NON_MOVING_RM.REPORT"
+Dashboards,/sap-reports/categories/,GET,,200,no,37,"NEW: 37 SAP query categories with query_count (APPROVAL TEMPLATES 82, Avtar 20, DAILY MAILER 5...). || live | registry:SAP_REPORTS.CATEGORIES"
+Dashboards,/sap-reports/reports/,GET,,200,no,21,"NEW, never in the repo: runs SAP saved queries from the factory app. 21 runnable reports incl. ORDER RECOMENDATION MANUAL / WEEKLY / WITHOUT FG STOCK, Production Report, WAREHOUSE WISE DETAIL, STOCK TRANSFER GUPTA GODOWN, PENDING DISPATCH, EXP DATE. || live | registry:SAP_REPORTS.LIST"
+Dashboards,/sap-reports/reports/{id}/,GET|PATCH,,not probed,no,,needs id | registry:SAP_REPORTS.BY_SLUG
+Dashboards,/sap-reports/reports/{id}/export/,POST,,not probed,no,,needs id | registry:SAP_REPORTS.EXPORT
+Dashboards,/sap-reports/reports/{id}/parameters/{id}/options/,GET,,not probed,no,,needs id | registry:SAP_REPORTS.PARAMETER_OPTIONS
+Dashboards,/sap-reports/reports/{id}/run/,POST,,not probed,no,,needs id | registry:SAP_REPORTS.RUN
+Dashboards,/sap-reports/reports/{id}/runs/,GET,,not probed,no,,needs id | registry:SAP_REPORTS.REPORT_RUNS
+Dashboards,/sap-reports/reports/{id}/sql/,GET,,not probed,no,,needs id | registry:SAP_REPORTS.SQL
+Dashboards,/sap-reports/runs/,UNRESOLVED,,not probed,no,,no GET evidence | registry:SAP_REPORTS.RUNS | verb unresolved in bundle
+Dashboards,/sap-reports/sync/,POST,,not probed,no,,write-shaped path segment | registry:SAP_REPORTS.SYNC
+Dashboards,/sap/plan-dashboard/details/,GET,sap plan-dashboard-details,404,binary+spec,,SHIPPED CLI COMMAND IS DEAD - HTML 404. || DEAD: Django URL-resolver 404 (HTML)
+Dashboards,/sap/plan-dashboard/procurement/,GET,sap plan-dashboard-procurement,404,binary+spec,,SHIPPED CLI COMMAND IS DEAD - HTML 404. || DEAD: Django URL-resolver 404 (HTML)
+Dashboards,/sap/plan-dashboard/sku/{id}/,GET,sap plan-dashboard-sku,not probed,binary+spec,,needs id
+Dashboards,/sap/plan-dashboard/summary/,GET,sap plan-dashboard-summary,404,binary+spec,,SHIPPED CLI COMMAND IS DEAD - HTML 404. Same for details/ and procurement/. || DEAD: Django URL-resolver 404 (HTML)
+Dispatch,/dispatch-plans/bills/,GET,dispatch-plans bills,400,binary+spec,,"routed; required query param missing: {""detail"":""Invalid query parameters."",""errors"":{""date_from"":[""This field is required.""],""d | registry:DISPATCH_PLANS.BILLS"
+Dispatch,/dispatch-plans/bills/by-number/{id}/,GET,dispatch-plans dispatch-plans-bill-by-number,not probed,binary+spec,,needs id | registry:DISPATCH_PLANS.BILL_BY_NUMBER
+Dispatch,/dispatch-plans/bills/plan/bulk-dispatch-date/,POST,,not probed,no,,no GET evidence | registry:DISPATCH_PLANS.BULK_DISPATCH_DATE
+Dispatch,/dispatch-plans/bills/selection/,POST,,not probed,no,,no GET evidence | registry:DISPATCH_PLANS.BILL_SELECTION
+Dispatch,/dispatch-plans/bills/{id}/plan/,PATCH,,not probed,no,,needs id | registry:DISPATCH_PLANS.PLAN
+Dispatch,/dispatch-plans/bills/{id}/plan/remove/,POST,,not probed,no,,needs id | registry:DISPATCH_PLANS.PLAN_REMOVE
+Dispatch,/dispatch-plans/dashboard/bills/,GET,dispatch-plans dispatch-fulfilment-bills,200,binary+spec,2741,live | registry:DISPATCH_FULFILMENT.BILLS
+Dispatch,/dispatch-plans/dashboard/summary/,GET,dispatch-plans dispatch-fulfilment-summary,200,binary+spec,obj,live | registry:DISPATCH_FULFILMENT.SUMMARY
+Dispatch,/dispatch-plans/pipeline/,GET,dispatch-plans pipeline,200,binary+spec,40,live | registry:DISPATCH_PIPELINE.BOARD
+Dispatch,/dispatch/bilty-grpo/history/,GET,dispatch bilty-grpo-history,200,binary+spec,57,live | registry:DISPATCH.BILTY_GRPO_HISTORY
+Dispatch,/dispatch/bilty-grpo/options/,GET,dispatch bilty-grpo-options,200,binary+spec,obj,live | registry:DISPATCH.BILTY_GRPO_OPTIONS
+Dispatch,/dispatch/bilty-grpo/pending/,GET,dispatch bilty-grpo-pending,200,binary+spec,145,live | registry:DISPATCH.BILTY_GRPO_PENDING
+Dispatch,/dispatch/bilty-grpo/post/,POST,,not probed,no,,write-shaped path segment | registry:DISPATCH.BILTY_GRPO_POST
+Dispatch,/dispatch/bilty-grpo/preview/{id}/,GET,,not probed,spec-only,,needs id | registry:DISPATCH.BILTY_GRPO_PREVIEW
+Dispatch,/dispatch/bilty-grpo/summary/,GET,,200,spec-only,obj,live | registry:DISPATCH.BILTY_GRPO_SUMMARY
+Dispatch,/dispatch/bilty-grpo/{id}/,GET,,not probed,spec-only,,needs id | registry:DISPATCH.BILTY_GRPO_DETAIL
+Dispatch,/dispatch/open-bilties/,GET,dispatch open-bilties,200,binary+spec,27,live | registry:DISPATCH.OPEN_BILTIES
+Dispatch,/dispatch/transporter-invoices/history/,GET,dispatch transporter-invoices-history,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:DISPATCH.TRANSPORTER_INVOICE_HISTORY"
+Dispatch,/dispatch/transporter-invoices/post-ap-invoice/,POST,,not probed,no,,no GET evidence | registry:DISPATCH.TRANSPORTER_INVOICE_POST_AP_INVOICE
+Dispatch,/dispatch/transporter-invoices/preview/,POST,,not probed,no,,no GET evidence | registry:DISPATCH.TRANSPORTER_INVOICE_PREVIEW
+Dispatch,/dispatch/transporter-invoices/submit/,POST,,not probed,no,,write-shaped path segment | registry:DISPATCH.TRANSPORTER_INVOICE_SUBMIT
+Dispatch,/dispatch/transporter-invoices/{id}/,GET,,not probed,no,,needs id | registry:DISPATCH.TRANSPORTER_INVOICE_DETAIL
+Dispatch,/dispatch/transporter-invoices/{id}/post-ap-invoice/,POST,,not probed,no,,needs id | registry:DISPATCH.TRANSPORTER_INVOICE_POST_SUBMITTED
+ETP/STP,/etp/backwash-entries/,POST,,not probed,no,,no GET evidence | registry:ETP.BACKWASH_ENTRIES
+ETP/STP,/etp/backwash-entries/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.BACKWASH_ENTRY_DETAIL
+ETP/STP,/etp/backwash-equipment/,POST,,not probed,no,,no GET evidence | registry:ETP.BACKWASH_EQUIPMENT
+ETP/STP,/etp/backwash-equipment/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.BACKWASH_EQUIPMENT_DETAIL
+ETP/STP,/etp/calibration-records/,POST,,not probed,no,,no GET evidence | registry:ETP.CALIBRATION_RECORDS
+ETP/STP,/etp/calibration-records/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.CALIBRATION_RECORD_DETAIL
+ETP/STP,/etp/change-log/,UNRESOLVED,,not probed,no,,no GET evidence | registry:ETP.CHANGE_LOG | verb unresolved in bundle
+ETP/STP,/etp/chemical-logs/,POST,,not probed,no,,no GET evidence | registry:ETP.CHEMICAL_LOGS
+ETP/STP,/etp/chemical-logs/totals/,UNRESOLVED,,not probed,no,,no GET evidence | registry:ETP.CHEMICAL_LOG_TOTALS | verb unresolved in bundle
+ETP/STP,/etp/chemical-logs/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.CHEMICAL_LOG_DETAIL
+ETP/STP,/etp/chemicals/,POST,,not probed,no,,no GET evidence | registry:ETP.CHEMICALS
+ETP/STP,/etp/chemicals/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.CHEMICAL_DETAIL
+ETP/STP,/etp/daily-logs/,POST,,not probed,no,,no GET evidence | registry:ETP.DAILY_LOGS
+ETP/STP,/etp/daily-logs/last-readings/,GET,,400,no,,"routed; required query param missing: {""detail"":""Pass ?plant=<id>.""} | registry:ETP.DAILY_LOG_LAST_READINGS"
+ETP/STP,/etp/daily-logs/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.DAILY_LOG_DETAIL
+ETP/STP,/etp/dashboard/,GET,,200,no,obj,live | registry:ETP.DASHBOARD
+ETP/STP,/etp/instruments/,POST,,not probed,no,,no GET evidence | registry:ETP.INSTRUMENTS
+ETP/STP,/etp/instruments/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.INSTRUMENT_DETAIL
+ETP/STP,/etp/monitoring-parameters/,POST,,not probed,no,,no GET evidence | registry:ETP.MONITORING_PARAMETERS
+ETP/STP,/etp/monitoring-parameters/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.MONITORING_PARAMETER_DETAIL
+ETP/STP,/etp/monitoring-records/,POST,,not probed,no,,no GET evidence | registry:ETP.MONITORING_RECORDS
+ETP/STP,/etp/monitoring-records/sheet-template/,GET,,400,no,,"routed; required query param missing: {""detail"":""Pass ?plant=<id>.""} | registry:ETP.MONITORING_SHEET_TEMPLATE"
+ETP/STP,/etp/monitoring-records/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.MONITORING_RECORD_DETAIL
+ETP/STP,/etp/monitoring-records/{id}/verify/,POST,,not probed,no,,write-shaped path segment | registry:ETP.MONITORING_VERIFY
+ETP/STP,/etp/options/,POST,,not probed,no,,no GET evidence | registry:ETP.OPTIONS
+ETP/STP,/etp/options/categories/,UNRESOLVED,,not probed,no,,no GET evidence | registry:ETP.OPTION_CATEGORIES | verb unresolved in bundle
+ETP/STP,/etp/options/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.OPTION_DETAIL
+ETP/STP,/etp/plants/,POST,,not probed,no,,"ETP/STP module is LIVE but UNCONFIGURED: 0 plants in all three companies, so every ETP endpoint returns empty. 37 registry paths, NONE in the repo spec - the only one of the 21 modules absent from the repo entirely. || no GET evidence | registry:ETP.PLANTS"
+ETP/STP,/etp/plants/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.PLANT_DETAIL
+ETP/STP,/etp/print-documents/,POST,,not probed,no,,no GET evidence | registry:ETP.PRINT_DOCUMENTS
+ETP/STP,/etp/print-documents/keys/,UNRESOLVED,,not probed,no,,no GET evidence | registry:ETP.PRINT_DOCUMENT_KEYS | verb unresolved in bundle
+ETP/STP,/etp/print-documents/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.PRINT_DOCUMENT_DETAIL
+ETP/STP,/etp/sludge-entries/,POST,,not probed,no,,no GET evidence | registry:ETP.SLUDGE_ENTRIES
+ETP/STP,/etp/sludge-entries/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.SLUDGE_ENTRY_DETAIL
+ETP/STP,/etp/staff/,POST,,not probed,no,,no GET evidence | registry:ETP.STAFF
+ETP/STP,/etp/staff/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:ETP.STAFF_DETAIL
+ETP/STP,/etp/summary/,GET,,400,no,,"routed; required query param missing: {""detail"":""Pass ?plant=<id>.""} | registry:ETP.SUMMARY"
+Fire,/maintenance/fire-categories/,GET|POST,maintenance maintenance-fire-categories,200,binary+spec,5,live | registry:MAINTENANCE.FIRE_CATEGORIES
+Fire,/maintenance/fire-categories/{id}/,PUT,,not probed,spec-only,,needs id | registry:MAINTENANCE.FIRE_CATEGORY_DETAIL
+Fire,/maintenance/fire-issues/,GET|POST,maintenance maintenance-fire-issues,200,binary+spec,3,live | registry:MAINTENANCE.FIRE_ISSUES
+Fire,/maintenance/fire-issues/{id}/,DELETE|GET,maintenance maintenance-fire-issue-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.FIRE_ISSUE_DETAIL
+Fire,/maintenance/fire-issues/{id}/return/,POST,,not probed,no,,needs id | registry:MAINTENANCE.FIRE_ISSUE_RETURN
+Fire,/maintenance/fire-movements/,GET,maintenance maintenance-fire-movements,200,binary+spec,7,live | registry:MAINTENANCE.FIRE_MOVEMENTS
+Fire,/maintenance/fire-report-attachments/,POST,maintenance maintenance-fire-report-attachments,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.FIRE_REPORT_ATTACHMENTS"
+Fire,/maintenance/fire-report-attachments/{id}/,DELETE,,not probed,no,,needs id | registry:MAINTENANCE.FIRE_REPORT_ATTACHMENT_DETAIL
+Fire,/maintenance/fire-report-items/,POST,maintenance maintenance-fire-report-items,200,binary+spec,5,live | registry:MAINTENANCE.FIRE_REPORT_ITEMS
+Fire,/maintenance/fire-report-items/{id}/,DELETE|PATCH,,not probed,spec-only,,needs id | registry:MAINTENANCE.FIRE_REPORT_ITEM_DETAIL
+Fire,/maintenance/fire-report-photos/,POST,maintenance maintenance-fire-report-photos,200,binary+spec,6,live | registry:MAINTENANCE.FIRE_REPORT_PHOTOS
+Fire,/maintenance/fire-report-photos/{id}/,DELETE,,not probed,spec-only,,needs id | registry:MAINTENANCE.FIRE_REPORT_PHOTO_DETAIL
+Fire,/maintenance/fire-reports/,GET|POST,maintenance maintenance-fire-reports,200,binary+spec,5,live | registry:MAINTENANCE.FIRE_REPORTS
+Fire,/maintenance/fire-reports/{id}/,DELETE|GET|PATCH,maintenance maintenance-fire-report-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.FIRE_REPORT_DETAIL
+Fire,/maintenance/fire-reports/{id}/review/,POST,,not probed,no,,needs id | registry:MAINTENANCE.FIRE_REPORT_REVIEW
+Fire,/maintenance/fire-requests/,GET|POST,maintenance maintenance-fire-requests,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.FIRE_REQUESTS"
+Fire,/maintenance/fire-requests/{id}/,GET,maintenance maintenance-fire-request-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.FIRE_REQUEST_DETAIL
+Fire,/maintenance/fire-requests/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.FIRE_REQUEST_CANCEL
+Fire,/maintenance/fire-requests/{id}/consume/,POST,,not probed,no,,needs id | registry:MAINTENANCE.FIRE_REQUEST_CONSUME
+Fire,/maintenance/fire-requests/{id}/issue/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.FIRE_REQUEST_ISSUE
+Fire,/maintenance/fire-requests/{id}/return-unused/,POST,,not probed,no,,needs id | registry:MAINTENANCE.FIRE_REQUEST_RETURN_UNUSED
+Fire,/maintenance/fire/,GET|POST,maintenance maintenance-fire-items,200,binary+spec,7,live | registry:MAINTENANCE.FIRE_ITEMS
+Fire,/maintenance/fire/low-stock/,GET,maintenance maintenance-fire-low-stock,200,binary+spec,2,live | registry:MAINTENANCE.FIRE_ITEMS_LOW_STOCK
+Fire,/maintenance/fire/{id}/,GET|PUT,maintenance maintenance-fire-item-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.FIRE_ITEM_DETAIL
+Fire,/maintenance/fire/{id}/adjust-stock/,POST,,not probed,no,,needs id | registry:MAINTENANCE.FIRE_ITEM_ADJUST_STOCK
+Gate,/construction-gatein/gate-entries/construction/categories/,GET,construction-gatein construction-categories,200,binary+spec,2,live
+Gate,/construction-gatein/gate-entries/{id}/complete/,POST,,not probed,no,,not in probe set
+Gate,/construction-gatein/gate-entries/{id}/construction/,GET|POST,construction-gatein construction-entry,not probed,binary+spec,,needs id
+Gate,/construction-gatein/gate-entries/{id}/construction/update/,PUT,,not probed,no,,not in probe set
+Gate,/daily-needs-gatein/gate-entries/daily-need/categories/,GET,daily-needs-gatein gate-entries-daily-need-categories,200,binary+spec,1,live | registry:DAILY_NEEDS_GATEIN.CATEGORIES
+Gate,/daily-needs-gatein/gate-entries/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:DAILY_NEEDS_GATEIN.COMPLETE
+Gate,/daily-needs-gatein/gate-entries/{id}/daily-need/,GET|POST,daily-needs-gatein daily-need-entry,not probed,binary+spec,,"needs id | registry:DAILY_NEEDS_GATEIN.GET,DAILY_NEEDS_GATEIN.CREATE"
+Gate,/finished-goods-gatein/gate-entries/{id}/,DELETE,,not probed,no,,needs id | registry:FINISHED_GOODS_GATEIN.GATE_ENTRY_DELETE
+Gate,/finished-goods-gatein/gate-entries/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:FINISHED_GOODS_GATEIN.COMPLETE
+Gate,/finished-goods-gatein/gate-entries/{id}/po-receipts/,POST,,not probed,no,,needs id | registry:FINISHED_GOODS_GATEIN.PO_RECEIPTS
+Gate,/finished-goods-gatein/gate-entries/{id}/po-receipts/view/,GET,,not probed,no,,needs id | registry:FINISHED_GOODS_GATEIN.PO_RECEIPTS_VIEW
+Gate,/finished-goods-gatein/gate-entries/{id}/po-receipts/{id}/,PUT,,not probed,no,,needs id | registry:FINISHED_GOODS_GATEIN.PO_RECEIPT_DETAIL
+Gate,/fixed-asset-gatein/gate-entries/fixed-asset/categories/,GET,fixed-asset-gatein,200,binary+spec,8,live
+Gate,/fixed-asset-gatein/gate-entries/{id}/complete/,POST,,not probed,no,,not in probe set
+Gate,/fixed-asset-gatein/gate-entries/{id}/fixed-asset/,GET|POST,,not probed,spec-only,,needs id
+Gate,/fixed-asset-gatein/gate-entries/{id}/fixed-asset/update/,PUT,,not probed,no,,not in probe set
+Gate,/gate-core/arrivals/,POST,gate-core arrivals,200,binary+spec,200,live | registry:GATE_CORE.ARRIVALS
+Gate,/gate-core/arrivals/expected/,GET,gate-core arrivals-expected,400,binary+spec,,"routed; required query param missing: {""detail"":""vehicle_id is required.""} | registry:GATE_CORE.ARRIVALS_EXPECTED"
+Gate,/gate-core/arrivals/{id}/depart/,POST,,not probed,no,,needs id | registry:GATE_CORE.ARRIVAL_DEPART_BY_ID
+Gate,/gate-core/arrivals/{id}/dispatch/,POST,,not probed,no,,needs id | registry:GATE_CORE.ARRIVAL_DISPATCH_BY_ID
+Gate,/gate-core/arrivals/{id}/empty-out/,POST,,not probed,no,,needs id | registry:GATE_CORE.ARRIVAL_EMPTY_OUT_BY_ID
+Gate,/gate-core/arrivals/{id}/gatepass/commit/,POST,,not probed,no,,needs id | registry:GATE_CORE.ARRIVAL_GATEPASS_COMMIT_BY_ID
+Gate,/gate-core/arrivals/{id}/gatepass/print/,POST,,not probed,no,,needs id | registry:GATE_CORE.ARRIVAL_GATEPASS_PRINT_BY_ID
+Gate,/gate-core/arrivals/{id}/gatepass/readiness/,GET,gate-core arrival-gatepass-readiness,not probed,binary+spec,,needs id | registry:GATE_CORE.ARRIVAL_GATEPASS_READINESS_BY_ID
+Gate,/gate-core/arrivals/{id}/gatepass/reprint/,POST,,not probed,no,,needs id | registry:GATE_CORE.ARRIVAL_GATEPASS_REPRINT_BY_ID
+Gate,/gate-core/arrivals/{id}/truck-photo/,POST,,not probed,no,,needs id | registry:GATE_CORE.ARRIVAL_TRUCK_PHOTO_BY_ID
+Gate,/gate-core/bst-ins/,GET,gate-core bst-ins,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:GATE_CORE.BST_INS"
+Gate,/gate-core/bst-ins/by-vehicle-entry/{id}/,GET,,not probed,spec-only,,needs id | registry:GATE_CORE.BST_IN_BY_VEHICLE_ENTRY
+Gate,/gate-core/bst-ins/by-vehicle-entry/{id}/complete/,UNRESOLVED,,not probed,no,,write-shaped path segment | registry:GATE_CORE.BST_IN_COMPLETE_BY_VEHICLE_ENTRY | verb unresolved in bundle
+Gate,/gate-core/bst-ins/eligible-outs/,GET,gate-core bst-ins-eligible-outs,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:GATE_CORE.BST_IN_ELIGIBLE_OUTS"
+Gate,/gate-core/bst-ins/{id}/,GET,gate-core bst-in,not probed,binary+spec,,needs id | registry:GATE_CORE.BST_IN_BY_ID
+Gate,/gate-core/bst-outs/,POST,gate-core bst-outs,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:GATE_CORE.BST_OUTS"
+Gate,/gate-core/bst-outs/by-vehicle-entry/{id}/,GET,,not probed,spec-only,,needs id | registry:GATE_CORE.BST_OUT_BY_VEHICLE_ENTRY
+Gate,/gate-core/bst-outs/by-vehicle-entry/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.BST_OUT_COMPLETE_BY_VEHICLE_ENTRY
+Gate,/gate-core/bst-outs/sap-transfers/,GET,gate-core bst-outs-sap-transfers,200,binary+spec,50,live | registry:GATE_CORE.BST_OUT_SAP_TRANSFERS
+Gate,/gate-core/bst-outs/sap-transfers/{id}/,GET,gate-core bst-outs-sap-transfer,not probed,binary+spec,,needs id | registry:GATE_CORE.BST_OUT_SAP_TRANSFER_BY_DOC_ENTRY
+Gate,/gate-core/bst-outs/{id}/,GET|PUT,gate-core bst-out,not probed,binary+spec,,needs id | registry:GATE_CORE.BST_OUT_BY_ID
+Gate,/gate-core/bst-outs/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.BST_OUT_CANCEL_BY_ID
+Gate,/gate-core/bst-returns/,GET,gate-core bst-returns,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:GATE_CORE.BST_RETURNS"
+Gate,/gate-core/bst-returns/by-vehicle-entry/{id}/,GET,,not probed,spec-only,,needs id | registry:GATE_CORE.BST_RETURN_BY_VEHICLE_ENTRY
+Gate,/gate-core/bst-returns/by-vehicle-entry/{id}/complete/,UNRESOLVED,,not probed,no,,write-shaped path segment | registry:GATE_CORE.BST_RETURN_COMPLETE_BY_VEHICLE_ENTRY | verb unresolved in bundle
+Gate,/gate-core/bst-returns/eligible-outs/,GET,gate-core bst-returns-eligible-outs,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:GATE_CORE.BST_RETURN_ELIGIBLE_OUTS"
+Gate,/gate-core/bst-returns/{id}/,GET,gate-core bst-return,not probed,binary+spec,,needs id | registry:GATE_CORE.BST_RETURN_BY_ID
+Gate,/gate-core/construction-gate-entry/{id}/,GET,gate-core construction-gate-entry,not probed,binary+spec,,needs id
+Gate,/gate-core/daily-need-gate-entry/{id}/,GET,gate-core daily-need-gate-entry,not probed,binary+spec,,needs id | registry:DAILY_NEEDS_GATEIN.FULL_VIEW
+Gate,/gate-core/dispatch-tracking/,GET,gate-core dispatch-tracking,200,binary+spec,1160,live | registry:GATE_CORE.DISPATCH_TRACKING
+Gate,/gate-core/dispatch-tracking/summary/,GET,,200,spec-only,obj,live | registry:GATE_CORE.DISPATCH_TRACKING_SUMMARY
+Gate,/gate-core/dispatch-tracking/{id}/bills/,GET,,not probed,spec-only,,needs id | registry:GATE_CORE.DISPATCH_TRACKING_BILLS
+Gate,/gate-core/dispatch-tracking/{id}/updates/,GET|POST,gate-core dispatch-tracking-updates,not probed,binary+spec,,needs id | registry:GATE_CORE.DISPATCH_TRACKING_UPDATES
+Gate,/gate-core/dispatch-tracking/{id}/updates/{id}/return-note/,POST,,not probed,no,,needs id | registry:GATE_CORE.DISPATCH_TRACKING_RETURN_NOTE
+Gate,/gate-core/empty-vehicle-ins/,POST,gate-core empty-vehicle-ins,200,binary+spec,,live | registry:GATE_CORE.EMPTY_VEHICLE_INS
+Gate,/gate-core/empty-vehicle-ins/eligible/,GET,gate-core empty-vehicle-ins-eligible,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:GATE_CORE.EMPTY_VEHICLE_IN_ELIGIBLE"
+Gate,/gate-core/empty-vehicle-ins/reasons/,GET,gate-core empty-vehicle-ins-reasons,200,binary+spec,4,live | registry:GATE_CORE.EMPTY_VEHICLE_IN_REASONS
+Gate,/gate-core/empty-vehicle-ins/{id}/,GET|PATCH,gate-core empty-vehicle-in,not probed,binary+spec,,needs id | registry:GATE_CORE.EMPTY_VEHICLE_IN_BY_ID
+Gate,/gate-core/empty-vehicle-ins/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.EMPTY_VEHICLE_IN_COMPLETE_BY_ID
+Gate,/gate-core/empty-vehicle-outs/,POST,gate-core empty-vehicle-outs,200,binary+spec,230,live | registry:GATE_CORE.EMPTY_VEHICLE_OUTS
+Gate,/gate-core/empty-vehicle-outs/eligible-entries/,GET,gate-core empty-vehicle-outs-eligible-entries,200,binary+spec,,live | registry:GATE_CORE.EMPTY_VEHICLE_ELIGIBLE_ENTRIES
+Gate,/gate-core/empty-vehicle-outs/{id}/,GET,gate-core empty-vehicle-out,not probed,binary+spec,,needs id | registry:GATE_CORE.EMPTY_VEHICLE_OUT_BY_ID
+Gate,/gate-core/empty-vehicle-outs/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.EMPTY_VEHICLE_OUT_CANCEL_BY_ID
+Gate,/gate-core/gate-attachments/{id}/,GET|POST,gate-core gate-attachments,not probed,binary+spec,,needs id | registry:GATE_ATTACHMENTS.BY_ENTRY
+Gate,/gate-core/gate-attachments/{id}/?history=1/,GET,,not probed,no,,needs id | registry:GATE_ATTACHMENTS.HISTORY
+Gate,/gate-core/gate-attachments/{id}/{id}/,DELETE,,not probed,no,,needs id | registry:GATE_ATTACHMENTS.DETAIL
+Gate,/gate-core/inside-dispatch-vehicles/,GET,gate-core inside-dispatch-vehicles,200,binary+spec,3,live | registry:GATE_CORE.INSIDE_DISPATCH_VEHICLES
+Gate,/gate-core/inside-dispatch-vehicles/add-bill-to-truck/,POST,,not probed,no,,no GET evidence | registry:GATE_CORE.INSIDE_VEHICLE_ADD_BILL_TO_TRUCK
+Gate,/gate-core/inside-dispatch-vehicles/add-bill/,POST,,not probed,no,,no GET evidence | registry:GATE_CORE.INSIDE_VEHICLE_ADD_BILL
+Gate,/gate-core/inside-dispatch-vehicles/move-bill/,POST,,not probed,no,,no GET evidence | registry:GATE_CORE.INSIDE_VEHICLE_MOVE_BILL
+Gate,/gate-core/inside-dispatch-vehicles/remove-bill/,POST,,not probed,no,,no GET evidence | registry:GATE_CORE.INSIDE_VEHICLE_REMOVE_BILL
+Gate,/gate-core/inside-dispatch-vehicles/unlink-all/,POST,,not probed,no,,no GET evidence | registry:GATE_CORE.INSIDE_VEHICLE_UNLINK_ALL
+Gate,/gate-core/job-work/,POST,gate-core job-work,200,binary+spec,14,live | registry:GATE_CORE.JOB_WORKS
+Gate,/gate-core/job-work/by-vehicle-entry/{id}/,GET,,not probed,spec-only,,needs id | registry:GATE_CORE.JOB_WORK_BY_VEHICLE_ENTRY
+Gate,/gate-core/job-work/by-vehicle-entry/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.JOB_WORK_COMPLETE_BY_VEHICLE_ENTRY
+Gate,/gate-core/job-work/sap-grpos/,GET,gate-core job-work-sap-grpos,200,binary+spec,50,live | registry:GATE_CORE.JOB_WORK_SAP_GRPOS
+Gate,/gate-core/job-work/sap-grpos/{id}/,GET,gate-core job-work-sap-grpo,not probed,binary+spec,,needs id | registry:GATE_CORE.JOB_WORK_SAP_GRPO_BY_DOC_ENTRY
+Gate,/gate-core/job-work/sap-production-orders/,GET,gate-core job-work-sap-production-orders,200,binary+spec,50,live | registry:GATE_CORE.JOB_WORK_SAP_PRODUCTION_ORDERS
+Gate,/gate-core/job-work/sap-production-orders/{id}/,GET,gate-core job-work-sap-production-order,not probed,binary+spec,,needs id | registry:GATE_CORE.JOB_WORK_SAP_PRODUCTION_ORDER_BY_DOC_ENTRY
+Gate,/gate-core/job-work/{id}/,GET|PUT,gate-core job-work-detail,not probed,binary+spec,,needs id | registry:GATE_CORE.JOB_WORK_BY_ID
+Gate,/gate-core/maintenance-gate-entry/{id}/,GET,gate-core maintenance-gate-entry,not probed,binary+spec,,needs id
+Gate,/gate-core/raw-material-gate-entry/{id}/,GET,gate-core raw-material-gate-entry,not probed,binary+spec,,needs id | registry:GATE_CORE.FULL_VIEW
+Gate,/gate-core/rejected-qc-returns/,POST,gate-core rejected-qc-returns,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:GATE_CORE.REJECTED_QC_RETURNS"
+Gate,/gate-core/rejected-qc-returns/{id}/,GET,gate-core rejected-qc-return,not probed,binary+spec,,needs id | registry:GATE_CORE.REJECTED_QC_RETURN_BY_ID
+Gate,/gate-core/sales-dispatch/,POST,gate-core sales-dispatch,200,binary+spec,,live | registry:GATE_CORE.SALES_DISPATCHES
+Gate,/gate-core/sales-dispatch/by-vehicle-entry/{id}/,GET,,not probed,spec-only,,needs id | registry:GATE_CORE.SALES_DISPATCH_BY_VEHICLE_ENTRY
+Gate,/gate-core/sales-dispatch/documents/,GET,gate-core sales-dispatch-documents,200,binary+spec,200,live | registry:GATE_CORE.SALES_DISPATCH_DOCUMENTS
+Gate,/gate-core/sales-dispatch/documents/{id}/{id}/,GET,gate-core sales-dispatch-document,not probed,binary+spec,,needs id | registry:GATE_CORE.SALES_DISPATCH_DOCUMENT_BY_DOC_ENTRY
+Gate,/gate-core/sales-dispatch/expected-vehicles/,GET,,200,spec-only,2,live | registry:GATE_CORE.SALES_DISPATCH_EXPECTED_VEHICLES
+Gate,/gate-core/sales-dispatch/lock/,GET|PATCH,,not probed,no,,denylist:side-effect | registry:GATE_CORE.SALES_DISPATCH_LOCK
+Gate,/gate-core/sales-dispatch/partial-approval/{id}/decide/,UNRESOLVED,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_PARTIAL_APPROVAL_DECIDE | verb unresolved in bundle
+Gate,/gate-core/sales-dispatch/pending-bookings/,GET,gate-core sales-dispatch-pending-bookings,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:GATE_CORE.SALES_DISPATCH_PENDING_BOOKINGS"
+Gate,/gate-core/sales-dispatch/reports/,GET,gate-core sales-dispatch-reports,200,binary+spec,,live | registry:GATE_CORE.SALES_DISPATCH_REPORTS
+Gate,/gate-core/sales-dispatch/{id}/,GET|PATCH,gate-core sales-dispatch-detail,not probed,binary+spec,,needs id | registry:GATE_CORE.SALES_DISPATCH_BY_ID
+Gate,/gate-core/sales-dispatch/{id}/additional-weights/,PUT,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_ADDITIONAL_WEIGHTS
+Gate,/gate-core/sales-dispatch/{id}/attachments/,GET|POST,gate-core sales-dispatch-attachments,not probed,binary+spec,,needs id | registry:GATE_CORE.SALES_DISPATCH_ATTACHMENTS
+Gate,/gate-core/sales-dispatch/{id}/attachments/{id}/,PATCH,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_ATTACHMENT_DETAIL
+Gate,/gate-core/sales-dispatch/{id}/barcode-scans/,GET,gate-core sales-dispatch-barcode-scans,not probed,binary+spec,,needs id | registry:GATE_CORE.SALES_DISPATCH_BARCODE_SCANS
+Gate,/gate-core/sales-dispatch/{id}/barcode-scans/import/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.SALES_DISPATCH_BARCODE_SCANS_IMPORT
+Gate,/gate-core/sales-dispatch/{id}/box-scans/,GET|POST,gate-core sales-dispatch-box-scans,not probed,binary+spec,,needs id | registry:GATE_CORE.SALES_DISPATCH_BOX_SCANS
+Gate,/gate-core/sales-dispatch/{id}/box-scans/bulk-delete/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.SALES_DISPATCH_BOX_SCANS_BULK_DELETE
+Gate,/gate-core/sales-dispatch/{id}/box-scans/{id}/,DELETE,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_BOX_SCAN
+Gate,/gate-core/sales-dispatch/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.SALES_DISPATCH_CANCEL
+Gate,/gate-core/sales-dispatch/{id}/challan-weight/,POST,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_CHALLAN_WEIGHT
+Gate,/gate-core/sales-dispatch/{id}/commit-print/,POST,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_COMMIT_PRINT
+Gate,/gate-core/sales-dispatch/{id}/dispatch/,POST,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_MARK_DISPATCHED
+Gate,/gate-core/sales-dispatch/{id}/documents/add/,POST,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_ADD_DOCUMENT
+Gate,/gate-core/sales-dispatch/{id}/documents/{id}/remove/,UNRESOLVED,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_REMOVE_DOCUMENT | verb unresolved in bundle
+Gate,/gate-core/sales-dispatch/{id}/gatepass/preview/,POST,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_GATEPASS_PREVIEW
+Gate,/gate-core/sales-dispatch/{id}/gatepass/print/,POST,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_GATEPASS_PRINT
+Gate,/gate-core/sales-dispatch/{id}/gatepass/prints/,GET,gate-core sales-dispatch-gatepass-prints,not probed,binary+spec,,needs id | registry:GATE_CORE.SALES_DISPATCH_GATEPASS_PRINTS
+Gate,/gate-core/sales-dispatch/{id}/gatepass/reprint/,POST,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_GATEPASS_REPRINT
+Gate,/gate-core/sales-dispatch/{id}/pallet-scan/,POST,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_PALLET_SCAN
+Gate,/gate-core/sales-dispatch/{id}/partial-approval/,UNRESOLVED,,not probed,no,,needs id | registry:GATE_CORE.SALES_DISPATCH_PARTIAL_APPROVAL | verb unresolved in bundle
+Gate,/gate-core/sales-dispatch/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.SALES_DISPATCH_REJECT
+Gate,/gate-core/unit-choices/,GET,gate-core unit-choices,200,binary+spec,7,live
+Gate,/maintenance-gatein/gate-entries/maintenance/types/,GET,maintenance-gatein maintenance-types,200,binary+spec,2,live
+Gate,/maintenance-gatein/gate-entries/{id}/complete/,POST,,not probed,no,,not in probe set
+Gate,/maintenance-gatein/gate-entries/{id}/maintenance/,GET|POST,maintenance-gatein maintenance-entry,not probed,binary+spec,,needs id
+Gate,/maintenance-gatein/gate-entries/{id}/maintenance/receive-spare/,POST,,not probed,no,,not in probe set
+Gate,/maintenance-gatein/gate-entries/{id}/maintenance/update/,PUT,,not probed,no,,not in probe set
+Gate,/person-gatein/check-status/,GET,,400,no,,"routed; required query param missing: {""error"":""Either 'visitor' or 'labour' parameter is required""}"
+Gate,/person-gatein/contractor/{id}/labours-status/,GET,,not probed,spec-only,,needs id
+Gate,/person-gatein/contractors/,GET|POST,person-gatein contractors,200,binary+spec,8,live
+Gate,/person-gatein/contractors/{id}/,DELETE|PUT,,not probed,no,,not in probe set
+Gate,/person-gatein/dashboard/,GET,person-gatein gate-person-dashboard,200,binary+spec,obj,live
+Gate,/person-gatein/entries/,GET,person-gatein entries,200,binary+spec,296,live
+Gate,/person-gatein/entries/count/,GET,,404,no,,DEAD: Django URL-resolver 404 (HTML)
+Gate,/person-gatein/entries/search/,GET,person-gatein gate-person-search,400,binary+spec,,"routed; required query param missing: {""error"":""Search query 'q' is required""}"
+Gate,/person-gatein/entry/bulk-create/,POST,,not probed,no,,not in probe set
+Gate,/person-gatein/entry/bulk-exit/,POST,,not probed,no,,not in probe set
+Gate,/person-gatein/entry/create/,POST,,not probed,no,,not in probe set
+Gate,/person-gatein/entry/inside/,GET,person-gatein gate-person-inside,200,binary+spec,0,"live, zero rows in JIVO_OIL"
+Gate,/person-gatein/entry/{id}/,GET,,not probed,spec-only,,needs id
+Gate,/person-gatein/entry/{id}/cancel/,POST,,not probed,no,,not in probe set
+Gate,/person-gatein/entry/{id}/exit/,POST,,not probed,no,,not in probe set
+Gate,/person-gatein/entry/{id}/update/,PATCH,,not probed,no,,not in probe set
+Gate,/person-gatein/gates/,GET|POST,person-gatein gates,200,binary+spec,1,live
+Gate,/person-gatein/gates/{id}/,DELETE|PUT,,not probed,no,,not in probe set
+Gate,/person-gatein/labour/{id}/history/,GET,,not probed,spec-only,,needs id
+Gate,/person-gatein/labours/,GET|POST,person-gatein labours,200,binary+spec,3,live
+Gate,/person-gatein/labours/{id}/,DELETE|GET|PUT,person-gatein gate-labour,not probed,binary+spec,,needs id
+Gate,/person-gatein/person-types/,GET|POST,person-gatein person-types,200,binary+spec,2,live
+Gate,/person-gatein/person-types/{id}/,DELETE|PUT,,not probed,no,,not in probe set
+Gate,/person-gatein/visitor/{id}/history/,GET,,not probed,spec-only,,needs id
+Gate,/person-gatein/visitors/,GET|POST,person-gatein visitors,200,binary+spec,205,live
+Gate,/person-gatein/visitors/{id}/,DELETE|GET|PUT,,not probed,spec-only,,needs id
+Gate,/raw-material-gatein/gate-entries/{id}/,DELETE,,not probed,no,,needs id | registry:RAW_MATERIAL_GATEIN.GATE_ENTRY_DELETE
+Gate,/raw-material-gatein/gate-entries/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:GATE_CORE.COMPLETE
+Gate,/raw-material-gatein/gate-entries/{id}/po-receipts/,POST,,not probed,no,,needs id | registry:RAW_MATERIAL_GATEIN.PO_RECEIPTS
+Gate,/raw-material-gatein/gate-entries/{id}/po-receipts/view/,GET,,not probed,no,,needs id | registry:RAW_MATERIAL_GATEIN.PO_RECEIPTS_VIEW
+Gate,/raw-material-gatein/gate-entries/{id}/po-receipts/{id}/,PUT,,not probed,no,,needs id | registry:RAW_MATERIAL_GATEIN.PO_RECEIPT_DETAIL
+Gate,/raw-material-gatein/gate-entries/{id}/po-receipts/{id}/replace/,POST,,not probed,no,,needs id | registry:RAW_MATERIAL_GATEIN.PO_RECEIPT_REPLACE
+Gate,/returnable-items/dashboard/,GET,returnable-items dashboard,200,binary+spec,obj,live | registry:RETURNABLE.DASHBOARD
+Gate,/returnable-items/options/,GET,returnable-items options,200,binary+spec,obj,live | registry:RETURNABLE.OPTIONS
+Gate,/returnable-items/reports/,GET,returnable-items report,200,binary+spec,73,live | registry:RETURNABLE.REPORTS
+Gate,/returnable-items/returnable-attachments/,POST,returnable-items attachments,200,binary+spec,64,live | registry:RETURNABLE.ATTACHMENTS
+Gate,/returnable-items/returnable-attachments/{id}/,DELETE,,not probed,spec-only,,needs id | registry:RETURNABLE.ATTACHMENT_DETAIL
+Gate,/returnable-items/returnable-gatepass-items/,GET,returnable-items gatepass-items,200,binary+spec,116,live | registry:RETURNABLE.ITEMS
+Gate,/returnable-items/returnable-gatepass-items/{id}/,GET,returnable-items gatepass-item,not probed,binary+spec,,needs id | registry:RETURNABLE.ITEM_DETAIL
+Gate,/returnable-items/returnable-gatepasses/,GET|POST,returnable-items gatepasses,200,binary+spec,73,live | registry:RETURNABLE.GATEPASSES
+Gate,/returnable-items/returnable-gatepasses/pending-approval/,GET,returnable-items pending-approval,200,binary+spec,1,live | registry:RETURNABLE.PENDING_APPROVAL
+Gate,/returnable-items/returnable-gatepasses/pending-gate-in/,GET,returnable-items pending-gate-in,200,binary+spec,9,live | registry:RETURNABLE.PENDING_GATE_IN
+Gate,/returnable-items/returnable-gatepasses/pending-gate-out/,GET,returnable-items pending-gate-out,200,binary+spec,11,live | registry:RETURNABLE.PENDING_GATE_OUT
+Gate,/returnable-items/returnable-gatepasses/{id}/,DELETE|GET|PATCH,returnable-items gatepass,not probed,binary+spec,,needs id | registry:RETURNABLE.GATEPASS_DETAIL
+Gate,/returnable-items/returnable-gatepasses/{id}/acknowledge/,POST,,not probed,no,,needs id | registry:RETURNABLE.ACKNOWLEDGE
+Gate,/returnable-items/returnable-gatepasses/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:RETURNABLE.APPROVE
+Gate,/returnable-items/returnable-gatepasses/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:RETURNABLE.CANCEL
+Gate,/returnable-items/returnable-gatepasses/{id}/close/,POST,,not probed,no,,write-shaped path segment | registry:RETURNABLE.CLOSE
+Gate,/returnable-items/returnable-gatepasses/{id}/gate-out/,POST,,not probed,no,,needs id | registry:RETURNABLE.GATE_OUT
+Gate,/returnable-items/returnable-gatepasses/{id}/record-return/,POST,,not probed,no,,needs id | registry:RETURNABLE.RECORD_RETURN
+Gate,/returnable-items/returnable-gatepasses/{id}/reject-at-gate/,POST,,not probed,no,,needs id | registry:RETURNABLE.REJECT_AT_GATE
+Gate,/returnable-items/returnable-gatepasses/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:RETURNABLE.REJECT
+Gate,/returnable-items/returnable-gatepasses/{id}/short-close/,POST,,not probed,no,,needs id | registry:RETURNABLE.SHORT_CLOSE
+Gate,/returnable-items/returnable-gatepasses/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:RETURNABLE.SUBMIT
+Gate,/returnable-items/returnable-gatepasses/{id}/timeline/,GET,returnable-items timeline,not probed,binary+spec,,needs id | registry:RETURNABLE.TIMELINE
+Gate,/returnable-items/returnable-return-events/,GET,returnable-items return-events,200,binary+spec,20,live | registry:RETURNABLE.RETURN_EVENTS
+Gate,/returnable-items/sap-items/,GET,returnable-items sap-items,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:RETURNABLE.SAP_ITEMS"
+Gate,/security-checks/gate-entries/{id}/security/,POST,,not probed,no,,needs id | registry:SECURITY.GATE_ENTRY_SECURITY
+Gate,/security-checks/gate-entries/{id}/security/view/,GET,,not probed,no,,needs id | registry:SECURITY.GATE_ENTRY_SECURITY_VIEW
+Gate,/security-checks/security/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:SECURITY.SUBMIT
+Gate,/weighment/gate-entries/{id}/weighment/,POST,,not probed,no,,needs id | registry:WEIGHMENT.CREATE
+Gate,/weighment/gate-entries/{id}/weighment/view/,GET,,not probed,no,,needs id | registry:WEIGHMENT.GET
+Labour,/attendance/employees/,GET|POST,attendance attendance-employees,200,binary+spec,0,"live, zero rows in JIVO_OIL"
+Labour,/attendance/employees/{id}/,DELETE|PUT,,not probed,no,,not in probe set
+Labour,/attendance/records/,GET|POST,attendance attendance-records,200,binary+spec,0,"live, zero rows in JIVO_OIL"
+Labour,/attendance/records/export/,GET,attendance attendance-export,200,binary+spec,,live
+Labour,/attendance/records/{id}/,DELETE,,not probed,no,,not in probe set
+Labour,/labour-count/gate/board/,GET,labour-count gate-board,400,binary+spec,,"routed; required query param missing: {""detail"":""work_date and a valid shift are required.""}"
+Labour,/labour-count/sheet/history/,GET,labour-count sheet-history,200,binary+spec,4,live
+Labour,/labour-gate/,GET,labour-gate gate-day,400,binary+spec,,"routed; required query param missing: {""detail"":""A valid ?date=YYYY-MM-DD is required.""}"
+Labour,/labour-gate/{id}/audit/,GET,labour-gate gate-entry-audit,not probed,binary+spec,,needs id
+Maintenance,/maintenance/alerts/,GET|POST,maintenance alerts,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.ALERTS"
+Maintenance,/maintenance/asset-categories/,POST,maintenance asset-categories,200,binary+spec,1,live | registry:MAINTENANCE.ASSET_CATEGORIES
+Maintenance,/maintenance/asset-categories/{id}/,PUT,,not probed,spec-only,,needs id | registry:MAINTENANCE.ASSET_CATEGORY_DETAIL
+Maintenance,/maintenance/asset-departments/,POST,maintenance asset-departments,200,binary+spec,2,live | registry:MAINTENANCE.ASSET_DEPARTMENTS
+Maintenance,/maintenance/asset-departments/{id}/,PUT,,not probed,spec-only,,needs id | registry:MAINTENANCE.ASSET_DEPARTMENT_DETAIL
+Maintenance,/maintenance/asset-documents/,GET|POST,maintenance asset-documents,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.ASSET_DOCUMENTS"
+Maintenance,/maintenance/asset-documents/{id}/,GET,maintenance maintenance-asset-document-get,not probed,binary+spec,,needs id
+Maintenance,/maintenance/asset-locations/,POST,maintenance asset-locations,200,binary+spec,1,live | registry:MAINTENANCE.ASSET_LOCATIONS
+Maintenance,/maintenance/asset-locations/{id}/,PUT,,not probed,spec-only,,needs id | registry:MAINTENANCE.ASSET_LOCATION_DETAIL
+Maintenance,/maintenance/asset-photos/,GET|POST,maintenance asset-photos,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.ASSET_PHOTOS"
+Maintenance,/maintenance/asset-photos/{id}/,GET,maintenance maintenance-asset-photo-get,not probed,binary+spec,,needs id
+Maintenance,/maintenance/assets/,GET|POST,maintenance assets,200,binary+spec,1,live | registry:MAINTENANCE.ASSETS
+Maintenance,/maintenance/assets/{id}/,GET|PUT,maintenance maintenance-asset-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.ASSET_DETAIL
+Maintenance,/maintenance/assets/{id}/deactivate/,POST,,not probed,no,,needs id | registry:MAINTENANCE.ASSET_DEACTIVATE
+Maintenance,/maintenance/assets/{id}/qr/,GET|POST,,not probed,spec-only,,needs id | registry:MAINTENANCE.ASSET_QR
+Maintenance,/maintenance/daily-electricity-readings/,GET|POST,,200,spec-only,5,live | registry:MAINTENANCE.DAILY_ELECTRICITY_READINGS
+Maintenance,/maintenance/daily-electricity-readings/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:MAINTENANCE.DAILY_ELECTRICITY_READING_DETAIL
+Maintenance,/maintenance/daily-wastage-logs/,GET|POST,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.DAILY_WASTAGE_LOGS"
+Maintenance,/maintenance/daily-wastage-logs/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:MAINTENANCE.DAILY_WASTAGE_LOG_DETAIL
+Maintenance,/maintenance/dashboard/,GET,maintenance dashboard,200,binary+spec,obj,live | registry:MAINTENANCE.DASHBOARD
+Maintenance,/maintenance/electricity-meters/,GET|POST,,200,spec-only,12,live | registry:MAINTENANCE.ELECTRICITY_METERS
+Maintenance,/maintenance/electricity-meters/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:MAINTENANCE.ELECTRICITY_METER_DETAIL
+Maintenance,/maintenance/material-indent-attachments/,POST,maintenance maintenance-material-indent-attachments,200,binary+spec,3,live | registry:MAINTENANCE.MATERIAL_INDENT_ATTACHMENTS
+Maintenance,/maintenance/material-indent-attachments/{id}/,DELETE,,not probed,spec-only,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_ATTACHMENT_DETAIL
+Maintenance,/maintenance/material-indent-quotations/,GET|POST,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.MATERIAL_INDENT_QUOTATIONS"
+Maintenance,/maintenance/material-indent-quotations/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_QUOTATION_DETAIL
+Maintenance,/maintenance/material-indents/,GET|POST,maintenance maintenance-material-indents,200,binary+spec,47,live | registry:MAINTENANCE.MATERIAL_INDENTS
+Maintenance,/maintenance/material-indents/{id}/,DELETE|GET|PATCH,maintenance maintenance-material-indent-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_DETAIL
+Maintenance,/maintenance/material-indents/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.MATERIAL_INDENT_APPROVE
+Maintenance,/maintenance/material-indents/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.MATERIAL_INDENT_CANCEL
+Maintenance,/maintenance/material-indents/{id}/gate-in/,POST,,not probed,no,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_GATE_IN
+Maintenance,/maintenance/material-indents/{id}/purchase/,POST,,not probed,no,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_PURCHASE
+Maintenance,/maintenance/material-indents/{id}/receive/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.MATERIAL_INDENT_RECEIVE
+Maintenance,/maintenance/material-indents/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.MATERIAL_INDENT_REJECT
+Maintenance,/maintenance/material-indents/{id}/return-quotations/,POST,,not probed,no,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_RETURN_QUOTATIONS
+Maintenance,/maintenance/material-indents/{id}/review/,POST,,not probed,no,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_REVIEW
+Maintenance,/maintenance/material-indents/{id}/select-quotation/,POST,,not probed,no,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_SELECT_QUOTATION
+Maintenance,/maintenance/material-indents/{id}/submit-quotations/,POST,,not probed,no,,needs id | registry:MAINTENANCE.MATERIAL_INDENT_SUBMIT_QUOTATIONS
+Maintenance,/maintenance/material-indents/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.MATERIAL_INDENT_SUBMIT
+Maintenance,/maintenance/options/,GET,maintenance options,200,binary+spec,obj,live | registry:MAINTENANCE.OPTIONS
+Maintenance,/maintenance/pm-checklist-items/,GET|POST,maintenance pm-checklist-items,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.PM_CHECKLIST_ITEMS"
+Maintenance,/maintenance/pm-checklist-items/{id}/,PUT,,not probed,no,,needs id | registry:MAINTENANCE.PM_CHECKLIST_ITEM_DETAIL
+Maintenance,/maintenance/pm-executions/,GET,maintenance pm-executions,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.PM_EXECUTIONS"
+Maintenance,/maintenance/pm-executions/{id}/,GET,maintenance maintenance-pm-execution-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.PM_EXECUTION_DETAIL
+Maintenance,/maintenance/pm-executions/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.PM_EXECUTION_COMPLETE
+Maintenance,/maintenance/pm-executions/{id}/skip/,POST,,not probed,no,,needs id | registry:MAINTENANCE.PM_EXECUTION_SKIP
+Maintenance,/maintenance/pm-executions/{id}/start/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.PM_EXECUTION_START
+Maintenance,/maintenance/pm-plans/,GET|POST,maintenance pm-plans,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.PM_PLANS"
+Maintenance,/maintenance/pm-plans/generate-due/,POST,,not probed,no,,no GET evidence | registry:MAINTENANCE.PM_PLANS_GENERATE_DUE
+Maintenance,/maintenance/pm-plans/{id}/,PUT,,not probed,no,,needs id | registry:MAINTENANCE.PM_PLAN_DETAIL
+Maintenance,/maintenance/pm-plans/{id}/generate/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.PM_PLAN_GENERATE
+Maintenance,/maintenance/reports/,GET,maintenance reports,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.REPORTS"
+Maintenance,/maintenance/safety-fine-photos/,POST,maintenance maintenance-safety-fine-photos,200,binary+spec,2,live | registry:MAINTENANCE.SAFETY_FINE_PHOTOS
+Maintenance,/maintenance/safety-fine-photos/{id}/,DELETE,,not probed,spec-only,,needs id | registry:MAINTENANCE.SAFETY_FINE_PHOTO_DETAIL
+Maintenance,/maintenance/safety-fines/,GET|POST,maintenance maintenance-safety-fines,200,binary+spec,2,live | registry:MAINTENANCE.SAFETY_FINES
+Maintenance,/maintenance/safety-fines/{id}/,DELETE|GET|PATCH,maintenance maintenance-safety-fine-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.SAFETY_FINE_DETAIL
+Maintenance,/maintenance/safety-fines/{id}/settle/,POST,,not probed,no,,needs id | registry:MAINTENANCE.SAFETY_FINE_SETTLE
+Maintenance,/maintenance/safety-violation-types/,GET|POST,maintenance maintenance-safety-violation-types,200,binary+spec,8,live | registry:MAINTENANCE.SAFETY_VIOLATION_TYPES
+Maintenance,/maintenance/safety-violation-types/{id}/,DELETE|PATCH,,not probed,spec-only,,needs id | registry:MAINTENANCE.SAFETY_VIOLATION_TYPE_DETAIL
+Maintenance,/maintenance/scan/lookup/,GET,,404,no,,routed; semantic 404 (needs param/record) | registry:MAINTENANCE.SCAN_LOOKUP
+Maintenance,/maintenance/scan/work-order/,POST,,not probed,no,,no GET evidence | registry:MAINTENANCE.SCAN_WORK_ORDER
+Maintenance,/maintenance/spare-categories/,POST,maintenance spare-categories,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.SPARE_CATEGORIES"
+Maintenance,/maintenance/spare-categories/{id}/,PUT,,not probed,no,,needs id | registry:MAINTENANCE.SPARE_CATEGORY_DETAIL
+Maintenance,/maintenance/spare-movements/,GET,maintenance spare-movements,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.SPARE_MOVEMENTS"
+Maintenance,/maintenance/spare-requests/,GET|POST,maintenance spare-requests,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.SPARE_REQUESTS"
+Maintenance,/maintenance/spare-requests/{id}/,GET,maintenance maintenance-spare-request-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.SPARE_REQUEST_DETAIL
+Maintenance,/maintenance/spare-requests/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.SPARE_REQUEST_CANCEL
+Maintenance,/maintenance/spare-requests/{id}/consume/,POST,,not probed,no,,needs id | registry:MAINTENANCE.SPARE_REQUEST_CONSUME
+Maintenance,/maintenance/spare-requests/{id}/issue/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.SPARE_REQUEST_ISSUE
+Maintenance,/maintenance/spare-requests/{id}/return-unused/,POST,,not probed,no,,needs id | registry:MAINTENANCE.SPARE_REQUEST_RETURN_UNUSED
+Maintenance,/maintenance/spares/,GET|POST,maintenance spares,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.SPARES"
+Maintenance,/maintenance/spares/low-stock/,GET,maintenance spares-low-stock,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.SPARES_LOW_STOCK"
+Maintenance,/maintenance/spares/stock/,GET,,404,no,,routed; semantic 404 (needs param/record) | registry:MAINTENANCE.SPARE_STOCK
+Maintenance,/maintenance/spares/{id}/,GET|PUT,maintenance maintenance-spare-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.SPARE_DETAIL
+Maintenance,/maintenance/spares/{id}/adjust-stock/,POST,,not probed,no,,needs id | registry:MAINTENANCE.SPARE_ADJUST_STOCK
+Maintenance,/maintenance/vendor-visits/,GET|POST,maintenance vendor-visits,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.VENDOR_VISITS"
+Maintenance,/maintenance/vendor-visits/{id}/,GET,maintenance maintenance-vendor-visit-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.VENDOR_VISIT_DETAIL
+Maintenance,/maintenance/vendor-visits/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.VENDOR_VISIT_CANCEL
+Maintenance,/maintenance/vendor-visits/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.VENDOR_VISIT_COMPLETE
+Maintenance,/maintenance/vendor-visits/{id}/start/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.VENDOR_VISIT_START
+Maintenance,/maintenance/work-order-photos/,GET|POST,maintenance work-order-photos,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.WORK_ORDER_PHOTOS"
+Maintenance,/maintenance/work-order-photos/{id}/,GET,maintenance maintenance-work-order-photo-get,not probed,binary+spec,,needs id
+Maintenance,/maintenance/work-orders/,GET|POST,maintenance work-orders,200,binary+spec,13,live | registry:MAINTENANCE.WORK_ORDERS
+Maintenance,/maintenance/work-orders/{id}/,GET|PUT,maintenance maintenance-work-order-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.WORK_ORDER_DETAIL
+Maintenance,/maintenance/work-orders/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_ORDER_APPROVE
+Maintenance,/maintenance/work-orders/{id}/assign/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_ORDER_ASSIGN
+Maintenance,/maintenance/work-orders/{id}/close/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_ORDER_CLOSE
+Maintenance,/maintenance/work-orders/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_ORDER_COMPLETE
+Maintenance,/maintenance/work-orders/{id}/logs/,UNRESOLVED,,not probed,no,,needs id | registry:MAINTENANCE.WORK_ORDER_LOGS | verb unresolved in bundle
+Maintenance,/maintenance/work-orders/{id}/request-spare/,POST,,not probed,no,,needs id | registry:MAINTENANCE.WORK_ORDER_REQUEST_SPARE
+Maintenance,/maintenance/work-orders/{id}/send-back/,UNRESOLVED,,not probed,no,,needs id | registry:MAINTENANCE.WORK_ORDER_SEND_BACK | verb unresolved in bundle
+Maintenance,/maintenance/work-orders/{id}/set-status/,POST,,not probed,no,,needs id | registry:MAINTENANCE.WORK_ORDER_SET_STATUS
+Maintenance,/maintenance/work-orders/{id}/start/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_ORDER_START
+Maintenance,/maintenance/work-permit-attachments/,POST,maintenance maintenance-work-permit-attachments,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:MAINTENANCE.WORK_PERMIT_ATTACHMENTS"
+Maintenance,/maintenance/work-permit-attachments/{id}/,DELETE,,not probed,no,,needs id | registry:MAINTENANCE.WORK_PERMIT_ATTACHMENT_DETAIL
+Maintenance,/maintenance/work-permit-workers/,POST,maintenance maintenance-work-permit-workers,200,binary+spec,3,live | registry:MAINTENANCE.WORK_PERMIT_WORKERS
+Maintenance,/maintenance/work-permit-workers/{id}/,DELETE|PATCH,,not probed,spec-only,,needs id | registry:MAINTENANCE.WORK_PERMIT_WORKER_DETAIL
+Maintenance,/maintenance/work-permits/,GET|POST,maintenance maintenance-work-permits,200,binary+spec,4,live | registry:MAINTENANCE.WORK_PERMITS
+Maintenance,/maintenance/work-permits/{id}/,DELETE|GET|PATCH,maintenance maintenance-work-permit-get,not probed,binary+spec,,needs id | registry:MAINTENANCE.WORK_PERMIT_DETAIL
+Maintenance,/maintenance/work-permits/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_PERMIT_APPROVE
+Maintenance,/maintenance/work-permits/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_PERMIT_CANCEL
+Maintenance,/maintenance/work-permits/{id}/close/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_PERMIT_CLOSE
+Maintenance,/maintenance/work-permits/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_PERMIT_COMPLETE
+Maintenance,/maintenance/work-permits/{id}/renew/,POST,,not probed,no,,needs id | registry:MAINTENANCE.WORK_PERMIT_RENEW
+Maintenance,/maintenance/work-permits/{id}/start/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_PERMIT_START
+Maintenance,/maintenance/work-permits/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:MAINTENANCE.WORK_PERMIT_SUBMIT
+Marketplace,/marketplace/batches/,GET,marketplace batches,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.BATCHES"
+Marketplace,/marketplace/batches/{id}/,GET,marketplace batch,not probed,binary+spec,,needs id | registry:MARKETPLACE.BATCH_BY_ID
+Marketplace,/marketplace/batches/{id}/issuance.csv,GET,marketplace batch-issuance-csv,not probed,binary+spec,,needs id | registry:MARKETPLACE.BATCH_EXPORT
+Marketplace,/marketplace/batches/{id}/skip-unmapped/,POST,,not probed,no,,needs id | registry:MARKETPLACE.BATCH_SKIP_UNMAPPED
+Marketplace,/marketplace/batches/{id}/stock-list/,GET,marketplace batch-stock-list,not probed,binary+spec,,needs id | registry:MARKETPLACE.BATCH_STOCK_LIST
+Marketplace,/marketplace/batches/{id}/variants/,GET,marketplace batch-variants,not probed,binary+spec,,needs id | registry:MARKETPLACE.BATCH_VARIANTS
+Marketplace,/marketplace/combos/,POST,marketplace combos,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.COMBOS"
+Marketplace,/marketplace/combos/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:MARKETPLACE.COMBO_BY_ID
+Marketplace,/marketplace/delivery-notes/cut/,POST,,not probed,no,,no GET evidence | registry:MARKETPLACE.DELIVERY_NOTE_CUT
+Marketplace,/marketplace/delivery-notes/posted/,GET,marketplace dn-posted,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.DELIVERY_NOTE_POSTED"
+Marketplace,/marketplace/delivery-notes/reconcile/,POST,marketplace dn-awaiting-approval,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.DELIVERY_NOTE_RECONCILE"
+Marketplace,/marketplace/delivery-notes/sheets/,GET,marketplace dn-sheets,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.DELIVERY_NOTE_SHEETS"
+Marketplace,/marketplace/delivery-notes/summary/,GET,marketplace dn-summary,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.DELIVERY_NOTE_SUMMARY"
+Marketplace,/marketplace/delivery-notes/{id}/export.csv,GET,marketplace dn-export-csv,not probed,binary+spec,,needs id | registry:MARKETPLACE.DELIVERY_NOTE_EXPORT
+Marketplace,/marketplace/dispatches/,POST,marketplace dispatches-list,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.DISPATCHES"
+Marketplace,/marketplace/dispatches/board/{id}/,GET,marketplace dispatch-board,not probed,binary+spec,,needs id | registry:MARKETPLACE.DISPATCH_BOARD
+Marketplace,/marketplace/dispatches/orders-in-range/,GET,marketplace dispatch-orders-in-range,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.DISPATCH_ORDERS_RANGE"
+Marketplace,/marketplace/dispatches/scan/,POST,,not probed,no,,no GET evidence | registry:MARKETPLACE.DISPATCH_SCAN_TRACKING
+Marketplace,/marketplace/dispatches/scan/bulk/,POST,,not probed,no,,no GET evidence | registry:MARKETPLACE.DISPATCH_SCAN_BULK
+Marketplace,/marketplace/dispatches/sheets/,GET,marketplace dispatch-sheets,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.DISPATCH_SHEETS"
+Marketplace,/marketplace/dispatches/{id}/,GET,,not probed,spec-only,,needs id | registry:MARKETPLACE.DISPATCH_BY_ID
+Marketplace,/marketplace/dispatches/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.DISPATCH_CANCEL
+Marketplace,/marketplace/dispatches/{id}/confirm/,POST,,not probed,no,,needs id | registry:MARKETPLACE.DISPATCH_CONFIRM
+Marketplace,/marketplace/dispatches/{id}/retry-delivery-note/,POST,,not probed,no,,needs id | registry:MARKETPLACE.DISPATCH_RETRY_DN
+Marketplace,/marketplace/dispatches/{id}/scans/,POST,,not probed,no,,needs id | registry:MARKETPLACE.DISPATCH_SCANS
+Marketplace,/marketplace/dispatches/{id}/scans/{id}/,DELETE,,not probed,no,,needs id | registry:MARKETPLACE.DISPATCH_SCAN_BY_ID
+Marketplace,/marketplace/gate-passes/,UNRESOLVED,,not probed,no,,no GET evidence | registry:MARKETPLACE.GATE_PASSES | verb unresolved in bundle
+Marketplace,/marketplace/gate-passes/manual/,UNRESOLVED,,not probed,no,,no GET evidence | registry:MARKETPLACE.GATE_PASS_MANUAL | verb unresolved in bundle
+Marketplace,/marketplace/gate-passes/{id}/,UNRESOLVED,,not probed,no,,needs id | registry:MARKETPLACE.GATE_PASS_DETAIL | verb unresolved in bundle
+Marketplace,/marketplace/gate-passes/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.GATE_PASS_CANCEL
+Marketplace,/marketplace/gate-passes/{id}/dispatch/,POST,,not probed,no,,needs id | registry:MARKETPLACE.GATE_PASS_DISPATCH
+Marketplace,/marketplace/gate-passes/{id}/print/,POST,,not probed,no,,needs id | registry:MARKETPLACE.GATE_PASS_PRINT
+Marketplace,/marketplace/gate-passes/{id}/weighment/,POST,,not probed,no,,needs id | registry:MARKETPLACE.GATE_PASS_WEIGHMENT
+Marketplace,/marketplace/gate/queue/,GET,marketplace gate-queue,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.GATE_QUEUE"
+Marketplace,/marketplace/gate/{id}/,GET,marketplace gate-sheet,not probed,binary+spec,,needs id | registry:MARKETPLACE.GATE_DETAIL
+Marketplace,/marketplace/gate/{id}/approve/,UNRESOLVED,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.GATE_APPROVE | verb unresolved in bundle
+Marketplace,/marketplace/gate/{id}/hold/,UNRESOLVED,,not probed,no,,needs id | registry:MARKETPLACE.GATE_HOLD | verb unresolved in bundle
+Marketplace,/marketplace/issue-requests/,POST,marketplace issue-requests-list,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.ISSUE_REQUESTS"
+Marketplace,/marketplace/issue-requests/{id}/,GET,,not probed,spec-only,,needs id | registry:MARKETPLACE.ISSUE_REQUEST_BY_ID
+Marketplace,/marketplace/issue-requests/{id}/issue/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.ISSUE_ISSUE
+Marketplace,/marketplace/issue-requests/{id}/receive/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.ISSUE_RECEIVE
+Marketplace,/marketplace/issue-requests/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.ISSUE_REJECT
+Marketplace,/marketplace/issue-requests/{id}/review/,POST,,not probed,no,,needs id | registry:MARKETPLACE.ISSUE_REVIEW
+Marketplace,/marketplace/orders/,GET,marketplace orders-list,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.ORDERS"
+Marketplace,/marketplace/orders/choose-variant/,POST,,not probed,no,,no GET evidence | registry:MARKETPLACE.ORDER_CHOOSE_VARIANT
+Marketplace,/marketplace/orders/import/,UNRESOLVED,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.ORDER_IMPORT | verb unresolved in bundle
+Marketplace,/marketplace/orders/import/preview/,UNRESOLVED,,not probed,no,,no GET evidence | registry:MARKETPLACE.ORDER_IMPORT_PREVIEW | verb unresolved in bundle
+Marketplace,/marketplace/orders/resolve/,UNRESOLVED,,not probed,no,,denylist:side-effect | registry:MARKETPLACE.ORDER_RESOLVE | verb unresolved in bundle
+Marketplace,/marketplace/packing/barcodes/{id}/print/,POST,,not probed,no,,needs id | registry:MARKETPLACE.PACK_BARCODE_PRINT
+Marketplace,/marketplace/packing/open/,POST,,not probed,no,,no GET evidence | registry:MARKETPLACE.PACKING_OPEN
+Marketplace,/marketplace/packing/queue/,GET,marketplace packing-queue,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.PACKING_QUEUE"
+Marketplace,/marketplace/packing/scan/,POST,,not probed,no,,no GET evidence | registry:MARKETPLACE.PACKING_SCAN
+Marketplace,/marketplace/packing/summary/,GET,marketplace packing-summary,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.PACKING_SUMMARY"
+Marketplace,/marketplace/packing/summary/complete/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.PACKING_SUMMARY_COMPLETE
+Marketplace,/marketplace/packing/{id}/,GET,,not probed,no,,needs id | registry:MARKETPLACE.PACKING_BY_ID
+Marketplace,/marketplace/packing/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.PACKING_COMPLETE
+Marketplace,/marketplace/packing/{id}/generate/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.PACKING_GENERATE
+Marketplace,/marketplace/reconciliation/,GET,marketplace reconciliation,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.RECONCILIATION"
+Marketplace,/marketplace/reports/reconciliation/export.csv,GET,marketplace reconciliation-export-csv,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un"
+Marketplace,/marketplace/reports/tracking/{id}/,UNRESOLVED,,not probed,no,,needs id | registry:MARKETPLACE.REPORT_TRACKING | verb unresolved in bundle
+Marketplace,/marketplace/reports/{id}/export.csv,GET,marketplace report-export-csv,not probed,binary+spec,,needs id | registry:MARKETPLACE.REPORT_EXPORT
+Marketplace,/marketplace/reports/{id}/preview/,UNRESOLVED,,not probed,no,,needs id | registry:MARKETPLACE.REPORT_PREVIEW | verb unresolved in bundle
+Marketplace,/marketplace/returns/,POST,marketplace returns-list,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.RETURNS"
+Marketplace,/marketplace/returns/scan/,POST,,not probed,no,,no GET evidence | registry:MARKETPLACE.RETURN_SCAN_TRACKING
+Marketplace,/marketplace/returns/{id}/,GET,,not probed,spec-only,,needs id | registry:MARKETPLACE.RETURN_BY_ID
+Marketplace,/marketplace/returns/{id}/scans/,POST,,not probed,no,,needs id | registry:MARKETPLACE.RETURN_SCANS
+Marketplace,/marketplace/returns/{id}/scans/{id}/condition/,POST,,not probed,no,,needs id | registry:MARKETPLACE.RETURN_SCAN_CONDITION
+Marketplace,/marketplace/returns/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.RETURN_SUBMIT
+Marketplace,/marketplace/sap-items/,GET,marketplace sap-items,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.SAP_ITEMS"
+Marketplace,/marketplace/settings/,UNRESOLVED,,not probed,no,,denylist:side-effect | registry:MARKETPLACE.SETTINGS | verb unresolved in bundle
+Marketplace,/marketplace/sku-mappings/,POST,marketplace sku-mappings,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.SKU_MAPPINGS"
+Marketplace,/marketplace/sku-mappings/import/,POST,,not probed,no,,write-shaped path segment | registry:MARKETPLACE.SKU_MAPPINGS_IMPORT
+Marketplace,/marketplace/sku-mappings/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:MARKETPLACE.SKU_MAPPING_BY_ID
+Marketplace,/marketplace/warehouse-insights/,GET,marketplace warehouse-insights,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.WAREHOUSE_INSIGHTS"
+Marketplace,/marketplace/warehouses/,POST,marketplace warehouses,403,binary+spec,,"{""code"":""WRONG_COMPANY"",""error"":""The marketplace module is not enabled for this company un | registry:MARKETPLACE.WAREHOUSES"
+Marketplace,/marketplace/warehouses/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:MARKETPLACE.WAREHOUSE_BY_ID
+Notifications,/notifications/,GET,notifications list,200,binary+spec,8741,live | registry:NOTIFICATIONS.LIST
+Notifications,/notifications/devices/register/,UNRESOLVED,,not probed,no,,no GET evidence | registry:NOTIFICATIONS.REGISTER | verb unresolved in bundle
+Notifications,/notifications/devices/unregister/,UNRESOLVED,,not probed,no,,no GET evidence | registry:NOTIFICATIONS.UNREGISTER | verb unresolved in bundle
+Notifications,/notifications/mark-read/,POST,,not probed,no,,no GET evidence | registry:NOTIFICATIONS.MARK_READ
+Notifications,/notifications/preferences/,GET|POST,,200,spec-only,65,live | registry:NOTIFICATIONS.PREFERENCES
+Notifications,/notifications/send/,POST,,not probed,no,,write-shaped path segment | registry:NOTIFICATIONS.SEND
+Notifications,/notifications/test/,POST,,not probed,no,,no GET evidence | registry:NOTIFICATIONS.TEST
+Notifications,/notifications/unread-count/,GET,notifications unread-count,200,binary+spec,obj,live | registry:NOTIFICATIONS.UNREAD_COUNT
+Notifications,/notifications/{id}/,GET,,not probed,spec-only,,needs id | registry:NOTIFICATIONS.DETAIL
+Order Processing,/oms/invoices/,GET,oms invoices,400,binary+spec,,"routed; required query param missing: {""whs"":[""This field is required.""]} | registry:OMS.INVOICES"
+Order Processing,/oms/invoices/pending-count/,GET,oms pending-count,400,binary+spec,,"routed; required query param missing: {""detail"":""whs (warehouse) is required""} | registry:OMS.INVOICE_PENDING_COUNT"
+Order Processing,/oms/invoices/{id}/audit/,GET,oms invoice-audit,not probed,binary+spec,,needs id | registry:OMS.INVOICE_AUDIT
+Order Processing,/oms/invoices/{id}/history/,GET,oms invoice-history,not probed,binary+spec,,needs id | registry:OMS.INVOICE_HISTORY
+Order Processing,/oms/invoices/{id}/status/,PATCH,,not probed,no,,needs id | registry:OMS.INVOICE_STATUS
+Order Processing,/order-processing/dashboard/,GET,,200,spec-only,obj,live | registry:ORDER_PROCESSING.DASHBOARD
+Order Processing,/order-processing/line-issues/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:ORDER_PROCESSING.LINE_ISSUES"
+Order Processing,/order-processing/materials/,GET,,200,spec-only,105,live | registry:ORDER_PROCESSING.MATERIALS
+Order Processing,/order-processing/materials/plan/,POST,,not probed,no,,no GET evidence | registry:ORDER_PROCESSING.MATERIALS_PLAN
+Order Processing,/order-processing/orders/,GET,,200,spec-only,2281,live | registry:ORDER_PROCESSING.ORDERS
+Order Processing,/order-processing/orders/{id}/,GET,,not probed,spec-only,,needs id | registry:ORDER_PROCESSING.ORDER_DETAIL
+Order Processing,/order-processing/orders/{id}/check-stock/,POST,,not probed,no,,needs id | registry:ORDER_PROCESSING.ORDER_CHECK_STOCK
+Order Processing,/order-processing/orders/{id}/timeline/,GET,,not probed,spec-only,,needs id | registry:ORDER_PROCESSING.ORDER_TIMELINE
+Order Processing,/order-processing/procurement/,GET,,200,spec-only,37,live | registry:ORDER_PROCESSING.PROCUREMENT
+Order Processing,/order-processing/production/,GET,,200,spec-only,15,live | registry:ORDER_PROCESSING.PRODUCTION
+Order Processing,/order-processing/production/{id}/,UNRESOLVED,,not probed,no,,needs id | registry:ORDER_PROCESSING.PRODUCTION_DETAIL | verb unresolved in bundle
+Order Processing,/order-processing/sync/,GET|POST,,not probed,spec-only,,write-shaped path segment | registry:ORDER_PROCESSING.SYNC
+Planning & Purchase,/planning-purchase/commitments/,GET,,400,no,,"routed; required query param missing: {""item_code"":[""This field is required.""],""warehouse"":[""This field is required.""]} | registry:PLANNING_PURCHASE.COMMITMENTS"
+Planning & Purchase,/planning-purchase/plans/,GET,,200,no,25,"PLANNER GOLD: 25 monthly plans on Oil; SEP PLANNING 26 = abs_id 44, 84 items, 2026-09-01..30. Plan ORIGINATES IN SAP (one qty per item at period start); this module spreads it EVEN_WORKING_DAYS and marks derived. || live | registry:PLANNING_PURCHASE.PLANS"
+Planning & Purchase,/planning-purchase/plans/{id}/,GET,,200,no,84,"PLANNER GOLD: plan 44 = 84 lines, 4,320,331 planned litres / 3,053,094 qty / 242,298 cases (vs jolly EXIM figure 4,323,300 L, gap 2,969 L = 0.07%). Carries produced_qty for plan-vs-actual. TRAP: the embedded plan{} summary is zeroed - totals must be summed from lines[]. || probed live with abs_id=44 (SEP PLANNING 26) | registry:PLANNING_PURCHASE.PLAN_DETAIL"
+Planning & Purchase,/planning-purchase/plans/{id}/producible/,GET,,200,no,84,"PLANNER GOLD: buildable_qty per SKU + limited_by = the exact blocking component. TRAP: defaults to target_date=TODAY; outside the plan window it falsely reports plan_runs_in_full=true, planned_litres=0. With target_date=2026-09-30: 31 of 84 SKUs blocked, 24 blocking components, 42.1% of a working day at risk. Figures are ONE DAY, not the month. || probed live with abs_id=44 and target_date=2026-09-30 | registry:PLANNING_PURCHASE.PLAN_PRODUCIBLE"
+Planning & Purchase,/planning-purchase/plans/{id}/requirement/,GET,,200,no,209,"PLANNER GOLD: full BOM explosion, 209 components. 111 shortages (100 packaging, 11 raw), est purchase value Rs 66.4 Cr, 65 over-committed, 111 with no lead time. RM0000003 MUSTARD LOOSE OIL required 1,370,268 L vs 129,952 on hand. || probed live with abs_id=44 | registry:PLANNING_PURCHASE.PLAN_REQUIREMENT"
+Planning & Purchase,/planning-purchase/plans/{id}/requirement/export/,GET,,not probed,no,,needs id | registry:PLANNING_PURCHASE.PLAN_REQUIREMENT_EXPORT
+Planning & Purchase,/planning-purchase/purchase-orders/,GET|POST,,200,no,2,live | registry:PLANNING_PURCHASE.PURCHASE_ORDERS
+Planning & Purchase,/planning-purchase/purchase-orders/{id}/,DELETE|GET|PATCH,,not probed,no,,needs id | registry:PLANNING_PURCHASE.PURCHASE_ORDER_DETAIL
+Planning & Purchase,/planning-purchase/purchase-orders/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:PLANNING_PURCHASE.PURCHASE_ORDER_APPROVE
+Planning & Purchase,/planning-purchase/purchase-orders/{id}/post-to-sap/,POST,,not probed,no,,write-shaped path segment | registry:PLANNING_PURCHASE.PURCHASE_ORDER_POST
+Planning & Purchase,/planning-purchase/vendors/,GET,,200,no,100,live | registry:PLANNING_PURCHASE.VENDORS
+Planning & Purchase,/planning-purchase/warehouses/,GET,,200,no,46,"STORAGE MASTER: 46 named warehouses (BH-FG Bhakharpur Finished Basement, BH-PF Production Finished 1st Floor, BH-PM Packaging 1st Floor, GP-FG Gupta, BH-LO Loose Oil...). Code+name ONLY - no capacity/tonnage field anywhere in this app. || live | registry:PLANNING_PURCHASE.WAREHOUSES"
+Planning & Purchase,/po/open-pos/,GET,po open-pos,400,binary+spec,,"routed; required query param missing: {""detail"":""supplier_code is required""}"
+Planning & Purchase,/po/open-pos/{id}/items/,GET,po open-po-items,not probed,binary+spec,,needs id | registry:PO.OPEN_PO_BY_NUMBER
+Planning & Purchase,/po/vendors/,GET,po vendors,200,binary+spec,2224,live | registry:PO.VENDORS
+Planning & Purchase,/po/warehouses/,GET,po warehouses,200,binary+spec,46,live | registry:PO.WAREHOUSES
+Planning & Purchase,/production-planning/,GET|POST,,404,no,,"DEAD CODE. 17 registry paths under /production-planning/ are all Django URL-resolver 404s (HTML) in all companies. The SPA registry keeps them but no server route exists. Do NOT build on this - the live planner is /planning-purchase/. || DEAD: Django URL-resolver 404 (HTML) | registry:PRODUCTION_PLANNING.LIST,PRODUCTION_PLANNING.CREATE"
+Planning & Purchase,/production-planning/daily-entries/,GET,,404,no,,DEAD: Django URL-resolver 404 (HTML) | registry:PRODUCTION_PLANNING.DAILY_ENTRIES_ALL
+Planning & Purchase,/production-planning/dropdown/bom/,GET,,404,no,,DEAD: Django URL-resolver 404 (HTML) | registry:PRODUCTION_PLANNING.DROPDOWN_BOM
+Planning & Purchase,/production-planning/dropdown/items/,GET,,404,no,,DEAD: Django URL-resolver 404 (HTML) | registry:PRODUCTION_PLANNING.DROPDOWN_ITEMS
+Planning & Purchase,/production-planning/dropdown/uom/,GET,,404,no,,DEAD: Django URL-resolver 404 (HTML) | registry:PRODUCTION_PLANNING.DROPDOWN_UOM
+Planning & Purchase,/production-planning/dropdown/warehouses/,GET,,404,no,,DEAD: Django URL-resolver 404 (HTML) | registry:PRODUCTION_PLANNING.DROPDOWN_WAREHOUSES
+Planning & Purchase,/production-planning/summary/,GET,,404,no,,DEAD: Django URL-resolver 404 (HTML) | registry:PRODUCTION_PLANNING.SUMMARY
+Planning & Purchase,/production-planning/weekly-plans/{id}/daily-entries/,GET|POST,,not probed,no,,needs id | registry:PRODUCTION_PLANNING.DAILY_ENTRIES
+Planning & Purchase,/production-planning/weekly-plans/{id}/daily-entries/{id}/,PATCH,,not probed,no,,needs id | registry:PRODUCTION_PLANNING.DAILY_ENTRY_DETAIL
+Planning & Purchase,/production-planning/{id}/,DELETE|GET|PATCH,,not probed,no,,needs id | registry:PRODUCTION_PLANNING.DETAIL
+Planning & Purchase,/production-planning/{id}/close/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_PLANNING.CLOSE
+Planning & Purchase,/production-planning/{id}/materials/,GET|POST,,not probed,no,,needs id | registry:PRODUCTION_PLANNING.MATERIALS
+Planning & Purchase,/production-planning/{id}/materials/{id}/,DELETE,,not probed,no,,needs id | registry:PRODUCTION_PLANNING.MATERIAL_DELETE
+Planning & Purchase,/production-planning/{id}/post-to-sap/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_PLANNING.POST_TO_SAP
+Planning & Purchase,/production-planning/{id}/weekly-plans/,GET|POST,,not probed,no,,needs id | registry:PRODUCTION_PLANNING.WEEKLY_PLANS
+Planning & Purchase,/production-planning/{id}/weekly-plans/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_PLANNING.WEEKLY_PLAN_DETAIL
+Production,/blowing/audit/,GET,blowing audit,400,binary+spec,,"routed; required query param missing: {""detail"":""Query params 'entity_type' and 'entity_id' are required.""} | registry:PRODUCTION_BLOWING.AUDIT"
+Production,/blowing/breakdown-categories/,GET|POST,blowing breakdown-categories,200,binary+spec,4,live | registry:PRODUCTION_BLOWING.BREAKDOWN_CATEGORIES
+Production,/blowing/breakdown-categories/{id}/,UNRESOLVED,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.BREAKDOWN_CATEGORY_DETAIL | verb unresolved in bundle
+Production,/blowing/buy-prices/,GET|POST,blowing buy-prices,200,binary+spec,1,live | registry:PRODUCTION_BLOWING.BUY_PRICES
+Production,/blowing/buy-prices/{id}/,PATCH,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.BUY_PRICE_DETAIL
+Production,/blowing/cost-rates/,GET|POST,blowing cost-rates,200,binary+spec,7,live | registry:PRODUCTION_BLOWING.COST_RATES
+Production,/blowing/cost-rates/{id}/,DELETE,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.COST_RATE_DETAIL
+Production,/blowing/machines/,GET|POST,blowing machines,200,binary+spec,1,live | registry:PRODUCTION_BLOWING.MACHINES
+Production,/blowing/machines/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.MACHINE_DETAIL
+Production,/blowing/preform-specs/,GET|POST,blowing preform-specs,200,binary+spec,4,live | registry:PRODUCTION_BLOWING.PREFORM_SPECS
+Production,/blowing/preform-specs/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.PREFORM_SPEC_DETAIL
+Production,/blowing/rate-configs/,GET|POST,blowing rate-configs,200,binary+spec,1,live | registry:PRODUCTION_BLOWING.RATE_CONFIGS
+Production,/blowing/rate-configs/{id}/,PATCH,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.RATE_CONFIG_DETAIL
+Production,/blowing/reports/daily/,GET,blowing report-daily,400,binary+spec,,"routed; required query param missing: {""detail"":""Query param 'date' is required (YYYY-MM-DD).""} | registry:PRODUCTION_BLOWING.REPORT_DAILY"
+Production,/blowing/reports/make-vs-buy/,GET,blowing make-vs-buy,400,binary+spec,,"routed; required query param missing: {""detail"":""Query params 'date_from' and 'date_to' are required.""} | registry:PRODUCTION_BLOWING.REPORT_MAKE_VS_BUY"
+Production,/blowing/reports/monthly/,GET,blowing report-monthly,400,binary+spec,,"routed; required query param missing: {""detail"":""Query params 'year' and 'month' are required.""} | registry:PRODUCTION_BLOWING.REPORT_MONTHLY"
+Production,/blowing/reports/variances/,GET,blowing variances,400,binary+spec,,"routed; required query param missing: {""detail"":""Query params 'date_from' and 'date_to' are required.""} | registry:PRODUCTION_BLOWING.REPORT_VARIANCES"
+Production,/blowing/runs/,GET|POST,blowing runs,200,binary+spec,32,live | registry:PRODUCTION_BLOWING.RUNS
+Production,/blowing/runs/{id}/,GET|PATCH,blowing run,not probed,binary+spec,,needs id | registry:PRODUCTION_BLOWING.RUN_DETAIL
+Production,/blowing/runs/{id}/add-breakdown/,POST,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.ADD_BREAKDOWN
+Production,/blowing/runs/{id}/breakdowns/manual/,POST,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.ADD_MANUAL_BREAKDOWN
+Production,/blowing/runs/{id}/breakdowns/{id}/resolve/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_BLOWING.RESOLVE_BREAKDOWN
+Production,/blowing/runs/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_BLOWING.RUN_COMPLETE
+Production,/blowing/runs/{id}/cost/,GET,,not probed,no,,denylist:side-effect | registry:PRODUCTION_BLOWING.RUN_COST
+Production,/blowing/runs/{id}/preform-request/,POST,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.SUBMIT_PREFORM_REQUEST
+Production,/blowing/runs/{id}/segments/manual/,POST,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.ADD_MANUAL_SEGMENT
+Production,/blowing/runs/{id}/segments/{id}/,PATCH,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.SEGMENT_UPDATE
+Production,/blowing/runs/{id}/start-production/,POST,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.START_PRODUCTION
+Production,/blowing/runs/{id}/stop-production/,POST,,not probed,no,,needs id | registry:PRODUCTION_BLOWING.STOP_PRODUCTION
+Production,/blowing/sap/items/,GET,blowing sap-items,200,binary+spec,50,live | registry:PRODUCTION_BLOWING.SAP_ITEMS
+Production,/production-execution/breakdown-categories/,GET|POST,production-execution breakdown-categories,200,binary+spec,5,live | registry:PRODUCTION_EXECUTION.BREAKDOWN_CATEGORIES
+Production,/production-execution/breakdown-categories/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.BREAKDOWN_CATEGORY_DETAIL
+Production,/production-execution/checklist-templates/,GET|POST,production-execution checklist-templates,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:PRODUCTION_EXECUTION.CHECKLIST_TEMPLATES"
+Production,/production-execution/checklist-templates/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.CHECKLIST_TEMPLATE_DETAIL
+Production,/production-execution/cost-rates/,GET|POST,production-execution cost-rates,200,binary+spec,6,live | registry:PRODUCTION_EXECUTION.COST_RATES
+Production,/production-execution/cost-rates/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.COST_RATE_DETAIL
+Production,/production-execution/costs/analytics/,GET,production-execution costs-analytics,200,binary+spec,226,live | registry:PRODUCTION_EXECUTION.COST_ANALYTICS
+Production,/production-execution/line-clearance/,GET|POST,production-execution line-clearance,200,binary+spec,216,live | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE
+Production,/production-execution/line-clearance/{id}/,GET|PATCH,production-execution line-clearance-detail,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE_DETAIL
+Production,/production-execution/line-clearance/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE_APPROVE
+Production,/production-execution/line-clearance/{id}/attachments/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE_ATTACHMENTS
+Production,/production-execution/line-clearance/{id}/attachments/{id}/,DELETE,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE_ATTACHMENT_DETAIL
+Production,/production-execution/line-clearance/{id}/hold/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE_HOLD
+Production,/production-execution/line-clearance/{id}/manager-decision/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE_MANAGER_DECISION
+Production,/production-execution/line-clearance/{id}/reopen/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE_REOPEN
+Production,/production-execution/line-clearance/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_EXECUTION.LINE_CLEARANCE_SUBMIT
+Production,/production-execution/line-configs/,GET|POST,production-execution line-configs,200,binary+spec,11,live | registry:PRODUCTION_EXECUTION.LINE_CONFIGS
+Production,/production-execution/line-configs/auto-fill/,GET,production-execution line-configs-auto-fill,400,binary+spec,,"routed; required query param missing: {""error"":""line_id is required""} | registry:PRODUCTION_EXECUTION.LINE_CONFIG_AUTO_FILL"
+Production,/production-execution/line-configs/{id}/,DELETE|PATCH,,not probed,spec-only,,needs id | registry:PRODUCTION_EXECUTION.LINE_CONFIG_DETAIL
+Production,/production-execution/lines/,GET|POST,production-execution lines,200,binary+spec,7,live | registry:PRODUCTION_EXECUTION.LINES
+Production,/production-execution/lines/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.LINE_DETAIL
+Production,/production-execution/machine-checklists/,GET|POST,production-execution machine-checklists,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:PRODUCTION_EXECUTION.MACHINE_CHECKLISTS"
+Production,/production-execution/machine-checklists/bulk/,POST,,not probed,no,,no GET evidence | registry:PRODUCTION_EXECUTION.MACHINE_CHECKLISTS_BULK
+Production,/production-execution/machine-checklists/{id}/,PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.MACHINE_CHECKLIST_DETAIL
+Production,/production-execution/machines/,GET|POST,production-execution machines,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:PRODUCTION_EXECUTION.MACHINES"
+Production,/production-execution/machines/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.MACHINE_DETAIL
+Production,/production-execution/reports/analytics/,GET,production-execution reports-analytics,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_ANALYTICS
+Production,/production-execution/reports/analytics/cost-analysis/,GET,production-execution reports-analytics-cost-analysis,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_COST_ANALYSIS
+Production,/production-execution/reports/analytics/downtime-pareto/,GET,production-execution reports-analytics-downtime-pareto,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_DOWNTIME_PARETO
+Production,/production-execution/reports/analytics/downtime/,GET,production-execution reports-analytics-downtime,200,binary+spec,56,live | registry:PRODUCTION_EXECUTION.REPORTS_DOWNTIME
+Production,/production-execution/reports/analytics/monthly-summary/,GET,production-execution reports-analytics-monthly-summary,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_MONTHLY_SUMMARY
+Production,/production-execution/reports/analytics/oee-trend/,GET,production-execution reports-analytics-oee-trend,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_OEE_TREND
+Production,/production-execution/reports/analytics/oee/,GET,production-execution reports-analytics-oee,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_OEE
+Production,/production-execution/reports/analytics/plan-vs-production/,GET,production-execution reports-analytics-plan-vs-production,200,binary+spec,3,live | registry:PRODUCTION_EXECUTION.REPORTS_PLAN_VS_PRODUCTION
+Production,/production-execution/reports/analytics/procurement-vs-planned/,GET,production-execution reports-analytics-procurement-vs-planned,400,binary+spec,,"routed; required query param missing: {""error"":""sap_doc_entry is required""} | registry:PRODUCTION_EXECUTION.REPORTS_PROCUREMENT_VS_PLANNED"
+Production,/production-execution/reports/analytics/resource-consumption/,GET,production-execution reports-analytics-resource-consumption,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_RESOURCE_CONSUMPTION
+Production,/production-execution/reports/analytics/waste-trend/,GET,production-execution reports-analytics-waste-trend,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_WASTE_TREND
+Production,/production-execution/reports/analytics/waste/,GET,production-execution reports-analytics-waste,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_WASTE_ANALYTICS
+Production,/production-execution/reports/daily-production/,GET,production-execution reports-daily-production,400,binary+spec,,"routed; required query param missing: {""detail"":""date query parameter is required.""} | registry:PRODUCTION_EXECUTION.REPORTS_DAILY"
+Production,/production-execution/reports/line-clearance/,GET,production-execution reports-line-clearance,200,binary+spec,216,live | registry:PRODUCTION_EXECUTION.REPORTS_LINE_CLEARANCE
+Production,/production-execution/reports/production-movement/,GET,production-execution reports-production-movement,200,binary+spec,16,live | registry:PRODUCTION_EXECUTION.REPORTS_PRODUCTION_MOVEMENT
+Production,/production-execution/reports/production-movement/filter-options/,GET,production-execution reports-production-movement-filter-options,200,binary+spec,obj,live | registry:PRODUCTION_EXECUTION.REPORTS_PRODUCTION_MOVEMENT_FILTER_OPTIONS
+Production,/production-execution/reports/reconciliation/material/,GET,production-execution recon-material,200,binary+spec,obj,live
+Production,/production-execution/reports/reconciliation/production/,GET,production-execution recon-production,200,binary+spec,obj,live
+Production,/production-execution/reports/reconciliation/wastage/,GET,production-execution recon-wastage,200,binary+spec,obj,live
+Production,/production-execution/reports/yield/{id}/,GET,production-execution yield-report,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.REPORTS_YIELD
+Production,/production-execution/runs/,GET|POST,production-execution runs,200,binary+spec,229,live | registry:PRODUCTION_EXECUTION.RUNS
+Production,/production-execution/runs/{id}/,DELETE|GET|PATCH,production-execution run-detail,not probed,binary+spec,,"needs id | registry:PRODUCTION_EXECUTION.RUN_DETAIL,PRODUCTION_EXECUTION.RUN_DELETE"
+Production,/production-execution/runs/{id}/add-breakdown/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.ADD_BREAKDOWN
+Production,/production-execution/runs/{id}/breakdowns/,GET,production-execution run-breakdowns,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_BREAKDOWNS
+Production,/production-execution/runs/{id}/breakdowns/manual/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.ADD_MANUAL_BREAKDOWN
+Production,/production-execution/runs/{id}/breakdowns/{id}/,DELETE,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_BREAKDOWN_DETAIL
+Production,/production-execution/runs/{id}/breakdowns/{id}/resolve/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_EXECUTION.RESOLVE_BREAKDOWN
+Production,/production-execution/runs/{id}/breakdowns/{id}/update/,PATCH,,not probed,no,,write-shaped path segment | registry:PRODUCTION_EXECUTION.BREAKDOWN_UPDATE
+Production,/production-execution/runs/{id}/complete/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_EXECUTION.RUN_COMPLETE
+Production,/production-execution/runs/{id}/cost/,GET,,not probed,no,,denylist:side-effect | registry:PRODUCTION_EXECUTION.RUN_COST
+Production,/production-execution/runs/{id}/machine-runtime/,GET|POST,production-execution run-machine-runtime,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_MACHINE_RUNTIME
+Production,/production-execution/runs/{id}/machine-runtime/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_MACHINE_RUNTIME_DETAIL
+Production,/production-execution/runs/{id}/manpower/,GET|POST,production-execution run-manpower,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_MANPOWER
+Production,/production-execution/runs/{id}/manpower/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_MANPOWER_DETAIL
+Production,/production-execution/runs/{id}/materials/,GET|POST,production-execution run-materials,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_MATERIALS
+Production,/production-execution/runs/{id}/materials/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_MATERIAL_DETAIL
+Production,/production-execution/runs/{id}/qc/final/,GET|PATCH|POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_QC_FINAL
+Production,/production-execution/runs/{id}/qc/inprocess/,GET|POST,production-execution run-qc-inprocess,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_QC_INPROCESS
+Production,/production-execution/runs/{id}/qc/inprocess/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_QC_INPROCESS_DETAIL
+Production,/production-execution/runs/{id}/resources/compressed-air/,GET|POST,production-execution run-compressed-air,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_COMPRESSED_AIR
+Production,/production-execution/runs/{id}/resources/compressed-air/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_COMPRESSED_AIR_DETAIL
+Production,/production-execution/runs/{id}/resources/electricity/,GET|POST,production-execution run-electricity,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_ELECTRICITY
+Production,/production-execution/runs/{id}/resources/electricity/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_ELECTRICITY_DETAIL
+Production,/production-execution/runs/{id}/resources/gas/,GET|POST,production-execution run-gas,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_GAS
+Production,/production-execution/runs/{id}/resources/gas/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_GAS_DETAIL
+Production,/production-execution/runs/{id}/resources/labour/,GET|POST,production-execution run-labour,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_LABOUR
+Production,/production-execution/runs/{id}/resources/labour/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_LABOUR_DETAIL
+Production,/production-execution/runs/{id}/resources/machine-costs/,GET|POST,production-execution run-machine-costs,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_MACHINE_COSTS
+Production,/production-execution/runs/{id}/resources/machine-costs/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_MACHINE_COSTS_DETAIL
+Production,/production-execution/runs/{id}/resources/overhead/,GET|POST,production-execution run-overhead,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_OVERHEAD
+Production,/production-execution/runs/{id}/resources/overhead/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_OVERHEAD_DETAIL
+Production,/production-execution/runs/{id}/resources/water/,GET|POST,production-execution run-water,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.RUN_WATER
+Production,/production-execution/runs/{id}/resources/water/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.RUN_WATER_DETAIL
+Production,/production-execution/runs/{id}/segments/manual/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.ADD_MANUAL_SEGMENT
+Production,/production-execution/runs/{id}/segments/{id}/,PATCH,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.SEGMENT_UPDATE
+Production,/production-execution/runs/{id}/start-production/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.START_PRODUCTION
+Production,/production-execution/runs/{id}/stop-production/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.STOP_PRODUCTION
+Production,/production-execution/sap/bom/,GET,production-execution sap-bom,400,binary+spec,,"routed; required query param missing: {""detail"":""item_code query parameter is required.""} | registry:PRODUCTION_EXECUTION.SAP_BOM"
+Production,/production-execution/sap/items/,GET,production-execution sap-items,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:PRODUCTION_EXECUTION.SAP_ITEMS"
+Production,/production-execution/sap/orders/,GET,production-execution sap-orders,200,binary+spec,31,live | registry:PRODUCTION_EXECUTION.SAP_ORDERS
+Production,/production-execution/sap/orders/{id}/,GET,production-execution sap-order-detail,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.SAP_ORDER_DETAIL
+Production,/production-execution/waste/,GET|POST,production-execution waste,200,binary+spec,517,live | registry:PRODUCTION_EXECUTION.WASTE
+Production,/production-execution/waste/{id}/,DELETE|GET|PATCH,production-execution waste-detail,not probed,binary+spec,,needs id | registry:PRODUCTION_EXECUTION.WASTE_DETAIL
+Production,/production-execution/waste/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:PRODUCTION_EXECUTION.WASTE_APPROVE
+Production,/production-execution/waste/{id}/approve/am/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.WASTE_APPROVE_AM
+Production,/production-execution/waste/{id}/approve/engineer/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.WASTE_APPROVE_ENGINEER
+Production,/production-execution/waste/{id}/approve/hod/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.WASTE_APPROVE_HOD
+Production,/production-execution/waste/{id}/approve/store/,POST,,not probed,no,,needs id | registry:PRODUCTION_EXECUTION.WASTE_APPROVE_STORE
+Quality Control,/quality-control/arrival-slips/,GET,quality-control arrival-slips,200,binary+spec,,live | registry:QUALITY_CONTROL_V2.ARRIVAL_SLIP_LIST
+Quality Control,/quality-control/arrival-slips/{id}/,GET,quality-control qc-arrival-slip-get,not probed,binary+spec,,needs id | registry:QUALITY_CONTROL_V2.ARRIVAL_SLIP_BY_ID
+Quality Control,/quality-control/arrival-slips/{id}/inspection/,GET,,not probed,spec-only,,needs id | registry:QUALITY_CONTROL_V2.INSPECTION_FOR_SLIP
+Quality Control,/quality-control/arrival-slips/{id}/send-back/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.ARRIVAL_SLIP_SEND_BACK
+Quality Control,/quality-control/arrival-slips/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.ARRIVAL_SLIP_SUBMIT
+Quality Control,/quality-control/inspections/,GET,quality-control inspections,200,binary+spec,,live | registry:QUALITY_CONTROL_V2.INSPECTIONS_LIST
+Quality Control,/quality-control/inspections/actionable/,GET,quality-control inspections-actionable,200,binary+spec,10,live | registry:QUALITY_CONTROL_V2.ACTIONABLE_INSPECTIONS
+Quality Control,/quality-control/inspections/awaiting-chemist/,GET,quality-control inspections-awaiting-chemist,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:QUALITY_CONTROL_V2.AWAITING_CHEMIST"
+Quality Control,/quality-control/inspections/awaiting-qam/,GET,quality-control inspections-awaiting-qam,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:QUALITY_CONTROL_V2.AWAITING_QAM"
+Quality Control,/quality-control/inspections/completed/,GET,quality-control inspections-completed,200,binary+spec,,live | registry:QUALITY_CONTROL_V2.COMPLETED_INSPECTIONS
+Quality Control,/quality-control/inspections/counts/,GET,quality-control inspections-counts,200,binary+spec,obj,live | registry:QUALITY_CONTROL_V2.INSPECTION_COUNTS
+Quality Control,/quality-control/inspections/decision-changed/,GET,quality-control qc-inspections-decision-changed,200,binary+spec,30,live | registry:QUALITY_CONTROL_V2.DECISION_CHANGED_INSPECTIONS
+Quality Control,/quality-control/inspections/draft/,GET,quality-control inspections-draft,200,binary+spec,3,live | registry:QUALITY_CONTROL_V2.DRAFT_INSPECTIONS
+Quality Control,/quality-control/inspections/pending/,GET,quality-control inspections-pending,200,binary+spec,7,live | registry:QUALITY_CONTROL_V2.PENDING_INSPECTIONS
+Quality Control,/quality-control/inspections/rejected/,GET,quality-control inspections-rejected,200,binary+spec,51,live | registry:QUALITY_CONTROL_V2.REJECTED_INSPECTIONS
+Quality Control,/quality-control/inspections/return-to-vendor/,GET,quality-control inspections-return-to-vendor,200,binary+spec,51,live | registry:QUALITY_CONTROL_V2.RETURN_TO_VENDOR_INSPECTIONS
+Quality Control,/quality-control/inspections/{id}/,GET,quality-control qc-inspection-get,not probed,binary+spec,,needs id | registry:QUALITY_CONTROL_V2.INSPECTION_BY_ID
+Quality Control,/quality-control/inspections/{id}/approve/chemist/,UNRESOLVED,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.APPROVE_CHEMIST | verb unresolved in bundle
+Quality Control,/quality-control/inspections/{id}/approve/qam/,UNRESOLVED,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.APPROVE_QAM | verb unresolved in bundle
+Quality Control,/quality-control/inspections/{id}/chemist-decision/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.CHEMIST_DECISION
+Quality Control,/quality-control/inspections/{id}/manager-decision/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.MANAGER_DECISION
+Quality Control,/quality-control/inspections/{id}/parameters/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.INSPECTION_PARAMETERS
+Quality Control,/quality-control/inspections/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.REJECT_INSPECTION
+Quality Control,/quality-control/inspections/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.INSPECTION_SUBMIT
+Quality Control,/quality-control/material-types/,GET|POST,quality-control material-types,200,binary+spec,152,live | registry:QUALITY_CONTROL_V2.MATERIAL_TYPES
+Quality Control,/quality-control/material-types/by-sap-item/{id}/,GET,,not probed,spec-only,,needs id | registry:QUALITY_CONTROL_V2.MATERIAL_TYPE_BY_SAP_ITEM
+Quality Control,/quality-control/material-types/link-sap-item/,POST,,not probed,no,,no GET evidence | registry:QUALITY_CONTROL_V2.MATERIAL_TYPE_LINK_SAP_ITEM
+Quality Control,/quality-control/material-types/{id}/,DELETE|GET|PUT,quality-control qc-material-type-get,not probed,binary+spec,,needs id | registry:QUALITY_CONTROL_V2.MATERIAL_TYPE_BY_ID
+Quality Control,/quality-control/material-types/{id}/parameter-sets/,GET|POST,,not probed,spec-only,,needs id | registry:QUALITY_CONTROL_V2.MATERIAL_TYPE_PARAMETER_SETS
+Quality Control,/quality-control/material-types/{id}/parameters/,GET,quality-control qc-material-type-parameters,not probed,binary+spec,,needs id | registry:QUALITY_CONTROL_V2.MATERIAL_TYPE_PARAMETERS
+Quality Control,/quality-control/online-monitoring/,GET|POST,quality-control qc-online-monitoring,200,binary+spec,2,live | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_LIST
+Quality Control,/quality-control/online-monitoring/lines/,GET,quality-control qc-online-monitoring-lines,200,binary+spec,7,live | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_LINES
+Quality Control,/quality-control/online-monitoring/runs/,GET,quality-control qc-online-monitoring-runs,200,binary+spec,32,live | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_RUNS
+Quality Control,/quality-control/online-monitoring/specs/,GET,quality-control qc-online-monitoring-specs,200,binary+spec,9,live | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_SPECS
+Quality Control,/quality-control/online-monitoring/specs/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_SPEC_DETAIL
+Quality Control,/quality-control/online-monitoring/{id}/,DELETE|GET|PATCH,quality-control qc-online-monitoring-get,not probed,binary+spec,,needs id | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_DETAIL
+Quality Control,/quality-control/online-monitoring/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_APPROVE
+Quality Control,/quality-control/online-monitoring/{id}/readings/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_READINGS
+Quality Control,/quality-control/online-monitoring/{id}/readings/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_READING_DETAIL
+Quality Control,/quality-control/online-monitoring/{id}/readings/{id}/attachments/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_READING_ATTACHMENTS
+Quality Control,/quality-control/online-monitoring/{id}/readings/{id}/attachments/{id}/,DELETE,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_READING_ATTACHMENT_DETAIL
+Quality Control,/quality-control/online-monitoring/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_REJECT
+Quality Control,/quality-control/online-monitoring/{id}/reopen/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_REOPEN
+Quality Control,/quality-control/online-monitoring/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.ONLINE_MONITORING_SUBMIT
+Quality Control,/quality-control/parameter-sets/{id}/,DELETE|GET|PUT,,not probed,spec-only,,needs id | registry:QUALITY_CONTROL_V2.PARAMETER_SET_BY_ID
+Quality Control,/quality-control/parameter-sets/{id}/copy-parameters/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.PARAMETER_SET_COPY_PARAMETERS
+Quality Control,/quality-control/parameter-sets/{id}/parameters/,GET|POST,,not probed,spec-only,,needs id | registry:QUALITY_CONTROL_V2.PARAMETER_SET_PARAMETERS
+Quality Control,/quality-control/parameters/{id}/,DELETE|GET|PUT,quality-control qc-parameter-get,not probed,binary+spec,,needs id | registry:QUALITY_CONTROL_V2.QC_PARAMETER_BY_ID
+Quality Control,/quality-control/po-items/{id}/arrival-slip/,GET|POST,,not probed,no,,"needs id | registry:QUALITY_CONTROL_V2.ARRIVAL_SLIP_CREATE,QUALITY_CONTROL_V2.ARRIVAL_SLIP_GET"
+Quality Control,/quality-control/po-items/{id}/qc/,UNRESOLVED,,not probed,no,,needs id | registry:QUALITY_CONTROL.CREATE | verb unresolved in bundle
+Quality Control,/quality-control/po-items/{id}/qc/view/,UNRESOLVED,,not probed,no,,needs id | registry:QUALITY_CONTROL.GET | verb unresolved in bundle
+Quality Control,/quality-control/print-documents/,GET|POST,quality-control print-documents,200,binary+spec,1,live | registry:QUALITY_CONTROL_V2.PRINT_DOCUMENTS
+Quality Control,/quality-control/print-documents/{id}/,DELETE|PUT,,not probed,spec-only,,needs id | registry:QUALITY_CONTROL_V2.PRINT_DOCUMENT_BY_ID
+Quality Control,/quality-control/production-qc/,GET,quality-control production-qc,200,binary+spec,6,live | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_LIST
+Quality Control,/quality-control/production-qc/counts/,GET,quality-control production-qc-counts,200,binary+spec,obj,live | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_COUNTS
+Quality Control,/quality-control/production-qc/pending/,GET,quality-control production-qc-pending,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_PENDING"
+Quality Control,/quality-control/production-qc/running-runs/,GET,quality-control qc-production-running-runs,200,binary+spec,32,live | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_RUNNING_RUNS
+Quality Control,/quality-control/production-qc/runs/{id}/request-final/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_FINAL_REQUEST
+Quality Control,/quality-control/production-qc/runs/{id}/sessions/,GET|POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_RUN_SESSIONS
+Quality Control,/quality-control/production-qc/sessions/{id}/,DELETE|GET,quality-control qc-production-session-get,not probed,binary+spec,,needs id | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_SESSION_DETAIL
+Quality Control,/quality-control/production-qc/sessions/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_SESSION_APPROVE
+Quality Control,/quality-control/production-qc/sessions/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_SESSION_REJECT
+Quality Control,/quality-control/production-qc/sessions/{id}/results/,POST,,not probed,no,,needs id | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_SESSION_RESULTS
+Quality Control,/quality-control/production-qc/sessions/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:QUALITY_CONTROL_V2.PRODUCTION_QC_SESSION_SUBMIT
+Quality Control,/quality-control/sap-items/,GET,quality-control sap-items,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:QUALITY_CONTROL_V2.SAP_ITEMS"
+Returns,/goods-return/,GET|POST,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:GOODS_RETURN.LIST,GOODS_RETURN.CREATE"
+Returns,/goods-return/gate/expected/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:GOODS_RETURN.GATE_EXPECTED"
+Returns,/goods-return/gate/{id}/mark-in/,POST,,not probed,no,,write-shaped path segment | registry:GOODS_RETURN.GATE_MARK_IN
+Returns,/goods-return/warehouses/,GET,,200,spec-only,3,live | registry:GOODS_RETURN.WAREHOUSES
+Returns,/goods-return/{id}/,GET|PATCH,,not probed,no,,needs id | registry:GOODS_RETURN.BY_ID
+Returns,/goods-return/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:GOODS_RETURN.APPROVE
+Returns,/goods-return/{id}/attachments/,GET|POST,,not probed,no,,needs id | registry:GOODS_RETURN.ATTACHMENTS
+Returns,/goods-return/{id}/attachments/{id}/,DELETE,,not probed,no,,needs id | registry:GOODS_RETURN.ATTACHMENT_BY_ID
+Returns,/goods-return/{id}/invoice-refs/,POST,,not probed,no,,needs id | registry:GOODS_RETURN.INVOICE_REFS
+Returns,/goods-return/{id}/invoice-refs/{id}/,DELETE,,not probed,no,,needs id | registry:GOODS_RETURN.INVOICE_REF_BY_ID
+Returns,/goods-return/{id}/items/,PUT,,not probed,no,,needs id | registry:GOODS_RETURN.ITEMS
+Returns,/goods-return/{id}/receive/,POST,,not probed,no,,write-shaped path segment | registry:GOODS_RETURN.RECEIVE
+Returns,/goods-return/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:GOODS_RETURN.REJECT
+Returns,/goods-return/{id}/returnable-items/,GET,,not probed,no,,needs id | registry:GOODS_RETURN.RETURNABLE_ITEMS
+Returns,/goods-return/{id}/submit/,POST,,not probed,no,,write-shaped path segment | registry:GOODS_RETURN.SUBMIT
+Returns,/goods-return/{id}/vehicle/,PATCH,,not probed,no,,needs id | registry:GOODS_RETURN.VEHICLE
+Supply Chain,/supply-chain/alarms/preview/,GET,,200,spec-only,obj,live | registry:SUPPLY_CHAIN.ALARM_PREVIEW
+Supply Chain,/supply-chain/alarms/send/,POST,,not probed,no,,write-shaped path segment | registry:SUPPLY_CHAIN.ALARM_SEND
+Supply Chain,/supply-chain/capacity/,GET,,200,spec-only,obj,live | registry:SUPPLY_CHAIN.CAPACITY
+Supply Chain,/supply-chain/dashboard/,GET,,200,spec-only,obj,"FALSE GREEN - DO NOT TRUST THE HEADLINE. Reports plan_is_feasible=true, needs_ordering_today=0, lines_over_capacity=0. But 266 of 294 materials have NO lead time (so order-by can never fire), machines=0 (so capacity is vacuous), floor_convention verdict=INDETERMINATE on all 294, and required_by is still 2026-08-01 (August plan) on 30 Aug. || live | registry:SUPPLY_CHAIN.DASHBOARD"
+Supply Chain,/supply-chain/floor-convention/,GET,,200,spec-only,294,live | registry:SUPPLY_CHAIN.FLOOR_CONVENTION
+Supply Chain,/supply-chain/floors/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:SUPPLY_CHAIN.FLOORS"
+Supply Chain,/supply-chain/live-trail/,GET,,200,spec-only,,live | registry:SUPPLY_CHAIN.LIVE_TRAIL
+Supply Chain,/supply-chain/monitored-skus/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:SUPPLY_CHAIN.MONITORED_SKUS"
+Supply Chain,/supply-chain/parameters/,GET,,200,spec-only,obj,live | registry:SUPPLY_CHAIN.PARAMETERS
+Supply Chain,/supply-chain/policy/,GET,,200,spec-only,obj,live | registry:SUPPLY_CHAIN.POLICY
+Supply Chain,/supply-chain/procurement/,GET,,200,spec-only,294,"294 rows live on Oil (Bev 21, Mart 0). This CONTRADICTS CHANGES-2026-08-11 which said supply-chain is unconfigured everywhere - demand rows now exist. Still no lead times: row0 FG0000004 shortage 41,933 with alarm=NO_LEAD_TIME. || live | registry:SUPPLY_CHAIN.PROCUREMENT"
+Supply Chain,/supply-chain/reference/imports/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:SUPPLY_CHAIN.REFERENCE_IMPORTS"
+Supply Chain,/supply-chain/reference/lead-times/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:SUPPLY_CHAIN.LEAD_TIMES"
+Supply Chain,/supply-chain/reference/machines/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:SUPPLY_CHAIN.MACHINES"
+Supply Chain,/supply-chain/reference/sku-machines/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:SUPPLY_CHAIN.SKU_MACHINES"
+Supply Chain,/supply-chain/reference/upload/,POST,,not probed,no,,write-shaped path segment | registry:SUPPLY_CHAIN.REFERENCE_UPLOAD
+Supply Chain,/supply-chain/rows/{id}/owner/,POST,,not probed,no,,needs id | registry:SUPPLY_CHAIN.ROW_OWNER
+Supply Chain,/supply-chain/rows/{id}/verdict/,POST,,not probed,no,,needs id | registry:SUPPLY_CHAIN.ROW_VERDICT
+Supply Chain,/supply-chain/runs/,GET,,200,spec-only,1,live | registry:SUPPLY_CHAIN.RUNS
+Supply Chain,/supply-chain/runs/generate/,POST,,not probed,no,,write-shaped path segment | registry:SUPPLY_CHAIN.RUN_GENERATE
+Supply Chain,/supply-chain/runs/latest/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:SUPPLY_CHAIN.RUN_LATEST"
+Supply Chain,/supply-chain/runs/{id}/,GET,,not probed,no,,needs id | registry:SUPPLY_CHAIN.RUN_DETAIL
+Supply Chain,/supply-chain/runs/{id}/publish/,POST,,not probed,no,,needs id | registry:SUPPLY_CHAIN.RUN_PUBLISH
+Supply Chain,/supply-chain/runs/{id}/review/,POST,,not probed,no,,needs id | registry:SUPPLY_CHAIN.RUN_REVIEW
+Supply Chain,/supply-chain/weekly/,GET,,200,spec-only,obj,live | registry:SUPPLY_CHAIN.WEEKLY
+Vehicle Management,/driver-management/drivers/,GET|POST,driver-management drivers,200,binary+spec,645,live | registry:DRIVER.DRIVERS
+Vehicle Management,/driver-management/drivers/names/,GET,driver-management drivers-names,200,binary+spec,645,live | registry:DRIVER.DRIVER_NAMES
+Vehicle Management,/driver-management/drivers/{id}/,GET|PUT,,not probed,spec-only,,needs id | registry:DRIVER.DRIVER_BY_ID
+Vehicle Management,/vehicle-management/transporters/,GET|POST,vehicle-management transporters,200,binary+spec,130,live | registry:VEHICLE.TRANSPORTERS
+Vehicle Management,/vehicle-management/transporters/names/,GET,vehicle-management transporters-names,200,binary+spec,130,live | registry:VEHICLE.TRANSPORTER_NAMES
+Vehicle Management,/vehicle-management/transporters/{id}/,GET|PUT,,not probed,spec-only,,needs id | registry:VEHICLE.TRANSPORTER_BY_ID
+Vehicle Management,/vehicle-management/vehicle-entries/,POST,vehicle-management vehicle-entries,400,binary+spec,,"routed; required query param missing: {""detail"":""entry_type query parameter is required""} | registry:VEHICLE.VEHICLE_ENTRIES"
+Vehicle Management,/vehicle-management/vehicle-entries/count/,GET,vehicle-management vehicle-entries-count,400,binary+spec,,"routed; required query param missing: {""detail"":""entry_type query parameter is required""} | registry:VEHICLE.VEHICLE_ENTRIES_COUNT"
+Vehicle Management,/vehicle-management/vehicle-entries/list-by-status/,GET,vehicle-management vehicle-entries-list-by-status,400,binary+spec,,"routed; required query param missing: {""detail"":""status query parameter is required""} | registry:VEHICLE.VEHICLE_ENTRIES_BY_STATUS"
+Vehicle Management,/vehicle-management/vehicle-entries/{id}/,GET|PUT,,not probed,spec-only,,needs id | registry:VEHICLE.VEHICLE_ENTRY_BY_ID
+Vehicle Management,/vehicle-management/vehicle-types/,GET,vehicle-management vehicle-types,200,binary+spec,7,live | registry:VEHICLE.VEHICLE_TYPES
+Vehicle Management,/vehicle-management/vehicles/,GET|POST,vehicle-management vehicles,200,binary+spec,675,live | registry:VEHICLE.VEHICLES
+Vehicle Management,/vehicle-management/vehicles/by-number/{id}/history/,GET,,not probed,spec-only,,needs id | registry:VEHICLE.VEHICLE_HISTORY
+Vehicle Management,/vehicle-management/vehicles/names/,GET,vehicle-management vehicles-names,200,binary+spec,675,live | registry:VEHICLE.VEHICLE_NAMES
+Vehicle Management,/vehicle-management/vehicles/{id}/,GET|PUT,,not probed,spec-only,,needs id | registry:VEHICLE.VEHICLE_BY_ID
+WAREHOUSE,/grpo/all-entries/,GET,grpo all-entries,200,binary+spec,755,live | registry:GRPO.ALL_ENTRIES
+WAREHOUSE,/grpo/draft/,POST,,not probed,no,,no GET evidence | registry:GRPO.DRAFT_CREATE
+WAREHOUSE,/grpo/draft/{id}/,DELETE|GET|PATCH,,not probed,no,,needs id | registry:GRPO.DRAFT_DETAIL
+WAREHOUSE,/grpo/draft/{id}/post/,POST,,not probed,no,,write-shaped path segment | registry:GRPO.DRAFT_POST
+WAREHOUSE,/grpo/expense-codes/,GET,,200,no,11,live | registry:GRPO.EXPENSE_CODES
+WAREHOUSE,/grpo/fg/all-entries/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:GRPO.FG_ALL_ENTRIES"
+WAREHOUSE,/grpo/fg/history/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:GRPO.FG_HISTORY"
+WAREHOUSE,/grpo/fg/pending/,GET,,200,spec-only,0,"live, zero rows in JIVO_OIL | registry:GRPO.FG_PENDING"
+WAREHOUSE,/grpo/fg/post/,POST,,not probed,no,,write-shaped path segment | registry:GRPO.FG_POST
+WAREHOUSE,/grpo/fg/preview/{id}/,GET,,not probed,spec-only,,needs id | registry:GRPO.FG_PREVIEW
+WAREHOUSE,/grpo/fg/summary/,GET,,200,spec-only,obj,live | registry:GRPO.FG_SUMMARY
+WAREHOUSE,/grpo/history/,GET,grpo history,200,binary+spec,294,live | registry:GRPO.HISTORY
+WAREHOUSE,/grpo/inspection-report/{id}/,GET,grpo inspection-report,not probed,binary+spec,,needs id | registry:GRPO.INSPECTION_REPORT
+WAREHOUSE,/grpo/pending/,GET,grpo pending,200,binary+spec,456,live | registry:GRPO.PENDING
+WAREHOUSE,/grpo/post/,POST,,not probed,no,,write-shaped path segment | registry:GRPO.POST
+WAREHOUSE,/grpo/preview/{id}/,GET,grpo preview,not probed,binary+spec,,needs id | registry:GRPO.PREVIEW
+WAREHOUSE,/grpo/service/history/,GET,grpo service-history,200,binary+spec,57,live | registry:GRPO.SERVICE_HISTORY
+WAREHOUSE,/grpo/service/options/,GET,grpo service-options,200,binary+spec,obj,live | registry:GRPO.SERVICE_OPTIONS
+WAREHOUSE,/grpo/service/pending/,GET,grpo service-pending,200,binary+spec,145,live | registry:GRPO.SERVICE_PENDING
+WAREHOUSE,/grpo/service/post/,UNRESOLVED,,not probed,no,,write-shaped path segment | registry:GRPO.SERVICE_POST | verb unresolved in bundle
+WAREHOUSE,/grpo/service/preview/{id}/,UNRESOLVED,,not probed,no,,needs id | registry:GRPO.SERVICE_PREVIEW | verb unresolved in bundle
+WAREHOUSE,/grpo/service/{id}/,GET,,not probed,spec-only,,needs id | registry:GRPO.SERVICE_DETAIL
+WAREHOUSE,/grpo/summary/,GET,grpo summary,200,binary+spec,obj,live | registry:GRPO.SUMMARY
+WAREHOUSE,/grpo/{id}/,GET,,not probed,spec-only,,needs id | registry:GRPO.DETAIL
+WAREHOUSE,/grpo/{id}/attachments/,GET|POST,grpo attachments,not probed,binary+spec,,needs id | registry:GRPO.ATTACHMENTS
+WAREHOUSE,/grpo/{id}/attachments/{id}/,DELETE,,not probed,no,,needs id | registry:GRPO.ATTACHMENT_DELETE
+WAREHOUSE,/grpo/{id}/attachments/{id}/retry/,POST,,not probed,no,,needs id | registry:GRPO.ATTACHMENT_RETRY
+WAREHOUSE,/warehouse/bom-requests/,GET,warehouse bom-requests,200,binary+spec,240,live | registry:WAREHOUSE.BOM_REQUESTS
+WAREHOUSE,/warehouse/bom-requests/create/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BOM_REQUEST_CREATE
+WAREHOUSE,/warehouse/bom-requests/{id}/,GET,warehouse bom-request-get,not probed,binary+spec,,needs id | registry:WAREHOUSE.BOM_REQUEST_DETAIL
+WAREHOUSE,/warehouse/bom-requests/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BOM_REQUEST_APPROVE
+WAREHOUSE,/warehouse/bom-requests/{id}/issue/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BOM_REQUEST_ISSUE
+WAREHOUSE,/warehouse/bom-requests/{id}/re-request/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BOM_REQUEST_RE_REQUEST
+WAREHOUSE,/warehouse/bom-requests/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BOM_REQUEST_REJECT
+WAREHOUSE,/warehouse/bst/,GET|POST,warehouse bst-list,200,binary+spec,379,live | registry:WAREHOUSE.BST_LIST
+WAREHOUSE,/warehouse/bst/gate/expected-inwards/,GET,warehouse bst-gate-inwards,200,binary+spec,0,"live, zero rows in JIVO_OIL | registry:WAREHOUSE.BST_GATE_INWARDS"
+WAREHOUSE,/warehouse/bst/gate/expected-outwards/,GET,warehouse bst-gate-outwards,200,binary+spec,293,live | registry:WAREHOUSE.BST_GATE_OUTWARDS
+WAREHOUSE,/warehouse/bst/incoming/,GET,warehouse bst-incoming,200,binary+spec,137,live | registry:WAREHOUSE.BST_INCOMING
+WAREHOUSE,/warehouse/bst/incoming/{id}/,GET,warehouse bst-incoming-get,not probed,binary+spec,,needs id | registry:WAREHOUSE.BST_INCOMING_DETAIL
+WAREHOUSE,/warehouse/bst/partial-transfers/,GET,warehouse bst-partial-transfers,200,binary+spec,5,live | registry:WAREHOUSE.BST_PARTIAL_TRANSFERS
+WAREHOUSE,/warehouse/bst/partial-transfers/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_PARTIAL_TRANSFER_APPROVE
+WAREHOUSE,/warehouse/bst/partial-transfers/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_PARTIAL_TRANSFER_REJECT
+WAREHOUSE,/warehouse/bst/sap-transfers/,GET,warehouse bst-sap-transfers,200,binary+spec,50,live | registry:WAREHOUSE.BST_SAP_TRANSFERS
+WAREHOUSE,/warehouse/bst/sap-transfers/{id}/,GET,warehouse bst-sap-transfer-get,not probed,binary+spec,,needs id | registry:WAREHOUSE.BST_SAP_TRANSFER_DETAIL
+WAREHOUSE,/warehouse/bst/{id}/,GET|PUT,warehouse bst-get,not probed,binary+spec,,needs id | registry:WAREHOUSE.BST_DETAIL
+WAREHOUSE,/warehouse/bst/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_APPROVE
+WAREHOUSE,/warehouse/bst/{id}/box-scans/,POST,,not probed,no,,needs id | registry:WAREHOUSE.BST_BOX_SCANS
+WAREHOUSE,/warehouse/bst/{id}/box-scans/batch/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_BOX_SCANS_BATCH
+WAREHOUSE,/warehouse/bst/{id}/box-scans/bulk-delete/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_BOX_SCANS_BULK_DELETE
+WAREHOUSE,/warehouse/bst/{id}/box-scans/{id}/,DELETE,,not probed,no,,needs id | registry:WAREHOUSE.BST_BOX_SCAN_DETAIL
+WAREHOUSE,/warehouse/bst/{id}/cancel/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_CANCEL
+WAREHOUSE,/warehouse/bst/{id}/gate/mark-in/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_GATE_MARK_IN
+WAREHOUSE,/warehouse/bst/{id}/gate/mark-out/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_GATE_MARK_OUT
+WAREHOUSE,/warehouse/bst/{id}/manual-entries/,POST,,not probed,no,,needs id | registry:WAREHOUSE.BST_MANUAL_ENTRIES
+WAREHOUSE,/warehouse/bst/{id}/partial-transfer/request/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_PARTIAL_TRANSFER_REQUEST
+WAREHOUSE,/warehouse/bst/{id}/receive-scans/,POST,,not probed,no,,needs id | registry:WAREHOUSE.BST_RECEIVE_SCAN
+WAREHOUSE,/warehouse/bst/{id}/receive/complete/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.BST_RECEIVE_COMPLETE
+WAREHOUSE,/warehouse/fg-receipts/,GET,warehouse fg-receipts,200,binary+spec,3,live | registry:WAREHOUSE.FG_RECEIPTS
+WAREHOUSE,/warehouse/fg-receipts/create/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.FG_RECEIPT_CREATE
+WAREHOUSE,/warehouse/fg-receipts/{id}/,GET,warehouse fg-receipt-get,not probed,binary+spec,,needs id | registry:WAREHOUSE.FG_RECEIPT_DETAIL
+WAREHOUSE,/warehouse/fg-receipts/{id}/post-to-sap/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.FG_RECEIPT_POST_SAP
+WAREHOUSE,/warehouse/fg-receipts/{id}/receive/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.FG_RECEIPT_RECEIVE
+WAREHOUSE,/warehouse/my-warehouses/,GET,,200,no,obj,live | registry:WAREHOUSE.MY_WAREHOUSES
+WAREHOUSE,/warehouse/stock/check/,POST,,not probed,no,,no GET evidence | registry:WAREHOUSE.STOCK_CHECK
+WAREHOUSE,/warehouse/transfer-requests/,GET|POST,,200,no,3,live | registry:WAREHOUSE.TRANSFER_REQUESTS
+WAREHOUSE,/warehouse/transfer-requests/in-transit/,GET,,200,no,0,"live, zero rows in JIVO_OIL | registry:WAREHOUSE.TRANSFER_REQUESTS_IN_TRANSIT"
+WAREHOUSE,/warehouse/transfer-requests/pending/,GET,,200,no,0,"live, zero rows in JIVO_OIL | registry:WAREHOUSE.TRANSFER_REQUESTS_PENDING"
+WAREHOUSE,/warehouse/transfer-requests/reconcile/,GET,,200,no,obj,live | registry:WAREHOUSE.TRANSFER_REQUESTS_RECONCILE
+WAREHOUSE,/warehouse/transfer-requests/stock/,GET,,400,no,,"routed; required query param missing: {""error"":""Pick the source warehouse first.""} | registry:WAREHOUSE.TRANSFER_REQUESTS_STOCK"
+WAREHOUSE,/warehouse/transfer-requests/{id}/,GET,,not probed,no,,needs id | registry:WAREHOUSE.TRANSFER_REQUEST_DETAIL
+WAREHOUSE,/warehouse/transfer-requests/{id}/allocation-preview/,GET,,not probed,no,,needs id | registry:WAREHOUSE.TRANSFER_REQUEST_ALLOCATION_PREVIEW
+WAREHOUSE,/warehouse/transfer-requests/{id}/approve/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.TRANSFER_REQUEST_APPROVE
+WAREHOUSE,/warehouse/transfer-requests/{id}/create-bst/,POST,,not probed,no,,needs id | registry:WAREHOUSE.TRANSFER_REQUEST_CREATE_BST
+WAREHOUSE,/warehouse/transfer-requests/{id}/post-second-leg/,POST,,not probed,no,,needs id | registry:WAREHOUSE.TRANSFER_REQUEST_SECOND_LEG
+WAREHOUSE,/warehouse/transfer-requests/{id}/post/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.TRANSFER_REQUEST_POST
+WAREHOUSE,/warehouse/transfer-requests/{id}/reject/,POST,,not probed,no,,write-shaped path segment | registry:WAREHOUSE.TRANSFER_REQUEST_REJECT
+WAREHOUSE,/warehouse/transfer-requests/{id}/verify-batches/,GET,,not probed,no,,needs id | registry:WAREHOUSE.TRANSFER_REQUEST_VERIFY_BATCHES
+WAREHOUSE,/warehouse/user-warehouses/,GET|POST,,200,no,17,live | registry:WAREHOUSE.USER_WAREHOUSES
+WAREHOUSE,/warehouse/user-warehouses/gaps/,GET,,200,no,5,live | registry:WAREHOUSE.USER_WAREHOUSE_GAPS
+WAREHOUSE,/warehouse/user-warehouses/{id}/,DELETE|PATCH,,not probed,no,,needs id | registry:WAREHOUSE.USER_WAREHOUSE_DETAIL
+WAREHOUSE,/warehouse/wms/item-groups/,GET,warehouse wms-item-groups,200,binary+spec,obj,live | registry:WAREHOUSE.WMS_ITEM_GROUPS
+WAREHOUSE,/warehouse/wms/warehouses/,GET,warehouse wms-warehouses,200,binary+spec,obj,live | registry:WAREHOUSE.WMS_WAREHOUSE_LIST
+WAREHOUSE OPS,/wms/cellPurposes/,GET,wms wms-cell-purposes,200,binary+spec,9,live
+WAREHOUSE OPS,/wms/inventory/,GET,wms wms-inventory,200,binary+spec,433,live
+WAREHOUSE OPS,/wms/locations/,GET,wms wms-locations,200,binary+spec,961,"CAPACITY: 961 RACK cells, each maxPallets=1. By purpose: 739 FINISHED-GOODS + 46 PACKING-MATERIAL = 785 usable pallet positions; 176 are aisle/stairs/pillar/lift/conveyor/cabin/gate. maxUnits, maxVolume, maxWeight and dimensions are ALL null - no volumetric capacity. || live"
+WAREHOUSE OPS,/wms/materials/,GET,wms wms-materials,200,binary+spec,0,"live, zero rows in JIVO_OIL"
+WAREHOUSE OPS,/wms/movements/,GET,wms wms-movements,200,binary+spec,764,live
+WAREHOUSE OPS,/wms/pallets/,GET,wms wms-pallets,200,binary+spec,334,"OCCUPANCY: 333 active pallets, all with a currentLocationId = 42.4% of the 785 usable positions. 11,276 boxes / 121,630 units across 37 items. || live"
+WAREHOUSE OPS,/wms/templates/,GET,wms wms-templates,200,binary+spec,1,live
+WAREHOUSE OPS,/wms/warehouses/,GET,wms wms-warehouses,200,binary+spec,1,"ONLY physical capacity model in the app: 1 warehouse, BHAKHARPUR-BASEMENT, 31 rows x 31 cols x 1 level, mapped to SAP code BH-BT. The other 45 warehouses have no location/capacity model. || live"
+WAREHOUSE OPS,/wms/zones/,GET,wms wms-zones,200,binary+spec,0,"live, zero rows in JIVO_OIL"
+WAREHOUSE OPS,/wms/{id}/{id}/,GET,wms wms-get,not probed,binary+spec,,needs id

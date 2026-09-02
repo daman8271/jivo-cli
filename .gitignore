@@ -109,3 +109,30 @@ summon/agent/policy.json
 # summon: the SAP credential store. Lives ONLY at /opt/jivo-summon/credentials/
 # on the VPS (0600, root-only). Never committed — this repo is public.
 summon/credentials/
+
+# entry-vault mined corpus — DERIVED data, deliberately not committed.
+# profile.py/gl.py/flow.py/sample.py dump real production rows (a scan of _data/ on
+# 2026-08-24 found 21 distinct GSTINs and 26 account-number-shaped strings), and this
+# repo is public. It is regenerable in ~40 min with no model tokens:
+#   python3 sap-b1/entry-vault/bin/sweep.py --jobs 5
+# The vault NOTES are the committed artefact; the corpus is scratch.
+sap-b1/entry-vault/_data/
+.claude/skills/*/bin/__pycache__/
+
+# ── OPERATOR CREDENTIALS — deliberately committed ────────────────────
+# Daman's call, 2026-09-02. This repo is PRIVATE (verified: visibility
+# PRIVATE). Operators reach SAP/factory/EXIM from machines that have no
+# way to receive an .env by hand — a cloud Claude Code session, an iPad.
+# The blanket rules above still hold for every OTHER .env; these named
+# files are the exceptions.
+#
+# NOT included, and never to be added: ALISE_MAIL_* (Daman's personal
+# mailbox) — stripped from .env on 2026-09-02.
+!.env
+!sap-b1/cli/.env
+!sap-b1/accounts-kit/.env
+!sap-b1/cli/*.env
+!connections/*.env
+!portals/gst/.env
+!portals/tankhapay/.env
+!control-panel/.env

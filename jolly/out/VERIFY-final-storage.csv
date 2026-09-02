@@ -1,0 +1,43 @@
+date,sap_onhand_l,standing_l,physical_l,pct_827k,over_working_827k,over_absolute_peak_923k,note,check,verdict,evidence
+2026-08-01,468960,390245,859205,103.9,YES,,,,,
+2026-08-02,468960,390245,859205,103.9,YES,,,,,
+2026-08-03,426127,408748,834875,101.0,YES,,,,,
+2026-08-04,459731,359661,819392,99.1,,,,,,
+2026-08-05,478015,311609,789624,95.5,,,,,,
+2026-08-06,533727,290447,824174,99.7,,,,,,
+2026-08-07,539118,232448,771567,93.3,,,,,,
+2026-08-08,574437,208260,782698,94.6,,,,,,
+2026-08-09,594109,190076,784185,94.8,,,,,,
+2026-08-10,587513,185008,772522,93.4,,,,,,
+2026-08-11,585866,193994,779860,94.3,,,,,,
+2026-08-12,583028,233757,816785,98.8,,,,,,
+2026-08-13,631395,112860,744254,90.0,,,,,,
+2026-08-14,693520,73118,766638,92.7,,,,,,
+2026-08-15,693520,67648,761168,92.0,,,,,,
+2026-08-16,693520,67648,761168,92.0,,,,,,
+2026-08-17,652195,91466,743661,89.9,,,,,,
+2026-08-18,683900,119737,803637,97.2,,,,,,
+2026-08-19,664961,136926,801886,97.0,,,,,,
+2026-08-20,681790,139000,820790,99.2,,,,,,
+2026-08-21,676497,133098,809594,97.9,,,,,,
+2026-08-22,811247,173495,984742,119.1,YES,YES,physically impossible on 923k pallet peak,,,
+2026-08-23,811247,123885,935132,113.1,YES,YES,physically impossible on 923k pallet peak,,,
+2026-08-24,726186,156040,882227,106.7,YES,,,,,
+2026-08-25,696656,173835,870491,105.3,YES,,,,,
+2026-08-26,641865,199359,841224,101.7,YES,,,,,
+2026-08-27,651153,184279,835431,101.0,YES,,,,,
+2026-08-28,658933,184279,843211,102.0,YES,,,,,
+2026-08-29,668646,200897,869544,105.1,YES,,,,,
+2026-08-30,668644,128797,797442,96.4,,,,,,
+
+check,verdict,evidence
+,,,,,,,,BST /warehouse/bst/ is a real second exit lane,CONFIRMED,379 Oil rows pulled live 2026-08-30; 242 INVOICE + 137 STOCK_TRANSFER; 356 from BH-PF; dispatched_at present on 368/379
+,,,,,,,,"OnHand BH-BT+BH-PF = 668,644 L",CONFIRMED,"OITW x OITM grp 102/115, pack_litres: BH-BT 414,078 + BH-PF 254,566"
+,,,,,,,,"Standing today = 128,797 L (14d cutoff)",CONFIRMED,"independently recomputed from OINV/INV1 + live sales-dispatch + live BST: 128,797 L exactly; 7d=116,134; 30d=137,304; no cutoff=180,695"
+,,,,,,,,August standing series reproduces,CONFIRMED,"28 of 30 days match to <=400 L; 15-16 Aug differ by 8,353 L"
+,,,,,,,,Invoice IS the stock movement (C-0054 premise),CONFIRMED,"OINM at BH-BT/BH-PF Aug: TransType 13 x1055, no TransType 15 anywhere; OINV Aug 540/540 DocDate=CreateDate, zero backdating"
+,,,,,,,,"Standing is measured, not missing-record artefact",CONFIRMED,litre gate-match rate 94.9% Jul-Aug; >=92.7% every completed week; Jul-w5 month-end pile 97.6% matched with mean lag 5.04 d
+,,,,,,,,739 finished-goods cells at BH-BT,PARTIAL,"961 cells live, all ACTIVE RACK, 739 share one purposeId - count confirmed. But grid is 31x31=961 auto-generated, ALL 961 carry identical default maxPallets=1 and null dimensions. Not a physical pallet count."
+,,,,,,,,BH-PF->GP-FG route stopped 23 Jul,CONFIRMED,"SAP OWTR: Jun 531,474 pcs, Jul 415,421 pcs, Aug ZERO; BST GP-FG transfers all dated 2026-07-02..07-23"
+,,,,,,,,"3-day runway on 29,558 L headroom",REFUTED,"+8,690 L/day is the SAP BOOK net change. On their own corrected PHYSICAL series Aug ran 859,205 -> 797,442 = -2,130 L/day (OLS +1,936 L/day). Runway is ~15 days at worst, not 3."
+,,,,,,,,Corrected physical stays within capacity,REFUTED,"11 of 30 Aug days above the 827,000 L working ceiling; 22-23 Aug above the 923,000 L ABSOLUTE pallet peak (984,742 L = 107%). Impossible on the sheet's own pallet count."

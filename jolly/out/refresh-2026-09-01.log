@@ -1,0 +1,49 @@
+[18:46:33] === rolling refresh, as-of 2026-09-01 ===
+[18:46:34] HANA ok
+sim/sep-inputs.json — 0.8 MB
+
+  plan            84 SKUs, 4,323,300 L
+  FG on hand      437,526 L (plan 380,641 + other 56,885)
+  oil on hand     806,143 L
+  packaging       12,177,431 pcs
+  inbound         oil 1,639,518 L | packaging 7,162,866 pcs over 5 days
+  open backlog    1,288,754 pcs  Rs 28.23 Cr
+  components AT ZERO: 7
+[18:47:52]   sim -sep
+[18:47:52]   sim -sep-12x31
+[18:47:52]   sim -sep-22x31
+[18:47:52]   sim -sep-24x31
+[18:47:52] ABORT: sim -sep-taper failed
+[18:48:05] === rolling refresh, as-of 2026-09-01 ===
+[18:48:06] HANA ok
+sim/sep-inputs.json — 0.8 MB
+
+  plan            84 SKUs, 4,323,300 L
+  FG on hand      437,526 L (plan 380,641 + other 56,885)
+  oil on hand     806,143 L
+  packaging       12,177,431 pcs
+  inbound         oil 1,639,518 L | packaging 7,162,866 pcs over 5 days
+  open backlog    1,288,754 pcs  Rs 28.23 Cr
+  components AT ZERO: 7
+[18:48:20]   sim -sep
+[18:48:20]   sim -sep-12x31
+[18:48:20]   sim -sep-22x31
+[18:48:20]   sim -sep-24x31
+[18:48:20]   sim -sep-taper
+[18:48:21]   sim -sep-taper18
+  made 2,765,370 L | shipped 2,760,307 L | value Rs 48.93 Cr
+  conservation 0.023% | storage-pinned days 0 | non-shipping working days 0
+  gates PASS
+  of which ALREADY LATE                41
+
+wrote out/order-by-sep.csv and out/order-by-sep.json  (209 components)
+[18:48:21] order-by, whatsapp, build list regenerated
+  unproducible plan SKUs: 4 (FG0000034, FG0000043, FG0000328, FG0000006)
+  scenarios: 24x30 4,063,317 L (36.1% extra hrs used) · 22x30 3,977,016 L (42.4% extra hrs used) · taper-22-18 3,784,733 L (44.4% extra hrs used) · taper-22-12 3,318,072 L (38.7% extra hrs used) · 12x30 2,994,749 L (82.7% extra hrs used)
+  loops: 39/43 blocker chains resolved in-month
+  whatsapp: 4 threads · 53 simulated drafts · 0 replies · numbers MASKED
+  august calibration: sim 2,122,639 vs actual 2,119,237 (0.16%)
+  checks: 150/150 passed
+[18:48:26] build green, phone scan clean
+[18:48:26] DEPLOY=0 — built locally, not published
+[18:48:26] === refresh complete ===

@@ -1,0 +1,243 @@
+{
+ "meta": {
+  "month": "September 2026",
+  "frozen": "2026-08-31",
+  "as_of": "2026-09-01",
+  "horizon": [
+   "2026-09-01",
+   "2026-09-30"
+  ],
+  "forward": true,
+  "forward_rule": "A FORWARD PLAN, not a backtest. September has not happened. Only the 1-Sept opening is observed.",
+  "generated": "2026-09-01T13:18:21+00:00"
+ },
+ "totals": {
+  "made_l": 2765370,
+  "value_rs": 489288667,
+  "shipped_l": 2760307,
+  "oil_used_l": 2766013,
+  "days": 30,
+  "working_days": 26,
+  "runs": 339,
+  "oil_changes": 231,
+  "clearances_only": 24,
+  "flushes": 231,
+  "bought_lines": 556,
+  "events": 155,
+  "util_median": 88,
+  "peak_day": {
+   "date": "2026-09-02",
+   "made_l": 147729
+  }
+ },
+ "plan": {
+  "litres": 4323300,
+  "skus": 84,
+  "made_vs_plan_pct": 64.0,
+  "source": "EXIM GET /planning/latest/ — PRODUCTION PLANING MONTH OF SEP 2026, uploaded 2026-08-27 by aahar831@gmail.com, 186 rows / 185 FG codes / 4,323,300 L, weekly buckets. No Excel."
+ },
+ "demand": {
+  "rows": 2029,
+  "real_rows": 121,
+  "forecast_rows": 1908,
+  "real_pieces": 1288754,
+  "forecast_pieces": 1801779,
+  "real_value_rs": 282287364,
+  "forecast_value_rs": 492401042,
+  "forecast_share_pieces_pct": 58.3,
+  "forecast_share_value_pct": 63.56,
+  "forecast_share_litres_pct": 64.3,
+  "order_dates": 26,
+  "channels": {
+   "TRADE": 120,
+   "MART": 1,
+   "FORECAST": 1908
+  },
+  "note": "the demand stream MIXES real orders and the plan as dated FORECAST buckets — forecast rows are triple-tagged (channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)') and must stay visually distinct"
+ },
+ "opening": {
+  "fg_litres": 437526,
+  "fg_plan_l": 380641,
+  "fg_other_l": 56885,
+  "oil_l": 806143,
+  "oil_l_definition": "ALL RM oils at open — a different definition from the day files' BOM-relevant oil_on_hand_l; never chart them together",
+  "packaging_pieces": 12177431,
+  "inbound_oil_l": 1639518,
+  "inbound_packaging": 7162866,
+  "standing_l": 0,
+  "standing_assumed": true,
+  "backlog_pieces": 1288754,
+  "backlog_value_rs": 282287364,
+  "plan_sku_backlog_docs": 47,
+  "plan_sku_backlog_docs_overdue": 40,
+  "at_zero_count": 7
+ },
+ "storage": {
+  "ceiling_l": 827000,
+  "peak_l": 923000,
+  "ceiling_assumed": true,
+  "invoice_truck_lag_days": 2,
+  "days_ge_95": 1,
+  "days_ge_100": [],
+  "throttle_events": 0
+ },
+ "day1_blocked": {
+  "attempts": 37,
+  "products": 13,
+  "product_binder_pairs": 15,
+  "by_binder_class": {
+   "oil": {
+    "attempts": 29,
+    "products": 12
+   },
+   "zero_stock_packaging": {
+    "attempts": 0,
+    "products": 0
+   },
+   "other_packaging": {
+    "attempts": 8,
+    "products": 3
+   }
+  },
+  "top_binder": {
+   "code": "RM0000001",
+   "name": "LOOSE REFINED OLIVE OIL",
+   "kind": "OIL",
+   "attempts": 20,
+   "products": 7
+  },
+  "products_in_multiple_classes": 2,
+  "zero_openers_products_blocked_month": 1,
+  "note": "attempts = blocked scheduling tries, NOT distinct planned runs; quote products. Day-1 blocking is mostly OIL-short — never attribute it to the zero-stock packaging openers (a class per-product count can overlap: a product can be short oil and packaging at once)"
+ },
+ "august": {
+  "sim_made_l": 2122639,
+  "actual_made_l": 2119237,
+  "delta_pct": 0.16,
+  "note": "the same engine backtested on August landed this close to actual — the basis for trusting the September plan"
+ },
+ "scenarios_mini": [
+  {
+   "id": "24x30",
+   "label": "24h shifts, Sundays on",
+   "made_l": 4063317,
+   "delta_made_l": 1297947,
+   "pct_extra_hours_used": 36.1
+  },
+  {
+   "id": "22x30",
+   "label": "22h shifts, Sundays on",
+   "made_l": 3977016,
+   "delta_made_l": 1211646,
+   "pct_extra_hours_used": 42.4
+  },
+  {
+   "id": "taper-22-18",
+   "label": "front-load then taper: 22h through day 13, 18h from day 14, Sundays on",
+   "made_l": 3784733,
+   "delta_made_l": 1019363,
+   "pct_extra_hours_used": 44.4
+  },
+  {
+   "id": "taper-22-12",
+   "label": "front-load then taper: 22h through day 13, 12h from day 14, Sundays on",
+   "made_l": 3318072,
+   "delta_made_l": 552702,
+   "pct_extra_hours_used": 38.7
+  },
+  {
+   "id": "12x30",
+   "label": "12h shifts, Sundays on",
+   "made_l": 2994749,
+   "delta_made_l": 229379,
+   "pct_extra_hours_used": 82.7
+  }
+ ],
+ "materials_mini": {
+  "components": 209,
+  "under_100_cover": 88,
+  "must_order_week1": 47,
+  "already_late": 41,
+  "zero_literal_items": 6,
+  "zero_literal_value_rs": 4456124,
+  "zero_august_rule_items": 11,
+  "zero_august_rule_value_rs": 107653164
+ },
+ "whatsapp_mini": {
+  "threads": 4,
+  "messages": 53,
+  "replies": 0,
+  "simulated": true
+ },
+ "unproducible": [
+  {
+   "code": "FG0000034",
+   "sku": "EXTRA LIGHT OLIVE 200 LTR 1 PCS",
+   "pack_type": "DRUM",
+   "litres_per_piece": 200.0,
+   "plan_pieces": 150,
+   "plan_litres": 30000.0,
+   "slot_needed": "DRUM",
+   "reason": "no line is configured for the DRUM slot",
+   "value_est_rs": 6000000,
+   "value_est_derived": true
+  },
+  {
+   "code": "FG0000043",
+   "sku": "COLD PRESS 3 LTR 6 PCS",
+   "pack_type": "PET",
+   "litres_per_piece": 3.0,
+   "plan_pieces": 6667,
+   "plan_litres": 20000.0,
+   "slot_needed": "3L",
+   "reason": "no line is configured for the 3L slot",
+   "value_est_rs": 3809600,
+   "value_est_derived": true
+  },
+  {
+   "code": "FG0000328",
+   "sku": "SANO POMACE OLIVE 200 LTR 1 PCS",
+   "pack_type": "DRUM",
+   "litres_per_piece": 200.0,
+   "plan_pieces": 75,
+   "plan_litres": 15000.0,
+   "slot_needed": "DRUM",
+   "reason": "no line is configured for the DRUM slot",
+   "value_est_rs": 3534300,
+   "value_est_derived": true
+  },
+  {
+   "code": "FG0000006",
+   "sku": "POMACE OLIVE 200 LTR 1 PCS",
+   "pack_type": "DRUM",
+   "litres_per_piece": 200.0,
+   "plan_pieces": 5,
+   "plan_litres": 1000.0,
+   "slot_needed": "DRUM",
+   "reason": "no line is configured for the DRUM slot",
+   "value_est_rs": 300000,
+   "value_est_derived": true
+  }
+ ],
+ "questions_top": [
+  {
+   "n": 2,
+   "priority": "blocking",
+   "one_liner": "Is the basement (BH-BT) 628 pallet positions or 739?",
+   "status": ""
+  },
+  {
+   "n": 4,
+   "priority": "blocking",
+   "one_liner": "Do the filling lines actually stop around 16:20, or do they keep running to about 19:00 with the output keyed in once at the end of the run?",
+   "status": ""
+  },
+  {
+   "n": 13,
+   "priority": "medium",
+   "one_liner": "Should the day plan refuse to schedule a run whose bill of materials exceeds the packaging actually on hand, or only warn?",
+   "status": ""
+  }
+ ],
+ "simulated": true
+}

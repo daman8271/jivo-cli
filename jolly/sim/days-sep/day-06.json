@@ -1,0 +1,114 @@
+{
+ "date": "2026-09-06",
+ "weekday": "Sunday",
+ "working": false,
+ "received": [],
+ "new_orders": [],
+ "runs": [],
+ "blocked": [],
+ "dispatched": [],
+ "bought": [],
+ "decisions": [],
+ "unblocked": [],
+ "flushes": 0,
+ "made_litres": 0,
+ "made_value": 0,
+ "shipped_litres": 0,
+ "oil_used_l": 0,
+ "line_util": 0,
+ "line_hours": {
+  "JP Machine": 0,
+  "Clear Pack": 0,
+  "10 Head": 0,
+  "6 Head": 0,
+  "Pouch Machine": 0,
+  "Tin Head": 0
+ },
+ "storage": {
+  "physical_l": 410213,
+  "ceiling_l": 827000,
+  "peak_l": 923000,
+  "pct": 49.6,
+  "fg_in_godown_l": 341229,
+  "invoiced_not_trucked_l": 68984,
+  "headroom_l": 416787
+ },
+ "book": {
+  "plan_left_l": 3257220,
+  "po_open_l": 1162160,
+  "po_open_value": 213558686,
+  "forecast_open_l": 325265
+ },
+ "oil_on_hand_l": 1688724,
+ "waiting_on": [
+  {
+   "code": "PM0000127",
+   "name": "LABEL 500 MLS COLD PRESS BACK",
+   "since": "2026-09-01"
+  },
+  {
+   "code": "PM0000349",
+   "name": "LABEL 2 LTR POMACE HANDLE BOTTLE FRONT",
+   "since": "2026-09-01"
+  },
+  {
+   "code": "PM0000413",
+   "name": "LABEL 200 MLS EXTRA VIRGIN COCONUT BACK",
+   "since": "2026-09-05"
+  },
+  {
+   "code": "PM0000414",
+   "name": "LABEL 200 MLS EXTRA VIRGIN COCONUT FRONT",
+   "since": "2026-09-05"
+  },
+  {
+   "code": "PM0000560",
+   "name": "PET BOTTLE 2 LTR 80 GRM (GREEN HANDLE)",
+   "since": "2026-09-03"
+  },
+  {
+   "code": "PM0000593",
+   "name": "TIN 15 KGS/LTR MULTI CP KACCHI GHANI MUSTARD OIL  PRINTED",
+   "since": "2026-09-01"
+  },
+  {
+   "code": "PM0000855",
+   "name": "PET BOTTLE 10 ML",
+   "since": "2026-09-01"
+  },
+  {
+   "code": "RM0000001",
+   "name": "LOOSE REFINED OLIVE OIL",
+   "since": "2026-09-01"
+  },
+  {
+   "code": "RM0000002",
+   "name": "CANOLA COLD PRESS LOOSE OIL OLD",
+   "since": "2026-09-01"
+  },
+  {
+   "code": "RM0000054",
+   "name": "SEASAME OIL",
+   "since": "2026-09-01"
+  }
+ ],
+ "honesty": {
+  "measured": [
+   "31-Aug stock, FG and open POs (SAP, godown allow-list, OpenInvQty)",
+   "the open order backlog (SAP ORDR, dated by promise; the 84 plan SKUs only)",
+   "BOMs",
+   "line speeds and clearance (ji.jivo.in, August-observed)",
+   "realise May-Jul",
+   "lead times measured: oil 11 d, packaging 6 d"
+  ],
+  "assumed": [
+   "64% of the demand stream is the monthly plan as dated FORECAST buckets, not orders (channel=FORECAST, separable)",
+   "the un-bucketed ecom plan volume spreads evenly across working days \u2014 EXIM gives it no weekly split",
+   "supply arrives exactly on its lead time",
+   "2-day invoice-to-truck lag",
+   "lines run at 50% of rated, the observed rate",
+   "15 L PET fills at the 5 L slot's litres/hour (pieces/hr divided by 3) \u2014 DERIVED, no measured 15 L rate exists",
+   "standing_l=0: stock invoiced on/before 31 Aug but not yet gated out is uncounted (optimistic on day-1 space)"
+  ]
+ }
+}

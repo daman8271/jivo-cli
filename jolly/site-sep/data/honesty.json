@@ -1,0 +1,115 @@
+{
+ "forward_rule": "A FORWARD PLAN, not a backtest. September has not happened. Only the 1-Sept opening is observed.",
+ "measured": [
+  "31-Aug stock, FG and open POs (SAP, godown allow-list, OpenInvQty)",
+  "the open order backlog (SAP ORDR, dated by promise; the 84 plan SKUs only)",
+  "BOMs",
+  "line speeds and clearance (ji.jivo.in, August-observed)",
+  "realise May-Jul",
+  "lead times measured: oil 11 d, packaging 6 d"
+ ],
+ "assumed": [
+  "64% of the demand stream is the monthly plan as dated FORECAST buckets, not orders (channel=FORECAST, separable)",
+  "the un-bucketed ecom plan volume spreads evenly across working days — EXIM gives it no weekly split",
+  "supply arrives exactly on its lead time",
+  "2-day invoice-to-truck lag",
+  "every line runs at its stored rate × 50% efficiency — Clear Pack 5L and Tin Head are stored at OBSERVED rates, so for them that is the observed rate derated again ('observed rate, then 50% efficiency'), never '50% of rated'",
+  "15 L PET fills at the 5 L slot's litres/hour (pieces/hr divided by 3) — DERIVED, no measured 15 L rate exists",
+  "standing_l=0: stock invoiced on/before 31 Aug but not yet gated out is uncounted (optimistic on day-1 space)"
+ ],
+ "provenance": {
+  "plan": "EXIM GET /planning/latest/ — PRODUCTION PLANING MONTH OF SEP 2026, uploaded 2026-08-27 by aahar831@gmail.com, 186 rows / 185 FG codes / 4,323,300 L, weekly buckets. No Excel.",
+  "opening": "SAP OITW as at 2026-08-31 (the eve of the month), godown allow-list incl. BH-GJ and GP-PM (GODOWNS.md, settled 2026-08-29).",
+  "inbound": "Open POs raised in the last 90 days only, OpenInvQty in inventory units, x1000 guard. Where a PO carries no ship date, it lands at order-date + measured lead (oil 11 d, packaging 6 d). ASSUMPTION: lines already overdue on 1 Sept are spread deterministically across the first working week rather than all arriving on day one.",
+  "demand": "Two streams: (1) the SAP ORDR open backlog, real orders, dated by PROMISE (DocDueDate; measured 2026-08-31: 131 of 138 open docs already overdue, so most enter day 1 — the state of the book, not an assumption); (2) the plan as a FORECAST for demand not yet ordered, net of the backlog: EXIM's weekly buckets where they exist (trade 1,890,300 L), plus the un-bucketed ecom volume (2,433,000 L — EXIM has no ecom weekly split) spread evenly across the month's working days as week 0. ASSUMPTION: the even ecom spread. Stream 2 is a projection, tagged channel=FORECAST so it can be separated on the site. NOT the OMS mirror (dead, unjoinable). SCOPE: the backlog counted here covers the 84 plan SKUs only — open FG orders on non-plan codes are outside the sim's world (it cannot produce them) and are counted separately in opening.backlog_nonplan_*. VALUE BASIS: order value = OpenQty x unit Price, the open pieces' worth — SUM(LineTotal) was refuted (it includes the delivered part of part-shipped lines; Rs 14.4 Cr / 44% overstatement).",
+  "standing": "ASSUMPTION: standing_l=0 — any stock invoiced on/before 31 Aug but not yet gated out (C-0054) is NOT counted, which is optimistic on godown space. Not measured at freeze.",
+  "lines": "ji.jivo.in masters with August observations: Clear Pack 5L 1,000/hr (rated 3,000 refuted), Tin Head 215/hr, clearance 51.3 min. The sim plans at these speeds x0.50 (rules.efficiency) — the August-calibrated effective rate (sim 2,122,639 L vs actual 2,119,237 L): CP 5L effectively 500/hr vs its observed median 831, Tin Head 107.5/hr vs its observed peak 215. Deliberately conservative — a reported tin shortfall is therefore an upper bound. 15 L PET has NO measured rate anywhere: the engine DERIVES it as the 5 L slot's pieces/hr divided by 3 (constant litres/hour through the same head).",
+  "august_lesson": "The August rebuild found 5 input bugs. All corrections are carried here."
+ },
+ "label_rules": [
+  {
+   "id": "po-open-value",
+   "rule": "book.po_open_value is CUMULATIVE booked order value, never decremented — if shown, label it 'cumulative value ordered', NEVER 'open PO value'."
+  },
+  {
+   "id": "po-open-litres",
+   "rule": "book.po_open_l is not unshipped-order litres — prefer the computed open_real_l_computed (ordered − shipped from rows), shipped alongside it in the spine."
+  },
+  {
+   "id": "orders-mixed",
+   "rule": "summary days[].new_orders MIXES real orders and forecast rows — always split by channel; on quiet days it is 100% FORECAST.",
+   "forecast_share_litres_pct": 64.3
+  },
+  {
+   "id": "two-oil-series",
+   "rule": "opening.oil_l (all-RM oils) and the day files' oil_on_hand_l (BOM-relevant oils) use DIFFERENT definitions — never chart them as one series.",
+   "opening_oil_l": 806143
+  },
+  {
+   "id": "forecast-tags",
+   "rule": "FORECAST rows are triple-tagged (channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)') — keep them visually distinct everywhere."
+  },
+  {
+   "id": "ceiling-assumed",
+   "rule": "the storage ceiling is Daman's spreadsheet figure, NOT a measured capacity — mark it assumed wherever it appears (open question Q2).",
+   "working_l": 827000,
+   "peak_l": 923000
+  },
+  {
+   "id": "standing-zero",
+   "rule": "standing_l=0 at open is a declared OPTIMISTIC assumption — invoiced-but-not-gated-out stock is uncounted (C-0054)."
+  },
+  {
+   "id": "ecom-spread",
+   "rule": "the ecom half of the plan has NO weekly dating in EXIM — it is spread evenly across working days as a DECLARED ASSUMPTION (FCST-W0 rows)."
+  },
+  {
+   "id": "day1-pile",
+   "rule": "the day-1 order pile is MEASURED reality, not a bug — most of the open backlog was already overdue on 31 Aug.",
+   "provenance_quote": "Two streams: (1) the SAP ORDR open backlog, real orders, dated by PROMISE (DocDueDate; measured 2026-08-31: 131 of 138 open docs already overdue, so most enter day 1 — the state of the book, not an assumption); (2) the plan as a FORECAST for demand not yet ordered, net of the backlog: EXIM's weekly buckets where they exist (trade 1,890,300 L), plus the un-bucketed ecom volume (2,433,000 L — EXIM has no ecom weekly split) spread evenly across the month's working days as week 0. ASSUMPTION: the even ecom spread. Stream 2 is a projection, tagged channel=FORECAST so it can be separated on the site. NOT the OMS mirror (dead, unjoinable). SCOPE: the backlog counted here covers the 84 plan SKUs only — open FG orders on non-plan codes are outside the sim's world (it cannot produce them) and are counted separately in opening.backlog_nonplan_*. VALUE BASIS: order value = OpenQty x unit Price, the open pieces' worth — SUM(LineTotal) was refuted (it includes the delivered part of part-shipped lines; Rs 14.4 Cr / 44% overstatement).",
+   "plan_sku_backlog_docs": 47,
+   "plan_sku_backlog_docs_overdue": 40
+  },
+  {
+   "id": "observed-then-derated",
+   "rule": "Clear Pack 5L and Tin Head are stored at OBSERVED rates and the sim derates by 50% again — say 'observed rate, then 50% efficiency', never '50% of rated'.",
+   "efficiency": 0.5
+  },
+  {
+   "id": "unproducible",
+   "rule": "four plan SKUs are UNPRODUCIBLE (no 3L PET or DRUM line configured) — surface them honestly on Materials/Order-by.",
+   "codes": [
+    "FG0000034",
+    "FG0000043",
+    "FG0000328",
+    "FG0000006"
+   ]
+  },
+  {
+   "id": "realise-outlier",
+   "rule": "realise for FG0000155 is an inherited outlier vs its own order-book price — do not headline it unqualified.",
+   "detail": {
+    "code": "FG0000155",
+    "sku": "EXTRA VIRGIN 2 LTR 10 PCS HANDLE",
+    "realise_rs_per_l": 1162.07,
+    "order_book_rs_per_l": 350.0,
+    "ratio": 3.32,
+    "note": "inherited realise outlier — never headline this SKU's realise unqualified"
+   }
+  },
+  {
+   "id": "whatsapp-simulated",
+   "rule": "the whole WhatsApp feed is SIMULATED (assumed:true on every message, zero replies) — render as simulated drafts, never as sent/received traffic."
+  },
+  {
+   "id": "numbers-masked",
+   "rule": "no real phone number anywhere — masked at the data layer; September has no approval to show them."
+  }
+ ],
+ "august_calibration": {
+  "sim_made_l": 2122639,
+  "actual_made_l": 2119237,
+  "delta_pct": 0.16,
+  "note": "the same engine backtested on August landed this close to actual — the basis for trusting the September plan"
+ }
+}

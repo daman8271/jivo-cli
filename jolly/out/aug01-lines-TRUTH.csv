@@ -1,0 +1,29 @@
+line,line_id,config_name,pack_litres,rated_pieces_per_hour,rated_litres_per_hour,capacity_pieces_per_12h_shift,capacity_litres_per_12h_shift,capacity_litres_per_22h_day_app_master,observed_median_pcs_per_hour_aug,observed_best_pcs_per_hour_aug,observed_n_runs,observed_median_pct_of_rated,verdict_vs_ruling,master_source,master_created_at,as_at,confidence,note
+JP Machine,2,1 LTR,1.0,5400,5400.0,64800,64800.0,118800.0,2102,2910,12,38.9,REFUTED in practice - median only 39% of rated,app line-config id=6,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+Clear Pack,1,1 LTR,1.0,4800,4800.0,57600,57600.0,105600.0,2745,2927,5,57.2,REFUTED in practice - median only 57% of rated,app line-config id=4,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+Clear Pack,1,5 LTR,5.0,3000,15000.0,36000,180000.0,330000.0,831,1068,5,27.7,REFUTED in practice - median only 28% of rated,app line-config id=5,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+10 Head,3,1 LTR,1.0,2100,2100.0,25200,25200.0,46200.0,1535,3132,14,73.1,rated not reached in Aug (median 73%),app line-config id=7,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+10 Head,3,2 LTR,2.0,1260,2520.0,15120,30240.0,55440.0,,,0,,NO WELL-LOGGED AUG RUN - unverified,app line-config id=8,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+10 Head,3,5 LTR,5.0,900,4500.0,10800,54000.0,99000.0,,,0,,NO WELL-LOGGED AUG RUN - unverified,app line-config id=9,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+6 Head,4,1 LTR,1.0,1080,1080.0,12960,12960.0,23760.0,810,3491,3,75.0,rated not reached in Aug (median 75%),app line-config id=10,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+6 Head,4,2 LTR,2.0,720,1440.0,8640,17280.0,31680.0,625,678,3,86.9,rated not reached in Aug (median 87%),app line-config id=11,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+6 Head,4,5 LTR,5.0,600,3000.0,7200,36000.0,66000.0,262,1173,7,43.7,REFUTED in practice - median only 44% of rated,app line-config id=12,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+Pouch Machine,5,Hitech,1.0,1800,1800.0,21600,21600.0,39600.0,1077,1143,2,59.8,REFUTED in practice - median only 60% of rated,app line-config id=13,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+Pouch Machine,5,Samarpan,1.0,2400,2400.0,28800,28800.0,52800.0,1077,1143,2,44.9,REFUTED in practice - median only 45% of rated,app line-config id=14,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+Tin Head,6,15 L tin,15.0,240,3600.0,2880,43200.0,79200.0,130,130,1,54.1,REFUTED in practice - median only 54% of rated,DAMAN RULING 2026-08-29 - NO app line-config exists,2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,VERIFIED - read live from ji.jivo.in,
+Manual,7,200 L drum,200.0,,,,,,,,0,,OUT OF SCOPE,"no config - hand filling, out of scope",2026-08-05 (created AFTER the 1 Aug study date),2026-08-01,INFERRED - operator word only,
+
+# NON-SPEED MASTERS,,,,,,,,,,,,,,,,,,
+standard_hours_per_day (all 7 lines),,,,,,,,,,,,,22.00,VERIFIED - app /production-execution/lines/,,2026-08-01,,IDENTICAL on all 7 lines = template default; contradicts the app OEE engine which benchmarks a 12 h shift
+OEE benchmark shift used by the app,,,,,,,,,,,,,12.00 h,"VERIFIED - reverse-engineered, 118/119 runs exact",,2026-08-01,,"perf = min(100, pieces / (rated x (12h - breakdown)))"
+electricity_units_per_hour,,,,,,,,,,,,,NULL on all 7 lines,VERIFIED - app,,2026-08-01,,"GAP: no per-line electricity rate exists, so the shift-length/electricity trade-off Daman asked for cannot be costed from the app"
+line clearance: raise -> QA sign-off,,,,,,,,,,,,,22.7 min median,DERIVED from 133 Aug clearances,,2026-08-01,,"p90 99 min; per line: 6 Head 10, JP 23, 10 Head 29, Clear Pack 31, Pouch 36"
+line clearance: QA sign-off -> production,,,,,,,,,,,,,4.0 min median,DERIVED from 134 Aug clearances,,2026-08-01,,p90 47 min
+LINE CLEARANCE TOTAL (raise -> first output),,,,,,,,,,,,,51.3 min median,DERIVED from 133 Aug clearances,,2026-08-01,,p90 130 min. ONE CLEARANCE PER RUN (135 clearances / 136 runs)
+manpower per run (labour_count),,,,,,,,,,,,,18 median,VERIFIED - app run records,,2026-08-01,,17-18 on the 4 main lines; Pouch 12; Tin Head 15; one junk value 1000; rate_per_hour is 0.00 so labour COST is unusable
+supervisor,,,,,,,,,,,,,Ravi on 128 of 136 runs,VERIFIED - app run records,,2026-08-01,,Hardeep 3
+machines registered on lines,,,,,,,,,,,,,0,VERIFIED - app /production-execution/machines/ returns [],,2026-08-01,,GAP: no filler/capper/labeler breakdown exists
+maintenance assets registered (Oil),,,,,,,,,,,,,1 (a deactivated smoke-test record),VERIFIED - app maintenance/assets,,2026-08-01,,GAP
+PM plans / PM executions (Oil),,,,,,,,,,,,,0 / 0,VERIFIED - app maintenance,,2026-08-01,,GAP: planned maintenance is NOT recorded anywhere
+machine availability on 2026-08-01,,,,,,,,,,,,,NOT RECORDED,GAP,,2026-08-01,,"13 maintenance work orders exist, none dated 1 Aug, none linked to a line, none with real downtime"
+flush per oil change,,,,,,,,,,,,,400 L of the incoming oil,Daman ruling 2026-08-29,,2026-08-01,,"reused ~1 month, so MATERIAL ~400 L per oil per month; TIME per changeover"

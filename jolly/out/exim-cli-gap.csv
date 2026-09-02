@@ -1,0 +1,70 @@
+model,live_endpoint,documented,cli_command,cached_sample,priority,effort,notes
+advancelicenseexportlines,GET /license/advance-license-export-lines/ ; GET /license/advance-license-export-lines/{id}/,partial,license get-advance-export-lines,license__advance-license-export-lines.json,P2,1 cmd,list VERIFIED 200 n=9; detail 403 for this login and has no CLI
+advancelicenseheaders,GET /license/advance-license-headers/ ; GET /license/advance-license-header/{license_no}/,partial,license get-advance-headers ; license get-advance-header (SOURCE ONLY - not in shipped binary),license__advance-license-headers.json,P1,rebuild,"Q3 country: license header carries the import entitlement. Detail cmd exists in source, binary is stale"
+advancelicenseimportlines,GET /license/advance-license-import-lines/ ; GET /license/advance-license-import-lines/{id}/,partial,license get-advance-import-lines ; license get-advance-import-lines-dropdown,license__advance-license-import-lines.json,P1,1 cmd,"Q2/Q3: BOE no + BOE date + boe_value_usd + import_in_mts = the import evidence. Detail 200 VERIFIED, no CLI"
+advancelicenselines,(no distinct live route - /license/advance-license-lines/ 404 VERIFIED),no,-,-,P4,none,urlconf name only; the export/import line views share it. Nothing to build
+balance_sheet,GET /sap-sync/balance-sheet/ ; GET /sap-sync/balance-sheet-insights/,partial,sap-sync get-balance-sheet,more__sap-sync_balance-sheet.json,P3,1 cmd,"balance-sheet-insights 200 VERIFIED n=10, undocumented, no CLI"
+basicrates,GET /rates/basic-rate/,yes,rates get-basic,rates__rates_basic-rate...json,P3,0,VERIFIED 200 (empty for Aug 1-29 range)
+commoditymargin,GET /rates/commodity/ ; GET /rates/commodity/{id}/,partial,rates get-commodity,rates__rates_commodity.json,P3,1 cmd,"list VERIFIED n=12; detail VERIFIED 200, no CLI"
+contractualhistory,GET /stock-status/contractual-history/,yes,stock-status get-contractual-history,stock-status__contractual-history.json,P1,0,Q5 value: contract rate + contract dates per import lot. VERIFIED n=20
+daily_price,GET /daily-price/fetch/,yes,-,rates__daily-price_fetch.json,EXCLUDED,none,"HARD-RULE: fetch permission, sync-shaped. Do not build"
+daily_price_graph,GET /daily-price/trends/,yes,daily-price get-trends,daily-price__trends.json,P3,0,VERIFIED 200
+dailyprice,GET /daily-price/db-list/ ; /range/ ; /highest-lowest/,yes,daily-price get-db-list ; get-range ; get-highest-lowest,daily-price__db-list.json,P2,0,db-list VERIFIED n=2865. highest-lowest 400 without params - CLI should require them
+dashboardorder,GET /stock-status/dashboard-order/{id}/,no,-,-,P4,1 cmd,UI ordering of dashboard cards. Live route exists (bare path 405 VERIFIED); detail not verified (TLS)
+dashboardsnapshot,GET /stock-status/dashboard-snapshot/,no,-,-,P3,1 cmd,"In live schema + urlconf. NOT VERIFIED - my probe hit the TLS fault, never got a status"
+debitentry,GET /stock-status/debit-entries/ ; /debit-insights/,yes,stock-status get-debit-entries ; get-debit-insights,stock-status__debit-entries.json,P2,0,VERIFIED n=204. Shortage/debit per vehicle = the arrival-loss story
+dfia_line_insights,(no distinct live route found),no,-,-,P4,none,No endpoint carries this name in the live schema or urlconf
+dfialicenseexportlines,GET /license/dfia-license-export-lines/list/ ; /dropdown/ ; /{id}/,partial,license get-dfia-export-lines-dropdown,license__dfia-license-export-lines__dropdown.json,P3,2 cmds,list VERIFIED 200 but EMPTY (n=0); detail 404. No DFIA data in the system right now
+dfialicenseheader,GET /license/dfia-license-header/list/ ; /{file_no}/,partial,license get-dfia-header-list,license__dfia-license-header__list.json,P3,1 cmd,list VERIFIED 200 n=0 (empty); detail 404 VERIFIED
+dfialicenseimportlines,GET /license/dfia-license-import-lines/list/ ; /{id}/,no,-,-,P3,2 cmds,list VERIFIED 200 n=0; both undocumented and absent from the CLI
+dfialicenselines,"(shared urlconf name, no distinct route)",no,-,-,P4,none,404 VERIFIED on /license/dfia-license-lines/
+director_report,GET /director-inventorty/,yes,director-inventorty,director-inventorty.json,P2,0,VERIFIED 200. Note the app also gates a 'director_inventory' module this login lacks
+domesticcontract,GET /pos/ ; GET /po/{id}/,no,-,-,P0,2 cmds,"THE BIGGEST GAP. /pos/ VERIFIED 200, 362 KB, 623 rows, schema DomesticContract: contract_qty, contract_rate, contract_value, bilty_no, bilty_date, basic_amount, allowance. Answers Q1/Q4/Q5 directly. No CLI, no doc, no cached sample"
+domesticcontractdetails,GET /dc/details/,no,dc get-details (SOURCE ONLY - not in shipped binary),dc__details.json (this session),P1,rebuild,"VERIFIED 200 n=144. In manifest + source since 22 Aug, missing from the Jul-31 binary"
+domesticcontracts,GET /dc/ ; GET /dc/dropdown/ ; GET /dc/{id}/,partial,dc get ; dc get-dropdown ; dc get-contract (SOURCE ONLY),rates__dc_year_2026.json,P1,rebuild,/dc/ VERIFIED n=47 for year=2026. Detail cmd blocked by the stale binary
+domesticreports,GET /dc/{id}/ (schema DomesticReport),no,dc get-contract (SOURCE ONLY),-,P2,rebuild,404 for id 342 - needs a real contract id from /dc/
+exim_rates,GET /exim-rates/fetch/,yes,exim-rates,rates__exim-rates_fetch.json,P2,0,VERIFIED 200. Q5 in USD: FX for import valuation. HARD-RULE keeps this one as a read (permission=view)
+fg,GET /sap_sync/fg/items/ ; /sap_sync/fg/item/{itemCode}/,partial,-,more__sap_sync_fg_items.json,EXCLUDED,none,HARD-RULE underscore namespace: GET that writes. Proven 22 Aug. Do not build
+fgproducts,GET /items/fg/ ; GET /item/fg/{item_code}/,yes,items get-fg ; item get-fg-code,items__fg.json,P3,0,VERIFIED n=335
+inventory,GET /sap-sync/inventory/ ; /finished-inventory/,yes,sap-sync get-inventory ; get-finished-inventory,more__sap-sync_inventory.json,P1,0,VERIFIED 200. Q1/Q2: what is actually in the tanks vs on the water
+itemwise_average,GET /tank/item-wise-average/,yes,tank get-item-wise-average,tank__item-wise-average.json,P2,0,VERIFIED 200. Q5: weighted average landed rate per tank item
+jivo_rate,GET /jivo-rate/fetch/,yes,-,rates__jivo-rate_fetch.json,EXCLUDED,none,HARD-RULE: fetch permission. Excluded pending Daman's call (see HARD-RULE.md)
+jivo_rates,GET /jivo-rate/fetch/,yes,-,rates__jivo-rate_fetch.json,EXCLUDED,none,Same route as jivo_rate
+jivorates,GET /jivo-rate/range/,yes,jivo-rate,jivo-rate__range.json,P3,0,VERIFIED n=650
+line_insights,GET /stock-status/stock-insights/ (INFERRED mapping),yes,stock-status get-stock-insights,stock-status__stock-insights.json,P3,0,"VERIFIED 200. Model-to-route mapping is INFERRED from naming, not proven"
+marketrates,GET /rates/market-rate/latest/ ; /get/ ; /{id}/,partial,rates get-market-latest ; rates get-market-get,rates__rates_market-rate_latest.json,P2,1 cmd,"latest VERIFIED n=12. Detail /{id}/ VERIFIED 200, no CLI"
+open_aps,GET /sap-sync/open-ap/,yes,sap-sync get-open-ap,more__sap-sync_open-ap.json,P3,0,VERIFIED 200
+open_grpos,GET /sap_sync/open-grpos/,yes,-,more__sap_sync_open-grpos.json,EXCLUDED,none,HARD-RULE underscore namespace. Do not build
+open_pos,GET /sap-sync/open-pos/,yes,sap-sync get-open-pos,more__sap-sync_open-pos.json,P0,0,VERIFIED 200. Q4 lead time: the unreceived PO lines. Already covered
+opening_rate,(POST /stock-status/opening-stock/ only),yes,-,stock-status__opening-stock.json,EXCLUDED,none,"add permission only, no read route. Nothing to build"
+packingmargins,GET /rates/packing/ ; GET /rates/packing/{id}/,partial,rates get-packing,rates__rates_packing.json,P3,1 cmd,"list VERIFIED n=3; detail VERIFIED 200, no CLI"
+packrates,GET /rates/pack-rate/,no,-,-,P2,1 cmd,"VERIFIED 200 n=20 pack_rates. Undocumented, no CLI, no cached sample"
+packsize,GET /rates/pack-size/ ; GET /rates/pack-size/{id}/,no,rates get-pack-size (SOURCE ONLY - not in shipped binary),-,P2,rebuild + 1,"list VERIFIED n=7, detail VERIFIED 200. List cmd exists in source only"
+party,GET /parties/ ; GET /party/{card_code}/,yes,parties ; party,parties.json,P1,0,VERIFIED n=139. Q1/Q3: who the counterparty is (domestic vs foreign)
+planningrow,GET /planning/latest/ (rows[]),no,-,-,P0,1 cmd,"VERIFIED 200, 186 SKU rows, SEP-2026 plan. per_ltrs, ltrs_per_box, commodity/premium/ecom weekly split. This is the demand side of the oil shortage. No CLI, no doc, no sample"
+planningupload,GET /planning/uploads/ ; GET /planning/uploads/{id}/,no,-,-,P0,2 cmds,"VERIFIED 200. Upload 1 = 'PRODUCTION PLANING MONTH OF SEP 2026', 4,323,300 L grand total, loaded 27 Aug 2026. REPLACES /sap-sync/monthly-planning/ which now 400s"
+po,GET /sap-sync/po/ ; GET /sap-sync/po/{grpo_no}/,no,-,-,EXCLUDED,none,DANGER: GET /sap-sync/po/ returned {records_synced:623} and wrote sync_logs row 363. It is a GET that writes despite the hyphen namespace. Read the same data from /pos/ instead
+products,(generic - served by /items/rm/ and /items/fg/),yes,items get-rm ; items get-fg,items__rm.json,P3,0,No standalone route
+rm,GET /sap_sync/rm/items/ ; /sap_sync/rm/item/{itemCode}/,partial,-,more__sap_sync_rm_items.json,EXCLUDED,none,HARD-RULE underscore namespace. Do not build
+rmproducts,GET /items/rm/ ; /summary/ ; /varieties/ ; GET /item/rm/{item_code}/,yes,items get-rm ; get-rm-summary ; get-rm-varieties ; item get-rm-code,items__rm.json,P1,0,VERIFIED n=24. Q1/Q2: the RM master incl RM0000016 CRUDE DEGUMMED RAPESEED
+stockstatus,GET /stock-status/ ; /{id}/ ; /out/ ; /get-unique-rm/ ; /get-stock-entry-by-rm/,partial,stock-status get ; get-id ; get-stock-dashboard ; get-stock-summary ; get-vehicle-report,stock-status.json,P0,3 cmds,"core VERIFIED n=84. MISSING: /out/ (VERIFIED 200 n=1, dispatched lots), /get-unique-rm/ (VERIFIED 200 n=11), /get-stock-entry-by-rm/ (400 - needs an rm param). All three answer Q4 lead time"
+stockstatuschangesession,GET /stock-status/stock-logs/,yes,stock-status get-stock-logs,stock-status__stock-logs.json,P3,0,VERIFIED n=1964
+stockstatusfieldlog,(nested in /stock-status/stock-logs/; /stock-status/field-logs/ 404 VERIFIED),no,-,-,P4,none,No standalone route despite the urlconf entry
+stockstatusupdatelog,(nested in /stock-status/stock-logs/),no,-,-,P4,none,No standalone route
+synclogs,GET /sync_logs/,yes,sync-logs,sync_logs.json,P2,0,VERIFIED n=363. The audit trail that proves whether a GET wrote
+tankdata,GET /tank/ ; /{tank_code}/ ; /tank-summary/ ; /capacity-insights/,yes,tank get ; get-code ; get-summary ; get-capacity-insights,tank.json,P1,0,VERIFIED n=32 tanks. Q1/Q2: physical oil on hand at BH
+tankitem,GET /tank/items/ ; /in-tank-items/ ; /item-wise-summary/ ; GET /tank/item/{tank_item_code}/,partial,tank get-items ; get-in-items ; get-item-wise-summary,tank__items.json,P3,blocked,"list VERIFIED n=54. Detail /tank/item/{code}/ returns HTTP 500 AssertionError - SERVER BUG, do not build a command against it yet"
+tanklayer,(no live route - /tank/layers/ 404 VERIFIED),no,-,-,P4,none,Model has no API surface
+tanklog,GET /tank/log/,yes,tank get-log,tank__log.json,P1,0,VERIFIED n=213. Q4: inflow/outflow timing per tank
+tanklogconsumption,(no distinct live route),no,-,-,P4,none,Model has no API surface
+user,GET /account/users/ ; GET /account/user/{id}/,yes,account get-users ; account get-user-id,account__users.json,P4,0,"list VERIFIED n=12; detail 404 for id 342 (that id is a stock-status id, not a user id)"
+vehicle_report,GET /stock-status/vehicle-report/,yes,stock-status get-vehicle-report,stock-status__vehicle-report.json,P1,0,VERIFIED 200 but n=0 without a status filter. Q4: vehicles ON_THE_WAY is the lead-time answer - CLI must pass status
+vendor_ledger,GET /sap-sync/vendor/ledger/,yes,sap-sync get-vendor-ledger,-,P3,0,NOT VERIFIED this session (TLS fault window); route is in the live schema
+vendor_outstanding,GET /sap-sync/vendor/balance-sheet/,yes,sap-sync get-vendor-balance-sheet,rates__sap-sync_vendor_balance-sheet.json,P3,0,VERIFIED 200
+bank_accounts (NOT in the 62),GET /hana/accounts/,no,hana accounts (SOURCE ONLY - not in shipped binary),-,P2,rebuild + auth,403 VERIFIED for daman@exim.in. New 'Bank & Loan Accounts' screen. Needs a permission grant before any CLI work is testable
+bank_ledger (NOT in the 62),GET /hana/accounts/ledger/,no,hana accounts-ledger (SOURCE ONLY),-,P2,rebuild + auth,403 VERIFIED. Bare /hana/accounts/ledger (no slash) 301-redirects
+finance_dashboard (NOT in the 62),GET /hana/accounts/summary/ ; /monthly-trend/ ; /closing-balances/,no,hana accounts-summary ; accounts-monthly-trend (SOURCE ONLY),-,P2,rebuild + 1 + auth,all 403 VERIFIED. /hana/accounts/closing-balances/ is in NEITHER the manifest NOR the source - genuinely new
+customer_ledger / customer_outstanding / customer_aging / open_ars (NOT in the 62),GET /sap-sync/customer/ledger/ ; /customer/balance/ ; /sap-sync/open-ar/,yes,sap-sync get-customer-ledger ; get-customer-balance ; get-open-ar,-,P3,auth,403 VERIFIED for this login. Commands exist; the login lacks the module
+(no model) warehouses,GET /sap-sync/warehouses/,no,-,-,P1,1 cmd,"VERIFIED 200: BH-EC, BH-GJ, BH-CRUDE, GP-FG, BH-EX, BH-LO, BH-PF, BH-PC, BH-VA. BH-GJ is the Gujarat job worker named in the brief. No CLI, no doc, no sample"
+(no model) tank-rates,GET /tank/tank-rates/,no,-,-,P3,blocked,"HTTP 500 VERIFIED - server bug, same as /tank/item/{code}/"
+(no model) monthly-planning LEGACY,GET /sap-sync/monthly-planning/ ; /sap-sync/planned-months/,yes,sap-sync get-monthly-planning ; get-planned-months,sap-sync__monthly-planning.json,P1,retire,monthly-planning now returns 400 VERIFIED and the live app no longer calls either. Superseded by /planning/*. The CLI still points operators at the dead one

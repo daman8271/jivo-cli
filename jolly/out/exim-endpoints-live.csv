@@ -1,0 +1,217 @@
+path,method,status,known_in_repo,model_guess,sample_row_count,notes
+/account/users/,GET,200,yes,user,12,"live read; keys: id,name,email"
+/commodity-margin/,GET,404,NO,?,,404 — route does not exist
+/daily-price/db-list/,GET,200,yes,dailyprice / daily_price / daily_price_graph,2865,live read; keys: 
+/daily-price/fetch/,GET,NOT_PROBED,yes,dailyprice / daily_price / daily_price_graph,,GET-that-WRITES per HARD-RULE.md; found in the live bundle; NOT CALLED
+/daily-price/graph/,GET,404,NO,dailyprice / daily_price / daily_price_graph,,404 — route does not exist
+/daily-price/highest-lowest/,GET,200,yes,dailyprice / daily_price / daily_price_graph,-1,"live read; keys: highest,lowest"
+/daily-price/range/,GET,200,yes,dailyprice / daily_price / daily_price_graph,312,"live read; keys: id,commodity_name,factory_price,packing_cost_kg,with_gst_kg,with_gst_ltr,date,created_by"
+/daily-price/trends/,GET,200,yes,dailyprice / daily_price / daily_price_graph,26,"live read; keys: labels,datasets"
+/dashboard/,GET,404,NO,?,,404 — route does not exist
+/dashboard/order/,GET,404,NO,?,,404 — route does not exist
+/dashboard/snapshot/,GET,404,NO,?,,404 — route does not exist
+/dc/,GET,200,yes,domesticcontract / domesticcontracts / domesticreports,180,500 on a bare call (int() TypeError); works with ?year=2025 (180 rows) and ?year=2026 (47 rows).
+/dc/1/,GET,404,NO,domesticcontract / domesticcontracts / domesticreports,,404 — route does not exist
+/dc/details/,GET,200,NO,domesticcontractdetails,144,"NEW. 144 rows of landed-cost detail per invoice: contract/load/unload qty, shortage + allowance + deduction, freight, brokerage, bilty charges, cost_per_mt / cost_per_kl / cost_per_ltr, transporter, vehicle. Sourced from 'D C.xlsx'."
+/dc/dropdown/,GET,200,yes,domesticcontract / domesticcontracts / domesticreports,201,"live read; keys: id,po_number,vendor_code,vendor_name,product_code,product_name"
+/dc/reports/,GET,404,NO,domesticcontract / domesticcontracts / domesticreports,,404 — route does not exist
+/dc/summary/,GET,404,NO,domesticcontract / domesticcontracts / domesticreports,,404 — route does not exist
+/director-inventorty/,GET,200,yes,director_report,0,"Buckets are the pipeline stages: finished, at_factory, otw, under_loading, at_refinery, mundra_port, on_the_sea, in_contract. All empty at this call."
+/domestic-reports/,GET,404,NO,?,,404 — route does not exist
+/exim-rates/,GET,404,NO,exim_rates,,404 — route does not exist
+/exim-rates/latest/,GET,404,NO,exim_rates,,404 — route does not exist
+/hana/,GET,404,NO,?,,404 — route does not exist
+/hana/accounts/,GET,403,NO,bank_accounts / finance_dashboard (NOT in the 62-model list),,"NEW namespace — reads SAP HANA directly, per company (branch=OIL|BEVERAGES|MART). 403 for this login (module bank_accounts / finance_dashboard not granted)."
+/hana/accounts/branches/,GET,404,NO,bank_accounts / finance_dashboard (NOT in the 62-model list),,404 — route does not exist
+/hana/accounts/closing-balances/,GET,403,NO,bank_accounts / finance_dashboard (NOT in the 62-model list),,Guessed from the module name; 403 (so the route exists behind the same permission — a 404 would have said otherwise).
+/hana/accounts/ledger,GET,403,NO,bank_accounts / finance_dashboard (NOT in the 62-model list),,"NEW. params branch, acct_code, from_date, to_date. 403 for this login."
+/hana/accounts/monthly-trend/,GET,403,NO,bank_accounts / finance_dashboard (NOT in the 62-model list),,"NEW. params branch, acct_code, from_date, to_date. 403 for this login."
+/hana/accounts/summary/,GET,403,NO,bank_accounts / finance_dashboard (NOT in the 62-model list),,NEW. 403 for this login.
+/inventory/,GET,404,NO,?,,404 — route does not exist
+/item/rm/RM0000016/,GET,200,yes-templated,rmproducts / fgproducts,0,"EXIM's own RM master row for SAP's CRUDE DEGUMMED RAPESEED: u_variety CRUDE, u_sub_group CANOLA, total_in_qty = total_out_qty = 5688.5387, total_qty 0.000000 — EXIM agrees with SAP that the tank is empty."
+/items/fg/,GET,200,yes,rmproducts / fgproducts / rm / fg / products,335,"live read; keys: count,items"
+/items/rm/,GET,200,yes,rmproducts / fgproducts / rm / fg / products,24,"live read; keys: count,items"
+/items/rm/opening-rate/,GET,404,NO,rmproducts / fgproducts / rm / fg / products,,404 — route does not exist
+/items/rm/summary/,GET,200,yes,rmproducts / fgproducts / rm / fg / products,-1,live read; keys: summary
+/items/rm/varieties/,GET,200,yes,rmproducts / fgproducts / rm / fg / products,13,live read; keys: varieties
+/jivo-rate/,GET,404,NO,jivo_rate / jivorates,,404 — route does not exist
+/jivo-rate/db-list/,GET,404,NO,jivo_rate / jivorates,,404 — route does not exist
+/jivo-rate/fetch/,GET,NOT_PROBED,yes,jivo_rate / jivorates,,GET-that-WRITES per HARD-RULE.md; found in the live bundle; NOT CALLED
+/jivo-rate/range/,GET,200,yes,jivo_rate / jivorates,650,"live read; keys: id,pack_type,commodity,rate,date,created_by"
+/license/advance-license-export-lines/,GET,200,yes,advancelicenseheaders / advancelicense*lines / line_insights,9,"live read; keys: id,linked_import_line,linked_import_line_id,shipping_bill_no,sb_value_usd,sb_date,export_in_mts,license_no"
+/license/advance-license-header/1/,GET,404,NO,advancelicenseheaders / advancelicense*lines / line_insights,,404 — route does not exist
+/license/advance-license-headers/,GET,200,yes,advancelicenseheaders / advancelicense*lines / line_insights,4,"live read; keys: license_no,import_lines,export_lines,issue_date,import_validity,export_validity,cif_value_inr,cif_value_usd,ci"
+/license/advance-license-import-lines/,GET,200,yes,advancelicenseheaders / advancelicense*lines / line_insights,4,"live read; keys: id,boe_No,boe_value_usd,boe_date,import_in_mts,license_no"
+/license/advance-license-import-lines/dropdown/,GET,400,yes,advancelicenseheaders / advancelicense*lines / line_insights,,"400 — route exists, needs a query param: {""error"": ""license_no query parameter is required.""}"
+/license/advance-license-lines/,GET,404,NO,advancelicenseheaders / advancelicense*lines / line_insights,,404 — route does not exist
+/license/dfia-license-export-lines/,GET,404,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,404 — route does not exist
+/license/dfia-license-export-lines/dropdown/,GET,400,yes,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"400 — route exists, needs a query param: {""error"": ""file_no query parameter is required.""}"
+/license/dfia-license-export-lines/list/,GET,200,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,0,NEW list route (0 rows).
+/license/dfia-license-header/1/,GET,404,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,404 — route does not exist
+/license/dfia-license-header/list/,GET,200,yes,dfialicenseheader / dfialicense*lines / dfia_line_insights,0,live read; keys: 
+/license/dfia-license-import-lines/,GET,404,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,404 — route does not exist
+/license/dfia-license-import-lines/list/,GET,200,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,0,NEW list route (0 rows).
+/license/dfia-license-lines/,GET,404,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,404 — route does not exist
+/license/dfia-line-insights/,GET,404,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,404 — route does not exist
+/license/line-insights/,GET,404,NO,?,,404 — route does not exist
+/open-aps/,GET,404,NO,?,,404 — route does not exist
+/open-ars/,GET,404,NO,?,,404 — route does not exist
+/open-pos/,GET,404,NO,?,,404 — route does not exist
+/opening-rate/,GET,404,NO,?,,404 — route does not exist
+/pack-size/,GET,404,NO,?,,404 — route does not exist
+/packing-margin/,GET,404,NO,?,,404 — route does not exist
+/parties/,GET,200,yes,party,139,"139 parties WITH A country FIELD (IN 124, AE 4, AU 3, ES 2, SW/EG/DK/DE 1 each, UR 1, TMP 1) — answers 'from which country' directly. TEMP0010 UKRAINE (country UR) and TEMP0011 COBRAM are TEMP card codes, i.e. parties with no SAP business partner behind them."
+/party/VENDA000102/,GET,200,yes-templated,party,0,"live read; keys: id,card_code,card_name,state,u_main_group,country"
+/planning/,GET,404,NO,planningupload / planningrow,,404 — route does not exist
+/planning/latest/,GET,200,NO,planningupload / planningrow,186,"*** NEW *** the live SEP-2026 production plan: 186 SKU rows, grand_total 4,323,300 L (commodity 1,077,000 / premium 813,300 / ecom 2,433,000), uploaded 2026-08-27 by aahar831@gmail.com from 'PLANNING FOR SEP 2026.xlsx'."
+/planning/months/,GET,404,NO,planningupload / planningrow,,404 — route does not exist
+/planning/rows/,GET,404,NO,planningupload / planningrow,,404 — route does not exist
+/planning/uploads/,GET,200,NO,planningupload / planningrow,1,NEW. List wrapper {uploads:[...]}; 1 upload so far. GET is a read; the POST on the same path is the Excel upload (not called).
+/planning/uploads/1/,GET,200,NO,planningupload / planningrow,186,NEW. Same payload as /planning/latest/ by upload id.
+/po/,GET,404,NO,po,,404 — route does not exist
+/pos/,GET,200,NO,po,623,"*** MOST VALUABLE NEW ENDPOINT *** 623 SAP purchase-order lines w/ contract_qty|rate|value, load/unload, transporter, vehicle, bilty, grpo_no+grpo_date, landed_cost. Verified pure READ (sync_logs unchanged 362->362 across a call). PO->GRPO lead time: median 12d, mean 17d, p90 36d, max 101d."
+/products/,GET,404,NO,?,,404 — route does not exist
+/rates/basic-rate/,GET,200,yes,basicrates,-1,live read; keys: basic_rates
+/rates/commodity-margin/,GET,404,NO,?,,404 — route does not exist
+/rates/commodity/,GET,200,yes,commoditymargin,12,"live read; keys: id,commodity,margin_rate,freight_rate,created_by"
+/rates/commodity/1/,GET,200,NO,commoditymargin,0,NEW detail route.
+/rates/margins/,GET,404,NO,?,,404 — route does not exist
+/rates/market-rate/1/,GET,200,NO,marketrates,0,NEW detail route.
+/rates/market-rate/get/,GET,200,yes,marketrates,0,live read; keys: 
+/rates/market-rate/latest/,GET,200,yes,marketrates,12,"live read; keys: id,date,commodity,factory_kg,factory_kg_freight,with_packing,with_gst_kg,with_gst_ltr,freight_rate,created_by"
+/rates/opening-rate/,GET,404,NO,?,,404 — route does not exist
+/rates/pack-rate/,GET,200,NO,packrates,20,NEW. 20 pack-level selling rates (pack_size x commodity x date).
+/rates/pack-size/,GET,200,NO,packsize,7,NEW. 7 pack sizes w/ conversion_factor + commodities.
+/rates/pack-size/1/,GET,200,NO,packsize,4,NEW detail route.
+/rates/packing-margin/,GET,404,NO,?,,404 — route does not exist
+/rates/packing/,GET,200,yes,packingmargins,3,"live read; keys: id,packing_name,packing_margin,created_by"
+/rates/packing/1/,GET,200,NO,packingmargins,0,NEW detail route.
+/rates/rate-table/latest/,GET,200,yes,jivo_rates / exim_rates,7,"live read; keys: commodities,rows"
+/sap-sync/balance-sheet-insights/,GET,200,NO,balance_sheet,10,NEW. 10 vendors w/ Balance + Last Transaction Date/Amount.
+/sap-sync/balance-sheet/,GET,200,yes,balance_sheet,22,live read; keys: balance_sheet
+/sap-sync/custa/balance-sheet/,GET,403,yes,balance_sheet,,403 — permission not granted to this login.
+/sap-sync/customer-aging-balance/,GET,200,yes,balance_sheet,5392,live read; keys: data
+/sap-sync/customer-outstanding/,GET,404,NO,balance_sheet,,404 — route does not exist
+/sap-sync/customer/balance/,GET,403,yes,balance_sheet,,403 — permission not granted to this login.
+/sap-sync/customer/ledger/,GET,403,yes,balance_sheet,,403 — permission not granted to this login.
+/sap-sync/finished-inventory/,GET,200,yes,inventory,22,live read; keys: finished_inventory
+/sap-sync/inventory/,GET,200,yes,inventory,50,live read; keys: inventory
+/sap-sync/monthly-planning/,GET,400,yes,?,,"400 — route exists, needs a query param: {""error"": ""Month Id is required""}"
+/sap-sync/open-ap/,GET,200,yes,open_aps,149,live read; keys: Open APs
+/sap-sync/open-ar/,GET,403,yes,open_aps,,403 — permission not granted to this login.
+/sap-sync/open-grpos/,GET,404,NO,?,,404 — route does not exist
+/sap-sync/open-pos/,GET,200,yes,open_pos,17,live read; keys: open_pos
+/sap-sync/planned-months/,GET,200,yes,?,25,live read; keys: Planned_months
+/sap-sync/po/,GET,200,NO,po (SYNC TRIGGER — writes),-1,"*** GET THAT WRITES *** returned {records_synced:623} and created sync_logs id 362 (DMC, 623 processed, 0 created, 0 updated). HARD-RULE said the hyphen /sap-sync/ family are reads — this one is NOT. Add to the blocklist."
+/sap-sync/pos/,GET,404,NO,?,,404 — route does not exist
+/sap-sync/vendor-outstanding/,GET,404,NO,vendor_ledger / vendor_outstanding,,404 — route does not exist
+/sap-sync/vendor/balance-sheet/,GET,200,yes,vendor_ledger / vendor_outstanding,375,live read; keys: data
+/sap-sync/vendor/ledger/,GET,400,yes,vendor_ledger / vendor_outstanding,,"400 — route exists, needs a query param: {""error"": ""cardCode query parameter is required.""}"
+/sap-sync/warehouses/,GET,200,NO,inventory (warehouse master),9,"NEW. 9 warehouses incl. BH-GJ (Gujarat job worker), BH-CRUDE, BH-EC, BH-EX, BH-LO, BH-PF, BH-PC, BH-VA, GP-FG."
+/sap_sync/fg/item/{code}/,GET,NOT_PROBED,NO,open_grpos / rm / fg / party (SYNC — writes),,GET-that-WRITES per HARD-RULE.md; found in the live bundle; NOT CALLED
+/sap_sync/fg/items/,GET,NOT_PROBED,yes,open_grpos / rm / fg / party (SYNC — writes),,GET-that-WRITES per HARD-RULE.md; found in the live bundle; NOT CALLED
+/sap_sync/open-grpos/,GET,NOT_PROBED,yes,open_grpos / rm / fg / party (SYNC — writes),,GET-that-WRITES per HARD-RULE.md; found in the live bundle; NOT CALLED
+/sap_sync/party/{code}/,GET,NOT_PROBED,yes,open_grpos / rm / fg / party (SYNC — writes),,GET-that-WRITES per HARD-RULE.md; found in the live bundle; NOT CALLED
+/sap_sync/rm/item/{code}/,GET,NOT_PROBED,NO,open_grpos / rm / fg / party (SYNC — writes),,GET-that-WRITES per HARD-RULE.md; found in the live bundle; NOT CALLED
+/sap_sync/rm/items/,GET,NOT_PROBED,yes,open_grpos / rm / fg / party (SYNC — writes),,GET-that-WRITES per HARD-RULE.md; found in the live bundle; NOT CALLED
+/stock-status/,GET,200,yes,stockstatus,84,"84 live rows = THE INBOUND PIPELINE. Statuses IN_TANK 64 / IN_CONTRACT 9 / ON_THE_WAY 9 / IN_WAREHOUSE 1 / OUT_SIDE_FACTORY 1. Carries eta, location (incl. country), quantity_in_litre, rate_in_litres, job_work."
+/stock-status/1/,GET,404,yes-templated,stockstatus,,404 — route does not exist
+/stock-status/change-sessions/,GET,404,NO,stockstatus,,404 — route does not exist
+/stock-status/contractual-history/,GET,200,yes,contractualhistory,20,"live read; keys: id,item_code,item_name,vendor_code,vendor_name,rate,contract_start,contract_end,created_at,created_by"
+/stock-status/dashboard-order/,GET,405,NO,dashboardorder / dashboardsnapshot,,"405 — route exists, GET not allowed"
+/stock-status/dashboard-snapshot/,GET,400,NO,dashboardorder / dashboardsnapshot,,NEW. 400 'date query parameter is required' — route exists (model dashboardsnapshot).
+/stock-status/debit-entries/,GET,200,yes,debitentry,204,"live read; keys: id,item_code,item_name,rate,load_qty,unload_qty,shortage_qty,allowed_shortage_qty,deducted_shortage_qty,deduct"
+/stock-status/debit-insights/,GET,200,yes,debitentry,-1,"live read; keys: total_deduction_shortager,total_records,total_deduction_amount"
+/stock-status/field-logs/,GET,404,NO,stockstatus,,404 — route does not exist
+/stock-status/get-stock-entry-by-rm/,GET,400,NO,stockstatus,,NEW. 400 without an rm param — route exists.
+/stock-status/get-unique-rm/,GET,200,NO,stockstatus,11,NEW. 11 distinct EXIM RM codes currently in stock-status.
+/stock-status/out/,GET,200,NO,stockstatus,1,NEW. Dispatched-out rows (OUT_SIDE_FACTORY); 1 live.
+/stock-status/shortage/,GET,404,NO,stockstatus,,404 — route does not exist
+/stock-status/stock-dashboard/,GET,200,yes,stockstatus,13,"live read; keys: summary,status_vendors,items,totals"
+/stock-status/stock-entry-by-rm/,GET,404,NO,stockstatus,,404 — route does not exist
+/stock-status/stock-insights/,GET,200,yes,stockstatus,-1,live read; keys: summary
+/stock-status/stock-logs/,GET,200,yes,stockstatusupdatelog / stockstatusfieldlog,1964,"live read; keys: id,stock,action,changed_by_label,note,timestamp,field_logs"
+/stock-status/stock-summary/,GET,200,yes,stockstatus,0,live read; keys: summary
+/stock-status/unique-rm/,GET,404,NO,stockstatus,,404 — route does not exist
+/stock-status/variance/,GET,404,NO,stockstatus,,404 — route does not exist
+/stock-status/vehicle-report/,GET,200,yes,vehicle_report,0,live read; keys: 
+/sync_logs/,GET,200,yes,synclogs,361,"live read; keys: id,sync_type,status,triggered_by,started_at,completed_at,error_message,records_procesed,records_created,record"
+/tank/,GET,200,yes,tankdata / tankitem / tanklog / tanklayer,32,"live read; keys: tank_code,item_code,tank_capacity,current_capacity,tank_type,is_active,created_at,updated_at"
+/tank/capacity-insights/,GET,200,yes,tankdata / tankitem / tanklog / tanklayer,-1,"live read; keys: total_capacity,filled_capacity,filled_percentage,empty_capacity,empty_percentage"
+/tank/consumption/,GET,404,NO,tankdata / tankitem / tanklog / tanklayer,,404 — route does not exist
+/tank/in-tank-breakdown/,GET,404,NO,tankdata / tankitem / tanklog / tanklayer,,404 — route does not exist
+/tank/in-tank-items/,GET,200,yes,tankdata / tankitem / tanklog / tanklayer,28,live read; keys: item_code
+/tank/item-wise-average/,GET,200,yes,itemwise_average,0,"live read; keys: item_code,tank_total_capacity,..."
+/tank/item-wise-summary/,GET,200,yes,tankdata / tankitem / tanklog / tanklayer,20,"live read; keys: total_quantity,items"
+/tank/item/1/,GET,500,NO,tankdata / tankitem / tanklog / tanklayer,,500 — server bug: view expects the kwarg 'id'. Route exists (bundle uses /tank/item/{id}/).
+/tank/items/,GET,200,yes,tankdata / tankitem / tanklog / tanklayer,54,"live read; keys: id,tank_item_code,tank_item_name,category,is_active,created_at,created_by,color"
+/tank/layer/,GET,404,NO,tankdata / tankitem / tanklog / tanklayer,,404 — route does not exist
+/tank/layers/,GET,404,NO,tankdata / tankitem / tanklog / tanklayer,,404 — route does not exist
+/tank/log-consumption/,GET,404,NO,tankdata / tankitem / tanklog / tanklayer,,404 — route does not exist
+/tank/log/,GET,200,yes,tankdata / tankitem / tanklog / tanklayer,213,"live read; keys: id,log_type,quantity,vehicle_number,rate,party,item_code,item_name,arrival,created_at"
+/tank/rates/,GET,404,NO,tankdata / tankitem / tanklog / tanklayer,,404 — route does not exist
+/tank/tank-rates/,GET,500,NO,tankdata / tankitem / tanklog / tanklayer,,"NEW route, but 500 — server bug: IsAuthenticated.has_permission() missing 'view'. Broken in production."
+/tank/tank-summary/,GET,200,yes,tankdata / tankitem / tanklog / tanklayer,-1,live read; keys: summary
+/vehicle-report/,GET,404,NO,?,,404 — route does not exist
+/warehouse-inventory/,GET,404,NO,?,,404 — route does not exist
+/account/login/,POST,NOT_PROBED,yes,user,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/account/login/refresh/,POST,NOT_PROBED,yes,user,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/account/logout/,POST,NOT_PROBED,yes,user,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/account/register/,POST,NOT_PROBED,yes,user,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/account/user/{id}/,PATCH,NOT_PROBED,yes,user,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/ai/chat/,POST,NOT_PROBED,yes,(LLM assistant),,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/daily-price/fetch/,POST,NOT_PROBED,yes,dailyprice / daily_price / daily_price_graph,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/dc/contract/create/,POST,NOT_PROBED,yes,domesticcontract / domesticcontracts / domesticreports,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/dc/freight/create/{id}/,PUT,NOT_PROBED,yes,domesticcontract / domesticcontracts / domesticreports,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/dc/loading/create/{id}/,PUT,NOT_PROBED,yes,domesticcontract / domesticcontracts / domesticreports,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/dc/{id}/,PATCH,NOT_PROBED,NO,domesticcontract / domesticcontracts / domesticreports,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/item/fg/{item_code}/,DELETE,NOT_PROBED,yes,rmproducts / fgproducts,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/item/rm/{item_code}/,DELETE,NOT_PROBED,yes,rmproducts / fgproducts,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/jivo-rate/fetch/,POST,NOT_PROBED,yes,jivo_rate / jivorates,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-export-lines/,POST,NOT_PROBED,yes,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-export-lines/{id}/,PUT,NOT_PROBED,NO,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-export-lines/{id}/,DELETE,NOT_PROBED,NO,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-header/{id}/,PUT,NOT_PROBED,NO,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-header/{id}/,DELETE,NOT_PROBED,NO,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-headers/,POST,NOT_PROBED,yes,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-import-lines/,POST,NOT_PROBED,yes,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-import-lines/{id}/,PUT,NOT_PROBED,NO,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/advance-license-import-lines/{id}/,DELETE,NOT_PROBED,NO,advancelicenseheaders / advancelicense*lines / line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-export-lines/create/,POST,NOT_PROBED,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-export-lines/{id}/,PUT,NOT_PROBED,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-export-lines/{id}/,DELETE,NOT_PROBED,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-header/create/,POST,NOT_PROBED,yes,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-header/{id}/,PUT,NOT_PROBED,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-header/{id}/,DELETE,NOT_PROBED,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-import-lines/create/,POST,NOT_PROBED,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-import-lines/{id}/,PUT,NOT_PROBED,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/license/dfia-license-import-lines/{id}/,DELETE,NOT_PROBED,NO,dfialicenseheader / dfialicense*lines / dfia_line_insights,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/party/temp/create/,POST,NOT_PROBED,NO,party,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/party/{card_code}/,DELETE,NOT_PROBED,yes,party,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/planning/uploads/,POST,NOT_PROBED,NO,planningupload / planningrow,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/planning/uploads/{id}/,DELETE,NOT_PROBED,NO,planningupload / planningrow,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/commodity/,POST,NOT_PROBED,yes,commoditymargin,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/commodity/{id}/,PATCH,NOT_PROBED,NO,commoditymargin,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/commodity/{id}/,DELETE,NOT_PROBED,NO,commoditymargin,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/market-rate/add/,POST,NOT_PROBED,NO,marketrates,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/market-rate/{id}/,PATCH,NOT_PROBED,NO,marketrates,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/pack-size/,POST,NOT_PROBED,NO,packsize,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/pack-size/{id}/,PATCH,NOT_PROBED,NO,packsize,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/pack-size/{id}/,DELETE,NOT_PROBED,NO,packsize,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/packing/,POST,NOT_PROBED,yes,packingmargins,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/rates/packing/{id}/,DELETE,NOT_PROBED,NO,packingmargins,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/stock-status/,POST,NOT_PROBED,yes,stockstatus,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/stock-status/arrive-batch/,POST,NOT_PROBED,yes,stockstatus,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/stock-status/dashboard-order/{id}/,PATCH,NOT_PROBED,yes,dashboardorder / dashboardsnapshot,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/stock-status/dispatch/,POST,NOT_PROBED,yes,stockstatus,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/stock-status/move/,POST,NOT_PROBED,yes,stockstatus,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/stock-status/opening-stock/,POST,NOT_PROBED,yes,stockstatus,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/stock-status/{id}/,PUT,NOT_PROBED,yes,stockstatus,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/stock-status/{id}/,PATCH,NOT_PROBED,yes,stockstatus,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/tank/,POST,NOT_PROBED,yes,tankdata / tankitem / tanklog / tanklayer,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/tank/empty-tank/,PATCH,NOT_PROBED,NO,tankdata / tankitem / tanklog / tanklayer,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/tank/item/update-color/{id}/,PUT,NOT_PROBED,yes,tankdata / tankitem / tanklog / tanklayer,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/tank/item/{id}/,DELETE,NOT_PROBED,NO,tankdata / tankitem / tanklog / tanklayer,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/tank/items/,POST,NOT_PROBED,yes,tankdata / tankitem / tanklog / tanklayer,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/tank/update-capacity/{id}/,PUT,NOT_PROBED,yes,tankdata / tankitem / tanklog / tanklayer,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"
+/tank/{id}/,DELETE,NOT_PROBED,yes-templated,tankdata / tankitem / tanklog / tanklayer,,"found in the live SPA bundle; NOT CALLED (EXIM HARD-RULE: read-only, GET only)"

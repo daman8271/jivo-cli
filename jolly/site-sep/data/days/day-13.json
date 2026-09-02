@@ -1,0 +1,172 @@
+{
+ "n": 13,
+ "date": "2026-09-13",
+ "weekday": "Sunday",
+ "working": false,
+ "made_litres": 0,
+ "made_value_rs": 0,
+ "shipped_litres": 0,
+ "oil_used_l": 0,
+ "line_util": 0,
+ "line_hours": {
+  "JP Machine": 0,
+  "Clear Pack": 0,
+  "10 Head": 0,
+  "6 Head": 0,
+  "Pouch Machine": 0,
+  "Tin Head": 0
+ },
+ "flushes": 0,
+ "storage": {
+  "physical_l": 607789,
+  "ceiling_l": 827000,
+  "peak_l": 923000,
+  "pct": 73.5,
+  "fg_in_godown_l": 513987,
+  "invoiced_not_trucked_l": 93802,
+  "headroom_l": 219211
+ },
+ "storage_ceiling_assumed": true,
+ "book": {
+  "plan_left_l": 2655734,
+  "po_cumulative_value_rs": 186825421,
+  "po_cumulative_value_label": "cumulative value ordered since day 1 — never decremented; NOT open PO value",
+  "po_open_l_raw": 1023254,
+  "po_open_l_raw_label": "raw sim counter — overstates unshipped-order litres; prefer open_real_l_computed",
+  "forecast_open_l": 703604
+ },
+ "open_real_l_computed": 875998,
+ "runs": [],
+ "blocked": [],
+ "unblocked": [
+  {
+   "code": "PM0000517",
+   "name": "PET BOTTLE 1 LTR 75 GMS",
+   "qty": 18717,
+   "ordered_on": "2026-09-10",
+   "waited_days": 3
+  },
+  {
+   "code": "PM0000722",
+   "name": "CARTON 1 LTR 20 PCS PET 75 GM",
+   "qty": 936,
+   "ordered_on": "2026-09-12",
+   "waited_days": 1
+  },
+  {
+   "code": "PM0000054",
+   "name": "PET BOTTLE 1 LTR 23.8 GMS ROUND",
+   "qty": 2038,
+   "ordered_on": "2026-09-08",
+   "waited_days": 5
+  }
+ ],
+ "waiting_on": [
+  {
+   "code": "PM0000362",
+   "name": "LABEL 15 LTR REFINED RICE BRAN OIL",
+   "since": "2026-09-12"
+  },
+  {
+   "code": "PM0000629",
+   "name": "CARTON TIN TOP",
+   "since": "2026-09-10"
+  },
+  {
+   "code": "PM0000838",
+   "name": "CARTON 2 LTR 10 PCS HANDLE BOTTLE PLAIN",
+   "since": "2026-09-12"
+  }
+ ],
+ "received": [
+  {
+   "code": "PM0000727",
+   "name": "CAPS 1 & 2 LTR WHITE AND RED-ORANGE WITH LOGO YMO",
+   "qty": 20295,
+   "kind": "PACKAGING"
+  },
+  {
+   "code": "PM0000517",
+   "name": "PET BOTTLE 1 LTR 75 GMS",
+   "qty": 18717,
+   "kind": "PACKAGING"
+  },
+  {
+   "code": "PM0000013",
+   "name": "CARTON 5 LTR 4 PCS",
+   "qty": 3863,
+   "kind": "PACKAGING"
+  },
+  {
+   "code": "PM0000054",
+   "name": "PET BOTTLE 1 LTR 23.8 GMS ROUND",
+   "qty": 2038,
+   "kind": "PACKAGING"
+  },
+  {
+   "code": "PM0000722",
+   "name": "CARTON 1 LTR 20 PCS PET 75 GM",
+   "qty": 936,
+   "kind": "PACKAGING"
+  }
+ ],
+ "orders_real": [],
+ "orders_forecast": [],
+ "dispatched_real": [],
+ "dispatched_forecast": [],
+ "bought": [],
+ "decisions": [],
+ "events": [
+  {
+   "day": "2026-09-13",
+   "kind": "UNBLOCKED",
+   "code": "PM0000517",
+   "name": "PET BOTTLE 1 LTR 75 GMS",
+   "waited_days": 3
+  },
+  {
+   "day": "2026-09-13",
+   "kind": "UNBLOCKED",
+   "code": "PM0000722",
+   "name": "CARTON 1 LTR 20 PCS PET 75 GM",
+   "waited_days": 1
+  },
+  {
+   "day": "2026-09-13",
+   "kind": "UNBLOCKED",
+   "code": "PM0000054",
+   "name": "PET BOTTLE 1 LTR 23.8 GMS ROUND",
+   "waited_days": 5
+  }
+ ],
+ "news": {
+  "materials_landed": 5,
+  "unblocked": [
+   "PET BOTTLE 1 LTR 75 GMS",
+   "CARTON 1 LTR 20 PCS PET 75 GM",
+   "PET BOTTLE 1 LTR 23.8 GMS ROUND"
+  ],
+  "real_pos_entering": 0,
+  "forecast_rows": 0
+ },
+ "honesty": {
+  "measured": [
+   "31-Aug stock, FG and open POs (SAP, godown allow-list, OpenInvQty)",
+   "the open order backlog (SAP ORDR, dated by promise; the 84 plan SKUs only)",
+   "BOMs",
+   "line speeds and clearance (ji.jivo.in, August-observed)",
+   "realise May-Jul",
+   "lead times measured: oil 11 d, packaging 6 d"
+  ],
+  "assumed": [
+   "64% of the demand stream is the monthly plan as dated FORECAST buckets, not orders (channel=FORECAST, separable)",
+   "the un-bucketed ecom plan volume spreads evenly across working days — EXIM gives it no weekly split",
+   "supply arrives exactly on its lead time",
+   "2-day invoice-to-truck lag",
+   "every line runs at its stored rate × 50% efficiency — Clear Pack 5L and Tin Head are stored at OBSERVED rates, so for them that is the observed rate derated again ('observed rate, then 50% efficiency'), never '50% of rated'",
+   "15 L PET fills at the 5 L slot's litres/hour (pieces/hr divided by 3) — DERIVED, no measured 15 L rate exists",
+   "standing_l=0: stock invoiced on/before 31 Aug but not yet gated out is uncounted (optimistic on day-1 space)"
+  ]
+ },
+ "simulated": true
+}

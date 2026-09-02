@@ -1,0 +1,29 @@
+# live session / secrets — NEVER commit (this repo is public)
+.env
+.env.*
+!.env.example
+*.token
+cookies*.json
+session*.json
+# raw live captures (real ARNs, balances, signatory phone/email) and outputs
+fixtures/
+captures/
+out/
+captcha-labels/
+*.png
+
+# operator/credential state — real portal usernames + which account is one bad
+# password from a lockout. Never commit (Sentinel, 2026-08-21): a public repo
+# would hand out half of every credential pair for a statutory filing account.
+LOGIN-STATUS.md
+
+# compiled binaries — ~21 MB of build output that nothing in the repo needs.
+# Without this, a `git add -A` on an operator's checkout pushes both into a
+# PUBLIC repo (added 2026-08-25 after the drop to Ziyaul's box).
+cli/gst-portal
+cli/gst-portal.exe
+
+# ── credentials committed on purpose (Daman, 2026-09-02) ─────────────
+# Repo is PRIVATE. Operators on cloud/iPad sessions cannot receive an
+# .env by hand. See the root .gitignore for the full note.
+!.env
