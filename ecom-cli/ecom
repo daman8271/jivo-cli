@@ -14,7 +14,8 @@ set -uo pipefail
 CFGDIR="$HOME/.config/jivo-ecom-pp-cli"   # the CLI hardcodes ~/.config
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLI="${JIVO_ECOM_CLI:-$HERE/jivo-ecom-pp-cli}"
-[ -x "$CLI" ] || { [ -x "$HERE/jivo-ecom-pp-cli.linux" ] && CLI="$HERE/jivo-ecom-pp-cli.linux"; }
+# a Mac binary is executable-but-unrunnable on Linux (bash exits 126), so prefer the .linux build there
+[ "$(uname -s)" = Linux ] && [ -z "${JIVO_ECOM_CLI:-}" ] && [ -x "$HERE/jivo-ecom-pp-cli.linux" ] && CLI="$HERE/jivo-ecom-pp-cli.linux"
 MARGIN=300   # renew when fewer than 5 minutes remain
 
 [ -x "$CLI" ] || { echo "ecom: CLI not found at $CLI (set JIVO_ECOM_CLI)" >&2; exit 127; }
