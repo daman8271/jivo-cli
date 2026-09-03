@@ -48,7 +48,42 @@ Mark 2's flat "2-day invoice→truck lag" is a guess that this source replaces.
 
 ---
 
-## THE ONE RULE THAT DEFINES MARK 2 (superseded in Mark 3)
+## MARK 3 — the live system (LIVE since 2026-09-03 14:59 IST)
+
+Mark 3 replaces the 31-August photo with the plant's position **every 3 minutes**,
+read from the live systems above — never SAP — by the VPS:
+
+```
+live/                      the ingest loop. README.md is the adapter contract.
+live/adapters/<source>.py  factory_dispatch · factory_production · factory_inbound · exim · oms · ecom
+live/collect.py            runs them, writes live/state/state.json   (cron */3 on the VPS)
+live/keepalive.sh          daily re-logins (factory, OMS, ecom)       (cron 04:17)
+live/publish/              the HTTPS publisher (Traefik route + read-only JSON server)
+live/PHASE4-FREEZE-LIVE.md the engine on live state  — freeze_live.py rebuilds sim/live-inputs.json
+live/PHASE5-SITE.md        the Mark 3 site — a static shell that fetches the publisher every 180 s
+reference/MARK3-LIVE-SOURCES.md   every live command, verified, with its traps (102 KB — read it)
+```
+
+**The live state, over HTTPS, no login:**
+`https://mark3-2ff07f84.srv1685505.hstgr.cloud/state.json` (and `/healthz`).
+`collected_at` is when the loop ran; each source carries its own `fetched_at`,
+`server_at`, `ok`, `error`. A source with `ok:false` keeps its last-good file
+beside it — read `last_good_at`, never treat a failed source as zero.
+
+**What is live and what is not, inside state.json** — say it on any page:
+tank levels are a **manual daily dip reading**; ecom targets are **carried from
+July**; the invoice→gate lag note is **static** (measured once, 2026-09-03);
+GRPO posting counts and the QC scoreboard are **all-time**; the 827,000 L
+ceiling is still **ASSUMED**. The MES sees ~⅔ of the plant; goods receipts see
+the rest. Dispatch litres are **three companies** — Oil is the split, never the
+merged headline (3 Sep: 47,182 L "dispatched" was 89% Beverages).
+
+**A cloud/iPad session can read all of this** — the publisher is plain HTTPS.
+It still cannot run the loop, reach the source systems, or deploy Vercel.
+
+---
+
+## THE ONE RULE THAT DEFINED MARK 2 (superseded in Mark 3)
 
 > **Only day 1 is observed. Every later day is COMPUTED from the day before plus
 > what the algorithm decided.**
