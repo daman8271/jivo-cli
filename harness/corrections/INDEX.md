@@ -73,6 +73,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0040]** A GRPO's attachment is the BILTY/LR page, filenamed by bilty number (135/135 in Oil) — never the vendor's tax invoice. That belongs on the A/P invoice that copies the GRPO.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
+- **[C-0076]** ji.jivo.in: 'not DISPATCHED' ≠ 'still in godown' — the dock module records ~45% of loads. For storage use dispatch-fulfilment-summary's PENDING+BOOKED backlog, never the bills window.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
 - **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.
