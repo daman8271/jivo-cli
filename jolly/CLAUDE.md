@@ -134,16 +134,31 @@ say it needs deploying from a machine that can reach Vercel.
 
 ---
 
-## What a cloud/iPad session cannot do
+## What a cloud/iPad session can and cannot do
 
-Say this plainly rather than failing quietly:
+**SAP is reachable from the cloud since 2026-09-03 — if the environment allows
+it.** The sandbox cannot SSH (no client, port 22 refused) and speaks HTTPS only
+to hostnames on its environment's allowlist. So the Service Layer is published
+on the VPS as `https://sl-14fce609.srv1685505.hstgr.cloud`, and the claude.ai
+environment must (a) allow `*.srv1685505.hstgr.cloud` under **Network access →
+Custom** and (b) set `SAPB1_HOST=sl-14fce609.srv1685505.hstgr.cloud` and
+`SAPB1_PORT=443` as environment variables. Then `sap-b1/cli/sapb1.linux` works
+exactly as in the office. Full runbook, the setting steps and a paste-in
+verification prompt: `connections/CLOUD-SESSION-ACCESS.md`.
 
-- **Reach SAP, factory, EXIM, Postgres** — they answer only from inside the office
-  network loop. The credentials being in this repo does not change that.
-- **Reach Vercel**, or view `jivo-mark2.vercel.app`. Verify against the local
-  build and page source instead.
-- **Re-freeze from live SAP** (`engine/freeze_sep.py`). The frozen inputs in
-  `sim/` are what you have; everything else can still be re-run on top of them.
+If `curl https://sl-14fce609.srv1685505.hstgr.cloud/b1s/v1/` answers
+`CONNECT tunnel failed, response 403`, the setting is missing — say exactly that
+and point at the runbook. **No prompt inside the session can change it.**
+
+Say these plainly rather than failing quietly:
+
+- **HANA raw SQL and Postgres** are not HTTP, so they never pass the proxy. That
+  is why **re-freezing from live SAP** (`engine/freeze_sep.py`, HANA CLI) stays a
+  laptop/VPS job — the frozen inputs in `sim/` are what you have. Reads of ecom,
+  OMS, factory, EXIM and Postgres go through the MCP gateway on the same host
+  (see the runbook).
+- **Reach Vercel**, or view `jivo-mark2.vercel.app` — not on the allowlist
+  (untested even with it). Verify against the local build and page source.
 
 Everything else — re-running the simulator, regenerating the site data, editing
 pages, fixing bugs — works completely.

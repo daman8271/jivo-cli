@@ -1,0 +1,45 @@
+# SAP B1 Service Layer published over HTTPS 443 for clients that can only
+# speak HTTP through a proxy — the Claude Code CLOUD sandbox (claude.ai/code)
+# is the one that needs it: no ssh binary, port 22 refused, HTTPS only.
+#
+# Source of truth for /docker/traefik/dynamic/sap-sl.yml on the VPS. Traefik's
+# file provider watches that directory, so copying the file there IS the deploy;
+# deleting it there un-publishes the route within seconds (the rollback).
+#
+# What it fronts: VPS 127.0.0.1:45000 = the reverse tunnel the SAP box parks on
+# the VPS (see connections/SAP-HOME-ACCESS.md §8b and memory
+# sap-novpn-tunnel-port-45000). 401 from it is health, not failure.
+#
+# Gates, in order: (1) tokenized hostname — wildcard DNS resolves anything, the
+# token keeps casual scanners off, but Let's Encrypt logs the name in CT, so it
+# is obscurity, not a secret; (2) SAP's own login (SAPB1_USER/PASSWORD — nothing
+# answers without them); (3) 20 req/s per source IP so a password guess costs
+# hours, not minutes. Optional 4th gate for cloud sessions: a secret header the
+# claude.ai environment's "API credentials" attaches outside the sandbox — see
+# connections/CLOUD-SESSION-ACCESS.md.
+http:
+  routers:
+    sap-sl:
+      rule: "Host(`sl-14fce609.srv1685505.hstgr.cloud`)"
+      entryPoints: [websecure]
+      middlewares: [sap-sl-ratelimit]
+      service: sap-sl
+      tls:
+        certResolver: letsencrypt
+  middlewares:
+    sap-sl-ratelimit:
+      rateLimit:
+        average: 20
+        burst: 50
+  services:
+    sap-sl:
+      loadBalancer:
+        # SAP's Apache 403s Host headers it does not know; 127.0.0.1 it knows.
+        passHostHeader: false
+        serversTransport: sap-sl@file
+        servers:
+          - url: "https://127.0.0.1:45000"
+  serversTransports:
+    sap-sl:
+      # the tunnel end presents SAP's self-signed certificate
+      insecureSkipVerify: true

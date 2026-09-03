@@ -189,6 +189,16 @@ Gotcha when changing `env/sapb1/.env` on the VPS: it is a **single-file bind
 mount**, so `sed -i` swaps the inode and the container keeps the old values —
 `docker compose up -d --force-recreate sapb1 sapb1-sl-proxy`, not `restart`.
 
+## 8c · Route E — SAP from a Claude Code CLOUD session (claude.ai/code, iPad)
+
+The cloud sandbox cannot SSH at all and only speaks HTTPS to allowlisted
+hostnames, so Route D's tunnel does not apply. Instead the Service Layer is
+published by the VPS's Traefik at `https://sl-14fce609.srv1685505.hstgr.cloud`
+(→ VPS `127.0.0.1:45000`, the same reverse tunnel), and the claude.ai
+environment allows `*.srv1685505.hstgr.cloud` and sets `SAPB1_HOST`/`SAPB1_PORT`.
+Runbook, setting steps, verification prompt and the security posture:
+**`connections/CLOUD-SESSION-ACCESS.md`**. Built 2026-09-03.
+
 ## 9 · The real long-run fix (don't stop at the tunnel)
 
 Every route above still depends on the **office WAN being up** (the box + its tunnel

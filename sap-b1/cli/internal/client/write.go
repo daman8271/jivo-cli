@@ -391,7 +391,13 @@ func (c *Client) writeClient() *http.Client {
 	if c.writeHTTP != nil {
 		return c.writeHTTP
 	}
-	transport := &http.Transport{}
+	transport := &http.Transport{
+		// Honour HTTPS_PROXY / NO_PROXY like http.DefaultTransport does. Without
+		// this the Claude Code cloud sandbox (egress only via a CONNECT proxy)
+		// cannot reach SAP at all; everywhere else the variables are unset and
+		// nothing changes.
+		Proxy: http.ProxyFromEnvironment,
+	}
 	if c.cfg.Insecure {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec G402 — user opt-in for self-signed SAP certs
 	}

@@ -18,6 +18,7 @@ This vault maps how JivoGPT's six current JIVO CLIs can be queried together with
 - **SAP from home — full runbook:** [[SAP-HOME-ACCESS]] — HANA data + Service Layer + the ~105 GB of attachment files, all reachable from any IP via the reverse tunnel (`ssh jivo-sap-any`). Read-only.
 - **ARY (SQL Server) — access + queries:** [[ARY-ACCESS]] — MSSQL 2017 box `138.252.101.118`, reachable from anywhere (no tunnel). Hosts the LIVE DMS `FR8HODBNEW` (ARY sales, per-warehouse) + SAP-B1-SQL `ARY_BSU` + 70 more. Query read-only via `dsr-cli/dsr`. Creds in gitignored `connections/ary.env`.
 - **Reverse SSH tunnel (goal #96):** [[reverse-tunnel/README]] — the box dials out to the fleet VPS so the office-IP whitelist is bypassed; self-healing.
+- **From a Claude Code CLOUD session (claude.ai/code, iPad):** [[CLOUD-SESSION-ACCESS]] — no SSH there, HTTPS only; SAP Service Layer published on the VPS at `sl-14fce609.srv1685505.hstgr.cloud`, plus the claude.ai environment allowlist + `SAPB1_HOST`/`SAPB1_PORT`. Built 2026-09-03.
 - Secrets live in `connections/*.env` (gitignored, `chmod 600`): `fleet-access.env` (box SSH + Windows SMB/RDP), `hana.env`/`hana-tunnel.env` (HANA), `sap-b1/cli/.env` (Service Layer).
 
 ## The six connector hubs
