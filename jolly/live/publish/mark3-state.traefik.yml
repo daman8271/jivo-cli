@@ -1,0 +1,25 @@
+# Mark 3 live state, published over HTTPS for the Mark 3 site to fetch every
+# 3 minutes client-side. Source of truth for /docker/traefik/dynamic/mark3-state.yml.
+# Deploy = copy there; rollback = delete there. Backend is the read-only JSON
+# server in state_server.py (systemd unit mark3-state) on 127.0.0.1:8793.
+# The hostname token is obscurity, not a secret — the data is operational, not
+# credentials. Rate-limited so a scanner cannot make the VPS busy.
+http:
+  routers:
+    mark3-state:
+      rule: "Host(`mark3-2ff07f84.srv1685505.hstgr.cloud`)"
+      entryPoints: [websecure]
+      middlewares: [mark3-state-ratelimit]
+      service: mark3-state
+      tls:
+        certResolver: letsencrypt
+  middlewares:
+    mark3-state-ratelimit:
+      rateLimit:
+        average: 60
+        burst: 120
+  services:
+    mark3-state:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8793"

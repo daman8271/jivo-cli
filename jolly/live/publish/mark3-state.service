@@ -1,0 +1,12 @@
+[Unit]
+Description=Mark 3 state publisher (read-only JSON on 127.0.0.1:8793)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /root/jivo-courier/jolly/live/publish/state_server.py /root/jivo-courier/jolly/live/state 8793
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
