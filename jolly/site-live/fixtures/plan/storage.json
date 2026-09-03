@@ -1,0 +1,481 @@
+{
+ "meta": {
+  "collected_at": "2026-09-03T17:18:01+05:30",
+  "as_of": "2026-09-03T17:18:01+05:30",
+  "horizon": [
+   "2026-09-03",
+   "2026-09-30"
+  ],
+  "rolling": true,
+  "forward": true,
+  "generated": "2026-09-03T11:48:14+00:00",
+  "generated_by": "live/gen_live.py"
+ },
+ "ceiling": {
+  "working_l": 827000,
+  "peak_l": 923000,
+  "assumed": true,
+  "source": "Daman's number, from his spreadsheet — not measured",
+  "open_question": "Q2"
+ },
+ "standing_at_open": {
+  "litres": 208753,
+  "assumed": false,
+  "optimistic": false,
+  "note": "stock billed but not yet on a truck IS counted here — read live off the factory's own dispatch plans, not guessed at nothing. Mark 2 put it at nothing and said so; this is the real pile"
+ },
+ "at_open": {
+  "physical_l": 641105,
+  "fg_l": 432352,
+  "billed_not_gone_l": 208753,
+  "pct": 77.5,
+  "over_ceiling": false,
+  "measured": true,
+  "assumed": false,
+  "source": {
+   "source": "factory_dispatch",
+   "fetched_at": "2026-09-03T17:18:01.250784+05:30",
+   "server_at": "2026-09-03T16:50:32.985062+05:30",
+   "mode": "live",
+   "note": "the CHEAP pile 274,549 L (dispatch-fulfilment-summary backlog, PENDING+BOOKED, all three books) x the Oil share 0.7603 of the last heavy bills read (2026-09-03T17:02:48.949470+05:30)"
+  },
+  "alternatives": {
+   "used": 208753,
+   "used_basis": "the CHEAP pile 274,549 L (dispatch-fulfilment-summary backlog, PENDING+BOOKED, all three books) x the Oil share 0.7603 of the last heavy bills read (2026-09-03T17:02:48.949470+05:30)",
+   "cheap_backlog_all_company_l": 274548.6,
+   "cheap_backlog_source": "dispatch-plans dispatch-fulfilment-summary",
+   "oil_share_of_heavy_split": 0.7603,
+   "oil_share_read_at": "2026-09-03T17:02:48.949470+05:30",
+   "wide_14d_by_company_JIVO_OIL_l": 1277381,
+   "wide_14d_all_company_l": 1679991.1,
+   "godown_rooms_only_all_company_l": 1259138.9,
+   "companions_read_at": "2026-09-03T17:02:48.949470+05:30",
+   "note": "These two do NOT reconcile and are not meant to be added or differenced. The headline counts open dispatch PLANS with no date bound; by_company counts BILLS in a 14-day invoice window whose plan never reached DISPATCHED — which includes bills that physically left but whose plan was never closed. Quote one, name its source, and say which."
+  },
+  "reconciliation": {
+   "fg_in_godown": {
+    "shown": 419694,
+    "expected": 419694,
+    "from": "counted live in the two finished-goods rooms, plus what is filled today, less what is billed today",
+    "delta_l": 0
+   },
+   "billed_not_gone": {
+    "shown": 341173,
+    "expected": 341173,
+    "from": "the pile read live off the dispatch plans, plus today's billing — no truck leaves on day 1",
+    "delta_l": 0
+   },
+   "whole_godown": {
+    "shown": 760867,
+    "expected": 760867,
+    "from": "the two above added together",
+    "delta_l": 0
+   }
+  },
+  "clears_on_day_n": 4,
+  "clears_note": "the planner sends this pile out over the first few days (roughly half, then a third, then the rest), so the first days show huge truck movements that were billed before today",
+  "note": "stock billed but not yet on a truck IS counted here — read live off the factory's own dispatch plans, not guessed at nothing. Mark 2 put it at nothing and said so; this is the real pile"
+ },
+ "invoice_truck_lag_days": 2,
+ "invoice_truck_note": "'sent' here means billed, not the truck leaving — after billing, the truck leaves 2 days later, which is the middle of what the gate log really shows. Trucks-left litres are worked out from how full the godown was",
+ "series": [
+  {
+   "n": 1,
+   "date": "2026-09-03",
+   "working": true,
+   "physical_l": 760867,
+   "pct": 92.0,
+   "fg_in_godown_l": 419694,
+   "invoiced_not_trucked_l": 341173,
+   "headroom_l": 66133,
+   "invoiced_l": 132420,
+   "trucked_out_l": 0,
+   "cum_trucked_out_l": 0
+  },
+  {
+   "n": 2,
+   "date": "2026-09-04",
+   "working": true,
+   "physical_l": 805063,
+   "pct": 97.3,
+   "fg_in_godown_l": 435567,
+   "invoiced_not_trucked_l": 369495,
+   "headroom_l": 21937,
+   "invoiced_l": 122261,
+   "trucked_out_l": 93938,
+   "cum_trucked_out_l": 93938
+  },
+  {
+   "n": 3,
+   "date": "2026-09-05",
+   "working": true,
+   "physical_l": 827000,
+   "pct": 100.0,
+   "fg_in_godown_l": 415173,
+   "invoiced_not_trucked_l": 411827,
+   "headroom_l": 0,
+   "invoiced_l": 115395,
+   "trucked_out_l": 73064,
+   "cum_trucked_out_l": 167002
+  },
+  {
+   "n": 4,
+   "date": "2026-09-06",
+   "working": false,
+   "physical_l": 530568,
+   "pct": 64.2,
+   "fg_in_godown_l": 415173,
+   "invoiced_not_trucked_l": 115395,
+   "headroom_l": 296432,
+   "invoiced_l": 0,
+   "trucked_out_l": 296432,
+   "cum_trucked_out_l": 463434
+  },
+  {
+   "n": 5,
+   "date": "2026-09-07",
+   "working": true,
+   "physical_l": 551290,
+   "pct": 66.7,
+   "fg_in_godown_l": 402901,
+   "invoiced_not_trucked_l": 148388,
+   "headroom_l": 275710,
+   "invoiced_l": 148388,
+   "trucked_out_l": 115394,
+   "cum_trucked_out_l": 578828
+  },
+  {
+   "n": 6,
+   "date": "2026-09-08",
+   "working": true,
+   "physical_l": 630458,
+   "pct": 76.2,
+   "fg_in_godown_l": 364128,
+   "invoiced_not_trucked_l": 266330,
+   "headroom_l": 196542,
+   "invoiced_l": 117941,
+   "trucked_out_l": 0,
+   "cum_trucked_out_l": 578828
+  },
+  {
+   "n": 7,
+   "date": "2026-09-09",
+   "working": true,
+   "physical_l": 594949,
+   "pct": 71.9,
+   "fg_in_godown_l": 372813,
+   "invoiced_not_trucked_l": 222136,
+   "headroom_l": 232051,
+   "invoiced_l": 104195,
+   "trucked_out_l": 148388,
+   "cum_trucked_out_l": 727216
+  },
+  {
+   "n": 8,
+   "date": "2026-09-10",
+   "working": true,
+   "physical_l": 590481,
+   "pct": 71.4,
+   "fg_in_godown_l": 396649,
+   "invoiced_not_trucked_l": 193833,
+   "headroom_l": 236519,
+   "invoiced_l": 89638,
+   "trucked_out_l": 117942,
+   "cum_trucked_out_l": 845158
+  },
+  {
+   "n": 9,
+   "date": "2026-09-11",
+   "working": true,
+   "physical_l": 608463,
+   "pct": 73.6,
+   "fg_in_godown_l": 402252,
+   "invoiced_not_trucked_l": 206211,
+   "headroom_l": 218537,
+   "invoiced_l": 116573,
+   "trucked_out_l": 104195,
+   "cum_trucked_out_l": 949353
+  },
+  {
+   "n": 10,
+   "date": "2026-09-12",
+   "working": true,
+   "physical_l": 609791,
+   "pct": 73.7,
+   "fg_in_godown_l": 372024,
+   "invoiced_not_trucked_l": 237767,
+   "headroom_l": 217209,
+   "invoiced_l": 121194,
+   "trucked_out_l": 89638,
+   "cum_trucked_out_l": 1038991
+  },
+  {
+   "n": 11,
+   "date": "2026-09-13",
+   "working": false,
+   "physical_l": 493218,
+   "pct": 59.6,
+   "fg_in_godown_l": 372024,
+   "invoiced_not_trucked_l": 121194,
+   "headroom_l": 333782,
+   "invoiced_l": 0,
+   "trucked_out_l": 116573,
+   "cum_trucked_out_l": 1155564
+  },
+  {
+   "n": 12,
+   "date": "2026-09-14",
+   "working": true,
+   "physical_l": 481060,
+   "pct": 58.2,
+   "fg_in_godown_l": 381459,
+   "invoiced_not_trucked_l": 99601,
+   "headroom_l": 345940,
+   "invoiced_l": 99601,
+   "trucked_out_l": 121194,
+   "cum_trucked_out_l": 1276758
+  },
+  {
+   "n": 13,
+   "date": "2026-09-15",
+   "working": true,
+   "physical_l": 592010,
+   "pct": 71.6,
+   "fg_in_godown_l": 428655,
+   "invoiced_not_trucked_l": 163354,
+   "headroom_l": 234990,
+   "invoiced_l": 63753,
+   "trucked_out_l": 0,
+   "cum_trucked_out_l": 1276758
+  },
+  {
+   "n": 14,
+   "date": "2026-09-16",
+   "working": true,
+   "physical_l": 603158,
+   "pct": 72.9,
+   "fg_in_godown_l": 445033,
+   "invoiced_not_trucked_l": 158126,
+   "headroom_l": 223842,
+   "invoiced_l": 94372,
+   "trucked_out_l": 99602,
+   "cum_trucked_out_l": 1376360
+  },
+  {
+   "n": 15,
+   "date": "2026-09-17",
+   "working": true,
+   "physical_l": 655786,
+   "pct": 79.3,
+   "fg_in_godown_l": 473995,
+   "invoiced_not_trucked_l": 181791,
+   "headroom_l": 171214,
+   "invoiced_l": 87418,
+   "trucked_out_l": 63753,
+   "cum_trucked_out_l": 1440113
+  },
+  {
+   "n": 16,
+   "date": "2026-09-18",
+   "working": true,
+   "physical_l": 676791,
+   "pct": 81.8,
+   "fg_in_godown_l": 450685,
+   "invoiced_not_trucked_l": 226107,
+   "headroom_l": 150209,
+   "invoiced_l": 138688,
+   "trucked_out_l": 94373,
+   "cum_trucked_out_l": 1534486
+  },
+  {
+   "n": 17,
+   "date": "2026-09-19",
+   "working": true,
+   "physical_l": 695916,
+   "pct": 84.1,
+   "fg_in_godown_l": 434913,
+   "invoiced_not_trucked_l": 261003,
+   "headroom_l": 131084,
+   "invoiced_l": 122314,
+   "trucked_out_l": 87418,
+   "cum_trucked_out_l": 1621904
+  },
+  {
+   "n": 18,
+   "date": "2026-09-20",
+   "working": false,
+   "physical_l": 557227,
+   "pct": 67.4,
+   "fg_in_godown_l": 434913,
+   "invoiced_not_trucked_l": 122314,
+   "headroom_l": 269773,
+   "invoiced_l": 0,
+   "trucked_out_l": 138689,
+   "cum_trucked_out_l": 1760593
+  },
+  {
+   "n": 19,
+   "date": "2026-09-21",
+   "working": true,
+   "physical_l": 531651,
+   "pct": 64.3,
+   "fg_in_godown_l": 424458,
+   "invoiced_not_trucked_l": 107193,
+   "headroom_l": 295349,
+   "invoiced_l": 107193,
+   "trucked_out_l": 122315,
+   "cum_trucked_out_l": 1882908
+  },
+  {
+   "n": 20,
+   "date": "2026-09-22",
+   "working": true,
+   "physical_l": 634859,
+   "pct": 76.8,
+   "fg_in_godown_l": 414845,
+   "invoiced_not_trucked_l": 220014,
+   "headroom_l": 192141,
+   "invoiced_l": 112821,
+   "trucked_out_l": 0,
+   "cum_trucked_out_l": 1882908
+  },
+  {
+   "n": 21,
+   "date": "2026-09-23",
+   "working": true,
+   "physical_l": 632253,
+   "pct": 76.5,
+   "fg_in_godown_l": 413606,
+   "invoiced_not_trucked_l": 218646,
+   "headroom_l": 194747,
+   "invoiced_l": 105826,
+   "trucked_out_l": 107193,
+   "cum_trucked_out_l": 1990101
+  },
+  {
+   "n": 22,
+   "date": "2026-09-24",
+   "working": true,
+   "physical_l": 613824,
+   "pct": 74.2,
+   "fg_in_godown_l": 386410,
+   "invoiced_not_trucked_l": 227414,
+   "headroom_l": 213176,
+   "invoiced_l": 121588,
+   "trucked_out_l": 112821,
+   "cum_trucked_out_l": 2102922
+  },
+  {
+   "n": 23,
+   "date": "2026-09-25",
+   "working": true,
+   "physical_l": 600132,
+   "pct": 72.6,
+   "fg_in_godown_l": 371913,
+   "invoiced_not_trucked_l": 228218,
+   "headroom_l": 226868,
+   "invoiced_l": 106631,
+   "trucked_out_l": 105826,
+   "cum_trucked_out_l": 2208748
+  },
+  {
+   "n": 24,
+   "date": "2026-09-26",
+   "working": true,
+   "physical_l": 574333,
+   "pct": 69.4,
+   "fg_in_godown_l": 378767,
+   "invoiced_not_trucked_l": 195566,
+   "headroom_l": 252667,
+   "invoiced_l": 88936,
+   "trucked_out_l": 121588,
+   "cum_trucked_out_l": 2330336
+  },
+  {
+   "n": 25,
+   "date": "2026-09-27",
+   "working": false,
+   "physical_l": 467703,
+   "pct": 56.6,
+   "fg_in_godown_l": 378767,
+   "invoiced_not_trucked_l": 88936,
+   "headroom_l": 359297,
+   "invoiced_l": 0,
+   "trucked_out_l": 106630,
+   "cum_trucked_out_l": 2436966
+  },
+  {
+   "n": 26,
+   "date": "2026-09-28",
+   "working": true,
+   "physical_l": 471745,
+   "pct": 57.0,
+   "fg_in_godown_l": 372501,
+   "invoiced_not_trucked_l": 99244,
+   "headroom_l": 355255,
+   "invoiced_l": 99244,
+   "trucked_out_l": 88936,
+   "cum_trucked_out_l": 2525902
+  },
+  {
+   "n": 27,
+   "date": "2026-09-29",
+   "working": true,
+   "physical_l": 558806,
+   "pct": 67.6,
+   "fg_in_godown_l": 345441,
+   "invoiced_not_trucked_l": 213365,
+   "headroom_l": 268194,
+   "invoiced_l": 114121,
+   "trucked_out_l": 0,
+   "cum_trucked_out_l": 2525902
+  },
+  {
+   "n": 28,
+   "date": "2026-09-30",
+   "working": true,
+   "physical_l": 554232,
+   "pct": 67.0,
+   "fg_in_godown_l": 311955,
+   "invoiced_not_trucked_l": 242277,
+   "headroom_l": 272768,
+   "invoiced_l": 128157,
+   "trucked_out_l": 99244,
+   "cum_trucked_out_l": 2625146
+  }
+ ],
+ "biggest_fall": {
+  "n": 4,
+  "date": "2026-09-06",
+  "fall_l": 296432,
+  "trucked_out_l": 296432,
+  "made_l": 0,
+  "invoiced_that_day_l": 0,
+  "source_day_n": 2,
+  "source_date": "2026-09-04",
+  "note": "the drop is trucks leaving (billed 2 days earlier) minus what was filled that day — not that day's billing"
+ },
+ "biggest_invoicing_day": {
+  "n": 5,
+  "date": "2026-09-07",
+  "invoiced_l": 148388,
+  "trucked_out_that_day_l": 115394
+ },
+ "biggest_trucked_day": {
+  "n": 4,
+  "date": "2026-09-06",
+  "trucked_out_l": 296432
+ },
+ "days_ge_95": 2,
+ "days_ge_100": [
+  "2026-09-05"
+ ],
+ "throttles": [
+  {
+   "day": "2026-09-05",
+   "pct_start_of_day": 89,
+   "headroom_l": 95001
+  }
+ ],
+ "simulated": true
+}

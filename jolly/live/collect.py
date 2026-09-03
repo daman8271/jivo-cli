@@ -57,6 +57,17 @@ THE RULES THIS FILE OBEYS (each one already bit this project)
     the retry storm Daman's standing rule forbids. `heavy_last_ok_at` records
     the last one that actually returned, so "gated off" is distinguishable from
     "failing".
+  * NO PHONE NUMBER IS EVER PUBLISHED. state.json goes out over HTTPS at a
+    tokenised public hostname, so a driver's mobile inside a gate row is a
+    mobile on a public URL — the site not rendering it is not the same as it
+    not being there. Every write goes through _write_atomic(), which runs
+    live/adapters/_mask.py over the object first: a key that names a phone
+    loses its value to "****XX", and any other string has mobile-shaped runs
+    replaced in place. Identifier keys (vehicle_no, po_number, grpo_no,
+    entry_no, *_code, *_id) are allow-listed, because a ten-digit OMS PO
+    starting with 6 has a mobile's exact shape. After state.json is written it
+    is re-read and scanned; a survivor is a WARNING naming the JSON path, never
+    a failed cycle.
   * NO KEY IS SILENTLY CLOBBERED. `collected_at`, `cycle_seconds`, `sources`
     and `warnings` are reserved; an adapter claiming one is refused and the
     refusal is published in `warnings` rather than swallowed.
@@ -124,6 +135,29 @@ STATE_FILE = os.path.join(STATE_DIR, "state.json")
 if _JOLLY not in sys.path:
     sys.path.insert(0, _JOLLY)
 
+# THE PHONE MASK. state.json is published over HTTPS, so a driver's mobile in
+# any adapter's payload is a mobile on a public URL. `live/adapters/_mask.py`
+# is the one implementation; it is applied in _write_atomic() below, which is
+# the single door every published file goes through. Imported the forgiving
+# way discover() imports an adapter — by package name, then straight off disk —
+# and if BOTH fail the cycle refuses to start rather than publish unmasked.
+try:
+    from live.adapters._mask import mask_phones_verbose, scan_phones
+except Exception:                                           # noqa: BLE001
+    try:
+        _mspec = importlib.util.spec_from_file_location(
+            "_mark3_mask", os.path.join(ADAPTER_DIR, "_mask.py"))
+        _mmod = importlib.util.module_from_spec(_mspec)
+        _mspec.loader.exec_module(_mmod)                     # type: ignore[union-attr]
+        mask_phones_verbose = _mmod.mask_phones_verbose
+        scan_phones = _mmod.scan_phones
+    except Exception as _exc:                               # noqa: BLE001
+        raise RuntimeError(
+            "live/adapters/_mask.py is missing or broken (%s: %s). This cycle "
+            "will not publish state.json without the phone mask — no real "
+            "phone number, ever." % (type(_exc).__name__, _exc)
+        ) from _exc
+
 
 def _envint(name: str, default: int) -> int:
     try:
@@ -166,7 +200,22 @@ def _iso(dt: datetime) -> str:
 
 def _write_atomic(path: str, obj) -> None:
     """tmp + os.replace. state_server.py serves this directory live; a reader
-    must never catch a half-written file."""
+    must never catch a half-written file.
+
+    AND: this is where phone numbers are masked, deliberately in the io helper
+    rather than in any adapter. Every file this loop publishes goes through
+    here — <source>.json, <source>.last-good.json and state.json — so one call
+    covers all six adapters and a seventh cannot forget it. The mask is
+    idempotent, so the second and third write of the same object find nothing
+    left to do. It mutates `obj` in place on purpose: the same dict is written
+    three times and merged into state.json, and it must be masked in all of
+    them.
+    """
+    obj, redacted = mask_phones_verbose(obj)
+    if redacted:
+        keys = sorted({str(r["key"] or "?") for r in redacted})
+        _log("  mask %s: %d phone value(s) redacted (%s)"
+             % (os.path.basename(path), len(redacted), ", ".join(keys)[:120]))
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp = f"{path}.tmp.{os.getpid()}"
     with open(tmp, "w", encoding="utf-8") as fh:
@@ -202,6 +251,37 @@ def _last_good(path: str, age_now: datetime) -> tuple:
         return lg_at, max(0, int((age_now - d).total_seconds()))
     except (TypeError, ValueError):
         return lg_at, None
+
+
+def _leak_guard(path: str) -> int:
+    """Re-read the PUBLISHED file and warn about any mobile that survived.
+
+    Deliberately reads the bytes on disk rather than the object in memory: the
+    question is what the tokenised public URL is about to serve, not what we
+    believe we wrote. Allow-listed identifier keys (vehicle_no, po_number,
+    grpo_no, entry_no, order_number, *_code, *_id) are skipped — an OMS PO is
+    ten digits and starts with 6, exactly a mobile's shape, and warning about
+    every one of them would train the operator to ignore this line.
+
+    NEVER fails the cycle, and never prints the number it found. The site
+    fetches state.json every 3 minutes; a missing file is an outage, while a
+    survivor is a bug in an adapter to be fixed at leisure. The path is enough
+    to find it. Printed straight to stdout, not through _log(), so
+    MARK3_QUIET=1 cannot hide a leak.
+    """
+    leaked = scan_phones(_read_json(path) or {})
+    if not leaked:
+        return 0
+    sys.stdout.write(
+        "WARNING: %d phone-shaped value(s) survived the mask in %s\n"
+        % (len(leaked), os.path.basename(path)))
+    for where, value in leaked[:20]:
+        preview, _ = mask_phones_verbose({"preview": value})
+        sys.stdout.write("WARNING:   %s = %s\n" % (where, preview["preview"]))
+    if len(leaked) > 20:
+        sys.stdout.write("WARNING:   ... and %d more\n" % (len(leaked) - 20))
+    sys.stdout.flush()
+    return len(leaked)
 
 
 def _log(msg: str) -> None:
@@ -516,6 +596,7 @@ def main() -> int:
         _log(f"  .. diagnostic run ({why}) — state.json and .cadence.json NOT written")
     else:
         _write_atomic(STATE_FILE, state)
+        _leak_guard(STATE_FILE)
         if flags["heavy"] and heavy_ok:
             cad["heavy_last_ok_at"] = _iso(now)
         if flags["hourly"] and hourly_ok:
