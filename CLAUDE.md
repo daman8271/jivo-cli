@@ -15,9 +15,14 @@ create documents for a living. Daman authorised this on 2026-08-22.
   - `sapb1 draft <doctype>` — creates a **draft**. Nothing posts: no stock movement,
     no ledger entry, until a human opens SAP B1 → Document Drafts and presses
     **Add**. Drafts *are* visible to others and to any approval workflow.
-  - `sapb1 post <EntitySet>` — creates live, no draft. Master data only
-    (BusinessPartners, Items), and it accepts only a **bare, catalogued entity
-    set**. **Prefer `draft` for anything document-shaped.**
+  - `sapb1 post <EntitySet>` — creates live, no draft. **Master data only, and
+    that is now enforced in code, not asked for:** it accepts a bare, catalogued
+    entity set (BusinessPartners, Items, ItemGroups, ProjectCodes …) and
+    **refuses every posting document** — invoices, A/P invoices, credit notes,
+    orders, GRPOs, payments, journal entries, stock movements. There is no
+    override. Document-shaped work goes through `draft`, because on 2026-08-26 a
+    `POST PurchaseInvoices` through this CLI returned 201 and put a live,
+    unapproved A/P invoice in the books.
   - `sapb1 patch <Entity(key)>` — updates fields on one existing object.
   - `sapb1 delete draft <DocEntry> [<DocEntry>...]` (and `sapb1 delete payment-draft`)
     — removes a **draft**, and nothing else. It reads the draft first and shows the
@@ -71,8 +76,19 @@ create documents for a living. Daman authorised this on 2026-08-22.
   number and wait. Operators here are not AI users — they will not know a magic
   word, and most will say nothing at all beyond handing you the paper.
   **Never `sapb1 post` a document to "just get it in"** — that bypasses her and
-  lands unapproved in the ledger (C-0034). Say plainly when it is with her, and
+  lands unapproved in the ledger (C-0034); `post` now refuses documents outright.
+  Say plainly when it is with her, and
   that her approval does not post it — a human presses Add a second time.
+
+  **`add-draft` only reaches her from a login an approval template names.**
+  Guard 5c (2026-09-03) refuses the submit otherwise, because SAP does not: with
+  no Always-terms template covering the login and the doctype, it decides the
+  document needs no approval and posts it LIVE. Verified live: the only
+  Always-terms A/P-invoice templates are Oil **103**, Mart **48**, Bev **68**,
+  and each names **USER39 alone**. So a box logged in as anyone else stops at
+  the draft — attach the bill, say it is waiting, and a person presses Add in the
+  SAP B1 client (that route does consult the template). Getting a login added is
+  an admin's ten minutes in Approval Templates → Originators, never a flag here.
 
 ### What is still genuinely impossible — do not promise these
 

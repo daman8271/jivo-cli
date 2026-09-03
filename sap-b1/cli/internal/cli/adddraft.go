@@ -543,6 +543,7 @@ func preflightAddDrafts(cmd *cobra.Command, c *client.Client, cfg *config.Config
 		checkAddOpen(&pf, cfg)
 		checkAddApproval(&pf, cfg)
 		checkAddDIApproval(&pf, cfg, admin)
+		checkAddApprovalTemplate(&pf, cfg)
 		checkAddLineIntegrity(&pf, cfg)
 		if err := checkAddBaseLines(cmd, c, cfg, &pf, bases); err != nil {
 			return nil, err

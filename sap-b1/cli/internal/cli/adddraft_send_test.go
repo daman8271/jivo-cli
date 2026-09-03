@@ -150,6 +150,12 @@ func newFakeAddSAP(t *testing.T) *fakeAddSAP {
 	t.Setenv("SAPB1_PASSWORD", "irrelevant")
 	t.Setenv("SAPB1_INSECURE", "true")
 	t.Setenv("SAPB1_TIMEOUT", "5")
+	// TESTDB is not one of JIVO's three books, so guard 5c has no verified
+	// approval template for it and would refuse every submit in this file. The
+	// fixture asserts one, exactly as a real box's .env does once an admin has
+	// added that login as an originator. Guard 5c has its own tests in
+	// adddraft_template_test.go; here it must stay out of the way.
+	t.Setenv("SAPB1_APPROVAL_TEMPLATE", "TEST-FIXTURE")
 	setProvenanceRoot(t, t.TempDir())
 	withTTY(t, false)
 	return f

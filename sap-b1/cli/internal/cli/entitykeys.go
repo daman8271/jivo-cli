@@ -57,6 +57,10 @@ func validateWriteEntitySet(name, method string) (string, error) {
 		return "", &errs.UsageError{Msg: msg}
 	}
 
+	if err := refuseLivePostingDocument(svc.Service, method); err != nil {
+		return "", err
+	}
+
 	if !supportsEntityOperation(svc, method) {
 		return "", &errs.UsageError{Msg: fmt.Sprintf(
 			"%s does not support %s on the entity itself (the catalog lists: %s) — run `sapb1 ops %s` to see what it does support",
