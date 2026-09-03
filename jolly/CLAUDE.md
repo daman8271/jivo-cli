@@ -11,7 +11,44 @@ Answer in plain language. Give the number first, then one line on where it came 
 
 ---
 
-## THE ONE RULE THAT DEFINES THIS PROJECT
+## 🔴 RULE 0 — FACTORY TRUTH IS `ji.jivo.in`. NEVER SAP. (Daman, 2026-09-03)
+
+> *"ji.jivo.in has the ultimate data about the factory, no one dares come near.
+> You should always listen to ji.jivo.in whatever the case. All the factory
+> monitoring is there and there only. This is the reason your results are so
+> different."*
+
+**Do not answer a factory question from SAP.** Not production, not stock, not
+dispatch, not receiving, not lines. Every one of them has a live owner:
+
+| Question | Ask | Never ask |
+|---|---|---|
+| what was made, on which line, stock on hand | **ji.jivo.in** (`factory-cli`) | SAP |
+| what left the gate / is still in the warehouse | **ji.jivo.in `/dispatch`** | SAP invoices |
+| what material arrived, what is in QC | **ji.jivo.in** GRPO / gate board | SAP GRPO |
+| bulk oil, tanks, the monthly plan | **EXIM** | SAP |
+| sales + purchase orders, GT/MT | **OMS** (`oms.jivo.in`) | SAP `Orders` |
+| ecom purchase orders | **ecom.jivo.in** | SAP |
+
+**Why this is not a preference.** Backtested 2026-09-03 against the first two days
+of September, a SAP-sourced answer said the plant would make 269,740 L and run
+COLD PRESS GROUNDNUT 5 LTR. The factory made 85,488 L of **1-litre** olive,
+mustard and sunflower — **0 of 15 SKUs matched**. Meanwhile ji.jivo.in's gate
+board showed 156,000 one-litre caps and 37,000 one-litre bottles arriving. The
+factory systems were coherent with each other and SAP was the outlier.
+
+**If a live source lacks something Mark 3 needs, BUILD the CLI for it.** Daman:
+*"if you find something which is not part of the CLI just make one of it, simple
+as that."* Do not fall back to SAP because it is easier.
+
+**A business truth that changes the storage maths:** goods stay in the warehouse
+and count as storage pressure **until they are physically DISPATCHED**. Booked,
+invoiced and billed are not dispatched. `ji.jivo.in/dispatch` holds that truth —
+Mark 2's flat "2-day invoice→truck lag" is a guess that this source replaces.
+
+---
+
+## THE ONE RULE THAT DEFINES MARK 2 (superseded in Mark 3)
 
 > **Only day 1 is observed. Every later day is COMPUTED from the day before plus
 > what the algorithm decided.**
