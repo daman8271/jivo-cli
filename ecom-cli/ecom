@@ -1,0 +1,55 @@
+#!/bin/bash
+# ecom — jivo-ecom-pp-cli with automatic token renewal.
+#
+# The ecom.jivo.in access token lives ONE HOUR. This wrapper decodes the stored
+# token's own exp claim and, if under 5 minutes remain, renews it from the
+# 30-day rotating refresh token before running the command. Then it just
+# forwards every argument to the real CLI.
+#
+#   ecom doctor
+#   ecom platform stats --platform blinkit --json
+#   ecom --renew            # force a renewal, run nothing
+set -uo pipefail
+
+CFGDIR="$HOME/.config/jivo-ecom-pp-cli"   # the CLI hardcodes ~/.config
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CLI="${JIVO_ECOM_CLI:-$HERE/jivo-ecom-pp-cli}"
+[ -x "$CLI" ] || { [ -x "$HERE/jivo-ecom-pp-cli.linux" ] && CLI="$HERE/jivo-ecom-pp-cli.linux"; }
+MARGIN=300   # renew when fewer than 5 minutes remain
+
+[ -x "$CLI" ] || { echo "ecom: CLI not found at $CLI (set JIVO_ECOM_CLI)" >&2; exit 127; }
+
+remaining() {  # seconds left on the stored access token; empty if unreadable
+  python3 - "$CFGDIR/config.toml" <<'PY' 2>/dev/null
+import base64,json,re,sys,time
+try: txt=open(sys.argv[1]).read()
+except OSError: sys.exit(1)
+m=re.search(r"access_token\s*=\s*['\"]([^'\"]+)['\"]",txt)
+if not m: sys.exit(1)
+parts=m.group(1).split(".")
+if len(parts)!=3: sys.exit(1)
+try: exp=json.loads(base64.urlsafe_b64decode(parts[1]+"=="*3))["exp"]
+except Exception: sys.exit(1)
+print(int(exp-time.time()))
+PY
+}
+
+renew() {
+  if [ -x "$CFGDIR/renew-and-store.sh" ]; then
+    "$CFGDIR/renew-and-store.sh" >&2 || {
+      echo "ecom: automatic renewal failed — see the message above." >&2; return 1; }
+  else
+    echo "ecom: $CFGDIR/renew-and-store.sh missing; cannot auto-renew." >&2; return 1
+  fi
+}
+
+if [ "${1:-}" = "--renew" ]; then renew; exit $?; fi
+
+LEFT="$(remaining)"
+if [ -z "$LEFT" ]; then
+  echo "ecom: could not read token expiry; renewing to be safe." >&2; renew || exit 1
+elif [ "$LEFT" -lt "$MARGIN" ]; then
+  renew || exit 1
+fi
+
+exec "$CLI" "$@"
