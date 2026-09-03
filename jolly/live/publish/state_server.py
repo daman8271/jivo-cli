@@ -23,9 +23,16 @@ class H(http.server.BaseHTTPRequestHandler):
         if length is not None: self.send_header("Content-Length", str(length))
         self.end_headers()
     def _path(self):
+        # state.json at the root, plus the Phase-4 plan files under plan/ and plan/days/.
+        # Still *.json only, no dotfiles, no empty segments, never outside ROOT.
         name = self.path.split("?", 1)[0].lstrip("/") or "state.json"
-        if "/" in name or not name.endswith(".json") or name.startswith("."): return None
-        p = os.path.join(ROOT, name)
+        parts = name.split("/")
+        if not name.endswith(".json") or any(seg == "" or seg.startswith(".") for seg in parts): return None
+        if len(parts) == 2 and parts[0] != "plan": return None
+        if len(parts) == 3 and (parts[0], parts[1]) != ("plan", "days"): return None
+        if len(parts) > 3: return None
+        p = os.path.normpath(os.path.join(ROOT, *parts))
+        if not p.startswith(ROOT + os.sep): return None
         return p if os.path.isfile(p) else None
     def do_OPTIONS(self): self._hdr(204, length=0)
     def do_HEAD(self):
@@ -35,7 +42,8 @@ class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.split("?",1)[0] in ("/healthz", "/"):
             body = json.dumps({"ok": True, "root": ROOT, "now": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                               "files": sorted(f for f in os.listdir(ROOT) if f.endswith(".json"))}).encode()
+                               "files": sorted(f for f in os.listdir(ROOT) if f.endswith(".json")),
+                               "plan_files": len([f for f in os.listdir(os.path.join(ROOT,"plan")) if f.endswith(".json")]) if os.path.isdir(os.path.join(ROOT,"plan")) else 0}).encode()
             self._hdr(200, length=len(body)); self.wfile.write(body); return
         p = self._path()
         if not p:
