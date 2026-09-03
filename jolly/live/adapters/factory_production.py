@@ -168,7 +168,11 @@ CAVEATS BAKED INTO THIS ADAPTER (each one already produced a wrong number here)
    so everything emitted is re-stamped IST.
 11. rated_speed is carried because the site wants it, but it is NOT a ceiling: measured August
    rates ran 17%-327% of it. RATED_SPEED_NOTE ships in data.notes every cycle.
-12. server_at is null on a normal 3-minute cycle and that is CORRECT — none of the four
+12. data.cli_path names the jivo-factory-pp-cli binary that actually answered. The Mac build
+   and the Linux build (<name>.linux) sit side by side in the repo; running the wrong one is
+   an OSError [Errno 8] Exec format error, so the binary is resolved per platform and the
+   answer is published rather than assumed.
+13. server_at is null on a normal 3-minute cycle and that is CORRECT — none of the four
    per-cycle endpoints stamps its response (their meta is only {"source": "live"}). Only the
    hourly stock call returns meta.fetched_at.
 """
@@ -177,6 +181,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -196,9 +201,26 @@ GOODS_RECEIPT_TRANSTYPE = 59
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]          # …/jivo-cli
 _JOLLY = Path(__file__).resolve().parents[2]              # …/jivo-cli/jolly
-CLI = os.environ.get(
+def _platform_cli(base: str) -> str:
+    """Prefer the Linux build of the CLI when we are actually on Linux.
+
+    The repo ships the MAC binary under its bare name and the Linux build beside
+    it as `<name>.linux`. On the VPS the bare name is a Mach-O, so exec() dies
+    with OSError [Errno 8] Exec format error — which took four adapters down in
+    one cycle on 2026-09-03 while the loop still reported itself alive. Applied
+    to whatever path resolution produced, an env override included, so pointing
+    the override at the base name keeps working on both boxes; naming the
+    `.linux` file directly is idempotent (there is no `.linux.linux`).
+    """
+    if platform.system() == "Linux":
+        linux = base + ".linux"
+        if os.path.isfile(linux) and os.access(linux, os.X_OK):
+            return linux
+    return base
+
+CLI = _platform_cli(os.environ.get(
     "JIVO_FACTORY_CLI", str(_REPO_ROOT / "factory-cli" / "jivo-factory-pp-cli")
-)
+))
 
 # engine/plan_units.pack_litres() is the ONLY sanctioned way to derive litres from a name.
 sys.path.insert(0, str(_JOLLY / "engine"))
@@ -808,6 +830,9 @@ def fetch(hourly: bool = False) -> dict:
 
     data["unavailable"] = unavailable
     data["notes"] = notes
+    # Which binary actually answered: the Mac and Linux builds sit side by side
+    # in the repo, and the wrong one is an Exec format error, not a bad number.
+    data["cli_path"] = CLI
     data["calls"] = list(calls)
 
     ok = all(c["ok"] for c in calls) and bool(calls)

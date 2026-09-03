@@ -123,6 +123,10 @@ lag_note                dict  invoice-date -> gate-out lag, MEASURED off the gat
                               measured_window, measured_on, method, caveat}
 warnings                list  plain-language cautions that travel with the numbers
 calls                   list  [{name, ok, ms, args, error}] — per-CLI-call health
+cli_path                str   the jivo-factory-pp-cli binary this cycle actually ran.
+                              The Mac build and the Linux build (<name>.linux) sit side
+                              by side in the repo; running the wrong one is an Exec
+                              format error, so state.json names the one that answered.
 ===============================================================================
 """
 
@@ -130,6 +134,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -175,10 +180,27 @@ LOADED_INSIDE_STATUSES = {
 }
 
 _REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
-_CLI = os.environ.get(
+def _platform_cli(base: str) -> str:
+    """Prefer the Linux build of the CLI when we are actually on Linux.
+
+    The repo ships the MAC binary under its bare name and the Linux build beside
+    it as `<name>.linux`. On the VPS the bare name is a Mach-O, so exec() dies
+    with OSError [Errno 8] Exec format error — which took four adapters down in
+    one cycle on 2026-09-03 while the loop still reported itself alive. Applied
+    to whatever path resolution produced, an env override included, so pointing
+    the override at the base name keeps working on both boxes; naming the
+    `.linux` file directly is idempotent (there is no `.linux.linux`).
+    """
+    if platform.system() == "Linux":
+        linux = base + ".linux"
+        if os.path.isfile(linux) and os.access(linux, os.X_OK):
+            return linux
+    return base
+
+_CLI = _platform_cli(os.environ.get(
     "JIVO_FACTORY_CLI",
     os.path.join(_REPO_ROOT, "factory-cli", "jivo-factory-pp-cli"),
-)
+))
 
 # Agent-safe defaults. --agent is NOT used: it implies --compact, which strips
 # the quantity fields. --data-source live --no-cache because `auto` silently
@@ -824,6 +846,10 @@ def fetch(heavy: bool = False) -> dict:
         "oil": {},
         "lag_note": dict(LAG_NOTE),
         "warnings": [],
+        # Which binary actually answered. Mac and Linux builds sit side by side
+        # in the repo and picking the wrong one is an Exec format error, not a
+        # wrong number — state.json should name the one that ran.
+        "cli_path": _CLI,
         "calls": [],
         "_server_stamps": [],
     }

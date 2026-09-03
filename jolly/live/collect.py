@@ -9,7 +9,10 @@ WHAT IT DOES
 
   1. Discovers every adapter under ``live/adapters/`` (``*.py``, no leading
      underscore). Nothing is hard-coded — drop a new module in and it joins the
-     cycle on the next run.
+     cycle on the next run. The one hard-coded thing is ``EXPECTED_ADAPTERS``:
+     a roster of the sources this loop is SUPPOSED to have, checked against
+     discovery so a deleted, renamed or unimportable adapter is published as a
+     FAILED source instead of quietly disappearing from a "5/5 ok" cycle.
   2. Decides this cycle's depth from ``live/state/.cadence.json``:
          cheap   every run
          heavy   every 30 min   -> fetch(heavy=True)   where fetch takes it
@@ -31,6 +34,13 @@ WHAT IT DOES
 
 THE RULES THIS FILE OBEYS (each one already bit this project)
 
+  * AN ADAPTER THAT VANISHES IS A FAILURE, NOT AN ABSENCE. Discovery is a
+    glob, so deleting or breaking `oms.py` used to leave a cycle reporting
+    "5/5 ok" with a whole source missing from state.json and nothing red
+    anywhere. Every name in EXPECTED_ADAPTERS that discovery did not produce
+    gets a `warnings` line AND a `sources[key]` entry with ok:false and
+    error "adapter file missing", so the site renders it as broken. The
+    exit code is unchanged: non-zero still means EVERY adapter failed.
   * A FAILED ADAPTER IS NEVER PAPERED OVER. state.json never substitutes
     last-good data for a failed source. `sources[key].ok` is false, the error
     is verbatim, and `last_good_at` tells a consumer that a stale file exists
@@ -134,6 +144,16 @@ QUIET = os.environ.get("MARK3_QUIET") == "1"
 RESERVED = {"collected_at", "completed_at", "cycle_seconds", "sources",
             "warnings", "cadence"}
 
+# The sources this loop is SUPPOSED to have. Discovery is a *.py glob: delete,
+# rename or break the import of an adapter and it simply stops existing — the
+# cycle then reports "5/5 ok" with a whole system missing and nothing to see.
+# Anything here that discovery did not produce is published as a FAILED source.
+# Adding a genuinely new adapter means adding its key here too; that is the
+# point, not an oversight. Not applied on a MARK3_ONLY / MARK3_SKIP run — there
+# the operator excluded it on purpose, and that run publishes nothing anyway.
+EXPECTED_ADAPTERS = ("ecom", "exim", "factory_dispatch", "factory_inbound",
+                     "factory_production", "oms")
+
 
 # --------------------------------------------------------------------------- io
 def _now() -> datetime:
@@ -163,6 +183,25 @@ def _read_json(path: str):
             return json.load(fh)
     except (OSError, ValueError):
         return None
+
+
+def _last_good(path: str, age_now: datetime) -> tuple:
+    """(fetched_at, age_s) of a <source>.last-good.json, or (None, None).
+
+    A stale file EXISTING is information the site is entitled to. Reading it is
+    never the same as serving it — that choice stays with the consumer.
+    """
+    lg = _read_json(path)
+    if not isinstance(lg, dict):
+        return None, None
+    lg_at = lg.get("fetched_at")
+    try:
+        d = datetime.fromisoformat(str(lg_at))
+        if d.tzinfo is None:
+            d = d.replace(tzinfo=IST)
+        return lg_at, max(0, int((age_now - d).total_seconds()))
+    except (TypeError, ValueError):
+        return lg_at, None
 
 
 def _log(msg: str) -> None:
@@ -336,6 +375,15 @@ def main() -> int:
     if not adapters:
         warnings.append("no adapters discovered — nothing to collect")
 
+    # An expected adapter that discovery did not produce (file deleted, renamed,
+    # or its import blew up) must show up as a FAILED source, not vanish. On a
+    # MARK3_ONLY / MARK3_SKIP run the exclusion is the operator's own doing, so
+    # the check is off — that run is diagnostic and publishes no state.json.
+    discovered = {ad["key"] for ad in adapters} | {ad["module"] for ad in adapters}
+    missing = [] if filtered else [k for k in EXPECTED_ADAPTERS if k not in discovered]
+    for key in missing:
+        warnings.append(f"adapter {key} not found on disk")
+
     flags, cad = cadence(now)
     _log(f"cycle {cad['run']} @ {_iso(now)}  heavy={flags['heavy']} hourly={flags['hourly']}  "
          f"adapters={len(adapters)} workers={MAX_WORKERS}")
@@ -402,17 +450,7 @@ def main() -> int:
 
         # A stale file EXISTS — say so, and say how stale. Never serve it in
         # place of the live number; that decision belongs to the consumer.
-        lg_at, lg_age = None, None
-        lg = _read_json(lg_path)
-        if isinstance(lg, dict):
-            lg_at = lg.get("fetched_at")
-            try:
-                d = datetime.fromisoformat(str(lg_at))
-                if d.tzinfo is None:
-                    d = d.replace(tzinfo=IST)
-                lg_age = max(0, int((age_now - d).total_seconds()))
-            except (TypeError, ValueError):
-                lg_age = None
+        lg_at, lg_age = _last_good(lg_path, age_now)
 
         state["sources"][key] = {
             "ok": env["ok"],
@@ -441,6 +479,27 @@ def main() -> int:
              f"{(row['seconds'] if row['seconds'] is not None else -1):>6.2f}s"
              f"  server_at={env['server_at'] or '-'}{tail}")
 
+    # The expected-but-absent ones. Written AFTER the loop so a real adapter is
+    # never overwritten by a stub, and with the same key shape so the site does
+    # not need a second code path — it just sees ok:false like any other break.
+    for key in missing:
+        if key in state["sources"]:
+            continue
+        lg_at, lg_age = _last_good(os.path.join(STATE_DIR, f"{key}.last-good.json"), age_now)
+        state["sources"][key] = {
+            "ok": False,
+            "fetched_at": _iso(now),
+            "server_at": None,
+            "error": "adapter file missing",
+            "seconds": None,
+            "cadence": "cheap",
+            "has_data": False,
+            "last_good_at": lg_at,
+            "last_good_age_s": lg_age,
+        }
+        _log(f"  FAIL {key:<20} {'missing':<13} {-1:>6.2f}s  server_at=-  "
+             f"adapter file missing")
+
     state["cycle_seconds"] = round(time.monotonic() - started, 2)
     # collected_at is the top of the cycle — the conservative end of the window,
     # so "as of" never claims to be newer than the oldest number in the file.
@@ -464,8 +523,9 @@ def main() -> int:
         _write_atomic(CADENCE_FILE, cad)
 
     dest = "(diagnostic — state.json untouched)" if (filtered or not adapters) else STATE_FILE
+    gone = f", {len(missing)} MISSING ({', '.join(missing)})" if missing else ""
     _log(f"cycle {cad['run']} done in {state['cycle_seconds']}s — "
-         f"{ok_count}/{len(adapters)} ok -> {dest}")
+         f"{ok_count}/{len(adapters)} ok{gone} -> {dest}")
 
     # Non-zero ONLY when every adapter failed. A partial cycle is a normal one.
     # The one addition: a FULL cycle that discovered nothing is a broken install,

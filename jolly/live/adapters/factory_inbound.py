@@ -167,6 +167,10 @@ posting_backlog_all_time    dict  — HEAVY ONLY. grpo summary. Every count in i
 heavy                       bool  — whether the heavy calls ran this cycle.
 calls                       list  — [{name, ok, seconds, error}] one per CLI invocation.
 notes                       dict  — short caveat strings for the UI, no numbers in them.
+cli_path                    str   — the jivo-factory-pp-cli binary this cycle actually ran.
+                                    The Mac build and the Linux build (<name>.linux) sit
+                                    side by side in the repo; the wrong one is an Exec
+                                    format error, not a wrong number.
 
 server_at is always None: this API returns no clock of its own.
 """
@@ -175,6 +179,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import subprocess
 import sys
 import time as _time
@@ -188,8 +193,25 @@ COMPANY = "JIVO_OIL"
 _REPO = os.path.dirname(os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__)))))          # …/jivo-cli
 CLI_CWD = os.path.join(_REPO, "factory-cli")
-CLI = os.environ.get("JIVO_FACTORY_CLI",
-                     os.path.join(CLI_CWD, "jivo-factory-pp-cli"))
+def _platform_cli(base: str) -> str:
+    """Prefer the Linux build of the CLI when we are actually on Linux.
+
+    The repo ships the MAC binary under its bare name and the Linux build beside
+    it as `<name>.linux`. On the VPS the bare name is a Mach-O, so exec() dies
+    with OSError [Errno 8] Exec format error — which took four adapters down in
+    one cycle on 2026-09-03 while the loop still reported itself alive. Applied
+    to whatever path resolution produced, an env override included, so pointing
+    the override at the base name keeps working on both boxes; naming the
+    `.linux` file directly is idempotent (there is no `.linux.linux`).
+    """
+    if platform.system() == "Linux":
+        linux = base + ".linux"
+        if os.path.isfile(linux) and os.access(linux, os.X_OK):
+            return linux
+    return base
+
+CLI = _platform_cli(os.environ.get("JIVO_FACTORY_CLI",
+                                   os.path.join(CLI_CWD, "jivo-factory-pp-cli")))
 
 IST = timezone(timedelta(hours=5, minutes=30))
 
@@ -218,6 +240,14 @@ NOTES = {
     "gate_company": "The gate arrivals endpoint ignores the company flag; rows are "
                     "filtered here on each gate-in's own company code. Most open "
                     "arrivals are outbound dispatch trucks, not inbound material.",
+    "qc_counts_scope": "qc_counts is an ALL-TIME, COMPANY-WIDE QC scoreboard — every "
+                       "inspection ever raised, not today's and not this cycle's. "
+                       "completed 1,452 / rejected 51 (2026-09-03) are cumulative "
+                       "totals since the system went in; they do not move much between "
+                       "cycles and must never be charted as a daily or monthly figure, "
+                       "or set beside the inbound numbers above, which ARE current. "
+                       "Only not_started / draft / awaiting_chemist / awaiting_qam / "
+                       "hold / actionable describe the queue right now.",
     "qc_rejects": "The QC rejection count is a clerical field, not a quality signal.",
     "summary_units": "The backlog's accepted/rejected quantities add pieces and tonnes "
                      "together on the server. They are carried verbatim; no ratio or "
@@ -476,6 +506,9 @@ def fetch(heavy=False):
         "board": {"year": now_ist.year, "month": now_ist.month},
         "heavy": bool(heavy),
         "notes": NOTES,
+        # Which binary actually answered: the Mac and Linux builds sit side by
+        # side in the repo, and the wrong one is an Exec format error.
+        "cli_path": CLI,
     }
 
     def run(name, args):

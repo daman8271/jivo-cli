@@ -113,8 +113,19 @@ data.open_by_status : {status_code: {...}} — EVERY status bucket over EVERY pe
     bucket ages. Set OMS_REFRESH_OPEN=N to re-poll the N stalest non-terminal orders per
     cycle (costs N extra live calls); `oldest_seen_at` is the honest badge either way.
 
-data.open_total : {count, litres L, litres_by_category {cat: L}, amount_inr INR}
-    — non-terminal buckets only
+data.open_total : {count, litres L, litres_by_category {cat: L}, amount_inr INR,
+                   amount_inr_ex_outliers INR, litres_ex_outliers L, rs_per_l INR/L,
+                   rs_per_l_ex_outliers INR/L, headline_note str}
+    — non-terminal buckets only.
+    `amount_inr` and `litres` are RAW: exactly what OMS holds, never corrected. The
+    `*_ex_outliers` pair is the same total with every price_outliers line on a
+    NON-TERMINAL order deducted, published BESIDE the raw one so a Rs/L headline is not
+    built on a bad rate. Live 2026-09-03: Rs 74,55,619 / 16,710 L = Rs 446/L raw, of
+    which Rs 48,35,715 is three orders (3117/3118/3119) pricing FG0000030 MUSTARD KACHI
+    GHANI 1 LTR at Rs 3,223.81/L against Rs 160/L for the same SKU on order 3106 —
+    Rs 26,19,904 / 15,210 L = Rs 172/L once they are out. `headline_note` says in words
+    how many orders and lines came out and why. Flags on TERMINAL orders are never
+    deducted: open_total never counted them. `rs_per_l` is null when litres is 0.
 
 data.stale : bool — true when NO live call was possible this cycle (binary or config
     gone) and every figure below is the persisted book from an earlier cycle. The keys
@@ -196,6 +207,9 @@ data.counts          : {orders_stored, orders_new, probes_this_cycle}
 data.calls           : [{cmd, ok, seconds, code, source}] — every live call this cycle
     made. `source` is the CLI's own provenance stamp; anything but "live" means the
     payload was DISCARDED, never published.
+data.cli_path        : str  — the oms-pp-cli binary this cycle actually ran. The Mac
+    build and the Linux build (oms-pp-cli.linux) sit side by side in oms-cli/; running
+    the wrong one is an OSError [Errno 8] Exec format error, not a wrong number.
 data.note            : str  — the standing caveats, carried to the site
 
 STATE FILES (live/state/)
@@ -221,6 +235,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import re
 import subprocess
 import time
@@ -234,7 +249,25 @@ _HERE = Path(__file__).resolve()
 REPO_ROOT = _HERE.parents[3]
 STATE_DIR = _HERE.parents[1] / "state"
 
-BIN = Path(os.environ.get("OMS_BIN") or (REPO_ROOT / "oms-cli" / "oms-pp-cli"))
+def _platform_cli(base: str) -> str:
+    """Prefer the Linux build of the CLI when we are actually on Linux.
+
+    The repo ships the MAC binary under its bare name and the Linux build beside
+    it as `<name>.linux`. On the VPS the bare name is a Mach-O, so exec() dies
+    with OSError [Errno 8] Exec format error — which took four adapters down in
+    one cycle on 2026-09-03 while the loop still reported itself alive. Applied
+    to whatever path resolution produced, an env override included, so pointing
+    the override at the base name keeps working on both boxes; naming the
+    `.linux` file directly is idempotent (there is no `.linux.linux`).
+    """
+    if platform.system() == "Linux":
+        linux = base + ".linux"
+        if os.path.isfile(linux) and os.access(linux, os.X_OK):
+            return linux
+    return base
+
+BIN = Path(_platform_cli(
+    str(os.environ.get("OMS_BIN") or (REPO_ROOT / "oms-cli" / "oms-pp-cli"))))
 CONFIG = Path(
     os.environ.get("OMS_CONFIG")
     or (Path.home() / ".config" / "oms-pp-cli" / "oms-daman.toml")
@@ -869,6 +902,113 @@ def _by_status(store: dict) -> tuple:
     return buckets, open_total
 
 
+def _inr(value: float) -> str:
+    """Indian grouping for the plain-language note (12,34,567 — not 1,234,567)."""
+    try:
+        whole = int(round(float(value)))
+    except (TypeError, ValueError):
+        return str(value)
+    sign, digits = ("-" if whole < 0 else ""), str(abs(whole))
+    if len(digits) <= 3:
+        return sign + digits
+    head, tail = digits[:-3], digits[-3:]
+    parts = []
+    while len(head) > 2:
+        parts.insert(0, head[-2:])
+        head = head[:-2]
+    if head:
+        parts.insert(0, head)
+    return sign + ",".join(parts + [tail])
+
+
+def _rate_per_l(amount, litres):
+    """INR/L, or None when there are no litres — never a ZeroDivisionError, never 0.0."""
+    if not isinstance(amount, (int, float)) or not isinstance(litres, (int, float)):
+        return None
+    if litres <= 0:
+        return None
+    return round(float(amount) / float(litres), 2)
+
+
+def _headline_ex_outliers(open_total: dict, outliers: list) -> dict:
+    """Add an ex-outlier headline BESIDE the raw one. Nothing is dropped or corrected.
+
+    `amount_inr` IS what OMS holds and it stays exactly as it is. But on 2026-09-03 the
+    open book read Rs 74,55,619 over 16,710 L — Rs 446/L — and Rs 48,35,715 of that was
+    three orders (3117/3118/3119) pricing FG0000030 MUSTARD KACHI GHANI 1 LTR at
+    Rs 3,223.81/L, where order 3106 prices the same SKU at Rs 160/L. Ex those lines the
+    same book runs Rs 172/L. Both figures are published; the site picks, out loud.
+
+    Only flags on NON-TERMINAL orders are deducted, because open_total only ever counted
+    non-terminal buckets — deducting a REJECTED order's line (3120, same SKU, same rate)
+    would push the headline BELOW the truth. The deduction is line-level and comes from
+    the SAME published price_outliers list, so a consumer can reconcile it by hand.
+    """
+    raw_amount = open_total.get("amount_inr") or 0.0
+    raw_litres = open_total.get("litres") or 0.0
+
+    cut_amount, cut_litres, cut_lines = 0.0, 0.0, 0
+    cut_orders, skipped_terminal = [], 0
+    for flag in outliers or []:
+        if (flag.get("status_code") or "UNKNOWN") in TERMINAL_STATUSES:
+            skipped_terminal += 1
+            continue
+        total, litres = flag.get("total_inr"), flag.get("ltrs")
+        if isinstance(total, (int, float)):
+            cut_amount += float(total)
+        if isinstance(litres, (int, float)):
+            cut_litres += float(litres)
+        cut_lines += 1
+        if flag.get("order_id") not in cut_orders:
+            cut_orders.append(flag.get("order_id"))
+
+    open_total["amount_inr_ex_outliers"] = round(raw_amount - cut_amount, 2)
+    open_total["litres_ex_outliers"] = round(raw_litres - cut_litres, 2)
+    open_total["rs_per_l"] = _rate_per_l(raw_amount, raw_litres)
+    open_total["rs_per_l_ex_outliers"] = _rate_per_l(
+        open_total["amount_inr_ex_outliers"], open_total["litres_ex_outliers"])
+
+    if cut_lines:
+        note = (
+            f"amount_inr / litres are RAW — Rs {_inr(raw_amount)} over "
+            f"{_inr(raw_litres)} L, exactly what OMS holds, nothing corrected. "
+            f"amount_inr_ex_outliers takes out {cut_lines} line"
+            f"{'' if cut_lines == 1 else 's'} on {len(cut_orders)} open order"
+            f"{'' if len(cut_orders) == 1 else 's'} "
+            f"({', '.join(str(o) for o in cut_orders)}) — Rs {_inr(cut_amount)} over "
+            f"{_inr(cut_litres)} L — because their implied price falls outside the "
+            f"Rs {PRICE_MIN_PER_L}-{PRICE_MAX_PER_L}/L sanity band and would otherwise "
+            f"set the headline rate on its own. Every one of those lines is still listed "
+            f"in price_outliers, with the order number, the SKU and the rate. "
+            f"Rs/L: {open_total['rs_per_l']} raw vs "
+            f"{open_total['rs_per_l_ex_outliers']} ex-outliers."
+        )
+        if skipped_terminal:
+            note += (
+                f" {skipped_terminal} further flagged line"
+                f"{'' if skipped_terminal == 1 else 's'} "
+                f"{'sits' if skipped_terminal == 1 else 'sit'} on a TERMINAL order and "
+                f"{'was' if skipped_terminal == 1 else 'were'} NOT deducted — "
+                f"open_total never counted "
+                f"{'it' if skipped_terminal == 1 else 'them'}."
+            )
+    else:
+        note = (
+            f"No line in the open book prices outside the Rs {PRICE_MIN_PER_L}-"
+            f"{PRICE_MAX_PER_L}/L sanity band, so the ex-outlier figures are identical to "
+            f"the raw ones. amount_inr / litres are RAW either way."
+        )
+        if skipped_terminal:
+            note += (
+                f" {skipped_terminal} flagged line"
+                f"{'' if skipped_terminal == 1 else 's'} "
+                f"{'sits' if skipped_terminal == 1 else 'sit'} on a TERMINAL order, "
+                f"outside open_total already."
+            )
+    open_total["headline_note"] = note
+    return open_total
+
+
 def _shape_invoice_logs(rows: list) -> tuple:
     """-> (so_to_invoice_map, invoice_logs summary). Drops invoice_payload (heavy)."""
     mapping = []
@@ -1003,6 +1143,8 @@ def fetch() -> dict:
         by_status, totals = _by_status(store)
         recent = sorted(store.values(), key=lambda r: (r.get("id") or 0),
                         reverse=True)[:RECENT_N]
+        outliers = _price_outliers(recent)
+        _headline_ex_outliers(totals, outliers)
         return {
             "source": SOURCE, "fetched_at": seen_at, "server_at": None, "ok": False,
             "error": error,
@@ -1015,14 +1157,14 @@ def fetch() -> dict:
                 "open_by_status": by_status, "open_total": totals,
                 "company_scope": _company_scope(store),
                 "dashboards": _dashboards(None, None),
-                "price_outliers": _price_outliers(recent),
+                "price_outliers": outliers,
                 "statuses": meta.get("statuses"),
                 "statuses_fetched_at": meta.get("statuses_fetched_at"),
                 "heavy_refresh": False, "heavy_fetched_at": meta.get("heavy_fetched_at"),
                 "heavy_ok_at": meta.get("heavy_ok_at"),
                 "counts": {"orders_stored": len(store), "orders_new": 0,
                            "probes_this_cycle": 0, "orders_refreshed": 0},
-                "calls": [], "note": NOTE,
+                "calls": [], "cli_path": str(BIN), "note": NOTE,
             },
         }
 
@@ -1096,6 +1238,10 @@ def fetch() -> dict:
     # 6) shape the answer
     open_by_status, open_total = _by_status(store)
     recent = sorted(store.values(), key=lambda r: (r.get("id") or 0), reverse=True)[:RECENT_N]
+    # The RAW headline stays; the ex-outlier one is added beside it. See
+    # _headline_ex_outliers — three orders at Rs 3,224/L were setting the whole rate.
+    price_outliers = _price_outliers(recent)
+    _headline_ex_outliers(open_total, price_outliers)
 
     # The newest SERVER-SIDE event stamp anything read this cycle carried, in IST. Never
     # our own clock — OMS's dashboards carry no stamp of their own, and dating them from
@@ -1122,7 +1268,7 @@ def fetch() -> dict:
         "open_total": open_total,
         "company_scope": _company_scope(store),
         "dashboards": _dashboards(dash_orders.get("payload"), dash_summary.get("payload")),
-        "price_outliers": _price_outliers(recent),
+        "price_outliers": price_outliers,
         "statuses": meta.get("statuses"),
         "statuses_fetched_at": meta.get("statuses_fetched_at"),
         "heavy_refresh": bool(heavy_due),
@@ -1135,6 +1281,9 @@ def fetch() -> dict:
             "orders_refreshed": len(refreshed),
         },
         "calls": list(_CALLS),
+        # Which binary actually answered: the Mac and Linux builds sit side by
+        # side in oms-cli/, and the wrong one is an Exec format error.
+        "cli_path": str(BIN),
         "note": NOTE,
     }
     if so_map is not None:

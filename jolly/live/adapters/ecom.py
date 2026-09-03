@@ -1,8 +1,10 @@
 """ecom.jivo.in — the open e-commerce purchase-order book, live.
 
 Feeds Mark 3's demand side for the q-commerce + marketplace channel. Everything
-here comes out of the `ecom` wrapper (~/.local/bin/ecom -> jivo-ecom-pp-cli),
-which owns auth and renews its own 1-hour token. No SAP is touched, ever.
+here comes out of the `ecom` wrapper (-> jivo-ecom-pp-cli), which owns auth and
+renews its own 1-hour token. No SAP is touched, ever. The wrapper is resolved at
+call time, NOT assumed to be at the Mac's ~/.local/bin/ecom — see _cli_path(),
+and read the answer back off data.cli_path.
 
 Run standalone:      cd jolly && python3 -m live.adapters.ecom
 
@@ -30,6 +32,11 @@ EVERY KEY IN data, WITH ITS UNIT
     heavy_from_cache         bool   True = the big pull was skipped this cycle
     heavy_fetched_at         str    ISO+05:30 when the heavy pull actually ran
     heavy_age_s              s      how old those figures are, in seconds
+    cli_path                 str    the `ecom` wrapper this cycle actually ran.
+                                    Published because it differs per box (Mac
+                                    ~/.local/bin, VPS /usr/local/bin, in-repo
+                                    ecom-cli/ecom) and "which binary answered"
+                                    is the first question a wrong number raises.
 
     -- open PO book, rolled up to factory FG codes -------------------------
     open_po_litres_by_fg     {FG code: L}  q-commerce OPEN + Amazon-September,
@@ -115,6 +122,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from collections import defaultdict
@@ -158,12 +166,45 @@ class EcomError(RuntimeError):
 # the one call helper
 # --------------------------------------------------------------------------
 
+# repo root: live/adapters/ecom.py -> adapters -> live -> jolly -> <repo>
+REPO_ROOT = Path(__file__).resolve().parents[3]
+
+
 def _cli_path() -> str:
-    override = os.environ.get("JIVO_ECOM_WRAPPER")
-    if override:
-        return override
+    """Find the `ecom` wrapper. Resolved per box, never assumed.
+
+    This used to be Path.home()/".local"/"bin"/"ecom" with a bare "ecom"
+    fallback — a MAC path. On the VPS the checkout is /root/jivo-courier, the
+    wrapper is installed at /usr/local/bin/ecom, and the home directory has no
+    .local/bin at all, so the loop fell through to the bare name and depended on
+    cron's PATH. Order now, first hit wins:
+
+        1. $ECOM_WRAPPER            (and $JIVO_ECOM_WRAPPER, the older name,
+                                     still honoured so existing boxes keep working)
+        2. <repo>/ecom-cli/ecom     ships in-repo, so a fresh clone just works
+        3. shutil.which("ecom")     whatever the box installed on PATH
+        4. ~/.local/bin/ecom        the Mac's own install
+
+    Falls back to the bare name so the failure is still the familiar
+    "ecom CLI not found at ecom" rather than something new.
+    """
+    for name in ("ECOM_WRAPPER", "JIVO_ECOM_WRAPPER"):
+        override = os.environ.get(name)
+        if override:
+            return override
+
+    in_repo = REPO_ROOT / "ecom-cli" / "ecom"
+    # exists() is not enough: a checkout can land without the executable bit,
+    # and running it would fail with a Permission denied that reads like auth.
+    if in_repo.is_file() and os.access(in_repo, os.X_OK):
+        return str(in_repo)
+
+    on_path = shutil.which("ecom")
+    if on_path:
+        return on_path
+
     wrapper = Path.home() / ".local" / "bin" / "ecom"
-    if wrapper.exists():
+    if wrapper.is_file():
         return str(wrapper)
     return "ecom"
 
@@ -973,6 +1014,9 @@ def fetch() -> dict:
     data["heavy_from_cache"] = from_cache
     data["heavy_fetched_at"] = heavy_fetched_at
     data["heavy_age_s"] = round(_age_s(heavy_fetched_at), 1) if heavy_fetched_at else None
+    # Which wrapper actually answered. Differs per box; state.json should say so
+    # rather than leaving "why is the VPS empty" to guesswork.
+    data["cli_path"] = _cli_path()
     warnings = list(data.get("warnings") or [])
     if from_cache:
         warnings.append("heavy pull skipped this cycle; figures are from %s"
