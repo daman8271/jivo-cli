@@ -36,6 +36,7 @@ esac
 # this wrapper rather than calling the binary directly — the BLOCK guard above
 # is the read-only defence, and it only exists here.
 BIN="$ROOT/cli/exim-pp-cli/exim-pp-cli"
+[ "$(uname -s)" = Linux ] && [ -x "$BIN.linux" ] && BIN="$BIN.linux"
 [ -x "$BIN" ] || BIN="$BIN.exe"
 case "$(uname -s 2>/dev/null)" in
   MINGW*|MSYS*|CYGWIN*|Windows_NT) BIN="$ROOT/cli/exim-pp-cli/exim-pp-cli.exe" ;;
