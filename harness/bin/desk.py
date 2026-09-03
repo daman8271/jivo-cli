@@ -107,7 +107,11 @@ def drafts_only_note(identity: list[str]) -> str | None:
     return None
 
 
-POLICY_BANNER = """## THIS DESK IS DRAFTS ONLY — you never press Add
+# ASCII ONLY, deliberately. A Windows console is cp1252: one arrow or em dash
+# raises UnicodeEncodeError inside print(), main()'s catch-all swallows it, and
+# the banner silently does not reach the session — which is the whole point of
+# the banner. Caught live on PC-AUDIT-05, 2026-09-03.
+POLICY_BANNER = """## THIS DESK IS DRAFTS ONLY - you never press Add
 
 {note}
 
@@ -118,17 +122,23 @@ Build the draft, attach the bill, tell the operator the draft number, and STOP.
 - Do NOT reach for `post`, `patch`, curl, another checkout or another login to
   get the same effect. There is no flag and no second route.
 - Submitting a draft for approval, and posting an approved one, are this
-  operator's own clicks in the SAP B1 client: Document Drafts → open it → Add.
-- CLAUDE.md's "a bill is not done at the draft — send it to the approver" rule
+  operator's own clicks in the SAP B1 client: Document Drafts -> open it -> Add.
+- CLAUDE.md's "a bill is not done at the draft - send it to the approver" rule
   does NOT apply on this desk. Here the bill is done when the draft exists and
   the operator has been told its number."""
+
+
+def _say(text: str) -> None:
+    """print() that cannot die on a cp1252 console — see POLICY_BANNER."""
+    enc = (sys.stdout.encoding or "utf-8")
+    sys.stdout.write(text.encode(enc, "replace").decode(enc, "replace") + "\n")
 
 
 def cmd_policy(args: argparse.Namespace) -> int:
     note = drafts_only_note(_identity())
     if not note:
         return 0
-    print(POLICY_BANNER.format(note=note))
+    _say(POLICY_BANNER.format(note=note))
     return 0
 
 
@@ -212,7 +222,7 @@ def cmd_show(args: argparse.Namespace) -> int:
     paths, notes = _excluded_paths(identity)
     print("identity:", ", ".join(identity))
     note = drafts_only_note(identity)
-    print("drafts-only:", f"YES — {note}" if note else "no (this desk may press Add)")
+    _say("drafts-only: " + (f"YES - {note}" if note else "no (this desk may press Add)"))
     if not paths:
         print("no exclusions — this box carries every skill on main")
         return 0

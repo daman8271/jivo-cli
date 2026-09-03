@@ -159,3 +159,18 @@ def test_drafts_only_desks_do_not_carry_the_submit_skill():
         for who in rule["who"]:
             assert who.lower() in hidden_from, (
                 f"{who} is drafts-only but still carries jivo-add-and-new")
+
+
+def test_drafts_only_banner_is_pure_ascii():
+    """A Windows console is cp1252. One arrow in this banner raises
+    UnicodeEncodeError inside print(), desk.py's catch-all swallows it, and the
+    session is never told the desk is drafts-only — silently. Live on
+    PC-AUDIT-05, 2026-09-03."""
+    import importlib.util as _u
+    spec = _u.spec_from_file_location("desk", HARNESS / "bin" / "desk.py")
+    desk = _u.module_from_spec(spec)
+    spec.loader.exec_module(desk)
+    banner = desk.POLICY_BANNER.format(note="x")
+    bad = sorted({c for c in banner if ord(c) > 127})
+    assert not bad, f"banner must be ASCII for cp1252 consoles; found {bad}"
+    banner.encode("cp1252")
