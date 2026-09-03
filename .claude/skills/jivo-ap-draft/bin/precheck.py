@@ -173,13 +173,35 @@ def main():
         if bp["Frozen"] == "tYES" or bp["Valid"] != "tYES":
             problems.append("vendor card is frozen/invalid")
 
-    branches = q("BusinessPlaces", None, "BPLID,BPLName,FederalTaxID,Disabled")
+    # BusinessPlaces is the branch list, and not every login may read it: USER08
+    # (Divjot) gets "[SAP -3000] The logged-on user does not have permission to
+    # use this object" and, until 2026-09-03, that ended the pre-check with no
+    # bill made. It should not: the branch this invoice belongs to is stamped on
+    # the GRPO (BPL_IDAssignedToInvoice), which the same login CAN read, and the
+    # GRPO's branch is the one that wins anyway. So a denied list degrades to
+    # "no cross-check", never to "no bill" — and never to a guess.
+    try:
+        branches = q("BusinessPlaces", None, "BPLID,BPLName,FederalTaxID,Disabled")
+        branches_readable = True
+    except RuntimeError as e:
+        branches, branches_readable = [], False
+        warnings.append(
+            f"this login cannot read the branch list ({e}) — the branch will be taken "
+            "off the GRPO, which is the branch that decides anyway. Nothing is guessed: "
+            "if there is no GRPO to read it from, the pre-check stops. Ask an admin for "
+            "read rights on Business Places to get the GSTIN cross-check back.")
     by_id = {b["BPLID"]: b for b in branches}
     bpl, bpl_matches = None, []
     if a.bpl:
         bpl = by_id.get(a.bpl)
-        if not bpl:
+        if not bpl and not branches_readable:
+            # The operator named the branch; it just cannot be validated here.
+            bpl = {"BPLID": a.bpl, "BPLName": "(name unavailable: no rights on the branch list)", "FederalTaxID": None}
+            warnings.append(f"branch {a.bpl} taken as given — this login cannot read Business Places to confirm it exists or carries the invoice GSTIN")
+        elif not bpl:
             problems.append(f"branch {a.bpl} does not exist")
+    elif a.gstin and not branches_readable:
+        warnings.append(f"cannot match GSTIN {a.gstin} to a branch without the branch list — the GRPO's branch will be used and the GSTIN not cross-checked")
     elif a.gstin:
         bpl_matches = [b for b in branches if (b.get("FederalTaxID") or "").upper() == a.gstin.upper() and b.get("Disabled") != "tYES"]
         if not bpl_matches:
@@ -274,6 +296,10 @@ def main():
         if bp and grpo["CardCode"] != bp["CardCode"]:
             problems.append(f"GRPO belongs to {grpo['CardCode']}, not {bp['CardCode']}")
         g_bpl = by_id.get(grpo["BPL_IDAssignedToInvoice"])
+        if not g_bpl and not branches_readable and grpo.get("BPL_IDAssignedToInvoice") is not None:
+            g_bpl = {"BPLID": grpo["BPL_IDAssignedToInvoice"],
+                     "BPLName": "(name unavailable: no rights on the branch list)",
+                     "FederalTaxID": None}
         if bpl and g_bpl and g_bpl["BPLID"] != bpl["BPLID"]:
             problems.append(f"GRPO branch {g_bpl['BPLID']} {g_bpl['BPLName']} ≠ invoice branch {bpl['BPLID']} {bpl['BPLName']}")
         if not bpl and g_bpl:
@@ -304,6 +330,8 @@ def main():
             warnings.append(f"could not scan the vendor's open drafts by GRPO ({e})")
     elif not bpl and len(bpl_matches) > 1:
         problems.append("GSTIN matches several branches and there is no GRPO to decide — pass --bpl")
+    elif not bpl and not branches_readable:
+        problems.append("no branch: this login cannot read the branch list and there is no GRPO to take it from — pass --bpl <id>, or ask an admin for read rights on Business Places")
 
     # 4. template: last posted invoices for this vendor
     print("\n[4] how JIVO booked this vendor before (last 3 posted A/P invoices)")
