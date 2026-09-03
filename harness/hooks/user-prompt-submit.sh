@@ -37,6 +37,16 @@ printf '%s' "$_in" | "$PY" "$HARNESS_DIR/bin/harness.py" ask >/dev/null 2>&1 || 
 # invoke first (stdout of this hook is added to the turn's context). It prints
 # nothing for an ordinary question, so those still cost zero tokens.
 if [ -f "$HARNESS_DIR/bin/skill_router.py" ]; then
-  printf '%s' "$_in" | "$PY" "$HARNESS_DIR/bin/skill_router.py" match 2>/dev/null || true
+  _nudge="$(printf '%s' "$_in" | "$PY" "$HARNESS_DIR/bin/skill_router.py" match 2>/dev/null || true)"
+  if [ -n "$_nudge" ]; then
+    printf '%s\n' "$_nudge"
+    # On a drafts-only desk the entry nudge must never be the last word — the
+    # session has just been told to enter a document, and this is the sentence
+    # that says where entering STOPS. One line; the full banner is at session
+    # start and the binary refuses regardless.
+    if [ -f "$HARNESS_DIR/bin/desk.py" ] && "$PY" "$HARNESS_DIR/bin/desk.py" policy 2>/dev/null | head -1 | grep -q "DRAFTS ONLY"; then
+      printf '%s\n' "[jivo desk] DRAFTS ONLY desk: build the draft, say its number, STOP. Never \`sapb1 add-draft\`, never post - the operator presses Add herself in SAP B1."
+    fi
+  fi
 fi
 exit 0

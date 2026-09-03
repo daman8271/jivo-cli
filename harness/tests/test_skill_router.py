@@ -109,3 +109,53 @@ def test_reads_hook_json(monkeypatch, capsys):
     monkeypatch.setattr(sys, "stdin", type("S", (), {"isatty": lambda self: False, "read": lambda self: json.dumps({"prompt": "rent invoice"})})())
     assert sr.main(["skill_router.py", "match"]) == 0
     assert "jivo-rent-invoice" in capsys.readouterr().out
+
+
+# --- drafts-only desks: the submit skill is hidden, so it is never named ------
+# Mahak's GRPO desk builds drafts and she presses Add herself (Daman 2026-09-03).
+# desks.json hides .claude/skills/jivo-add-and-new there, and both the table and
+# the per-prompt nudge must fall silent about it — pointing at a bolted door is
+# how an operator ends up asking why "the AI keeps saying it sent it".
+
+def test_always_after_is_never_named_when_the_skill_is_hidden(tmp_path):
+    empty = tmp_path / "skills"          # a desk carrying no skill folders at all
+    empty.mkdir()
+    routes = [dict(CFG["routes"][0])]    # a real A/P route, so the nudge fires
+    nudge = sr.match_text("yeh bill enter karo", CFG, routes)
+    assert nudge, "the entry nudge itself must still fire"
+    real = sr.SKILLS
+    try:
+        sr.SKILLS = empty
+        hidden = sr.match_text("yeh bill enter karo", CFG, routes)
+        table = sr.table_text(CFG, routes)
+    finally:
+        sr.SKILLS = real
+    assert CFG["always_after"]["skill"] not in hidden, (
+        "a desk that does not carry the submit skill must never be told to run it")
+    assert CFG["always_after"]["skill"] not in table
+
+
+def test_desks_json_drafts_only_matches_mahaks_box():
+    import importlib.util as _u
+    spec = _u.spec_from_file_location("desk", HARNESS / "bin" / "desk.py")
+    desk = _u.module_from_spec(spec)
+    spec.loader.exec_module(desk)
+    assert desk.drafts_only_note(["PC-AUDIT-05"]), "Mahak's box must be drafts-only"
+    assert desk.drafts_only_note(["mahak"]), "the operator slug must match too"
+    assert not desk.drafts_only_note(["HO-IT-PC1"]), "other desks keep add-draft"
+
+
+def test_drafts_only_desks_do_not_carry_the_submit_skill():
+    """The two halves of the lock must name the same boxes, or a desk gets the
+    'send it to Bhawani' skill while its binary refuses to send."""
+    cfg = json.loads((HARNESS / "desks.json").read_text(encoding="utf-8"))
+    submit_sets = [name for name, paths in cfg["skill_sets"].items()
+                   if any("jivo-add-and-new" in p for p in paths)]
+    assert submit_sets, "no skill set hides jivo-add-and-new"
+    hidden_from = {w.lower() for rule in cfg["exclude"]
+                   if set(rule.get("sets", [])) & set(submit_sets)
+                   for w in rule["who"]}
+    for rule in cfg.get("drafts_only", []):
+        for who in rule["who"]:
+            assert who.lower() in hidden_from, (
+                f"{who} is drafts-only but still carries jivo-add-and-new")

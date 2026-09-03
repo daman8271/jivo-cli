@@ -90,6 +90,17 @@ create documents for a living. Daman authorised this on 2026-08-22.
   SAP B1 client (that route does consult the template). Getting a login added is
   an admin's ten minutes in Approval Templates → Originators, never a flag here.
 
+  **The one exception — a DRAFTS-ONLY desk, where this whole rule is OFF.**
+  `harness/desks.json` → `drafts_only` names the boxes whose operator submits and
+  posts the documents herself. On those, entering a bill FINISHES at the draft:
+  build it, attach the scan, tell her the draft number, stop. `sapb1 add-draft`
+  refuses there before it reads anything (exit 9), the SessionStart hook says so
+  in your context, and `jivo-add-and-new` is not even on the box. Do not go
+  looking for another route — `post` refuses documents, and a second login or a
+  second checkout to get around a desk policy is not a workaround, it is the
+  thing the policy exists to stop. **Mahak's GRPO desk (PC-AUDIT-05) is the first
+  — Daman 2026-09-03: "only make drafts, only she will post".**
+
 ### What is still genuinely impossible — do not promise these
 
 - **Everything except SAP is read-only** — postsql, portals, exim, factory, oms,

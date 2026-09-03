@@ -85,6 +85,53 @@ def _excluded_paths(identity: list[str]) -> tuple[list[str], list[str]]:
     return list(seen), notes
 
 
+def drafts_only_note(identity: list[str]) -> str | None:
+    """The note on this box's drafts-only rule, or None.
+
+    `sapb1` enforces this rule itself (sap-b1/cli/internal/config/desk.go reads
+    the same list) — this is only how the AI in the session gets TOLD, so it
+    stops at the draft instead of discovering the refusal by running into it.
+    Best-effort: a broken desks.json must never take out SessionStart.
+    """
+    if not DESKS.exists():
+        return None
+    try:
+        cfg = json.loads(DESKS.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    low = [i.lower() for i in identity]
+    for rule in cfg.get("drafts_only", []):
+        tokens = [str(t).lower() for t in rule.get("who", [])]
+        if any(tok and tok in ident for tok in tokens for ident in low):
+            return rule.get("note") or ", ".join(tokens)
+    return None
+
+
+POLICY_BANNER = """## THIS DESK IS DRAFTS ONLY — you never press Add
+
+{note}
+
+Build the draft, attach the bill, tell the operator the draft number, and STOP.
+
+- Do NOT run `sapb1 add-draft`. The binary refuses it here and exits 9; that
+  refusal IS the policy, not a fault to route around.
+- Do NOT reach for `post`, `patch`, curl, another checkout or another login to
+  get the same effect. There is no flag and no second route.
+- Submitting a draft for approval, and posting an approved one, are this
+  operator's own clicks in the SAP B1 client: Document Drafts → open it → Add.
+- CLAUDE.md's "a bill is not done at the draft — send it to the approver" rule
+  does NOT apply on this desk. Here the bill is done when the draft exists and
+  the operator has been told its number."""
+
+
+def cmd_policy(args: argparse.Namespace) -> int:
+    note = drafts_only_note(_identity())
+    if not note:
+        return 0
+    print(POLICY_BANNER.format(note=note))
+    return 0
+
+
 def _sparse_file() -> Path:
     r = _git("rev-parse", "--git-path", "info/sparse-checkout")
     rel = (r.stdout or "").strip() or ".git/info/sparse-checkout"
@@ -164,6 +211,8 @@ def cmd_show(args: argparse.Namespace) -> int:
     identity = _identity()
     paths, notes = _excluded_paths(identity)
     print("identity:", ", ".join(identity))
+    note = drafts_only_note(identity)
+    print("drafts-only:", f"YES — {note}" if note else "no (this desk may press Add)")
     if not paths:
         print("no exclusions — this box carries every skill on main")
         return 0
@@ -179,6 +228,8 @@ def main() -> int:
     a = sub.add_parser("apply", help="hide the skill folders this box must not carry")
     a.add_argument("--quiet", action="store_true")
     a.set_defaults(fn=cmd_apply)
+    pol = sub.add_parser("policy", help="print this box's drafts-only banner, if it has one")
+    pol.set_defaults(fn=cmd_policy)
     s = sub.add_parser("show", help="what this box matches")
     s.set_defaults(fn=cmd_show)
     args = ap.parse_args()

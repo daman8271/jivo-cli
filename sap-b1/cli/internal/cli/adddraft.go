@@ -251,6 +251,37 @@ type addFlags struct {
 	dryRun bool
 }
 
+// draftsOnlyRefusal is what an operator on a drafts-only desk reads instead of
+// a preview. It has to work for two readers at once: the accountant, who needs
+// to know nothing was sent and what she does next, and the AI standing behind
+// her, which needs to be told plainly that there is no other route — otherwise
+// it goes looking for one, and `post` is sitting right there.
+func draftsOnlyRefusal(d config.DraftsOnly, args []string) string {
+	var b strings.Builder
+	b.WriteString("this computer is set to DRAFTS ONLY — add-draft is switched off on this desk.\n\n")
+	if len(args) > 0 {
+		fmt.Fprintf(&b, "  Nothing was sent. Draft %s is untouched and still a draft.\n", strings.Join(args, ", "))
+	} else {
+		b.WriteString("  Nothing was sent.\n")
+	}
+	b.WriteString(`
+  This desk builds the draft and stops there. Pressing Add — which puts the
+  document in the approver's queue, and on an already-approved draft posts it
+  to the books — is the operator's own click, in the SAP B1 client:
+  Document Drafts -> open it -> Add.
+
+  TO THE AI READING THIS: this is the desk's policy, not a fault to work
+  around. Do not reach for post, patch, curl or another checkout, and do not
+  ask for a flag — there isn't one. Tell the operator the draft is ready and
+  where to find it, and stop.
+`)
+	fmt.Fprintf(&b, "\n  Set in %s (matched \"%s\")", d.From, d.Who)
+	if strings.TrimSpace(d.Note) != "" {
+		fmt.Fprintf(&b, ": %s", d.Note)
+	}
+	return b.String()
+}
+
 func newAddDraftCmd() *cobra.Command {
 	var af addFlags
 
@@ -371,6 +402,16 @@ func runAddDrafts(cmd *cobra.Command, args []string, af addFlags) error {
 	// A closed stdout must come back as an error this command can report on, not
 	// as a signal that kills it between two POSTs.
 	ignoreSIGPIPE()
+
+	// --- GUARD 0: is this desk allowed to press Add at all? ---------------
+	//
+	// Ahead of everything, including --dry-run. On a drafts-only desk there is
+	// no version of this command that should run: a dry run prints the POST
+	// that "would" go out, and printing it invites the next step. The operator
+	// presses Add themselves, in the SAP B1 client, or not at all.
+	if d := config.DraftsOnlyDesk(); d.On {
+		return &errs.RefusedError{Msg: draftsOnlyRefusal(d, args)}
+	}
 
 	cfg, err := writeConfigMsg(cmd, "--csv is not supported for add-draft; use --json for machine-readable output (one JSON object per draft)")
 	if err != nil {

@@ -107,7 +107,11 @@ def match_text(prompt: str, cfg: dict, routes: list[dict]) -> str:
         lines += [_line(r) for r in c["specific"][:4]]
         lines += ["If it is only a question (a balance, a lookup), ignore this and answer it."]
         aa = cfg.get("always_after")
-        if aa and any(r["skill"].startswith("jivo-ap") for r in c["specific"]):
+        # Same gate as table_text: a skill this desk does not carry is never
+        # named. A drafts-only desk has jivo-add-and-new hidden, and telling it
+        # to "finish the job" would be pointing at a door that is bolted.
+        if (aa and (SKILLS / aa["skill"] / "SKILL.md").exists()
+                and any(r["skill"].startswith("jivo-ap") for r in c["specific"])):
             lines += [f"After the draft: {aa['skill']} - {aa['when']}"]
         return "\n".join(lines)
     if c["attachment"] or c["generic"]:

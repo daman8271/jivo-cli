@@ -73,6 +73,15 @@ if [ -f "$HARNESS_DIR/bin/skill_router.py" ]; then
   "$PY" "$HARNESS_DIR/bin/skill_router.py" table 2>/dev/null || true
 fi
 
+# Some desks build drafts and never press Add (harness/desks.json "drafts_only").
+# `sapb1` enforces that itself; this is how the SESSION is told, so it stops at
+# the draft on purpose instead of finding out by running into a refusal. Prints
+# nothing on the desks that may submit.
+if [ -f "$HARNESS_DIR/bin/desk.py" ]; then
+  _pol="$("$PY" "$HARNESS_DIR/bin/desk.py" policy 2>/dev/null || true)"
+  [ -n "$_pol" ] && printf '\n\n%s' "$_pol"
+fi
+
 # Integrity check. `-q` stays silent when everything matches, so this costs
 # nothing on a normal session; when a protected file HAS changed it prints to
 # stderr, which lands in the agent's context at session start — the earliest
