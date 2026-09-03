@@ -1,0 +1,8 @@
+# Operational output of the ingest loop, rewritten every 3 minutes. Committing
+# it would put 200 KB of churn in every cycle and would make the VPS's
+# `git pull --ff-only` fight its own running loop.
+state/
+
+# Credentials for keepalive.sh (the OMS billing pair). Already matched by the
+# repo-root *.env rule; repeated here so it is obvious next to the script.
+.keepalive.env
