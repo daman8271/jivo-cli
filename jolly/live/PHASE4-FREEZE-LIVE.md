@@ -126,6 +126,50 @@ lines}` = source + `fetched_at` + `server_at` + `"live" | "last-good <ts>" |
 "carried"`. `honesty.assumed[]` lists every mapping/fallback used **this cycle**
 (oil-name map entries actually exercised, lead-day fallbacks actually applied).
 
+## Rulings applied on top of this design (2026-09-03, after the first live cycles)
+
+**1. EXIM is the bulk-oil truth. `opening.stock[RM]` is the TANK dip when EXIM has a
+tank for that code, ELSE the drummed litres from the raw-material rooms. NEVER both.**
+The freeze briefly counted the tank AND the raw-material store as two physical stocks.
+It is one stock counted twice: `reference/GODOWNS.md` says bulk oil is not in SAP's
+godowns at all, EXIM's own sap-sync inventory shows BH-LO groundnut at exactly the
+store's figure for the same oil (275,110 L), and the two added together came to 1.55 M L
+against a measured tank capacity of 1,351,500 L. The store's figure is still published,
+per code, as `opening.oil_book_l` with `oil_book_l_note` — the LAGGING BOOK VIEW, for
+information. `opening.oil_tank_l` and `opening.oil_drum_l` stay; drum now means the
+tank-less oils only.
+
+**2. Only the plan's own oils are converted out of the raw-material rooms.** The KG
+branch used to divide rosemary leaf (26.65 KG) and walnut (11.5 KG) by 0.91 kg/L and
+count them as bulk oil. Anything whose canonical code is not in the BOM oil set now goes
+to `opening.rm_store_other` with its own qty and unit — counted nowhere, invented
+nowhere — and that is also where the two rows that used to be dropped in silence land:
+SF0000009 (3,249 finished 15 kg canola tins, ~48.7 t, published as tins and NEVER as
+litres) and SC0000051 (vitamin AD2 premix). **Nothing in those rooms may vanish without
+a name.**
+
+**3. Room membership.** `GP-FG` is a PACKAGING room (GODOWNS.md allow-lists it for
+oil+packaging as well as finished goods, and it holds 64,680 PM). `BH-GJ` is a
+RAW-MATERIAL room (allow-listed by the same 2026-08-29 ruling, but what it holds is oil —
+read as packaging, every litre was thrown away by the PM-code test). A room that has just
+moved is **NOT YET READ** until the next hourly cycle: a warning and a declared floor,
+never a refusal.
+
+**4. The NON-MOVING rooms are COUNTED and BADGED — and it is an open question.**
+GODOWNS.md allow-lists `BH-NM` and `GP-NM` in its table and calls them "not available" in
+its Traps section, both Daman's, same page. They are counted (the plant is running on that
+packaging, and Mark 2's calibrated August counted them) and the exposure is published:
+`opening.packaging_in_non_moving_rooms_pcs` / `packaging_only_in_non_moving_codes`, plus a
+`honesty.assumed` line naming the codes that would vanish if "non-moving" means unusable.
+**Ask Daman.**
+
+**5. Publish hygiene.** `gen_live.py` writes `live/state/plan/manifest.json` — the exact
+list of files this cycle produced — and `loop.sh`'s publish step deletes any other
+`*.json` in `plan/` and `plan/days/`, logging each one. No manifest, no sweep. A refused
+`gen_live.py` run now exits through its own "N CHECK(S) FAILED — NOT WRITING" line
+instead of a traceback, and leaves no `out/order-by-live.{json,csv}` behind: the gap list
+is built to a temp name and moved into place only after every check has passed.
+
 ## Runtime
 `live/loop.sh` step order per cycle: `collect.py` → `freeze_live.py` (writes
 `sim/live-inputs.json`, refuses to write if any of opening.fg / standing / orders

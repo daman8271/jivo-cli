@@ -13,9 +13,11 @@ SQLite mirror can never be served as if it were live.
 
 CALLS PER CYCLE
     hourly=False : 4 calls  (reports-daily-production x2, reports-production-movement, runs)
-    hourly=True  : 8-14 calls (+ lines, line-configs, dashboards stock — one per
-                    warehouse: BH-PF/BH-BT finished goods read once each, BH-BS/BH-PM
-                    packaging PAGED until on_hand reaches 0, at most 4 pages a room)
+    hourly=True  : 8-30 calls (+ lines, line-configs, dashboards stock — ONE WAREHOUSE
+                    PER CALL, never a CSV: BH-PF/BH-BT finished goods read once each,
+                    then the SEVEN packaging rooms and the THREE raw-material rooms of
+                    GODOWNS.md's allow-list, each PAGED until on_hand reaches 0, at most
+                    4 pages a room, the whole phase inside one wall-clock budget)
     Masters (lines, line-configs) and stock change slowly; that is why they are hourly.
 
 =============================================================================
@@ -26,8 +28,8 @@ TOP LEVEL
   company                str   always "JIVO_OIL".
   date                   str   the plant's today, YYYY-MM-DD, Asia/Kolkata.
   date_yesterday         str   YYYY-MM-DD.
-  hourly                 bool  whether the hourly block (lines/line_configs/fg_stock/pm_stock)
-                               was fetched.
+  hourly                 bool  whether the hourly block (lines / line_configs / fg_stock /
+                               pm_stock / rm_stock) was fetched.
   calls                  list  [{name, args, ok, seconds, error, data_source}] — one row per
                                CLI call. `args` is the FULL argv (so --company oil and
                                --data-source live are auditable here, not just in this file);
@@ -141,12 +143,20 @@ fg_stock_meta   dict warehouse -> {total_items, rows_returned, nonzero_rows, non
              stock_status / min_stock / health_ratio are DELIBERATELY DROPPED: the benchmark is
              unmaintained (min_stock 0.0 and status "unset" on effectively every row). on_hand
              is real; nothing else on that endpoint is.
-pm_stock     dict warehouse -> {item_code: on_hand}  — the PACKAGING rooms, BH-BS and BH-PM,
-             read exactly the way fg_stock reads BH-PF/BH-BT: same endpoint, ONE WAREHOUSE PER
-             CALL (a CSV silently SUMS them), non-zero rows only, on_hand in that item's own UOM
-             (PIECES for packaging). These two rooms are NOT inside the Oil FG godown ceiling —
-             the ceiling covers BH-BT + BH-PF only (GODOWNS.md); never add pm_stock into it.
-             This is what the planner's opening.stock[PM…] is built from: sum the two rooms.
+pm_stock     dict warehouse -> {item_code: on_hand}  — the PACKAGING rooms, read exactly the
+             way fg_stock reads BH-PF/BH-BT: same endpoint, ONE WAREHOUSE PER CALL (a CSV
+             silently SUMS them), non-zero rows only, on_hand in that item's own UOM (PIECES
+             for packaging). Seven rooms, PM_WAREHOUSES below, straight off GODOWNS.md's
+             oil+packaging allow-list (Daman, 2026-08-29): BH-BS, BH-PM, BH-NM, BH-SDL,
+             GP-NM, GP-PM and GP-FG. (BH-GJ is on the same allow-list but holds RAW
+             MATERIAL, not packaging, so it is read with rm_stock below — moved
+             2026-09-03.) Reading only BH-BS + BH-PM left 49 BOM packaging codes
+             holding 691,184 pieces at the 31-Aug freeze reading ZERO in the live planner,
+             and a zero packaging code blocks a whole SKU. None of these rooms is inside the
+             Oil FG godown ceiling — that covers BH-BT + BH-PF only; never add pm_stock into
+             it. This is what the planner's opening.stock[PM…] is built from: sum the rooms.
+             A room that does not answer is named in `unavailable` as pm_stock[<wh>] and is
+             simply ABSENT from the dict — it never becomes a zero.
 pm_stock_detail dict warehouse -> [{item_code, item_name, on_hand, uom}] sorted desc.
 pm_stock_meta   dict warehouse -> fg_stock_meta's block with `page` replaced by
              `pages_read` and `stopped_because` added. `truncated` matters more here than on
@@ -156,6 +166,22 @@ pm_stock_meta   dict warehouse -> fg_stock_meta's block with `page` replaced by
              code absent from pm_stock is UNKNOWN, not empty. As on FG, the list is NOT
              single-prefix — non_fg_rows counts every row whose code does not start with FG,
              which in these rooms is nearly all of them and is expected, not an anomaly.
+rm_stock     dict warehouse -> {item_code: {qty, uom, name}} — the RAW-MATERIAL rooms,
+             RM_WAREHOUSES below: BH-LO (Bhakharpur Loose Oil), BH-CRUDE (Gujarat Crude),
+             BH-EX (Export) and BH-GJ (Gujarat Job Worker — the front door for imported
+             oil, allow-listed by Daman 2026-08-29 and read here, not with the packaging
+             rooms, because what it holds is oil). Same endpoint, same one-warehouse-per-call
+             rule, same paging.
+             UNLIKE pm_stock the UOM IS CARRIED PER CODE, because these rows are NOT all in
+             one unit — the store holds drums (L/LTR), weighed oil (KGS) and counted items
+             (PCS) side by side, and a consumer that assumes litres would invent them.
+             `qty` is the raw on_hand in `uom`; converting it is the CONSUMER's job and every
+             conversion it makes is its own declared assumption. Why this exists: five BOM
+             oils (RM0000001 refined olive, RM0000009 sunflower, RM0000015, RM0000030,
+             RM0000053 toasted sesame) have NO EXIM tank at all, so a planner reading only
+             the tanks scores them zero while their drums sit in this store.
+rm_stock_detail dict warehouse -> [{item_code, item_name, on_hand, uom}] sorted desc.
+rm_stock_meta   dict warehouse -> the same block as pm_stock_meta.
 
 =============================================================================
 CAVEATS BAKED INTO THIS ADAPTER (each one already produced a wrong number here)
@@ -210,36 +236,69 @@ from pathlib import Path
 SOURCE = "factory_production"
 COMPANY = "JIVO_OIL"
 IST = timezone(timedelta(hours=5, minutes=30), "IST")
-# The WORST-CASE hourly cycle (10 calls x TIMEOUT_S) must stay under live/loop.sh's
-# 175 s hard timeout. Observed latency is 0.12-2.4 s; 16 s is ~7x the observed max and
-# 10 x 16 = 160 s < 175 s. It was 8 x 20 = 160 s before the two packaging rooms were
-# added — the same budget, spread over two more calls.
+# The WORST-CASE hourly cycle must stay under live/loop.sh's 175 s hard timeout.
+# Observed latency is 0.12-2.4 s; 16 s is ~7x the observed max. See ROOM_PHASE_BUDGET_S
+# for how the two halves add up now that ten rooms are read instead of two.
 TIMEOUT_S = 16
 FG_WAREHOUSES = ("BH-PF", "BH-BT")
-# The two PACKAGING rooms. Same endpoint, same one-warehouse-per-call rule, but a
-# DIFFERENT room from the FG godown: BH-BS/BH-PM hold bottles, caps, cartons and labels
-# and sit OUTSIDE the 827,000 L FG ceiling (GODOWNS.md).
-PM_WAREHOUSES = ("BH-BS", "BH-PM")
+# The PACKAGING rooms — GODOWNS.md's oil+packaging allow-list, settled by Daman
+# 2026-08-29, minus BH-LO, which is the raw-material store (below).
+#
+# GP-FG JOINED this list 2026-09-03. GODOWNS.md puts it on the oil+packaging allow-list
+# as well as the finished-goods one, and its own row says why both: 2,615 FG *and*
+# 64,680 PM. Keeping it out because of the "FG" in its name silently lost 64,680 pieces
+# of real packaging — the tail that blocks.
+# BH-GJ MOVED OFF this list to RM_WAREHOUSES the same day. It is allow-listed by Daman's
+# 2026-08-29 ruling (the front door for imported oil) and that has not changed; what
+# changed is where it is read. What BH-GJ actually holds is RAW MATERIAL — 42,853 RM in
+# GODOWNS.md's table, 226.8 L of loose oil on 2026-09-03, and no packaging at all — so
+# read as a packaging room every litre of it was thrown away by the consumer's PM-code
+# test, and read as a raw-material room it arrives with the per-row UOM oil needs.
+#
+# It was BH-BS + BH-PM alone until 2026-09-03. Those two are ~98% of the pieces, but the
+# other rooms hold the tail, and the tail is what BLOCKS: 49 BOM packaging codes carrying
+# 691,184 pieces at the 31-Aug freeze read ZERO in the live planner, and one zero
+# component stops a whole SKU. The order below is a PRIORITY order — the phase budget is
+# spent from the top, so the two rooms the planner refuses to run without go first.
+PM_WAREHOUSES = ("BH-BS", "BH-PM", "BH-NM", "BH-SDL", "GP-NM", "GP-PM", "GP-FG")
+# The RAW-MATERIAL rooms. BH-LO is the loose-oil store (808,933 L at the 31-Aug freeze);
+# BH-CRUDE, BH-EX and BH-GJ are small — often empty, 226.8 L in BH-GJ on 2026-09-03 —
+# but they are read so an oil that moves into them does not vanish. Five BOM oils have
+# NO EXIM tank at all and are invisible without these rooms. Their UOM is carried per
+# row — this store mixes L, KGS and PCS.
+RM_WAREHOUSES = ("BH-LO", "BH-CRUDE", "BH-EX", "BH-GJ")
 STOCK_PAGE_SIZE = 200
-# The packaging rooms carry FAR more item codes than the two FG rooms (SAP's 31-Aug
-# freeze had 895 PM codes, 508 of them non-zero) and the page is sorted on_hand DESC,
-# so a short page drops the SMALLEST stocks first. That is the dangerous direction: a
-# real 300-piece label reading as absent is indistinguishable from a stock-out, and the
-# planner blocks a whole SKU on it. So these two rooms are PAGED, not read once.
+# The packaging and raw-material rooms carry FAR more item codes than the two FG rooms
+# (SAP's 31-Aug freeze had 895 PM codes, 508 of them non-zero) and the page is sorted
+# on_hand DESC, so a short page drops the SMALLEST stocks first. That is the dangerous
+# direction: a real 300-piece label reading as absent is indistinguishable from a
+# stock-out, and the planner blocks a whole SKU on it. So these rooms are PAGED.
 #
 # 200 is the server's own hard maximum, quoted from its 400 on 2026-09-03:
 #   {"page_size":["Ensure this value is less than or equal to 200."]}
 # Asking for more is an HTTP 400, an empty stdout and a dead call — not a big page.
-PM_STOCK_PAGE_SIZE = 200
+ROOM_PAGE_SIZE = 200
 # Paging stops on its own the moment on_hand reaches 0 (the rest of a desc-sorted room
-# is zeros), so these two are the WORST case, not the normal one. Measured 2026-09-03:
+# is zeros), so the cap is the WORST case, not the normal one. Measured 2026-09-03:
 # BH-BS finished inside page 1 (129 non-zero of 200); BH-PM filled page 1 completely.
-PM_MAX_PAGES = 4                     # 800 rows a room
-PM_CALL_TIMEOUT_S = 12
-# Wall clock for the whole packaging phase. The budget the loop has to respect:
-# 8 base calls x 16 s + 30 s of paging + the one in-flight call that trips the budget
-# (12 s) = 170 s, under live/loop.sh's 175 s hard timeout.
-PM_PHASE_BUDGET_S = 30
+ROOM_MAX_PAGES = 4                   # 800 rows a room
+ROOM_CALL_TIMEOUT_S = 12
+# Wall clock for the WHOLE room phase — eleven rooms, packaging and raw material together.
+# The budget the loop has to respect, worst case:
+#   6 base calls x 16 s (4 cheap + lines + line-configs)      =  96 s
+#   2 FG stock calls x 12 s (same endpoint as the paged rooms)=  24 s
+#   the room phase                                            =  40 s
+#   the one in-flight room call that trips the budget         =  12 s
+#                                                              -------
+#                                                               172 s  < 175 s
+# Rooms are read in PM_WAREHOUSES then RM_WAREHOUSES order with the two critical
+# packaging rooms and the loose-oil store first, so a spent budget costs the tail rooms
+# and never the ones a refusal is built on.
+ROOM_PHASE_BUDGET_S = 40
+# Read first, whatever order the tuples are edited into later: the two packaging rooms
+# freeze_live REFUSES to publish a plan without, and the loose-oil store that carries
+# the five BOM oils EXIM has no tank for. Everything else is tail.
+ROOM_PRIORITY = ("BH-BS", "BH-PM", "BH-LO")
 GOODS_RECEIPT_TRANSTYPE = 59
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]          # …/jivo-cli
@@ -292,10 +351,17 @@ STOCK_NOTE = (
     "are unmaintained and are not carried."
 )
 PM_STOCK_NOTE = (
-    "pm_stock is the packaging rooms BH-BS and BH-PM, read one warehouse per call. They are "
-    "NOT part of the Oil FG godown ceiling — that covers BH-BT and BH-PF only. Check "
-    "pm_stock_meta[wh].truncated before totalling: these rooms hold more item codes than one "
-    "page returns."
+    "pm_stock is GODOWNS.md's packaging allow-list — BH-BS, BH-PM, BH-NM, BH-SDL, GP-NM, "
+    "GP-PM and GP-FG — read one warehouse per call. BH-GJ is allow-listed too but holds "
+    "raw material, so it is in rm_stock. None of these rooms is part of the Oil FG "
+    "godown ceiling; that covers BH-BT and BH-PF only. Check pm_stock_meta[wh].truncated "
+    "before totalling: these rooms hold more item codes than one page returns."
+)
+RM_STOCK_NOTE = (
+    "rm_stock is the raw-material rooms BH-LO, BH-CRUDE, BH-EX and BH-GJ, read one "
+    "warehouse per call. qty is in the row's OWN uom — L/LTR, KGS and PCS all appear — so it is not a "
+    "litre figure until a consumer converts it and says so. This is where the five BOM oils "
+    "with no EXIM tank (RM0000001, RM0000009, RM0000015, RM0000030, RM0000053) actually sit."
 )
 NO_CONFIG_NOTE = (
     "Tin Head and Manual carry no line-config row. has_config False does NOT mean the line "
@@ -701,14 +767,14 @@ def _stock_paged(calls, wh, deadline):
     """
     codes, detail, metas = {}, [], []
     truncated, stopped = False, None
-    for page in range(1, PM_MAX_PAGES + 1):
+    for page in range(1, ROOM_MAX_PAGES + 1):
         if time.monotonic() > deadline and page > 1:
             truncated, stopped = True, "phase budget spent"
             break
         p_st, _e = _cli(calls, f"stock_{wh}_p{page}", "dashboards", "stock",
                         "--warehouse", wh, "--sort-by", "on_hand", "--sort-dir", "desc",
-                        "--page-size", str(PM_STOCK_PAGE_SIZE), "--page", str(page),
-                        timeout=PM_CALL_TIMEOUT_S)
+                        "--page-size", str(ROOM_PAGE_SIZE), "--page", str(page),
+                        timeout=ROOM_CALL_TIMEOUT_S)
         if p_st is None:
             if not metas:
                 return None, None, None
@@ -718,7 +784,7 @@ def _stock_paged(calls, wh, deadline):
         codes.update(c)
         detail.extend(d)
         metas.append(m)
-        if m.get("rows_returned", 0) < PM_STOCK_PAGE_SIZE:
+        if m.get("rows_returned", 0) < ROOM_PAGE_SIZE:
             stopped = "short page — the room ended"
             break
         if not m.get("truncated"):
@@ -729,7 +795,7 @@ def _stock_paged(calls, wh, deadline):
             stopped = "last page"
             break
     else:
-        truncated, stopped = True, f"page cap ({PM_MAX_PAGES})"
+        truncated, stopped = True, f"page cap ({ROOM_MAX_PAGES})"
 
     detail.sort(key=lambda r: r["on_hand"], reverse=True)
     non_fg = [r for r in detail if not str(r["item_code"]).upper().startswith("FG")]
@@ -743,7 +809,7 @@ def _stock_paged(calls, wh, deadline):
             "nonzero_rows": len(detail),
             "non_fg_rows": len(non_fg),
             "non_fg_codes": sorted(r["item_code"] for r in non_fg),
-            "page_size": PM_STOCK_PAGE_SIZE,
+            "page_size": ROOM_PAGE_SIZE,
             "pages_read": len(metas),
             "total_pages": first.get("total_pages"),
             "truncated": truncated,
@@ -751,6 +817,43 @@ def _stock_paged(calls, wh, deadline):
             "fetched_at": first.get("fetched_at"),
         },
     )
+
+
+def _room_read_order():
+    """[(kind, warehouse)] — every packaging and raw-material room, priority first.
+
+    `sorted` is stable, so ROOM_PRIORITY promotes the three rooms that matter most and
+    everything else keeps the order it was written in PM_WAREHOUSES / RM_WAREHOUSES.
+    Those two tuples stay the single list of rooms; this only decides who gets the
+    budget when it runs short.
+    """
+    rooms = [("pm", wh) for wh in PM_WAREHOUSES] + [("rm", wh) for wh in RM_WAREHOUSES]
+    return sorted(
+        rooms,
+        key=lambda kv: ROOM_PRIORITY.index(kv[1]) if kv[1] in ROOM_PRIORITY else len(ROOM_PRIORITY),
+    )
+
+
+def _rm_rows(detail):
+    """A raw-material room's detail rows -> {item_code: {qty, uom, name}}.
+
+    The UOM is carried per code and NEVER normalised here: BH-LO mixes litres, kilograms
+    and pieces in one list, and the only honest thing an adapter can do with that is hand
+    the consumer the unit it was given. A code that somehow appears twice under two units
+    keeps both, joined — an invented single number would be worse than a visible mess.
+    """
+    out = {}
+    for row in detail:
+        code = row.get("item_code")
+        if not code:
+            continue
+        rec = out.setdefault(code, {"qty": 0.0, "uom": row.get("uom") or "",
+                                    "name": row.get("item_name")})
+        rec["qty"] = round(rec["qty"] + _num(row.get("on_hand")), 3)
+        uom = row.get("uom") or ""
+        if uom and uom != rec["uom"]:
+            rec["uom"] = "+".join(sorted({rec["uom"], uom} - {""}))
+    return out
 
 
 # --------------------------------------------------------------------------- fetch
@@ -869,6 +972,9 @@ def fetch(hourly: bool = False) -> dict:
         "pm_stock": None,
         "pm_stock_detail": None,
         "pm_stock_meta": None,
+        "rm_stock": None,
+        "rm_stock_detail": None,
+        "rm_stock_meta": None,
     }
 
     # ---- hourly ------------------------------------------------------------
@@ -926,7 +1032,8 @@ def fetch(hourly: bool = False) -> dict:
         for wh in FG_WAREHOUSES:               # ONE warehouse per call — a CSV sums them
             p_st, e = _cli(calls, f"stock_{wh}", "dashboards", "stock",
                            "--warehouse", wh, "--sort-by", "on_hand",
-                           "--sort-dir", "desc", "--page-size", str(STOCK_PAGE_SIZE))
+                           "--sort-dir", "desc", "--page-size", str(STOCK_PAGE_SIZE),
+                           timeout=ROOM_CALL_TIMEOUT_S)
             note_err(e)
             if p_st is None:
                 unavailable.append(f"fg_stock[{wh}]")
@@ -944,38 +1051,75 @@ def fetch(hourly: bool = False) -> dict:
         else:
             unavailable.append("fg_stock")
 
-        # The packaging rooms, read exactly like the FG rooms above: one warehouse per
-        # call, each failing on its own. A room that does not answer is named in
-        # `unavailable` and left out of pm_stock — it never becomes a zero, because a
-        # zero packaging room is indistinguishable from a real stock-out and that is
-        # precisely the number the planner blocks production on.
+        # The packaging and raw-material rooms, read exactly like the FG rooms above: one
+        # warehouse per call, each failing on its own. A room that does not answer is named
+        # in `unavailable` and left out — it never becomes a zero, because a zero packaging
+        # room is indistinguishable from a real stock-out and that is precisely the number
+        # the planner blocks production on. The whole phase shares ONE wall clock; when it
+        # runs out the rooms not reached are named too, so a short read is never silent.
         pm_stock, pm_detail, pm_meta = {}, {}, {}
-        pm_deadline = time.monotonic() + PM_PHASE_BUDGET_S
-        for wh in PM_WAREHOUSES:               # ONE warehouse per call — a CSV sums them
-            codes, det, m = _stock_paged(calls, wh, pm_deadline)
-            if codes is None:
-                unavailable.append(f"pm_stock[{wh}]")
+        rm_stock, rm_detail, rm_meta = {}, {}, {}
+        room_deadline = time.monotonic() + ROOM_PHASE_BUDGET_S
+        skipped_rooms = []
+        for kind, wh in _room_read_order():     # ONE warehouse per call — a CSV sums them
+            label = f"{kind}_stock[{wh}]"
+            if time.monotonic() > room_deadline:
+                unavailable.append(label)
+                skipped_rooms.append(wh)
                 continue
-            pm_stock[wh], pm_detail[wh], pm_meta[wh] = codes, det, m
+            codes, det, m = _stock_paged(calls, wh, room_deadline)
+            if codes is None:
+                unavailable.append(label)
+                continue
+            if kind == "pm":
+                pm_stock[wh], pm_detail[wh], pm_meta[wh] = codes, det, m
+            else:
+                rm_stock[wh], rm_detail[wh], rm_meta[wh] = _rm_rows(det), det, m
             if m.get("truncated"):
                 notes.append(
-                    f"pm_stock[{wh}] is INCOMPLETE ({m.get('stopped_because')}): the rows "
+                    f"{label} is INCOMPLETE ({m.get('stopped_because')}): the rows "
                     "not read are the smallest stocks, so treat any zero in that room as "
                     "unknown rather than empty."
                 )
             if m.get("fetched_at") and not server_at:
                 server_at = m["fetched_at"]
+        if skipped_rooms:
+            notes.append(
+                "the stock phase ran out of its "
+                f"{ROOM_PHASE_BUDGET_S}s budget before reading {', '.join(skipped_rooms)} — "
+                "those rooms are UNKNOWN this cycle, not empty."
+            )
         if pm_stock:
             data["pm_stock"] = pm_stock
             data["pm_stock_detail"] = pm_detail
             data["pm_stock_meta"] = pm_meta
             notes.append(PM_STOCK_NOTE)
+            missing_pm = [wh for wh in PM_WAREHOUSES if wh not in pm_stock]
+            if missing_pm:
+                notes.append(
+                    "packaging rooms that did NOT answer this cycle: "
+                    f"{', '.join(missing_pm)}. Packaging on hand is a FLOOR by whatever "
+                    "they hold — a missing room understates stock and invents stock-outs."
+                )
         else:
             unavailable.append("pm_stock")
+        if rm_stock:
+            data["rm_stock"] = rm_stock
+            data["rm_stock_detail"] = rm_detail
+            data["rm_stock_meta"] = rm_meta
+            notes.append(RM_STOCK_NOTE)
+            missing_rm = [wh for wh in RM_WAREHOUSES if wh not in rm_stock]
+            if missing_rm:
+                notes.append(
+                    f"raw-material rooms that did NOT answer this cycle: {', '.join(missing_rm)}."
+                )
+        else:
+            unavailable.append("rm_stock")
     else:
         # not an outage — simply not fetched this cycle
         notes.append(
-            "lines / line_configs / fg_stock / pm_stock are hourly; not fetched this cycle."
+            "lines / line_configs / fg_stock / pm_stock / rm_stock are hourly; "
+            "not fetched this cycle."
         )
 
     data["unavailable"] = unavailable

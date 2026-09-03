@@ -10,8 +10,9 @@
 #   3. runs the PLAN CHAIN on what collect just wrote:
 #        freeze_live.py  -> sim/live-inputs.json   (the engine's input, from live state)
 #        august_sim.py   -> sim/days-live/, summary-live.json, events-live.json
-#        gen-data.py     -> site-sep/data/*.json   (its cross-checks are the gate)
-#        publish         -> live/state/plan/*.json
+#        gen_live.py     -> live/state/plan/*.json (its cross-checks are the gate)
+#        publish         -> a last look over live/state/plan/*.json, then a SWEEP of
+#                           anything there that is not in this cycle's manifest.json
 #   4. appends a stamped line-by-line log to live/state/loop.log, rotating at 5 MB
 #
 # THE CHAIN NEVER COSTS THE INGEST ANYTHING. collect.py has already written
@@ -51,7 +52,12 @@ KEEP="${LOOP_KEEP:-3}"
 TIMEOUT_S="${LOOP_TIMEOUT_S:-175}"
 PY="${MARK3_PYTHON:-python3}"
 PLAN_DIR="$STATE_DIR/plan"
-SITE_DATA="$JOLLY_DIR/site-sep/data"
+# gen_live.py writes straight into $PLAN_DIR — atomically, days/ included — so by the
+# time the publish step runs there is nothing left to copy. SITE_DATA therefore points
+# AT the published directory: publish_plan becomes a last look that this cycle's files
+# are there and readable, and, the reason this line changed, it can no longer copy
+# site-sep/data (the FROZEN 31-August Mark 2 plan) straight over the live one.
+SITE_DATA="$PLAN_DIR"
 SKIP_CHAIN="${LOOP_SKIP_CHAIN:-0}"
 # LOOP_ONLY_CHAIN=1 re-runs the plan chain on the state.json ALREADY on disk and makes
 # no call to the plant at all. It is how a change to the engine, the freeze or
@@ -125,10 +131,23 @@ run_step() {
   return "$rc"
 }
 
-# Copy the generated plan JSON where the publisher can reach it. Per file:
-# write a .tmp beside the target and mv it into place, because state_server.py
-# is serving this directory while we write and half a JSON file is worse than
-# yesterday's whole one.
+# Copy the generated plan JSON where the publisher can reach it, then SWEEP.
+#
+# Per file: write a .tmp beside the target and mv it into place, because
+# state_server.py is serving this directory while we write and half a JSON file is
+# worse than yesterday's whole one.
+#
+# THE SWEEP. gen_live.py writes plan/manifest.json — the exact list of files it just
+# produced, days included. Anything else in plan/ or plan/days/ is from another
+# vintage, and it was not harmless: build.json, questions.json, scenarios.json and
+# whatsapp.json were Mark 2 files that nothing had generated for days, and every cycle
+# re-copied them and re-stamped their mtime so they looked as fresh as the real plan
+# while the site served them. They are deleted here, one log line each.
+#
+# The manifest is the ONLY authority for the sweep. No manifest, no sweep — a missing
+# or unreadable manifest leaves every file exactly where it is and says so, because
+# the one thing worse than serving a stale file is deleting a live one on a guess.
+# manifest.json lists itself, so it survives its own sweep.
 publish_plan() {
   local n=0 rc=0 f base
   mkdir -p "$PLAN_DIR" || return 1
@@ -145,6 +164,40 @@ publish_plan() {
     return 1
   fi
   echo "publish_plan: $n file(s) -> $PLAN_DIR"
+  "$PY" - "$PLAN_DIR" <<'SWEEP' || rc=1
+import glob, json, os, sys
+plan = sys.argv[1]
+mpath = os.path.join(plan, "manifest.json")
+try:
+    with open(mpath, encoding="utf-8") as fh:
+        m = json.load(fh)
+    keep_top = set(m["files"]) | {"manifest.json"}
+    keep_days = set(m["days"])
+except (OSError, ValueError, KeyError, TypeError) as e:
+    print(f"publish_plan: no usable {mpath} ({e}) — NOTHING swept. Every file in "
+          f"{plan} stays where it is; a sweep without a manifest is a guess.")
+    raise SystemExit(0)
+gone = []
+for path in sorted(glob.glob(os.path.join(plan, "*.json"))):
+    if os.path.basename(path) not in keep_top:
+        try:
+            os.remove(path)
+            gone.append(os.path.basename(path))
+        except OSError as e:
+            print(f"publish_plan: could not delete {os.path.basename(path)}: {e}")
+for path in sorted(glob.glob(os.path.join(plan, "days", "*.json"))):
+    if os.path.basename(path) not in keep_days:
+        try:
+            os.remove(path)
+            gone.append("days/" + os.path.basename(path))
+        except OSError as e:
+            print(f"publish_plan: could not delete days/{os.path.basename(path)}: {e}")
+for name in gone:
+    print(f"publish_plan: DELETED {name} — not in this cycle's manifest.json, so it was "
+          f"a leftover being served as though it were part of the plan")
+print(f"publish_plan: swept {plan} against manifest.json — "
+      f"{len(gone)} deleted, {len(keep_top)} + {len(keep_days)} day file(s) kept")
+SWEEP
   return "$rc"
 }
 
@@ -171,33 +224,36 @@ run_chain() {
     say "chain STOPPED at sim — no new sim/days-live; the site keeps its last plan."
     return 1
   }
-  run_step gen "$PY" "$JOLLY_DIR/site-sep/scripts/gen-data.py" || {
-    say "chain STOPPED at gen — gen-data.py refused to write (its cross-checks are ""the gate and a failing check is a wrong number, never a check to weaken). ""site-sep/data/ keeps its last good copy."
+  run_step gen "$PY" "$LIVE_DIR/gen_live.py" || {
+    say "chain STOPPED at gen — gen_live.py refused to write (its cross-checks are ""the gate and a failing check is a wrong number, never a check to weaken). ""live/state/plan/ keeps its last good copy."
     return 1
   }
-  # Is what we are about to publish actually THIS cycle's re-plan? gen-data.py reads
-  # the `-sep` artifacts (sim/sep-inputs.json, sim/days-sep/, five -sep scenarios,
-  # out/*-sep.json) and has no tag knob, so today it re-emits the 31-AUGUST FROZEN
-  # September plan and the freeze/sim above are only a gate on it. Wiring it to `-live`
-  # is Phase 5, not a flag. Until then this compares the two horizons and says so out
-  # loud every cycle — a published plan wearing the wrong date must never be silent.
-  # LOG ONLY: it never fails the chain, because publishing the frozen plan is, for now,
-  # the intended behaviour.
-  "$PY" - "$JOLLY_DIR" <<'EOF' >>"$LOG" 2>&1 || true
+  # Is what is now published actually THIS cycle's re-plan? It used to be a standing
+  # warning: gen-data.py is hard-wired to the `-sep` artifacts, so it re-emitted the
+  # 31-AUGUST FROZEN September plan every cycle wearing today's timestamp. gen_live.py
+  # reads the `-live` artifacts, so the two should agree now — and this became a real
+  # check instead of a notice. It compares the freeze against the PUBLISHED file, on
+  # the collection stamp as well as the dates: the dates are the same all day, the
+  # stamp changes every cycle, so only the stamp catches "gen_live.py quietly wrote
+  # nothing". STILL LOG ONLY — it never fails the chain, because state.json is already
+  # out and a mismatch is a thing to read in the log, not a reason to kill the loop.
+  "$PY" - "$JOLLY_DIR" "$PLAN_DIR" <<'EOF' >>"$LOG" 2>&1 || true
 import json, os, sys
-j = sys.argv[1]
+jolly, plan_dir = sys.argv[1], sys.argv[2]
 try:
-    live = json.load(open(os.path.join(j, "sim", "live-inputs.json")))["meta"]["horizon"]
-    site = json.load(open(os.path.join(j, "site-sep", "data", "overview.json")))["meta"]["horizon"]
+    frozen = json.load(open(os.path.join(jolly, "sim", "live-inputs.json")))["meta"]
+    shown = json.load(open(os.path.join(plan_dir, "overview.json")))["meta"]
 except Exception as e:
-    print(f"  chain: could not compare horizons ({e})")
+    print(f"  chain: could not compare the published plan with this cycle's freeze ({e})")
 else:
-    if live != site:
-        print(f"  !! chain: PUBLISHING THE FROZEN PLAN, NOT THE LIVE ONE — "
-              f"site-sep/data horizon {site} vs this cycle's freeze {live}. "
-              f"gen-data.py is hard-wired to the -sep artifacts (Phase 5).")
+    want = (frozen["horizon"], frozen.get("state_collected_at") or frozen["as_of"])
+    got = (shown.get("horizon"), shown.get("collected_at"))
+    if want != got:
+        print(f"  !! chain: THE PUBLISHED PLAN IS NOT THIS CYCLE'S — plan/overview.json says "
+              f"{got} against this cycle's freeze {want}. gen_live.py wrote nothing, or "
+              f"something else overwrote live/state/plan/.")
     else:
-        print(f"  chain: published plan horizon {site} matches this cycle's freeze")
+        print(f"  chain: published plan {got[0]} as of {got[1]} matches this cycle's freeze")
 EOF
   run_step publish publish_plan || {
     say "chain STOPPED at publish — live/state/plan/ keeps its last good copy."
