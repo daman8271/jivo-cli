@@ -13,7 +13,9 @@ SQLite mirror can never be served as if it were live.
 
 CALLS PER CYCLE
     hourly=False : 4 calls  (reports-daily-production x2, reports-production-movement, runs)
-    hourly=True  : 8 calls  (+ lines, line-configs, dashboards stock x2 — one per warehouse)
+    hourly=True  : 8-14 calls (+ lines, line-configs, dashboards stock — one per
+                    warehouse: BH-PF/BH-BT finished goods read once each, BH-BS/BH-PM
+                    packaging PAGED until on_hand reaches 0, at most 4 pages a room)
     Masters (lines, line-configs) and stock change slowly; that is why they are hourly.
 
 =============================================================================
@@ -24,7 +26,8 @@ TOP LEVEL
   company                str   always "JIVO_OIL".
   date                   str   the plant's today, YYYY-MM-DD, Asia/Kolkata.
   date_yesterday         str   YYYY-MM-DD.
-  hourly                 bool  whether the hourly block (lines/line_configs/fg_stock) was fetched.
+  hourly                 bool  whether the hourly block (lines/line_configs/fg_stock/pm_stock)
+                               was fetched.
   calls                  list  [{name, args, ok, seconds, error, data_source}] — one row per
                                CLI call. `args` is the FULL argv (so --company oil and
                                --data-source live are auditable here, not just in this file);
@@ -138,6 +141,21 @@ fg_stock_meta   dict warehouse -> {total_items, rows_returned, nonzero_rows, non
              stock_status / min_stock / health_ratio are DELIBERATELY DROPPED: the benchmark is
              unmaintained (min_stock 0.0 and status "unset" on effectively every row). on_hand
              is real; nothing else on that endpoint is.
+pm_stock     dict warehouse -> {item_code: on_hand}  — the PACKAGING rooms, BH-BS and BH-PM,
+             read exactly the way fg_stock reads BH-PF/BH-BT: same endpoint, ONE WAREHOUSE PER
+             CALL (a CSV silently SUMS them), non-zero rows only, on_hand in that item's own UOM
+             (PIECES for packaging). These two rooms are NOT inside the Oil FG godown ceiling —
+             the ceiling covers BH-BT + BH-PF only (GODOWNS.md); never add pm_stock into it.
+             This is what the planner's opening.stock[PM…] is built from: sum the two rooms.
+pm_stock_detail dict warehouse -> [{item_code, item_name, on_hand, uom}] sorted desc.
+pm_stock_meta   dict warehouse -> fg_stock_meta's block with `page` replaced by
+             `pages_read` and `stopped_because` added. `truncated` matters more here than on
+             FG: these rooms hold thousands of item codes and the server caps a page at 200,
+             so the read is PAGED and can still stop early (page cap, phase budget, a failed
+             page). When truncated is True the rows missing are the SMALLEST stocks, so a
+             code absent from pm_stock is UNKNOWN, not empty. As on FG, the list is NOT
+             single-prefix — non_fg_rows counts every row whose code does not start with FG,
+             which in these rooms is nearly all of them and is expected, not an anomaly.
 
 =============================================================================
 CAVEATS BAKED INTO THIS ADAPTER (each one already produced a wrong number here)
@@ -192,11 +210,36 @@ from pathlib import Path
 SOURCE = "factory_production"
 COMPANY = "JIVO_OIL"
 IST = timezone(timedelta(hours=5, minutes=30), "IST")
-# 8 calls x TIMEOUT_S must stay under the 3-minute loop period in live/loop.sh.
-# Observed latency is 0.12-2.4 s; 20 s is ~80x the median and 8 x 20 = 160 s < 180 s.
-TIMEOUT_S = 20
+# The WORST-CASE hourly cycle (10 calls x TIMEOUT_S) must stay under live/loop.sh's
+# 175 s hard timeout. Observed latency is 0.12-2.4 s; 16 s is ~7x the observed max and
+# 10 x 16 = 160 s < 175 s. It was 8 x 20 = 160 s before the two packaging rooms were
+# added — the same budget, spread over two more calls.
+TIMEOUT_S = 16
 FG_WAREHOUSES = ("BH-PF", "BH-BT")
+# The two PACKAGING rooms. Same endpoint, same one-warehouse-per-call rule, but a
+# DIFFERENT room from the FG godown: BH-BS/BH-PM hold bottles, caps, cartons and labels
+# and sit OUTSIDE the 827,000 L FG ceiling (GODOWNS.md).
+PM_WAREHOUSES = ("BH-BS", "BH-PM")
 STOCK_PAGE_SIZE = 200
+# The packaging rooms carry FAR more item codes than the two FG rooms (SAP's 31-Aug
+# freeze had 895 PM codes, 508 of them non-zero) and the page is sorted on_hand DESC,
+# so a short page drops the SMALLEST stocks first. That is the dangerous direction: a
+# real 300-piece label reading as absent is indistinguishable from a stock-out, and the
+# planner blocks a whole SKU on it. So these two rooms are PAGED, not read once.
+#
+# 200 is the server's own hard maximum, quoted from its 400 on 2026-09-03:
+#   {"page_size":["Ensure this value is less than or equal to 200."]}
+# Asking for more is an HTTP 400, an empty stdout and a dead call — not a big page.
+PM_STOCK_PAGE_SIZE = 200
+# Paging stops on its own the moment on_hand reaches 0 (the rest of a desc-sorted room
+# is zeros), so these two are the WORST case, not the normal one. Measured 2026-09-03:
+# BH-BS finished inside page 1 (129 non-zero of 200); BH-PM filled page 1 completely.
+PM_MAX_PAGES = 4                     # 800 rows a room
+PM_CALL_TIMEOUT_S = 12
+# Wall clock for the whole packaging phase. The budget the loop has to respect:
+# 8 base calls x 16 s + 30 s of paging + the one in-flight call that trips the budget
+# (12 s) = 170 s, under live/loop.sh's 175 s hard timeout.
+PM_PHASE_BUDGET_S = 30
 GOODS_RECEIPT_TRANSTYPE = 59
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]          # …/jivo-cli
@@ -247,6 +290,12 @@ GR_LAG_NOTE = (
 STOCK_NOTE = (
     "fg_stock on_hand is live and trustworthy; stock_status, min_stock and health_ratio "
     "are unmaintained and are not carried."
+)
+PM_STOCK_NOTE = (
+    "pm_stock is the packaging rooms BH-BS and BH-PM, read one warehouse per call. They are "
+    "NOT part of the Oil FG godown ceiling — that covers BH-BT and BH-PF only. Check "
+    "pm_stock_meta[wh].truncated before totalling: these rooms hold more item codes than one "
+    "page returns."
 )
 NO_CONFIG_NOTE = (
     "Tin Head and Manual carry no line-config row. has_config False does NOT mean the line "
@@ -637,6 +686,73 @@ def _stock(payload):
     )
 
 
+def _stock_paged(calls, wh, deadline):
+    """Read one warehouse's stock across pages. Returns ({code: on_hand}, detail, meta).
+
+    Stops as soon as it can prove nothing is left: a SHORT page, or a full page whose
+    last row already reads 0 (the list is sorted on_hand DESC, so everything after it
+    is zero too). Otherwise it stops on the page cap or the phase budget and says so in
+    meta.stopped_because with meta.truncated True — the rows it did not reach are the
+    SMALLEST stocks, which is the direction that invents a stock-out, so a consumer has
+    to be able to see that it happened.
+
+    A page that fails does not discard the pages before it: what came back is kept and
+    marked truncated. Returns (None, None, None) only if the FIRST page failed.
+    """
+    codes, detail, metas = {}, [], []
+    truncated, stopped = False, None
+    for page in range(1, PM_MAX_PAGES + 1):
+        if time.monotonic() > deadline and page > 1:
+            truncated, stopped = True, "phase budget spent"
+            break
+        p_st, _e = _cli(calls, f"stock_{wh}_p{page}", "dashboards", "stock",
+                        "--warehouse", wh, "--sort-by", "on_hand", "--sort-dir", "desc",
+                        "--page-size", str(PM_STOCK_PAGE_SIZE), "--page", str(page),
+                        timeout=PM_CALL_TIMEOUT_S)
+        if p_st is None:
+            if not metas:
+                return None, None, None
+            truncated, stopped = True, f"page {page} failed"
+            break
+        c, d, m = _stock(p_st)
+        codes.update(c)
+        detail.extend(d)
+        metas.append(m)
+        if m.get("rows_returned", 0) < PM_STOCK_PAGE_SIZE:
+            stopped = "short page — the room ended"
+            break
+        if not m.get("truncated"):
+            stopped = "on_hand reached 0 — nothing but zeros left"
+            break
+        tp = m.get("total_pages") or 0
+        if tp and page >= tp:
+            stopped = "last page"
+            break
+    else:
+        truncated, stopped = True, f"page cap ({PM_MAX_PAGES})"
+
+    detail.sort(key=lambda r: r["on_hand"], reverse=True)
+    non_fg = [r for r in detail if not str(r["item_code"]).upper().startswith("FG")]
+    first = metas[0] if metas else {}
+    return (
+        codes,
+        detail,
+        {
+            "total_items": first.get("total_items"),
+            "rows_returned": sum(m.get("rows_returned", 0) for m in metas),
+            "nonzero_rows": len(detail),
+            "non_fg_rows": len(non_fg),
+            "non_fg_codes": sorted(r["item_code"] for r in non_fg),
+            "page_size": PM_STOCK_PAGE_SIZE,
+            "pages_read": len(metas),
+            "total_pages": first.get("total_pages"),
+            "truncated": truncated,
+            "stopped_because": stopped,
+            "fetched_at": first.get("fetched_at"),
+        },
+    )
+
+
 # --------------------------------------------------------------------------- fetch
 def fetch(hourly: bool = False) -> dict:
     now = datetime.now(IST)
@@ -750,6 +866,9 @@ def fetch(hourly: bool = False) -> dict:
         "fg_stock": None,
         "fg_stock_detail": None,
         "fg_stock_meta": None,
+        "pm_stock": None,
+        "pm_stock_detail": None,
+        "pm_stock_meta": None,
     }
 
     # ---- hourly ------------------------------------------------------------
@@ -824,9 +943,40 @@ def fetch(hourly: bool = False) -> dict:
             notes.append(NON_FG_STOCK_NOTE)
         else:
             unavailable.append("fg_stock")
+
+        # The packaging rooms, read exactly like the FG rooms above: one warehouse per
+        # call, each failing on its own. A room that does not answer is named in
+        # `unavailable` and left out of pm_stock — it never becomes a zero, because a
+        # zero packaging room is indistinguishable from a real stock-out and that is
+        # precisely the number the planner blocks production on.
+        pm_stock, pm_detail, pm_meta = {}, {}, {}
+        pm_deadline = time.monotonic() + PM_PHASE_BUDGET_S
+        for wh in PM_WAREHOUSES:               # ONE warehouse per call — a CSV sums them
+            codes, det, m = _stock_paged(calls, wh, pm_deadline)
+            if codes is None:
+                unavailable.append(f"pm_stock[{wh}]")
+                continue
+            pm_stock[wh], pm_detail[wh], pm_meta[wh] = codes, det, m
+            if m.get("truncated"):
+                notes.append(
+                    f"pm_stock[{wh}] is INCOMPLETE ({m.get('stopped_because')}): the rows "
+                    "not read are the smallest stocks, so treat any zero in that room as "
+                    "unknown rather than empty."
+                )
+            if m.get("fetched_at") and not server_at:
+                server_at = m["fetched_at"]
+        if pm_stock:
+            data["pm_stock"] = pm_stock
+            data["pm_stock_detail"] = pm_detail
+            data["pm_stock_meta"] = pm_meta
+            notes.append(PM_STOCK_NOTE)
+        else:
+            unavailable.append("pm_stock")
     else:
         # not an outage — simply not fetched this cycle
-        notes.append("lines / line_configs / fg_stock are hourly; not fetched this cycle.")
+        notes.append(
+            "lines / line_configs / fg_stock / pm_stock are hourly; not fetched this cycle."
+        )
 
     data["unavailable"] = unavailable
     data["notes"] = notes
