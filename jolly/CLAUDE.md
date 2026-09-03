@@ -64,6 +64,34 @@ live/PHASE5-SITE.md        the Mark 3 site — a static shell that fetches the p
 reference/MARK3-LIVE-SOURCES.md   every live command, verified, with its traps (102 KB — read it)
 ```
 
+**The Mark 3 site — public, no login: https://jivo-mark3.vercel.app**
+(Vercel project `jivo-mark3`; `site-live/`; a static shell that fetches the
+publisher every 180 s — a deploy is a UI change only, never a data change.
+`vercel.json` pins `framework: nextjs`; without it Vercel served `public/` and
+every route 404'd.) Mark 2 stays frozen at jivo-mark2.vercel.app as the baseline.
+
+**The forward plan, over HTTPS:** `…/plan/overview.json`, `…/plan/manifest.json`,
+`…/plan/days/day-NN.json` (+ spine, storage, materials, loops, honesty, lines) —
+the calibrated engine re-run on live state every cycle by `live/freeze_live.py`
+→ `engine/august_sim.py` → `live/gen_live.py`. **Only day 1 is observed** is
+still the rule — day 1 is now re-observed every 3 minutes.
+
+**Rulings that shape the live plan (2026-09-03), all carried in honesty.assumed:**
+- storage pile = the live PENDING+BOOKED backlog × Oil share, never the 14-day
+  bills window (C-0076: "not DISPATCHED" ≠ "still in godown").
+- bulk oil = EXIM tank if one exists, else drums in BH-LO/BH-CRUDE/BH-EX/BH-GJ —
+  never both (BH-LO is SAP's lagging book of the same oil).
+- packaging from all allow-listed rooms incl. **BH-NM / GP-NM — OPEN QUESTION
+  for Daman**: GODOWNS.md both allows them and calls them "non-moving, not
+  available"; 41 BOM codes / 655,666 pcs (PM0000075 tape) have their only stock
+  there. If "non-moving" means unusable, the plan changes materially.
+- open bulk POs are blanket contracts: the undrawn balance is booked as arriving
+  at lead time and is the loosest number in the freeze.
+- a fresh clone's freeze REFUSES (rc=2) until the hourly stock set has run once —
+  `rm live/state/.cadence.json`, then one `loop.sh`. Correct, not a bug.
+- phone numbers are masked at the publisher door (`live/adapters/_mask.py`);
+  the site never renders driver fields at all.
+
 **The live state, over HTTPS, no login:**
 `https://mark3-2ff07f84.srv1685505.hstgr.cloud/state.json` (and `/healthz`).
 `collected_at` is when the loop ran; each source carries its own `fetched_at`,
