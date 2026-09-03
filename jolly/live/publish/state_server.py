@@ -42,7 +42,7 @@ class H(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.split("?",1)[0] in ("/healthz", "/"):
             body = json.dumps({"ok": True, "root": ROOT, "now": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                               "files": sorted(f for f in os.listdir(ROOT) if f.endswith(".json")),
+                               "files": sorted(f for f in os.listdir(ROOT) if f.endswith(".json") and not f.startswith(".")),
                                "plan_files": len([f for f in os.listdir(os.path.join(ROOT,"plan")) if f.endswith(".json")]) if os.path.isdir(os.path.join(ROOT,"plan")) else 0}).encode()
             self._hdr(200, length=len(body)); self.wfile.write(body); return
         p = self._path()
