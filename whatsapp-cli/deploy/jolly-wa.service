@@ -6,7 +6,8 @@ Wants=jwa.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 __HOME__/bin/jolly_wa.py
+# the venv holds claude-agent-sdk (pip install claude-agent-sdk into __HOME__/jolly-venv)
+ExecStart=__HOME__/jolly-venv/bin/python __HOME__/bin/jolly_wa.py
 WorkingDirectory=__HOME__/jivo-cli/jolly
 Environment=HOME=__HOME__
 # Answer everyone, not only named people, through this IST date (blank = named only):

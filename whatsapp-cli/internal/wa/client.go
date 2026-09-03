@@ -48,6 +48,12 @@ type Client struct {
 	since time.Time
 
 	lidSeen map[string]bool // LIDs already checked against the names table
+
+	// wake is closed and replaced every time an inbound message is stored, so
+	// the API's /wait can hand a message to the answering loop the instant it
+	// arrives instead of the loop polling the archive.
+	wakeMu sync.Mutex
+	wake   chan struct{}
 }
 
 // Open builds the client but does not connect.
@@ -234,6 +240,28 @@ func (c *Client) record(evt *events.Message) {
 	}
 	c.learnLID(evt.Info.Chat)
 	c.learnLID(evt.Info.Sender)
+	if !evt.Info.IsFromMe {
+		c.wakeAll()
+	}
+}
+
+func (c *Client) wakeAll() {
+	c.wakeMu.Lock()
+	if c.wake != nil {
+		close(c.wake)
+	}
+	c.wake = make(chan struct{})
+	c.wakeMu.Unlock()
+}
+
+// Wake returns a channel closed on the next inbound message.
+func (c *Client) Wake() <-chan struct{} {
+	c.wakeMu.Lock()
+	defer c.wakeMu.Unlock()
+	if c.wake == nil {
+		c.wake = make(chan struct{})
+	}
+	return c.wake
 }
 
 // learnLID completes a label that was given by phone number only. WhatsApp

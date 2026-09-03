@@ -85,6 +85,16 @@ func (c *Client) SendText(ctx context.Context, to types.JID, text string) (strin
 	return resp.ID, nil
 }
 
+// Typing shows "typing…" to one chat while an answer is being written. It is
+// the only presence jwa ever emits, and only when the loop is really working.
+func (c *Client) Typing(ctx context.Context, to types.JID, on bool) error {
+	state := types.ChatPresenceComposing
+	if !on {
+		state = types.ChatPresencePaused
+	}
+	return c.WA.SendChatPresence(ctx, to, state, types.ChatPresenceMediaText)
+}
+
 func oneLine(s string, n int) string {
 	s = strings.Join(strings.Fields(s), " ")
 	if len(s) > n {

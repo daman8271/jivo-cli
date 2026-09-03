@@ -5,7 +5,9 @@ package wa
 // commands never connect to WhatsApp at all.
 //
 //	GET  /health          {"linked":…, "connected":…, "state":…}
+//	GET  /wait            blocks until an inbound message lands (≤25 s), then {"woke":true|false}
 //	POST /send            {"to":"+91…"|"jid","text":"…"}  → {"id":"…"}
+//	POST /typing          {"to":"…","on":true|false}
 
 import (
 	"context"
@@ -36,23 +38,45 @@ func (c *Client) Serve(ctx context.Context, addr string) error {
 			"me":        c.WA.Store.ID.String(),
 		})
 	})
+	mux.HandleFunc("GET /wait", func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case <-c.Wake():
+			writeJSON(w, 200, map[string]any{"woke": true})
+		case <-time.After(25 * time.Second):
+			writeJSON(w, 200, map[string]any{"woke": false})
+		case <-r.Context().Done():
+		}
+	})
+	mux.HandleFunc("POST /typing", func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			To string `json:"to"`
+			On bool   `json:"on"`
+		}
+		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4<<10)).Decode(&req); err != nil {
+			writeJSON(w, 400, map[string]any{"error": "bad json: " + err.Error()})
+			return
+		}
+		to, err := c.deliverable(r.Context(), req.To)
+		if err != nil {
+			writeJSON(w, 400, map[string]any{"error": err.Error()})
+			return
+		}
+		if err := c.Typing(r.Context(), to, req.On); err != nil {
+			writeJSON(w, 502, map[string]any{"error": err.Error()})
+			return
+		}
+		writeJSON(w, 200, map[string]any{"ok": true})
+	})
 	mux.HandleFunc("POST /send", func(w http.ResponseWriter, r *http.Request) {
 		var req sendReq
 		if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64<<10)).Decode(&req); err != nil {
 			writeJSON(w, 400, map[string]any{"error": "bad json: " + err.Error()})
 			return
 		}
-		to, err := ToJID(req.To)
+		to, err := c.deliverable(r.Context(), req.To)
 		if err != nil {
 			writeJSON(w, 400, map[string]any{"error": err.Error()})
 			return
-		}
-		// A chat keyed by a privacy LID is delivered to the phone behind it
-		// when the session store knows the mapping; otherwise send to the LID.
-		if to.Server == types.HiddenUserServer {
-			if pn, perr := c.WA.Store.LIDs.GetPNForLID(r.Context(), to.ToNonAD()); perr == nil && !pn.IsEmpty() {
-				to = pn
-			}
 		}
 		sctx, cancel := context.WithTimeout(r.Context(), 60*time.Second)
 		defer cancel()
@@ -83,6 +107,21 @@ func (c *Client) Serve(ctx context.Context, addr string) error {
 		return err
 	}
 	return nil
+}
+
+// deliverable parses a target and, for a chat keyed by a privacy LID, swaps in
+// the phone behind it when the session store knows the mapping.
+func (c *Client) deliverable(ctx context.Context, who string) (types.JID, error) {
+	to, err := ToJID(who)
+	if err != nil {
+		return to, err
+	}
+	if to.Server == types.HiddenUserServer {
+		if pn, perr := c.WA.Store.LIDs.GetPNForLID(ctx, to.ToNonAD()); perr == nil && !pn.IsEmpty() {
+			to = pn
+		}
+	}
+	return to, nil
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
