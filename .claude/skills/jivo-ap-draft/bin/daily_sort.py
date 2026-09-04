@@ -85,13 +85,18 @@ def lane_of(draft, company):
 
 
 def sort_book(company):
+    """Returns (trays, lanes). `lanes` keeps the called lane for EVERY draft --
+    the trays alone lose it for not_sent and rejected, and the snapshot needs
+    the real call, not a guess."""
     trays = {k: [] for k in ("ready", "jsap_approved", "with_her_fast",
                              "with_her_slow", "not_sent", "rejected", "unknown")}
+    lanes = {}
     for d in fetch(company):
         st = d.get("AuthorizationStatus")
         lane, _ = lane_of(d, company)
         row = (d["DocEntry"], d.get("CardName") or "", d.get("NumAtCard") or "",
                float(d.get("DocTotal") or 0))
+        lanes[d["DocEntry"]] = lane
         if lane == "UNKNOWN":
             trays["unknown"].append(row)
         elif st == APPROVED:
@@ -102,7 +107,7 @@ def sort_book(company):
             trays["not_sent"].append(row)
         elif st == REJECTED:
             trays["rejected"].append(row)
-    return trays
+    return trays, lanes
 
 
 def tot(rows):
@@ -183,19 +188,18 @@ def _default_log():
     return os.path.join(REPO, "queries", slug, "jsap-lane-predictions.jsonl")
 
 
-def snapshot(company, trays, path):
+def snapshot(company, trays, lanes, path):
     """Write down what we predicted, today, for drafts nobody has resolved yet.
     This is what makes the claim checkable later instead of just asserted: the
     rule is deterministic, but a draft's lines CAN be edited before posting, so
     the honest test records the call at the time it was made."""
     import datetime
     now = datetime.datetime.now().isoformat(timespec="seconds")
-    lane = {}
-    for k in ("with_her_fast", "not_sent"):
-        for r in trays[k]:
-            lane[r[0]] = POST_NOW
-    for r in trays["with_her_slow"]:
-        lane[r[0]] = WAITS
+    # Only drafts whose lane is not yet decided in reality, and each recorded
+    # with the lane we ACTUALLY called -- never a bucket-wide assumption.
+    undecided = [r[0] for k in ("with_her_fast", "with_her_slow", "not_sent")
+                 for r in trays[k]]
+    lane = {de: lanes[de] for de in undecided if lanes.get(de) in (POST_NOW, WAITS)}
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "a") as f:
         for de, pred in sorted(lane.items()):
@@ -335,13 +339,13 @@ def main():
     books = ["oil", "mart", "bev"] if a.all else [a.company]
     out = {}
     for co in books:
-        trays = sort_book(co)
+        trays, lanes = sort_book(co)
         out[co] = {k: [{"DocEntry": r[0], "CardName": r[1], "NumAtCard": r[2],
                         "DocTotal": r[3]} for r in v] for k, v in trays.items()}
         if not a.json:
             show(co, trays, a.limit)
         if a.snapshot:
-            snapshot(co, trays, a.log)
+            snapshot(co, trays, lanes, a.log)
     if a.json:
         print(json.dumps(out, indent=1))
 
