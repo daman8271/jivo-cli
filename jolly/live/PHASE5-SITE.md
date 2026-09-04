@@ -44,7 +44,7 @@ Every figure on the site comes from ji.jivo.in / EXIM / OMS / ecom through
 - A source with `ok:false` renders its last-good data greyed with "no fresh data
   since <last_good_at>" — **never a zero, never blank**.
 - Non-live inputs carry a persistent badge: tank levels (manual daily reading),
-  ecom targets (`carried_from`), the lag note (`static`). The ceiling is NOT badged — it is Daman's declared limit (C-0079, 2026-09-04).
+  ecom targets (`carried_from`), the lag note (`static`). The ceiling is badged **YOUR LIMIT** — Daman's declared limit (C-0079/C-0080, 2026-09-04), never 'assumed'.
 - All-time counters (GRPO posting backlog, QC scoreboard) are labelled all-time.
 
 ## Company scoping on screen
