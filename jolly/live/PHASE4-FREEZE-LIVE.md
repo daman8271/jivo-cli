@@ -117,8 +117,9 @@ rating; Clear Pack 5 L at 17%). Use the measured August pieces/hr table in
 Emit `lines_basis {line: {pack: "measured|rated×eff|carried"}}`.
 
 ### rules
-Carry Mark 2's; override `invoice_truck_lag_days` from the measured median; keep
-`storage_ceiling_l` = 827,000 **and keep it badged ASSUMED** (Q2 is still open).
+Carry Mark 2's; override `invoice_truck_lag_days` from the measured median;
+`storage_ceiling_l` = 827,000 — **Daman's declared limit** (STORAGE-CAPACITY.md,
+reaffirmed 2026-09-04: "no guess now"; Q2 closed). Never badge it as assumed.
 
 ### provenance + honesty (write them, the site renders them)
 `provenance.{opening_fg, opening_pm, opening_oil, standing, orders, inbound,
