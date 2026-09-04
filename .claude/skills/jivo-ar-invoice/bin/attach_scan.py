@@ -17,12 +17,13 @@ Each invoice gets its OWN Attachments2 row — never share a row between documen
 """
 import argparse, json, os, subprocess, sys, tempfile
 
-REPO = os.environ.get("JIVO_REPO", "/Users/damanpreetsingh/jivo-cli")
-HANA = os.path.join(REPO, "hana-sql", "hana-sql")
-SAPB1 = os.path.join(REPO, "sap-b1", "cli", "sapb1")
-ENVS = {"JIVO_OIL_HANADB": "sap-b1/cli/user19-oil.env",
-        "JIVO_MART_HANADB": "sap-b1/cli/user19-mart.env",
-        "JIVO_BEVERAGES_HANADB": "sap-b1/cli/user19-bev.env"}
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+from _paths import REPO as _REPO, sapb1 as _sapb1, hana_sql as _hana, load_env as _load_env
+
+REPO = str(_REPO)
+HANA = _hana()
+SAPB1 = _sapb1()
 
 def hana(sql):
     r = subprocess.run([HANA, sql], capture_output=True, text=True, cwd=REPO)
@@ -35,13 +36,7 @@ def hana(sql):
     return [dict(zip(h, l.split("\t"))) for l in ls[1:]]
 
 def load_env(company):
-    env = dict(os.environ)
-    for line in open(os.path.join(REPO, ENVS[company])):
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, v = line.split("=", 1)
-            env[k] = v
-    return env
+    return _load_env(company)
 
 def short(invs):
     """626070362,363,364,365,370 — the house filename convention."""

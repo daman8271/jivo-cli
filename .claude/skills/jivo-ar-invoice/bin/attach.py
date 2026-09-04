@@ -25,14 +25,13 @@ mapping.json:
 """
 import argparse, json, os, subprocess, sys
 
-REPO = os.environ.get("JIVO_REPO", "/Users/damanpreetsingh/jivo-cli")
-HANA = os.path.join(REPO, "hana-sql", "hana-sql")
-SAPB1 = os.path.join(REPO, "sap-b1", "cli", "sapb1")
-ENVS = {  # company -> env file holding that book's login
-    "JIVO_OIL_HANADB":       "sap-b1/cli/user19-oil.env",
-    "JIVO_MART_HANADB":      "sap-b1/cli/user19-mart.env",
-    "JIVO_BEVERAGES_HANADB": "sap-b1/cli/user19-bev.env",
-}
+import sys as _sys, pathlib as _pl
+_sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
+from _paths import REPO as _REPO, sapb1 as _sapb1, hana_sql as _hana, load_env as _load_env
+
+REPO = str(_REPO)
+HANA = _hana()
+SAPB1 = _sapb1()
 
 def hana(sql):
     r = subprocess.run([HANA, sql], capture_output=True, text=True, cwd=REPO)
@@ -45,16 +44,7 @@ def hana(sql):
     return [dict(zip(hdr, l.split("\t"))) for l in lines[1:]]
 
 def load_env(company):
-    path = os.path.join(REPO, ENVS[company])
-    if not os.path.exists(path):
-        sys.exit(f"no login file for {company}: {path}")
-    env = dict(os.environ)
-    for line in open(path):
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            k, v = line.split("=", 1)
-            env[k] = v
-    return env
+    return _load_env(company)
 
 def fetch(company, nums):
     return {int(r["DocNum"]): r for r in hana(
@@ -74,8 +64,6 @@ def main():
 
     m = json.load(open(a.mapping))
     company = m["company"]
-    if company not in ENVS:
-        sys.exit(f"unknown company {company}")
 
     want = {}
     for b in m["bilties"]:
