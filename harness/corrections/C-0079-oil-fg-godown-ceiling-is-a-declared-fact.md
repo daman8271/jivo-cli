@@ -4,7 +4,7 @@ date: 2026-09-04
 author: Daman (2026-09-04), recorded by Claude
 area: factory
 severity: medium
-status: active
+status: superseded
 supersedes: 
 tags: [godown]
 ---
