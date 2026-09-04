@@ -295,6 +295,13 @@ export type EcomNow = {
   open_by_platform_source?: string;
   open_qcomm_l?: number | null;
   open_amazon_sep_l?: number | null;
+  open_amazon_l?: number | null;
+  open_amazon_pos?: number | null;
+  open_expired_l?: number | null;
+  open_qcomm_expired_l?: number | null;
+  open_qcomm_expired_pos?: number | null;
+  open_qcomm_no_expiry_l?: number | null;
+  expiry_basis?: string | null;
   open_total_l?: number | null;
   open_value_ex_gst_inr?: number | null;
   open_value_ex_gst_qcomm_inr?: number | null;

@@ -48,7 +48,14 @@ EVERY KEY IN data, WITH ITS UNIT
     unmapped_top             list   [{format, sku_code, item, litres L}] worst 10
     open_total_l             L      = sum(open_po_litres_by_fg) + unmapped_l
     open_qcomm_l             L      q-commerce open litres (all 8 formats)
-    open_amazon_sep_l        L      Amazon open litres dated to the plan month
+    open_amazon_l            L      Amazon open+UNEXPIRED litres, every month
+                                    -- this is what enters open_total_l
+    open_amazon_pos          int    how many POs that is
+    open_amazon_sep_l        L      of that, the share RAISED in the plan month
+                                    (reporting only; it gates nothing)
+    open_qcomm_expired_l / _pos     q-comm litres past expiry, NOT in the total
+    open_expired_l           L      both feeds, past expiry, excluded
+    expiry_basis             str    how "not yet expired" was tested
     open_value_ex_gst_inr    Rs     q-comm open value ONLY, PRE-TAX (never mix
                                     with overall-pendency's GST-inclusive
                                     figure, and never render it beside
@@ -341,6 +348,20 @@ def _iso_date(value):
     return None
 
 
+def _is_expired(iso_text, today_iso: str) -> bool:
+    """Has this PO's window closed?
+
+    The date is the ONLY safe test. Both feeds also carry days_to_expiry and it
+    CLAMPS AT ZERO: q-comm PO ZHPHR27-PO-4093679 expired 2026-08-30 and still
+    reported days_to_expiry=0 on 2026-09-04. Reading that field would have
+    called a dead PO live. No date at all = cannot prove it is dead, so it is
+    kept and counted in the no_expiry_date field so it stays visible.
+    """
+    if not iso_text:
+        return False
+    return str(iso_text) < today_iso
+
+
 def _now_ist() -> datetime:
     return datetime.now(IST)
 
@@ -556,6 +577,14 @@ def _heavy(month: int, year: int):
     warnings = []
     data = {"month": month, "year": year}
     server_at = None
+    # An open PO counts when its window is still open. Daman's rule, 2026-09-04:
+    # "take all the open PO which are not yet expired". This replaced a plan-month
+    # gate that had been calling August-raised Amazon POs "stale backlog" when
+    # every one of the 118 was unexpired, with expiry dates out to 17 Oct.
+    today_iso = _now_ist().date().isoformat()
+    data["expiry_basis"] = (
+        "open AND not yet expired, tested on the PO's own expiry date against "
+        + today_iso + " (never days_to_expiry — that field clamps at 0)")
     # which feeds actually answered. master_po + amazon-po ARE the demand book;
     # without either one the payload is not a position, and must never be
     # cached as though it were.
@@ -587,6 +616,9 @@ def _heavy(month: int, year: int):
     open_q_l = 0.0
     open_value = 0.0
     casefold_hits = 0
+    q_expired_l = 0.0
+    q_expired_pos = set()
+    q_no_expiry_l = 0.0
     try:
         rows, count = _fetch_master_po()
         if count is not None and len(rows) < count:
@@ -600,6 +632,18 @@ def _heavy(month: int, year: int):
             ordered = _f(row.get("total_order_liters"))
             delivered = _f(row.get("total_delivered_liters"))
             litres = max(ordered - delivered, 0.0)
+
+            # An expired PO is not demand. master_po still calls it OPEN.
+            expiry = _iso_date(row.get("po_expiry_date"))
+            if _is_expired(expiry, today_iso):
+                q_expired_l += litres
+                po_x = _s(row.get("po_number"))
+                if po_x:
+                    q_expired_pos.add(po_x)
+                continue
+            if not expiry:
+                q_no_expiry_l += litres
+
             open_q_l += litres
             open_value += max(
                 _f(row.get("total_order_amt_exclusive"))
@@ -650,6 +694,9 @@ def _heavy(month: int, year: int):
         "still_due_l": 0.0, "value_still_due_ex_gst_inr": 0.0,
         "september_value_ex_gst_inr": 0.0, "before_month_l": 0.0,
         "before_month_pos": 0,
+        "live_l": 0.0, "live_value_ex_gst_inr": 0.0, "live_pos": 0,
+        "live_lines": 0, "expired_lines": 0,
+        "expired_l": 0.0, "expired_pos": 0, "no_expiry_date_l": 0.0,
         "unmapped_l": 0.0, "pending_fill_rate_pct": None,
         "fill_rate_pct": amazon_fill_rate,
         "fill_rate_basis": "all-time, reports amazon-po-summary (refreshed hourly)",
@@ -665,6 +712,8 @@ def _heavy(month: int, year: int):
         pos = set()
         sep_pos = set()
         stale_pos = set()
+        live_pos = set()
+        expired_pos = set()
         sep_lines = 0
         for row in rows:
             if not isinstance(row, dict):
@@ -684,6 +733,37 @@ def _heavy(month: int, year: int):
             if po:
                 pos.add(po)
 
+            # Expiry decides WHETHER it counts; the expiry date decides WHEN.
+            # The old gate was po_month == plan month, which threw away every
+            # August-raised PO that is still perfectly live.
+            expiry = _iso_date(row.get("expiry_date"))
+            if _is_expired(expiry, today_iso):
+                amazon["expired_l"] += litres
+                amazon["expired_lines"] += 1
+                if po:
+                    expired_pos.add(po)
+                continue
+            if not expiry:
+                amazon["no_expiry_date_l"] += litres
+
+            amazon["live_lines"] += 1
+            amazon["live_l"] += litres
+            amazon["live_value_ex_gst_inr"] += value
+            if po:
+                live_pos.add(po)
+            fg = _s(row.get("sap_sku_code"))
+            if fg:
+                by_fg_amz[fg] += litres
+            else:
+                amazon["unmapped_l"] += litres
+            when = expiry or _iso_date(row.get("order_date"))
+            if when:
+                dated[(when, "AMAZON")] += litres
+            else:
+                undated_l += litres
+
+            # kept for the record: which month the PO was RAISED in. Reporting
+            # only -- it no longer gates anything.
             row_month = _i(row.get("po_month"))
             row_year = _i(row.get("year"), year)
             if row_month == month and row_year == year:
@@ -692,16 +772,6 @@ def _heavy(month: int, year: int):
                     sep_pos.add(po)
                 amazon["september_l"] += litres
                 amazon["september_value_ex_gst_inr"] += value
-                fg = _s(row.get("sap_sku_code"))
-                if fg:
-                    by_fg_amz[fg] += litres
-                else:
-                    amazon["unmapped_l"] += litres
-                when = _iso_date(row.get("expiry_date")) or _iso_date(row.get("order_date"))
-                if when:
-                    dated[(when, "AMAZON")] += litres
-                else:
-                    undated_l += litres
             elif row_month == prev_month and row_year == prev_year:
                 amazon["august_stale_l"] += litres
                 amazon["before_month_l"] += litres
@@ -713,15 +783,23 @@ def _heavy(month: int, year: int):
                 if po:
                     stale_pos.add(po)
         amazon["pos"] = len(pos)
+        amazon["live_pos"] = len(live_pos)
+        amazon["expired_pos"] = len(expired_pos - live_pos)
         if amazon["ordered_l"] > 0:
             amazon["pending_fill_rate_pct"] = round(
                 100.0 * amazon["delivered_l"] / amazon["ordered_l"], 2)
-        if amazon["august_stale_l"] > amazon["september_l"]:
+        if amazon["expired_l"] > 0:
             warnings.append(
-                "Amazon open book is mostly stale backlog: %.0f L dated %04d-%02d vs "
-                "%.0f L dated %04d-%02d — never feed the stale share into the plan"
-                % (amazon["august_stale_l"], prev_year, prev_month,
-                   amazon["september_l"], year, month))
+                "Amazon: %.0f L on %d PO(s) has passed its expiry date and is NOT "
+                "counted as open" % (amazon["expired_l"], amazon["expired_pos"]))
+        if amazon["before_month_l"] > amazon["september_l"]:
+            warnings.append(
+                "most of Amazon's live book was RAISED earlier (%.0f L from before "
+                "%04d-%02d vs %.0f L raised in it) — every litre of it is still "
+                "unexpired, so it counts as open; the month it was raised in "
+                "decides nothing"
+                % (amazon["before_month_l"], year, month,
+                   amazon["september_l"]))
         # pos/lines here are the PLAN-MONTH slice, so the row is internally
         # consistent with its own litres. The whole PENDING book (637 lines /
         # 69 POs, 93% August backlog) stays in data["amazon"].
@@ -730,9 +808,11 @@ def _heavy(month: int, year: int):
         # POs whose litres are NOT in open_total_l. The card MUST show this or a
         # planner reads the month-scoped Amazon row as Amazon's whole book.
         amazon["before_month_pos"] = len(stale_pos - sep_pos)
+        # the LIVE book (every unexpired PO), so this row is on the same basis
+        # as the q-comm rows beside it and can honestly be ranked against them.
         by_platform["AMAZON"] = {
-            "pos": len(sep_pos), "lines": sep_lines,
-            "litres": round(amazon["september_l"], 2),
+            "pos": len(live_pos), "lines": amazon["live_lines"],
+            "litres": round(amazon["live_l"], 2),
         }
         feeds["amazon_po"] = True
     except EcomError as exc:
@@ -740,7 +820,9 @@ def _heavy(month: int, year: int):
 
     for key in ("september_l", "august_stale_l", "other_month_l", "ordered_l",
                 "delivered_l", "unmapped_l", "still_due_l", "before_month_l",
-                "value_still_due_ex_gst_inr", "september_value_ex_gst_inr"):
+                "value_still_due_ex_gst_inr", "september_value_ex_gst_inr",
+                "live_l", "live_value_ex_gst_inr", "expired_l",
+                "no_expiry_date_l"):
         amazon[key] = round(amazon[key], 2)
     data["amazon"] = amazon
 
@@ -756,8 +838,13 @@ def _heavy(month: int, year: int):
         fg: round(v, 2) for fg, v in sorted(combined.items(), key=lambda kv: -kv[1])}
     data["open_po_litres_by_fg_qcomm"] = {
         fg: round(v, 2) for fg, v in sorted(by_fg_q.items(), key=lambda kv: -kv[1])}
-    data["open_po_litres_by_fg_amazon_sep"] = {
-        fg: round(v, 2) for fg, v in sorted(by_fg_amz.items(), key=lambda kv: -kv[1])}
+    amazon_fg = {fg: round(v, 2)
+                 for fg, v in sorted(by_fg_amz.items(), key=lambda kv: -kv[1])}
+    data["open_po_litres_by_fg_amazon"] = amazon_fg
+    # the old key name said "_sep" when it held the plan-month slice. It now
+    # holds every unexpired Amazon litre. Kept populated so an older
+    # freeze_live/gen_live keeps working; new readers use the name above.
+    data["open_po_litres_by_fg_amazon_sep"] = amazon_fg
     data["unmapped_l"] = round(unmapped_total, 2)
     data["unmapped_top"] = [
         {"format": k.split("\x00")[0], "sku_code": k.split("\x00")[1],
@@ -765,8 +852,15 @@ def _heavy(month: int, year: int):
         for k, v in sorted(unmapped_rows.items(), key=lambda kv: -kv[1]["litres"])[:10]
     ]
     data["open_qcomm_l"] = round(open_q_l, 2)
+    data["open_qcomm_expired_l"] = round(q_expired_l, 2)
+    data["open_qcomm_expired_pos"] = len(q_expired_pos)
+    data["open_qcomm_no_expiry_l"] = round(q_no_expiry_l, 2)
+    # the headline: open AND unexpired, every month, both feeds.
+    data["open_amazon_l"] = amazon["live_l"]
+    data["open_amazon_pos"] = amazon["live_pos"]
     data["open_amazon_sep_l"] = amazon["september_l"]
-    data["open_total_l"] = round(open_q_l + amazon["september_l"], 2)
+    data["open_total_l"] = round(open_q_l + amazon["live_l"], 2)
+    data["open_expired_l"] = round(q_expired_l + amazon["expired_l"], 2)
     # open_value_ex_gst_inr is q-comm ONLY and is kept under its old name so
     # nothing that already reads it changes meaning. Anything rendered next to
     # open_total_l must use open_value_ex_gst_total_inr instead -- the two
@@ -774,13 +868,16 @@ def _heavy(month: int, year: int):
     data["open_value_ex_gst_inr"] = round(open_value, 2)
     data["open_value_ex_gst_qcomm_inr"] = round(open_value, 2)
     data["open_value_ex_gst_total_inr"] = round(
-        open_value + amazon["september_value_ex_gst_inr"], 2)
+        open_value + amazon["live_value_ex_gst_inr"], 2)
     data["open_value_basis"] = (
-        "q-commerce open value plus Amazon's plan-month open value, both "
-        "pre-tax and both on the same basis as open_total_l")
+        "q-commerce plus Amazon, unexpired only, pre-tax, on exactly the same "
+        "basis as open_total_l")
     # The Amazon litres deliberately left OUT of open_total_l: real open POs
     # dated before the plan month, which must not drive this month's plan but
     # must not vanish from the page either.
+    # Amazon litres raised in an earlier month. They are IN open_total_l now --
+    # unexpired is unexpired. Kept as a field because the page should say how
+    # much of the book is older paper, not because it changes the total.
     data["open_backlog_amazon_l"] = amazon["before_month_l"]
     data["open_backlog_amazon_pos"] = amazon.get("before_month_pos", 0)
     data["open_amazon_all_l"] = amazon["still_due_l"]
@@ -790,9 +887,9 @@ def _heavy(month: int, year: int):
         "master_po open_close=OPEN for the 8 q-commerce formats; "
         "AMAZON from reports amazon-po PENDING scoped to the plan month")
     data["open_backlog_basis"] = (
-        "Amazon PENDING POs dated before the plan month. Excluded from "
-        "open_total_l on purpose (they must not drive this month's plan); "
-        "counted here because they are still open orders.")
+        "Amazon PENDING litres RAISED before the plan month. Included in "
+        "open_total_l -- they are unexpired, so they are real open orders. "
+        "The month a PO was raised in decides nothing; only its expiry does.")
     if casefold_hits:
         warnings.append(
             "%d q-comm lines joined to an FG only after case-folding the SKU code"

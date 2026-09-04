@@ -1367,7 +1367,11 @@ def build():
 
     # -- 2. ecom --------------------------------------------------------------
     dated = ((ecom or {}).get("dated_demand") or [])
-    amz_mix = {k: f(v) for k, v in ((ecom or {}).get("open_po_litres_by_fg_amazon_sep") or {}).items()}
+    # every UNEXPIRED Amazon litre (the adapter's new key), falling back to the
+    # old plan-month-only key if this run is reading an older state file.
+    amz_mix = {k: f(v) for k, v in (
+        (ecom or {}).get("open_po_litres_by_fg_amazon")
+        or (ecom or {}).get("open_po_litres_by_fg_amazon_sep") or {}).items()}
     qc_mix = {k: f(v) for k, v in ((ecom or {}).get("open_po_litres_by_fg_qcomm") or {}).items()}
 
     def mix_for(platform):
@@ -1384,7 +1388,7 @@ def build():
         if d is None or lit <= 0:
             continue
         if not (today.year == d.year and today.month == d.month):
-            ec_excluded_l += lit                       # August backlog and October POs alike
+            ec_excluded_l += lit         # unexpired, but due in a later month
             continue
         share, _tot = mix_for(row.get("platform"))
         if not share:
@@ -1412,9 +1416,9 @@ def build():
         F.assume("ecom order value is DERIVED as litres x the May-Jul realise rate — ecom's "
                  "dated demand carries no money")
     if ec_excluded_l:
-        F.warn(f"{ec_excluded_l:,.0f} L of ecom demand is dated outside {today.strftime('%B %Y')} "
-               "(Amazon's open book is mostly stale August backlog plus one October PO) and is "
-               "NOT in the demand stream")
+        F.warn(f"{ec_excluded_l:,.0f} L of ecom demand is required AFTER "
+               f"{today.strftime('%B %Y')} — every litre of it is an unexpired open PO, it is "
+               "simply not due this month, so it is not in this month's demand stream")
     if ec_subpiece_l >= 1:
         F.assume(f"{ec_subpiece_l:,.0f} L of ecom demand fell out as sub-one-bottle slices when "
                  "each dated row was split across that platform's FG mix — the ecom stream is a "
