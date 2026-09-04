@@ -146,10 +146,26 @@ Every tool previews by default and needs `--apply` to send. `receive.py` and
 - Invoice series names the book: Oil `626…`, Mart `706…`/`707…`.
 - `NA` is the bilty number when the transporter is **"Jivo Vehicle"** (own truck).
 
+## Cross-book bilties — C-0081
+
+**One bilty can carry Oil AND Beverages invoices** (the LR reads "CARTON OIL AND
+WATER"): Beverages is (BEVERAGE UNIT) JIVO WELLNESS PVT LTD, the same legal
+entity in a separate company DB, so one bill legitimately spans both books. If an
+invoice number off a bilty is not in Oil, **look in Beverages before calling it
+missing** (C-0073), and write TWO mappings — one per `company` — for that bilty.
+`attach.py` reports a not-found invoice with exactly this hint.
+
 ## Which login
 
-`sap-b1/cli/user19-*.env` — USER19 (GURCHARAN), the transport/GRPO desk, one file
-per book. Passwords differ per company (C-0031).
+USER19 (GURCHARAN), the transport/GRPO desk, one env file per book — passwords
+differ per company (C-0031). `bin/_paths.py` finds them, accepting either
+`sap-b1/cli/user19-<oil|mart|bev>.env` or the `mahak-user19-*.env` naming.
+
+**The tools run on Mac and on a Windows operator box.** `_paths.py` walks up from
+the script to find the checkout (no hard-coded path) and picks the binary by
+PLATFORM, not by which file exists — both `sapb1` and `sapb1.exe` are committed,
+so an exists-first check picks the wrong one and dies with
+`OSError: [Errno 8] Exec format error`. Override the checkout with `$JIVO_REPO`.
 
 ## Scale of the backlog
 
