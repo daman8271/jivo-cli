@@ -38,9 +38,20 @@ Add `--snapshot` to record today's calls so the accuracy keeps being checked.
 
 It reads SAP and prints the pile as trays:
 
+> **"READY TO POST" means "needs no JSAP approval". It does NOT mean "SAP will
+> accept it."** Those are two separate gates and this tool only answers the
+> first. SAP has its own posting validations on top, and a draft can be approved,
+> direct-lane and still be refused. **Proven live 2026-09-04:** draft 54959
+> (Babaji Udyog, ₹1,91,634) passed `add-draft --dry-run` clean and the real POST
+> came back `[SAP -5002] 10000877 - In "Taxable Amount" column, enter value less
+> than base document total`. Nothing posted; the batch stopped and never touched
+> the second draft. **The dry-run does NOT run SAP's posting validations** — so a
+> clean preview is not a promise. Say "these need no JSAP approval", never "these
+> will post".
+
 | Tray | What to do |
 |---|---|
-| **READY TO POST** | Bhawani approved it **and** it needs nothing else → post it |
+| **READY TO POST** | Bhawani approved it **and** it needs no JSAP approval → try posting it |
 | APPROVED BUT WAITING ON JSAP | above office; **do not hold the others for these** |
 | WITH BHAWANI NOW | split into "will post straight after her" / "then waits in JSAP" |
 | NOT SENT TO HER YET | use `jivo-add-and-new` — a draft nobody submits is invisible to her |
@@ -115,5 +126,19 @@ Full rule, the measured accuracy, and how to refresh it:
   (₹42 Cr, some from 2024). They are abandoned, not work. Showing them is what
   made the list too long to read in the first place.
 * If the READY tray is empty, say that plainly. It is a normal answer.
+* **`[SAP -5002] … "Taxable Amount" … less than base document total` = the TDS
+  block, not the lane.** Seen on draft 54959. Its 194Q row carried the FULL
+  taxable value as the base (`TaxableAmount 162540`, the whole line), but JIVO's
+  precedent on that vendor is different: of Babaji's five August invoices, four
+  posted with **no TDS at all** and one with a **partial** base
+  (`147847.46` on a ₹1.79 L bill) — the threshold residual, the same shape as BR
+  Agrotech's `14540.17`. So the draft's TDS is the defect. **The fix is the
+  operator's call, not yours** — either `WTLiable tNO` (matching 4 of 5
+  precedents) or the correct 194Q residual as the base. Show them the vendor's
+  last posted invoices and let them choose, per the `WTLiable` rule in
+  `jivo-ap-draft`. **Never re-run the same add-draft hoping it sticks.**
+* **The batch stops at the first failure and does not attempt the rest** — so
+  after a failure, the later DocEntries are untouched, not half-done. Check the
+  ones that share the same defect before retrying any of them.
 * This skill **writes nothing**. The only write is the `add-draft` the operator
   approves, and that is theirs, not yours.
