@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Attach bilty (G.R.) numbers to A/R invoices — addressed BY INVOICE NUMBER.
+"""Attach bilty (G.R.) numbers to A/R invoices - addressed BY INVOICE NUMBER.
 
 The bilty paper is the source (C-0038). Its `B/L No.` field names the JIVO sale
 invoice numbers it carried, and the transporter's consolidated bill repeats the
 same thing as a GR.NO -> INVOICE NO. table. So the match key is the INVOICE
 NUMBER; the G.R. number is the value being written.
 
-THE ONE RULE THAT MATTERS — OINV.U_BilltyNumber IS WRITE-ONCE.
+THE ONE RULE THAT MATTERS - OINV.U_BilltyNumber IS WRITE-ONCE.
 SAP's SBO_SP_TransactionNotification refuses any change once a value exists:
     [SAP -1116] (1395114) Cannot change the Bilty No once updated
 There is no override, from this CLI or from the SAP B1 client. So this tool
 REFUSES to touch an invoice that already carries a number, and only ever fills
-a NULL. A wrong number is permanent — never guess a clipped digit.
+a NULL. A wrong number is permanent - never guess a clipped digit.
 
     python3 attach.py mapping.json                 # preview (default)
     python3 attach.py mapping.json --apply         # send
@@ -69,7 +69,7 @@ def main():
     for b in m["bilties"]:
         gr = str(b["gr"]).strip()
         if not gr:
-            sys.exit("empty G.R. number in mapping — never write a guess")
+            sys.exit("empty G.R. number in mapping - never write a guess")
         dt = str(b.get("date", "")).strip()   # the Date box next to G.R. No.
         for inv in b["invoices"]:
             want[int(inv)] = (gr, dt)
@@ -100,27 +100,27 @@ def main():
         else:
             locked.append((inv, cur, gr))
 
-    print(f"=== {'APPLY' if a.apply else 'PREVIEW'} — {company} ===\n")
+    print(f"=== {'APPLY' if a.apply else 'PREVIEW'} - {company} ===\n")
     for inv, cur in ok_already:
         print(f"  OK ALREADY  {inv}  has {cur}")
     for inv in cancelled:
         print(f"  CANCELLED   {inv}  skipped")
     for inv in missing:
-        print(f"  NOT FOUND   {inv}  not in {company} — check the other two books (C-0073)")
+        print(f"  NOT FOUND   {inv}  not in {company} - check the other two books (C-0073)")
     for inv, cur, new in locked:
-        print(f"  LOCKED      {inv}  has {cur}, paper says {new} — WRITE-ONCE, cannot change")
+        print(f"  LOCKED      {inv}  has {cur}, paper says {new} - WRITE-ONCE, cannot change")
     if locked:
         print("\n  ^ these need the SAP partner at DB level, or cancel-and-reissue.")
     print()
     for inv, de, fields, name, cur, curdt in todo:
-        bits = " · ".join(f"{k.replace('U_','')} NULL -> {v}" for k, v in fields.items())
+        bits = " | ".join(f"{k.replace('U_','')} NULL -> {v}" for k, v in fields.items())
         note = "" if cur == "@NULL@" else f"  (number stays {cur}, locked)"
         print(f"  FILL        {inv}  DocEntry {de:<6} {bits}{note}  {name[:28]}")
-    print(f"\n  {len(todo)} to fill · {len(locked)} locked · {len(ok_already)} already correct "
-          f"· {len(cancelled)} cancelled · {len(missing)} missing")
+    print(f"\n  {len(todo)} to fill | {len(locked)} locked | {len(ok_already)} already correct "
+          f"| {len(cancelled)} cancelled | {len(missing)} missing")
 
     if not a.apply:
-        print("\n(preview only — re-run with --apply)")
+        print("\n(preview only - re-run with --apply)")
         return
     if not todo:
         print("\nnothing to write.")
@@ -138,7 +138,7 @@ def main():
             print(f"  FAIL  {inv} rc={r.returncode} "
                   f"{(r.stderr or r.stdout).strip().splitlines()[-1][:140]}")
 
-    if done:  # read back — never trust a 204
+    if done:  # read back - never trust a 204
         print("\n  read-back:")
         back = fetch(company, done)
         bad = 0

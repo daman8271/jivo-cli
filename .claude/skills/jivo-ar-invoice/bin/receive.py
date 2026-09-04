@@ -3,13 +3,13 @@
 
 JIVO's receiving workflow, enforced by SBO_SP_TransactionNotification:
 
-  130001002  "Please Attach its Receiving" — U_Recv_Date cannot be set unless
+  130001002  "Please Attach its Receiving" - U_Recv_Date cannot be set unless
              the invoice already has an attachment (AtcEntry). ATTACH FIRST.
-  1300013    "Please update the received qty" — with U_Recv_Date set, EVERY
+  1300013    "Please update the received qty" - with U_Recv_Date set, EVERY
              line must carry a non-zero U_Recvd_Qty.
   1300014    U_Recv_Date must not be earlier than DocDate.
 
-So this sends one PATCH per invoice carrying the date and all lines together —
+So this sends one PATCH per invoice carrying the date and all lines together -
 the guards test the final state, so a partial write is refused.
 
   python3 receive.py --invoices 626070363,626070364        # preview
@@ -85,16 +85,16 @@ def main():
         if d["cancelled"] != "N":
             skip.append((n, "cancelled")); continue
         if d["atc"] == -1:
-            skip.append((n, "NO ATTACHMENT — guard 130001002 will refuse; attach first"))
+            skip.append((n, "NO ATTACHMENT - guard 130001002 will refuse; attach first"))
             continue
         if a.date < d["docdate"]:
-            skip.append((n, f"date {a.date} is before DocDate {d['docdate']} — guard 1300014"))
+            skip.append((n, f"date {a.date} is before DocDate {d['docdate']} - guard 1300014"))
             continue
         if d["recv"] not in (None, "", "NULL") and all(r > 0 for _, _, r in d["lines"]):
             skip.append((n, f"already received on {d['recv']}")); continue
         todo.append((n, d))
 
-    print(f"=== {'APPLY' if a.apply else 'PREVIEW'} — {company} · recv date {a.date} ===\n")
+    print(f"=== {'APPLY' if a.apply else 'PREVIEW'} - {company} | recv date {a.date} ===\n")
     for n, why in skip:
         print(f"  SKIP  {n}  {why}")
     print()
@@ -103,7 +103,7 @@ def main():
         print(f"  RECV  {n}  DocEntry {d['de']:<6} atc {d['atc']:<7} {ls}")
     print(f"\n  {len(todo)} to receive, {len(skip)} skipped")
     if not a.apply:
-        print("\n(preview only — re-run with --apply)"); return
+        print("\n(preview only - re-run with --apply)"); return
     if not todo:
         return
 

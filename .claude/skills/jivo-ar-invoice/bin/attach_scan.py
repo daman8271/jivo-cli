@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Attach each bilty page to every A/R invoice that bilty carried.
 
-Addressed BY INVOICE NUMBER — the bilty's `B/L No.` names the invoices, so the
+Addressed BY INVOICE NUMBER - the bilty's `B/L No.` names the invoices, so the
 scan lands on the exact documents that rode on that truck.
 
 This is the half that WORKS on a posted, closed invoice: linking an attachment
@@ -13,7 +13,7 @@ bilty page as evidence.
   python3 attach_scan.py mapping.json --pdf "<scan.pdf>" --apply
 
 mapping.json bilties need a "page" (1-based page in the scan holding that bilty).
-Each invoice gets its OWN Attachments2 row — never share a row between documents.
+Each invoice gets its OWN Attachments2 row - never share a row between documents.
 """
 import argparse, json, os, subprocess, sys, tempfile
 
@@ -39,7 +39,7 @@ def load_env(company):
     return _load_env(company)
 
 def short(invs):
-    """626070362,363,364,365,370 — the house filename convention."""
+    """626070362,363,364,365,370 - the house filename convention."""
     invs = [str(i) for i in invs]
     out = [invs[0]]
     for i in invs[1:]:
@@ -65,14 +65,14 @@ def main():
     plan = []
     for b in m["bilties"]:
         if not b.get("page"):
-            print(f"  SKIP GR {b['gr']} — no 'page' in mapping"); continue
+            print(f"  SKIP GR {b['gr']} - no 'page' in mapping"); continue
         name = short(b["invoices"]) + ".pdf"
         for inv in b["invoices"]:
             r = rows.get(int(inv))
             if not r:
                 print(f"  !!   {inv} not found"); continue
             if int(r["ATC"]) != -1:
-                print(f"  HAS  {inv}  already has attachment row {r['ATC']} — left alone")
+                print(f"  HAS  {inv}  already has attachment row {r['ATC']} - left alone")
                 continue
             plan.append((int(inv), int(r["DocEntry"]), b["page"], name, b["gr"]))
 
@@ -80,7 +80,7 @@ def main():
     for inv, de, pg, name, gr in plan:
         print(f"  {inv}  DocEntry {de:<6} GR {gr:<6} page {pg}  -> {name}")
     if not a.apply:
-        print("\n(preview only — re-run with --apply)"); return
+        print("\n(preview only - re-run with --apply)"); return
     if not plan:
         return
 
@@ -108,7 +108,7 @@ def main():
     for inv, de, pg, name, gr in plan:
         src = pages[pg]; kb = round(os.path.getsize(src) / 1024)
         up = os.path.join(tmp, "up.json")
-        # commas in the name break curl -F (treated as a file separator) — quote it
+        # commas in the name break curl -F (treated as a file separator) - quote it
         r = subprocess.run(["curl", "-sSk", "--http1.1", "-H", "Expect:", "-b", ck,
                             "-X", "POST", f"{H}/b1s/v1/Attachments2",
                             "-F", f'files=@"{src}";type=application/pdf;filename="{name}"',

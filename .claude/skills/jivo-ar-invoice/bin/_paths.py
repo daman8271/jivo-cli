@@ -62,7 +62,7 @@ def env_file(company):
                f"sap-b1/cli/user19{'' if stem == 'oil' else '-' + stem}.env")
     if not p:
         sys.exit(f"jivo-ar-invoice: no USER19 login file for {company} under "
-                 f"{REPO / 'sap-b1' / 'cli'} — expected user19-{stem}.env")
+                 f"{REPO / 'sap-b1' / 'cli'} - expected user19-{stem}.env")
     return p
 
 

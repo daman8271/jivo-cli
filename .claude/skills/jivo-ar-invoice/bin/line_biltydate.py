@@ -68,13 +68,13 @@ def main():
     todo, skip = [], []
     for n, d in inv.items():
         if d["hdr"] in (None, "", "NULL"):
-            skip.append((n, "header U_BiltyDate is empty — nothing to copy down")); continue
+            skip.append((n, "header U_BiltyDate is empty - nothing to copy down")); continue
         need = [ln for ln, cur in d["lines"] if cur == "@NULL@"]
         if not need:
             skip.append((n, "every line already has it")); continue
         todo.append((n, d["de"], d["hdr"], need))
 
-    print(f"=== {'APPLY' if a.apply else 'PREVIEW'} — {c} ===\n")
+    print(f"=== {'APPLY' if a.apply else 'PREVIEW'} - {c} ===\n")
     for n, why in skip:
         print(f"  SKIP  {n}  {why}")
     print()
@@ -83,7 +83,7 @@ def main():
               f"{', '.join(map(str,need))}")
     print(f"\n  {len(todo)} invoice(s), {sum(len(t[3]) for t in todo)} line(s)")
     if not a.apply:
-        print("\n(preview only — re-run with --apply)"); return
+        print("\n(preview only - re-run with --apply)"); return
     if not todo:
         return
 
