@@ -49,8 +49,20 @@ EVERY KEY IN data, WITH ITS UNIT
     open_total_l             L      = sum(open_po_litres_by_fg) + unmapped_l
     open_qcomm_l             L      q-commerce open litres (all 8 formats)
     open_amazon_sep_l        L      Amazon open litres dated to the plan month
-    open_value_ex_gst_inr    Rs     q-comm open value, PRE-TAX (never mix with
-                                    overall-pendency's GST-inclusive figure)
+    open_value_ex_gst_inr    Rs     q-comm open value ONLY, PRE-TAX (never mix
+                                    with overall-pendency's GST-inclusive
+                                    figure, and never render it beside
+                                    open_total_l -- see the _total_ field)
+    open_value_ex_gst_qcomm_inr  Rs  explicit alias of the field above
+    open_value_ex_gst_total_inr  Rs  q-comm + Amazon plan-month, PRE-TAX. THIS
+                                    is the one that matches open_total_l
+    open_value_basis         str    what the _total_ figure covers
+    open_backlog_amazon_l    L      Amazon open litres dated BEFORE the plan
+                                    month -- real open POs kept out of
+                                    open_total_l so they cannot drive the plan
+    open_backlog_amazon_pos  int    how many POs those are
+    open_amazon_all_l / _pos       Amazon's whole PENDING book, for the record
+    open_backlog_basis       str    why the backlog is excluded from the total
 
     -- per platform -------------------------------------------------------
     open_by_platform         {PLATFORM: {pos: int, lines: int, litres: L}}
@@ -635,6 +647,9 @@ def _heavy(month: int, year: int):
     amazon = {
         "september_l": 0.0, "august_stale_l": 0.0, "other_month_l": 0.0,
         "ordered_l": 0.0, "delivered_l": 0.0, "lines": 0, "pos": 0,
+        "still_due_l": 0.0, "value_still_due_ex_gst_inr": 0.0,
+        "september_value_ex_gst_inr": 0.0, "before_month_l": 0.0,
+        "before_month_pos": 0,
         "unmapped_l": 0.0, "pending_fill_rate_pct": None,
         "fill_rate_pct": amazon_fill_rate,
         "fill_rate_basis": "all-time, reports amazon-po-summary (refreshed hourly)",
@@ -649,6 +664,7 @@ def _heavy(month: int, year: int):
                 "amazon-po: pulled %d of %d PENDING rows (page cap)" % (len(rows), count))
         pos = set()
         sep_pos = set()
+        stale_pos = set()
         sep_lines = 0
         for row in rows:
             if not isinstance(row, dict):
@@ -656,9 +672,14 @@ def _heavy(month: int, year: int):
             ordered = _f(row.get("total_order_liters"))
             delivered = _f(row.get("total_delivered_liters"))
             litres = max(ordered - delivered, 0.0)
+            value = max(
+                _f(row.get("total_order_amt_exclusive"))
+                - _f(row.get("total_deliver_amt_exclusive")), 0.0)
             amazon["lines"] += 1
             amazon["ordered_l"] += ordered
             amazon["delivered_l"] += delivered
+            amazon["still_due_l"] += litres
+            amazon["value_still_due_ex_gst_inr"] += value
             po = _s(row.get("po_number"))
             if po:
                 pos.add(po)
@@ -670,6 +691,7 @@ def _heavy(month: int, year: int):
                 if po:
                     sep_pos.add(po)
                 amazon["september_l"] += litres
+                amazon["september_value_ex_gst_inr"] += value
                 fg = _s(row.get("sap_sku_code"))
                 if fg:
                     by_fg_amz[fg] += litres
@@ -682,8 +704,14 @@ def _heavy(month: int, year: int):
                     undated_l += litres
             elif row_month == prev_month and row_year == prev_year:
                 amazon["august_stale_l"] += litres
+                amazon["before_month_l"] += litres
+                if po:
+                    stale_pos.add(po)
             else:
                 amazon["other_month_l"] += litres
+                amazon["before_month_l"] += litres
+                if po:
+                    stale_pos.add(po)
         amazon["pos"] = len(pos)
         if amazon["ordered_l"] > 0:
             amazon["pending_fill_rate_pct"] = round(
@@ -699,6 +727,9 @@ def _heavy(month: int, year: int):
         # 69 POs, 93% August backlog) stays in data["amazon"].
         amazon["september_pos"] = len(sep_pos)
         amazon["september_lines"] = sep_lines
+        # POs whose litres are NOT in open_total_l. The card MUST show this or a
+        # planner reads the month-scoped Amazon row as Amazon's whole book.
+        amazon["before_month_pos"] = len(stale_pos - sep_pos)
         by_platform["AMAZON"] = {
             "pos": len(sep_pos), "lines": sep_lines,
             "litres": round(amazon["september_l"], 2),
@@ -708,7 +739,8 @@ def _heavy(month: int, year: int):
         errors.append("amazon-po: %s" % exc)
 
     for key in ("september_l", "august_stale_l", "other_month_l", "ordered_l",
-                "delivered_l", "unmapped_l"):
+                "delivered_l", "unmapped_l", "still_due_l", "before_month_l",
+                "value_still_due_ex_gst_inr", "september_value_ex_gst_inr"):
         amazon[key] = round(amazon[key], 2)
     data["amazon"] = amazon
 
@@ -735,11 +767,32 @@ def _heavy(month: int, year: int):
     data["open_qcomm_l"] = round(open_q_l, 2)
     data["open_amazon_sep_l"] = amazon["september_l"]
     data["open_total_l"] = round(open_q_l + amazon["september_l"], 2)
+    # open_value_ex_gst_inr is q-comm ONLY and is kept under its old name so
+    # nothing that already reads it changes meaning. Anything rendered next to
+    # open_total_l must use open_value_ex_gst_total_inr instead -- the two
+    # figures were on different bases on the site until 2026-09-04.
     data["open_value_ex_gst_inr"] = round(open_value, 2)
+    data["open_value_ex_gst_qcomm_inr"] = round(open_value, 2)
+    data["open_value_ex_gst_total_inr"] = round(
+        open_value + amazon["september_value_ex_gst_inr"], 2)
+    data["open_value_basis"] = (
+        "q-commerce open value plus Amazon's plan-month open value, both "
+        "pre-tax and both on the same basis as open_total_l")
+    # The Amazon litres deliberately left OUT of open_total_l: real open POs
+    # dated before the plan month, which must not drive this month's plan but
+    # must not vanish from the page either.
+    data["open_backlog_amazon_l"] = amazon["before_month_l"]
+    data["open_backlog_amazon_pos"] = amazon.get("before_month_pos", 0)
+    data["open_amazon_all_l"] = amazon["still_due_l"]
+    data["open_amazon_all_pos"] = amazon["pos"]
     data["open_by_platform"] = by_platform
     data["open_by_platform_source"] = (
         "master_po open_close=OPEN for the 8 q-commerce formats; "
         "AMAZON from reports amazon-po PENDING scoped to the plan month")
+    data["open_backlog_basis"] = (
+        "Amazon PENDING POs dated before the plan month. Excluded from "
+        "open_total_l on purpose (they must not drive this month's plan); "
+        "counted here because they are still open orders.")
     if casefold_hits:
         warnings.append(
             "%d q-comm lines joined to an FG only after case-folding the SKU code"
