@@ -28,10 +28,10 @@ Every figure on the site comes from ji.jivo.in / EXIM / OMS / ecom through
 
 | Route | NOW (state.json) | FORWARD (plan/*.json) |
 |---|---|---|
-| `/` Overview | the strip: lines running now · made today (MES view, ~⅔ of the plant — say so) · trucks inside · **invoiced-not-dispatched Oil litres and % of the ASSUMED ceiling** · tank litres (badge: manual dip reading) · arrivals today · open ecom POs · OMS open (ex-outliers Rs/L beside raw) | plan left to make, sim-expected rest of month, the block→order→run loop chain |
+| `/` Overview | the strip: lines running now · made today (MES view, ~⅔ of the plant — say so) · trucks inside · **invoiced-not-dispatched Oil litres and % of the 827,000 L declared limit** · tank litres (badge: manual dip reading) · arrivals today · open ecom POs · OMS open (ex-outliers Rs/L beside raw) | plan left to make, sim-expected rest of month, the block→order→run loop chain |
 | `/days` + `/days/[n]` | day 1 = today, opening from live | the `-live` sim days; **only day 1 is observed** stays the rule, now re-observed every 3 min |
 | `/build` | **what Gautam is running right now** (line, SKU, cases, live) — from `running_now` | beside it, what the plan would run next; differences highlighted, never hidden |
-| `/storage` | the pile split (PENDING / BOOKED / DOCKED-not-gone, by company, by room when heavy data is present), measured lag note (`static: true` badge) | the sim's day-by-day godown curve against the ASSUMED ceiling |
+| `/storage` | the pile split (PENDING / BOOKED / DOCKED-not-gone, by company, by room when heavy data is present), measured lag note (`static: true` badge) | the sim's day-by-day godown curve against Daman's declared 827,000 L limit |
 | `/materials`, `/order-by` | in QC (bulk oil pending MT, packaging), on-the-way with ETAs, open bulk POs, month-pending PO lines | zero-cover gap list and order-by dates from the sim |
 | `/lines` | per-line today from MES; measured vs rated basis shown | utilisation from the sim |
 | `/floor` | Floor 3D — keep; **fix the WebGL failure Daman hit**: retry once after 2 s, then draw a flat 2D floor plan instead of the "can't draw 3D" box | |
@@ -44,7 +44,7 @@ Every figure on the site comes from ji.jivo.in / EXIM / OMS / ecom through
 - A source with `ok:false` renders its last-good data greyed with "no fresh data
   since <last_good_at>" — **never a zero, never blank**.
 - Non-live inputs carry a persistent badge: tank levels (manual daily reading),
-  ecom targets (`carried_from`), the lag note (`static`), the ceiling (ASSUMED, Q2 open).
+  ecom targets (`carried_from`), the lag note (`static`). The ceiling is badged **YOUR LIMIT** — Daman's declared limit (C-0079/C-0080, 2026-09-04), never 'assumed'.
 - All-time counters (GRPO posting backlog, QC scoreboard) are labelled all-time.
 
 ## Company scoping on screen

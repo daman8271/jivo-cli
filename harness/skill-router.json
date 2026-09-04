@@ -245,6 +245,22 @@
     "(why|kyun|kyu).{0,30}draft.{0,20}(wait|pending|stuck|atka)",
     "post today"
    ]
+  },
+  {
+   "skill": "jivo-ar-invoice",
+   "when": "transporter BILTY / G.R. / LR sheets whose A/R sale invoices must be COMPLETED - attach the scan, bilty date on header AND every line, Received Qty = Quantity, Received Date. Matches on the INVOICE NUMBER off the bilty's B/L No. Attach FIRST (guard 130001002); a wrong bilty number does not matter",
+   "patterns": [
+    "bilt[iy]",
+    "\\bg\\.?\\s?r\\.?\\s?(no|number)",
+    "\\blr\\s*(no|number)",
+    "\\bar\\b.{0,12}invoice",
+    "receiving",
+    "(recei?v(ed|ing)?)\\s*(qty|quantity|date)",
+    "(attach|lagao|laga do|daal|dalo|add).*(bilt[iy]|gr no|receiving|scan)",
+    "(bilt[iy]|gr no).*(invoice|ar invoice|sale invoice)",
+    "mark.*(received|receiving)",
+    "(bilt[iy]|gr|receiving).*(missing|blank|khali|pending|left)"
+   ]
   }
  ]
 }

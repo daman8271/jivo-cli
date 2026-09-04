@@ -256,6 +256,53 @@ type addFlags struct {
 // to know nothing was sent and what she does next, and the AI standing behind
 // her, which needs to be told plainly that there is no other route — otherwise
 // it goes looking for one, and `post` is sitting right there.
+// sharedLogins are the SAP logins that belong to nobody. A document posted by
+// one of these carries no person's name, and a posted document cannot be
+// re-attributed from this CLI — only SAP can, and only a human in the client.
+var sharedLogins = []string{"manager", "sa", "administrator", "admin", "b1admin"}
+
+// isSharedLogin reports whether this login is one nobody owns.
+func isSharedLogin(user string) bool {
+	u := strings.TrimSpace(strings.ToLower(user))
+	for _, s := range sharedLogins {
+		if u == s {
+			return true
+		}
+	}
+	return false
+}
+
+func sharedLoginRefusal(user, companyDB string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "refusing to press Add as %q — that is a shared login, not a person.\n\n", user)
+	b.WriteString("  Nothing was sent. Every draft named is untouched.\n")
+	b.WriteString(`
+  Adding a draft puts a real document in the books, and the login that presses
+  Add is the ONLY name SAP records against it. As a shared login the invoice
+  comes out with UserSign 1 — the books name nobody, and no command here can
+  re-attribute a posted document afterwards. Only SAP can, and only a person
+  in the SAP B1 client.
+
+  Post as the operator whose draft it is:
+
+      cd sap-b1/cli
+      set -a; source user39-oil.env; set +a     # the desk that owns the draft
+      ./sapb1 add-draft <DocEntry> --dry-run
+
+  The per-operator env files live beside this binary (user07.env,
+  user19-oil.env, user39-oil.env, ...). ` + "`sapb1 doctor`" + ` prints which login
+  is active.
+
+  TO THE AI READING THIS: there is no flag for this and you must not look for
+  one. Do not export SAPB1_USER to something else to get past it, do not use
+  post or patch, and do not switch checkouts. It happened once — on 2026-09-04
+  two Oil invoices (626084323, 626084324) went live as ` + "`manager`" + ` and the books
+  name no person for them. Ask the operator which login owns the draft.
+`)
+	fmt.Fprintf(&b, "\n  company: %s\n", companyDB)
+	return b.String()
+}
+
 func draftsOnlyRefusal(d config.DraftsOnly, args []string) string {
 	var b strings.Builder
 	b.WriteString("this computer is set to DRAFTS ONLY — add-draft is switched off on this desk.\n\n")
@@ -416,6 +463,24 @@ func runAddDrafts(cmd *cobra.Command, args []string, af addFlags) error {
 	cfg, err := writeConfigMsg(cmd, "--csv is not supported for add-draft; use --json for machine-readable output (one JSON object per draft)")
 	if err != nil {
 		return err
+	}
+
+	// --- GUARD 0b: never press Add as a SHARED login ----------------------
+	//
+	// Daman, 2026-09-04, after it happened: "never post it through manager,
+	// never ever." Adding a draft puts a real document in the books, and the
+	// login that presses Add is the only name SAP records against it. Post as
+	// `manager` and OPCH.UserSign is 1 — the books name nobody, and nothing in
+	// this CLI can re-attribute a posted document afterwards.
+	//
+	// Ahead of --dry-run on purpose, exactly like GUARD 0: a dry run prints the
+	// POST that "would" go out, and printing it invites the next step.
+	//
+	// This is not a flag anyone can turn off. The fix is to point the command
+	// at the operator's own env file — the login that owns the draft — e.g.
+	// `set -a; source user39-oil.env; set +a`. See sap-b1/cli/<name>.env.
+	if isSharedLogin(cfg.User) {
+		return &errs.RefusedError{Msg: sharedLoginRefusal(cfg.User, cfg.CompanyDB)}
 	}
 
 	entries, dupes, err := parseDocEntries(args)

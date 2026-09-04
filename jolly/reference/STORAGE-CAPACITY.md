@@ -3,11 +3,17 @@ title: Warehouse storage capacity — Oil, Mart, Beverages
 type: reference
 company: JIVO_OIL_HANADB (+ Mart, Beverages — the sheet spans all three)
 source: "Daman's capacity sheet, WhatsApp 2026-08-29 (reference/img/warehouse-storage-capacity-2026-08-29.jpeg); rulings by Daman 2026-08-29; SAP live"
-last_verified: 2026-08-29
+last_verified: 2026-09-04
 tags: [jivo/reference, jivo/godown, jivo/capacity]
 ---
 
 # How much each godown can actually hold
+
+> [!important] **Reaffirmed as FACT by Daman, 2026-09-04: 827,000 L working / 923,000 L peak.**
+> This is not an assumption and is not open question Q2 any more. Mark 2 carried the
+> ceiling as "assumed — never measured"; Mark 3 inherited that flag and badged every
+> "% of the godown" as OUR GUESS. Daman: *"827,000 L godown = this is correct, no guess
+> now."* Treat it as a declared limit everywhere; the site labels it YOUR LIMIT.
 
 **Given and ruled by Daman, 2026-08-29.** This is the authority on capacity and
 **replaces every earlier assumption.** Before it, no capacity figure existed
@@ -34,7 +40,7 @@ ever hand a capacity figure to procurement, convert: 1 purchase-MT = 1,098.9 L.
 
 | Physical location | SAP code | Company | Pallets | Sq.ft | Peak (T) | Counts for Oil |
 |---|---|---|---:|---:|---:|:--:|
-| Basement | `BH-BT` | Oil | 628 | 7,536 | **502** | ✅ |
+| Basement | `BH-BT` | Oil | **739** | 7,536 | **591** | ✅ |
 | Tin & Pouch — New Shed | `BH-PF` | Oil | 300 | 3,600 | 240 | ✅ |
 | Production Floor | `BH-PF` | Oil | 226 | 2,712 | 181 | ✅ |
 | Gupta | `GP-FGM` | **Mart** | 1,400 | 16,800 | 1,120 | ❌ |
@@ -74,7 +80,19 @@ movements, anchored to today's `OITW` balances:
 BH-PF's reconstructed occupancy never once exceeded **376.3 T**. The two agree to
 0.3%, so 377 T is a real ceiling the floor has been respecting, not an assumption.
 
-**Oil FG working capacity = 450 + 377 = 827 T. Peak = 923 T.**
+**Oil FG working capacity = 530 + 377 = 907 T. Peak = 591 + 421 = 1,012 T.**
+
+> [!important] 739 pallet positions, not 628 — settled 2026-09-03 from the app
+> Daman: *"listen to what ji.jivo.in says, that is your truth bible."* The app's WMS
+> holds the basement as a 31x31 grid = **961 cells**, of which **739 carry purpose
+> FINISHED-GOODS** — the only purpose with `holdsStock=true` — and all 739 are enabled.
+> The remaining 222 are walkable path (94), packing material (46), stairs (27), pillar
+> (18), conveyer (18), lift (12), cabin (6) and main gate (1). Read it back with
+> `factory-cli/jivo-factory-pp-cli wms wms-locations --company JIVO_OIL`.
+> At the sheet's own 0.8 T/pallet that is **591 T peak**, and Daman's working haircut
+> (450 / 502 = 89.6%) carries across to **530 T working**. The old 628 / 502 / 450 row
+> came from the capacity spreadsheet and is superseded. `BH-PF` is untouched — it has
+> no rack map in the app, so its 421 / 377 still rests on the reconstruction below.
 
 > [!note] Caveats on the reconstruction, stated plainly
 > - **`BH-BT` is five weeks old.** First movement 2026-07-22; only 38 days exist.

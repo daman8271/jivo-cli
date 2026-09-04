@@ -154,14 +154,14 @@ export default function NowStrip() {
               {pilePct !== null && (
                 <div className="text-sm text-amber-300">
                   {pct1(pilePct)} of the godown{" "}
-                  <NotLive p={P.ceiling(ceiling.text, "Q2")} />
+                  <NotLive p={P.ceiling(ceiling.text)} />
                 </div>
               )}
             </div>
             <div className="mt-2 text-xs text-zinc-400">
               Whole godown right now: {orUnknown(storage?.at_open.physical_l, litres)} —{" "}
               {orUnknown(storage?.at_open.pct, pct1)} full against a limit of{" "}
-              {orUnknown(ceiling.working_l, litres)}, which is a guess, not a measurement.
+              {orUnknown(ceiling.working_l, litres)} — the limit you gave us.
             </div>
             {storage?.at_open.clears_note && (
               <p className="mt-2 text-xs text-zinc-500">{maskDigits(storage.at_open.clears_note)}</p>
@@ -282,8 +282,10 @@ export default function NowStrip() {
               {orUnknown(ecom?.open_total_l, litres)}
             </div>
             <div className="mt-1 text-xs text-zinc-400">
-              {orUnknown(ecom?.open_value_ex_gst_inr, money)} before GST · quick-commerce{" "}
-              {orUnknown(ecom?.open_qcomm_l, litres)}, Amazon this month {orUnknown(ecom?.open_amazon_sep_l, litres)}
+              {orUnknown(ecom?.open_value_ex_gst_total_inr ?? ecom?.open_value_ex_gst_inr, money)}{" "}
+              before GST · every order still open and not yet expired ·
+              quick-commerce {orUnknown(ecom?.open_qcomm_l, litres)}, Amazon{" "}
+              {orUnknown(ecom?.open_amazon_l, litres)}
             </div>
             <ul className="mt-2 space-y-0.5 text-xs text-zinc-400">
               {Object.entries(ecom?.open_by_platform ?? {})
@@ -291,11 +293,47 @@ export default function NowStrip() {
                 .slice(0, 5)
                 .map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
-                    <span>{k.toLowerCase()}</span>
+                    <span>
+                      {k.toLowerCase()}
+                      <span className="text-zinc-500">
+                        {" "}
+                        · {orUnknown(v.pos, (n) => `${n} ${plural(n, "PO", "POs")}`)}
+                      </span>
+                    </span>
                     <span className="tabular-nums">{orUnknown(v.litres, litres)}</span>
                   </li>
                 ))}
             </ul>
+            {/* Expiry decides whether an order counts, and its required-by date
+                decides which month it lands in. Older paper is IN the figure --
+                an unexpired PO is a real order whatever month it was raised in.
+                What must stay visible is (a) how much of the book is older
+                paper, (b) what fell out for being past expiry, and (c) how much
+                is not due until after this month. */}
+            <div className="mt-2 space-y-1 border-t border-zinc-800 pt-2 text-xs">
+              {(ecom?.open_backlog_amazon_l ?? 0) > 0 && (
+                <div className="text-zinc-400">
+                  Included above: {orUnknown(ecom?.open_backlog_amazon_l, litres)} on{" "}
+                  {orUnknown(ecom?.open_backlog_amazon_pos, (v) => `${v} ${plural(v, "PO", "POs")}`)}{" "}
+                  raised in an earlier month — unexpired, so still a real order.
+                </div>
+              )}
+              {(ecom?.dated_demand_total_l ?? 0) > 0 &&
+                (ecom?.dated_demand_in_month_l ?? 0) > 0 &&
+                (ecom?.dated_demand_total_l ?? 0) >
+                  (ecom?.dated_demand_in_month_l ?? 0) && (
+                  <div className="text-zinc-400">
+                    Due this month: {orUnknown(ecom?.dated_demand_in_month_l, litres)}. The rest
+                    is not required until next month, so the plan leaves it there.
+                  </div>
+                )}
+              {(ecom?.open_expired_l ?? 0) > 0 && (
+                <div className="text-amber-300/80">
+                  Left out: {orUnknown(ecom?.open_expired_l, litres)} past its expiry date. The
+                  platform still calls it open; it is not an order any more.
+                </div>
+              )}
+            </div>
             {ecom?.targets?.carried_from && (
               <div className="mt-2 text-xs text-amber-300/80">
                 Month target {orUnknown(ecom.targets.total_l, litres)}{" "}

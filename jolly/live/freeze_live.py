@@ -47,7 +47,7 @@ factory_dispatch publishes two undispatched figures that do NOT reconcile (5.8x 
 on 2026-09-03) and the adapter says so itself:
   WIDE  invoiced_not_dispatched.by_company[JIVO_OIL] = every Oil BILL invoiced in the
         last 14 days whose dispatch plan never reached DISPATCHED. 1,260,504 L — 152%
-        of the whole assumed godown, so the engine opened with negative space and made
+        of the whole declared godown, so the engine opened with negative space and made
         ZERO on days 1 and 2.
   CHEAP invoiced_not_dispatched.litres = open dispatch plans, PENDING + BOOKED, no date
         bound, all three books. 284,549 L.
@@ -290,6 +290,22 @@ RM_ROOMS = ("BH-LO", "BH-CRUDE", "BH-EX", "BH-GJ")
 # calibrated August counted them) and BADGED, with the exposure published so the open
 # question can be settled on a number instead of an argument.
 NON_MOVING_ROOMS = ("BH-NM", "GP-NM")
+
+# THE GODOWN CEILING IS A DECLARED FACT, NOT AN ASSUMPTION.
+# Daman, 2026-09-04: "827,000 L godown = this is correct, no guess now." The figure is
+# his own capacity sheet of 2026-08-29 (reference/STORAGE-CAPACITY.md), given with the
+# ruling that a tonne means litres on the sale side (C-0050). Mark 2 carried it as
+# "assumed, never measured (open question Q2)"; that flag is withdrawn and Q2 is closed.
+# The litres themselves are UNCHANGED — 827,000 working / 923,000 peak, out of
+# base["rules"]. Only the label changes: this is the owner's declared limit, so it never
+# goes into honesty.assumed and the site badges it YOUR LIMIT, not OUR GUESS.
+STORAGE_CEILING_BASIS = (
+    "DECLARED LIMIT — Daman's capacity sheet, 2026-08-29 "
+    "(reference/STORAGE-CAPACITY.md): BH-BT 502 T + BH-PF 421 T = 923 T peak, "
+    "450 T + 377 T = 827 T working; tonne = litre (C-0050); reaffirmed as fact "
+    "2026-09-04. BH-BT + BH-PF only. The owner's own limit, not an estimate."
+)
+STORAGE_CEILING_DECLARED_BY = "Daman, 2026-09-04 (capacity sheet 2026-08-29)"
 
 # The UNIT RULE for a raw-material row, declared per code in honesty.assumed for every
 # code actually converted. The store mixes units in one list, so the unit is read off
@@ -1093,7 +1109,7 @@ def build():
     # factory_dispatch publishes two figures and they do not reconcile (ratio 5.8x on
     # 2026-09-03). The WIDE one — invoiced_not_dispatched.by_company[JIVO_OIL] — counts
     # every Oil BILL invoiced in the last 14 days whose dispatch plan never reached
-    # DISPATCHED: 1,260,504 L, which is 152% of the whole assumed godown, so the engine
+    # DISPATCHED: 1,260,504 L, which is 152% of the whole declared godown, so the engine
     # opened with negative space and made ZERO on days 1 and 2. Daman proved on
     # 2026-09-03 that the dock module records only ~45% of dispatches, so "the plan never
     # reached DISPATCHED" includes a great many bills that physically left the gate. The
@@ -1231,24 +1247,24 @@ def build():
             alt_at = at
 
     ceil_l = f(base["rules"]["storage_ceiling_l"])
-    # Warned, NEVER capped: the ceiling is itself an assumption (Q2 open) and silently
-    # trimming a measured pile to fit an assumed room would hide the very collision the
-    # planner exists to show.
+    # Warned, NEVER capped: the ceiling is Daman's DECLARED limit (his capacity sheet,
+    # 2026-08-29, reaffirmed as fact 2026-09-04) and silently trimming a measured pile to
+    # fit the declared room would hide the very collision the planner exists to show.
     if standing >= ceil_l:
         F.warn(f"the invoiced-not-dispatched Oil pile ({standing:,.0f} L) is at or above the "
-               f"whole ASSUMED godown ceiling ({ceil_l:,.0f} L) — day 1 opens with no space "
+               f"whole DECLARED godown ceiling ({ceil_l:,.0f} L) — day 1 opens with no space "
                "and the engine will throttle production until the pile drains.")
     elif standing + fg_plan_l + fg_other_l > ceil_l:
-        F.warn(f"the opening godown is already OVER the ASSUMED ceiling: "
+        F.warn(f"the opening godown is already OVER the DECLARED ceiling: "
                f"{standing:,.0f} L invoiced-not-gone + {fg_plan_l + fg_other_l:,.0f} L of "
                f"finished goods = {standing + fg_plan_l + fg_other_l:,.0f} L against "
                f"{ceil_l:,.0f} L "
                f"({100 * (standing + fg_plan_l + fg_other_l) / ceil_l:.0f}%). Nothing is "
-               "capped — the ceiling is an assumption (Q2 open) and the collision is the "
+               "capped — the ceiling is Daman's declared limit and the collision is the "
                "finding, not an error to smooth away.")
     if wide_oil_l is not None and f(wide_oil_l) >= ceil_l:
         F.warn(f"for scale: the WIDE 14-day figure ({f(wide_oil_l):,.0f} L) is "
-               f"{100 * f(wide_oil_l) / ceil_l:.0f}% of the whole assumed godown on its own. "
+               f"{100 * f(wide_oil_l) / ceil_l:.0f}% of the whole declared godown on its own. "
                "It is published for information and is NOT what the engine was given.")
     # The two dispatch endpoints do not reconcile and are not meant to be added or
     # differenced (the adapter says so). The one this freeze uses is named in
@@ -1351,7 +1367,11 @@ def build():
 
     # -- 2. ecom --------------------------------------------------------------
     dated = ((ecom or {}).get("dated_demand") or [])
-    amz_mix = {k: f(v) for k, v in ((ecom or {}).get("open_po_litres_by_fg_amazon_sep") or {}).items()}
+    # every UNEXPIRED Amazon litre (the adapter's new key), falling back to the
+    # old plan-month-only key if this run is reading an older state file.
+    amz_mix = {k: f(v) for k, v in (
+        (ecom or {}).get("open_po_litres_by_fg_amazon")
+        or (ecom or {}).get("open_po_litres_by_fg_amazon_sep") or {}).items()}
     qc_mix = {k: f(v) for k, v in ((ecom or {}).get("open_po_litres_by_fg_qcomm") or {}).items()}
 
     def mix_for(platform):
@@ -1368,7 +1388,7 @@ def build():
         if d is None or lit <= 0:
             continue
         if not (today.year == d.year and today.month == d.month):
-            ec_excluded_l += lit                       # August backlog and October POs alike
+            ec_excluded_l += lit         # unexpired, but due in a later month
             continue
         share, _tot = mix_for(row.get("platform"))
         if not share:
@@ -1396,9 +1416,9 @@ def build():
         F.assume("ecom order value is DERIVED as litres x the May-Jul realise rate — ecom's "
                  "dated demand carries no money")
     if ec_excluded_l:
-        F.warn(f"{ec_excluded_l:,.0f} L of ecom demand is dated outside {today.strftime('%B %Y')} "
-               "(Amazon's open book is mostly stale August backlog plus one October PO) and is "
-               "NOT in the demand stream")
+        F.warn(f"{ec_excluded_l:,.0f} L of ecom demand is required AFTER "
+               f"{today.strftime('%B %Y')} — every litre of it is an unexpired open PO, it is "
+               "simply not due this month, so it is not in this month's demand stream")
     if ec_subpiece_l >= 1:
         F.assume(f"{ec_subpiece_l:,.0f} L of ecom demand fell out as sub-one-bottle slices when "
                  "each dated row was split across that platform's FG mix — the ecom stream is a "
@@ -1652,11 +1672,19 @@ def build():
             "ji.jivo.in's own standard hours per line. rules.shift_hours is a DECISION "
             "(PLAN-AND-LINES.md: 12 h is the floor, not the answer) and overrides this — "
             "the field is published so the two are not confused.")
-    rules["storage_ceiling_l_basis"] = ("ASSUMED — Daman's spreadsheet, never measured "
-                                        "(open question Q2). BH-BT + BH-PF only.")
-    rules["storage_peak_l_basis"] = rules["storage_ceiling_l_basis"]
-    F.assume(f"the godown ceiling {rules['storage_ceiling_l']:,} L working / "
-             f"{rules['storage_peak_l']:,} L peak is ASSUMED, never measured (Q2 still open)")
+    # THE CEILING IS A DECLARED FACT, NOT AN ASSUMPTION (Daman, 2026-09-04).
+    # Mark 2 carried Daman's own capacity sheet as "assumed, never measured (Q2)" and
+    # Mark 3 inherited the flag, so every "% of the godown" on the site was badged OUR
+    # GUESS. Daman: "827,000 L godown = this is correct, no guess now." Q2 is closed.
+    # It stays OUT of honesty.assumed — an owner's declared limit is not a guess the
+    # engine made — and it is published as provenance instead, so the site can name
+    # where the number came from without calling it an estimate.
+    rules["storage_ceiling_l_basis"] = STORAGE_CEILING_BASIS
+    rules["storage_peak_l_basis"] = STORAGE_CEILING_BASIS
+    rules["storage_ceiling_declared"] = True
+    rules["storage_ceiling_declared_by"] = STORAGE_CEILING_DECLARED_BY
+    prov("storage_ceiling", "reference/STORAGE-CAPACITY.md", "declared", None,
+         STORAGE_CEILING_BASIS)
     if lag_note.get("median_days") is not None:
         F.assume(f"the {lag_days}-day invoice-to-truck lag is the MEASURED median off the gate "
                  f"log ({lag_note.get('rows')} rows, {lag_note.get('measured_window')}); the "
@@ -2058,7 +2086,7 @@ def reconcile(F, out, recon, path):
       f"{r['mapped_l']:,.0f} + tank-less store {r['drum_l']:,.0f}")
     r = recon["standing"]
     a(f"  INVOICED, NOT GONE{r['litres']:>14,.0f} L  = {r['pct']:.0f}% of the "
-      f"{r['ceiling_l']:,.0f} L ASSUMED ceiling   [{r['mode']}]  <- FED TO THE ENGINE")
+      f"{r['ceiling_l']:,.0f} L DECLARED ceiling  [{r['mode']}]  <- FED TO THE ENGINE")
     if r["cheap_l"] is not None:
         a(f"     cheap backlog  {r['cheap_l']:>14,.0f} L all three books"
           + (f"  x Oil share {r['share'] * 100:.1f}%" if r["share"] is not None else
@@ -2068,7 +2096,7 @@ def reconcile(F, out, recon, path):
           f"{100 * r['wide_l'] / r['ceiling_l']:.0f}% of the ceiling   [{r['wide_mode']}]"
           "  <- INFORMATION ONLY")
     a(f"     + finished gds {r['fg_l']:>14,.0f} L  = opening godown "
-      f"{100 * (r['litres'] + r['fg_l']) / r['ceiling_l']:.0f}% of the ASSUMED ceiling")
+      f"{100 * (r['litres'] + r['fg_l']) / r['ceiling_l']:.0f}% of the DECLARED ceiling")
     r = recon["orders"]
     a(f"  ORDERS            {r['rows']:>14,} rows   real {r['real_pieces']:>12,.0f} pcs   "
       f"forecast {r['forecast_pieces']:>12,.0f} pcs")

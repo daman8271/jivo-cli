@@ -102,7 +102,7 @@ beside it — read `last_good_at`, never treat a failed source as zero.
 tank levels are a **manual daily dip reading**; ecom targets are **carried from
 July**; the invoice→gate lag note is **static** (measured once, 2026-09-03);
 GRPO posting counts and the QC scoreboard are **all-time**; the 827,000 L
-ceiling is still **ASSUMED**. The MES sees ~⅔ of the plant; goods receipts see
+ceiling is Daman's **declared limit** (reaffirmed 2026-09-04 — not an assumption). The MES sees ~⅔ of the plant; goods receipts see
 the rest. Dispatch litres are **three companies** — Oil is the split, never the
 merged headline (3 Sep: 47,182 L "dispatched" was 89% Beverages).
 
@@ -182,9 +182,10 @@ monthly plan dated into forecast buckets. Forecast rows are triple-tagged
 **The day-1 order pile is real, not a bug.** 40 of 47 open plan-SKU orders were
 already overdue on 31 Aug. That is the state of the book.
 
-**The storage ceiling is ASSUMED.** 827,000 L working / 923,000 L peak, from
-Daman's spreadsheet — **never measured** (open question Q2). Badge it wherever it
-appears. The godown is FG only: two rooms, `BH-BT` + `BH-PF`. Bulk oil is in EXIM
+**The storage ceiling is a DECLARED FACT: 827,000 L working / 923,000 L peak** —
+Daman's capacity sheet (reference/STORAGE-CAPACITY.md, 2026-08-29), **reaffirmed
+as correct 2026-09-04: "no guess now."** Q2 is closed. Never badge it as assumed;
+the site labels it YOUR LIMIT. The godown is FG only: two rooms, `BH-BT` + `BH-PF`. Bulk oil is in EXIM
 tanks, packaging in `BH-BS`/`BH-PM` — neither is in this ceiling.
 
 **Storage pressure is mostly already-sold stock.** On a bad day two-thirds of the

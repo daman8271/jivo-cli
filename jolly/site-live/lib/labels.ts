@@ -15,7 +15,7 @@ import type { DispatchRow, HonestyData, LabelRule, OrderRow } from "./types";
 
 export type RuleId =
   | "rolling-replan" | "po-open-value" | "po-open-litres" | "orders-mixed" | "two-oil-series"
-  | "forecast-tags" | "ceiling-assumed" | "standing-measured" | "day1-pile" | "observed-then-derated"
+  | "forecast-tags" | "ceiling-declared" | "standing-measured" | "day1-pile" | "observed-then-derated"
   | "unproducible" | "realise-outlier" | "numbers-masked" | "tank-dip";
 
 export function rule(h: HonestyData | null, id: RuleId): LabelRule | null {
@@ -55,10 +55,11 @@ export function unproducibleCodes(h: HonestyData | null): string[] {
   return Array.isArray(codes) ? codes.filter((c): c is string => typeof c === "string") : [];
 }
 
-/** The ceiling is Daman's spreadsheet number, never measured (open question Q2). */
+/** The godown limit is Daman's own capacity sheet — a limit he declared, not a guess
+ *  we made. Ruled 2026-09-04; the site says YOUR LIMIT, never OUR GUESS. */
 export function ceilingRule(h: HonestyData | null) {
-  const r = rule(h, "ceiling-assumed");
-  return { text: ruleText(h, "ceiling-assumed"), working_l: num(r?.working_l), peak_l: num(r?.peak_l) };
+  const r = rule(h, "ceiling-declared");
+  return { text: ruleText(h, "ceiling-declared"), working_l: num(r?.working_l), peak_l: num(r?.peak_l) };
 }
 
 /** Machines are derated once from the listed speed, twice where we measured it. */
@@ -202,10 +203,14 @@ export const P = {
     label: "MEASURED ONCE",
     note: caveat || "measured once off the gate log and carried — not re-measured every cycle",
   }),
-  /** The godown ceiling — Daman's spreadsheet, never measured (Q2). */
-  ceiling: (source?: string | null, q?: string | null): Persist => ({
-    label: "OUR GUESS",
-    note: `${source || "Daman's number, from his spreadsheet — not measured"}${q ? ` (open question ${q})` : ""}`,
+  /** The godown limit — Daman's own capacity sheet of 29 Aug 2026. He ruled on
+   *  2026-09-04 that it IS the limit ("this is correct, no guess now"), so it is the
+   *  one persistent input on this site that is a declared fact rather than an
+   *  estimate: it is badged YOUR LIMIT, and it is never called a guess anywhere.
+   *  The litres come from the data, as everything on this site does. */
+  ceiling: (source?: string | null): Persist => ({
+    label: "YOUR LIMIT",
+    note: source || "Daman's capacity sheet, 29 Aug 2026. A declared limit, not a measurement estimate.",
   }),
   /** A counter that has been adding up since the system went in. */
   allTime: (scopeNote?: string | null): Persist => ({

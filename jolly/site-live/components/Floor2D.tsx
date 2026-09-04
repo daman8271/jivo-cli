@@ -82,7 +82,7 @@ export default function Floor2D({
                 className="absolute inset-x-0 border-t border-dashed border-red-500/80"
                 style={{ bottom: `${ceilFrac * 100}%` }}
               >
-                <span className="absolute -top-4 right-1 text-[10px] text-red-300">limit — a guess</span>
+                <span className="absolute -top-4 right-1 text-[10px] text-red-300">limit — yours</span>
               </div>
               <div className="absolute inset-x-0 bottom-0 flex flex-col-reverse">
                 <div

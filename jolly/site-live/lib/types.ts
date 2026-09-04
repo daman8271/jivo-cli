@@ -295,8 +295,23 @@ export type EcomNow = {
   open_by_platform_source?: string;
   open_qcomm_l?: number | null;
   open_amazon_sep_l?: number | null;
+  open_amazon_l?: number | null;
+  open_amazon_pos?: number | null;
+  open_expired_l?: number | null;
+  open_qcomm_expired_l?: number | null;
+  open_qcomm_expired_pos?: number | null;
+  open_qcomm_no_expiry_l?: number | null;
+  expiry_basis?: string | null;
   open_total_l?: number | null;
   open_value_ex_gst_inr?: number | null;
+  open_value_ex_gst_qcomm_inr?: number | null;
+  open_value_ex_gst_total_inr?: number | null;
+  open_value_basis?: string | null;
+  open_backlog_amazon_l?: number | null;
+  open_backlog_amazon_pos?: number | null;
+  open_amazon_all_l?: number | null;
+  open_amazon_all_pos?: number | null;
+  open_backlog_basis?: string | null;
   mtd_by_platform?: Record<string, number>;
   mtd_delivered_l?: number | null;
   mtd_complete?: boolean;
@@ -449,7 +464,9 @@ export type Overview = {
   storage: {
     ceiling_l: number;
     peak_l: number;
-    ceiling_assumed: boolean;
+    /** Daman's declared limit (2026-09-04), never a guess of ours. */
+    ceiling_declared: boolean;
+    ceiling_declared_by?: string;
     invoice_truck_lag_days: number;
     days_ge_95: number;
     days_ge_100: string[];
@@ -595,7 +612,7 @@ export type DayDetail = {
     invoiced_not_trucked_l: number;
     headroom_l: number;
   };
-  storage_ceiling_assumed?: boolean;
+  storage_ceiling_declared?: boolean;
   book?: PlanBook;
   open_real_l_computed?: number;
   runs: PlanRun[];
@@ -614,7 +631,15 @@ export type DayDetail = {
 
 export type StorageData = {
   meta: PlanMeta;
-  ceiling: { working_l: number; peak_l: number; assumed: boolean; source?: string; open_question?: string };
+  /** `declared` — Daman's own capacity sheet, ruled a fact on 2026-09-04. Not `assumed`. */
+  ceiling: {
+    working_l: number;
+    peak_l: number;
+    declared: boolean;
+    declared_by?: string;
+    source?: string;
+    basis?: string;
+  };
   standing_at_open: { litres: number; assumed?: boolean; optimistic?: boolean; note?: string };
   at_open: {
     physical_l: number;

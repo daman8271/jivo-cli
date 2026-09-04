@@ -219,6 +219,9 @@ run_chain() {
   # env(1), not a `VAR=x func` prefix: an assignment in front of a FUNCTION call
   # lands in the current shell rather than cleanly in the child's environment.
   # This is also verbatim the invocation live/PHASE4-FREEZE-LIVE.md specifies.
+  # The horizon shrinks by a day every day; the engine rewrites day-01..day-N but never
+  # deletes yesterday's day-N+1, and gen_live refuses on "28 files / 27 days" (bit us 2026-09-04).
+  rm -f "$JOLLY_DIR/sim/days-live/day-"*.json 2>/dev/null || true
   run_step sim env SIM_INPUTS=sim/live-inputs.json SIM_TAG=-live \
     "$PY" "$JOLLY_DIR/engine/august_sim.py" || {
     say "chain STOPPED at sim — no new sim/days-live; the site keeps its last plan."

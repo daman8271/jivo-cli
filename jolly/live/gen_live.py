@@ -385,6 +385,19 @@ def build(paths, check):
     lag_days = rules["invoice_truck_lag_days"]
     day1_dm = dm(h0)
 
+    # THE GODOWN CEILING IS DECLARED, NOT GUESSED (Daman, 2026-09-04).
+    # Mark 2 shipped it as "Daman's spreadsheet — not measured (open question Q2)" and
+    # every "% of the godown" on the site wore an OUR GUESS badge because of it. Daman
+    # ruled the sheet IS the limit: "827,000 L godown = this is correct, no guess now."
+    # The sentence below is what the site prints; the litres in it are READ from the
+    # inputs, never typed, so the badge can never drift from the number beside it.
+    ceiling_declared_by = (rules.get("storage_ceiling_declared_by")
+                           or "Daman, 2026-09-04 (capacity sheet 2026-08-29)")
+    ceiling_source = (
+        f"Daman's capacity sheet, 29 Aug 2026 — {rules['storage_ceiling_l']:,} L working, "
+        f"{rules['storage_peak_l']:,} L peak. A declared limit, not a measurement estimate."
+    )
+
     stamp = {
         "collected_at": meta.get("state_collected_at") or meta.get("as_of"),
         "as_of": meta["as_of"],
@@ -563,7 +576,7 @@ def build(paths, check):
             "line_hours": day["line_hours"],
             "flushes": day["flushes"],
             "storage": day["storage"],
-            "storage_ceiling_assumed": True,
+            "storage_ceiling_declared": True,
             "book": book,
             "open_real_l_computed": row["open_real_l_computed"],
             "runs": day["runs"],
@@ -821,12 +834,17 @@ def build(paths, check):
         "plans, not guessed at nothing. Mark 2 put it at nothing and said so; this is the real pile")
     storage_out = {
         "meta": dict(stamp),
+        # DECLARED, not assumed. Daman ruled on 2026-09-04 that the ceiling is his own
+        # capacity sheet and therefore a fact: "827,000 L godown = this is correct, no
+        # guess now." Q2 is closed. The litres are untouched; only the label changed,
+        # so the site badges it YOUR LIMIT instead of OUR GUESS.
         "ceiling": {
             "working_l": rules["storage_ceiling_l"],
             "peak_l": rules["storage_peak_l"],
-            "assumed": True,
-            "source": plain("Daman's number, from his spreadsheet — not measured"),
-            "open_question": "Q2",
+            "declared": True,
+            "declared_by": ceiling_declared_by,
+            "source": plain(ceiling_source),
+            "basis": rules.get("storage_ceiling_l_basis"),
         },
         # The Mark 2 key, kept so a component copied from site-sep keeps reading —
         # with the flags telling the truth this time: the pile is read live, so it
@@ -886,6 +904,16 @@ def build(paths, check):
     check("the at-open litres are stock plus the pile it opened with",
           abs(_ao["physical_l"] - (_ao["fg_l"] + _ao["billed_not_gone_l"])) <= 1,
           f"{_ao['physical_l']} vs {_ao['fg_l']} + {_ao['billed_not_gone_l']}")
+
+    # The ceiling is Daman's declared limit (2026-09-04) and must never drift back to a
+    # guess. This is the guard on that: the flag has to be there, it has to say DECLARED,
+    # it has to name who declared it, and no "open question" may ride along with it.
+    _ceil = storage_out["ceiling"]
+    check("the godown limit is published as declared, with who declared it",
+          _ceil.get("declared") is True and bool(_ceil.get("declared_by"))
+          and bool(_ceil.get("source")) and "assumed" not in _ceil
+          and "open_question" not in _ceil,
+          str({k: v for k, v in _ceil.items() if k != "basis"})[:160])
 
     # ---- materials (the order-by list) --------------------------------------
     ob_summary = order_by["summary"]
@@ -1075,6 +1103,12 @@ def build(paths, check):
     check("no line still says the wrong thing about machine speeds",
           not any(bad_rate_phrase in a for a in honesty.get("assumed", [])),
           str([a for a in honesty.get("assumed", []) if bad_rate_phrase in a][:2]))
+    # The godown limit was on this list until 2026-09-04, and everything the site badges
+    # OUR GUESS is read off it. It is a declared fact now, so it must not be here.
+    _ceil_guesses = [a for a in assumed
+                     if "godown ceiling" in a.lower() or "storage ceiling" in a.lower()]
+    check("the godown limit is not listed as one of our guesses",
+          not _ceil_guesses, str(_ceil_guesses[:2]))
 
     outlier = None
     r155 = realise.get("FG0000155")
@@ -1112,10 +1146,9 @@ def build(paths, check):
         {"id": "forecast-tags", "rule": plain(
             "expected orders (not ordered yet) are marked in the data — keep them looking different "
             "from confirmed orders everywhere.")},
-        {"id": "ceiling-assumed", "rule": plain(
-            "the godown limit is Daman's number from his spreadsheet — not measured. Say so wherever it "
-            "appears (open question Q2)."),
-         "working_l": rules["storage_ceiling_l"], "peak_l": rules["storage_peak_l"]},
+        {"id": "ceiling-declared", "rule": plain(ceiling_source),
+         "working_l": rules["storage_ceiling_l"], "peak_l": rules["storage_peak_l"],
+         "declared": True, "declared_by": ceiling_declared_by},
         {"id": "standing-measured", "rule": pile_note,
          "billed_not_gone_l": opening["standing_l"],
          "pct_of_ceiling": round(opening["standing_l"] / rules["storage_ceiling_l"] * 100, 1)},
@@ -1309,7 +1342,8 @@ def build(paths, check):
         "storage": {
             "ceiling_l": rules["storage_ceiling_l"],
             "peak_l": rules["storage_peak_l"],
-            "ceiling_assumed": True,
+            "ceiling_declared": True,
+            "ceiling_declared_by": ceiling_declared_by,
             "invoice_truck_lag_days": lag_days,
             "days_ge_95": storage_out["days_ge_95"],
             "days_ge_100": storage_out["days_ge_100"],

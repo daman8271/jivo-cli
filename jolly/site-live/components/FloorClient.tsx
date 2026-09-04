@@ -166,9 +166,9 @@ export default function FloorClient() {
             <Stat k="Stuck" v={day ? String(day.blocked.length) : "—"} tone={day && day.blocked.length ? "text-red-300" : ""} />
           </div>
           <div className="mt-3">
-            <NotLive p={P.ceiling(ceiling.text, "Q2")} />
+            <NotLive p={P.ceiling(ceiling.text)} />
             <span className="ml-2 text-xs text-zinc-500">
-              the limit these percentages are measured against is not a measurement
+              the limit these percentages are measured against is the one you gave us
             </span>
           </div>
         </Panel>
