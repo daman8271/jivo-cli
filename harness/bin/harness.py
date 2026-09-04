@@ -63,12 +63,19 @@ QLOG = QUESTIONS / "log.jsonl"
 # Bounded injection budget, in characters. Hermes ships 2200 for its always-on
 # memory tier; we allow more because ours is persona-filtered, but it is still
 # a hard ceiling — past it, corrections must be consolidated, not appended.
-# 12000, not 6000: on 2026-08-26 the digest silently dropped 8 corrections —
-# including a high-severity one recorded minutes earlier — because the budget was
-# smaller than the active rule set. The drop is by iteration order, not severity,
-# so the rule an operator needs most is as likely to go as any other, and the only
-# signal is an HTML comment nobody reads. 35 active rules fit in ~7.7k.
-DIGEST_CHAR_BUDGET = int(os.environ.get("JIVO_DIGEST_BUDGET", "16000"))
+# Raised twice for the same reason, and the reason keeps recurring: the drop is by
+# iteration order, not severity, so the rule an operator needs most is as likely
+# to go as any other, and the only signal is one warning line in a build nobody
+# watches.
+#   6000  -> 12000 on 2026-08-26: 8 corrections silently dropped, one of them
+#            high-severity and recorded minutes earlier.
+#   16000 -> 32000 on 2026-09-04: 75 active rules came to 15,994 of 16,000 chars,
+#            evicting C-0022 and C-0025 — they were reaching NO operator. Every
+#            new correction was silently costing an old one.
+# 32000 leaves room for roughly 150 rules at the current ~210 chars each. When
+# THAT fills, consolidate and retire superseded records rather than raising again —
+# a digest this long stops being a digest.
+DIGEST_CHAR_BUDGET = int(os.environ.get("JIVO_DIGEST_BUDGET", "32000"))
 
 # How many times a question shape must recur before we propose a skill.
 MINT_THRESHOLD = int(os.environ.get("JIVO_MINT_THRESHOLD", "5"))

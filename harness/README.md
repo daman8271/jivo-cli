@@ -263,7 +263,7 @@ corrections. Two things to know:
 | Variable | Default | Effect |
 |---|---|---|
 | `JIVO_PERSONA` | `all` | Role; overrides `harness/.persona` |
-| `JIVO_DIGEST_BUDGET` | `6000` | Hard char cap on the injected digest |
+| `JIVO_DIGEST_BUDGET` | `32000` | Hard char cap on the injected digest (raised 2026-09-04; 16000 was evicting live rules) |
 | `JIVO_MINT_THRESHOLD` | `5` | Repeats before a shape is flagged |
 | `JIVO_REVIEW_INTERVAL` | `10` | Turns between learning checks |
 | `JIVO_HARNESS_NO_LOG` | unset | `1` disables question logging |
