@@ -100,11 +100,31 @@ POST_NOW = "POST NOW"
 WAITS = "WAITS IN JSAP"
 
 
+def binary(folder, stem):
+    """Pick the build for THIS machine.
+
+    The repo ships one binary per OS side by side -- `sapb1` (darwin),
+    `sapb1.linux`, `sapb1.exe`. Hardcoding the bare name works on the Mac and
+    then dies on an operator's Windows desk with a format error, which is how
+    the fleet has been bitten before (dsr, hana-sql). Resolve it instead."""
+    if sys.platform == "win32":
+        names = [stem + ".exe", stem]
+    elif sys.platform == "darwin":
+        names = [stem, stem + ".darwin"]
+    else:
+        names = [stem + ".linux", stem]
+    base = os.path.join(REPO, folder)
+    for n in names:
+        p = os.path.join(base, n)
+        if os.path.exists(p):
+            return p
+    sys.exit("no %s build for %s in %s (looked for: %s)"
+             % (stem, sys.platform, base, ", ".join(names)))
+
+
 def hana(sql):
     """Run one SELECT against SAP HANA and return list-of-dicts."""
-    exe = os.path.join(REPO, "hana-sql", "hana-sql")
-    if not os.path.exists(exe):
-        sys.exit("hana-sql not found at %s" % exe)
+    exe = binary("hana-sql", "hana-sql")
     p = subprocess.run([exe, "-csv", sql], capture_output=True, text=True, timeout=180)
     out = (p.stdout or "").strip()
     if p.returncode != 0 or out.startswith("QUERY ERROR"):
@@ -211,8 +231,7 @@ def report(docs, company, verbose):
 
 def refit():
     """Re-derive NEVER_JSAP from live JSAP + SAP. Prints a paste-ready dict."""
-    dsr = os.path.join(REPO, "dsr-cli",
-                       "dsr-linux" if os.uname().sysname == "Linux" else "dsr")
+    dsr = binary("dsr-cli", "dsr")
     env = dict(os.environ)
     aryenv = os.path.join(REPO, "connections", "ary.env")
     if os.path.exists(aryenv):

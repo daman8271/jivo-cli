@@ -30,10 +30,10 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from jsap_route import NEVER_JSAP, POST_NOW, WAITS, classify  # noqa: E402
+from jsap_route import NEVER_JSAP, POST_NOW, WAITS, binary, classify  # noqa: E402
 
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
-SAPB1 = os.path.join(REPO, "sap-b1", "cli", "sapb1")
+SAPB1 = binary("sap-b1/cli", "sapb1")
 COMPANY_DB = {
     "oil": "JIVO_OIL_HANADB",
     "mart": "JIVO_MART_HANADB",
@@ -125,9 +125,14 @@ def show(company, trays, limit):
     if len(ready) > limit:
         print("     ... and %d more" % (len(ready) - limit))
     if ready:
+        # Print a line the operator can actually paste on THIS machine:
+        # sapb1.exe on Windows, ./sapb1 on the Mac.
+        exe = os.path.basename(SAPB1)
+        call = exe if sys.platform == "win32" else "./" + exe
         print("\n   Post them:")
-        print("     cd sap-b1/cli && ./sapb1 add-draft %s --dry-run"
-              % " ".join(str(r[0]) for r in ready[:limit]))
+        print("     cd sap-b1%scli" % os.sep)
+        print("     %s add-draft %s --dry-run"
+              % (call, " ".join(str(r[0]) for r in ready[:limit])))
         print("     (drop --dry-run once the preview looks right)")
 
     ja = trays["jsap_approved"]
@@ -272,8 +277,7 @@ def _actual_lanes(company, docentries):
     branch = {"oil": "OIL", "bev": "BEVERAGE"}.get(company)
     if not branch:
         return {de: POST_NOW for de in docentries}     # Mart is never in JSAP
-    dsr = os.path.join(REPO, "dsr-cli",
-                       "dsr-linux" if os.uname().sysname == "Linux" else "dsr")
+    dsr = binary("dsr-cli", "dsr")
     env = dict(os.environ)
     aryenv = os.path.join(REPO, "connections", "ary.env")
     if os.path.exists(aryenv):
