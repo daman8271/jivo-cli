@@ -124,6 +124,27 @@ a human presses Add a second time. Measured 2026-08-24: Oil had **78 approved A/
 sitting unposted, ₹87.55 lakh**, `dasGenerated` zero. Never tell an operator the bill is
 "done" at submission — it is *with the approver*, which is what they asked for.
 
+**And say which lane it lands in after her.** Once Bhawani approves and Accounts
+make the ledger, the document either gets posted that day or waits again for the
+above-office **budget** approval in JSAP. Operators cannot tell the two apart, so
+they hold the whole pile for the slowest bill. Name it:
+
+```bash
+python3 .claude/skills/jivo-ap-draft/bin/jsap_route.py <DocEntry> --company oil -v
+python3 .claude/skills/jivo-ap-draft/bin/daily_sort.py --company oil   # the whole pile, in trays
+```
+
+**`daily_sort.py` is the one to run when an operator asks "what can we post?"**
+It separates *approved and needs nothing else* from *approved but still waiting
+on JSAP* — the split Accounts could not see, which is why they waited for the
+whole batch instead of releasing the bills that were never held up.
+
+RM/PM drawn from a GRPO is **POST NOW** and must not be held behind the service
+bills; a `56xxxxx` expense line with a Budget dimension **WAITS IN JSAP**. Nothing
+auto-approves in JSAP right now (no FY26-27 allocation loaded — 586 of 587
+documents refused in the 30 days to 2026-09-04), so a JSAP document waits for a
+person. Rule, accuracy and traps: **`jivo-ap-draft/reference/jsap-routing.md`**.
+
 ## Hard stops
 
 - **🔴 Never run `add-draft` in a company whose `EnableApprovalProcedureInDI` is `tNO`

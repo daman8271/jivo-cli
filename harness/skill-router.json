@@ -1,221 +1,250 @@
 {
-  "_doc": "Which prompt shapes map to which SAP-entry skill. Read by harness/bin/skill_router.py: `table` prints the routing table at SessionStart, `match` reads each prompt (UserPromptSubmit) and names the skill(s) to invoke first. Patterns are case-insensitive regexes over the prompt text. A route is listed only if its skill folder exists on this checkout, so harness/desks.json exclusions apply on their own. Edit, commit, push - every box picks it up at its next session.",
-  "attachment_patterns": [
-    "\\[image",
-    "\\.(pdf|jpe?g|png|heic|webp|tiff?)\\b",
-    "\\bscan(ned|s)?\\b",
-    "\\bphotos?\\b",
-    "screenshot",
-    "attached",
-    "attachment"
-  ],
-  "generic_patterns": [
-    "\\bentr(y|ies)\\b",
-    "entry kar",
-    "enter (this|these|it|them)",
-    "\\bpunch",
-    "data entry",
-    "\\bsap (me|mein|main|pe|par)\\b",
-    "\\b(yeh?|ye|isko|inko|isse|ise) (karo|kar do|kardo|bana|banao)\\b",
-    "\\bdrafts?\\b",
-    "\\bkar do\\b",
-    "\\bbanao\\b",
-    "\\bbana do\\b",
-    "\\bdalo\\b",
-    "\\bdaal",
-    "make (a |the )?(draft|entry)",
-    "book (this|these|it)"
-  ],
-  "always_after": {
-    "skill": "jivo-add-and-new",
-    "when": "AFTER ANY A/P draft - attach the bill, `sapb1 add-draft`, verify WddStatus='W'. Oil only: Mart/Bev stop at the draft (C-0074). A bill is not done at the draft."
+ "_doc": "Which prompt shapes map to which SAP-entry skill. Read by harness/bin/skill_router.py: `table` prints the routing table at SessionStart, `match` reads each prompt (UserPromptSubmit) and names the skill(s) to invoke first. Patterns are case-insensitive regexes over the prompt text. A route is listed only if its skill folder exists on this checkout, so harness/desks.json exclusions apply on their own. Edit, commit, push - every box picks it up at its next session.",
+ "attachment_patterns": [
+  "\\[image",
+  "\\.(pdf|jpe?g|png|heic|webp|tiff?)\\b",
+  "\\bscan(ned|s)?\\b",
+  "\\bphotos?\\b",
+  "screenshot",
+  "attached",
+  "attachment"
+ ],
+ "generic_patterns": [
+  "\\bentr(y|ies)\\b",
+  "entry kar",
+  "enter (this|these|it|them)",
+  "\\bpunch",
+  "data entry",
+  "\\bsap (me|mein|main|pe|par)\\b",
+  "\\b(yeh?|ye|isko|inko|isse|ise) (karo|kar do|kardo|bana|banao)\\b",
+  "\\bdrafts?\\b",
+  "\\bkar do\\b",
+  "\\bbanao\\b",
+  "\\bbana do\\b",
+  "\\bdalo\\b",
+  "\\bdaal",
+  "make (a |the )?(draft|entry)",
+  "book (this|these|it)"
+ ],
+ "always_after": {
+  "skill": "jivo-add-and-new",
+  "when": "AFTER ANY A/P draft - attach the bill, `sapb1 add-draft`, verify WddStatus='W'. Oil only: Mart/Bev stop at the draft (C-0074). A bill is not done at the draft."
+ },
+ "routes": [
+  {
+   "skill": "jivo-invoice-sweep",
+   "when": "invoices that arrived in a MAILBOX - check the mail, count them, download them to Documents. Reads mail only; never enters anything in SAP",
+   "patterns": [
+    "(e-?mails?|mails?|inbox|mailbox).*(invoice|bill)",
+    "(invoice|bill).*(e-?mails?|mails?|inbox|mailbox)",
+    "download.*(invoice|bill)",
+    "(invoice|bill).*(download|save|documents folder)",
+    "(mail|e-?mail) (se|ke) (bill|invoice)",
+    "invoice sweep"
+   ]
   },
-  "routes": [
-    {
-      "skill": "jivo-ap-draft",
-      "when": "vendor TAX INVOICE / purchase bill for GOODS - a GRPO exists behind it; also 'is this bill already in SAP?'",
-      "patterns": [
-        "\\binvoices?\\b",
-        "\\bbills?\\b",
-        "tax invoice",
-        "purchase (invoice|bill)",
-        "\\ba/?p\\b",
-        "vendor bill",
-        "\\bgrpo\\b",
-        "bill entry",
-        "purchase entry"
-      ]
-    },
-    {
-      "skill": "jivo-ap-service-draft",
-      "when": "vendor bill with NO goods receipt behind it - services, job work, repairs, professional fees, plate charges",
-      "patterns": [
-        "service (bill|invoice|charge)",
-        "no grpo",
-        "without grpo",
-        "professional",
-        "consultan",
-        "plate charge",
-        "job ?work",
-        "repair",
-        "\\bamc\\b",
-        "commission",
-        "advertis",
-        "legal fee",
-        "audit fee",
-        "courier"
-      ]
-    },
-    {
-      "skill": "jivo-ap-credit-memo",
-      "when": "a CREDIT NOTE or DEBIT NOTE a vendor issued to JIVO (rate difference, shortage, return)",
-      "patterns": [
-        "credit note",
-        "debit note",
-        "credit memo",
-        "\\bcn\\b",
-        "\\bdn\\b",
-        "rate diff",
-        "shortage",
-        "purchase return"
-      ]
-    },
-    {
-      "skill": "jivo-outgoing-payment",
-      "when": "a payment TO a vendor - advance against a PO/contract, or settlement of open bills; an approved payment-request mail",
-      "patterns": [
-        "\\bpayments?\\b",
-        "\\bpay\\b",
-        "\\badvance\\b",
-        "\\brtgs\\b",
-        "\\bneft\\b",
-        "\\bimps\\b",
-        "\\butr\\b",
-        "payment request",
-        "\\bpaid\\b",
-        "pay kar",
-        "outgoing",
-        "vendor payment",
-        "bhugtan"
-      ]
-    },
-    {
-      "skill": "jivo-banking",
-      "when": "a BANK STATEMENT whose lines must be entered (receipts, charges, transfers)",
-      "patterns": [
-        "bank statement",
-        "bank entr",
-        "passbook",
-        "bank ki",
-        "bank charges",
-        "bank lines?",
-        "bank ka"
-      ]
-    },
-    {
-      "skill": "jivo-rent-invoice",
-      "when": "a landlord's RENT invoice for any JIVO premises",
-      "patterns": [
-        "\\brent\\b",
-        "\\brental\\b",
-        "kiraya",
-        "landlord",
-        "\\blease\\b"
-      ]
-    },
-    {
-      "skill": "jivo-service-vehicle-expense",
-      "when": "an EMPLOYEE expense claim / reimbursement voucher (conveyance, fuel, toll, travel) - IMPREST vendor accounts",
-      "patterns": [
-        "expense",
-        "reimburs",
-        "\\bclaim\\b",
-        "voucher",
-        "imprest",
-        "conveyance",
-        "petrol",
-        "diesel",
-        "\\btoll\\b",
-        "\\bta ?/ ?da\\b",
-        "travel",
-        "kharcha",
-        "vehicle expense"
-      ]
-    },
-    {
-      "skill": "jivo-loading-unloading-ap",
-      "when": "a LABOUR contractor's loading / unloading bill (Oil or Beverages)",
-      "patterns": [
-        "loading",
-        "unloading",
-        "labou?r",
-        "hamali",
-        "mazdoor",
-        "palledar",
-        "thekedar"
-      ]
-    },
-    {
-      "skill": "jivo-oil-freight-grpo",
-      "group": "freight",
-      "when": "TRANSPORTER freight bill / bilty / LR billed to JIVO OIL - raise the freight GRPOs. The BILL-TO decides the book: Oil sale invoices 626xxxxxx",
-      "patterns": [
-        "freight",
-        "bilty",
-        "bilti",
-        "\\bl\\.?r\\.?\\b",
-        "transporter",
-        "transport bill",
-        "lorry",
-        "\\btrucks?\\b",
-        "consignment",
-        "pick ?& ?ship",
-        "pick and ship",
-        "\\bbhada\\b"
-      ]
-    },
-    {
-      "skill": "jivo-mart-freight-grpo",
-      "group": "freight",
-      "when": "the same freight bill but billed to JIVO MART (sale invoices 707xxxxxx)",
-      "patterns": [
-        "freight.*\\bmart\\b",
-        "\\bmart\\b.*(freight|bilty|transport)"
-      ]
-    },
-    {
-      "skill": "jivo-bev-freight-grpo",
-      "group": "freight",
-      "when": "the same freight bill but billed to JIVO BEVERAGES (wellness water)",
-      "patterns": [
-        "freight.*(bev|beverage|water|wellness)",
-        "(bev|beverage|water|wellness).*(freight|bilty|transport)"
-      ]
-    },
-    {
-      "skill": "jivo-add-and-new",
-      "when": "asked to submit / send to Bhawani / send for approval / 'add and new', or why a draft is not in the Approval Status Report",
-      "patterns": [
-        "bhawani",
-        "approv",
-        "\\bsubmit",
-        "add (and|&) new",
-        "send (it|this|these|them)\\b",
-        "wddstatus"
-      ]
-    },
-    {
-      "skill": "jivo-summary-pdf",
-      "when": "one PDF of everything entered today / on a date (write log + SAP read-back)",
-      "patterns": [
-        "summary",
-        "aaj ki entr",
-        "today'?s? entr",
-        "entered today",
-        "kya kya (kiya|hua|entry)",
-        "entries (of|for) (today|yesterday|\\d)",
-        "report of (my |the )?entr"
-      ]
-    }
-  ]
+  {
+   "skill": "jivo-ap-draft",
+   "when": "vendor TAX INVOICE / purchase bill for GOODS - a GRPO exists behind it; also 'is this bill already in SAP?'",
+   "patterns": [
+    "\\binvoices?\\b",
+    "\\bbills?\\b",
+    "tax invoice",
+    "purchase (invoice|bill)",
+    "\\ba/?p\\b",
+    "vendor bill",
+    "\\bgrpo\\b",
+    "bill entry",
+    "purchase entry"
+   ]
+  },
+  {
+   "skill": "jivo-ap-service-draft",
+   "when": "vendor bill with NO goods receipt behind it - services, job work, repairs, professional fees, plate charges",
+   "patterns": [
+    "service (bill|invoice|charge)",
+    "no grpo",
+    "without grpo",
+    "professional",
+    "consultan",
+    "plate charge",
+    "job ?work",
+    "repair",
+    "\\bamc\\b",
+    "commission",
+    "advertis",
+    "legal fee",
+    "audit fee",
+    "courier"
+   ]
+  },
+  {
+   "skill": "jivo-ap-credit-memo",
+   "when": "a CREDIT NOTE or DEBIT NOTE a vendor issued to JIVO (rate difference, shortage, return)",
+   "patterns": [
+    "credit note",
+    "debit note",
+    "credit memo",
+    "\\bcn\\b",
+    "\\bdn\\b",
+    "rate diff",
+    "shortage",
+    "purchase return"
+   ]
+  },
+  {
+   "skill": "jivo-outgoing-payment",
+   "when": "a payment TO a vendor - advance against a PO/contract, or settlement of open bills; an approved payment-request mail",
+   "patterns": [
+    "\\bpayments?\\b",
+    "\\bpay\\b",
+    "\\badvance\\b",
+    "\\brtgs\\b",
+    "\\bneft\\b",
+    "\\bimps\\b",
+    "\\butr\\b",
+    "payment request",
+    "\\bpaid\\b",
+    "pay kar",
+    "outgoing",
+    "vendor payment",
+    "bhugtan"
+   ]
+  },
+  {
+   "skill": "jivo-banking",
+   "when": "a BANK STATEMENT whose lines must be entered (receipts, charges, transfers)",
+   "patterns": [
+    "bank statement",
+    "bank entr",
+    "passbook",
+    "bank ki",
+    "bank charges",
+    "bank lines?",
+    "bank ka"
+   ]
+  },
+  {
+   "skill": "jivo-rent-invoice",
+   "when": "a landlord's RENT invoice for any JIVO premises",
+   "patterns": [
+    "\\brent\\b",
+    "\\brental\\b",
+    "kiraya",
+    "landlord",
+    "\\blease\\b"
+   ]
+  },
+  {
+   "skill": "jivo-service-vehicle-expense",
+   "when": "an EMPLOYEE expense claim / reimbursement voucher (conveyance, fuel, toll, travel) - IMPREST vendor accounts",
+   "patterns": [
+    "expense",
+    "reimburs",
+    "\\bclaim\\b",
+    "voucher",
+    "imprest",
+    "conveyance",
+    "petrol",
+    "diesel",
+    "\\btoll\\b",
+    "\\bta ?/ ?da\\b",
+    "travel",
+    "kharcha",
+    "vehicle expense"
+   ]
+  },
+  {
+   "skill": "jivo-loading-unloading-ap",
+   "when": "a LABOUR contractor's loading / unloading bill (Oil or Beverages)",
+   "patterns": [
+    "loading",
+    "unloading",
+    "labou?r",
+    "hamali",
+    "mazdoor",
+    "palledar",
+    "thekedar"
+   ]
+  },
+  {
+   "skill": "jivo-oil-freight-grpo",
+   "group": "freight",
+   "when": "TRANSPORTER freight bill / bilty / LR billed to JIVO OIL - raise the freight GRPOs. The BILL-TO decides the book: Oil sale invoices 626xxxxxx",
+   "patterns": [
+    "freight",
+    "bilty",
+    "bilti",
+    "\\bl\\.?r\\.?\\b",
+    "transporter",
+    "transport bill",
+    "lorry",
+    "\\btrucks?\\b",
+    "consignment",
+    "pick ?& ?ship",
+    "pick and ship",
+    "\\bbhada\\b"
+   ]
+  },
+  {
+   "skill": "jivo-mart-freight-grpo",
+   "group": "freight",
+   "when": "the same freight bill but billed to JIVO MART (sale invoices 707xxxxxx)",
+   "patterns": [
+    "freight.*\\bmart\\b",
+    "\\bmart\\b.*(freight|bilty|transport)"
+   ]
+  },
+  {
+   "skill": "jivo-bev-freight-grpo",
+   "group": "freight",
+   "when": "the same freight bill but billed to JIVO BEVERAGES (wellness water)",
+   "patterns": [
+    "freight.*(bev|beverage|water|wellness)",
+    "(bev|beverage|water|wellness).*(freight|bilty|transport)"
+   ]
+  },
+  {
+   "skill": "jivo-add-and-new",
+   "when": "asked to submit / send to Bhawani / send for approval / 'add and new', or why a draft is not in the Approval Status Report",
+   "patterns": [
+    "bhawani",
+    "approv",
+    "\\bsubmit",
+    "add (and|&) new",
+    "send (it|this|these|them)\\b",
+    "wddstatus"
+   ]
+  },
+  {
+   "skill": "jivo-summary-pdf",
+   "when": "one PDF of everything entered today / on a date (write log + SAP read-back)",
+   "patterns": [
+    "summary",
+    "aaj ki entr",
+    "today'?s? entr",
+    "entered today",
+    "kya kya (kiya|hua|entry)",
+    "entries (of|for) (today|yesterday|\\d)",
+    "report of (my |the )?entr"
+   ]
+  },
+  {
+   "skill": "jivo-post-today",
+   "when": "asked WHICH DRAFTS CAN BE POSTED now / a morning check of the draft pile / why a draft is still waiting. Splits ready-to-post from stuck-in-JSAP. Reads only",
+   "patterns": [
+    "(what|which|kya|kaun|konsi|kon si).{0,30}(post|posting)",
+    "post.{0,20}(today|now|kar sakte|karna hai|ho sakta)",
+    "(ready|pending).{0,20}(post|draft)",
+    "(draft|drafts).{0,25}(ready|pending|status|check|list)",
+    "check.{0,15}(the )?drafts?\\b",
+    "(bhawani|bhavani|babani).{0,30}(approve|approv|kar diya|kar diye|ho gaya)",
+    "\\bjsap\\b.{0,30}(approv|wait|pending|stuck)",
+    "(approv|wait|pending|stuck).{0,30}\\bjsap\\b",
+    "morning check",
+    "(why|kyun|kyu).{0,30}draft.{0,20}(wait|pending|stuck|atka)",
+    "post today"
+   ]
+  }
+ ]
 }

@@ -2,10 +2,18 @@
   "_doc": "Which skill folders a box must NOT carry. Every box pulls all of main; harness/bin/desk.py apply (run by the SessionStart hook) hides the listed folders on the boxes whose identity matches, via git sparse-checkout, so a pull can never bring them back. Identity = hostname / COMPUTERNAME / local username / harness/.operator slug, matched case-insensitively as a substring. Edit, commit, push - the box applies it on its next session.",
   "_doc_drafts_only": "Desks that may BUILD a draft but must never press Add. Three things read this list: `sapb1 add-draft` refuses outright on these boxes (sap-b1/cli/internal/config/desk.go), the SessionStart hook puts the policy in the AI's context (harness/bin/desk.py policy), and the exclude rule below takes the submit skill off the box. Same identity matching as `exclude`. Add a desk here when the operator submits and posts the documents herself.",
   "drafts_only": [
-    {"who": ["PC-AUDIT-05", "mahak", "User57"], "note": "Mahak - GRPO desk. Nothing from this desk reaches the approver: `add-draft` is refused, and a GRPO is POSTED LIVE rather than drafted (`sapb1 post PurchaseDeliveryNotes`), because a drafted GRPO lands in Bhawani's queue and SAP refuses this login a GRPO draft in JIVO_MART anyway (-6006). Every other doctype still stops at the draft and the operator presses Add herself in the SAP B1 client. Daman 2026-09-03, GRPO route changed 2026-09-04."}
+    {
+      "who": [
+        "PC-AUDIT-05",
+        "mahak",
+        "User57"
+      ],
+      "note": "Mahak - GRPO desk. Nothing from this desk reaches the approver: `add-draft` is refused, and a GRPO is POSTED LIVE rather than drafted (`sapb1 post PurchaseDeliveryNotes`), because a drafted GRPO lands in Bhawani's queue and SAP refuses this login a GRPO draft in JIVO_MART anyway (-6006). Every other doctype still stops at the draft and the operator presses Add herself in the SAP B1 client. Daman 2026-09-03, GRPO route changed 2026-09-04."
+    }
   ],
   "skill_sets": {
     "accounts-desk": [
+      ".claude/skills/jivo-post-today",
       ".claude/skills/jivo-banking",
       ".claude/skills/jivo-outgoing-payment",
       ".claude/skills/jivo-rent-invoice",
@@ -23,11 +31,65 @@
     ]
   },
   "exclude": [
-    {"who": ["DESKTOP-TTMJNEG", "sarabjeet"], "sets": ["accounts-desk"], "note": "Sarabjeet - HR desk. Daman 2026-09-02"},
-    {"who": ["karanpreet"], "sets": ["accounts-desk"], "note": "Karanpreet - MacBook, manager creds. Daman 2026-09-02"},
-    {"who": ["DIVYA", "dolly"], "sets": ["accounts-desk"], "note": "Divya / Dolly (USER04) - tax desk. Daman 2026-09-02"},
-    {"who": ["DILPREETSINGH", "param"], "sets": ["accounts-desk"], "note": "Param - old DILPREETSINGH box. Daman 2026-09-02"},
-    {"who": ["HO-IT-PC1", "preshit"], "sets": ["accounts-desk"], "note": "Preshit - IT. Daman 2026-09-02"},
-    {"who": ["PC-AUDIT-05", "mahak", "User57"], "sets": ["submit-to-approver"], "note": "Mahak - drafts only, so the skill that submits to the approver never loads. Daman 2026-09-03"}
+    {
+      "who": [
+        "DESKTOP-TTMJNEG",
+        "sarabjeet"
+      ],
+      "sets": [
+        "accounts-desk"
+      ],
+      "note": "Sarabjeet - HR desk. Daman 2026-09-02"
+    },
+    {
+      "who": [
+        "karanpreet"
+      ],
+      "sets": [
+        "accounts-desk"
+      ],
+      "note": "Karanpreet - MacBook, manager creds. Daman 2026-09-02"
+    },
+    {
+      "who": [
+        "DIVYA",
+        "dolly"
+      ],
+      "sets": [
+        "accounts-desk"
+      ],
+      "note": "Divya / Dolly (USER04) - tax desk. Daman 2026-09-02"
+    },
+    {
+      "who": [
+        "DILPREETSINGH",
+        "param"
+      ],
+      "sets": [
+        "accounts-desk"
+      ],
+      "note": "Param - old DILPREETSINGH box. Daman 2026-09-02"
+    },
+    {
+      "who": [
+        "HO-IT-PC1",
+        "preshit"
+      ],
+      "sets": [
+        "accounts-desk"
+      ],
+      "note": "Preshit - IT. Daman 2026-09-02"
+    },
+    {
+      "who": [
+        "PC-AUDIT-05",
+        "mahak",
+        "User57"
+      ],
+      "sets": [
+        "submit-to-approver"
+      ],
+      "note": "Mahak - drafts only, so the skill that submits to the approver never loads. Daman 2026-09-03"
+    }
   ]
 }

@@ -74,6 +74,18 @@ below are through it.
    GRPO" flags are a **false positive for this document class**; say so. Then verify by
    query: `DocTotal` exact, every line has `LocationCode`, `CostingCode3`, `U_Recvd_Qty`,
    Σ `U_Recvd_Qty` = the paper's qty total, `GSTTransactionType`, `AttachmentEntry`.
+11. **Name the lane — always, unprompted.** Most bills entered with THIS skill go
+   on to wait for the above-office budget approval in JSAP, but not all of them:
+   ```bash
+   python3 .claude/skills/jivo-ap-draft/bin/jsap_route.py <DocEntry> --company oil -v
+   ```
+   A `56xxxxx` expense line with a Budget dimension **WAITS IN JSAP** (freight
+   outward, loading, rent, repairs, conveyance, legal…). But **job work
+   `5100009`/`5500003`, inward and import freight `5100002`/`5500001`, lab &
+   testing `5100018` and fixed assets post directly** — being a service bill is
+   *not* the test, the account is. Nothing auto-approves in JSAP at the moment
+   (no FY26-27 allocation is loaded), so a JSAP document genuinely waits for a
+   person. Full rule and accuracy: **`jivo-ap-draft/reference/jsap-routing.md`**.
 
 ## Pre-flight — tick before `--yes`
 

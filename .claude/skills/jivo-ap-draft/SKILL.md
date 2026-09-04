@@ -99,6 +99,18 @@ stamp; the draft carries the base document's file too).
    `python3 .claude/skills/jivo-ap-draft/bin/readback.py <DocEntry> --expect-total … --expect-qty …`
    Report its flags as gaps, not as success. Give the operator the draft number
    and the click-path it prints.
+7. **Name the lane — always, unprompted.** After Bhawani approves, this document
+   either gets posted that day or sits waiting for the above-office budget
+   approval in JSAP, and the operator cannot tell which. Say it:
+   ```bash
+   python3 .claude/skills/jivo-ap-draft/bin/jsap_route.py <DocEntry> --company oil -v
+   ```
+   A goods bill drawn from a GRPO is **POST NOW** (RM/PM land on `2140001` GRNI —
+   893 of 893 Oil drafts this FY went direct, none reached JSAP). Say "this one
+   does not wait for JSAP" so it is not held behind the service bills.
+   `--payload /tmp/ap-draft.json` gives the same answer *before* sending, so the
+   lane can be named alongside the dry-run. Full rule, accuracy and traps:
+   **`reference/jsap-routing.md`**.
 
 ## Rules the scripts encode (know them anyway)
 
