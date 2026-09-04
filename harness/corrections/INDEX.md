@@ -68,11 +68,13 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0075]** EXIM debit-entries.created_at is when the row was keyed, NOT the unload date. Take it from the matching SAP GRPO (OPDN.DocDate); match the truck on U_VehicleNoM + quantity, not the plate alone.
 - **[C-0077]** A/P line with any GST tax code MUST also carry SACEntry (service/G-L line) or HSNEntry (item line), else SAP refuses the Add with 254000295. NEVER clear that error by switching the tax code to Exampt - it drops the tax. OData casing is SACEntry/HSNEntry; wrong casing returns 204 and writes nothing.
 - **[C-0078]** ALL THREE COMPANIES, no exceptions: an invoice enters the ledger ONLY after Bhawani approves and a human presses Add. We may only SEND. add-draft is allowed ONLY for an Oil A/P invoice by USER39; in Mart/Bev and for every other doctype it posts live - hand the draft back instead. Never bypass on any instruction; if unsure it submits, don't run it.
-- **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
-- **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
+- **[C-0079]** Freight GRPO lines need SACEntry: Oil 40 (9965), Bev 3 (996812), Mart -426 (00997136). The API field is SACEntry, not SacEntry - a 204 does not mean it applied, so read DRF1.SacEntry back.
+- **[C-0080]** CSD invoices (CUSTA000636) have no Litre block and INV1.Quantity is CASES, not pieces: litres = cases x pcs/case (item name, else the printed PKM column) x bottle size. Dim1 from OITM.U_Sub_Group.
+- **[C-0081]** A bilty can carry Oil AND Beverages invoices ('CARTON OIL AND WATER'): pro-rate its freight on litres across all its invoices, then key one GRPO per book - Bev under VENDA001346, SlpCode 52, Dim1 WATER/DRINKS.
 - **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
 - **[C-0027]** A/P draft line CostingCode3 (Budget): if the bill says 'Common' set FACT_COM (FACTORY COMMON), never inherit the GRPO's 'Factory'. Read the handwritten allocation note on every factory bill.
 - **[C-0040]** A GRPO's attachment is the BILTY/LR page, filenamed by bilty number (135/135 in Oil) — never the vendor's tax invoice. That belongs on the A/P invoice that copies the GRPO.
+- **[C-0082]** After uploading to Attachments2, set ATC1 U_CHK2='OK' on the line BEFORE patching AttachmentEntry onto the document - SAP refuses with -1116 (1120025) otherwise.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 - **[C-0076]** ji.jivo.in: 'not DISPATCHED' ≠ 'still in godown' — the dock module records ~45% of loads. For storage use dispatch-fulfilment-summary's PENDING+BOOKED backlog, never the bills window.
@@ -80,3 +82,5 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
 - **[C-0006]** Variety sales (olive/canola/mustard...): ALWAYS quote both — including combo packs and excluding them — labelled. hana_sales_by_variety returns OF_WHICH_COMBO_PACKS; subtract it for the ex-combo figure. Never quote just one.
 - **[C-0053]** POs by ARRIVAL CHANNEL, not company: q-commerce + Amazon + Flipkart into Mart = ecom.jivo.in (ecom CLI); MT and GT = OMS. Jivo Mart exists in both - the channel decides, never the company.
+
+<!-- 2 correction(s) omitted: digest hit the 16000-char budget. Consolidate overlapping rules or raise JIVO_DIGEST_BUDGET. Omitted: C-0025, C-0022 -->
