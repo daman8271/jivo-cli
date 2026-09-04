@@ -99,7 +99,7 @@ the data rather than typed here:
 | HAND-READ DAILY | tank litres | `exim.tanks.reading_note` |
 | CARRIED FORWARD | ecom targets | `ecom.targets.carried_from` |
 | MEASURED ONCE | the invoice→truck lag | `factory_dispatch.lag_note.caveat` (`static: true`) |
-| OUR GUESS | the godown ceiling | `storage.ceiling.source` + `open_question` (Q2) |
+| YOUR LIMIT | the godown ceiling | `storage.ceiling.source` (`declared: true`, `declared_by`) — Daman's own capacity sheet, ruled a fact 2026-09-04, so this one is a declared limit rather than a guess |
 | ALL-TIME | the QC scoreboard, the posting backlog | `factory_inbound.notes.qc_counts_scope` |
 | NOT MOVING | packaging in non-moving rooms | `overview.opening.packaging_in_non_moving_rooms_pcs`, **when the publisher ships it** — absent today, and the badge simply does not appear |
 

@@ -56,11 +56,11 @@ export default function ForwardStrip() {
               title="Days the godown is over the limit"
               value={`${o.storage.days_ge_100.length} of ${o.totals.days}`}
               tone={o.storage.days_ge_100.length > 0 ? "text-red-400" : "text-emerald-300"}
-              badge={<NotLive p={P.ceiling(ceiling.text, "Q2")} />}
+              badge={<NotLive p={P.ceiling(ceiling.text)} />}
               sub={
                 <>
                   {o.storage.days_ge_95} {plural(o.storage.days_ge_95, "day", "days")} at 95% or more of{" "}
-                  {litres(o.storage.ceiling_l)} — a guess, not a measurement
+                  {litres(o.storage.ceiling_l)} — the limit you gave us
                 </>
               }
             />

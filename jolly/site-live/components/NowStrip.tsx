@@ -154,14 +154,14 @@ export default function NowStrip() {
               {pilePct !== null && (
                 <div className="text-sm text-amber-300">
                   {pct1(pilePct)} of the godown{" "}
-                  <NotLive p={P.ceiling(ceiling.text, "Q2")} />
+                  <NotLive p={P.ceiling(ceiling.text)} />
                 </div>
               )}
             </div>
             <div className="mt-2 text-xs text-zinc-400">
               Whole godown right now: {orUnknown(storage?.at_open.physical_l, litres)} —{" "}
               {orUnknown(storage?.at_open.pct, pct1)} full against a limit of{" "}
-              {orUnknown(ceiling.working_l, litres)}, which is a guess, not a measurement.
+              {orUnknown(ceiling.working_l, litres)} — the limit you gave us.
             </div>
             {storage?.at_open.clears_note && (
               <p className="mt-2 text-xs text-zinc-500">{maskDigits(storage.at_open.clears_note)}</p>
@@ -282,8 +282,9 @@ export default function NowStrip() {
               {orUnknown(ecom?.open_total_l, litres)}
             </div>
             <div className="mt-1 text-xs text-zinc-400">
-              {orUnknown(ecom?.open_value_ex_gst_inr, money)} before GST · quick-commerce{" "}
-              {orUnknown(ecom?.open_qcomm_l, litres)}, Amazon this month {orUnknown(ecom?.open_amazon_sep_l, litres)}
+              {orUnknown(ecom?.open_value_ex_gst_total_inr ?? ecom?.open_value_ex_gst_inr, money)}{" "}
+              before GST · quick-commerce {orUnknown(ecom?.open_qcomm_l, litres)}, Amazon this
+              month {orUnknown(ecom?.open_amazon_sep_l, litres)}
             </div>
             <ul className="mt-2 space-y-0.5 text-xs text-zinc-400">
               {Object.entries(ecom?.open_by_platform ?? {})
@@ -291,11 +292,31 @@ export default function NowStrip() {
                 .slice(0, 5)
                 .map(([k, v]) => (
                   <li key={k} className="flex justify-between gap-2">
-                    <span>{k.toLowerCase()}</span>
+                    <span>
+                      {k.toLowerCase()}
+                      {k === "AMAZON" && (
+                        <span className="text-zinc-500"> · this month only</span>
+                      )}
+                    </span>
                     <span className="tabular-nums">{orUnknown(v.litres, litres)}</span>
                   </li>
                 ))}
             </ul>
+            {/* The Amazon litres deliberately kept OUT of the headline. They are
+                real open POs; they are just dated before this month, so they must
+                not drive this month's plan. Showing the total without this line
+                let the page read as if Amazon's whole book were the month slice. */}
+            {(ecom?.open_backlog_amazon_l ?? 0) > 0 && (
+              <div className="mt-2 border-t border-zinc-800 pt-2 text-xs text-amber-300/80">
+                Not in the figure above: {orUnknown(ecom?.open_backlog_amazon_l, litres)} of
+                Amazon orders still open on{" "}
+                {orUnknown(ecom?.open_backlog_amazon_pos, (v) => `${v} ${plural(v, "PO", "POs")}`)}{" "}
+                dated before this month. Amazon&rsquo;s whole open book is{" "}
+                {orUnknown(ecom?.open_amazon_all_l, litres)} on{" "}
+                {orUnknown(ecom?.open_amazon_all_pos, (v) => `${v} ${plural(v, "PO", "POs")}`)}.
+                Old orders are left out of the plan on purpose.
+              </div>
+            )}
             {ecom?.targets?.carried_from && (
               <div className="mt-2 text-xs text-amber-300/80">
                 Month target {orUnknown(ecom.targets.total_l, litres)}{" "}

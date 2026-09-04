@@ -5,7 +5,7 @@
 // NOW: the pile as it stands, split PENDING / BOOKED / loaded-but-not-gone, by
 //      company and by room where the heavy read gave them, plus the measured
 //      invoice→truck lag (badged: measured once, carried).
-// FORWARD: the planner's day-by-day curve against the ASSUMED ceiling.
+// FORWARD: the planner's day-by-day curve against Daman's DECLARED ceiling.
 
 import { asHonesty, asState, asStorage, useLive } from "../lib/live";
 import { ceilingRule, maskDigits, P, standingRule } from "../lib/labels";
@@ -40,7 +40,8 @@ export default function StorageClient() {
       </div>
       <p className="mt-1 max-w-3xl text-sm text-zinc-300">
         Two rooms hold finished goods. Most of what is in them on a bad day is already sold — billed, waiting for a
-        truck. The limit they are measured against is a guess, and it is marked as one everywhere it appears.
+        truck. The limit they are measured against is the one you gave us, and it is named as yours everywhere it
+        appears.
       </p>
 
       {/* ── now ─────────────────────────────────────────────────── */}
@@ -74,8 +75,10 @@ export default function StorageClient() {
               <Card
                 title="The limit"
                 value={litres(S.ceiling.working_l)}
-                badge={<NotLive p={P.ceiling(S.ceiling.source, S.ceiling.open_question)} />}
-                sub={`up to ${litres(S.ceiling.peak_l)} packed tight — ${S.ceiling.source ?? "a guess"}`}
+                badge={<NotLive p={P.ceiling(S.ceiling.source)} />}
+                sub={`up to ${litres(S.ceiling.peak_l)} packed tight — ${
+                  S.ceiling.declared_by ? `your limit, ${S.ceiling.declared_by}` : "your own limit"
+                }`}
                 tone="text-zinc-400"
               />
             </>
@@ -191,7 +194,7 @@ export default function StorageClient() {
           title="How full it gets from here"
           badge={<SimBadge kind="plan" />}
           asOf={<AsOf rec={live.storage} />}
-          note="Grey is stock nobody has billed. Amber is billed and waiting for a truck. The red line is the limit — a guess, not a measurement."
+          note="Grey is stock nobody has billed. Amber is billed and waiting for a truck. The red line is the limit you gave us."
         >
           <Live rec={live.storage} what="the godown curve">
             {S && (
@@ -203,7 +206,7 @@ export default function StorageClient() {
                     style={{ bottom: `${(S.ceiling.working_l / maxPhys) * 100}%` }}
                   >
                     <span className="absolute -top-4 right-0 text-[10px] text-red-300">
-                      limit {litres(S.ceiling.working_l)} — a guess
+                      limit {litres(S.ceiling.working_l)} — yours
                     </span>
                   </div>
                   <div

@@ -3,7 +3,7 @@
 // The floor, in 3D. One block per machine — block height is the hours the plan
 // puts on it that day, block colour is the oil on it, a beacon blinks where the
 // oil is changed, and a green ring means that machine is filling RIGHT NOW.
-// The godown is one box inside a wire shell: the shell is the limit (a guess),
+// The godown is one box inside a wire shell: the shell is the limit (Daman's, declared),
 // the solid part is what is in it, amber for the share already sold.
 //
 // Every figure arrives as a prop. Nothing is typed in this file.

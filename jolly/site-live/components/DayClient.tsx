@@ -98,8 +98,8 @@ export default function DayClient({ n }: { n: number }) {
                   title="Godown"
                   value={pct1(day.storage.pct)}
                   tone={day.storage.pct >= 95 ? "text-red-400" : day.storage.pct >= 80 ? "text-amber-300" : "text-emerald-300"}
-                  badge={<NotLive p={P.ceiling(ceiling.text, "Q2")} />}
-                  sub={`${litres(day.storage.physical_l)} against a limit of ${litres(day.storage.ceiling_l)} — a guess`}
+                  badge={<NotLive p={P.ceiling(ceiling.text)} />}
+                  sub={`${litres(day.storage.physical_l)} against a limit of ${litres(day.storage.ceiling_l)} — the limit you gave us`}
                 />
               </div>
 
