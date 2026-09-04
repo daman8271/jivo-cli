@@ -20,7 +20,7 @@ def main():
     a = ap.parse_args()
 
     if not shutil.which("pdftoppm"):
-        sys.exit("pdftoppm not found — brew install poppler")
+        sys.exit("pdftoppm not found - brew install poppler")
     os.makedirs(a.out, exist_ok=True)
 
     subprocess.run(["pdftoppm", "-r", str(a.dpi), "-png", a.pdf,
