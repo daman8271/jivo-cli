@@ -101,7 +101,23 @@ live in the books** — that is click two, and nothing here can undo it. The
 operator names the drafts; you do not decide to clear the tray because it looked
 ready.
 
-5. **Say the "will post straight after her" number.** That is the planning
+5. **Log it to the Desktop — every direct post, no exceptions.** Daman,
+   2026-09-04: anything posted that was never going to JSAP gets written down.
+   ```bash
+   python3 .claude/skills/jivo-ap-draft/bin/post_log.py --record <DocEntry>... --company oil
+   ```
+   Writes `~/Desktop/JIVO-Direct-Posts/` — a readable `YYYY-MM-DD.md` per day
+   plus `YYYY-MM.csv` and an append-only `ALL-POSTS.csv`. Each row carries the
+   **draft number**, the invoice number it became, vendor, their bill number,
+   what it was for, amount, TDS, **which desk created the draft**, **which SAP
+   login posted it**, the lane, and whether the desk was in the five.
+   Run it **straight after** the add-draft, in the same breath — a posted
+   document cannot be undone or re-attributed from this CLI, so this file is
+   the only record of who did what. It refuses to log a JSAP-lane document
+   (that is not a direct post) and stamps `in_scope=NO` in red letters when the
+   draft came from outside the five desks. `--backfill` rebuilds it from the
+   shared write log if a post was ever made without logging.
+6. **Say the "will post straight after her" number.** That is the planning
    figure — it tells Accounts what is coming before the batch returns.
 
 **On a drafts-only desk** (`harness/desks.json` → `drafts_only`; Mahak's
