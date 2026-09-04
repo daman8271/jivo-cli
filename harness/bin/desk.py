@@ -111,16 +111,40 @@ def drafts_only_note(identity: list[str]) -> str | None:
 # raises UnicodeEncodeError inside print(), main()'s catch-all swallows it, and
 # the banner silently does not reach the session — which is the whole point of
 # the banner. Caught live on PC-AUDIT-05, 2026-09-03.
-POLICY_BANNER = """## THIS DESK IS DRAFTS ONLY - you never press Add
+POLICY_BANNER = """## THIS DESK NEVER REACHES THE APPROVER - and a GRPO is POSTED, not drafted
 
 {note}
 
-Build the draft, attach the bill, tell the operator the draft number, and STOP.
+### A GRPO: post it LIVE. Do not draft it. - Daman 2026-09-04
+
+`sapb1 post PurchaseDeliveryNotes` is the route on this desk. Two reasons, and
+the second is the one that matters:
+
+1. SAP refuses this login a GRPO *draft* in JIVO_MART - it answers
+   `-6006 Modifying this object is not permitted for current user`. USER19 has
+   never made a single draft in Mart, while making 148 in Oil and Beverages.
+   She CAN post a Mart GRPO live: 87 of them from the SAP B1 client.
+2. A drafted GRPO ends up in front of Bhawani, and Daman does not want a goods
+   receipt sitting in her approval queue. Posting it direct keeps it off her
+   desk entirely.
+
+So: build the GRPO, show `--dry-run`, then post it. Do not make a GRPO draft
+here and do not ask whether to submit one - the answer is no, permanently.
+
+- It creates a LIVE goods receipt: stock moves, the ledger moves, immediately.
+  There is no draft and no approver, and NOTHING in this CLI can undo it - only
+  a person in the SAP B1 client can reverse it. Preview every single time.
+- The GRPO is the ONLY thing `post` will create here. A/P and A/R invoices,
+  credit notes, orders, payments, journal entries and stock movements are all
+  still refused in code, with no flag. Those still go the draft route.
+
+### Everything else: build the draft and STOP - you never press Add
 
 - Do NOT run `sapb1 add-draft`. The binary refuses it here and exits 9; that
-  refusal IS the policy, not a fault to route around.
-- Do NOT reach for `post`, `patch`, curl, another checkout or another login to
-  get the same effect. There is no flag and no second route.
+  refusal IS the policy, not a fault to route around. It is what keeps this
+  desk's work out of the approver's queue.
+- Do NOT reach for `patch`, curl, another checkout or another login to get the
+  same effect. There is no flag and no second route.
 - Submitting a draft for approval, and posting an approved one, are this
   operator's own clicks in the SAP B1 client: Document Drafts -> open it -> Add.
 - CLAUDE.md's "a bill is not done at the draft - send it to the approver" rule

@@ -52,10 +52,36 @@ type postingDocTarget struct {
 	instead string
 }
 
+// postableLive is the one carve-out from the rule above, and it exists because
+// SAP itself closed the safe route on one desk.
+//
+// USER19 (Mahak's GRPO desk) cannot create a GRPO *draft* in JIVO_MART: SAP
+// answers `-6006 Modifying this object is not permitted for current user`
+// (2026-08-27, in the shared write log). She has never produced a single draft
+// in Mart by any route, while producing 148 of them in Oil and Beverages. She
+// *can* post a Mart GRPO live — 87 of them from the SAP B1 client, the last on
+// 2026-09-02, on the same series and branch the draft was refused on. Only an
+// admin in the B1 client can grant the missing draft right; the standard
+// authorisation tree is not in the database and not in the Service Layer
+// (`UserPermissionTree` in Mart carries 29 nodes, all Uneecops add-on ones).
+//
+// So for a GRPO the choice is not "draft or live" — it is "live or nothing".
+// Daman lifted the block for this one doctype on 2026-09-04.
+//
+// It stays a deliberately narrow hole. A GRPO receipts stock against a purchase
+// order that already exists and was already approved; it is the one document
+// here whose amounts are dictated by the PO rather than typed fresh. Everything
+// that creates money out of a keystroke — A/P and A/R invoices, credit notes,
+// payments, journal entries, free-hand stock movements — is still refused, and
+// still has no flag.
+var postableLive = map[string]string{
+	"purchasedeliverynotes": "GRPO — draft route refused by SAP for USER19 in Mart (-6006); Daman 2026-09-04",
+}
+
 // livePostingDocuments is keyed by lower-cased entity set. The marketing
 // documents come from draftDocTypes() — anything `sapb1 draft` can make a draft
 // of must not be creatable live — plus the payment and ledger documents, which
-// have their own safe routes.
+// have their own safe routes. Minus postableLive.
 func livePostingDocuments() map[string]postingDocTarget {
 	m := map[string]postingDocTarget{}
 	for _, dt := range draftDocTypes() {
@@ -77,6 +103,9 @@ func livePostingDocuments() map[string]postingDocTarget {
 		"inventorycountings":        {noun: "inventory counting", instead: "A counting document adjusts stock on hand. It is keyed by a person in Inventory → Inventory Transactions → Inventory Counting Transactions."},
 	} {
 		m[set] = t
+	}
+	for set := range postableLive {
+		delete(m, set)
 	}
 	return m
 }

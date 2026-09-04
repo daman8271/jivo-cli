@@ -11,7 +11,7 @@ import (
 func TestPostRefusesEveryLivePostingDocument(t *testing.T) {
 	for _, set := range []string{
 		"PurchaseInvoices", "Invoices", "CreditNotes", "PurchaseCreditNotes",
-		"Orders", "PurchaseOrders", "DeliveryNotes", "PurchaseDeliveryNotes",
+		"Orders", "PurchaseOrders", "DeliveryNotes",
 		"Returns", "PurchaseReturns", "Quotations", "PurchaseQuotations",
 		"DownPayments", "PurchaseDownPayments",
 		"IncomingPayments", "VendorPayments", "ChecksforPayment", "Deposits",
@@ -67,15 +67,41 @@ func TestPatchIsNotAffected(t *testing.T) {
 }
 
 // Every doctype `sapb1 draft` can make a draft of must be on the block list:
-// if a draft route exists, the live route is never the right one.
+// if a draft route exists, the live route is never the right one. The only
+// exemptions are the ones postableLive names out loud, because for those the
+// draft route is not actually available (SAP refuses it for the desk that needs
+// it) — see the comment on postableLive.
 func TestEveryDraftableDocTypeIsBlockedLive(t *testing.T) {
 	blocked := map[string]bool{}
 	for _, name := range livePostingDocumentNames() {
 		blocked[name] = true
 	}
 	for _, dt := range draftDocTypes() {
-		if !blocked[strings.ToLower(dt.EntitySet)] {
+		set := strings.ToLower(dt.EntitySet)
+		if _, exempt := postableLive[set]; exempt {
+			continue
+		}
+		if !blocked[set] {
 			t.Errorf("%s has a draft route (`sapb1 draft %s`) but `post` would still create it live", dt.EntitySet, dt.Name)
+		}
+	}
+}
+
+// The GRPO carve-out, asserted both ways: it is open, and it did not drag
+// anything else open with it. A/P invoices are the document that made this a
+// code rule (C-0034) — if they ever come unblocked, this test fails first.
+func TestGRPOIsThePostableException(t *testing.T) {
+	for _, spelling := range []string{"PurchaseDeliveryNotes", "purchasedeliverynotes", "PURCHASEDELIVERYNOTES"} {
+		if _, err := validateWriteEntitySet(spelling, "POST"); err != nil {
+			t.Errorf("post %q must be allowed — SAP refuses the draft route for Mart's GRPO desk; got: %v", spelling, err)
+		}
+	}
+	if len(postableLive) != 1 {
+		t.Errorf("postableLive has grown to %d entries (%v) — every addition reopens a live ledger route and needs Daman's word, not a refactor", len(postableLive), postableLive)
+	}
+	for _, set := range []string{"PurchaseInvoices", "Invoices", "CreditNotes", "JournalEntries", "VendorPayments"} {
+		if _, err := validateWriteEntitySet(set, "POST"); err == nil {
+			t.Errorf("post %s came unblocked alongside the GRPO carve-out — that is the C-0034 accident again", set)
 		}
 	}
 }
