@@ -41,6 +41,14 @@ COMPANY_DB = {
 }
 LABEL = {"oil": "JIVO OIL", "mart": "JIVO MART", "bev": "JIVO BEVERAGES"}
 
+# The desks whose drafts this check covers. Daman, 2026-09-04: only these
+# five. USER05 (Taran) and USER06 (Lovpreet) are deliberately OUT, and so is
+# the shared `manager`. Anything created by anyone else is not our pile -- on
+# 2026-09-04 two invoices were posted off a list that included another
+# operator's draft, which is exactly what this filter prevents.
+DESK_LOGINS = ["USER07", "USER08", "USER09", "USER19", "USER39"]
+EXCLUDED = {"USER05": "Taran", "USER06": "Lovpreet", "manager": "shared login"}
+
 # SAP's own word for where a draft stands. dasCancelled is old abandoned stock
 # (828 of them in Oil, some from 2024) -- never show it as work.
 NOT_SENT, WITH_HER, APPROVED, REJECTED = (
@@ -57,18 +65,39 @@ def rupees(n):
     return "Rs %s" % ("{:,.0f}".format(n))
 
 
-def fetch(company):
+def user_ids(company, codes):
+    """USER_CODE -> internal key, resolved PER COMPANY. The same USER_CODE has a
+    different UserSign in each book, so a key learned in Oil is the wrong person
+    in Beverages."""
+    flt = " or ".join("UserCode eq '%s'" % c for c in codes)
+    p = subprocess.run([SAPB1, "query", "Users", "--filter", flt, "--select",
+                        "InternalKey,UserCode,UserName", "--all", "--json",
+                        "--company", COMPANY_DB[company]],
+                       capture_output=True, text=True, timeout=180,
+                       cwd=os.path.dirname(SAPB1))
+    if p.returncode != 0:
+        sys.exit("could not read Users (%s): %s" % (company, (p.stderr or p.stdout).strip()[:200]))
+    return {int(r["InternalKey"]): (r["UserCode"], r.get("UserName") or "")
+            for r in json.loads(p.stdout or "[]")}
+
+
+def fetch(company, creators=None):
     flt = ("DocObjectCode eq 'oPurchaseInvoices' and DocumentStatus eq "
            "'bost_Open' and AuthorizationStatus ne 'dasCancelled'")
     cmd = [SAPB1, "query", "Drafts", "--filter", flt, "--all", "--json",
            "--company", COMPANY_DB[company], "--select",
-           "DocEntry,DocNum,CardName,NumAtCard,DocTotal,AuthorizationStatus,DocumentLines"]
+           "DocEntry,DocNum,CardName,NumAtCard,DocTotal,AuthorizationStatus,UserSign,DocumentLines"]
     # sapb1 reads its .env (and the operator's login) from its own directory.
     p = subprocess.run(cmd, capture_output=True, text=True, timeout=300,
                        cwd=os.path.dirname(SAPB1))
     if p.returncode != 0:
         sys.exit("SAP read failed (%s): %s" % (company, (p.stderr or p.stdout).strip()[:300]))
-    return json.loads(p.stdout or "[]")
+    rows = json.loads(p.stdout or "[]")
+    if creators is None:
+        return rows, {}
+    ids = user_ids(company, creators)
+    kept = [r for r in rows if r.get("UserSign") in ids]
+    return kept, ids
 
 
 def lane_of(draft, company):
@@ -84,19 +113,21 @@ def lane_of(draft, company):
     return classify(lines)
 
 
-def sort_book(company):
-    """Returns (trays, lanes). `lanes` keeps the called lane for EVERY draft --
-    the trays alone lose it for not_sent and rejected, and the snapshot needs
-    the real call, not a guess."""
+def sort_book(company, creators=DESK_LOGINS):
+    """Returns (trays, lanes, who). `lanes` keeps the called lane for EVERY
+    draft. `who` maps UserSign -> (USER_CODE, name) so the report can name the
+    desk each draft came from."""
     trays = {k: [] for k in ("ready", "jsap_approved", "with_her_fast",
                              "with_her_slow", "not_sent", "rejected", "unknown")}
     lanes = {}
-    for d in fetch(company):
+    rows, who = fetch(company, creators)
+    for d in rows:
         st = d.get("AuthorizationStatus")
         lane, _ = lane_of(d, company)
         row = (d["DocEntry"], d.get("CardName") or "", d.get("NumAtCard") or "",
                float(d.get("DocTotal") or 0))
         lanes[d["DocEntry"]] = lane
+        row = row + (who.get(d.get("UserSign"), ("?", "?"))[0],)
         if lane == "UNKNOWN":
             trays["unknown"].append(row)
         elif st == APPROVED:
@@ -107,17 +138,21 @@ def sort_book(company):
             trays["not_sent"].append(row)
         elif st == REJECTED:
             trays["rejected"].append(row)
-    return trays, lanes
+    return trays, lanes, who
 
 
 def tot(rows):
     return sum(r[3] for r in rows)
 
 
-def show(company, trays, limit):
-    print("=" * 74)
+def show(company, trays, limit, creators=DESK_LOGINS):
+    print("=" * 78)
     print("%s  --  A/P drafts" % LABEL[company])
-    print("=" * 74)
+    if creators:
+        print("desks counted: %s" % ", ".join(creators))
+        print("NOT counted  : %s" % ", ".join("%s (%s)" % (k, v)
+                                              for k, v in sorted(EXCLUDED.items())))
+    print("=" * 78)
 
     ready = sorted(trays["ready"], key=lambda r: -r[3])
     print("\n>> READY TO POST  --  %d drafts, %s" % (len(ready), rupees(tot(ready))))
@@ -125,8 +160,10 @@ def show(company, trays, limit):
     print("   They are not waiting on JSAP and never were.\n")
     if not ready:
         print("     (none right now)")
-    for de, nm, ref, amt in ready[:limit]:
-        print("     %-7s %-36s %-16s %14s" % (de, nm[:36], ref[:16], "{:,.0f}".format(amt)))
+    for r in ready[:limit]:
+        de, nm, ref, amt = r[0], r[1], r[2], r[3]
+        by = r[4] if len(r) > 4 else "?"
+        print("     %-7s %-9s %-30s %-15s %13s" % (de, by, nm[:30], ref[:15], "{:,.0f}".format(amt)))
     if len(ready) > limit:
         print("     ... and %d more" % (len(ready) - limit))
     if ready:
@@ -163,8 +200,9 @@ def show(company, trays, limit):
               % (len(rj), rupees(tot(rj))))
     if un:
         print("\n>> CANNOT CALL THE LANE  --  %d   <- look at these by hand" % len(un))
-        for de, nm, ref, amt in un[:limit]:
-            print("     %-7s %-36s %s" % (de, nm[:36], ref[:16]))
+        for r in un[:limit]:
+            print("     %-7s %-9s %-30s %s" % (r[0], r[4] if len(r) > 4 else "?",
+                                               r[1][:30], r[2][:15]))
 
     print("\n" + "-" * 74)
     if ready:
@@ -339,7 +377,7 @@ def main():
     books = ["oil", "mart", "bev"] if a.all else [a.company]
     out = {}
     for co in books:
-        trays, lanes = sort_book(co)
+        trays, lanes, _who = sort_book(co)
         out[co] = {k: [{"DocEntry": r[0], "CardName": r[1], "NumAtCard": r[2],
                         "DocTotal": r[3]} for r in v] for k, v in trays.items()}
         if not a.json:

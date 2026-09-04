@@ -27,6 +27,33 @@ was holding back **₹1.06 crore** of bills that were ready to go.
 still approves everything exactly as now. The only thing this removes is the
 waiting *after* her.
 
+## Whose drafts count — five desks, nobody else
+
+**Daman, 2026-09-04: only drafts created by these five logins are ours to post.**
+
+| Login | Who |
+|---|---|
+| USER07 | HARSH |
+| USER08 | DIVJOT |
+| USER09 | SATNAM |
+| USER19 | GURCHARAN |
+| USER39 | MUQEEM |
+
+**Explicitly OUT: USER05 (Taran), USER06 (Lovpreet), and the shared `manager`.**
+`daily_sort.py` applies this by default and prints the scope at the top; the
+internal `UserSign` is resolved **per company**, because the same USER_CODE is a
+different person in each book.
+
+**Why this exists.** On 2026-09-04 two invoices were posted off a list of
+DocEntries that nobody had filtered — and one of them, Geo Chem 56123 (₹3,480,
+now live as 626084324), was **Lovpreet's draft**. It was posted as `manager`, so
+the books name no person at all. MIGASA 56116 (₹1.01 Cr) was Lovpreet's too and
+was one attachment fix away from going the same way. A posted document cannot be
+undone or re-attributed from this CLI.
+
+**So: never post from a bare list of DocEntries.** Check the creator first, and
+if a draft belongs to a desk outside the five, say whose it is and stop.
+
 ## Run it
 
 ```bash
