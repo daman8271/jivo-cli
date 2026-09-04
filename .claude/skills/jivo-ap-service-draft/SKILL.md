@@ -44,7 +44,7 @@ below are through it.
    |---|---|---|
    | `DocType` | `dDocument_Service` for expense bills | service |
    | `Series` + `DocumentSubType` | the **flavour** (non-GST `HR_B` + `bod_None` vs GST `HR_G` + `bod_GSTTaxInvoice`); then find **this month's** number for that flavour and branch (`reference/series-and-errors.md` in jivo-ap-draft; confirm with what Aug-26 posted docs of that flavour carry) | 3324 HR_B0826 + bod_None |
-   | `BPL_IDAssignedToInvoice` | the branch precedent uses | 2 FACTORY |
+   | `BPL_IDAssignedToInvoice` | the branch precedent uses. **A `[SAP -3000] … does not have permission to use this object` on `BusinessPlaces` does NOT block this bill** — some logins (USER08/Divjot) cannot open the branch *list*, and none of them need to: take the branch from the vendor's last posted invoices above, or from the operator, and pass it. Nothing has to be granted in SAP first (verified live 2026-09-04) | 2 FACTORY |
    | `GSTTransactionType` | copy | `gsttrantyp_BillOfSupply` (petrol/diesel are outside GST) |
    | `WTLiable` / TDS | **precedent beats the master flag**; transport vendors are often 194C — check the last 3, report both, follow precedent | master `boNO`, all 3 posted TDS 0 → none |
    | line `AccountCode` | per head: fuel-vehicles / generator / conveyance / freight … | 5650015 / 5680001 / 5690002 |

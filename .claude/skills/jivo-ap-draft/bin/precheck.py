@@ -186,10 +186,11 @@ def main():
     except RuntimeError as e:
         branches, branches_readable = [], False
         warnings.append(
-            f"this login cannot read the branch list ({e}) — the branch will be taken "
-            "off the GRPO, which is the branch that decides anyway. Nothing is guessed: "
-            "if there is no GRPO to read it from, the pre-check stops. Ask an admin for "
-            "read rights on Business Places to get the GSTIN cross-check back.")
+            f"NOT A BLOCKER: this login cannot read the branch list ({e}), and it does "
+            "not need to. The branch is taken off the GRPO, which is the branch that "
+            "decides anyway, and this login reads that fine. Carry on and make the bill. "
+            "The only thing lost is the GSTIN-to-branch cross-check; if there is no GRPO "
+            "either, the fix is --bpl <id> on this command, NOT a permission from SAP.")
     by_id = {b["BPLID"]: b for b in branches}
     bpl, bpl_matches = None, []
     if a.bpl:
@@ -331,7 +332,30 @@ def main():
     elif not bpl and len(bpl_matches) > 1:
         problems.append("GSTIN matches several branches and there is no GRPO to decide — pass --bpl")
     elif not bpl and not branches_readable:
-        problems.append("no branch: this login cannot read the branch list and there is no GRPO to take it from — pass --bpl <id>, or ask an admin for read rights on Business Places")
+        # This is the ONE stop the denied branch list can cause, and it is not a
+        # permission to escalate: the branch is a fact the operator states. Name
+        # the branches this vendor's own last invoices sit on, so the answer is
+        # one flag away instead of a ticket to an admin. Still never auto-picked.
+        hint = ""
+        if bp:
+            try:
+                prev = q("PurchaseInvoices", f"CardCode eq '{bp['CardCode']}' and Cancelled eq 'tNO'",
+                         "DocEntry,BPL_IDAssignedToInvoice", orderby="DocEntry desc", top=3)
+                used = sorted({p["BPL_IDAssignedToInvoice"] for p in prev if p.get("BPL_IDAssignedToInvoice")})
+                if used:
+                    hint = (" This vendor's last posted invoices are on branch "
+                            + "/".join(str(u) for u in used)
+                            + f", so it is very likely --bpl {used[0]} - confirm with the operator, never assume.")
+            except RuntimeError:
+                pass
+        problems.append(
+            "TELL IT THE BRANCH: re-run with --bpl <id> and this bill goes through."
+            + hint +
+            " (Why you are seeing this: there is no GRPO to take the branch off, and"
+            " this login cannot read the Business Places list. NOTHING has to be granted"
+            " in SAP to enter this bill - --bpl is the whole fix. Read rights on Business"
+            " Places are worth asking an admin for separately, because they restore the"
+            " GSTIN-to-branch cross-check, but they are not what is stopping you.)")
 
     # 4. template: last posted invoices for this vendor
     print("\n[4] how JIVO booked this vendor before (last 3 posted A/P invoices)")

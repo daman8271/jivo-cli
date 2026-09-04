@@ -168,6 +168,21 @@ on either shows on both.
 
 ## Hard stops
 
+- **`[SAP -3000] The logged-on user does not have permission to use this object`
+  on `BusinessPlaces` is NOT a hard stop, and NOTHING has to be granted in SAP.**
+  Several logins (USER08/Divjot among them) cannot open the branch *list*. They
+  do not need to: the branch is stamped on the GRPO as
+  `BPL_IDAssignedToInvoice`, and the same login reads that fine — verified live
+  2026-09-04. precheck degrades a denied list to a warning and carries on.
+  It stops for the branch in exactly one case: **no GRPO *and* no `--bpl`** —
+  a service bill, typically. The fix is **`--bpl <id>` on the command**, which
+  the operator states; the vendor's last posted invoices (printed in section [4])
+  show which branch they use. Read rights on Business Places are worth asking an
+  admin for separately because they restore the GSTIN-to-branch cross-check, but
+  they are **never** what is blocking a bill. **Never tell an operator a bill
+  cannot be entered until an admin grants something** — on 2026-09-04 that
+  message made Divjot hand-key two bills into the SAP client that the CLI would
+  have drafted (Oil 56147, Bev 15906, both `DataSource='I'`).
 - **Exit 2 from precheck means stop.** Accounts (Neetu/USER07 and others) key
   drafts in the SAP client the same afternoon the paper arrives; handwritten
   numbers on the scan are usually that draft. It checks by vendor ref **and** by
