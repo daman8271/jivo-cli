@@ -310,7 +310,8 @@ set -a; source <operator>.env; set +a          # the login that owns the entry
 `draft payment` is a **separate command** because SAP keeps payment drafts in
 `PaymentDrafts` (`OPDF`), not `Drafts`. It moves no money and posts nothing until
 a human opens **Banking → Payment Drafts** and presses **Add** — which this CLI
-cannot do (that is an OData action, refused by design).
+cannot do (that is an OData action, refused by design). A posted payment cannot be
+cancelled from here either — `sapb1 cancel` covers the 14 marketing documents only.
 
 **Log in as the person whose entry it is.** SAP user codes are zero-padded:
 `user5` does not exist, `USER05` does (= TARAN, who keys most of Oil's outgoing

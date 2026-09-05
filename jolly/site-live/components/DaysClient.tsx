@@ -3,11 +3,13 @@
 // /days — the whole re-planned horizon, one row per day.
 // Day 1 is TODAY and it is the only day read off the plant. Every row after it
 // is computed from the row before it plus what the planner decided, and the
-// whole ladder is rebuilt from a fresh count every few minutes.
+// whole ladder is rebuilt from a fresh count every few minutes. "Today" is
+// checked against the calendar, never assumed from n === 1 — a plan the chain
+// has stopped rebuilding keeps yesterday's day 1.
 
 import Link from "next/link";
 import { useState } from "react";
-import { asHonesty, asOverview, asSpine, useLive } from "../lib/live";
+import { asHonesty, asOverview, asSpine, istToday, useLive, useNow } from "../lib/live";
 import { ruleText } from "../lib/labels";
 import { dlabel, inr, litres, money, pct, pct1, plural, weekdayShort } from "../lib/fmt";
 import { AsOf, Live } from "./Freshness";
@@ -20,6 +22,8 @@ export default function DaysClient() {
   const o = asOverview(live.overview);
   const h = asHonesty(live.honesty);
   const [hover, setHover] = useState<number | null>(null);
+  const now = useNow(10_000);
+  const today = istToday(now || undefined);
 
   const max = Math.max(1, ...spine.map((d) => d.made_l));
   const d = hover === null ? null : spine[hover];
@@ -52,7 +56,9 @@ export default function DaysClient() {
                 <div className="flex flex-wrap items-start gap-x-6 gap-y-3">
                   <div className="min-w-[120px]">
                     <div className="text-[10px] uppercase tracking-wider text-zinc-500">
-                      {d.n === 1 ? "Today — read off the plant" : d.working ? "Working day — the plan" : `${d.weekday} — closed`}
+                      {d.n === 1
+                        ? d.date === today ? "Today — read off the plant" : "Day 1 when the plan was built — not today"
+                        : d.working ? "Working day — the plan" : `${d.weekday} — closed`}
                     </div>
                     <div className="mt-0.5 text-sm font-semibold">
                       {weekdayShort(d.weekday)} {dlabel(d.date)}
@@ -132,9 +138,14 @@ export default function DaysClient() {
                         <Link href={`/days/${x.n}`} className="underline-offset-2 hover:underline">
                           {weekdayShort(x.weekday)} {dlabel(x.date)}
                         </Link>
-                        {x.n === 1 && (
+                        {x.n === 1 && x.date === today && (
                           <Pill tone="green" title="the only day that is read off the plant">
                             today
+                          </Pill>
+                        )}
+                        {x.n === 1 && x.date !== today && (
+                          <Pill tone="amber" title="day 1 of a plan the chain has not rebuilt — its date is not today">
+                            day 1, not today
                           </Pill>
                         )}
                       </td>

@@ -2,8 +2,14 @@
 
 // Freshness is a first-class element on this site, not a footnote.
 //
-//  · every panel says "as of HH:MM", taken from ITS OWN source's fetched_at
-//    (the publisher's own server_at is on hover)
+//  · every panel says "as of HH:MM", taken from the stamp its body carries for
+//    WHEN IT WAS MADE (madeAt) — never from when this browser fetched it. A plan
+//    the chain has stopped rebuilding is fetched fresh every 3 minutes; on
+//    2026-09-05 that fetch clock printed "as of 12:04" over a plan from 21:36
+//    the evening before, for 14 hours, on every plan tile. Older than the amber
+//    band the stamp reads "made 21:36 · 14 hours ago" in red instead.
+//  · one badge says how long ago the PLAN was rebuilt, from overview's own stamp
+//    (the ingest loop and the plan chain fail separately, so each gets a badge)
 //  · one global badge says how long ago the loop ran, from collected_at:
 //    green ≤ 6 min, amber ≤ 15, red beyond — and red says in words that the
 //    cron is dead
@@ -12,10 +18,12 @@
 
 import { useState } from "react";
 import {
-  agoWords, ageMinutes, asState, bandOf, FRESH_AMBER_MIN, FRESH_GREEN_MIN, hhmm, refreshNow, useLive, useNow,
+  agoWords, ageMinutes, asOverview, asState, bandOf, FRESH_AMBER_MIN, FRESH_GREEN_MIN, hhmm, istToday, madeAt,
+  refreshNow, useLive, useNow,
   type Band, type Rec,
 } from "../lib/live";
 import type { Persist } from "../lib/labels";
+import { dlabel } from "../lib/fmt";
 
 /* ─────────────────────────────── as of ─────────────────────────────── */
 
@@ -32,17 +40,23 @@ const BAND_CHIP: Record<Band, string> = {
   unknown: "bg-zinc-800 text-zinc-400 border-zinc-700",
 };
 
-/** "as of 16:42" for one panel, from that panel's own source. */
+/** "as of 16:42" for one panel, from the stamp the body itself carries for when
+ *  it was made. Past the amber band it says so in words — "made 21:36 · 14 hours
+ *  ago" — because a body that keeps arriving unchanged is old, however recently
+ *  it arrived. */
 export function AsOf({ rec, label }: { rec?: Rec; label?: string }) {
   const now = useNow();
   if (!rec) return null;
-  const stamp = rec.fetched_at;
+  const made = madeAt(rec);
+  const stamp = made ?? rec.fetched_at;
   const t = hhmm(stamp);
   const mins = ageMinutes(stamp, now);
   const band = rec.ok ? bandOf(mins) : "red";
+  const old = made !== null && mins !== null && mins > FRESH_AMBER_MIN;
   const title = [
-    rec.server_at ? `the publisher's own stamp: ${rec.server_at}` : "the publisher gave no stamp of its own",
-    rec.fetched_at ? `we read it at ${rec.fetched_at}` : null,
+    made ? `made (its own stamp): ${made}` : "the body carries no stamp of when it was made",
+    rec.server_at ? `built from the plant as read at: ${rec.server_at}` : null,
+    rec.fetched_at ? `this browser read it at ${rec.fetched_at}` : null,
     rec.from === "storage" ? "carried from this browser's saved copy" : null,
     rec.error ? `last attempt failed: ${rec.error}` : null,
   ].filter(Boolean).join(" · ");
@@ -50,7 +64,7 @@ export function AsOf({ rec, label }: { rec?: Rec; label?: string }) {
   return (
     <span className={`text-[11px] tabular-nums ${BAND_TEXT[band]}`} title={title}>
       {label ? `${label} ` : ""}
-      {t ? `as of ${t}` : "not read yet"}
+      {t ? (old ? `made ${t} · ${agoWords(mins)}` : `as of ${t}`) : "not read yet"}
       {/* "not fresh" means an attempt FAILED. While the first read of the
           session is still in the air over a saved copy, nothing has failed
           yet and saying so would be crying wolf. */}
@@ -105,9 +119,47 @@ export function LoopBadge() {
   );
 }
 
+/** How long ago the PLAN was rebuilt — overview.json's own stamp. The ingest loop
+ *  and the plan chain fail separately (the chain refused to write for 14 hours on
+ *  2026-09-04/05 while the loop stayed green), so the plan gets its own badge. */
+export function PlanBadge() {
+  const live = useLive(["overview"]);
+  const now = useNow(10_000);
+  const rec = live.overview;
+  const made = madeAt(rec);
+  const mins = ageMinutes(made, now);
+  const o = asOverview(rec);
+  const day1 = o?.meta?.horizon?.[0] ?? null;
+  const today = istToday(now || undefined);
+  const wrongDay = day1 !== null && now !== 0 && day1 !== today;
+  const band: Band = made === null ? "unknown" : wrongDay ? "red" : bandOf(mins);
+
+  const words = made === null
+    ? rec.loading ? "reading the plan…" : "no plan has reached this browser"
+    : band === "red"
+      ? `plan NOT rebuilt since ${hhmm(made)} — ${agoWords(mins)}${wrongDay && day1 ? `, its day 1 is ${dlabel(day1)}, not today` : ""}`
+      : `plan rebuilt ${agoWords(mins)}`;
+
+  return (
+    <button
+      type="button"
+      onClick={() => refreshNow()}
+      title={`${made ? `the plan's own stamp: ${made}` : "no stamp"}${day1 ? ` · day 1: ${day1}` : ""} — click to read again now`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${BAND_CHIP[band]}`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${
+          band === "green" ? "bg-emerald-400" : band === "amber" ? "bg-amber-400" : band === "red" ? "bg-red-400" : "bg-zinc-500"
+        }`}
+      />
+      {words}
+    </button>
+  );
+}
+
 /** The one-line strip under the nav — what this site is, and how old it is. */
 export function LoopBanner() {
-  const live = useLive(["state"]);
+  const live = useLive(["state", "overview"]);
   const now = useNow(10_000);
   const rec = live.state;
   const st = asState(rec);
@@ -116,10 +168,25 @@ export function LoopBanner() {
   const failed = Object.entries(st?.sources ?? {}).filter(([, s]) => !s.ok);
   const unreachable = !rec.ok && !rec.loading;
 
-  if (band === "red" || unreachable || failed.length > 0) {
+  // the plan's own age, separately — the chain can stop while the loop runs
+  const planMade = madeAt(live.overview);
+  const planMins = ageMinutes(planMade, now);
+  const day1 = asOverview(live.overview)?.meta?.horizon?.[0] ?? null;
+  const planWrongDay = day1 !== null && now !== 0 && day1 !== istToday(now);
+  const planStale = planMade !== null && ((planMins !== null && planMins > FRESH_AMBER_MIN) || planWrongDay);
+
+  if (band === "red" || unreachable || failed.length > 0 || planStale) {
     return (
       <div className="border-b border-red-500/25 bg-red-500/10">
         <div className="mx-auto max-w-7xl px-5 py-1.5 text-xs text-red-200">
+          {planStale && (
+            <span className="font-semibold">
+              The plan has not been rebuilt since {hhmm(planMade)} ({agoWords(planMins)})
+              {planWrongDay && day1 ? ` — its day 1 is ${dlabel(day1)}, not today` : ""}. Every COMPUTER PLAN figure on
+              this site — the month ahead, today&rsquo;s plan, the godown pile, the stuck products, every day page — is
+              from that older run. The LIVE plant readings are current.{" "}
+            </span>
+          )}
           {unreachable && (
             <span className="font-semibold">
               This browser cannot reach the publisher{rec.error ? ` (${rec.error})` : ""}. Everything below is the last
@@ -348,6 +415,10 @@ export function FreshnessKey() {
       </span>
       <span className="inline-flex items-center gap-1.5">
         <span className="h-1.5 w-1.5 rounded-full bg-red-400" /> older — the loop is not running
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <span className="text-red-300">made HH:MM · N ago</span> — that body has not been rebuilt since then, however
+        recently this page fetched it
       </span>
     </div>
   );

@@ -714,11 +714,14 @@ def build(paths, check):
     # day n IS day n-lag's billing, and the month's trucking adds up to the month's
     # billing. Both statements quietly assume an empty yard. Mark 3 opens with a
     # real pile (read live off the dispatch plans), the engine releases it 45/35/20
-    # over the first three days, and its release queue is FIFO by insertion rather
-    # than sorted by date — so a day-1 bill queued behind the pile's day-3 entry
-    # leaves on day 4, not day 3. Asserting the old equality here would report the
-    # engine's real, correct behaviour as a fault. What is still true, on any
-    # length of run and any size of pile, is a two-sided bound:
+    # over days 2-4 (day 1's pile IS the live count — reconciled below), and it
+    # drains its queue by DATE. (Until 2026-09-05 the queue popped head-first, so a
+    # day-1 bill waited behind the pile's day-4 tranche and left on day 4; the lower
+    # bound below caught that the moment the live pile fell under day-1 billing,
+    # 4 Sep 21:39, and refused to publish for 14 hours — the engine was fixed, not
+    # the check.) Asserting the old equality here would still report the pile's
+    # own departures as a fault. What is true, on any length of run and any size
+    # of pile, is a two-sided bound:
     #
     #   billed up to day n-lag  <=  trucked up to day n  <=  pile + billed up to n-lag
     #

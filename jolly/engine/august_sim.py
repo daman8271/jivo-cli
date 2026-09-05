@@ -119,10 +119,9 @@ for d, m in S["inbound_prebooked"].items():
 # 84 of 84 customer docs docked on 1 Aug or later, so it drains — it does not sit.
 standing = collections.deque()
 open_pile = f(OP["standing_l"])
-# Seed only a real pile. Zero-litre seeds are not harmless: the drain loop pops the
-# deque head while it is due, so a zero entry dated day 4 would trap a real day-3
-# release queued behind it and hold godown space a day too long (September opens with
-# standing_l=0; August, with a real pile, is untouched by this guard).
+# It leaves 45/35/20 over days 2, 3 and 4 (D0 + 1/2/3). Day 1's pile IS the live count
+# — gen_live reconciles the end of day 1 to it — so nothing of it goes on day 1; the
+# trucks start tomorrow. Seed only a real pile — a zero entry is noise in the queue.
 if open_pile > 0:
     for i, share in enumerate([0.45, 0.35, 0.20]):
         standing.append([D0 + timedelta(days=i + 1), open_pile * share])
@@ -156,8 +155,12 @@ while today <= D1:
     day = dict(date=key, weekday=today.strftime("%A"), working=working, received=[], new_orders=[],
                runs=[], blocked=[], dispatched=[], bought=[], decisions=[], unblocked=[], flushes=0)
 
-    # trucks leave -> space released
-    while standing and standing[0][0] <= today: standing.popleft()
+    # trucks leave -> space released — by DATE, wherever the entry sits. Until
+    # 2026-09-05 this popped the head only, so a day-1 bill (due day 3) waited behind
+    # the pile's day-4 tranche and left on day 4, a day past the lag the plant shows.
+    # gen_live's "trucks never fall behind the billing queue" caught it the moment the
+    # live pile fell below day-1 billing (4 Sep 21:39) and refused to publish for 14 h.
+    standing = collections.deque(e for e in standing if e[0] > today)
 
     # 1 RECEIVE — and note anything that unblocks a SKU we were waiting on
     for c, q in inbound.pop(key, {}).items():
@@ -335,6 +338,11 @@ while today <= D1:
 
 OUT = f"sim/days{TAG}"
 os.makedirs(OUT, exist_ok=True)
+# A rolling re-plan writes FEWER day files than the last run (2 Sep: 29, not 30).
+# Any day-NN.json left over from before is a stale artifact that a consumer will
+# happily read as part of THIS run — clear them first.
+import glob as _glob
+for _old in _glob.glob(f"{OUT}/day-*.json"): os.remove(_old)
 for i, d in enumerate(days, 1): json.dump(d, open(f"{OUT}/day-{i:02d}.json", "w"), indent=1)
 json.dump(events, open(f"sim/events{TAG}.json", "w"), indent=1)
 json.dump(dict(days=[dict(date=d["date"], working=d["working"], made_l=d["made_litres"], value=d["made_value"],

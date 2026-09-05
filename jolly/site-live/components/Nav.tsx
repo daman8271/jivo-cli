@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ROUTES } from "../lib/routes";
-import { LoopBadge } from "./Freshness";
+import { LoopBadge, PlanBadge } from "./Freshness";
 import { FIXTURES } from "../lib/live";
 
 // "/" matches only itself; every other tab also owns its subtree (/days/12 → "Day by day").
@@ -20,6 +20,7 @@ export default function Nav() {
           <span className="ml-2 hidden text-sm font-normal text-zinc-500 sm:inline">the plant, right now</span>
         </Link>
         <LoopBadge />
+        <PlanBadge />
         {FIXTURES && (
           <span
             title="This build is reading the saved copies in public/fixtures, not the publisher. Nothing here is live."

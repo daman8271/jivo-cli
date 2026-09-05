@@ -4,10 +4,12 @@
 //
 // Day 1 is today: its opening is the live count and it is the only observed day
 // on the site. Days 2..N are the planner's own output stacked on it. The page
-// says which it is, every time.
+// says which it is, every time — and "today" is checked against the calendar,
+// not assumed from n === 1: when the chain stops rebuilding, day 1 keeps
+// yesterday's date, and this page must say so rather than call it today.
 
 import Link from "next/link";
-import { asDay, asHonesty, asOverview, asSpine, dayId, useLive } from "../lib/live";
+import { asDay, asHonesty, asOverview, asSpine, dayId, istToday, madeAt, agoWords, ageMinutes, hhmm, useLive, useNow } from "../lib/live";
 import { ceilingRule, isRealiseOutlier, maskDigits, P, realiseOutlier } from "../lib/labels";
 import { dlabel, inr, litres, money, pct, pct1, plural, weekdayShort } from "../lib/fmt";
 import { AsOf, Live, NotLive } from "./Freshness";
@@ -24,7 +26,13 @@ export default function DayClient({ n }: { n: number }) {
   const h = asHonesty(live.honesty);
   const ceiling = ceilingRule(h);
   const outlier = realiseOutlier(h);
-  const isToday = n === 1;
+  const now = useNow(10_000);
+  const today = istToday(now || undefined);
+  // day 1 is "today" only while its date IS today — a plan the chain has not
+  // rebuilt keeps yesterday's day 1, and that must never be called today
+  const isToday = n === 1 && !!day && day.date === today;
+  const isStaleDayOne = n === 1 && !!day && day.date !== today;
+  const planMade = madeAt(live[id]);
   const last = spine.length ? spine[spine.length - 1].n : null;
 
   return (
@@ -35,6 +43,11 @@ export default function DayClient({ n }: { n: number }) {
         </h1>
         <SimBadge kind={isToday ? "live" : "plan"} />
         {isToday && <Pill tone="green">the only day that has happened</Pill>}
+        {isStaleDayOne && (
+          <Pill tone="amber" title={planMade ? `the plan's own stamp: ${planMade}` : undefined}>
+            day 1 of a plan built {hhmm(planMade) ?? "earlier"} · {agoWords(ageMinutes(planMade, now))} — not today
+          </Pill>
+        )}
         {day && !day.working && <Pill tone="zinc">factory closed</Pill>}
       </div>
 
@@ -57,7 +70,9 @@ export default function DayClient({ n }: { n: number }) {
       <p className="mt-2 max-w-3xl text-sm text-zinc-300">
         {isToday
           ? "Today's opening is the live count from the plant. Everything the planner does with it below is a decision, not a record."
-          : "Nothing on this page has happened. It is worked out from the day before it, which was worked out from the day before that, back to today's live count."}
+          : isStaleDayOne
+            ? "This was day 1 when the plan was last built. The planner has not rebuilt since, so its opening is the plant as it stood then — not today's count — and nothing below is today."
+            : "Nothing on this page has happened. It is worked out from the day before it, which was worked out from the day before that, back to today's live count."}
       </p>
 
       <div className="mt-6">

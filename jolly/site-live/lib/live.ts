@@ -83,6 +83,38 @@ const GUARDS: Record<string, (v: unknown) => boolean> = {
 
 const guardFor = (id: SourceId) => GUARDS[id.startsWith("day:") ? "day" : id] ?? (() => true);
 
+/** Is this id one of the plan files (the FORWARD layer, rebuilt by the chain)? */
+export const isPlanId = (id: SourceId) => id !== "state";
+
+/** The stamp a body carries for WHEN IT WAS MADE — the only honest age for it.
+ *  state.json: collected_at (the loop's own clock). A plan file: meta.generated,
+ *  the moment gen_live.py wrote it (meta.collected_at, the state it was built
+ *  from, when a build did not stamp itself). The browser's fetch time says
+ *  nothing about this: a plan the chain has refused to rebuild for 14 hours is
+ *  fetched fresh every 3 minutes, and stamping THAT printed "as of 12:04" over
+ *  yesterday evening's plan on 2026-09-05. */
+export function madeStampOf(id: SourceId, data: unknown): string | null {
+  if (!isObj(data)) return null;
+  if (id === "state") return typeof data.collected_at === "string" ? data.collected_at : null;
+  const meta = data.meta;
+  if (!isObj(meta)) return null;
+  if (typeof meta.generated === "string") return meta.generated;
+  if (typeof meta.collected_at === "string") return meta.collected_at;
+  return null;
+}
+
+/** madeStampOf for a record — null until it has a body. */
+export const madeAt = (rec?: Rec): string | null => (rec ? madeStampOf(rec.id, rec.data) : null);
+
+/** Today's date in the plant's own timezone (IST), as YYYY-MM-DD — what a plan's
+ *  day 1 has to equal before the site may call it "today". */
+export function istToday(now?: number): string {
+  const d = now ? new Date(now) : new Date();
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(d);
+}
+
 /** The publisher's own stamp for a body, when it carries one. */
 function serverStampOf(id: SourceId, data: unknown): string | null {
   if (!isObj(data)) return null;
