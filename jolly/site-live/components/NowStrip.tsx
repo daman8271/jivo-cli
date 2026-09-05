@@ -10,9 +10,17 @@ import {
 } from "../lib/live";
 import { ceilingRule, maskDigits, P, standingRule } from "../lib/labels";
 import { inr, litres, money, orUnknown, pct, pct1, plural, tonnes } from "../lib/fmt";
-import { AsOf, Live, LiveSource, NotLive, SourceLine } from "./Freshness";
+import { AsOf, Live, LiveSource, NotLive, OwnStamp, SourceLine } from "./Freshness";
 import { Panel, Pill, Stat } from "./Card";
 import SimBadge from "./SimBadge";
+
+/** "3 Sep 11:59" from an ISO stamp, in the reader's own clock. */
+const hhmmDate = (iso: string) => {
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return iso;
+  const d = new Date(t);
+  return `${d.getDate()} ${d.toLocaleString("en-GB", { month: "short" })} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
 
 export default function NowStrip() {
   const live = useLive(["state", "storage", "honesty"]);
@@ -127,7 +135,7 @@ export default function NowStrip() {
           <Panel
             title="Bulk oil in the tanks"
             badge={<NotLive p={P.tankDip(tanks?.reading_note)} />}
-            asOf={<SourceLine src="exim" />}
+            asOf={<OwnStamp iso={tanks?.reading_at} what="dip read" staleAfterHours={30} fallback={<SourceLine src="exim" />} />}
           >
             <LiveSource src="exim" what="the tanks">
               <div className="text-2xl font-semibold tabular-nums">{orUnknown(tanks?.total_l, litres)}</div>
@@ -135,6 +143,15 @@ export default function NowStrip() {
                 {orUnknown(tanks?.total_l, tonnes)} in {tanks?.tank_count ?? "—"} tanks ·{" "}
                 {orUnknown(tanks?.utilisation_pct, pct1)} of what they hold
               </div>
+              {/* the dip is a person's daily job; when it has not been done, say so —
+                  a 49-hour-old level wearing "as of 12:51" is how this tile lied on 5 Sep */}
+              {typeof tanks?.reading_age_hours === "number" && tanks.reading_age_hours > 30 && (
+                <div className="mt-2 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-[11px] text-amber-200">
+                  No tank has been dipped since {tanks.reading_at ? hhmmDate(tanks.reading_at) : "the last reading"} —{" "}
+                  {Math.round(tanks.reading_age_hours / 24)} {plural(Math.round(tanks.reading_age_hours / 24), "day", "days")} without a
+                  reading. These litres are that old, whatever time this page was loaded.
+                </div>
+              )}
             </LiveSource>
           </Panel>
         </div>
@@ -254,7 +271,7 @@ export default function NowStrip() {
         <Panel
           title="Billed today, on a truck when?"
           badge={<NotLive p={P.lagStatic(lag?.caveat)} />}
-          asOf={<SourceLine src="factory_dispatch" />}
+          asOf={<OwnStamp iso={lag?.measured_on} what="measured" fallback={<SourceLine src="factory_dispatch" />} />}
         >
           <LiveSource src="factory_dispatch" what="the lag">
             <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">

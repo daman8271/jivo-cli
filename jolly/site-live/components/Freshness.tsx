@@ -73,6 +73,41 @@ export function AsOf({ rec, label }: { rec?: Rec; label?: string }) {
   );
 }
 
+/** A stamp for a figure that carries ITS OWN reading time — a tank dip, a
+ *  one-off measurement. "as of <fetch time>" is the wrong stamp for these: the
+ *  tank total sat at 754,900 L from 3 Sep to 5 Sep 2026 under "as of 12:51"
+ *  because the loop re-fetched an untouched reading every 3 minutes. This says
+ *  when the reading itself was taken, how long ago, and goes amber past
+ *  `staleAfterHours` (a daily dip is overdue after ~30 h) and red past twice it. */
+export function OwnStamp({
+  iso, what, staleAfterHours, fallback,
+}: {
+  iso?: string | null;
+  /** the verb for the reading: "dip read", "measured" */
+  what: string;
+  /** omit for a one-off that is not expected to move (a declared static input) */
+  staleAfterHours?: number;
+  /** what to render when the body carries no stamp of its own */
+  fallback?: React.ReactNode;
+}) {
+  const now = useNow();
+  if (!iso) return <>{fallback ?? null}</>;
+  const mins = ageMinutes(iso, now);
+  const hours = mins === null ? null : mins / 60;
+  const tone =
+    staleAfterHours && hours !== null && hours > 2 * staleAfterHours ? "text-red-300"
+    : staleAfterHours && hours !== null && hours > staleAfterHours ? "text-amber-300"
+    : "text-zinc-500";
+  const t = hhmm(iso);
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(iso);
+  const when = dateOnly ? dlabel(iso) : `${dlabel(iso.slice(0, 10))} ${t ?? ""}`.trim();
+  return (
+    <span className={`text-[11px] tabular-nums ${tone}`} title={`the reading's own stamp: ${iso}`}>
+      {what} {when}{mins !== null && !dateOnly ? ` · ${agoWords(mins)}` : ""}
+    </span>
+  );
+}
+
 /* ───────────────────────── the global loop badge ───────────────────────── */
 
 /** How long ago the ingest loop ran. Red says the cron is dead, in words. */

@@ -214,6 +214,7 @@ run_chain() {
 
   run_step freeze "$PY" "$LIVE_DIR/freeze_live.py" || {
     say "chain STOPPED at freeze — sim/live-inputs.json was not rewritten, so the ""engine is not run on a stale one. state.json is published and unaffected."
+    CHAIN_STEP=freeze
     return 1
   }
   # env(1), not a `VAR=x func` prefix: an assignment in front of a FUNCTION call
@@ -225,10 +226,12 @@ run_chain() {
   run_step sim env SIM_INPUTS=sim/live-inputs.json SIM_TAG=-live \
     "$PY" "$JOLLY_DIR/engine/august_sim.py" || {
     say "chain STOPPED at sim — no new sim/days-live; the site keeps its last plan."
+    CHAIN_STEP=sim
     return 1
   }
   run_step gen "$PY" "$LIVE_DIR/gen_live.py" || {
     say "chain STOPPED at gen — gen_live.py refused to write (its cross-checks are ""the gate and a failing check is a wrong number, never a check to weaken). ""live/state/plan/ keeps its last good copy."
+    CHAIN_STEP=gen
     return 1
   }
   # Is what is now published actually THIS cycle's re-plan? It used to be a standing
@@ -260,6 +263,7 @@ else:
 EOF
   run_step publish publish_plan || {
     say "chain STOPPED at publish — live/state/plan/ keeps its last good copy."
+    CHAIN_STEP=publish
     return 1
   }
   say "chain ok"
@@ -276,7 +280,9 @@ run_cycle() {
   if [ "$ONLY_CHAIN" = "1" ]; then
     say "collect SKIPPED — LOOP_ONLY_CHAIN=1; the chain re-runs on the state already on disk"
     local crc0=0
+    CHAIN_STEP=""
     run_chain || crc0=$?
+    "$PY" "$LIVE_DIR/chain_status.py" "$STATE_DIR" "$crc0" "$CHAIN_STEP" >>"$LOG" 2>&1 || true
     t1=$(date +%s)
     say "---- cycle end rc=0 chain=$crc0 in $((t1 - t0))s (collect skipped) ----"
     return 0
@@ -298,7 +304,11 @@ run_cycle() {
   # The chain runs on what collect just wrote, inside the REMAINING budget. Its
   # outcome never changes rc: state.json is already published either way.
   local crc=0
+  CHAIN_STEP=""
   run_chain || crc=$?
+  # chain.json + the alarm: the loop's rc never carries the chain's outcome, so this
+  # is the only place a 14-hour plan freeze (4 Sep 21:36) becomes visible anywhere.
+  "$PY" "$LIVE_DIR/chain_status.py" "$STATE_DIR" "$crc" "$CHAIN_STEP" >>"$LOG" 2>&1 || true
 
   t1=$(date +%s)
   say "---- cycle end rc=$rc chain=$crc in $((t1 - t0))s ----"

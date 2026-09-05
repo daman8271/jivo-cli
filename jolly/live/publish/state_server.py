@@ -41,7 +41,24 @@ class H(http.server.BaseHTTPRequestHandler):
         self._hdr(200, length=os.path.getsize(p))
     def do_GET(self):
         if self.path.split("?",1)[0] in ("/healthz", "/"):
-            body = json.dumps({"ok": True, "root": ROOT, "now": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            now = datetime.datetime.now(datetime.timezone.utc)
+            def age_s(iso):
+                try: return round((now - datetime.datetime.fromisoformat(iso)).total_seconds())
+                except Exception: return None
+            def stamp(rel, key):
+                try: return json.load(open(os.path.join(ROOT, rel))).get(key)
+                except Exception: return None
+            # "ok" is this server; "fresh" is the data. The plan sat 14 h at 4 Sep 21:36
+            # behind an ok:true healthz — now its own age and the chain's outcome are here.
+            state_at, plan_at = stamp("state.json", "collected_at"), stamp(os.path.join("plan", "manifest.json"), "generated_at")
+            try: chain = json.load(open(os.path.join(ROOT, "chain.json")))
+            except Exception: chain = None
+            sa, pa = age_s(state_at), age_s(plan_at)
+            fresh = sa is not None and pa is not None and sa <= 900 and pa <= 900 and (chain is None or chain.get("ok") is True)
+            body = json.dumps({"ok": True, "fresh": fresh, "root": ROOT, "now": now.isoformat(),
+                               "state_collected_at": state_at, "state_age_s": sa,
+                               "plan_generated_at": plan_at, "plan_age_s": pa,
+                               "chain": chain,
                                "files": sorted(f for f in os.listdir(ROOT) if f.endswith(".json") and not f.startswith(".")),
                                "plan_files": len([f for f in os.listdir(os.path.join(ROOT,"plan")) if f.endswith(".json")]) if os.path.isdir(os.path.join(ROOT,"plan")) else 0}).encode()
             self._hdr(200, length=len(body)); self.wfile.write(body); return

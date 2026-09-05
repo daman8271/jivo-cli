@@ -65,6 +65,12 @@ data.tanks                       bulk oil in the EXIM storage tanks. LITRES thro
      .tank_count        count    how many tanks hold it
      .tanks[]           text     tank codes, e.g. ["TNK010","TNK0025"]
   .by_oil_note          text     the synonym/vocabulary warning (see TRAPS)
+  .reading_at           IST iso  the NEWEST per-tank updated_at (/tank/ rows) — when a
+                                 human last entered a dip for ANY tank. This is the
+                                 reading's own age; fetched_at is only when we asked.
+  .reading_oldest_at    IST iso  the oldest per-tank updated_at still on the board
+  .reading_age_hours    h        now - reading_at. Over ~30 h the daily dip is overdue.
+  .tanks_updated_today  count    tanks whose updated_at falls on today's IST date
   .reading_note         text     "manual daily dip reading, updated 10:45-13:35 IST
                                   — NOT a live sensor". Say this wherever levels show.
   .total_quantity_l     L        the same total as EXIM reports on item-wise-summary
@@ -426,6 +432,28 @@ def _tanks(errors):
             out["oil_count"] = len(rows)
     except Exception as e:                                    # noqa: BLE001
         errors.append("tank get-item-wise-summary: %s" % e)
+
+    # WHEN was the dip taken? The summaries carry no stamp, so the level read
+    # 754,900 L on every cycle from 3 Sep to 5 Sep 2026 and the site said "as of
+    # <fetch time>" over a reading nobody had touched for two days. /tank/ rows
+    # carry updated_at per tank; the newest one is when a human last entered a
+    # dip for anything, and that — not fetched_at — is this block's honest age.
+    out.update({"reading_at": None, "reading_oldest_at": None,
+                "reading_age_hours": None, "tanks_updated_today": None})
+    try:
+        t = _unwrap(_cli("tank", "get"))
+        stamps = [_ts(_txt(r.get("updated_at"))) for r in (t or []) if isinstance(r, dict)]
+        stamps = [s for s in stamps if s is not None]
+        if stamps:
+            now = datetime.now(IST)
+            newest, oldest = max(stamps), min(stamps)
+            out["reading_at"] = newest.astimezone(IST).isoformat()
+            out["reading_oldest_at"] = oldest.astimezone(IST).isoformat()
+            out["reading_age_hours"] = round((now - newest).total_seconds() / 3600, 1)
+            out["tanks_updated_today"] = sum(
+                1 for s in stamps if s.astimezone(IST).date() == now.date())
+    except Exception as e:                                    # noqa: BLE001
+        errors.append("tank get (per-tank updated_at): %s" % e)
     return out
 
 
@@ -755,6 +783,7 @@ def fetch() -> dict:
 
     data["freshness"] = {
         "tanks": READING_NOTE,
+        "tanks_reading_at": (data["tanks"] or {}).get("reading_at"),
         "inbound": ("event-driven as trucks move, keyed by one EXIM user; "
                     "same-day to 1-day resolution"),
         "open_bulk_pos": "GRPO-driven, lags receipts by a day or two",

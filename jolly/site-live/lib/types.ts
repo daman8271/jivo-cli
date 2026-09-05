@@ -238,6 +238,11 @@ export type EximNow = {
     by_oil_note?: string;
     /** "manual daily dip reading … NOT a live sensor" — persistent badge */
     reading_note?: string;
+    /** the newest per-tank updated_at (IST) — when a human LAST entered a dip; the block's own age */
+    reading_at?: string | null;
+    reading_oldest_at?: string | null;
+    reading_age_hours?: number | null;
+    tanks_updated_today?: number | null;
   } | null;
   inbound?: {
     on_the_way?: EximTruck[];

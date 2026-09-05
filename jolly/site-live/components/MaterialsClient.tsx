@@ -8,7 +8,7 @@ import Link from "next/link";
 import { asHonesty, asMaterials, asOverview, asState, useLive } from "../lib/live";
 import { maskDigits, P, unproducibleCodes } from "../lib/labels";
 import { dlabel, inr, litres, money, orUnknown, pct1, plural, tonnes } from "../lib/fmt";
-import { AsOf, Live, LiveSource, NotLive, SourceLine } from "./Freshness";
+import { AsOf, Live, LiveSource, NotLive, OwnStamp, SourceLine } from "./Freshness";
 import { Card, Panel, Pill, Stat } from "./Card";
 import SimBadge from "./SimBadge";
 
@@ -61,7 +61,7 @@ export default function MaterialsClient() {
             <div className="mt-1 text-xs text-zinc-400">{inb?.notes?.qc_speed ? maskDigits(inb.notes.qc_speed) : ""}</div>
           </LiveSource>
         </Panel>
-        <Panel title="Bulk oil in the tanks" badge={<NotLive p={P.tankDip(tanks?.reading_note)} />} asOf={<SourceLine src="exim" />}>
+        <Panel title="Bulk oil in the tanks" badge={<NotLive p={P.tankDip(tanks?.reading_note)} />} asOf={<OwnStamp iso={tanks?.reading_at} what="dip read" staleAfterHours={30} fallback={<SourceLine src="exim" />} />}>
           <LiveSource src="exim" what="the tanks">
             <div className="text-2xl font-semibold tabular-nums">{orUnknown(tanks?.total_l, litres)}</div>
             <div className="mt-1 text-xs text-zinc-400">
