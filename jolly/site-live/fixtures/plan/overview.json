@@ -1,41 +1,41 @@
 {
  "meta": {
-  "collected_at": "2026-09-04T15:33:01+05:30",
-  "as_of": "2026-09-04T15:33:01+05:30",
+  "collected_at": "2026-09-05T16:37:03+05:30",
+  "as_of": "2026-09-05T16:37:03+05:30",
   "horizon": [
-   "2026-09-04",
+   "2026-09-05",
    "2026-09-30"
   ],
   "rolling": true,
   "forward": true,
-  "generated": "2026-09-04T10:03:09+00:00",
+  "generated": "2026-09-05T11:07:15+00:00",
   "generated_by": "live/gen_live.py",
   "month": "September 2026",
-  "frozen": "2026-09-04T15:33:01+05:30",
-  "replanned_days": 27,
-  "working_days_left": 23,
-  "state_completed_at": "2026-09-04T15:33:08+05:30",
+  "frozen": "2026-09-05T16:37:03+05:30",
+  "replanned_days": 26,
+  "working_days_left": 22,
+  "state_completed_at": "2026-09-05T16:37:14+05:30",
   "forward_rule": "A ROLLING RE-PLAN from a LIVE opening. Only the opening is observed; every day after today is computed. Nothing past today has happened.",
-  "pieces_booked_today": 91154.0,
+  "pieces_booked_today": 40112.0,
   "pieces_booked_today_basis": "booked_today is goods receipts into BH-PF dated today. The receipt date lags the production date by 0-1 day and varies by SKU — this is production BOOKED, not 'produced today'.",
   "pieces_made_mtd": null,
-  "pieces_made_mtd_basis": "NOT AVAILABLE. factory_production reads today and yesterday only; state.json carries no month window, so month-to-date pieces cannot be computed here without a new live call. Published as null rather than as two days wearing a month's label. The engine does not read this field."
+  "pieces_made_mtd_basis": "NOT NETTED OFF THE PLAN on this run. The pieces per item code for every day already gone this month now arrive with factory_history (out[\"history\"]) and are published as records; reducing the plan by them changes what the engine is asked to make, so it is a deliberate next step, not a side effect of reading them. Published as null rather than as a figure the plan beside it does not use. The engine does not read this field."
  },
  "totals": {
-  "made_l": 2462601,
-  "value_rs": 427225264,
-  "shipped_l": 2612201,
-  "oil_used_l": 2463029,
-  "days": 27,
-  "working_days": 23,
+  "made_l": 2399578,
+  "value_rs": 419012722,
+  "shipped_l": 2510247,
+  "oil_used_l": 2400008,
+  "days": 26,
+  "working_days": 22,
   "runs": 261,
-  "flushes": 166,
-  "bought_lines": 813,
-  "events": 157,
+  "flushes": 173,
+  "bought_lines": 796,
+  "events": 152,
   "util_median": 83,
   "peak_day": {
    "date": "2026-09-07",
-   "made_l": 135359
+   "made_l": 140458
   },
   "oil_changes": null,
   "clearances_only": null,
@@ -44,59 +44,59 @@
  "plan": {
   "litres": 4323300,
   "skus": 84,
-  "made_vs_plan_pct": 57.0,
+  "made_vs_plan_pct": 55.5,
   "source": "the month's target, carried from the last plan — it is not re-read every cycle"
  },
  "demand": {
-  "rows": 3804,
-  "real_rows": 2073,
-  "forecast_rows": 1731,
-  "real_pieces": 878943,
-  "forecast_pieces": 2252766,
-  "real_value_rs": 218302219,
-  "forecast_value_rs": 547796029,
-  "forecast_share_pieces_pct": 71.93,
-  "forecast_share_value_pct": 71.5,
-  "forecast_share_litres_pct": 42.38,
-  "order_dates": 27,
+  "rows": 3675,
+  "real_rows": 2043,
+  "forecast_rows": 1632,
+  "real_pieces": 980593,
+  "forecast_pieces": 2177975,
+  "real_value_rs": 230261288,
+  "forecast_value_rs": 534177327,
+  "forecast_share_pieces_pct": 68.95,
+  "forecast_share_value_pct": 69.88,
+  "forecast_share_litres_pct": 24.91,
+  "order_dates": 26,
   "channels": {
-   "MART": 26,
-   "OIL": 53,
-   "BEVERAGES": 4,
-   "ECOM": 1990,
-   "FORECAST": 1731
+   "BEVERAGES": 7,
+   "OIL": 59,
+   "MART": 39,
+   "ECOM": 1938,
+   "FORECAST": 1632
   },
   "sources": {
-   "OMS": 83,
-   "ECOM-PO": 1990,
-   "FORECAST": 1731
+   "OMS": 105,
+   "ECOM-PO": 1938,
+   "FORECAST": 1632
   },
   "note": "what customers want mixes confirmed orders with expected orders — this month's target, not ordered yet. Expected rows are marked in the data and must always look different on the page"
  },
  "opening": {
-  "fg_litres": 479095,
-  "fg_plan_l": 414162,
-  "fg_other_l": 64933,
-  "oil_l": 754900,
-  "oil_mapped_l": 754900,
+  "fg_litres": 423511,
+  "fg_plan_l": 368410,
+  "fg_other_l": 55101,
+  "oil_l": 752200,
+  "oil_mapped_l": 752200,
   "oil_unmapped_l": 0,
   "oil_l_definition": "all oil in the tanks right now, every kind — the day pages count only the oils in this month's recipes, so the two are not the same line",
-  "packaging_pieces": 11353218,
-  "inbound_oil_l": 1517549,
-  "inbound_packaging": 113400,
-  "standing_l": 258837,
+  "packaging_pieces": 11452427,
+  "inbound_oil_l": 1607450,
+  "inbound_packaging": 3390,
+  "standing_l": 238238,
   "standing_assumed": false,
   "standing_measured": true,
   "standing_note": "stock billed but not yet on a truck IS counted here — read live off the factory's own dispatch plans, not guessed at nothing. Mark 2 put it at nothing and said so; this is the real pile",
-  "backlog_pieces": 56483,
-  "backlog_value_rs": 12126743,
-  "plan_sku_backlog_docs": 14,
-  "plan_sku_backlog_docs_overdue": 3,
+  "backlog_pieces": 241681,
+  "backlog_value_rs": 52849075,
+  "plan_sku_backlog_docs": 35,
+  "plan_sku_backlog_docs_overdue": 13,
   "backlog_basis": "orders that were already on the book before today and that the order reader has not walked back to yet. It reads low until the reader is walked backwards over the older order numbers",
   "orders_dated_before_today": 0,
   "at_zero_count": 9,
-  "physical_l": 737932,
-  "physical_pct": 89.2
+  "physical_l": 661749,
+  "physical_pct": 80.0
  },
  "storage": {
   "ceiling_l": 827000,
@@ -104,40 +104,37 @@
   "ceiling_declared": true,
   "ceiling_declared_by": "Daman, 2026-09-04 (capacity sheet 2026-08-29)",
   "invoice_truck_lag_days": 2,
-  "days_ge_95": 2,
-  "days_ge_100": [
-   "2026-09-04",
-   "2026-09-05"
-  ],
-  "throttle_events": 1,
-  "pct_at_open": 89.2
+  "days_ge_95": 0,
+  "days_ge_100": [],
+  "throttle_events": 0,
+  "pct_at_open": 80.0
  },
  "day1_blocked": {
-  "attempts": 22,
-  "products": 9,
-  "product_binder_pairs": 10,
+  "attempts": 31,
+  "products": 11,
+  "product_binder_pairs": 11,
   "by_binder_class": {
    "oil": {
-    "attempts": 17,
-    "products": 7
+    "attempts": 16,
+    "products": 5
    },
    "zero_stock_packaging": {
     "attempts": 0,
     "products": 0
    },
    "other_packaging": {
-    "attempts": 5,
-    "products": 3
+    "attempts": 15,
+    "products": 6
    }
   },
   "top_binder": {
    "code": "RM0000001",
    "name": "LOOSE REFINED OLIVE OIL",
    "kind": "OIL",
-   "attempts": 17,
-   "products": 7
+   "attempts": 16,
+   "products": 5
   },
-  "products_in_multiple_classes": 1,
+  "products_in_multiple_classes": 0,
   "zero_openers_products_blocked_run": 2,
   "zero_openers_products_blocked_month": 2,
   "note": "'attempts' = how many times the planner tried and was stopped, not how many products — quote products. One product can be short of oil and packing at once, so the per-type counts can overlap. On a day the godown is full nothing is tried at all, and this is zero"
@@ -151,17 +148,17 @@
  "materials_mini": {
   "components": 209,
   "under_100_cover": 118,
-  "must_order_week1": 66,
-  "already_late": 42,
+  "must_order_week1": 73,
+  "already_late": 48,
   "zero_literal_items": 9,
   "zero_literal_value_rs": 8106644,
-  "zero_august_rule_items": 16,
-  "zero_august_rule_value_rs": 112045524
+  "zero_august_rule_items": 15,
+  "zero_august_rule_value_rs": 40971224
  },
  "loops_mini": {
-  "chains": 52,
-  "resolved": 47,
-  "ran_after_unblock": 34
+  "chains": 51,
+  "resolved": 46,
+  "ran_after_unblock": 28
  },
  "scenarios_mini": [],
  "scenarios_basis": "what-if shift patterns are not worked out on this run yet",
@@ -223,83 +220,89 @@
   "40 packaging codes this month's recipes need have stock ONLY in the NON-MOVING rooms BH-NM, GP-NM — 117,257 pieces, biggest first: PM0000183 LABEL 500 MLS EXTRA LIGHT FRONT 25,882, PM0000184 LABEL 500 MLS EXTRA LIGHT BACK 25,882, PM0000126 LABEL 500 MLS COLD PRESS FRONT 8,142, PM0000471 CAPS 5 LTR BLUE 7,725, PM0000504 LABEL 1 LTR POMACE BACK ZANO 5,866, PM0000159 LABEL 1 LTR EXTRA VIRGIN BACK 5,086. They are COUNTED as available here. If Daman rules that non-moving means unusable, every one of those codes goes to zero and blocks its whole product.",
   "raw-material rooms hold stock that is NOT an oil in this month's recipes. It is named in opening.rm_store_other and counted nowhere — never converted, never invented: RM0000034 16,106.00 LTR LOOSE OIL RICE BRAN & OLIVE, RM0000043 9,909.13 LTR COCONUT OIL, RM0000012 8,700.00 LTR EXTRA LIGHT OLIVE LOSSE OIL IMPORTED, SF0000009 3,249.00 PCS REFINED CANOLA OIL 15 KG TIN, RM0000006 3,046.70 PCS DESI GHEE, RM0000039 2,100.68 LTR A-2 COW GHEE, RM0000008 1,432.00 LTR LOOSE OIL EXTRA LIGHT OLIVE, RM0000010 730.57 LTR POMACE OLIVE LOOSE OIL BOM, RM0000004 534.04 LTR LOOSE OIL EXTRA VIRGIN OLIVE, RM0000056 162.00 LTR JAITOON OIL (LOOSE), RM0000055 160.00 PCS VEGETABLE OIL (15 KGS) PER TIN, RM0000022 53.17 LTR PAIN OIL, RM0000051 26.65 KGS JIVO ROSEMARY LEAVE, RM0000049 11.50 KGS AKHROT WALNUT, SC0000051 1.75 PCS VITAMIN AD2 PREMIX FOR OIL FORTIFICATION.",
   "SF0000009 REFINED CANOLA OIL 15 KG TIN: 3,249 PCS in BH-LO — the item name says 15 kg a tin, so that is roughly 48.7 TONNES of canola sitting in the raw-material store as FINISHED TINS. It is NOT converted to litres and NOT counted anywhere in this plan: a pack size read off an item name is not a measurement, and this file does not invent litres. It is oil the plan cannot see until somebody rules on it.",
-  "for scale: the WIDE 14-day figure (1,303,151 L) is 158% of the whole declared godown on its own. It is published for information and is NOT what the engine was given.",
-  "12 live OMS order line(s) (38,123 pieces) are on codes the September plan does not carry — the engine cannot build them, so they are not in the demand stream",
-  "70,000 L of ecom demand is required AFTER September 2026 — every litre of it is an unexpired open PO, it is simply not due this month, so it is not in this month's demand stream",
-  "1,686,240 L of EXIM oil is under loading or still in contract and is NOT booked as arriving — only trucks already on the way are",
-  "1,208,022 L is booked to arrive from OPEN BULK POs (contract quantity minus what has been drawn down). JIVO's oil POs are BLANKET orders drawn down over many part-loads — the adapter says so itself — so this is the undrawn balance of a contract, NOT a shipment on its way. It is the loosest number in this freeze and it makes oil look more available than it is."
+  "for scale: the WIDE 14-day figure (1,260,051 L) is 152% of the whole declared godown on its own. It is published for information and is NOT what the engine was given.",
+  "22 live OMS order line(s) (70,008 pieces) are on codes the September plan does not carry — the engine cannot build them, so they are not in the demand stream",
+  "71,100 L of ecom demand is required AFTER September 2026 — every litre of it is an unexpired open PO, it is simply not due this month, so it is not in this month's demand stream",
+  "1,595,702 L of EXIM oil is under loading or still in contract and is NOT booked as arriving — only trucks already on the way are",
+  "1,295,022 L is booked to arrive from OPEN BULK POs (contract quantity minus what has been drawn down). JIVO's oil POs are BLANKET orders drawn down over many part-loads — the adapter says so itself — so this is the undrawn balance of a contract, NOT a shipment on its way. It is the loosest number in this freeze and it makes oil look more available than it is."
  ],
  "sources": {
   "opening_fg": {
    "source": "factory_production",
-   "mode": "carried 2026-09-04T15:20:28.275279+05:30",
-   "fetched_at": "2026-09-04T15:33:03.439470+05:30",
-   "server_at": null
+   "mode": "live",
+   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
+   "server_at": "2026-09-05T16:37:07.071456+05:30"
   },
   "packaging_non_moving": {
    "source": "factory_production",
-   "mode": "carried 2026-09-04T15:20:28.275279+05:30",
-   "fetched_at": "2026-09-04T15:33:03.439470+05:30",
-   "server_at": null
+   "mode": "live",
+   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
+   "server_at": "2026-09-05T16:37:07.071456+05:30"
   },
   "opening_pm": {
    "source": "factory_production",
-   "mode": "carried 2026-09-04T15:20:28.275279+05:30",
-   "fetched_at": "2026-09-04T15:33:03.439470+05:30",
-   "server_at": null
+   "mode": "live",
+   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
+   "server_at": "2026-09-05T16:37:07.071456+05:30"
   },
   "opening_oil": {
    "source": "exim",
    "mode": "live",
-   "fetched_at": "2026-09-04T15:33:01+05:30",
-   "server_at": "2026-09-04T13:18:30.994192+05:30"
+   "fetched_at": "2026-09-05T16:37:03+05:30",
+   "server_at": "2026-09-05T15:45:08.936971+05:30"
   },
   "opening_oil_drums": {
    "source": "factory_production",
-   "mode": "carried 2026-09-04T15:20:28.275279+05:30",
-   "fetched_at": "2026-09-04T15:33:03.439470+05:30",
-   "server_at": null
+   "mode": "live",
+   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
+   "server_at": "2026-09-05T16:37:07.071456+05:30"
   },
   "standing": {
    "source": "factory_dispatch",
    "mode": "live",
-   "fetched_at": "2026-09-04T15:33:01.753380+05:30",
-   "server_at": "2026-09-04T15:31:52.283896+05:30"
+   "fetched_at": "2026-09-05T16:37:03.456586+05:30",
+   "server_at": "2026-09-05T16:29:00.513552+05:30"
   },
   "standing_wide_14d": {
    "source": "factory_dispatch",
-   "mode": "carried 2026-09-04T15:20:21.549285+05:30",
-   "fetched_at": "2026-09-04T15:33:01.753380+05:30",
-   "server_at": "2026-09-04T15:31:52.283896+05:30"
+   "mode": "carried 2026-09-05T16:09:01.862640+05:30",
+   "fetched_at": "2026-09-05T16:37:03.456586+05:30",
+   "server_at": "2026-09-05T16:29:00.513552+05:30"
   },
   "orders": {
    "source": "oms",
    "mode": "live",
-   "fetched_at": "2026-09-04T15:33:04+05:30",
+   "fetched_at": "2026-09-05T16:37:05+05:30",
    "server_at": null
   },
   "orders_ecom": {
    "source": "ecom",
    "mode": "live",
-   "fetched_at": "2026-09-04T15:33:01.752085+05:30",
-   "server_at": "2026-09-04"
+   "fetched_at": "2026-09-05T16:37:03.455488+05:30",
+   "server_at": "2026-09-05"
   },
   "inbound": {
    "source": "factory_inbound + exim",
    "mode": "live / live",
-   "fetched_at": "2026-09-04T15:33:03.004333+05:30",
+   "fetched_at": "2026-09-05T16:37:04.642006+05:30",
    "server_at": null
   },
   "lines": {
    "source": "factory_production",
    "mode": "live",
-   "fetched_at": "2026-09-04T15:33:03.439470+05:30",
-   "server_at": null
+   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
+   "server_at": "2026-09-05T16:37:07.071456+05:30"
   },
   "storage_ceiling": {
    "source": "reference/STORAGE-CAPACITY.md",
    "mode": "declared",
    "fetched_at": null,
+   "server_at": null
+  },
+  "history": {
+   "source": "factory_history",
+   "mode": "live",
+   "fetched_at": "2026-09-05T16:37:04+05:30",
    "server_at": null
   }
  },
