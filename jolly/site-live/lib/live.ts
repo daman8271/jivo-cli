@@ -23,7 +23,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type {
-  DayDetail, HonestyData, LinesData, LoopsData, MaterialsData, Overview, SpineDay, StateJson, StorageData,
+  DayDetail, HistoryData, HonestyData, LinesData, LoopsData, MaterialsData, Overview, SpineDay, StateJson,
+  StorageData,
 } from "./types";
 
 /* ───────────────────────────── where from ───────────────────────────── */
@@ -40,7 +41,7 @@ export const BASE: string =
 /* ─────────────────────────── the source list ─────────────────────────── */
 
 export type SourceId =
-  | "state" | "overview" | "spine" | "storage" | "materials" | "loops" | "honesty" | "lines"
+  | "state" | "overview" | "spine" | "storage" | "materials" | "loops" | "honesty" | "lines" | "history"
   | `day:${number}`;
 
 export const dayId = (n: number): SourceId => `day:${n}` as SourceId;
@@ -77,6 +78,13 @@ const GUARDS: Record<string, (v: unknown) => boolean> = {
   honesty: (v) => hasPlanMeta(v) && Array.isArray((v as Record<string, unknown>).label_rules) &&
     Array.isArray((v as Record<string, unknown>).measured),
   lines: (v) => hasPlanMeta(v) && Array.isArray((v as Record<string, unknown>).lines),
+  // The days already gone. `basis` and `meta.status` are in the guard because a
+  // history file without them cannot be labelled, and an unlabelled record of
+  // what the plant did is exactly what this page must never show.
+  history: (v) => hasPlanMeta(v) && Array.isArray((v as Record<string, unknown>).days) &&
+    Array.isArray((v as Record<string, unknown>).missing_dates) &&
+    isObj((v as Record<string, unknown>).basis) &&
+    typeof ((v as Record<string, unknown>).meta as Record<string, unknown>).status === "string",
   day: (v) => hasPlanMeta(v) && typeof (v as Record<string, unknown>).n === "number" &&
     Array.isArray((v as Record<string, unknown>).runs),
 };
@@ -394,6 +402,7 @@ export const asMaterials = (r?: Rec) => (r?.data as MaterialsData | null) ?? nul
 export const asLoops = (r?: Rec) => (r?.data as LoopsData | null) ?? null;
 export const asHonesty = (r?: Rec) => (r?.data as HonestyData | null) ?? null;
 export const asLines = (r?: Rec) => (r?.data as LinesData | null) ?? null;
+export const asHistory = (r?: Rec) => (r?.data as HistoryData | null) ?? null;
 export const asDay = (r?: Rec) => (r?.data as DayDetail | null) ?? null;
 
 /** A ticking clock, so an age on screen counts up between polls. */

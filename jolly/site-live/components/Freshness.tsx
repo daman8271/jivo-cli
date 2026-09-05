@@ -5,9 +5,9 @@
 //  · every panel says "as of HH:MM", taken from the stamp its body carries for
 //    WHEN IT WAS MADE (madeAt) — never from when this browser fetched it. A plan
 //    the chain has stopped rebuilding is fetched fresh every 3 minutes; on
-//    2026-09-05 that fetch clock printed "as of 12:04" over a plan from 21:36
-//    the evening before, for 14 hours, on every plan tile. Older than the amber
-//    band the stamp reads "made 21:36 · 14 hours ago" in red instead.
+//    5 Sep that fetch clock printed a fresh "as of" over a plan built the
+//    evening before, for half a day, on every plan tile. Older than the amber
+//    band the stamp reads "made HH:MM · N hours ago" in red instead.
 //  · one badge says how long ago the PLAN was rebuilt, from overview's own stamp
 //    (the ingest loop and the plan chain fail separately, so each gets a badge)
 //  · one global badge says how long ago the loop ran, from collected_at:
@@ -75,7 +75,7 @@ export function AsOf({ rec, label }: { rec?: Rec; label?: string }) {
 
 /** A stamp for a figure that carries ITS OWN reading time — a tank dip, a
  *  one-off measurement. "as of <fetch time>" is the wrong stamp for these: the
- *  tank total sat at 754,900 L from 3 Sep to 5 Sep 2026 under "as of 12:51"
+ *  tank total sat unchanged from 3 Sep to 5 Sep under a fresh "as of" stamp
  *  because the loop re-fetched an untouched reading every 3 minutes. This says
  *  when the reading itself was taken, how long ago, and goes amber past
  *  `staleAfterHours` (a daily dip is overdue after ~30 h) and red past twice it. */
@@ -155,8 +155,8 @@ export function LoopBadge() {
 }
 
 /** How long ago the PLAN was rebuilt — overview.json's own stamp. The ingest loop
- *  and the plan chain fail separately (the chain refused to write for 14 hours on
- *  2026-09-04/05 while the loop stayed green), so the plan gets its own badge. */
+ *  and the plan chain fail separately (the chain refused to write for half a day
+ *  on 4-5 Sep while the loop stayed green), so the plan gets its own badge. */
 export function PlanBadge() {
   const live = useLive(["overview"]);
   const now = useNow(10_000);
@@ -247,8 +247,9 @@ export function LoopBanner() {
   return (
     <div className="border-b border-emerald-500/15 bg-emerald-500/5">
       <div className="mx-auto max-w-7xl px-5 py-1.5 text-xs text-emerald-200/90">
-        <span className="font-semibold">Only today is real.</span> Every later day is worked out by the computer from
-        today&rsquo;s count — and the whole thing is re-worked every few minutes.
+        <span className="font-semibold">Only today is live.</span> The days before it are records read off the
+        factory&rsquo;s own systems; every later day is worked out by the computer from today&rsquo;s count — and the
+        whole thing is re-worked every few minutes.
       </div>
     </div>
   );

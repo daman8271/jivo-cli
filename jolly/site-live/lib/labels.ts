@@ -14,9 +14,9 @@ import type { DispatchRow, HonestyData, LabelRule, OrderRow } from "./types";
 /* ───────────────────────────── rule lookup ───────────────────────────── */
 
 export type RuleId =
-  | "rolling-replan" | "po-open-value" | "po-open-litres" | "orders-mixed" | "two-oil-series"
-  | "forecast-tags" | "ceiling-declared" | "standing-measured" | "day1-pile" | "observed-then-derated"
-  | "unproducible" | "realise-outlier" | "numbers-masked" | "tank-dip";
+  | "rolling-replan" | "happened-days" | "po-open-value" | "po-open-litres" | "orders-mixed"
+  | "two-oil-series" | "forecast-tags" | "ceiling-declared" | "standing-measured" | "day1-pile"
+  | "observed-then-derated" | "unproducible" | "realise-outlier" | "numbers-masked" | "tank-dip";
 
 export function rule(h: HonestyData | null, id: RuleId): LabelRule | null {
   if (!h?.label_rules) return null;
@@ -74,6 +74,20 @@ export function derateRule(h: HonestyData | null) {
 export function forecastShareRule(h: HonestyData | null) {
   const r = rule(h, "orders-mixed");
   return { text: ruleText(h, "orders-mixed"), sharePct: num(r?.forecast_share_litres_pct) };
+}
+
+/** The days between the 1st and yesterday are RECORDS, not the plan — and the
+ *  two ways of counting what was filled are never added. Counts come from the
+ *  rule object, never from a number typed into a page. */
+export function happenedRule(h: HonestyData | null) {
+  const r = rule(h, "happened-days");
+  return {
+    text: ruleText(h, "happened-days"),
+    through: str(r?.through),
+    days: num(r?.days),
+    notRead: num(r?.not_read),
+    status: str(r?.status),
+  };
 }
 
 export function standingRule(h: HonestyData | null) {
@@ -222,11 +236,38 @@ export const P = {
     label: "NOT MOVING",
     note: note || "counted in rooms that have not moved — it may not all be usable stock",
   }),
-  /** A body read on an earlier cycle and carried into this one. */
-  carried: (mode?: string | null): Persist => ({
-    label: "EARLIER READ",
-    note: mode || "read on an earlier cycle and carried into this one",
-  }),
+  /** A body read on an earlier cycle and carried into this one.
+   *
+   *  `mode` is the PUBLISHER's word for where the body came from — "live",
+   *  "live-partial", "last-good <stamp>", "missing". It was being used as the
+   *  note itself, so on the ordinary path (a cached record republished by a
+   *  live source) the badge expanded to the single word "live", and on the
+   *  others to publisher jargon and a raw timestamp. It picks the sentence
+   *  now; it is never shown. */
+  carried: (mode?: string | null, fromCache?: boolean): Persist => {
+    const m = (mode ?? "").trim();
+    if (m.startsWith("last-good"))
+      return {
+        label: "EARLIER READ",
+        note: "the plant's systems did not answer this cycle, so the last reading that did come back is shown",
+      };
+    if (m === "live-partial")
+      return {
+        label: "PART-READ",
+        note: "part of this reading did not come back this cycle; what did is shown, and anything missing says so",
+      };
+    if (m === "missing")
+      return {
+        label: "NOT READ",
+        note: "nothing came back for this and there is no earlier reading to fall back on",
+      };
+    return {
+      label: "EARLIER READ",
+      note: fromCache
+        ? "these are read once an hour, not every few minutes — this one was read on an earlier cycle and carried into this one"
+        : "read on an earlier cycle and carried into this one",
+    };
+  },
 } as const;
 
 /* ───────────────────── honesty notes, as the publisher wrote them ─────────

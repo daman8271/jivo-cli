@@ -71,7 +71,7 @@ import subprocess
 import sys
 import traceback
 from collections import Counter, defaultdict
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))          # .../jolly/live
 JOLLY = os.path.dirname(HERE)                              # .../jolly
@@ -83,7 +83,7 @@ DEFAULT_OUT_DIR = os.path.join(HERE, "state", "plan")
 # from another vintage. This file reports them; loop.sh's publish step is what removes
 # them, off manifest.json — see the manifest block at the end of build().
 OWNED = ("overview.json", "spine.json", "storage.json", "materials.json",
-         "loops.json", "honesty.json", "lines.json", "manifest.json")
+         "loops.json", "honesty.json", "lines.json", "history.json", "manifest.json")
 
 
 def load(path):
@@ -190,8 +190,22 @@ NULL_OK = {
 }
 
 
-def scan_numbers(check, name, obj):
+# history.json is the one file where a null quantity is the POINT: a day the
+# plant's systems did not answer for must read UNKNOWN, and a zero would say the
+# plant did nothing. These keys are allowed to be null in that file ONLY — the
+# plan files keep the strict global set above, where a null litre is a fault.
+HISTORY_NULL_OK = {
+    "made_mes_l", "made_mes_cases", "runs", "open_segments",
+    "made_booked_l", "made_booked_pcs", "booked_receipts", "booked_unparsed_pcs",
+    "billed_out_l", "billed_out_pcs", "billed_lines", "billed_unparsed_pcs",
+    "dispatched_oil_l", "dispatched_all_l", "trucks_oil", "trucks_all",
+    "rows_oil", "bills_oil",
+}
+
+
+def scan_numbers(check, name, obj, null_ok=None):
     bad = []
+    allowed = NULL_OK | set(null_ok or ())
 
     def walk(node, path):
         if len(bad) >= 6:
@@ -199,7 +213,7 @@ def scan_numbers(check, name, obj):
         if isinstance(node, dict):
             for key, value in node.items():
                 here = f"{path}.{key}" if path else key
-                if value is None and key not in NULL_OK and _QTY_KEY.search(key):
+                if value is None and key not in allowed and _QTY_KEY.search(key):
                     bad.append(f"{here} is null")
                 walk(value, here)
         elif isinstance(node, list):
@@ -350,6 +364,196 @@ def drop_order_by(pending):
 
 
 # =============================================================== the builder ==
+# ------------------------------------------------------- the days gone -------
+# plan/history.json. The ONE file on this site that looks backwards: a record
+# per day between the 1st of the month and yesterday, read off the factory's own
+# systems by live/adapters/factory_history.py and passed through the freeze.
+#
+# It is not the plan and it is never mixed into it. Two rules hold it together:
+#   * a figure that was not read is NULL, and the page draws a null as "not
+#     read" — never as a bar of height zero, which is the plant idle.
+#   * the machine log and the goods receipts are the same production counted two
+#     ways, so they travel side by side, both labelled, and this file refuses to
+#     be written if any key ever merges them.
+WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+                 "Saturday", "Sunday"]
+
+# The numbers a day record carries, and the only ones. by_company and
+# booked_by_item stay in state.json: nothing on the site reads them, and this
+# file is fetched by every browser on the /days page every three minutes.
+HISTORY_DAY_NUMBERS = ("made_mes_l", "made_mes_cases", "runs", "open_segments",
+                       "made_booked_l", "made_booked_pcs", "booked_receipts",
+                       "booked_unparsed_pcs", "billed_out_l", "billed_out_pcs",
+                       "billed_lines", "billed_unparsed_pcs",
+                       "dispatched_oil_l", "dispatched_all_l",
+                       "trucks_oil", "trucks_all", "rows_oil", "bills_oil")
+HISTORY_SUMS = ("made_mes_l", "made_booked_l", "billed_out_l",
+                "dispatched_oil_l", "dispatched_all_l", "runs")
+# A key that would mean "the two ways of counting, added". None may ever exist.
+HISTORY_BANNED_KEYS = ("made_l", "made_total_l", "filled_l", "total_made_l",
+                       "produced_l")
+
+
+def build_history(inp, meta, stamp, check):
+    """The days already gone this month, as records. Returns the file to write."""
+    h0 = meta["horizon"][0]
+    d0 = date.fromisoformat(h0)
+    first = d0.replace(day=1)
+    expected = [(first + timedelta(days=i)).isoformat() for i in range((d0 - first).days)]
+    through = expected[-1] if expected else "—"
+
+    block = inp.get("history") if isinstance(inp.get("history"), dict) else {}
+    data = block.get("data") if isinstance(block.get("data"), dict) else None
+    mode = block.get("mode") or "missing"
+
+    rule = plain(
+        "the days before today are records read off the factory's own systems — what was "
+        "filled, and what left the gate. Nothing on them was worked out by the computer, "
+        "and the two ways of counting what was filled are never added together.")
+    mes_label = plain("filled, per the machine log — it sees about two-thirds of the plant")
+    booked_label = plain("booked into the godown — a day's booking can land a day after "
+                         "the filling it books")
+
+    days, trimmed, notes = [], [], []
+    if data is not None:
+        for row in data.get("days") or []:
+            if not isinstance(row, dict) or not isinstance(row.get("date"), str):
+                continue
+            iso = row["date"]
+            if iso >= h0:
+                # A cycle that straddled midnight read a day the plan calls today.
+                # Report it and drop it; the next cycle heals itself.
+                trimmed.append(iso)
+                continue
+            if iso not in expected:
+                trimmed.append(iso)
+                continue
+            day = date.fromisoformat(iso)
+            out = {"date": iso, "day_of_month": day.day,
+                   "weekday": WEEKDAY_NAMES[day.weekday()],
+                   "working": day.weekday() != 6, "happened": True}
+            for key in HISTORY_DAY_NUMBERS:
+                out[key] = row.get(key)
+            out["booked_truncated"] = bool(row.get("booked_truncated"))
+            out["complete"] = bool(row.get("complete"))
+            out["settled"] = bool(row.get("settled"))
+            out["read_at"] = row.get("read_at")
+            out["notes"] = [n for n in (row.get("notes") or []) if isinstance(n, str)]
+            out["made_mes_label"] = mes_label
+            out["made_booked_label"] = booked_label
+            days.append(out)
+        notes = [n for n in (data.get("notes") or []) if isinstance(n, str)]
+
+    days.sort(key=lambda r: r["date"])
+    have = {r["date"] for r in days}
+    missing = [d for d in expected if d not in have]
+
+    sums = {k: None for k in HISTORY_SUMS}
+    covers = {k: 0 for k in HISTORY_SUMS}
+    for row in days:
+        for key in HISTORY_SUMS:
+            value = row.get(key)
+            if isinstance(value, (int, float)):
+                sums[key] = (sums[key] or 0) + value
+                covers[key] += 1
+    for key, value in sums.items():
+        if isinstance(value, float):
+            sums[key] = round(value, 1)
+
+    status = ("unavailable" if data is None
+              else "complete" if days and not missing and all(r["complete"] for r in days)
+              else "complete" if not expected
+              else "partial")
+
+    reason = None
+    if data is None:
+        reason = plain("the days already gone could not be read this cycle "
+                       f"(the factory records came back {mode})")
+
+    out = {
+        "meta": dict(stamp,
+                     month=h0[:7],
+                     first=first.isoformat(),
+                     through=through,
+                     status=status,
+                     records_mode=mode,
+                     records_read_at=(data or {}).get("read_at"),
+                     records_through=(data or {}).get("through"),
+                     records_from_cache=bool((data or {}).get("from_cache")),
+                     source=(inp.get("provenance") or {}).get("history")),
+        "rule": rule,
+        "days": days,
+        "missing_dates": missing,
+        "trimmed_dates": sorted(set(trimmed)),
+        "totals": dict(sums,
+                       days_with_records=len(days),
+                       days_not_read=len(missing),
+                       working_days=sum(1 for r in days if r["working"]),
+                       covers=covers),
+        "basis": (data or {}).get("basis") or {},
+        "notes": notes,
+        "unavailable_reason": reason,
+    }
+
+    # ---- the checks. Every one refuses the whole run. ---------------------
+    check("the days gone belong to the month the plan is in",
+          data is None or data.get("month") == h0[:7],
+          f"records say {(data or {}).get('month')}, the plan is in {h0[:7]}")
+    accounted = sorted(have | set(missing))
+    check("every day between the 1st and today is accounted for exactly once",
+          accounted == expected,
+          f"{len(accounted)} accounted vs {len(expected)} expected; "
+          f"first gap {next((d for d in expected if d not in accounted), '-')}")
+    check("the number of days gone matches the calendar",
+          len(days) + len(missing) == (d0 - first).days,
+          f"{len(days)} + {len(missing)} vs {(d0 - first).days}")
+    check("no record is dated today or later",
+          all(r["date"] < h0 for r in days),
+          str([r["date"] for r in days if r["date"] >= h0][:3]))
+    check("the last day gone is the day before today",
+          through == (expected[-1] if expected else "—")
+          and (not expected or through == (d0 - timedelta(days=1)).isoformat()),
+          f"{through} vs {h0}")
+    bad_num = [f"{r['date']}.{k}" for r in days for k in HISTORY_DAY_NUMBERS
+               if r[k] is not None and not (isinstance(r[k], (int, float)) and r[k] >= 0)]
+    check("every figure in a record is zero or more, or not read at all",
+          not bad_num, str(bad_num[:5]))
+    bad_day = [r["date"] for r in days
+               if r["working"] != (date.fromisoformat(r["date"]).weekday() != 6)
+               or r["weekday"] != WEEKDAY_NAMES[date.fromisoformat(r["date"]).weekday()]]
+    check("a working day is any day that is not a Sunday, on every record",
+          not bad_day, str(bad_day[:5]))
+    bad_oil = [r["date"] for r in days
+               if (r["dispatched_oil_l"] is not None and r["dispatched_all_l"] is not None
+                   and r["dispatched_oil_l"] > r["dispatched_all_l"])
+               or (r["trucks_oil"] is not None and r["trucks_all"] is not None
+                   and r["trucks_oil"] > r["trucks_all"])]
+    check("what left the gate for Oil never exceeds all three companies together",
+          not bad_oil, str(bad_oil[:5]))
+    # Over the raw records AND over the whole file about to be written: a key
+    # that merges the machine log with the goods receipts must not exist
+    # anywhere, not in the adapter's row and not in anything built from it.
+    def merged_keys(node):
+        found = set()
+        if isinstance(node, dict):
+            found |= {k for k in node if k in HISTORY_BANNED_KEYS}
+            for value in node.values():
+                found |= merged_keys(value)
+        elif isinstance(node, list):
+            for value in node:
+                found |= merged_keys(value)
+        return found
+
+    merged = sorted(merged_keys(out) | merged_keys((data or {}).get("days") or []))
+    check("the two ways of counting what was filled are never added together",
+          not merged, str(merged))
+    check("the days gone say complete only when every one of them is whole",
+          (status != "complete") or (not missing and all(r["complete"] for r in days)),
+          f"status {status}, {len(missing)} not read, "
+          f"{sum(1 for r in days if not r['complete'])} part-read")
+    return out
+
+
 def build(paths, check):
     """Everything, in one pass. Returns (outputs, stats)."""
     inp = load(paths["inputs"])
@@ -1131,11 +1335,22 @@ def build(paths, check):
                                   "never show it as a headline without saying so"),
                 }
 
+    history_out = build_history(inp, meta, stamp, check)
+    hist_meta = history_out["meta"]
+    hist_days = len(history_out["days"])
+
     label_rules = [
         {"id": "rolling-replan", "rule": plain(
-            "only today is real. Every later day on this site is worked out by the computer from today's "
-            "count plus what the plan decides — and the whole thing is re-worked every few minutes"),
-         "as_of": meta["as_of"], "days_left": len(days)},
+            "only today is live. The days before it are records read off the factory's own systems — "
+            "what was filled and what left the gate. Every later day is worked out by the computer "
+            "from today's count plus what the plan decides, and re-worked every few minutes"),
+         "as_of": meta["as_of"], "days_left": len(days), "days_gone": hist_days},
+        {"id": "happened-days", "rule": plain(
+            "the days already gone are records, not the plan: two ways of counting what was filled "
+            "are shown side by side, both labelled, and never added together"),
+         "through": hist_meta["through"], "days": hist_days,
+         "status": hist_meta["status"], "not_read": len(history_out["missing_dates"]),
+         "source": prov.get("history")},
         {"id": "po-open-value", "rule": po_cum_label},
         {"id": "po-open-litres", "rule": po_open_label},
         {"id": "orders-mixed", "rule": plain(
@@ -1174,10 +1389,16 @@ def build(paths, check):
             "not always today's."), "source": prov.get("opening_oil")},
     ]
 
+    measured = list(honesty.get("measured", []))
+    if hist_meta["status"] != "unavailable" and hist_days:
+        measured.append(plain(
+            f"the {hist_days} day(s) of this month already gone, to {dm(hist_meta['through'])} "
+            f"— records read off the factory's own systems, not the plan"))
+
     honesty_out = {
         "meta": dict(stamp),
         "forward_rule": meta["rule"],
-        "measured": honesty.get("measured", []),
+        "measured": measured,
         "assumed": assumed,
         "provenance": prov,
         "warnings": warnings,
@@ -1393,6 +1614,7 @@ def build(paths, check):
         "loops.json": loops_out,
         "honesty.json": honesty_out,
         "lines.json": lines_out,
+        "history.json": history_out,
     }
     for i, detail in enumerate(details):
         outputs[os.path.join("days", f"day-{i + 1:02d}.json")] = detail
@@ -1400,9 +1622,11 @@ def build(paths, check):
     # ---- the scans, over what is actually about to be written ----------------
     for name, obj in outputs.items():
         scan_no_phones(check, name, obj)
-        scan_numbers(check, name, obj)
+        # history.json is the one file where a null quantity is the honest answer.
+        scan_numbers(check, name, obj,
+                     null_ok=HISTORY_NULL_OK if name == "history.json" else None)
     for name in ("overview.json", "storage.json", "materials.json", "loops.json",
-                 "honesty.json", "lines.json"):
+                 "honesty.json", "lines.json", "history.json"):
         got = outputs[name].get("meta") or {}
         check(f"{name} is stamped",
               got.get("collected_at") == stamp["collected_at"] and got.get("horizon") == stamp["horizon"],
@@ -1450,6 +1674,10 @@ def build(paths, check):
         "zero_items": ob_summary["items_at_zero"], "late": ob_summary["already_late"],
         "chains": len(chains), "resolved": loops_out["resolved_chains"],
         "warnings": len(warnings), "no_machine": [u["code"] for u in no_machine],
+        "history": {"days": hist_days, "through": hist_meta["through"],
+                    "status": hist_meta["status"], "mode": hist_meta["records_mode"],
+                    "not_read": len(history_out["missing_dates"]),
+                    "trimmed": len(history_out["trimmed_dates"])},
         "august": honesty_out["august_calibration"], "recon": recon,
     }
     return outputs, stats
@@ -1597,6 +1825,11 @@ def main(argv=None):
           f"already late to order: {stats['late']}")
     print(f"  stuck-item chains {stats['resolved']}/{stats['chains']} clear inside this run")
     print(f"  no machine for: {', '.join(stats['no_machine']) or 'none'}")
+    hist = stats["history"]
+    print(f"  days already gone: {hist['days']} to {hist['through']} ({hist['status']}, "
+          f"read {hist['mode']})"
+          + (f" · {hist['not_read']} not read" if hist["not_read"] else "")
+          + (f" · {hist['trimmed']} dropped as today or later" if hist["trimmed"] else ""))
     print(f"  August check: plan {aug['sim_made_l']:,} L vs actual {aug['actual_made_l']:,} L "
           f"({aug['delta_pct']}%)")
     print(f"  checks: {len(check.passed)}/{len(check.rows)} passed")

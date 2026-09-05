@@ -87,6 +87,16 @@ fails waits for its next 30-minute slot instead of re-firing every 3 minutes at
 a server that is already in trouble. `heavy_last_ok_at` separates "gated off"
 from "failing".
 
+**`factory_history` — the days already gone this month — is HOURLY ONLY.** On
+every other cycle it republishes `live/state/factory_history.month.json`
+verbatim with `from_cache: true` and makes no CLI call at all. A day in it is
+re-read every hour until it is two days old AND every read of it came back
+whole, then kept: a goods receipt lags the filling it books by 0-1 day, and a
+segment an operator left open reports 0 cases until they close it, so
+yesterday's figures genuinely keep moving. A cold box reads as much of the
+month as fits in its 60-second budget and carries on next hour; the days it
+has not reached are named in `missing_dates`, never published as zero days.
+
 **A failed source is never papered over.** `state.json` does not substitute
 last-good data — `sources[key].ok` is false, the error is verbatim, and
 `last_good_age_s` tells the site a stale file exists and how old it is, so any

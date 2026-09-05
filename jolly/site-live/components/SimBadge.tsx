@@ -1,12 +1,18 @@
-// The "is this real?" tag, kept from Mark 2 — but Mark 3 has one more kind than
-// Mark 2 did, because Mark 3 has a NOW layer at all: `live`, a figure read off
-// the plant minutes ago. Everything else on the site is worked out from it.
+// The "is this real?" tag, kept from Mark 2 — but Mark 3 has two more kinds than
+// Mark 2 did. `live` is a figure read off the plant minutes ago, because Mark 3
+// has a NOW layer at all. `happened` is a day already gone, read off the same
+// systems hours or days ago — a record, not the plan and not live either.
 
 const KINDS: Record<string, { cls: string; label: string; title: string }> = {
   live: {
     cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
     label: "LIVE",
     title: "Read off the plant's own systems minutes ago. This is happening now.",
+  },
+  happened: {
+    cls: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+    label: "HAPPENED",
+    title: "A record of a day already gone, read off the factory's own systems. Not the plan.",
   },
   measured: {
     cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",

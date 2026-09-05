@@ -33,6 +33,7 @@ export type StateJson = {
   ecom?: EcomNow;
   exim?: EximNow;
   factory_dispatch?: DispatchNow;
+  factory_history?: HistoryNow;
   factory_inbound?: InboundNow;
   factory_production?: ProductionNow;
   oms?: OmsNow;
@@ -43,9 +44,66 @@ export type StateSourceKey =
   | "ecom"
   | "exim"
   | "factory_dispatch"
+  | "factory_history"
   | "factory_inbound"
   | "factory_production"
   | "oms";
+
+/* ── the days already gone this month, as the adapter publishes them ──
+   factory_history reads one record per elapsed day off ji.jivo.in. It is hourly
+   and it caches settled days, so `read_at` is its own stamp and is usually older
+   than state.json's collected_at — say so wherever it is rendered.
+
+   EVERY figure is `| null` on purpose: a day a system did not answer for reads
+   UNKNOWN, never 0, because 0 is a plant that stood still. */
+export type HistoryNowDay = {
+  date: string;
+  day_of_month: number;
+  weekday: string;
+  working: boolean;
+  made_mes_l: number | null;
+  made_mes_cases: number | null;
+  runs: number | null;
+  open_segments: number | null;
+  made_booked_l: number | null;
+  made_booked_pcs: number | null;
+  booked_receipts: number | null;
+  booked_unparsed_pcs: number | null;
+  booked_truncated?: boolean | null;
+  /** pieces per item code — Phase 2's input; the site does not render it */
+  booked_by_item?: Record<string, number> | null;
+  billed_out_l: number | null;
+  billed_out_pcs: number | null;
+  billed_lines: number | null;
+  billed_unparsed_pcs: number | null;
+  dispatched_oil_l: number | null;
+  dispatched_all_l: number | null;
+  trucks_oil: number | null;
+  trucks_all: number | null;
+  rows_oil: number | null;
+  bills_oil: number | null;
+  /** the gate split per book — state.json only, never in history.json */
+  by_company?: Record<string, { litres?: number; rows?: number; bills?: number; trucks?: number }> | null;
+  settled?: boolean;
+  complete?: boolean;
+  read_at?: string | null;
+  notes?: string[];
+};
+
+export type HistoryNow = {
+  company?: string;
+  month?: string;
+  through?: string;
+  today?: string;
+  status?: "complete" | "partial" | "unavailable" | string;
+  from_cache?: boolean;
+  read_at?: string;
+  days?: HistoryNowDay[];
+  missing_dates?: string[];
+  undated_dispatched_rows?: number;
+  basis?: Record<string, string>;
+  notes?: string[];
+};
 
 export type RunNow = {
   line: string;
@@ -800,4 +858,94 @@ export type HonestyData = {
   label_rules: LabelRule[];
   august_calibration?: { sim_made_l: number; actual_made_l: number; delta_pct: number; note?: string };
   not_here?: Record<string, string>;
+};
+
+/* ───────────────────── FORWARD — plan/history.json ─────────────────────
+   The one file on this site that looks BACKWARDS: what the plant actually did
+   on each day between the 1st and yesterday. It is not the plan and it is never
+   drawn as part of it.
+
+   Two things a component reading this must respect:
+     · a null figure means NOT READ. Draw it as "not read", never as zero.
+     · made_mes_l and made_booked_l are the SAME production counted two ways
+       (the machine log sees about two-thirds of the plant; the goods receipt is
+       the fuller figure). They carry their own labels and are never added. */
+
+export type HistoryDay = {
+  date: string;
+  day_of_month: number;
+  weekday: string;
+  working: boolean;
+  /** always true — this row is a record, not a plan day */
+  happened: true;
+  made_mes_l: number | null;
+  made_mes_cases: number | null;
+  runs: number | null;
+  open_segments: number | null;
+  made_booked_l: number | null;
+  made_booked_pcs: number | null;
+  booked_receipts: number | null;
+  booked_unparsed_pcs: number | null;
+  booked_truncated: boolean;
+  billed_out_l: number | null;
+  billed_out_pcs: number | null;
+  billed_lines: number | null;
+  billed_unparsed_pcs: number | null;
+  dispatched_oil_l: number | null;
+  dispatched_all_l: number | null;
+  trucks_oil: number | null;
+  trucks_all: number | null;
+  rows_oil: number | null;
+  bills_oil: number | null;
+  /** false = a read behind this day came back short; its figures are a floor */
+  complete: boolean;
+  /** true = this day is final and will not be read again */
+  settled: boolean;
+  read_at: string | null;
+  notes: string[];
+  made_mes_label: string;
+  made_booked_label: string;
+};
+
+export type HistoryTotals = {
+  made_mes_l: number | null;
+  made_booked_l: number | null;
+  billed_out_l: number | null;
+  dispatched_oil_l: number | null;
+  dispatched_all_l: number | null;
+  runs: number | null;
+  days_with_records: number;
+  days_not_read: number;
+  working_days: number;
+  /** how many days went into each sum above — a sum over 3 of 4 days says so */
+  covers: Record<string, number>;
+};
+
+export type HistoryMeta = PlanMeta & {
+  month?: string;
+  first?: string;
+  /** the last day already gone, or "—" on the 1st of the month */
+  through?: string;
+  status?: "complete" | "partial" | "unavailable" | string;
+  /** how the records reached this file: live, live-partial, last-good …, missing */
+  records_mode?: string;
+  /** the records' OWN reading time — older than meta.collected_at by design */
+  records_read_at?: string | null;
+  records_through?: string | null;
+  records_from_cache?: boolean;
+  source?: { source?: string; fetched_at?: string | null; server_at?: string | null; mode?: string; note?: string } | null;
+};
+
+export type HistoryData = {
+  meta: HistoryMeta;
+  rule: string;
+  days: HistoryDay[];
+  /** elapsed dates with no record at all — "not read", never a zero day */
+  missing_dates: string[];
+  /** records dated today or later, dropped rather than refused (midnight straddle) */
+  trimmed_dates: string[];
+  totals: HistoryTotals;
+  basis: Record<string, string>;
+  notes: string[];
+  unavailable_reason: string | null;
 };

@@ -438,10 +438,14 @@ class Freeze:
             if row.get("ok"):
                 return live, "live", row
             err = str(row.get("error") or "")[:160]
-            self.warn(f"{key} reported ok:false ({err}); its partial live data is used and "
-                      "each block is checked on its own")
-            self.assume(f"{key} half-failed this cycle and its partial live payload was used — "
-                        f"{err}")
+            # The reason is often EMPTY (an adapter can report ok:false with no
+            # error string). Both sentences are rendered on the site, so neither
+            # may trail off into nothing: "…was used — " with a blank after the
+            # dash is a sentence that says less than saying nothing.
+            self.warn(f"{key} reported ok:false ({err or 'it gave no reason'}); its partial "
+                      "live data is used and each block is checked on its own")
+            self.assume(f"{key} half-failed this cycle and its partial live payload was used"
+                        + (f" — {err}" if err else "; it gave no reason why"))
             return live, "live-partial", row
         lg_path = os.path.join(STATE_DIR, f"{key}.last-good.json")
         try:
@@ -625,6 +629,13 @@ def build():
     exim, exim_mode, exim_env = F.source("exim")
     oms, oms_mode, oms_env = F.source("oms")
     ecom, ecom_mode, ecom_env = F.source("ecom")
+    # The days already gone this month. Read for the site, NOT fed to the engine
+    # on this run — the plan still starts from today's live position and nothing
+    # about these records changes it. It comes through F.source() rather than
+    # being opened out of state.json directly so it inherits the same
+    # live / live-partial / last-good / missing handling as every other source,
+    # and so it can never be a different vintage from the plan beside it.
+    hist, hist_mode, hist_env = F.source("factory_history")
 
     def prov(name, key, mode, env, note):
         F.provenance[name] = {
@@ -1702,10 +1713,12 @@ def build():
         "working_days_left": len(working_days),
         "pieces_made_mtd": None,
         "pieces_made_mtd_basis": (
-            "NOT AVAILABLE. factory_production reads today and yesterday only; state.json "
-            "carries no month window, so month-to-date pieces cannot be computed here without "
-            "a new live call. Published as null rather than as two days wearing a month's "
-            "label. The engine does not read this field."),
+            "NOT NETTED OFF THE PLAN on this run. The pieces per item code for every day "
+            "already gone this month now arrive with factory_history (out[\"history\"]) and "
+            "are published as records; reducing the plan by them changes what the engine is "
+            "asked to make, so it is a deliberate next step, not a side effect of reading "
+            "them. Published as null rather than as a figure the plan beside it does not "
+            "use. The engine does not read this field."),
         "pieces_booked_today": booked.get("pcs"),
         "pieces_booked_today_basis": booked.get("note"),
         "rule": ("A ROLLING RE-PLAN from a LIVE opening. Only the opening is observed; every "
@@ -1714,8 +1727,25 @@ def build():
         "state_collected_at": F.state.get("collected_at"),
         "state_completed_at": F.state.get("completed_at"),
     }
-    F.assume("month-to-date production is not netted off the plan — the factory adapter carries "
-             "no month window, so pieces_made_mtd is null this run")
+    # Says the same thing as pieces_made_mtd_basis three lines above, because the
+    # SITE renders this one and the two must not contradict each other. The month
+    # window EXISTS now (factory_history publishes booked_by_item for every day
+    # already gone); what has not happened is netting the plan by it, which is a
+    # decision about what the engine is asked to make, not a missing read.
+    F.assume("month-to-date production is not netted off the plan — what has already been made "
+             "this month is read and shown as records, but the plan is not reduced by it on "
+             "this run, so pieces_made_mtd is null")
+
+    # ------------------------------------------------------- history --------
+    # Never a die(): a month's records failing to read is a gap on one panel,
+    # not a reason to refuse the whole plan.
+    prov("history", "factory_history", hist_mode, hist_env,
+         "the days already gone this month, read off ji.jivo.in — records, not the plan. "
+         "Not used by the engine on this run.")
+    if hist is None:
+        F.warn("factory_history has no data this cycle — the days already gone cannot be shown")
+    elif hist_mode != "live":
+        F.assume("the days already gone are from a %s read, not this cycle's" % hist_mode)
 
     # --------------------------------------------------------- assemble -----
     opening = {
@@ -1793,6 +1823,9 @@ def build():
 
     out = {
         "meta": meta,
+        # Passed through untouched. The engine reads its inputs by name and never
+        # sees this key; gen_live.py builds plan/history.json out of it.
+        "history": {"data": hist, "mode": hist_mode, "env": hist_env},
         "opening": opening,
         "orders": orders,
         "backlog": backlog,

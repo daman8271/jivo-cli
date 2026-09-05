@@ -185,8 +185,8 @@ RESERVED = {"collected_at", "completed_at", "cycle_seconds", "sources",
 # Adding a genuinely new adapter means adding its key here too; that is the
 # point, not an oversight. Not applied on a MARK3_ONLY / MARK3_SKIP run — there
 # the operator excluded it on purpose, and that run publishes nothing anyway.
-EXPECTED_ADAPTERS = ("ecom", "exim", "factory_dispatch", "factory_inbound",
-                     "factory_production", "oms")
+EXPECTED_ADAPTERS = ("ecom", "exim", "factory_dispatch", "factory_history",
+                     "factory_inbound", "factory_production", "oms")
 
 
 # --------------------------------------------------------------------------- io
