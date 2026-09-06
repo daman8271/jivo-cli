@@ -1,41 +1,41 @@
 {
  "meta": {
-  "collected_at": "2026-09-05T16:37:03+05:30",
-  "as_of": "2026-09-05T16:37:03+05:30",
+  "collected_at": "2026-09-05T15:32:25+05:30",
+  "as_of": "2026-09-05T15:32:25+05:30",
   "horizon": [
    "2026-09-05",
    "2026-09-30"
   ],
   "rolling": true,
   "forward": true,
-  "generated": "2026-09-05T11:07:15+00:00",
+  "generated": "2026-09-06T07:01:33+00:00",
   "generated_by": "live/gen_live.py",
   "month": "September 2026",
-  "frozen": "2026-09-05T16:37:03+05:30",
+  "frozen": "2026-09-05T15:32:25+05:30",
   "replanned_days": 26,
   "working_days_left": 22,
-  "state_completed_at": "2026-09-05T16:37:14+05:30",
+  "state_completed_at": "2026-09-05T15:32:30+05:30",
   "forward_rule": "A ROLLING RE-PLAN from a LIVE opening. Only the opening is observed; every day after today is computed. Nothing past today has happened.",
-  "pieces_booked_today": 40112.0,
+  "pieces_booked_today": 26172.0,
   "pieces_booked_today_basis": "booked_today is goods receipts into BH-PF dated today. The receipt date lags the production date by 0-1 day and varies by SKU — this is production BOOKED, not 'produced today'.",
   "pieces_made_mtd": null,
   "pieces_made_mtd_basis": "NOT NETTED OFF THE PLAN on this run. The pieces per item code for every day already gone this month now arrive with factory_history (out[\"history\"]) and are published as records; reducing the plan by them changes what the engine is asked to make, so it is a deliberate next step, not a side effect of reading them. Published as null rather than as a figure the plan beside it does not use. The engine does not read this field."
  },
  "totals": {
-  "made_l": 2399578,
-  "value_rs": 419012722,
-  "shipped_l": 2510247,
-  "oil_used_l": 2400008,
+  "made_l": 1223727,
+  "value_rs": 199299833,
+  "shipped_l": 1052734,
+  "oil_used_l": 1223743,
   "days": 26,
   "working_days": 22,
-  "runs": 261,
-  "flushes": 173,
-  "bought_lines": 796,
-  "events": 152,
-  "util_median": 83,
+  "runs": 102,
+  "flushes": 18,
+  "bought_lines": 902,
+  "events": 131,
+  "util_median": 28,
   "peak_day": {
    "date": "2026-09-07",
-   "made_l": 140458
+   "made_l": 169746
   },
   "oil_changes": null,
   "clearances_only": null,
@@ -44,121 +44,363 @@
  "plan": {
   "litres": 4323300,
   "skus": 84,
-  "made_vs_plan_pct": 55.5,
-  "source": "the month's target, carried from the last plan — it is not re-read every cycle"
+  "made_vs_plan_pct": 28.3,
+  "source": "the month's target, carried from the last plan — it is not re-read every cycle",
+  "sheet_skus": 84,
+  "expected_only_skus": 0
  },
  "demand": {
-  "rows": 3675,
-  "real_rows": 2043,
-  "forecast_rows": 1632,
-  "real_pieces": 980593,
-  "forecast_pieces": 2177975,
-  "real_value_rs": 230261288,
-  "forecast_value_rs": 534177327,
-  "forecast_share_pieces_pct": 68.95,
-  "forecast_share_value_pct": 69.88,
-  "forecast_share_litres_pct": 24.91,
+  "rows": 3190,
+  "real_rows": 1950,
+  "forecast_rows": 1240,
+  "real_pieces": 717747,
+  "forecast_pieces": 431622,
+  "real_value_rs": 177893613,
+  "forecast_value_rs": 125507934,
+  "forecast_share_pieces_pct": 37.55,
+  "forecast_share_value_pct": 41.37,
+  "forecast_share_litres_pct": 21.61,
   "order_dates": 26,
   "channels": {
-   "BEVERAGES": 7,
-   "OIL": 59,
-   "MART": 39,
+   "BEVERAGES": 2,
+   "MART": 7,
+   "OIL": 3,
    "ECOM": 1938,
-   "FORECAST": 1632
+   "FORECAST": 1240
   },
   "sources": {
-   "OMS": 105,
+   "OMS": 12,
    "ECOM-PO": 1938,
-   "FORECAST": 1632
+   "FORECAST": 1240
   },
   "note": "what customers want mixes confirmed orders with expected orders — this month's target, not ordered yet. Expected rows are marked in the data and must always look different on the page"
  },
  "opening": {
-  "fg_litres": 423511,
-  "fg_plan_l": 368410,
-  "fg_other_l": 55101,
-  "oil_l": 752200,
-  "oil_mapped_l": 752200,
+  "fg_litres": 465225,
+  "fg_plan_l": 406180,
+  "fg_other_l": 59045,
+  "oil_l": 754900,
+  "oil_mapped_l": 754900,
   "oil_unmapped_l": 0,
   "oil_l_definition": "all oil in the tanks right now, every kind — the day pages count only the oils in this month's recipes, so the two are not the same line",
-  "packaging_pieces": 11452427,
+  "packaging_pieces": 11375217,
   "inbound_oil_l": 1607450,
   "inbound_packaging": 3390,
-  "standing_l": 238238,
+  "standing_l": 215424,
   "standing_assumed": false,
   "standing_measured": true,
   "standing_note": "stock billed but not yet on a truck IS counted here — read live off the factory's own dispatch plans, not guessed at nothing. Mark 2 put it at nothing and said so; this is the real pile",
-  "backlog_pieces": 241681,
-  "backlog_value_rs": 52849075,
-  "plan_sku_backlog_docs": 35,
-  "plan_sku_backlog_docs_overdue": 13,
+  "backlog_pieces": 21830,
+  "backlog_value_rs": 2527952,
+  "plan_sku_backlog_docs": 5,
+  "plan_sku_backlog_docs_overdue": 1,
   "backlog_basis": "orders that were already on the book before today and that the order reader has not walked back to yet. It reads low until the reader is walked backwards over the older order numbers",
   "orders_dated_before_today": 0,
-  "at_zero_count": 9,
-  "physical_l": 661749,
-  "physical_pct": 80.0
+  "at_zero_count": 7,
+  "physical_l": 680649,
+  "physical_pct": 82.3
  },
  "storage": {
   "ceiling_l": 827000,
   "peak_l": 923000,
   "ceiling_declared": true,
   "ceiling_declared_by": "Daman, 2026-09-04 (capacity sheet 2026-08-29)",
-  "invoice_truck_lag_days": 2,
-  "days_ge_95": 0,
-  "days_ge_100": [],
-  "throttle_events": 0,
-  "pct_at_open": 80.0
+  "invoice_truck_lag_days": 3,
+  "invoice_truck_lag_book": "JIVO_OIL",
+  "days_ge_95": 24,
+  "days_ge_100": [
+   "2026-09-05",
+   "2026-09-08",
+   "2026-09-09",
+   "2026-09-10",
+   "2026-09-11",
+   "2026-09-12",
+   "2026-09-14",
+   "2026-09-15",
+   "2026-09-16",
+   "2026-09-17",
+   "2026-09-18",
+   "2026-09-19",
+   "2026-09-21",
+   "2026-09-22",
+   "2026-09-23",
+   "2026-09-24",
+   "2026-09-25",
+   "2026-09-26",
+   "2026-09-28",
+   "2026-09-29",
+   "2026-09-30"
+  ],
+  "throttle_events": 19,
+  "pct_at_open": 82.3
+ },
+ "storage_cap": {
+  "rule": "B20",
+  "in_effect": true,
+  "ceiling_l": 827000,
+  "what_it_does": "no run may be longer than the room left in the godown. The room left is the godown limit minus what is physically in there — goods finished and waiting, plus everything already billed and still waiting for a truck. It is worked out again every morning and comes down litre for litre as the day is filled, so when it reaches nothing the plant stops for the day whatever hours, bottles and orders are left",
+  "days_it_bit": 21,
+  "days_it_bit_dates": [
+   "2026-09-05",
+   "2026-09-08",
+   "2026-09-09",
+   "2026-09-10",
+   "2026-09-11",
+   "2026-09-12",
+   "2026-09-14",
+   "2026-09-15",
+   "2026-09-16",
+   "2026-09-17",
+   "2026-09-18",
+   "2026-09-19",
+   "2026-09-21",
+   "2026-09-22",
+   "2026-09-23",
+   "2026-09-24",
+   "2026-09-25",
+   "2026-09-26",
+   "2026-09-28",
+   "2026-09-29",
+   "2026-09-30"
+  ],
+  "days_throttled": 19,
+  "days_throttled_say": "the days that OPENED with the godown nearly full. A day that opens with room and fills it is not counted here — it is counted in the days it bit",
+  "working_days": 22,
+  "days_throttled_dates": [
+   "2026-09-08",
+   "2026-09-09",
+   "2026-09-10",
+   "2026-09-11",
+   "2026-09-12",
+   "2026-09-14",
+   "2026-09-15",
+   "2026-09-16",
+   "2026-09-17",
+   "2026-09-18",
+   "2026-09-19",
+   "2026-09-22",
+   "2026-09-23",
+   "2026-09-24",
+   "2026-09-25",
+   "2026-09-26",
+   "2026-09-28",
+   "2026-09-29",
+   "2026-09-30"
+  ],
+  "runs_cut_short": 21,
+  "litres_cut_off_runs_it_allowed": 236013,
+  "products_stopped_outright": 80,
+  "products_stopped_codes": [
+   "FG0000004",
+   "FG0000005",
+   "FG0000008",
+   "FG0000009",
+   "FG0000011",
+   "FG0000012",
+   "FG0000015",
+   "FG0000021",
+   "FG0000026",
+   "FG0000028",
+   "FG0000029",
+   "FG0000030",
+   "FG0000031",
+   "FG0000032",
+   "FG0000033",
+   "FG0000035",
+   "FG0000038",
+   "FG0000039",
+   "FG0000042",
+   "FG0000043",
+   "FG0000053",
+   "FG0000064",
+   "FG0000070",
+   "FG0000074",
+   "FG0000081",
+   "FG0000088",
+   "FG0000091",
+   "FG0000112",
+   "FG0000114",
+   "FG0000116",
+   "FG0000128",
+   "FG0000132",
+   "FG0000136",
+   "FG0000137",
+   "FG0000142",
+   "FG0000143",
+   "FG0000149",
+   "FG0000150",
+   "FG0000151",
+   "FG0000155",
+   "FG0000157",
+   "FG0000158",
+   "FG0000178",
+   "FG0000187",
+   "FG0000189",
+   "FG0000191",
+   "FG0000192",
+   "FG0000193",
+   "FG0000194",
+   "FG0000226",
+   "FG0000227",
+   "FG0000228",
+   "FG0000232",
+   "FG0000250",
+   "FG0000275",
+   "FG0000282",
+   "FG0000306",
+   "FG0000324",
+   "FG0000352",
+   "FG0000362",
+   "FG0000363",
+   "FG0000367",
+   "FG0000370",
+   "FG0000372",
+   "FG0000374",
+   "FG0000379",
+   "FG0000381",
+   "FG0000407",
+   "FG0000419",
+   "FG0000422",
+   "FG0000429",
+   "FG0000440",
+   "FG0000441",
+   "FG0000443",
+   "FG0000445",
+   "FG0000448",
+   "FG0000449",
+   "FG0000451",
+   "FG0000452",
+   "FG0000454"
+  ],
+  "days_at_zero_headroom": 21,
+  "month_made_l": 1223727,
+  "month_sheet_l": 4323300,
+  "month_made_pct_of_sheet": 28.3,
+  "products_on_the_sheet": 84,
+  "products_never_made": 58,
+  "products_never_made_top": [
+   {
+    "code": "FG0000081",
+    "sku": "COLD PRESS SUNFLOWER 1 LTR 20 PCS",
+    "month_target_litres": 310000
+   },
+   {
+    "code": "FG0000011",
+    "sku": "MUSTARD KACCHI GHANI 5 LTR 4 PCS",
+    "month_target_litres": 230000
+   },
+   {
+    "code": "FG0000136",
+    "sku": "SANO MUSTARD OIL 1 LTR 20 PCS",
+    "month_target_litres": 115000
+   },
+   {
+    "code": "FG0000053",
+    "sku": "COLD PRESS SUNFLOWER 5 LTR 4 PCS",
+    "month_target_litres": 110000
+   },
+   {
+    "code": "FG0000005",
+    "sku": "EXTRA LIGHT OLIVE 1 LTR 16 PCS",
+    "month_target_litres": 75000
+   },
+   {
+    "code": "FG0000191",
+    "sku": "SOYABEAN OIL 15 LTR",
+    "month_target_litres": 75000
+   },
+   {
+    "code": "FG0000150",
+    "sku": "SANO POMACE OLIVE 1 LTR 16 PCS",
+    "month_target_litres": 60000
+   },
+   {
+    "code": "FG0000151",
+    "sku": "SANO POMACE OLIVE 5 LTR TIN 4 PCS",
+    "month_target_litres": 60000
+   },
+   {
+    "code": "FG0000407",
+    "sku": "COLD PRESS 1 LTR 20 PCS (NIRMAL RISHI)",
+    "month_target_litres": 60000
+   },
+   {
+    "code": "FG0000422",
+    "sku": "JIVO MUSTARD KACCHI GHANI 869 GMS 20 PCS",
+    "month_target_litres": 60000
+   },
+   {
+    "code": "FG0000306",
+    "sku": "YELLOW MUSTARD OIL 1 LTR 20 PCS",
+    "month_target_litres": 55000
+   },
+   {
+    "code": "FG0000178",
+    "sku": "MUSTARD KACHI GHANI 15 KGS(PRINTED)",
+    "month_target_litres": 35000
+   }
+  ],
+  "why_it_is_a_build_choice": "Gurvinder ruled the godown limit and Daman declared the figure, but neither said what the planner should DO when the plan reaches it. Capping every run to the room left is the build's answer, not a ruling he gave — so it is a build choice (B20) and he can overrule it",
+  "headline": "The godown limit is what governs this plan. It held production back on 21 of the 22 working days left, the month reaches 28.3% of the sheet, and 58 of the 84 products on the sheet are never made at all. None of that is a machine running slowly or a bottle missing — it is that there is nowhere to put what would be filled"
  },
  "day1_blocked": {
-  "attempts": 31,
-  "products": 11,
-  "product_binder_pairs": 11,
+  "attempts": 41,
+  "products": 35,
+  "product_binder_pairs": 37,
   "by_binder_class": {
    "oil": {
-    "attempts": 16,
-    "products": 5
+    "attempts": 11,
+    "products": 7
    },
    "zero_stock_packaging": {
-    "attempts": 0,
-    "products": 0
+    "attempts": 1,
+    "products": 1
    },
    "other_packaging": {
-    "attempts": 15,
-    "products": 6
+    "attempts": 9,
+    "products": 9
+   },
+   "godown_full": {
+    "attempts": 20,
+    "products": 20
    }
   },
   "top_binder": {
-   "code": "RM0000001",
-   "name": "LOOSE REFINED OLIVE OIL",
-   "kind": "OIL",
-   "attempts": 16,
-   "products": 5
+   "code": "STORAGE",
+   "name": "the godown is full — no room for another bottle today",
+   "kind": "OTHER",
+   "attempts": 20,
+   "products": 20
   },
-  "products_in_multiple_classes": 0,
-  "zero_openers_products_blocked_run": 2,
-  "zero_openers_products_blocked_month": 2,
-  "note": "'attempts' = how many times the planner tried and was stopped, not how many products — quote products. One product can be short of oil and packing at once, so the per-type counts can overlap. On a day the godown is full nothing is tried at all, and this is zero"
+  "products_in_multiple_classes": 2,
+  "zero_openers_products_blocked_run": 5,
+  "zero_openers_products_blocked_month": 5,
+  "note": "'attempts' = how many times the planner tried and was stopped, not how many products — quote products. One product can be short of oil and packing at once, so the per-type counts can overlap. A full godown is one of the reasons: the machine had the hours and the material was there, and there was nowhere to put what it would fill"
  },
  "august": {
-  "sim_made_l": 2122639,
+  "sim_made_l": 2124866,
   "actual_made_l": 2119237,
-  "delta_pct": 0.16,
+  "delta_pct": 0.27,
+  "measured_on": "2026-09-06",
+  "reproducible": true,
+  "changed_since_measured": [],
+  "source": "reference/august-calibration.json (engine/calibrate_august.py)",
   "note": "tested on August: the same computer plan was run for August and came this close to what the factory really made — that is why these numbers can be trusted"
  },
  "materials_mini": {
   "components": 209,
-  "under_100_cover": 118,
-  "must_order_week1": 73,
-  "already_late": 48,
-  "zero_literal_items": 9,
-  "zero_literal_value_rs": 8106644,
-  "zero_august_rule_items": 15,
-  "zero_august_rule_value_rs": 40971224
+  "under_100_cover": 116,
+  "must_order_week1": 65,
+  "already_late": 58,
+  "zero_literal_items": 7,
+  "zero_literal_value_rs": 7513324,
+  "zero_august_rule_items": 14,
+  "zero_august_rule_value_rs": 111452204
  },
  "loops_mini": {
-  "chains": 51,
-  "resolved": 46,
-  "ran_after_unblock": 28
+  "chains": 21,
+  "resolved": 21,
+  "ran_after_unblock": 5
  },
  "scenarios_mini": [],
  "scenarios_basis": "what-if shift patterns are not worked out on this run yet",
@@ -166,62 +408,16 @@
  "whatsapp_basis": "the messages page belongs to the old site — the real one is the Jolly WhatsApp helper",
  "questions_top": [],
  "questions_basis": "the open questions list lives on the old site",
- "unproducible": [
-  {
-   "code": "FG0000034",
-   "sku": "EXTRA LIGHT OLIVE 200 LTR 1 PCS",
-   "pack_type": "DRUM",
-   "litres_per_piece": 200.0,
-   "plan_pieces": 150,
-   "plan_litres": 30000.0,
-   "slot_needed": "DRUM",
-   "reason": "no machine can fill drums",
-   "value_est_rs": 6000000,
-   "value_est_derived": true
-  },
-  {
-   "code": "FG0000043",
-   "sku": "COLD PRESS 3 LTR 6 PCS",
-   "pack_type": "PET",
-   "litres_per_piece": 3.0,
-   "plan_pieces": 6667,
-   "plan_litres": 20000.0,
-   "slot_needed": "3L",
-   "reason": "no machine can fill 3-litre bottles",
-   "value_est_rs": 3809600,
-   "value_est_derived": true
-  },
-  {
-   "code": "FG0000328",
-   "sku": "SANO POMACE OLIVE 200 LTR 1 PCS",
-   "pack_type": "DRUM",
-   "litres_per_piece": 200.0,
-   "plan_pieces": 75,
-   "plan_litres": 15000.0,
-   "slot_needed": "DRUM",
-   "reason": "no machine can fill drums",
-   "value_est_rs": 3534300,
-   "value_est_derived": true
-  },
-  {
-   "code": "FG0000006",
-   "sku": "POMACE OLIVE 200 LTR 1 PCS",
-   "pack_type": "DRUM",
-   "litres_per_piece": 200.0,
-   "plan_pieces": 5,
-   "plan_litres": 1000.0,
-   "slot_needed": "DRUM",
-   "reason": "no machine can fill drums",
-   "value_est_rs": 300000,
-   "value_est_derived": true
-  }
- ],
+ "unproducible": [],
  "warnings": [
-  "40 packaging codes this month's recipes need have stock ONLY in the NON-MOVING rooms BH-NM, GP-NM — 117,257 pieces, biggest first: PM0000183 LABEL 500 MLS EXTRA LIGHT FRONT 25,882, PM0000184 LABEL 500 MLS EXTRA LIGHT BACK 25,882, PM0000126 LABEL 500 MLS COLD PRESS FRONT 8,142, PM0000471 CAPS 5 LTR BLUE 7,725, PM0000504 LABEL 1 LTR POMACE BACK ZANO 5,866, PM0000159 LABEL 1 LTR EXTRA VIRGIN BACK 5,086. They are COUNTED as available here. If Daman rules that non-moving means unusable, every one of those codes goes to zero and blocks its whole product.",
-  "raw-material rooms hold stock that is NOT an oil in this month's recipes. It is named in opening.rm_store_other and counted nowhere — never converted, never invented: RM0000034 16,106.00 LTR LOOSE OIL RICE BRAN & OLIVE, RM0000043 9,909.13 LTR COCONUT OIL, RM0000012 8,700.00 LTR EXTRA LIGHT OLIVE LOSSE OIL IMPORTED, SF0000009 3,249.00 PCS REFINED CANOLA OIL 15 KG TIN, RM0000006 3,046.70 PCS DESI GHEE, RM0000039 2,100.68 LTR A-2 COW GHEE, RM0000008 1,432.00 LTR LOOSE OIL EXTRA LIGHT OLIVE, RM0000010 730.57 LTR POMACE OLIVE LOOSE OIL BOM, RM0000004 534.04 LTR LOOSE OIL EXTRA VIRGIN OLIVE, RM0000056 162.00 LTR JAITOON OIL (LOOSE), RM0000055 160.00 PCS VEGETABLE OIL (15 KGS) PER TIN, RM0000022 53.17 LTR PAIN OIL, RM0000051 26.65 KGS JIVO ROSEMARY LEAVE, RM0000049 11.50 KGS AKHROT WALNUT, SC0000051 1.75 PCS VITAMIN AD2 PREMIX FOR OIL FORTIFICATION.",
+  "oms reported ok:false (orders detail 3123: exit 4, no JSON on stdout; orders detail 3124: exit 4, no JSON on stdout; orders detail 3125: exit 4, no JSON on stdout; orders dashboard: e); its partial live data is used and each block is checked on its own",
+  "41 packaging codes this month's recipes need have stock ONLY in the NON-MOVING rooms BH-NM, GP-NM — 655,666 pieces, biggest first: PM0000075 TAPE LOGO PRINTED 538,408, PM0000183 LABEL 500 MLS EXTRA LIGHT FRONT 25,882, PM0000184 LABEL 500 MLS EXTRA LIGHT BACK 25,882, PM0000126 LABEL 500 MLS COLD PRESS FRONT 8,142, PM0000471 CAPS 5 LTR BLUE 7,725, PM0000504 LABEL 1 LTR POMACE BACK ZANO 5,866. They are COUNTED as available here. If Daman rules that non-moving means unusable, every one of those codes goes to zero and blocks its whole product.",
+  "packaging room(s) not read this cycle — no live answer, no last-good, no carry: GP-FG. A room only just added to the list is NOT YET READ, not unavailable — it fills in on the next hourly cycle, and it is never a reason to refuse the whole plan. Until then packaging on hand is a FLOOR by whatever they hold, and a missing room understates stock, which is the direction that invents a stock-out.",
+  "raw-material room(s) not read this cycle — no live answer, no last-good, no carry: BH-GJ. A room that has only just been added to the list is NOT YET READ, not unavailable: it fills in on the next hourly cycle. Until then, drummed oil in it is invisible to this plan.",
+  "raw-material rooms hold stock that is NOT an oil in this month's recipes. It is named in opening.rm_store_other and counted nowhere — never converted, never invented: RM0000034 16,106.00 LTR LOOSE OIL RICE BRAN & OLIVE, RM0000043 9,909.13 LTR COCONUT OIL, RM0000012 8,700.00 LTR EXTRA LIGHT OLIVE LOSSE OIL IMPORTED, SF0000009 3,249.00 PCS REFINED CANOLA OIL 15 KG TIN, RM0000006 3,046.70 PCS DESI GHEE, RM0000039 2,100.68 LTR A-2 COW GHEE, RM0000008 1,432.00 LTR LOOSE OIL EXTRA LIGHT OLIVE, RM0000010 730.57 LTR POMACE OLIVE LOOSE OIL BOM, RM0000004 494.04 LTR LOOSE OIL EXTRA VIRGIN OLIVE, RM0000056 162.00 LTR JAITOON OIL (LOOSE), RM0000055 160.00 PCS VEGETABLE OIL (15 KGS) PER TIN, RM0000022 53.17 LTR PAIN OIL, RM0000051 26.65 KGS JIVO ROSEMARY LEAVE, RM0000049 11.50 KGS AKHROT WALNUT, SC0000051 1.75 PCS VITAMIN AD2 PREMIX FOR OIL FORTIFICATION.",
   "SF0000009 REFINED CANOLA OIL 15 KG TIN: 3,249 PCS in BH-LO — the item name says 15 kg a tin, so that is roughly 48.7 TONNES of canola sitting in the raw-material store as FINISHED TINS. It is NOT converted to litres and NOT counted anywhere in this plan: a pack size read off an item name is not a measurement, and this file does not invent litres. It is oil the plan cannot see until somebody rules on it.",
-  "for scale: the WIDE 14-day figure (1,260,051 L) is 152% of the whole declared godown on its own. It is published for information and is NOT what the engine was given.",
-  "22 live OMS order line(s) (70,008 pieces) are on codes the September plan does not carry — the engine cannot build them, so they are not in the demand stream",
+  "for scale: the WIDE 14-day figure (1,244,508 L) is 150% of the whole declared godown on its own. It is published for information and is NOT what the engine was given.",
+  "3 live OMS order line(s) (285 pieces) are on codes the September plan does not carry — the engine cannot build them, so they are not in the demand stream",
   "71,100 L of ecom demand is required AFTER September 2026 — every litre of it is an unexpired open PO, it is simply not due this month, so it is not in this month's demand stream",
   "1,595,702 L of EXIM oil is under loading or still in contract and is NOT booked as arriving — only trucks already on the way are",
   "1,295,022 L is booked to arrive from OPEN BULK POs (contract quantity minus what has been drawn down). JIVO's oil POs are BLANKET orders drawn down over many part-loads — the adapter says so itself — so this is the undrawn balance of a contract, NOT a shipment on its way. It is the loosest number in this freeze and it makes oil look more available than it is."
@@ -229,69 +425,75 @@
  "sources": {
   "opening_fg": {
    "source": "factory_production",
-   "mode": "live",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30"
+   "mode": "carried 2026-09-03T16:08:44.776074+05:30",
+   "fetched_at": "2026-09-05T15:32:27.066090+05:30",
+   "server_at": null
   },
   "packaging_non_moving": {
    "source": "factory_production",
-   "mode": "live",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30"
+   "mode": "carried 2026-09-03T16:08:44.776074+05:30",
+   "fetched_at": "2026-09-05T15:32:27.066090+05:30",
+   "server_at": null
   },
   "opening_pm": {
    "source": "factory_production",
-   "mode": "live",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30"
+   "mode": "carried 2026-09-03T16:08:44.776074+05:30",
+   "fetched_at": "2026-09-05T15:32:27.066090+05:30",
+   "server_at": null
   },
   "opening_oil": {
    "source": "exim",
    "mode": "live",
-   "fetched_at": "2026-09-05T16:37:03+05:30",
-   "server_at": "2026-09-05T15:45:08.936971+05:30"
+   "fetched_at": "2026-09-05T15:32:25+05:30",
+   "server_at": "2026-09-04T13:18:30.994192+05:30"
   },
   "opening_oil_drums": {
    "source": "factory_production",
-   "mode": "live",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30"
+   "mode": "carried 2026-09-03T16:08:44.776074+05:30",
+   "fetched_at": "2026-09-05T15:32:27.066090+05:30",
+   "server_at": null
   },
   "standing": {
    "source": "factory_dispatch",
    "mode": "live",
-   "fetched_at": "2026-09-05T16:37:03.456586+05:30",
-   "server_at": "2026-09-05T16:29:00.513552+05:30"
+   "fetched_at": "2026-09-05T15:32:25.034846+05:30",
+   "server_at": "2026-09-05T15:30:57.280229+05:30"
   },
   "standing_wide_14d": {
    "source": "factory_dispatch",
-   "mode": "carried 2026-09-05T16:09:01.862640+05:30",
-   "fetched_at": "2026-09-05T16:37:03.456586+05:30",
-   "server_at": "2026-09-05T16:29:00.513552+05:30"
+   "mode": "carried 2026-09-03T16:08:38.530638+05:30",
+   "fetched_at": "2026-09-05T15:32:25.034846+05:30",
+   "server_at": "2026-09-05T15:30:57.280229+05:30"
+  },
+  "dispatch_lag": {
+   "source": "live/state/dispatch_lag.json",
+   "mode": "fresh",
+   "fetched_at": "2026-09-06T08:53:43.778144+05:30",
+   "server_at": null
   },
   "orders": {
    "source": "oms",
-   "mode": "live",
-   "fetched_at": "2026-09-05T16:37:05+05:30",
+   "mode": "live-partial",
+   "fetched_at": "2026-09-05T15:32:27+05:30",
    "server_at": null
   },
   "orders_ecom": {
    "source": "ecom",
    "mode": "live",
-   "fetched_at": "2026-09-05T16:37:03.455488+05:30",
+   "fetched_at": "2026-09-05T15:32:25.034739+05:30",
    "server_at": "2026-09-05"
   },
   "inbound": {
    "source": "factory_inbound + exim",
    "mode": "live / live",
-   "fetched_at": "2026-09-05T16:37:04.642006+05:30",
+   "fetched_at": "2026-09-05T15:32:26.514819+05:30",
    "server_at": null
   },
   "lines": {
-   "source": "factory_production",
-   "mode": "live",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30"
+   "source": "reference/mark4-rulebook.json",
+   "mode": "rulebook mark4-2026-09-06",
+   "fetched_at": null,
+   "server_at": null
   },
   "storage_ceiling": {
    "source": "reference/STORAGE-CAPACITY.md",
@@ -299,12 +501,1364 @@
    "fetched_at": null,
    "server_at": null
   },
+  "dispatch_book": {
+   "source": "factory_dispatch + factory_history",
+   "mode": "live",
+   "fetched_at": "2026-09-05T15:32:25.034846+05:30",
+   "server_at": "2026-09-05T15:30:57.280229+05:30"
+  },
+  "money": {
+   "source": "factory_history + factory_production",
+   "mode": "live",
+   "fetched_at": "2026-09-05T15:32:02+05:30",
+   "server_at": null
+  },
   "history": {
    "source": "factory_history",
    "mode": "live",
-   "fetched_at": "2026-09-05T16:37:04+05:30",
+   "fetched_at": "2026-09-05T15:32:02+05:30",
+   "server_at": null
+  },
+  "rulebook": {
+   "source": "reference/mark4-rulebook.json",
+   "mode": "embedded",
+   "fetched_at": null,
+   "server_at": null
+  },
+  "demand_baseline": {
+   "source": "/root/mark4/jivo-cli/jolly/live/state/demand_baseline.json",
+   "mode": "fresh",
+   "fetched_at": "2026-09-06T05:30:06+05:30",
    "server_at": null
   }
  },
- "simulated": true
+ "simulated": true,
+ "rulebook": {
+  "version": "mark4-2026-09-06",
+  "written": "2026-09-06",
+  "owner": "Gurvinderjeet Singh (planning); Daman (product)",
+  "applied": true,
+  "hours_per_session": 10.0,
+  "night_sessions": 2,
+  "night_sessions_worked": 2,
+  "night_hours_used": 10.5,
+  "night_litres": 15145,
+  "night_say": "10.5 hour(s) of second-shift work in the whole of the rest of the month, on 2 night(s). A second session is opened only where a machine has work it can still put somewhere"
+ },
+ "day1": {
+  "date": "2026-09-05",
+  "weekday": "Saturday",
+  "working": true
+ },
+ "money": {
+  "today_plan_rs": 28540491,
+  "today_booked_rs": 4168807,
+  "today_booked_pieces": 26172.0,
+  "mtd_made_rs": 41555036,
+  "mtd_days": 4,
+  "target_rs_per_day": 25000000,
+  "floor_rs_per_day": 20000000,
+  "on_target_today": true,
+  "above_floor_today": true,
+  "mtd_by_basis": {
+   "realise_rs": 40972278,
+   "baseline_rs": 0,
+   "default_rs": 582758
+  },
+  "basis": "what today's filling is worth: litres on the plan times the price each product sells for. The target and the floor are the plant's own, read from the rulebook",
+  "booked_basis": "booked_today is goods receipts into BH-PF dated today. The receipt date lags the production date by 0-1 day and varies by SKU — this is production BOOKED, not 'produced today'.",
+  "mtd_basis": "goods receipts per item for every day already gone this month (ji.jivo.in, factory_history.booked_by_item), pieces x litres per piece x realise. The MES sees about two-thirds of the plant; the receipts see the rest, so this is the fuller count.",
+  "month": {
+   "sheet_rs_at_the_same_prices": 752167329,
+   "sheet_rows_priced_by_default": 14,
+   "default_rs_per_l": 148.33,
+   "plan_pct_of_sheet_rs": 26.5,
+   "plan_rs": 199299833,
+   "working_days": 22,
+   "days_above_floor": 2,
+   "days_below_floor": 20,
+   "days_on_target": 2,
+   "target_rs_if_every_working_day_hit_it": 550000000,
+   "pct_of_a_month_of_targets": 36.2,
+   "worst_day": "2026-09-29",
+   "note": "the floor and the target are DAILY rules, and this is the whole month against them: 2 of 22 working days left keep the floor and 2 reach the target. Today is one day, and it is the one day the godown still has room in it — read the month, not the tick"
+  }
+ },
+ "lines_today": [
+  {
+   "line": "JP Machine",
+   "night": false,
+   "hours_planned": 10.0,
+   "hours_available": 10.0,
+   "runs": 3,
+   "pieces": 20835,
+   "litres": 20834,
+   "value_rs": 3113863,
+   "product_changes": 2,
+   "products": [
+    {
+     "code": "FG0000030",
+     "sku": "MUSTARD KACHI GHANI 1 LTR 20 PCS",
+     "litres": 20823,
+     "pieces": 20823,
+     "hours": 7.16,
+     "family": "26G",
+     "pref": 1,
+     "po_backed": false
+    },
+    {
+     "code": "FG0000149",
+     "sku": "JIVO GOLD 1 LTR 20 PCS",
+     "litres": 10,
+     "pieces": 10,
+     "hours": 0.0,
+     "family": "26G",
+     "pref": 1,
+     "po_backed": true
+    },
+    {
+     "code": "FG0000039",
+     "sku": "EXTRA LIGHT OLIVE 500 MLS 24 PCS",
+     "litres": 1,
+     "pieces": 2,
+     "hours": 0.0,
+     "family": "SMALL",
+     "pref": 1,
+     "po_backed": false
+    }
+   ]
+  },
+  {
+   "line": "Clear Pack",
+   "night": true,
+   "hours_planned": 10.5,
+   "hours_available": 20.0,
+   "runs": 2,
+   "pieces": 10306,
+   "litres": 51528,
+   "value_rs": 8734551,
+   "product_changes": 0,
+   "products": [
+    {
+     "code": "FG0000143",
+     "sku": "COLD PRESS GROUNDNUT OIL 5 LTR 4 PCS",
+     "litres": 51528,
+     "pieces": 10306,
+     "hours": 9.64,
+     "family": "HDPE",
+     "pref": 1,
+     "po_backed": false
+    }
+   ]
+  },
+  {
+   "line": "10 Head",
+   "night": false,
+   "hours_planned": 10.0,
+   "hours_available": 10.0,
+   "runs": 6,
+   "pieces": 9884,
+   "litres": 10440,
+   "value_rs": 2571972,
+   "product_changes": 5,
+   "products": [
+    {
+     "code": "FG0000228",
+     "sku": "SO OLIVE OIL 1 LTR 16 PCS",
+     "litres": 5538,
+     "pieces": 5538,
+     "hours": 3.3,
+     "family": "52G",
+     "pref": 1,
+     "po_backed": false
+    },
+    {
+     "code": "FG0000324",
+     "sku": "SESAME OIL 1 LTR 20 PCS",
+     "litres": 1553,
+     "pieces": 1553,
+     "hours": 0.92,
+     "family": "75G",
+     "pref": 1,
+     "po_backed": true
+    },
+    {
+     "code": "FG0000042",
+     "sku": "EXTRA VIRGIN OLIVE 1 LTR 16 PCS",
+     "litres": 1437,
+     "pieces": 1437,
+     "hours": 0.86,
+     "family": "52G",
+     "pref": 1,
+     "po_backed": false
+    },
+    {
+     "code": "FG0000064",
+     "sku": "EXTRA LIGHT OIVE 2 LTR 10 PCS HANDLE",
+     "litres": 900,
+     "pieces": 450,
+     "hours": 0.45,
+     "family": "ANY",
+     "pref": 1,
+     "po_backed": false
+    },
+    {
+     "code": "FG0000028",
+     "sku": "POMACE OLIVE 1 LTR 16 PCS",
+     "litres": 800,
+     "pieces": 800,
+     "hours": 0.48,
+     "family": "52G",
+     "pref": 1,
+     "po_backed": false
+    },
+    {
+     "code": "FG0000155",
+     "sku": "EXTRA VIRGIN 2 LTR 10 PCS HANDLE",
+     "litres": 212,
+     "pieces": 106,
+     "hours": 0.11,
+     "family": "ANY",
+     "pref": 1,
+     "po_backed": false
+    }
+   ]
+  },
+  {
+   "line": "6 Head",
+   "night": false,
+   "hours_planned": 10.0,
+   "hours_available": 10.0,
+   "runs": 3,
+   "pieces": 4390,
+   "litres": 21948,
+   "value_rs": 7282681,
+   "product_changes": 2,
+   "products": [
+    {
+     "code": "FG0000009",
+     "sku": "EXTRA LIGHT OLIVE 5 LTR TIN 4 PCS",
+     "litres": 16605,
+     "pieces": 3321,
+     "hours": 6.92,
+     "family": "TIN",
+     "pref": 1,
+     "po_backed": false
+    },
+    {
+     "code": "FG0000008",
+     "sku": "POMACE OLIVE 5 LTR TIN 4 PCS",
+     "litres": 5253,
+     "pieces": 1051,
+     "hours": 2.19,
+     "family": "TIN",
+     "pref": 1,
+     "po_backed": false
+    },
+    {
+     "code": "FG0000074",
+     "sku": "EXTRA VIRGIN OLIVE 5 LTR TIN 4 PCS IMPORTED",
+     "litres": 90,
+     "pieces": 18,
+     "hours": 0.04,
+     "family": "TIN",
+     "pref": 1,
+     "po_backed": false
+    }
+   ]
+  },
+  {
+   "line": "Tin Head",
+   "night": false,
+   "hours_planned": 10.0,
+   "hours_available": 10.0,
+   "runs": 2,
+   "pieces": 1565,
+   "litres": 23475,
+   "value_rs": 3981044,
+   "product_changes": 1,
+   "products": [
+    {
+     "code": "FG0000015",
+     "sku": "REFINED OIL 15 LTR",
+     "litres": 21930,
+     "pieces": 1462,
+     "hours": 7.61,
+     "family": "TIN",
+     "pref": 1,
+     "po_backed": false
+    },
+    {
+     "code": "FG0000275",
+     "sku": "COLD PRESS SUNFLOWER OIL 15 LTR",
+     "litres": 1545,
+     "pieces": 103,
+     "hours": 0.54,
+     "family": "TIN",
+     "pref": 1,
+     "po_backed": false
+    }
+   ]
+  },
+  {
+   "line": "Pouch Machine",
+   "night": false,
+   "hours_planned": 10.0,
+   "hours_available": 10.0,
+   "runs": 1,
+   "pieces": 18125,
+   "litres": 18125,
+   "value_rs": 2856380,
+   "product_changes": 0,
+   "products": [
+    {
+     "code": "FG0000194",
+     "sku": "SOYABEAN OIL 1 LTR POUCH 12 PCS",
+     "litres": 18125,
+     "pieces": 18125,
+     "hours": 9.14,
+     "family": "POUCH",
+     "pref": 1,
+     "po_backed": false
+    }
+   ]
+  }
+ ],
+ "night_line": {
+  "line": "Clear Pack",
+  "picked": "Clear Pack",
+  "reason": "the most ordered litres still unmade after the day session",
+  "po_backed_l_unmade": 16775,
+  "candidates": [
+   {
+    "line": "Clear Pack",
+    "po_backed_l": 16775,
+    "other_l": 1180686
+   },
+   {
+    "line": "10 Head",
+    "po_backed_l": 3865,
+    "other_l": 483046
+   },
+   {
+    "line": "JP Machine",
+    "po_backed_l": 27,
+    "other_l": 933631
+   },
+   {
+    "line": "Tin Head",
+    "po_backed_l": 0,
+    "other_l": 340109
+   },
+   {
+    "line": "Pouch Machine",
+    "po_backed_l": 0,
+    "other_l": 100808
+   },
+   {
+    "line": "6 Head",
+    "po_backed_l": 0,
+    "other_l": 38320
+   }
+  ],
+  "hours_rostered": 10.0,
+  "hours_used": 0.5,
+  "runs": 1,
+  "litres": 2694,
+  "worked": true,
+  "outcome": "0.5 h worked on Clear Pack, 2,694 L in 1 run(s)",
+  "hours": 10.0
+ },
+ "dispatch": {
+  "open_l_all_books": 285002,
+  "open_bills": 499,
+  "oil_pile_l": 215424,
+  "pendency_days_all": 1.5,
+  "pendency_days_oil": 5.1,
+  "trailing_days": 4,
+  "basis": "open dispatch plans from ji.jivo.in (dispatch-plans dispatch-fulfilment-summary, PENDING + BOOKED, all three books) divided by the mean litres the gate actually passed over the last 4 recorded day(s) (factory_history). The Oil line uses the Oil pile the engine is given and the Oil gate figure — the three books are not one queue.",
+  "basis_missing": null,
+  "lag_median_days": 3,
+  "lag_p90_days": 11,
+  "lag_max_days": 40,
+  "lag_mean_days": 5.02,
+  "lag_rows": 131,
+  "lag_window": "2026-08-07..2026-09-06",
+  "lag_measured_on": "2026-09-06",
+  "lag_static": false,
+  "lag_basis": "live/state/dispatch_lag.json (ji.jivo.in gate log, measured daily)",
+  "lag_caveat": "the gate log, not the invoice book: a bill that never reached a gate row is not in here at all, so this measures how long the bills that LEFT took to leave. The plan uses the median and the p90 is published beside it; the tail is real.",
+  "lag_by_company": {
+   "JIVO_BEVERAGES": {
+    "median_days": 2,
+    "p90_days": 7,
+    "max_days": 43,
+    "mean_days": 2.83,
+    "n": 313
+   },
+   "JIVO_MART": {
+    "median_days": 3,
+    "p90_days": 11,
+    "max_days": 25,
+    "mean_days": 4.32,
+    "n": 107
+   },
+   "JIVO_OIL": {
+    "median_days": 3,
+    "p90_days": 11,
+    "max_days": 40,
+    "mean_days": 5.02,
+    "n": 131
+   }
+  },
+  "lag_book": "JIVO_OIL",
+  "lag_book_say": "JIVO Oil's own gate rows — the book this plan makes for",
+  "lag_all_books_median_days": 2,
+  "lag_all_books_p90_days": 9,
+  "lag_all_books_rows": 551,
+  "headline": "the open dispatch book is 1.5 day(s) of work at the pace the gate has been keeping, and a JIVO Oil bill billed today reaches a truck in about 3 day(s); one Oil bill in ten waits 11 or more"
+ },
+ "stuck": {
+  "material": [
+   {
+    "month_target_pieces": 160000,
+    "month_target_litres": 160000.0,
+    "code": "FG0000028",
+    "sku": "POMACE OLIVE 1 LTR 16 PCS",
+    "want_pieces": 118677,
+    "want_litres": 118677,
+    "short_of": [
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     },
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 55000,
+    "month_target_litres": 55000.0,
+    "code": "FG0000149",
+    "sku": "JIVO GOLD 1 LTR 20 PCS",
+    "want_pieces": 54976,
+    "want_litres": 54976,
+    "short_of": [
+     {
+      "code": "PM0000397",
+      "name": "LABEL 1 LTR GOLD FRONT"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 4000,
+    "month_target_litres": 60000.0,
+    "code": "FG0000015",
+    "sku": "REFINED OIL 15 LTR",
+    "want_pieces": 2538,
+    "want_litres": 38070,
+    "short_of": [
+     {
+      "code": "PM0000008",
+      "name": "CARTON 15 LTR 1 PCS"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 75000,
+    "month_target_litres": 75000.0,
+    "code": "FG0000005",
+    "sku": "EXTRA LIGHT OLIVE 1 LTR 16 PCS",
+    "want_pieces": 31868,
+    "want_litres": 31868,
+    "short_of": [
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     },
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 60000,
+    "month_target_litres": 60000.0,
+    "code": "FG0000150",
+    "sku": "SANO POMACE OLIVE 1 LTR 16 PCS",
+    "want_pieces": 27905,
+    "want_litres": 27905,
+    "short_of": [
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     },
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 13500,
+    "month_target_litres": 27000.0,
+    "code": "FG0000064",
+    "sku": "EXTRA LIGHT OIVE 2 LTR 10 PCS HANDLE",
+    "want_pieces": 12891,
+    "want_litres": 25782,
+    "short_of": [
+     {
+      "code": "PM0000838",
+      "name": "CARTON 2 LTR 10 PCS HANDLE BOTTLE PLAIN"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 25000,
+    "month_target_litres": 25000.0,
+    "code": "FG0000324",
+    "sku": "SESAME OIL 1 LTR 20 PCS",
+    "want_pieces": 22016,
+    "want_litres": 22016,
+    "short_of": [
+     {
+      "code": "PM0000517",
+      "name": "PET BOTTLE 1 LTR 75 GMS"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 22000,
+    "month_target_litres": 22000.0,
+    "code": "FG0000042",
+    "sku": "EXTRA VIRGIN OLIVE 1 LTR 16 PCS",
+    "want_pieces": 10786,
+    "want_litres": 10786,
+    "short_of": [
+     {
+      "code": "PM0000195",
+      "name": "PET BOTTLE 1 LTR 52 GMS GREEN"
+     },
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 10000,
+    "month_target_litres": 10000.0,
+    "code": "FG0000189",
+    "sku": "ZANO POMACE OLIVE 1 LTR 16 PCS",
+    "want_pieces": 9923,
+    "want_litres": 9923,
+    "short_of": [
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     }
+    ],
+    "ordered": false
+   },
+   {
+    "month_target_pieces": 2000,
+    "month_target_litres": 10000.0,
+    "code": "FG0000074",
+    "sku": "EXTRA VIRGIN OLIVE 5 LTR TIN 4 PCS IMPORTED",
+    "want_pieces": 1811,
+    "want_litres": 9055,
+    "short_of": [
+     {
+      "code": "PM0000259",
+      "name": "TIN 5 LTR EXTRA VIRGIN OLIVE PRINTED IMPORTED"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 4000,
+    "month_target_litres": 8000.0,
+    "code": "FG0000114",
+    "sku": "POMACE OLIVE 2 LTR 10 PCS HANDLE",
+    "want_pieces": 3740,
+    "want_litres": 7480,
+    "short_of": [
+     {
+      "code": "PM0000349",
+      "name": "LABEL 2 LTR POMACE HANDLE BOTTLE FRONT"
+     },
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     },
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 5000,
+    "month_target_litres": 5000.0,
+    "code": "FG0000440",
+    "sku": "FIRST PRESSED SUNFLOWER OIL 1 LTR 20 PCS",
+    "want_pieces": 5000,
+    "want_litres": 5000,
+    "short_of": [
+     {
+      "code": "PM0000517",
+      "name": "PET BOTTLE 1 LTR 75 GMS"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 4600,
+    "month_target_litres": 23000.0,
+    "code": "FG0000009",
+    "sku": "EXTRA LIGHT OLIVE 5 LTR TIN 4 PCS",
+    "want_pieces": 960,
+    "want_litres": 4800,
+    "short_of": [
+     {
+      "code": "PM0000077",
+      "name": "TIN 5 LTR EXTRA LIGHT OLIVE PRINTED"
+     }
+    ],
+    "ordered": true
+   },
+   {
+    "month_target_pieces": 3000,
+    "month_target_litres": 3000.0,
+    "code": "FG0000187",
+    "sku": "ZANO EXTRA VIRGIN OLIVE1 LTR 16 PCS",
+    "want_pieces": 1768,
+    "want_litres": 1768,
+    "short_of": [
+     {
+      "code": "RM0000001",
+      "name": "LOOSE REFINED OLIVE OIL"
+     }
+    ],
+    "ordered": false
+   },
+   {
+    "month_target_pieces": 1000,
+    "month_target_litres": 2000.0,
+    "code": "FG0000155",
+    "sku": "EXTRA VIRGIN 2 LTR 10 PCS HANDLE",
+    "want_pieces": 234,
+    "want_litres": 468,
+    "short_of": [
+     {
+      "code": "PM0000560",
+      "name": "PET BOTTLE 2 LTR 80 GRM (GREEN HANDLE)"
+     }
+    ],
+    "ordered": true
+   }
+  ],
+  "storage": [
+   {
+    "month_target_pieces": 385000,
+    "month_target_litres": 385000.0,
+    "code": "FG0000142",
+    "sku": "COLD PRESS GROUNDNUT OIL 1 LTR 16 PCS",
+    "want_pieces": 385000,
+    "want_litres": 385000,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 310000,
+    "month_target_litres": 310000.0,
+    "code": "FG0000081",
+    "sku": "COLD PRESS SUNFLOWER 1 LTR 20 PCS",
+    "want_pieces": 293937,
+    "want_litres": 293937,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 45000,
+    "month_target_litres": 225000.0,
+    "code": "FG0000004",
+    "sku": "COLD PRESS 5 LTR 4 PCS",
+    "want_pieces": 44450,
+    "want_litres": 222250,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 46000,
+    "month_target_litres": 230000.0,
+    "code": "FG0000011",
+    "sku": "MUSTARD KACCHI GHANI 5 LTR 4 PCS",
+    "want_pieces": 44046,
+    "want_litres": 220230,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 110000,
+    "month_target_litres": 110000.0,
+    "code": "FG0000032",
+    "sku": "COLD PRESS 1 LTR 20 PCS",
+    "want_pieces": 109881,
+    "want_litres": 109881,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 22000,
+    "month_target_litres": 110000.0,
+    "code": "FG0000053",
+    "sku": "COLD PRESS SUNFLOWER 5 LTR 4 PCS",
+    "want_pieces": 18603,
+    "want_litres": 93015,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 60000,
+    "month_target_litres": 60000.0,
+    "code": "FG0000407",
+    "sku": "COLD PRESS 1 LTR 20 PCS (NIRMAL RISHI)",
+    "want_pieces": 31917,
+    "want_litres": 31917,
+    "ordered": false,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 6000,
+    "month_target_litres": 30000.0,
+    "code": "FG0000192",
+    "sku": "SOYABEAN OIL 5 LTR 4 PCS",
+    "want_pieces": 5995,
+    "want_litres": 29975,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 6000,
+    "month_target_litres": 30000.0,
+    "code": "FG0000128",
+    "sku": "JIVO GOLD 5 LTR 4 PCS",
+    "want_pieces": 5301,
+    "want_litres": 26505,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 5200,
+    "month_target_litres": 26000.0,
+    "code": "FG0000226",
+    "sku": "RICE BRAN OIL 5 LTR 4 PCS",
+    "want_pieces": 5060,
+    "want_litres": 25300,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 12500,
+    "month_target_litres": 25000.0,
+    "code": "FG0000091",
+    "sku": "COLD PRESS SUNFLOWER 1 LTR +1 LTR COMBO 10 SET PLAIN",
+    "want_pieces": 12500,
+    "want_litres": 25000,
+    "ordered": false,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 12500,
+    "month_target_litres": 25000.0,
+    "code": "FG0000429",
+    "sku": "MUSTARD KACHI GHANI 1 LTR + 1 LTR COMBO 10 SET PLAIN",
+    "want_pieces": 12240,
+    "want_litres": 24480,
+    "ordered": false,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 15000,
+    "month_target_litres": 30000.0,
+    "code": "FG0000033",
+    "sku": "COLD PRESS 1 LTR + 1 LTR COMBO 10 SET",
+    "want_pieces": 11075,
+    "want_litres": 22150,
+    "ordered": false,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 21000,
+    "month_target_litres": 21000.0,
+    "code": "FG0000227",
+    "sku": "RICE BRAN OIL 1 LTR 16 PCS",
+    "want_pieces": 13774,
+    "want_litres": 13774,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 2400,
+    "month_target_litres": 12000.0,
+    "code": "FG0000012",
+    "sku": "MUSTARD PAKKI GHANI 5 LTR 4 PCS",
+    "want_pieces": 1736,
+    "want_litres": 8680,
+    "ordered": false,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 6000,
+    "month_target_litres": 6000.0,
+    "code": "FG0000116",
+    "sku": "EXTRA VIRGIN COCONUT OIL 1 LTR 16 PCS",
+    "want_pieces": 5999,
+    "want_litres": 5999,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 2500,
+    "month_target_litres": 5000.0,
+    "code": "FG0000088",
+    "sku": "COLD PRESS 1 LTR +1 LTR COMBO 10 SET PLAIN",
+    "want_pieces": 2040,
+    "want_litres": 4080,
+    "ordered": true,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   },
+   {
+    "month_target_pieces": 400,
+    "month_target_litres": 2000.0,
+    "code": "FG0000137",
+    "sku": "SANO MUSTARD OIL 5 LTR 4 PCS",
+    "want_pieces": 400,
+    "want_litres": 2000,
+    "ordered": false,
+    "machines_with_room": [
+     "Clear Pack"
+    ]
+   }
+  ],
+  "no_order": [
+   {
+    "month_target_pieces": 12133,
+    "month_target_litres": 200000.0,
+    "code": "FG0000250",
+    "sku": "SOYABEAN OIL 15 KGS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 5000,
+    "month_target_litres": 75000.0,
+    "code": "FG0000191",
+    "sku": "SOYABEAN OIL 15 LTR",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 62831,
+    "month_target_litres": 60000.0,
+    "code": "FG0000422",
+    "sku": "JIVO MUSTARD KACCHI GHANI 869 GMS 20 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 55000,
+    "month_target_litres": 55000.0,
+    "code": "FG0000306",
+    "sku": "YELLOW MUSTARD OIL 1 LTR 20 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 2123,
+    "month_target_litres": 35000.0,
+    "code": "FG0000178",
+    "sku": "MUSTARD KACHI GHANI 15 KGS(PRINTED)",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 6600,
+    "month_target_litres": 33000.0,
+    "code": "FG0000374",
+    "sku": "YELLOW MUSTARD OIL 5 LTR TIN 4 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 15000,
+    "month_target_litres": 30000.0,
+    "code": "FG0000038",
+    "sku": "MUSTARD KACCHI GHANI 2 LTR 10 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 105000,
+    "month_target_litres": 21000.0,
+    "code": "FG0000441",
+    "sku": "COLD PRESS GROUNDNUT 200 MLS 70 PCS - BH",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 20000,
+    "month_target_litres": 20000.0,
+    "code": "FG0000031",
+    "sku": "MUSTARD PAKKI GHANI 1 LTR 20 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 6667,
+    "month_target_litres": 20000.0,
+    "code": "FG0000043",
+    "sku": "COLD PRESS 3 LTR 6 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 20000,
+    "month_target_litres": 20000.0,
+    "code": "FG0000106",
+    "sku": "MUSTARD KACHHI GHANI 1 LTR POUCH 12 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": true
+   },
+   {
+    "month_target_pieces": 10000,
+    "month_target_litres": 20000.0,
+    "code": "FG0000419",
+    "sku": "COLD PRESS GROUNDNUT OIL 2 LTR 10 PCS HANDLE",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 3400,
+    "month_target_litres": 17000.0,
+    "code": "FG0000232",
+    "sku": "SO OLIVE OIL 5 LTR 4 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 15000,
+    "month_target_litres": 15000.0,
+    "code": "FG0000379",
+    "sku": "MUSTARD KACHI GHANI 1 LTR 20 PCS ROUND BOTTLE",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 6000,
+    "month_target_litres": 12000.0,
+    "code": "FG0000029",
+    "sku": "MUSTARD PAKKI GHANI 2 LTR 10 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 11000,
+    "month_target_litres": 11000.0,
+    "code": "FG0000021",
+    "sku": "REFINED OIL 1 LTR POUCH 12 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 667,
+    "month_target_litres": 10000.0,
+    "code": "FG0000132",
+    "sku": "RICE BRAN OIL 15 LTR",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 607,
+    "month_target_litres": 10000.0,
+    "code": "FG0000445",
+    "sku": "RICE BRAN OIL 15 KGS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 533,
+    "month_target_litres": 8000.0,
+    "code": "FG0000158",
+    "sku": "REFINED COTTON SEED OIL 15 LTR",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 533,
+    "month_target_litres": 8000.0,
+    "code": "FG0000367",
+    "sku": "SANO POMACE OLIVE OIL 15 L",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 2000,
+    "month_target_litres": 6000.0,
+    "code": "FG0000372",
+    "sku": "POMACE OLIVE 3 LTR TIN 6 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 333,
+    "month_target_litres": 5000.0,
+    "code": "FG0000026",
+    "sku": "MUSTARD KACCHI GHANI 15 LTR",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 10000,
+    "month_target_litres": 5000.0,
+    "code": "FG0000035",
+    "sku": "COLD PRESS 500 MLS 24 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 2500,
+    "month_target_litres": 5000.0,
+    "code": "FG0000070",
+    "sku": "COLD PRESS 2 LTR 10 PCS HANDLE",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 5000,
+    "month_target_litres": 5000.0,
+    "code": "FG0000443",
+    "sku": "FIRST PRESSED MUSTARD OIL 1 LTR 20 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 10000,
+    "month_target_litres": 5000.0,
+    "code": "FG0000448",
+    "sku": "MUSTARD KACHI GHANI 500 ML 24 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 25000,
+    "month_target_litres": 5000.0,
+    "code": "FG0000449",
+    "sku": "MUSTARD KACHI GHANI 200 ML 35 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 25000,
+    "month_target_litres": 5000.0,
+    "code": "FG0000451",
+    "sku": "COLD PRESS SUNFLOWER OIL 200 ML 35 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 10000,
+    "month_target_litres": 5000.0,
+    "code": "FG0000452",
+    "sku": "SESAME OIL 500 MLS 12 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 10000,
+    "month_target_litres": 5000.0,
+    "code": "FG0000454",
+    "sku": "COLD PRESS GROUNDNUT 500 MLS 24 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 2000,
+    "month_target_litres": 4000.0,
+    "code": "FG0000362",
+    "sku": "LA RASOI COLD PRESSED CANOLA OIL 2 LTR 10 PCS HANDLE",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 2000,
+    "month_target_litres": 4000.0,
+    "code": "FG0000363",
+    "sku": "LA RASOI COLD PRESSED MUSTARD KACHI GHANI OIL 2 LTR 10 PCS HANDLE",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 1000,
+    "month_target_litres": 3000.0,
+    "code": "FG0000370",
+    "sku": "EXTRA LIGHT OLIVE 3 LTR TIN 6 PCS",
+    "ordered": false,
+    "expected_only": false,
+    "ordered_later": false
+   },
+   {
+    "month_target_pieces": 2000,
+    "month_target_litres": 1000.0,
+    "code": "FG0000352",
+    "sku": "SESAME OIL (TOASTED) 500 MLS 12 PCS",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": true
+   },
+   {
+    "month_target_pieces": 30000,
+    "month_target_litres": 300.0,
+    "code": "FG0000381",
+    "sku": "EXTRA VIRGIN OLIVE OIL 10ML",
+    "ordered": false,
+    "expected_only": true,
+    "ordered_later": false
+   }
+  ],
+  "no_line_time": [
+   {
+    "month_target_pieces": 115000,
+    "month_target_litres": 115000.0,
+    "code": "FG0000136",
+    "sku": "SANO MUSTARD OIL 1 LTR 20 PCS",
+    "ordered": true,
+    "machines_with_room": []
+   },
+   {
+    "month_target_pieces": 12000,
+    "month_target_litres": 60000.0,
+    "code": "FG0000151",
+    "sku": "SANO POMACE OLIVE 5 LTR TIN 4 PCS",
+    "ordered": true,
+    "machines_with_room": []
+   },
+   {
+    "month_target_pieces": 35000,
+    "month_target_litres": 35000.0,
+    "code": "FG0000193",
+    "sku": "SOYABEAN OIL 1 LTR 20 PCS",
+    "ordered": true,
+    "machines_with_room": []
+   },
+   {
+    "month_target_pieces": 2000,
+    "month_target_litres": 500.0,
+    "code": "FG0000112",
+    "sku": "EXTRA VIRGIN OLIVE 250 MLS 4 PCS",
+    "ordered": true,
+    "machines_with_room": []
+   },
+   {
+    "month_target_pieces": 1000,
+    "month_target_litres": 500.0,
+    "code": "FG0000157",
+    "sku": "EXTRA VIRGIN COCONUT OIL 500 MLS 24 PCS",
+    "ordered": true,
+    "machines_with_room": []
+   },
+   {
+    "month_target_pieces": 2500,
+    "month_target_litres": 500.0,
+    "code": "FG0000282",
+    "sku": "EXTRA VIRGIN COCONUT OIL 200 MLS 6 PCS",
+    "ordered": true,
+    "machines_with_room": []
+   }
+  ],
+  "manual": [
+   {
+    "code": "FG0000034",
+    "sku": "EXTRA LIGHT OLIVE 200 LTR 1 PCS",
+    "litres_per_piece": 200.0,
+    "plan_pieces": 150,
+    "plan_litres": 30000.0,
+    "display": "filled by hand, not scheduled here"
+   },
+   {
+    "code": "FG0000328",
+    "sku": "SANO POMACE OLIVE 200 LTR 1 PCS",
+    "litres_per_piece": 200.0,
+    "plan_pieces": 75,
+    "plan_litres": 15000.0,
+    "display": "filled by hand, not scheduled here"
+   },
+   {
+    "code": "FG0000006",
+    "sku": "POMACE OLIVE 200 LTR 1 PCS",
+    "litres_per_piece": 200.0,
+    "plan_pieces": 5,
+    "plan_litres": 1000.0,
+    "display": "filled by hand, not scheduled here"
+   }
+  ],
+  "godown_full_today": true,
+  "definitions": {
+   "material": "the planner tried to fill it today and something it is made from ran out. The litres beside it are what it tried to fill TODAY",
+   "storage": "the planner tried to fill it today, the machine had hours and the material was there — and there was no room left in the godown to put it. The godown holds 827,000 L and it is full of goods that are already sold and waiting for a truck, so nothing more can be made until something leaves the gate. No purchase order fixes this one. The litres beside it are what the planner tried to fill TODAY",
+   "no_order": "nobody has asked for it TODAY — it is in the month's target, and the litres beside it are that whole month's line, not today's want. 2 of these are really ordered, just for a later day — nobody is waiting on them yet, so they are marked and not counted as unwanted. 18 of them nobody has ordered at all — they are only expected",
+   "no_line_time": "somebody has really ordered it and the plan did not get to it today — every machine that can fill them was full. The godown was also too full to fill more than can be sent out. The litres beside it are that product's whole month on the sheet",
+   "manual": "filled by hand, not scheduled here"
+  },
+  "headings": {
+   "material": "Short of something it is made from",
+   "storage": "The godown was too full to put it anywhere",
+   "no_order": "Nobody has asked for it today",
+   "no_line_time": "Every machine that can fill it was full",
+   "manual": "Filled by hand"
+  },
+  "counts": {
+   "material": 15,
+   "storage": 18,
+   "no_order": 35,
+   "no_line_time": 6,
+   "manual": 3,
+   "no_order_expected_only": 18,
+   "no_order_wanted_later": 2,
+   "no_line_time_with_a_free_machine": 0
+  },
+  "hours_free_today": {
+   "JP Machine": 0.0,
+   "Clear Pack": 9.5,
+   "10 Head": 0.0,
+   "6 Head": 0.0,
+   "Tin Head": 0.0,
+   "Pouch Machine": 0.0
+  },
+  "litres_note": "two different counts sit in this block and they are named apart: what the planner tried to fill today, and the whole month's line off the sheet. Never add them together"
+ },
+ "manual_fill": [
+  {
+   "code": "FG0000034",
+   "sku": "EXTRA LIGHT OLIVE 200 LTR 1 PCS",
+   "litres_per_piece": 200.0,
+   "plan_pieces": 150,
+   "plan_litres": 30000.0,
+   "display": "filled by hand, not scheduled here"
+  },
+  {
+   "code": "FG0000328",
+   "sku": "SANO POMACE OLIVE 200 LTR 1 PCS",
+   "litres_per_piece": 200.0,
+   "plan_pieces": 75,
+   "plan_litres": 15000.0,
+   "display": "filled by hand, not scheduled here"
+  },
+  {
+   "code": "FG0000006",
+   "sku": "POMACE OLIVE 200 LTR 1 PCS",
+   "litres_per_piece": 200.0,
+   "plan_pieces": 5,
+   "plan_litres": 1000.0,
+   "display": "filled by hand, not scheduled here"
+  }
+ ],
+ "manual_fill_note": "filled by hand, not scheduled here",
+ "expected_orders": {
+  "present": true,
+  "used": true,
+  "window": {
+   "from": "2026-06-01",
+   "to": "2026-08-31",
+   "months": 3
+  },
+  "months": 3,
+  "share_of_demand_pct": 21.61,
+  "fallback_reason": null,
+  "fetched_at": "2026-09-06T05:30:06+05:30",
+  "source": "SAP OINV/INV1 (invoices) minus ORIN/RIN1 (credit notes), Oil book, DocDate in window, CANCELED='N', FG items; INR = INV1.LineTotal net of GST (never header DocTotal); litres = INV1.Quantity (PIECES, C-0001) x pack litres parsed from OITM.U_SKU by engine/plan_units.pack_litres (KGS / 0.91). Channel = OCRD.U_Main_Group; e-commerce, branches, staff, cash sales and the 9 Oil intercompany cards (C-0005) excluded — the excluded totals are published beside the included.",
+  "note": "what customers are likely to ask for, worked out from what the trade really bought over the last few months — read once a day into a file, never inside this loop",
+  "age_days": 0
+ },
+ "warnings_count": 11,
+ "warnings_where": "the things the planner wants you to know before quoting a number are on the honesty file, in full"
 }

@@ -16,8 +16,10 @@ export default function Nav() {
     <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-5">
         <Link href="/" className="whitespace-nowrap font-semibold tracking-tight">
-          <span className="text-amber-400">JIVO</span> Mark 3
-          <span className="ml-2 hidden text-sm font-normal text-zinc-500 sm:inline">the plant, right now</span>
+          <span className="text-amber-400">JIVO</span> Mark 4
+          <span className="ml-2 hidden text-sm font-normal text-zinc-500 sm:inline">
+            the plant, right now — and what it takes as fact
+          </span>
         </Link>
         <LoopBadge />
         <PlanBadge />

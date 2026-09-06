@@ -137,7 +137,30 @@ class LeaveAlone(unittest.TestCase):
     def test_nine_digit_run_is_not_a_mobile(self):
         self._unchanged("note", "batch 925226664 cleared QC")
 
-    # 25
+    # 25 — the decimals the full stop in the lookbehind was written to protect.
+    # These are the reason `Ravi.9876543210` was allowed to leak, so they are pinned
+    # here beside the leak: the fix has to keep every one of them untouched.
+    def test_litres_with_ten_decimal_places(self):
+        self._unchanged("note", "tank dip 1234.5678901234 L at 06:00")
+
+    # 26
+    def test_a_decimal_whose_fraction_is_mobile_shaped(self):
+        # the fractional tail of a longer number is not a phone number
+        self._unchanged("note", "meter read 1234.9876543210 at the gate")
+
+    # 27
+    def test_rupees_with_paise(self):
+        self._unchanged("note", "billed 9876543210.50 today")
+
+    # 28
+    def test_a_timestamp_with_fractional_seconds_in_prose(self):
+        self._unchanged("note", "posted 2026-09-03T07:40:20.123456Z by the loop")
+
+    # 29
+    def test_a_document_number_after_a_full_stop_in_prose(self):
+        self._unchanged("note", "see doc 1726086707. Next line follows")
+
+    # 30
     def test_empty_and_null_survive(self):
         doc = {"driver_mobile_no": "", "mobile_no": None, "ok": True}
         out, recs = mask_phones_verbose(doc)
@@ -220,6 +243,47 @@ class Mask(unittest.TestCase):
     def test_mobile_inside_a_list_of_strings(self):
         out = mask_phones({"notes": ["ok", "ring 8295058874"]})
         self.assertEqual(out["notes"], ["ok", "ring " + MASK + "74"])
+
+
+class AFullStopIsNotAShield(unittest.TestCase):
+    """ROUND B item 19 — the leak that blocked the deploy.
+
+    MOBILE_RE opened `(?<![\\d.])`, so a ten-digit run with a FULL STOP in front of
+    it was left alone. Question 14 of the file Gurvinder answers asks for WhatsApp
+    numbers and he answers in prose on an iPad, so `Ravi.9876543210` is the shape
+    that actually arrives — and it reached live/state/plan/assumptions.json, which
+    live/publish/ serves at a public hostname, with every check green.
+
+    The full stop stays in the pattern for decimals (LeaveAlone 25-29). What
+    changed is that a full stop is only a shield when a DIGIT sits in front of it.
+    """
+
+    def test_a_name_glued_to_a_number_by_a_full_stop(self):
+        out = mask_phones({"answer": "Answer: Ravi.9876543210"})
+        self.assertEqual(out["answer"], "Answer: Ravi." + MASK + "10")
+
+    def test_plus_91_then_a_full_stop(self):
+        out = mask_phones({"answer": "bulk oil +91.9876543210"})
+        self.assertEqual(out["answer"], "bulk oil " + MASK + "10")
+
+    def test_a_number_split_by_a_full_stop(self):
+        out = mask_phones({"answer": "dispatch 98765.43210"})
+        self.assertEqual(out["answer"], "dispatch " + MASK + "10")
+
+    def test_the_guard_and_the_masker_agree_on_all_three(self):
+        doc = {"a": "Ravi.9876543210", "b": "+91.9876543210", "c": "98765.43210"}
+        self.assertEqual(len(scan_phones(dict(doc))), 3, "the guard must see them too")
+        self.assertEqual(scan_phones(mask_phones(dict(doc))), [])
+
+    def test_the_shapes_that_already_masked_still_mask(self):
+        # nothing above may be bought by loosening what already worked
+        for value, tail in (("9876543210", "10"), ("98765 43210", "10"),
+                            ("(9876543210)", "10"), ("+91 98765 43210", "10"),
+                            ("09918-186361", "61"), ("Sompal 8295058874", "74")):
+            with self.subTest(value=value):
+                out = mask_phones({"note": value})
+                self.assertIn(MASK + tail, out["note"])
+                self.assertEqual(scan_phones({"note": out["note"]}), [])
 
 
 class Idempotent(unittest.TestCase):

@@ -1,6 +1,6 @@
-// The "is this real?" tag, kept from Mark 2 — but Mark 3 has two more kinds than
-// Mark 2 did. `live` is a figure read off the plant minutes ago, because Mark 3
-// has a NOW layer at all. `happened` is a day already gone, read off the same
+// The "is this real?" tag, kept from Mark 2 — but the live marks have two more
+// kinds than Mark 2 did. `live` is a figure read off the plant minutes ago,
+// because there is a NOW layer at all now. `happened` is a day already gone, read off the same
 // systems hours or days ago — a record, not the plan and not live either.
 
 const KINDS: Record<string, { cls: string; label: string; title: string }> = {

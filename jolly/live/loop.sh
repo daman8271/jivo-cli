@@ -38,7 +38,8 @@
 # (default 3 rotated files), LOOP_TIMEOUT_S (default 175 — under the 180 s slot),
 # LOOP_SKIP_CHAIN=1 (collect only), LOOP_ONLY_CHAIN=1 (chain only, ZERO calls to the
 # plant — re-runs the re-plan on the state already on disk), SIM_HOURS /
-# SIM_SUNDAYS_OFF (the engine's own knobs, defaulted here to 12 h / Sundays off).
+# SIM_SUNDAYS_OFF (the engine's own knobs — PASSED THROUGH ONLY WHEN SET, never
+# defaulted here; see below).
 
 set -uo pipefail
 
@@ -63,10 +64,25 @@ SKIP_CHAIN="${LOOP_SKIP_CHAIN:-0}"
 # no call to the plant at all. It is how a change to the engine, the freeze or
 # gen-data.py is tested without spending a live cycle on it.
 ONLY_CHAIN="${LOOP_ONLY_CHAIN:-0}"
-# The engine's own knobs. The baseline is 12 hours a day with Sundays off; a
-# scenario cycle overrides them in the environment, it is not edited in here.
-export SIM_HOURS="${SIM_HOURS:-12}"
-export SIM_SUNDAYS_OFF="${SIM_SUNDAYS_OFF:-1}"
+# The engine's own knobs — PASSED THROUGH ONLY WHEN SOMEBODY SETS THEM.
+#
+# THE SHIFT IS THE RULEBOOK'S NOW (R02). freeze_live.py writes rules.shift_hours = 10
+# out of reference/mark4-rulebook.json and engine/august_sim.py takes its hours from
+# there. This line used to DEFAULT the hours to twelve, which meant every 3-minute
+# cycle silently overrode the plant's own ruling with a 12-hour day, and put 24 hours on
+# the line that also took the night. Whether that buys litres or loses them depends on the
+# day's inputs — it was +11% when it was found and 1,202,011 L against 10 h's 1,284,706 L
+# on 2026-09-06 (measured with the engine's own R02 cap lifted, since it now refuses a
+# 12-hour override), because a storage-bound month gives the hours straight back — so the
+# figure is not quoted here; the ruling is. The engine now REFUSES an override longer
+# than the rulebook's session, so the default would not merely inflate the plan, it
+# would stop the chain dead every cycle.
+#
+# Set either variable and it still reaches the engine — that is a SCENARIO, it is
+# recorded in sim/summary-live.json as `hours_override`, and the gen gate refuses to
+# publish it as the plan. Unset, which is what cron does, and the rulebook decides.
+if [ -n "${SIM_HOURS:-}" ]; then export SIM_HOURS; fi
+if [ -n "${SIM_SUNDAYS_OFF:-}" ]; then export SIM_SUNDAYS_OFF; fi
 
 mkdir -p "$STATE_DIR"
 

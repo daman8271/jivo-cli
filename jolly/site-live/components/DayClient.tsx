@@ -10,7 +10,7 @@
 
 import Link from "next/link";
 import { asDay, asHonesty, asOverview, asSpine, dayId, istToday, madeAt, agoWords, ageMinutes, hhmm, useLive, useNow } from "../lib/live";
-import { ceilingRule, isRealiseOutlier, maskDigits, P, realiseOutlier } from "../lib/labels";
+import { ceilingRule, isRealiseOutlier, maskDigits, P, prefWords, realiseOutlier } from "../lib/labels";
 import { dlabel, inr, litres, money, pct, pct1, plural, weekdayShort } from "../lib/fmt";
 import { AsOf, Live, NotLive } from "./Freshness";
 import { Card, Panel, Pill, Stat } from "./Card";
@@ -35,6 +35,23 @@ export default function DayClient({ n }: { n: number }) {
   const planMade = madeAt(live[id]);
   const last = spine.length ? spine[spine.length - 1].n : null;
 
+  /* `day.blocked` is one row per ATTEMPT — a product is tried on every machine that
+     could fill it, on every pass of the day — so the same (product, reason) pair
+     comes back several times. On 7 Sep it was 87 rows for 35 distinct pairs, with
+     one product repeated five times, which reads as five different problems. One row
+     per pair, with how many tries stood behind it. */
+  const blockedRows = (() => {
+    const seen = new Map<string, { code: string; sku: string; binder: string;
+      binder_name: string; reason?: string; tries: number }>();
+    for (const b of day?.blocked ?? []) {
+      const key = `${b.code}|${b.binder}`;
+      const hit = seen.get(key);
+      if (hit) hit.tries += 1;
+      else seen.set(key, { ...b, tries: 1 });
+    }
+    return [...seen.values()];
+  })();
+
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
@@ -48,7 +65,11 @@ export default function DayClient({ n }: { n: number }) {
             day 1 of a plan built {hhmm(planMade) ?? "earlier"} · {agoWords(ageMinutes(planMade, now))} — not today
           </Pill>
         )}
-        {day && !day.working && <Pill tone="zinc">factory closed</Pill>}
+        {day && !day.working && (
+          <Pill tone="zinc" title="no filling on a Sunday — but trucks still leave and bills still go out">
+            closed — dispatch continues
+          </Pill>
+        )}
       </div>
 
       <div className="mt-2 flex items-center gap-3 text-sm">
@@ -68,11 +89,13 @@ export default function DayClient({ n }: { n: number }) {
       </div>
 
       <p className="mt-2 max-w-3xl text-sm text-zinc-300">
-        {isToday
-          ? "Today's opening is the live count from the plant. Everything the planner does with it below is a decision, not a record."
-          : isStaleDayOne
-            ? "This was day 1 when the plan was last built. The planner has not rebuilt since, so its opening is the plant as it stood then — not today's count — and nothing below is today."
-            : "Nothing on this page has happened. It is worked out from the day before it, which was worked out from the day before that, back to today's live count."}
+        {day && !day.working
+          ? "The factory is closed this day, so nothing is filled. Trucks still leave and bills still go out, so the godown keeps emptying."
+          : isToday
+            ? "Today's opening is the live count from the plant. Everything the planner does with it below is a decision, not a record."
+            : isStaleDayOne
+              ? "This was day 1 when the plan was last built. The planner has not rebuilt since, so its opening is the plant as it stood then — not today's count — and nothing below is today."
+              : "Nothing on this page has happened. It is worked out from the day before it, which was worked out from the day before that, back to today's live count."}
       </p>
 
       <div className="mt-6">
@@ -118,6 +141,76 @@ export default function DayClient({ n }: { n: number }) {
                 />
               </div>
 
+              {/* ── the second session, named ─────────────────────
+                  One machine a day may run twice, and the plan says which and
+                  why. On a closed day, or a day nobody needed a second shift,
+                  it says that instead of going quiet. */}
+              <Panel
+                title="Tonight's second session"
+                badge={<SimBadge kind="plan" />}
+                asOf={<AsOf rec={live[id]} />}
+              >
+                {day.night_line?.line ? (
+                  <>
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <span className="text-xl font-semibold text-violet-300">{day.night_line.line}</span>
+                      {day.night_line.hours != null && (
+                        <span className="text-sm text-zinc-400">{day.night_line.hours.toFixed(1)} more hours</span>
+                      )}
+                    </div>
+                    {day.night_line.reason && (
+                      <p className="mt-1 text-sm text-zinc-400">
+                        Picked because it has {maskDigits(day.night_line.reason)}.
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-zinc-500">
+                      One machine a day, at most. The plant can overrule this.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-sm text-zinc-500">
+                    {day.working
+                      ? "No machine is given a second session on this day — one session was enough for the work behind it."
+                      : "The factory is closed, so there is no session to double."}
+                  </p>
+                )}
+                {day.line_hours_max && Object.keys(day.line_hours_max).length > 0 && (
+                  <div className="mt-3 overflow-x-auto border-t border-zinc-800 pt-2">
+                    <table className="w-full min-w-[26rem] text-sm">
+                      <thead>
+                        <tr className="text-left text-[10px] uppercase tracking-wider text-zinc-500">
+                          <th className="py-1 font-normal">Machine</th>
+                          <th className="py-1 text-right font-normal">Hours it fills</th>
+                          <th className="py-1 text-right font-normal">Hours it may</th>
+                          <th className="py-1 text-right font-normal">Product changes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(day.line_hours_max).map(([name, max]) => (
+                          <tr key={name} className="border-t border-zinc-800/60">
+                            <td className="py-1">
+                              {name}
+                              {day.night_line?.line === name && (
+                                <Pill tone="violet" title="the one machine given a second session this day">
+                                  night
+                                </Pill>
+                              )}
+                            </td>
+                            <td className="py-1 text-right tabular-nums">
+                              {(day.line_hours?.[name] ?? 0).toFixed(1)}
+                            </td>
+                            <td className="py-1 text-right tabular-nums text-zinc-400">{max.toFixed(1)}</td>
+                            <td className="py-1 text-right tabular-nums text-zinc-400">
+                              {day.product_changes?.[name] ?? "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </Panel>
+
               {/* oil on hand — the OTHER series, and it says so */}
               <Panel
                 title="Oil on hand for this day's recipes"
@@ -141,11 +234,13 @@ export default function DayClient({ n }: { n: number }) {
                   <p className="text-sm text-zinc-500">No machine runs on this day.</p>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[44rem] text-sm">
+                    <table className="w-full min-w-[54rem] text-sm">
                       <thead>
                         <tr className="text-left text-[10px] uppercase tracking-wider text-zinc-500">
                           <th className="py-1 font-normal">Machine</th>
                           <th className="py-1 font-normal">Product</th>
+                          <th className="py-1 font-normal">Bottle</th>
+                          <th className="py-1 font-normal">Why this machine</th>
                           <th className="py-1 text-right font-normal">Pieces</th>
                           <th className="py-1 text-right font-normal">Litres</th>
                           <th className="py-1 text-right font-normal">Hours</th>
@@ -156,7 +251,14 @@ export default function DayClient({ n }: { n: number }) {
                       <tbody>
                         {day.runs.map((r, i) => (
                           <tr key={`${r.code}-${i}`} className="border-t border-zinc-800/60">
-                            <td className="py-1">{r.line}</td>
+                            <td className="py-1">
+                              {r.line}
+                              {r.night && (
+                                <Pill tone="violet" title="this run is on the machine's second session">
+                                  night
+                                </Pill>
+                              )}
+                            </td>
                             <td className="py-1">
                               <span className="mr-2 font-mono text-[11px] text-zinc-500">{r.code}</span>
                               {r.sku}
@@ -169,6 +271,22 @@ export default function DayClient({ n }: { n: number }) {
                                 <Pill tone="violet" title="no customer order behind this run — it is made to the month's target">
                                   no order behind it
                                 </Pill>
+                              )}
+                            </td>
+                            <td className="py-1 text-zinc-400">
+                              {r.family ?? "—"}
+                              {r.slot ? <span className="ml-1 text-zinc-600">{r.slot}</span> : null}
+                            </td>
+                            <td className="py-1">
+                              {r.pref != null ? (
+                                <Pill
+                                  tone={r.pref === 1 ? "green" : r.pref === 2 ? "amber" : "red"}
+                                  title="the rulebook ranks the machines a product may go on; a run only moves down the list when every better machine is full"
+                                >
+                                  {prefWords(r.pref)}
+                                </Pill>
+                              ) : (
+                                <span className="text-zinc-600">—</span>
                               )}
                             </td>
                             <td className="py-1 text-right tabular-nums">{inr(r.pieces)}</td>
@@ -188,15 +306,29 @@ export default function DayClient({ n }: { n: number }) {
 
               {/* stuck / waiting / landed */}
               <div className="grid gap-3 md:grid-cols-3">
-                <Panel title="Could not be started" badge={<SimBadge kind="plan" />} asOf={<AsOf rec={live[id]} />}>
-                  {day.blocked.length === 0 ? (
-                    <p className="text-sm text-zinc-500">Nothing was stopped for want of material.</p>
+                <Panel
+                  title="Could not be started"
+                  badge={<SimBadge kind="plan" />}
+                  asOf={<AsOf rec={live[id]} />}
+                  note={day.blocked_label}
+                >
+                  {blockedRows.length === 0 ? (
+                    <p className="text-sm text-zinc-500">Nothing was stopped.</p>
                   ) : (
                     <ul className="max-h-56 space-y-1 overflow-y-auto text-xs">
-                      {day.blocked.map((b, i) => (
-                        <li key={`${b.code}-${b.binder}-${i}`}>
+                      {blockedRows.map((b) => (
+                        <li key={`${b.code}-${b.binder}`}>
                           <span className="text-zinc-300">{b.sku}</span>
-                          <span className="text-zinc-500"> — short of {b.binder_name}</span>
+                          <span className="text-zinc-500">
+                            {b.reason === "storage"
+                              ? " — no room in the godown"
+                              : ` — short of ${b.binder_name}`}
+                          </span>
+                          {b.tries > 1 && (
+                            <span className="ml-1 text-zinc-600">
+                              tried on {inr(b.tries)} {plural(b.tries, "machine", "machines")}
+                            </span>
+                          )}
                         </li>
                       ))}
                     </ul>

@@ -23,8 +23,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import type {
-  DayDetail, HistoryData, HonestyData, LinesData, LoopsData, MaterialsData, Overview, SpineDay, StateJson,
-  StorageData,
+  AssumptionsData, DayDetail, HistoryData, HonestyData, LinesData, LoopsData, MaterialsData, Overview, SpineDay,
+  StateJson, StorageData,
 } from "./types";
 
 /* ───────────────────────────── where from ───────────────────────────── */
@@ -42,6 +42,7 @@ export const BASE: string =
 
 export type SourceId =
   | "state" | "overview" | "spine" | "storage" | "materials" | "loops" | "honesty" | "lines" | "history"
+  | "assumptions"
   | `day:${number}`;
 
 export const dayId = (n: number): SourceId => `day:${n}` as SourceId;
@@ -78,6 +79,14 @@ const GUARDS: Record<string, (v: unknown) => boolean> = {
   honesty: (v) => hasPlanMeta(v) && Array.isArray((v as Record<string, unknown>).label_rules) &&
     Array.isArray((v as Record<string, unknown>).measured),
   lines: (v) => hasPlanMeta(v) && Array.isArray((v as Record<string, unknown>).lines),
+  // What the plan takes as fact. The four lists are in the guard because
+  // /assumptions exists to render ALL of them: a body missing one would show a
+  // silently short page, and a page that quietly drops a ruling is worse than
+  // one that says it could not read the file.
+  assumptions: (v) => hasPlanMeta(v) && Array.isArray((v as Record<string, unknown>).settled) &&
+    Array.isArray((v as Record<string, unknown>).assumed) &&
+    Array.isArray((v as Record<string, unknown>).speeds) &&
+    Array.isArray((v as Record<string, unknown>).open_questions),
   // The days already gone. `basis` and `meta.status` are in the guard because a
   // history file without them cannot be labelled, and an unlabelled record of
   // what the plant did is exactly what this page must never show.
@@ -403,6 +412,7 @@ export const asLoops = (r?: Rec) => (r?.data as LoopsData | null) ?? null;
 export const asHonesty = (r?: Rec) => (r?.data as HonestyData | null) ?? null;
 export const asLines = (r?: Rec) => (r?.data as LinesData | null) ?? null;
 export const asHistory = (r?: Rec) => (r?.data as HistoryData | null) ?? null;
+export const asAssumptions = (r?: Rec) => (r?.data as AssumptionsData | null) ?? null;
 export const asDay = (r?: Rec) => (r?.data as DayDetail | null) ?? null;
 
 /** A ticking clock, so an age on screen counts up between polls. */

@@ -40,10 +40,25 @@ So the key is consulted first. A key on the ID/plate allow-list
 ``entry_no``, ``grpo``, ``*_code``, ``*_id``, …) keeps its scalar value
 verbatim — not scanned, not masked. Everything else is scanned.
 
-Shape-wise the run must stand alone: the lookarounds refuse a match that is
-glued to another digit or sits after a decimal point, which is what keeps
-timestamps (``2026-09-03T13:10:20+05:30``), litres (``9876543.21``) and long
-document numbers out of it.
+Shape-wise the run must stand alone: the lookarounds refuse a match glued to
+another digit, and a run that is the FRACTIONAL TAIL of a longer number is
+refused as well, which is what keeps timestamps (``2026-09-03T13:10:20+05:30``),
+litres (``1234.9876543210``), rupees (``9876543210.50``) and long document
+numbers out of it.
+
+A FULL STOP IS ONLY A SHIELD WHEN A DIGIT SITS IN FRONT OF IT (round B, 2026-09-06).
+The pattern used to open ``(?<![\d.])``, so anything after a full stop was left
+alone — and ``Ravi.9876543210``, ``+91.9876543210`` and ``98765.43210`` all reached
+``live/state/plan/assumptions.json``, which ``live/publish/`` serves at a public
+hostname, with every check green. Question 14 of the file Gurvinder answers asks
+for WhatsApp numbers and he answers in prose on an iPad, so those are the shapes
+that actually arrive. The full stop is still what protects a decimal, but only
+`digit . run` is a decimal — `word . run` and `run . run` are a phone number
+somebody typed with a dot in it. A full stop is also read as a separator INSIDE a
+run for the same reason. The cost, stated: a decimal in free text whose digits
+add up to exactly ten and start 6-9 (``684523.7712``) is masked. Numbers arrive
+as JSON numbers and are never scanned, so that costs a cosmetic dent in prose —
+the direction this module has always erred in.
 
 THE TRADE-OFF, STATED: an allow-listed key is trusted completely, and a
 ten-digit PO number that appears loose inside a free-text sentence WILL be
@@ -66,7 +81,7 @@ from __future__ import annotations
 
 import re
 
-__all__ = ["mask_phones", "mask_phones_verbose", "scan_phones",
+__all__ = ["mask_phones", "mask_phones_verbose", "scan_phones", "find_mobiles",
            "MASK", "PHONE_KEY_RE", "ID_KEY_RE", "MOBILE_RE"]
 
 MASK = "•" * 4          # ••••
@@ -98,14 +113,17 @@ ID_KEY_RE = re.compile(
 )
 
 # (b) an Indian mobile inside any other string.
-#   (?<![\d.])  — not glued to a digit, not the tail of a decimal
-#   prefix      — optional +91 / 91 / 0
-#   ten digits starting 6-9, single space or dash tolerated between them
+#   (?<!\d)     — not glued to a digit
+#   prefix      — optional +91 / 91 / 0, the separator after it may be a full stop
+#   ten digits starting 6-9, one space, dash or full stop tolerated between them
 #   (?!\d)(?!\.\d) — not the head of a longer number, not a rupee amount
+# The tail of a decimal is refused by find_mobiles(), not by a lookbehind: the
+# lookbehind could not tell `1234.9876543210` (a reading) from `98765.43210` (a
+# number with a dot typed into it), and it silently chose the wrong one.
 MOBILE_RE = re.compile(
-    r"(?<![\d.])"
-    r"(?:\+?91[\s\-]?|0)?"
-    r"(?:[6-9](?:[\s\-]?\d){9})"
+    r"(?<!\d)"
+    r"(?:\+?91[\s\-.]?|0)?"
+    r"(?:[6-9](?:[\s\-.]?\d){9})"
     r"(?!\d)(?!\.\d)"
 )
 
@@ -121,9 +139,35 @@ def _masked(text: str) -> str:
     return MASK + digits[-2:]
 
 
+def _is_decimal_tail(text: str, start: int) -> bool:
+    """True when the run at `start` is the fractional part of a longer number.
+
+    `1234.9876543210` is a meter reading with ten decimal places; the ten digits
+    after the point are not a phone number. `98765.43210` and `Ravi.9876543210`
+    are — nothing numeric precedes the point. That is the whole difference, and it
+    is a digit-before-the-dot test rather than a lookbehind because the lookbehind
+    that used to do this job could not see the difference.
+    """
+    return start >= 2 and text[start - 1] == "." and text[start - 2].isdigit()
+
+
+def find_mobiles(text: str):
+    """Every mobile-shaped run in `text` that is not a decimal's tail, as match
+    objects, in order. THE one definition — the masker and the leak guard both
+    call it, so they can never disagree about what a phone number looks like."""
+    return [m for m in MOBILE_RE.finditer(text)
+            if not _is_decimal_tail(text, m.start())]
+
+
 def _mask_runs(text: str) -> str:
     """Rule (b): mask every mobile-shaped run inside a free string."""
-    return MOBILE_RE.sub(lambda m: _masked(m.group(0)), text)
+    out, at = [], 0
+    for m in find_mobiles(text):
+        out.append(text[at:m.start()])
+        out.append(_masked(m.group(0)))
+        at = m.end()
+    out.append(text[at:])
+    return "".join(out)
 
 
 def _already_masked(text: str) -> bool:
@@ -210,7 +254,7 @@ def scan_phones(obj, path="$", key=None, out=None):
     elif isinstance(obj, str):
         if key and ID_KEY_RE.search(key) and not PHONE_KEY_RE.search(key):
             return out
-        if MOBILE_RE.search(obj):
+        if find_mobiles(obj):
             out.append((path, obj))
     return out
 

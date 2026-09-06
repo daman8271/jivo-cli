@@ -16,7 +16,11 @@ import type { DispatchRow, HonestyData, LabelRule, OrderRow } from "./types";
 export type RuleId =
   | "rolling-replan" | "happened-days" | "po-open-value" | "po-open-litres" | "orders-mixed"
   | "two-oil-series" | "forecast-tags" | "ceiling-declared" | "standing-measured" | "day1-pile"
-  | "observed-then-derated" | "unproducible" | "realise-outlier" | "numbers-masked" | "tank-dip";
+  | "observed-then-derated" | "unproducible" | "realise-outlier" | "numbers-masked" | "tank-dip"
+  // Mark 4. A rule the publisher has not shipped reads null and the page says
+  // nothing — it never falls back to a sentence with a number typed into it.
+  | "speed-planning" | "night-line" | "dispatch-pendency" | "money-target" | "manual-fill"
+  | "expected-orders-basis";
 
 export function rule(h: HonestyData | null, id: RuleId): LabelRule | null {
   if (!h?.label_rules) return null;
@@ -111,6 +115,138 @@ export function ruleSource(h: HonestyData | null, id: RuleId) {
     note: str(s.note),
   };
 }
+
+/* ─────────────────────────── Mark 4 rules ───────────────────────────
+   Six rules the rulebook added. Each reader returns the publisher's own
+   sentence plus the figures that rule carries — so a page can lay them out
+   without ever typing one. */
+
+/** How the plan picks a machine speed: a share of the listed speed, held to the
+ *  best August run that lasted long enough to count. */
+export function speedRule(h: HonestyData | null) {
+  const r = rule(h, "speed-planning");
+  return {
+    text: ruleText(h, "speed-planning"),
+    factor: num(r?.planning_factor),
+    minRuns: num(r?.min_runs_for_cap),
+    sustainedHours: num(r?.sustained_hours),
+    efficiency: num(r?.efficiency),
+  };
+}
+
+/** One machine, and only one, gets a second session — named, with the reason. */
+export function nightRule(h: HonestyData | null) {
+  const r = rule(h, "night-line");
+  return {
+    text: ruleText(h, "night-line"),
+    line: str(r?.line),
+    reason: str(r?.reason),
+    nights: num(r?.nights_in_this_run),
+  };
+}
+
+/** The dispatch headline is the open book and the wait — not what left today. */
+export function pendencyRule(h: HonestyData | null) {
+  const r = rule(h, "dispatch-pendency");
+  return {
+    text: ruleText(h, "dispatch-pendency"),
+    pendencyDaysAll: num(r?.pendency_days_all),
+    lagMedianDays: num(r?.lag_median_days),
+    lagP90Days: num(r?.lag_p90_days),
+    /** true = one measurement carried forward; false = re-measured every day */
+    lagStatic: r?.lag_static === true,
+  };
+}
+
+/** The day in rupees, against the plant's own floor and target. */
+export function moneyRule(h: HonestyData | null) {
+  const r = rule(h, "money-target");
+  return {
+    text: ruleText(h, "money-target"),
+    targetRsPerDay: num(r?.target_rs_per_day),
+    floorRsPerDay: num(r?.floor_rs_per_day),
+    basis: str(r?.basis),
+  };
+}
+
+/** The drums are filled by hand. They are never a machine that is missing. */
+export function manualRule(h: HonestyData | null) {
+  const r = rule(h, "manual-fill");
+  const codes = Array.isArray(r?.codes)
+    ? (r!.codes as unknown[]).filter((c): c is string => typeof c === "string")
+    : [];
+  return { text: ruleText(h, "manual-fill"), codes, display: str(r?.display) };
+}
+
+/** Orders nobody has placed yet, worked out from what the trade really bought. */
+export function expectedRule(h: HonestyData | null) {
+  const r = rule(h, "expected-orders-basis");
+  const w = (r?.window ?? null) as Record<string, unknown> | null;
+  return {
+    text: ruleText(h, "expected-orders-basis"),
+    present: r?.present === true,
+    used: r?.used === true,
+    months: num(r?.months),
+    from: str(w?.from),
+    to: str(w?.to),
+    fallbackReason: str(r?.fallback_reason),
+  };
+}
+
+/* ──────────────── the five words a planning speed can carry ────────────────
+   Mark 3 had three (rated / observed / derived) and the site's map still only
+   knew those, so a Mark 4 slot marked `capped`, `typical` or `carried` fell
+   through to "the machine's listed speed" — which is the one thing those three
+   are NOT. Each word gets its own tone and its own plain sentence; the slot's
+   own `note` still wins over the fallback wherever the publisher wrote one. */
+
+export const SPEED_BASIS: Record<string, { tone: string; label: string; words: string }> = {
+  capped: {
+    tone: "green",
+    label: "held to August",
+    words: "a share of the listed speed, then held to the best the machine really kept for hours at a stretch",
+  },
+  rated: {
+    tone: "zinc",
+    label: "listed speed",
+    words: "a share of the machine's listed speed — August had no run long enough to hold it to",
+  },
+  typical: {
+    tone: "blue",
+    label: "August typical",
+    words: "the middle August run — the factory app lists no speed for this pack",
+  },
+  carried: {
+    tone: "amber",
+    label: "carried over",
+    words: "carried over from the last plan and cut back — no listed speed, and no August run",
+  },
+  derived: {
+    tone: "amber",
+    label: "worked out",
+    words: "taken from another pack on the same machine — nobody has timed this one on its own",
+  },
+  // The sixth word, and the one that must never render as a bare label: the
+  // machine may take the pack and NOBODY HAS GIVEN IT A SPEED. It is a question
+  // for the plant, not a slot that runs at zero.
+  none: {
+    tone: "red",
+    label: "no rate yet",
+    words: "nobody has given this machine a speed for this pack — the plan puts nothing here until somebody rules on one",
+  },
+};
+
+export const speedBasis = (kind: string | null | undefined) =>
+  SPEED_BASIS[(kind ?? "").toLowerCase()] ?? { tone: "zinc", label: kind || "—", words: "" };
+
+/** 1 / 2 / 3 in floor words. The rulebook's own preference ladder. */
+export const PREF_WORDS: Record<number, string> = {
+  1: "first choice",
+  2: "when the first choice is full",
+  3: "last resort",
+};
+export const prefWords = (p: number | null | undefined) =>
+  typeof p === "number" && PREF_WORDS[p] ? PREF_WORDS[p] : "";
 
 /* ─────────────────────────── phone masking ───────────────────────────
    honesty rule `numbers-masked`: no real phone number anywhere on this site.

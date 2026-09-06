@@ -1,0 +1,25 @@
+{
+ "id": "august-calibration",
+ "measured_on": "2026-09-06",
+ "sim_made_l": 2124866,
+ "sim_value": 407944559,
+ "actual_made_l": 2119237,
+ "delta_pct": 0.27,
+ "shift": {
+  "hours": 12.0,
+  "schedule": null,
+  "sundays_off": true,
+  "lines": 6
+ },
+ "how": "SIM_INPUTS=sim/sim-inputs.json SIM_TAG=-calibration python3 engine/august_sim.py",
+ "what_it_means": "the same engine, standing on 1 August knowing nothing later, against what the factory really made that month",
+ "actual_source": "out/august-actuals-SCORING.csv (ji.jivo.in run records)",
+ "depends_on": {
+  "engine/august_sim.py": "b928449dee37a77bd7c1f4cddfa53a848fedf2e2ba28f87fef7b7ad2b825d8ef",
+  "engine/plan_units.py": "89b2b10968b33608ed52053809727bc66827e6d98b4244f3f1c6192e72c0fa7c",
+  "engine/plan_explode.py": "d987b3115f57e4c1961e6511b4d8cfa1498e4a8aec65af13140d5dd58c6061f1",
+  "sim/sim-inputs.json": "487c660fd14770e51a1773626be56791b22bee1da2bb083d24fa765589cee054"
+ },
+ "rebuild_with": "python3 engine/calibrate_august.py",
+ "note": "Pinned because sim/summary.json is a working file that any bare `python3 engine/august_sim.py` overwrites. Before 2026-09-06 the site read the claim from there and it had drifted to 2,122,639 L / 0.16% against an engine that made 2,124,866 L / 0.27%."
+}

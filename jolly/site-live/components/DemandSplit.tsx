@@ -11,8 +11,8 @@
 // different colours everywhere on this site so that can never be missed.
 
 import { asHonesty, asOverview, useLive, type Rec } from "../lib/live";
-import { CHANNEL, channelOf, forecastShareRule } from "../lib/labels";
-import { inr, litres, money, pct1, plural } from "../lib/fmt";
+import { CHANNEL, channelOf, expectedRule, forecastShareRule, maskDigits } from "../lib/labels";
+import { dlabel, inr, litres, money, pct1, plural } from "../lib/fmt";
 import type { OrderRow } from "../lib/types";
 import { Panel, Pill } from "./Card";
 import { AsOf, Live } from "./Freshness";
@@ -23,6 +23,12 @@ export function DemandSplit() {
   const o = asOverview(live.overview);
   const h = asHonesty(live.honesty);
   const share = forecastShareRule(h);
+  /* Mark 4 changed what "expected" MEANS. It used to be the month's target cut
+     into days. It is now worked out from what the trade really bought over the
+     last few months — a different claim, so the page has to say which one is
+     behind the violet block rather than leave the old sentence standing. */
+  const expected = expectedRule(h);
+  const eo = o?.expected_orders ?? null;
 
   const sources = o?.demand.sources ?? {};
   const total = Object.values(sources).reduce((a, b) => a + b, 0);
@@ -84,6 +90,17 @@ export function DemandSplit() {
                 <div className="tabular-nums text-violet-200">
                   {inr(o.demand.forecast_pieces)} pcs · {money(o.demand.forecast_value_rs)}
                 </div>
+                {eo?.used && (
+                  <div className="mt-1 text-[11px] text-violet-200/70">
+                    worked out from what the trade really bought
+                    {eo.window?.from && eo.window?.to
+                      ? `, ${dlabel(eo.window.from)} to ${dlabel(eo.window.to)}`
+                      : ""}
+                  </div>
+                )}
+                {eo && eo.used === false && eo.fallback_reason && (
+                  <div className="mt-1 text-[11px] text-amber-300/80">{maskDigits(eo.fallback_reason)}</div>
+                )}
               </div>
             </div>
 
@@ -91,6 +108,22 @@ export function DemandSplit() {
               By litres, {pct1(o.demand.forecast_share_litres_pct)} of what this month&rsquo;s demand asks for is
               expected, not ordered. By what it is worth, {pct1(o.demand.forecast_share_value_pct)}.
             </p>
+            {(expected.text || eo?.source) && (
+              <p className="mt-1 text-xs text-zinc-500">
+                {expected.text ? maskDigits(expected.text) : ""}
+                {eo?.note ? ` ${maskDigits(eo.note)}` : ""}
+              </p>
+            )}
+            {(o.plan.sheet_skus != null || o.plan.expected_only_skus != null) && (
+              <p className="mt-1 text-xs text-zinc-500">
+                Of the {inr(o.plan.skus)} products in the plan,{" "}
+                {o.plan.sheet_skus != null ? inr(o.plan.sheet_skus) : "—"} are on the month&rsquo;s own sheet
+                {o.plan.expected_only_skus
+                  ? ` and ${inr(o.plan.expected_only_skus)} are there only because the trade keeps buying them`
+                  : " and none are there only because the trade keeps buying them"}
+                .
+              </p>
+            )}
           </>
         )}
       </Live>

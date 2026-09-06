@@ -6,10 +6,10 @@
 
 import Link from "next/link";
 import {
-  asHonesty, asState, asStorage, useLive,
+  asHonesty, asOverview, asState, asStorage, useLive,
 } from "../lib/live";
-import { ceilingRule, maskDigits, P, standingRule } from "../lib/labels";
-import { inr, litres, money, orUnknown, pct, pct1, plural, tonnes } from "../lib/fmt";
+import { ceilingRule, maskDigits, P, pendencyRule, standingRule } from "../lib/labels";
+import { inr, litres, money, orUnknown, pct1, plural, tonnes } from "../lib/fmt";
 import { AsOf, Live, LiveSource, NotLive, OwnStamp, SourceLine } from "./Freshness";
 import { Panel, Pill, Stat } from "./Card";
 import SimBadge from "./SimBadge";
@@ -23,10 +23,11 @@ const hhmmDate = (iso: string) => {
 };
 
 export default function NowStrip() {
-  const live = useLive(["state", "storage", "honesty"]);
+  const live = useLive(["state", "storage", "honesty", "overview"]);
   const st = asState(live.state);
   const storage = asStorage(live.storage);
   const h = asHonesty(live.honesty);
+  const o = asOverview(live.overview);
 
   const prod = st?.factory_production;
   const disp = st?.factory_dispatch;
@@ -40,7 +41,36 @@ export default function NowStrip() {
   const ceiling = ceilingRule(h);
   const standing = standingRule(h);
   const tanks = exim?.tanks;
+
+  /* the dispatch headline, Mark 4 (AC09): how many days of work sit in the open
+     book, and how long a bill waits for a truck. `overview.dispatch` carries no
+     `trucks` field at all — what left the gate today is a detail, not a
+     headline, and lives in a fold at the bottom of this strip. */
+  const d = o?.dispatch ?? null;
+  const pend = pendencyRule(h);
+  const lagStatic = d ? d.lag_static === true : disp?.lag_note?.static === true;
+  /* the state adapter's own lag block is the fallback for a plan built before
+     the daily measurement existed */
   const lag = disp?.lag_note;
+  const lagMedian = d?.lag_median_days ?? lag?.median_days ?? null;
+  const lagP90 = d?.lag_p90_days ?? lag?.p90_days ?? null;
+  const lagMax = d?.lag_max_days ?? lag?.max_days ?? null;
+  const lagRows = d?.lag_rows ?? lag?.rows ?? null;
+  const lagWindow = d?.lag_window ?? lag?.measured_window ?? null;
+  const lagOn = d?.lag_measured_on ?? lag?.measured_on ?? null;
+  const lagCaveat = d?.lag_caveat ?? lag?.caveat ?? null;
+  const lagByCompany = Object.entries(d?.lag_by_company ?? {}).sort((a, b) => (b[1].n ?? 0) - (a[1].n ?? 0));
+  /* WHICH BOOK THE PLAN'S WAIT IS. The gate is one gate carrying three companies, this
+     plan makes Oil, and the engine used to be fed the MERGED median — a day shorter,
+     because Beverages is more than half the rows and turns its trucks fastest. A day of
+     wait is a day of room in a godown that opens full, so the merged figure was buying
+     the plan storage JIVO Oil's own gate log does not give it. */
+  const lagBook = d?.lag_book ?? null;
+  const lagBookName = lagBook && lagBook !== "ALL_BOOKS" ? lagBook.replace("JIVO_", "").toLowerCase() : null;
+  const lagAllMedian = d?.lag_all_books_median_days ?? null;
+  const lagAllP90 = d?.lag_all_books_p90_days ?? null;
+  const lagAllRows = d?.lag_all_books_rows ?? null;
+  const days = (v: number) => `${v} ${plural(v, "day", "days")}`;
 
   /* dispatched today, per company — never one merged headline (spec §Company scoping) */
   const byCompany = Object.entries(disp?.dispatched_today?.by_company ?? {})
@@ -157,7 +187,11 @@ export default function NowStrip() {
         </div>
       </div>
 
-      {/* ── the pile, split by company ─────────────────────────────── */}
+      {/* ── the pile, and the dispatch headline ───────────────────
+          AC09: the headline is the OPEN book and the WAIT, not what left
+          today. "Trucks that left today" used to sit here and it answers the
+          wrong question — a good gate day with a growing book still means the
+          godown fills up. What left today is in the fold at the bottom. */}
       <div className="grid gap-3 md:grid-cols-2">
         <Panel
           title="Billed but still in the godown — Oil"
@@ -187,11 +221,163 @@ export default function NowStrip() {
         </Panel>
 
         <Panel
-          title="Trucks that left today — by company"
+          title="The open dispatch book — days of pendency"
           badge={<SimBadge kind="live" />}
-          asOf={<SourceLine src="factory_dispatch" />}
-          note="Three separate books share one gate. These are never added together — on a bad day the merged figure is nine-tenths Beverages and reads as Oil."
+          asOf={<AsOf rec={live.overview} />}
+          note={pend.text ? maskDigits(pend.text) : undefined}
         >
+          <Live rec={live.overview} what="the dispatch book">
+            {d ? (
+              <>
+                <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3">
+                  <Stat
+                    k="Oil — days of work in the book"
+                    v={orUnknown(d.pendency_days_oil, days)}
+                    tone="text-amber-300"
+                    sub="at the pace the gate has been keeping"
+                  />
+                  <Stat k="All three books" v={orUnknown(d.pendency_days_all, days)} tone="text-zinc-400" />
+                  <Stat k="Oil still in the godown" v={orUnknown(d.oil_pile_l, litres)} />
+                  <Stat k="Open, all books" v={orUnknown(d.open_l_all_books, litres)} tone="text-zinc-400" />
+                  <Stat k="Bills waiting" v={orUnknown(d.open_bills, (v) => inr(v))} />
+                </div>
+                {pileByStatus.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {pileByStatus.map(([k, v]) => (
+                      <Pill key={k} tone={k === "PENDING" ? "amber" : "blue"}>
+                        {k.toLowerCase()}: {orUnknown(v.litres, litres)}
+                      </Pill>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-zinc-500">
+                  {d.basis ? maskDigits(d.basis) : ""}
+                  {d.basis_missing ? ` ${maskDigits(d.basis_missing)}` : ""}
+                </p>
+                <p className="mt-1 text-xs text-amber-300/70">
+                  The three books share one gate and are never added into one Oil headline.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+                  <Stat k="Litres, all books" v={orUnknown(pileAllBooksL, litres)} />
+                  <Stat k="Bills" v={orUnknown(disp?.invoiced_not_dispatched?.bills, (v) => inr(v))} />
+                  <Stat k="Worth" v={orUnknown(disp?.invoiced_not_dispatched?.value_inr, money)} />
+                </div>
+                <p className="mt-2 text-xs text-zinc-500">
+                  This plan does not work out days of pendency — it was built before that was part of the rulebook.
+                  What is shown is the open book straight off the gate system.
+                </p>
+              </>
+            )}
+          </Live>
+        </Panel>
+      </div>
+
+      {/* ── how long a bill waits for a truck ──────────────────────── */}
+      <div className="grid gap-3 md:grid-cols-2">
+        <Panel
+          title="Billed today, on a truck when?"
+          badge={
+            lagStatic ? (
+              <NotLive p={P.lagStatic(lagCaveat)} />
+            ) : (
+              <SimBadge kind="measured" note="re-measured every day off the gate log, not carried" />
+            )
+          }
+          asOf={<OwnStamp iso={lagOn} what="measured" staleAfterHours={lagStatic ? undefined : 30} fallback={<SourceLine src="factory_dispatch" />} />}
+        >
+          <Live rec={live.overview} what="the wait for a truck">
+            {lagBookName && (
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <Pill tone="green" title={d?.lag_book_say ?? undefined}>
+                  {lagBookName} — the book this plan makes for
+                </Pill>
+                <span className="text-xs text-zinc-500">
+                  the figures below are that book&rsquo;s own, and they are what the planner runs on
+                </span>
+              </div>
+            )}
+            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+              <Stat k="Usual wait" v={orUnknown(lagMedian, days)} />
+              <Stat k="Slowest one in ten" v={orUnknown(lagP90, days)} tone="text-amber-300" />
+              <Stat k="Worst seen" v={orUnknown(lagMax, days)} tone="text-red-300" />
+              <Stat k="Bills behind it" v={orUnknown(lagRows, (v) => inr(v))} />
+              <Stat k="Measured over" v={lagWindow ?? "—"} />
+            </div>
+            {lagAllMedian != null && lagBookName && (
+              <p className="mt-2 rounded border border-zinc-800 bg-zinc-900/40 px-2 py-1 text-xs text-zinc-400">
+                All three books together: {days(lagAllMedian)} usually
+                {lagAllP90 != null ? `, ${days(lagAllP90)} for the slowest one in ten` : ""}
+                {lagAllRows != null ? ` over ${inr(lagAllRows)} bills` : ""} — shown because the
+                gate is one gate, and NOT what the plan runs on. The three books are not one
+                queue.
+              </p>
+            )}
+            {d?.headline && <p className="mt-3 text-sm text-zinc-300">{maskDigits(d.headline)}</p>}
+            <p className="mt-2 text-xs text-zinc-500">
+              {maskDigits(lagCaveat ?? lag?.method ?? "")} The plan takes the usual wait and ignores the slow tail.
+            </p>
+          </Live>
+        </Panel>
+
+        <Panel
+          title="The wait, book by book"
+          badge={<SimBadge kind="measured" />}
+          asOf={<OwnStamp iso={lagOn} what="measured" fallback={<AsOf rec={live.overview} />} />}
+          note="Oil is the one that matters here. The other two are shown so a merged figure is never mistaken for it."
+        >
+          <Live rec={live.overview} what="the wait per book">
+            {lagByCompany.length > 0 ? (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-wider text-zinc-500">
+                    <th className="pb-1 font-normal">Book</th>
+                    <th className="pb-1 text-right font-normal">Usual</th>
+                    <th className="pb-1 text-right font-normal">One in ten</th>
+                    <th className="pb-1 text-right font-normal">Worst</th>
+                    <th className="pb-1 text-right font-normal">Bills</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lagByCompany.map(([name, v]) => {
+                    const isOil = name.includes("OIL");
+                    return (
+                      <tr key={name} className={isOil ? "text-zinc-100" : "text-zinc-400"}>
+                        <td className="py-0.5">
+                          <span className="mr-1.5">{name.replace("JIVO_", "").toLowerCase()}</span>
+                          {isOil && <Pill tone="green" title="the planner's own company">ours</Pill>}
+                        </td>
+                        <td className="py-0.5 text-right tabular-nums">{orUnknown(v.median_days, days)}</td>
+                        <td className="py-0.5 text-right tabular-nums">{orUnknown(v.p90_days, days)}</td>
+                        <td className="py-0.5 text-right tabular-nums">{orUnknown(v.max_days, days)}</td>
+                        <td className="py-0.5 text-right tabular-nums">{orUnknown(v.n, (x) => inr(x))}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-sm text-zinc-500">
+                This plan does not split the wait by book. The figure on the left is every book together.
+              </p>
+            )}
+          </Live>
+        </Panel>
+      </div>
+
+      {/* ── what left the gate today: a detail, not a headline ────── */}
+      <details className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-zinc-300">
+          What left the gate today, by company (not a headline)
+        </summary>
+        <p className="mt-2 text-xs text-zinc-500">
+          A good gate day does not mean the book is clearing — that is what the panel above measures. Three separate
+          books share one gate and these are never added together: on a bad day the merged figure is nine-tenths
+          Beverages and reads as Oil.
+        </p>
+        <div className="mt-3">
           <LiveSource src="factory_dispatch" what="the gate log">
             <table className="w-full text-sm">
               <thead>
@@ -237,55 +423,8 @@ export default function NowStrip() {
               </p>
             )}
           </LiveSource>
-        </Panel>
-      </div>
-
-      {/* ── the all-books backlog, and the lag ─────────────────────── */}
-      <div className="grid gap-3 md:grid-cols-2">
-        <Panel
-          title="The open dispatch book — all three companies"
-          badge={<SimBadge kind="live" />}
-          asOf={<SourceLine src="factory_dispatch" />}
-          note={disp?.invoiced_not_dispatched?.basis ? maskDigits(disp.invoiced_not_dispatched.basis) : undefined}
-        >
-          <LiveSource src="factory_dispatch" what="the dispatch book">
-            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-              <Stat k="Litres, all books" v={orUnknown(pileAllBooksL, litres)} />
-              <Stat k="Bills" v={orUnknown(disp?.invoiced_not_dispatched?.bills, (v) => inr(v))} />
-              <Stat k="Worth" v={orUnknown(disp?.invoiced_not_dispatched?.value_inr, money)} />
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {pileByStatus.map(([k, v]) => (
-                <Pill key={k} tone={k === "PENDING" ? "amber" : "blue"}>
-                  {k.toLowerCase()}: {orUnknown(v.litres, litres)}
-                </Pill>
-              ))}
-            </div>
-            <p className="mt-2 text-xs text-amber-300/70">
-              This is all three books together and it is not dated — it is the whole open backlog. The Oil-only slice is
-              the tile on the left.
-            </p>
-          </LiveSource>
-        </Panel>
-
-        <Panel
-          title="Billed today, on a truck when?"
-          badge={<NotLive p={P.lagStatic(lag?.caveat)} />}
-          asOf={<OwnStamp iso={lag?.measured_on} what="measured" fallback={<SourceLine src="factory_dispatch" />} />}
-        >
-          <LiveSource src="factory_dispatch" what="the lag">
-            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-              <Stat k="Usual wait" v={orUnknown(lag?.median_days, (v) => `${v} ${plural(v, "day", "days")}`)} />
-              <Stat k="Slowest nine in ten" v={orUnknown(lag?.p90_days, (v) => `${v} days`)} tone="text-amber-300" />
-              <Stat k="Worst seen" v={orUnknown(lag?.max_days, (v) => `${v} days`)} tone="text-red-300" />
-              <Stat k="Measured over" v={lag?.measured_window ?? "—"} />
-            </div>
-            <p className="mt-2 text-xs text-zinc-500">
-              {maskDigits(lag?.method ?? "")} The plan takes the usual wait and ignores the slow tail.
-            </p>
-          </LiveSource>
-        </Panel>
-      </div>
+        </div>
+      </details>
 
       {/* ── demand: what is really ordered ─────────────────────────── */}
       <div className="grid gap-3 md:grid-cols-3">

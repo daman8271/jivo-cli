@@ -8,8 +8,8 @@
 // Where they disagree the row is marked. A planner that hides the disagreement
 // is a planner nobody checks.
 
-import { asDay, asHonesty, asState, dayId, useLive } from "../lib/live";
-import { isRealiseOutlier, maskDigits, realiseOutlier } from "../lib/labels";
+import { asDay, asHonesty, asOverview, asState, dayId, useLive } from "../lib/live";
+import { isRealiseOutlier, maskDigits, prefWords, realiseOutlier } from "../lib/labels";
 import { inr, litres, money, orUnknown, plural } from "../lib/fmt";
 import { AsOf, Live, LiveSource, SourceLine } from "./Freshness";
 import { Panel, Pill, Stat } from "./Card";
@@ -19,11 +19,14 @@ import type { PlanRun, RunNow } from "../lib/types";
 const TODAY = dayId(1);
 
 export default function BuildClient() {
-  const live = useLive(["state", TODAY, "honesty"]);
+  const live = useLive(["state", TODAY, "honesty", "overview"]);
   const st = asState(live.state);
   const day = asDay(live[TODAY]);
   const h = asHonesty(live.honesty);
+  const o = asOverview(live.overview);
   const outlier = realiseOutlier(h);
+  // the one machine allowed a second session tonight, from the plan itself
+  const night = o?.night_line ?? day?.night_line ?? null;
 
   const prod = st?.factory_production;
   const running: RunNow[] = prod?.running_now ?? [];
@@ -118,6 +121,14 @@ export default function BuildClient() {
                   </Pill>
                 )}
                 {agree && <Pill tone="green">on plan</Pill>}
+                {night?.line === line && (
+                  <Pill
+                    tone="violet"
+                    title={night.reason ? `picked because it has ${maskDigits(night.reason)}` : "the one machine given a second session tonight"}
+                  >
+                    second session tonight
+                  </Pill>
+                )}
                 {/* right-hand end of the header: today's tally, then this
                     machine's own freshness line — the left half of the panel
                     below is read live off the factory app, so it says when */}
@@ -180,6 +191,13 @@ export default function BuildClient() {
                             <span>{r.hours.toFixed(1)} h</span>
                             {r.flush_min > 0 && <span className="text-amber-300">{r.flush_min} min oil change</span>}
                             {r.value != null && <span>{money(r.value)}</span>}
+                            {r.family && <span className="text-zinc-500">{r.family}</span>}
+                            {r.pref != null && r.pref > 1 && (
+                              <span className="text-amber-300" title="every machine it would rather be on was full">
+                                {prefWords(r.pref)}
+                              </span>
+                            )}
+                            {r.night && <span className="text-violet-300">on the second session</span>}
                             {r.po_backed === false && <span className="text-violet-300">no order behind it</span>}
                           </div>
                         </li>

@@ -10,4 +10,5 @@ export const ROUTES: [string, string][] = [
   ["/materials", "Stock"],
   ["/order-by", "Order by when"],
   ["/floor", "Floor map"],
+  ["/assumptions", "Taken as fact"],
 ];

@@ -490,7 +490,16 @@ export type Overview = {
     peak_day?: { date: string; made_l: number };
     oil_changes?: number | null;
   };
-  plan: { litres: number; skus: number; made_vs_plan_pct: number; source?: string };
+  plan: {
+    litres: number;
+    skus: number;
+    made_vs_plan_pct: number;
+    source?: string;
+    /** how many of those SKUs are on the month's sheet … */
+    sheet_skus?: number;
+    /** … and how many are only there because the trade keeps buying them */
+    expected_only_skus?: number;
+  };
   demand: {
     rows: number;
     real_rows: number;
@@ -535,6 +544,41 @@ export type Overview = {
     days_ge_100: string[];
     throttle_events?: number;
     pct_at_open?: number;
+    /** which company's gate the invoice-to-truck wait was measured on. The plan
+        runs on JIVO Oil's own; the merged three-book figure rides beside it. */
+    invoice_truck_lag_book?: string | null;
+  };
+  /** B20 — the godown limit, and what it did to THIS run. It caps every run to the
+      room left in the godown; it is the biggest single hand on the month's sheet and
+      it used to be invisible. Never a claim: every field is counted off the days the
+      engine just produced. */
+  storage_cap?: {
+    rule: string;
+    in_effect: boolean;
+    ceiling_l: number;
+    what_it_does: string;
+    /** days the cap actually stopped or shortened work — the number to quote */
+    days_it_bit: number;
+    days_it_bit_dates?: string[];
+    /** days that OPENED with the godown nearly full. A day that opens with room and
+        fills it is not in here, which is why it is the smaller of the two. */
+    days_throttled: number;
+    days_throttled_say?: string;
+    working_days: number;
+    days_throttled_dates?: string[];
+    runs_cut_short?: number;
+    litres_cut_off_runs_it_allowed?: number;
+    products_stopped_outright?: number;
+    products_stopped_codes?: string[];
+    days_at_zero_headroom?: number;
+    month_made_l: number;
+    month_sheet_l: number;
+    month_made_pct_of_sheet: number | null;
+    products_on_the_sheet: number;
+    products_never_made: number;
+    products_never_made_top?: { code: string; sku: string; month_target_litres: number }[];
+    why_it_is_a_build_choice: string;
+    headline: string;
   };
   day1_blocked?: {
     attempts: number;
@@ -543,7 +587,9 @@ export type Overview = {
     top_binder?: { code: string; name: string; kind: string; attempts: number; products: number } | null;
     note?: string;
   };
-  august?: { sim_made_l: number; actual_made_l: number; delta_pct: number; note?: string };
+  august?: { sim_made_l: number; actual_made_l: number; delta_pct: number; note?: string;
+    measured_on?: string; reproducible?: boolean; changed_since_measured?: string[];
+    source?: string };
   materials_mini?: {
     components: number;
     under_100_cover: number;
@@ -556,6 +602,176 @@ export type Overview = {
   };
   loops_mini?: { chains: number; resolved: number; ran_after_unblock: number };
   unproducible?: Unproducible[];
+
+  /* ───────────────────────────── Mark 4 ─────────────────────────────
+     Everything below arrives only from a rulebook run. Each is optional, and
+     a component that reads one must render nothing rather than a zero when it
+     is absent — a Mark 3 body is still a valid body.
+
+     `warnings` is deliberately NOT here: in rulebook mode the overview stops
+     carrying them and honesty.json is the one place they live (Footer already
+     reads them from there). Do not put them back. */
+
+  rulebook?: {
+    version: string;
+    written?: string;
+    owner?: string;
+    applied?: boolean;
+    hours_per_session?: number | null;
+    night_sessions?: number | null;
+  };
+  /** which day the plan calls day 1, in its own words */
+  day1?: { date: string; weekday?: string; working?: boolean };
+  /** the day in rupees, against the plant's own floor and target */
+  money?: {
+    today_plan_rs: number;
+    today_booked_rs?: number | null;
+    today_booked_pieces?: number | null;
+    mtd_made_rs?: number | null;
+    mtd_days?: number | null;
+    target_rs_per_day?: number | null;
+    floor_rs_per_day?: number | null;
+    on_target_today?: boolean;
+    /** THE MONTH against the daily floor and the daily target. `on_target_today` is a
+        statement about ONE day, and day 1 is the one day the godown limit does not
+        bite — a green tick there was sitting over a month that misses the floor on
+        almost every working day it has left (R16/F5). */
+    month?: {
+      sheet_rs_at_the_same_prices: number;
+      sheet_rows_priced_by_default?: number;
+      default_rs_per_l?: number | null;
+      plan_pct_of_sheet_rs: number | null;
+      plan_rs: number;
+      working_days: number;
+      days_above_floor: number;
+      days_below_floor: number;
+      days_on_target: number;
+      target_rs_if_every_working_day_hit_it: number | null;
+      pct_of_a_month_of_targets: number | null;
+      worst_day: string | null;
+      note: string;
+    };
+    above_floor_today?: boolean;
+    mtd_by_basis?: Record<string, number>;
+    basis?: string;
+    booked_basis?: string;
+    mtd_basis?: string;
+  };
+  /** one row per machine for TODAY — the overview is line by line in Mark 4 */
+  lines_today?: {
+    line: string;
+    night?: boolean;
+    hours_planned: number;
+    hours_available: number;
+    runs: number;
+    pieces: number;
+    litres: number;
+    value_rs: number;
+    product_changes?: number;
+    products?: {
+      code: string;
+      sku: string;
+      litres: number;
+      pieces: number;
+      hours: number;
+      family?: string | null;
+      pref?: number | null;
+      po_backed?: boolean;
+    }[];
+  }[];
+  night_line?: NightLine | null;
+  /** the dispatch HEADLINE in Mark 4: days of pendency and how long a bill waits.
+   *  `trucks` is not in this object at all — what left today is not the headline. */
+  dispatch?: {
+    open_l_all_books?: number | null;
+    open_bills?: number | null;
+    oil_pile_l?: number | null;
+    pendency_days_all?: number | null;
+    pendency_days_oil?: number | null;
+    trailing_days?: number | null;
+    basis?: string;
+    basis_missing?: string | null;
+    lag_median_days?: number | null;
+    lag_p90_days?: number | null;
+    lag_max_days?: number | null;
+    lag_mean_days?: number | null;
+    lag_rows?: number | null;
+    lag_window?: string | null;
+    lag_measured_on?: string | null;
+    /** false = re-measured every day; true = one measurement carried forward */
+    lag_static?: boolean;
+    lag_basis?: string;
+    lag_caveat?: string;
+    lag_by_company?: Record<string, { median_days?: number; p90_days?: number; max_days?: number; mean_days?: number; n?: number }>;
+    /** WHICH BOOK the lag above is. The gate is one gate carrying three companies and
+        this plan makes Oil, so the engine is fed Oil's own wait; the merged all-books
+        figure is published beside it and never instead of it. */
+    lag_book?: string | null;
+    lag_book_say?: string | null;
+    lag_all_books_median_days?: number | null;
+    lag_all_books_p90_days?: number | null;
+    lag_all_books_rows?: number | null;
+    headline?: string;
+  };
+  /** what the plan could not make, and the reason in the planner's own words */
+  stuck?: {
+    /** `want_*` is what the planner tried to fill TODAY. `month_target_*` is that
+        product's whole line on the month's sheet. Two different counts — the data
+        names them apart and `litres_note` says never to add them. */
+    material?: { code: string; sku: string; want_pieces?: number; want_litres?: number;
+      month_target_pieces?: number; month_target_litres?: number;
+      short_of?: { code: string; name: string }[]; ordered?: boolean }[];
+    /** B20 — the machine had the hours and the material was there; the godown had
+        nowhere to put the output. A different reason needing a different answer:
+        no purchase order fixes it. */
+    storage?: { code: string; sku: string; want_pieces?: number; want_litres?: number;
+      month_target_pieces?: number; month_target_litres?: number;
+      ordered?: boolean; machines_with_room?: string[] }[];
+    no_order?: { code: string; sku: string; month_target_pieces?: number; month_target_litres?: number;
+      ordered?: boolean; expected_only?: boolean; ordered_later?: boolean }[];
+    no_line_time?: { code: string; sku: string; month_target_pieces?: number; month_target_litres?: number;
+      ordered?: boolean; machines_with_room?: string[] }[];
+    manual?: ManualFill[];
+    /** true when the godown was too full to start anything at all */
+    godown_full_today?: boolean;
+    definitions?: Record<string, string>;
+    /** gen's own heading for each bucket — it is written from the same rows as the
+        definition, so a hand-typed heading cannot contradict the sentence under it */
+    headings?: Record<string, string>;
+    counts?: Record<string, number>;
+    /** hours each machine still had free on day 1 */
+    hours_free_today?: Record<string, number>;
+    litres_note?: string;
+  };
+  /** the drums: filled by hand, never scheduled on a machine */
+  manual_fill?: ManualFill[];
+  manual_fill_note?: string;
+  expected_orders?: {
+    present?: boolean;
+    used?: boolean;
+    window?: { from?: string; to?: string; months?: number };
+    months?: number;
+    share_of_demand_pct?: number | null;
+    fallback_reason?: string | null;
+    fetched_at?: string | null;
+    source?: string;
+    note?: string;
+    age_days?: number | null;
+  };
+  /** the warnings live in honesty.json — this only says how many and where */
+  warnings_count?: number;
+  warnings_where?: string;
+  sources?: Record<string, { source?: string; fetched_at?: string | null; server_at?: string | null; mode?: string; note?: string }>;
+};
+
+/** A product that is filled by hand off a machine — the drums (R14). */
+export type ManualFill = {
+  code: string;
+  sku: string;
+  litres_per_piece?: number;
+  plan_pieces?: number;
+  plan_litres?: number;
+  display?: string;
 };
 
 export type Unproducible = {
@@ -584,7 +800,13 @@ export type SpineDay = {
   headroom_l: number;
   runs: number;
   flushes: number;
+  /** ATTEMPTS stopped that day — one product tried on four machines is four rows.
+      Never render this as a count of products; see `blocked_products`. */
   blocked: number;
+  /** how many DIFFERENT products could not start that day — the one to show */
+  blocked_products?: number;
+  /** gen's own words for which of the two is which */
+  blocked_label?: string;
   unblocked: number;
   bought: number;
   oil_used_l: number;
@@ -599,6 +821,8 @@ export type SpineDay = {
   };
   dispatched: { real_l: number; forecast_l: number };
   received_count?: number;
+  /** Mark 4: the line given the second session that day, by name */
+  night_line?: string | null;
   events?: Record<string, number>;
   book?: PlanBook;
   open_real_l_computed?: number;
@@ -628,6 +852,17 @@ export type PlanRun = {
   realise?: number;
   value?: number;
   po_backed?: boolean;
+  /* Mark 4. The rulebook decides WHICH machine a run may open on, so a run now
+     carries the pack slot, the bottle family and which choice of line this was.
+     All optional: an older plan file has none of them and must still render. */
+  slot?: string;
+  family?: string | null;
+  /** 1 = its first-choice line, 2 = only because the first choice was full, 3 = last resort */
+  pref?: number | null;
+  /** true when this run is on the one machine allowed a second session that day */
+  night?: boolean;
+  fills?: number;
+  containers?: number;
 };
 
 export type OrderRow = {
@@ -665,6 +900,12 @@ export type DayDetail = {
   oil_on_hand_l: number;
   line_util: number;
   line_hours: Record<string, number>;
+  /** Mark 4: the hours each line was ALLOWED that day — 10, or 20 for the night line */
+  line_hours_max?: Record<string, number>;
+  /** Mark 4: the one machine given a second session, and why it was picked */
+  night_line?: NightLine | null;
+  /** Mark 4: how many times each line changed product that day */
+  product_changes?: Record<string, number>;
   flushes: number;
   storage: {
     physical_l: number;
@@ -679,7 +920,16 @@ export type DayDetail = {
   book?: PlanBook;
   open_real_l_computed?: number;
   runs: PlanRun[];
-  blocked: { code: string; sku: string; want: number; binder: string; binder_name: string }[];
+  /** one row per ATTEMPT — the same product appears once per machine it was tried on */
+  /** one row per ATTEMPT: the planner tries a product on every machine that could
+      fill it, on every pass of the day, so the SAME (product, binder) pair appears
+      several times. Render them de-duplicated — see `blocked_label`. `reason` is
+      "material" (a bottle ran out) or "storage" (B20: the godown had no room). */
+  blocked: { code: string; sku: string; want: number; binder: string; binder_name: string;
+    reason?: string }[];
+  /** how many DIFFERENT products those rows are */
+  blocked_products?: number;
+  blocked_label?: string;
   unblocked: { code: string; name?: string }[];
   waiting_on: { code: string; name: string; since: string }[];
   received: { code: string; name: string; qty: number; kind: string }[];
@@ -804,14 +1054,63 @@ export type LoopsData = {
   resolved_note?: string;
 };
 
+/** How the rulebook arrived at the speed the plan uses for one line + pack.
+ *  Mark 3 had three words; Mark 4 has five, and they are not interchangeable:
+ *    capped   80% of the listed speed, then held to the best August sustained run
+ *    rated    80% of the listed speed — August had no run long enough to hold it to
+ *    typical  the middle August run — the app has no listed speed for this pack
+ *    carried  a speed carried from the last plan, cut to 80% — nothing else exists
+ *    derived  taken from another pack on the same machine — never timed on its own
+ */
+export type SpeedBasis = "capped" | "rated" | "typical" | "carried" | "derived" | string;
+
 export type LineSlot = {
   slot: string;
   stored_rate_per_hr: number;
-  /** rated | observed | derived — the honest basis for the speed */
-  rate_basis: string;
+  /** capped | rated | typical | carried | derived — the honest basis for the speed */
+  rate_basis: SpeedBasis;
   rate_basis_raw?: string;
   effective_rate_per_hr: number;
   note?: string;
+  /* ── Mark 4 ── every one of these can be absent, and absent is never zero. */
+  /** which bottle/pack families may open here, and at which preference (1/2/3) */
+  families?: Record<string, number>;
+  /** the speed the factory app lists for this machine and pack */
+  rated?: number | null;
+  rated_basis?: string | null;
+  /** the middle August run, and the best one that lasted long enough to count */
+  aug_median?: number | null;
+  aug_best?: number | null;
+  aug_runs?: number;
+  aug_runs_sustained?: number;
+  /** the speed the plan actually uses */
+  planning?: number | null;
+  planning_basis?: string | null;
+  planning_rule?: {
+    kind?: SpeedBasis;
+    factor?: number | null;
+    rated?: number | null;
+    best?: number | null;
+    median?: number | null;
+    median_sustained?: number | null;
+    runs?: number;
+    runs_sustained?: number;
+    sustained_min_minutes?: number;
+    min_runs?: number;
+    carried_from?: number | null;
+    derived_from?: string[] | null;
+  } | null;
+  /** the pouch machine runs two sets at once — its own rate, said separately */
+  set_of_two_rate_per_hr?: number | null;
+  set_of_two_basis?: string | null;
+};
+
+/** A pack a line CAN take but has no speed for — a ruling is needed, and the
+ *  plan puts nothing there in the meantime. Shown, never dropped. */
+export type NoSpeedSlot = {
+  slot: string;
+  families?: Record<string, number>;
+  why: string;
 };
 
 export type LineStat = {
@@ -826,6 +1125,21 @@ export type LineStat = {
   days_active: number;
   flush_minutes: number;
   top_skus?: { sku: string; litres: number }[];
+  /* ── Mark 4 ── */
+  /** the dates this line is given the second session */
+  night_days?: string[];
+  /** the hours it is allowed TODAY — 10, or 20 if it has tonight's second session */
+  hours_max_today?: number | null;
+  no_speed_slots?: NoSpeedSlot[];
+};
+
+/** The one machine given a second session, and why it was picked. */
+export type NightLine = {
+  line: string | null;
+  reason?: string;
+  po_backed_l_unmade?: number | null;
+  hours?: number | null;
+  candidates?: { line: string; po_backed_l?: number; other_l?: number }[];
 };
 
 export type LinesData = {
@@ -837,6 +1151,15 @@ export type LinesData = {
   total_litres_note?: string;
   measured_slots?: string[];
   measured_from?: string;
+  /* ── Mark 4 ── */
+  planning_factor?: number | null;
+  planning_factor_basis?: string;
+  sustained_hours?: number | null;
+  night_line_today?: NightLine | null;
+  hours_per_session?: number | null;
+  rulebook_version?: string;
+  rate_basis_words?: string[];
+  runs_by_line?: Record<string, number>;
 };
 
 export type LabelRule = {
@@ -856,7 +1179,9 @@ export type HonestyData = {
   >;
   warnings?: string[];
   label_rules: LabelRule[];
-  august_calibration?: { sim_made_l: number; actual_made_l: number; delta_pct: number; note?: string };
+  august_calibration?: { sim_made_l: number; actual_made_l: number; delta_pct: number; note?: string;
+    measured_on?: string; reproducible?: boolean; changed_since_measured?: string[];
+    source?: string };
   not_here?: Record<string, string>;
 };
 
@@ -948,4 +1273,175 @@ export type HistoryData = {
   basis: Record<string, string>;
   notes: string[];
   unavailable_reason: string | null;
+};
+
+/* ─────────────────── FORWARD — plan/assumptions.json ───────────────────
+   Mark 4's centrepiece, and the reason the project exists: the plan's own
+   answer to "why does it say that". Three separate things, never blended:
+
+     settled        what the plant has RULED. Not ours to change.
+     assumed        what the computer filled in for itself because nobody has
+                    ruled yet — each one says whether it is in effect THIS run.
+     build_choices  where the rulebook was silent and this build had to pick.
+
+   Plus the speeds, the eligibility matrix, where the sheet disagrees with the
+   recipe, and the questions still waiting for an answer. Everything is a plain
+   list, so /assumptions can render all of it without knowing any of it. */
+
+export type SettledRule = {
+  id: string;
+  rule: string;
+  source?: string;
+  /** did THIS run really honour it. The freeze computes a verdict for the rulings it
+      can (the money floor, the daily-measured lag) exactly as it does for the
+      assumptions, and the page used to throw them away — a settled ruling never said
+      whether the run in front of you kept it. null = nothing this cycle exercised it. */
+  in_effect?: boolean | null;
+  in_effect_note?: string;
+};
+
+export type AssumedRule = {
+  id: string;
+  assumption: string;
+  why?: string;
+  /** what would replace this assumption with a ruling */
+  changes_it?: string;
+  /** is this assumption actually doing anything on THIS run */
+  in_effect?: boolean;
+  in_effect_note?: string;
+};
+
+export type BuildChoice = {
+  id: string;
+  choice: string;
+  why?: string;
+  changes_it?: string;
+};
+
+export type SpeedRow = {
+  line: string;
+  slot: string;
+  set_of_two?: boolean;
+  rated?: number | null;
+  aug_median?: number | null;
+  aug_best?: number | null;
+  aug_runs?: number | null;
+  planning?: number | null;
+  basis?: string;
+  basis_kind?: SpeedBasis;
+  used_by_the_plan?: boolean;
+};
+
+export type EligibilityRow = {
+  line: string;
+  slot: string;
+  /** family → preference: 1 first choice, 2 when the first choice is full, 3 last resort */
+  families: Record<string, number>;
+  has_a_speed?: boolean;
+};
+
+/** A plan-sheet row whose pack type disagrees with the recipe's own container. */
+export type SheetDisagreement = {
+  code: string;
+  sku: string;
+  sheet_pack_type?: string;
+  container_name?: string;
+  slot?: string;
+  family?: string;
+};
+
+export type OpenQuestion = {
+  number: number;
+  section: string;
+  title: string;
+  question: string;
+  status: string;
+  answer?: string | null;
+};
+
+export type AcceptanceCheck = {
+  id: string;
+  text: string;
+  /** the WHOLE line is this file's to pass */
+  checked_here?: boolean;
+  /** some clauses are and some are not — see `clauses` */
+  checked_here_in_part?: boolean;
+  /** a verdict on the whole line, or null when the whole line is not this file's */
+  passed?: boolean | null;
+  /** the verdict on the clauses this file DID check */
+  passed_here?: boolean | null;
+  checks?: number;
+  /** an acceptance line is several checks in one sentence; each says who owns it */
+  clauses?: { clause: string; checked_here: boolean; checked_here_in_part?: boolean;
+    verdict_by: string }[];
+  verdict_by?: string;
+};
+
+export type AssumptionsData = {
+  meta: PlanMeta & {
+    rulebook_version?: string;
+    rulebook_written?: string;
+    rulebook_owner?: string;
+    rulebook_sources?: Record<string, string>;
+    note?: string;
+  };
+  settled: SettledRule[];
+  assumed: AssumedRule[];
+  build_choices: BuildChoice[];
+  speeds: SpeedRow[];
+  eligibility: EligibilityRow[];
+  excluded_lines?: Record<string, string>;
+  sheet_disagrees: SheetDisagreement[];
+  open_questions: OpenQuestion[];
+  /** A16 in full — the note beside it shows only the first few */
+  a16_products?: {
+    named_in_the_rule: string[];
+    classed_the_same_way_and_not_named: string[];
+    named_but_not_classed_that_way: string[];
+  };
+  open_questions_source?: string;
+  open_questions_convention?: string;
+  /** what this particular run had to guess, and what it wants you to know */
+  this_run?: {
+    assumed?: string[];
+    warnings?: string[];
+    prefs_used?: Record<string, number>;
+    product_changes?: number | null;
+    product_changes_by_line?: Record<string, number>;
+    second_change_allowed?: number | null;
+    second_change_allowed_more_than_once?: number | null;
+    /** SESSIONS OPENED. Not hours, and not crews that did anything — see below. */
+    night_sessions?: number | null;
+    night_sessions_worked?: number | null;
+    night_hours_used?: number | null;
+    night_hours_rostered?: number | null;
+    night_litres?: number | null;
+    filled_by_hand?: string[];
+    storage_cap?: Overview["storage_cap"];
+  };
+  /** where a figure came from when the first choice was not available */
+  fallbacks?: {
+    expected_orders?: { used?: boolean; reason?: string | null; instead?: string };
+    lag?: { measured_daily?: boolean; source?: string; measured_on?: string | null; instead?: string };
+    night_line?: NightLine & { instead?: string };
+  };
+  freshness?: {
+    rulebook_written?: string;
+    questions_file?: string;
+    questions_file_read_at?: string | null;
+    state_collected_at?: string | null;
+    expected_orders_file?: {
+      present?: boolean;
+      fetched_at?: string | null;
+      window?: { from?: string; to?: string; months?: number };
+      mode?: string;
+      age_days?: number | null;
+    };
+    lag_file?: { measured_on?: string | null; measured_once?: boolean; window?: string; rows?: number };
+    history_through?: string | null;
+  };
+  preference_semantics?: string;
+  drums?: { scheduled?: boolean; skus?: string[]; display?: string; source?: string };
+  acceptance: AcceptanceCheck[];
+  acceptance_note?: string;
 };

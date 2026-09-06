@@ -9,11 +9,12 @@ import { LoopBanner } from "../components/Freshness";
 // cannot and does not read a single number.
 export const metadata: Metadata = {
   title: {
-    default: "JIVO Mark 3 — the plant, right now",
-    template: "%s · JIVO Mark 3",
+    default: "JIVO Mark 4 — the plant, right now",
+    template: "%s · JIVO Mark 4",
   },
   description:
-    "JIVO Oil's plant as it stands right now, re-planned to the end of the month every few minutes. Only today is read off the plant; every later day is worked out from it.",
+    "JIVO Oil's plant as it stands right now, re-planned to the end of the month every few minutes. Only today is " +
+    "read off the plant; every later day is worked out from it — and every rule and guess behind it is written down.",
 };
 
 export default function Root({ children }: { children: React.ReactNode }) {

@@ -195,7 +195,15 @@ export default function DaysClient() {
                     }
                   />
                   <Stat k="Runs" v={inr(hoveredPlan.runs)} />
-                  <Stat k="Stuck" v={inr(hoveredPlan.blocked)} tone={hoveredPlan.blocked > 0 ? "text-red-300" : "text-zinc-100"} />
+                  {/* PRODUCTS, not rows. `blocked` is one row per attempt and a product
+                      is tried on every machine that could fill it, so the row count runs
+                      to nearly double the products behind it. */}
+                  <Stat
+                    k="Stuck products"
+                    v={orUnknown(hoveredPlan.blocked_products, inr, "—")}
+                    tone={(hoveredPlan.blocked_products ?? 0) > 0 ? "text-red-300" : "text-zinc-100"}
+                    sub={`${inr(hoveredPlan.blocked)} ${plural(hoveredPlan.blocked, "try", "tries")} stopped`}
+                  />
                   <Stat k="Ordered lines" v={inr(hoveredPlan.orders.real_rows)} tone="text-emerald-300" />
                   <Stat k="Expected lines" v={inr(hoveredPlan.orders.forecast_rows)} tone="text-violet-300" />
                 </div>
@@ -461,7 +469,9 @@ export default function DaysClient() {
                     <th className="py-1 text-right font-normal">Busy</th>
                     <th className="py-1 text-right font-normal">Godown</th>
                     <th className="py-1 text-right font-normal">Runs</th>
-                    <th className="py-1 text-right font-normal">Stuck</th>
+                    <th className="py-1 text-right font-normal" title={spine[0]?.blocked_label}>
+                      Stuck products
+                    </th>
                     <th className="py-1 text-right font-normal">Ordered</th>
                     <th className="py-1 text-right font-normal">Expected</th>
                   </tr>
@@ -496,7 +506,12 @@ export default function DaysClient() {
                         {pct1(x.storage_pct)}
                       </td>
                       <td className="py-1 text-right tabular-nums">{x.runs}</td>
-                      <td className={`py-1 text-right tabular-nums ${x.blocked > 0 ? "text-red-300" : ""}`}>{x.blocked}</td>
+                      <td
+                        title={`${inr(x.blocked)} ${plural(x.blocked, "try", "tries")} stopped — ${x.blocked_label ?? ""}`}
+                        className={`py-1 text-right tabular-nums ${(x.blocked_products ?? 0) > 0 ? "text-red-300" : ""}`}
+                      >
+                        {orUnknown(x.blocked_products, inr, "—")}
+                      </td>
                       <td className="py-1 text-right tabular-nums text-emerald-300">{x.orders.real_rows}</td>
                       <td className="py-1 text-right tabular-nums text-violet-300">{x.orders.forecast_rows}</td>
                     </tr>
@@ -506,7 +521,9 @@ export default function DaysClient() {
             </div>
             <p className="mt-3 text-xs text-zinc-500">
               &ldquo;Ordered&rdquo; and &ldquo;Expected&rdquo; are order LINES, not litres — on a quiet day every one of
-              them is expected. {o ? `${plural(o.totals.days, "This day is", "These days are")} re-worked every few minutes.` : ""}
+              them is expected. &ldquo;Stuck products&rdquo; counts DIFFERENT products the planner could not start; a
+              product is tried on every machine that could fill it, so the number of stopped tries behind it is larger
+              &mdash; hover a figure for it. {o ? `${plural(o.totals.days, "This day is", "These days are")} re-worked every few minutes.` : ""}
             </p>
           </Live>
         </Panel>

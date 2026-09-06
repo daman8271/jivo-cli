@@ -1,5 +1,6 @@
 // The dense dark-zinc idiom, carried over from Mark 2 unchanged, plus one
-// addition Mark 3 needs everywhere: a panel header slot for the "as of" stamp.
+// addition every live mark needs everywhere: a panel header slot for the
+// "as of" stamp.
 
 export function Card({
   title, value, sub, tone = "", badge,

@@ -13,6 +13,7 @@ import { dlabel, inr, litres, money, orUnknown, pct, pct1, plural } from "../lib
 import { AsOf, Live, LiveSource, NotLive, SourceLine } from "./Freshness";
 import { Card, Panel, Pill, Stat } from "./Card";
 import SimBadge from "./SimBadge";
+import StorageCapStrip from "./StorageCapStrip";
 
 export default function StorageClient() {
   const live = useLive(["storage", "state", "honesty"]);
@@ -279,6 +280,11 @@ export default function StorageClient() {
             )}
           </Live>
         </Panel>
+
+        {/* B20 — the limit is not just a number on this page, it is the rule that
+            decides the month. The front page carries the same block; this is where a
+            reader lands from it. */}
+        <StorageCapStrip />
       </div>
     </div>
   );

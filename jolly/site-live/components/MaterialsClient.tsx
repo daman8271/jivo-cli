@@ -6,7 +6,7 @@
 
 import Link from "next/link";
 import { asHonesty, asMaterials, asOverview, asState, useLive } from "../lib/live";
-import { maskDigits, P, unproducibleCodes } from "../lib/labels";
+import { manualRule, maskDigits, P, unproducibleCodes } from "../lib/labels";
 import { dlabel, inr, litres, money, orUnknown, pct1, plural, tonnes } from "../lib/fmt";
 import { AsOf, Live, LiveSource, NotLive, OwnStamp, SourceLine } from "./Freshness";
 import { Card, Panel, Pill, Stat } from "./Card";
@@ -27,6 +27,11 @@ export default function MaterialsClient() {
   const contract = exim?.inbound?.in_contract ?? [];
   const bulkPos = exim?.open_bulk_pos ?? [];
   const cannotMake = unproducibleCodes(h);
+  const manual = manualRule(h);
+  /* the drums (R14): filled by hand, on no machine. They sit UNDER the
+     "no machine can fill it" panel and are pointedly not in it — a drum is not
+     a gap in the plant, it is a job somebody does with a hose. */
+  const byHand = o?.manual_fill ?? [];
   const nonMovingPcs = o?.opening.packaging_in_non_moving_rooms_pcs ?? null;
 
   return (
@@ -268,6 +273,38 @@ export default function MaterialsClient() {
                 Codes: {cannotMake.join(", ")}. Shown, never hidden.
               </p>
             )}
+          </Panel>
+        </div>
+      )}
+
+      {byHand.length > 0 && (
+        <div className="mt-4">
+          <Panel
+            title="Filled by hand — not scheduled here"
+            badge={<SimBadge kind="plan" />}
+            asOf={<AsOf rec={live.overview} />}
+            note={maskDigits(o?.manual_fill_note ?? manual.text ?? "")}
+          >
+            <ul className="space-y-1 text-sm">
+              {byHand.map((m) => (
+                <li key={m.code} className="flex flex-wrap items-baseline gap-2 border-t border-zinc-800/60 py-1 first:border-0">
+                  <span className="font-mono text-[11px] text-zinc-500">{m.code}</span>
+                  <span>{m.sku}</span>
+                  <Pill tone="zinc">{maskDigits(m.display ?? manual.display ?? "")}</Pill>
+                  <span className="ml-auto tabular-nums text-zinc-400">
+                    {m.plan_litres != null ? litres(m.plan_litres) : "—"}
+                  </span>
+                  {m.plan_pieces != null && (
+                    <span className="tabular-nums text-zinc-500">
+                      {inr(m.plan_pieces)} {plural(m.plan_pieces, "drum", "drums")}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-zinc-500">
+              These are in the month&rsquo;s target and they will be filled. No machine is missing for them.
+            </p>
           </Panel>
         </div>
       )}

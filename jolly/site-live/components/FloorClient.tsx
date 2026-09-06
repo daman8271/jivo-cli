@@ -16,6 +16,14 @@ import Floor2D from "./Floor2D";
 import { AsOf, Live, NotLive, SourceLine } from "./Freshness";
 import { Panel, Pill, Stat } from "./Card";
 import SimBadge from "./SimBadge";
+import type { DayDetail } from "../lib/types";
+
+/** The DIFFERENT products that could not start that day. `blocked` is one row per
+ *  ATTEMPT — a product that four machines could fill appends four of them — so its
+ *  length is not a product count. gen publishes the count; a body written before it
+ *  did is counted off the rows themselves rather than off their length. */
+const stuckProducts = (d: DayDetail) =>
+  d.blocked_products ?? new Set(d.blocked.map((b) => b.code)).size;
 
 export default function FloorClient() {
   const [n, setN] = useState(1);
@@ -163,7 +171,14 @@ export default function FloorClient() {
               v={day ? pct1(day.storage.pct) : "—"}
               tone={day && day.storage.pct >= 95 ? "text-red-300" : ""}
             />
-            <Stat k="Stuck" v={day ? String(day.blocked.length) : "—"} tone={day && day.blocked.length ? "text-red-300" : ""} />
+            {/* the DIFFERENT products that could not start. day.blocked is one row per
+                attempt — a product tried on four machines is four of them. */}
+            <Stat
+              k="Stuck products"
+              v={day ? String(stuckProducts(day)) : "—"}
+              tone={day && stuckProducts(day) ? "text-red-300" : ""}
+              sub={day ? `${day.blocked.length} ${day.blocked.length === 1 ? "try" : "tries"} stopped` : undefined}
+            />
           </div>
           <div className="mt-3">
             <NotLive p={P.ceiling(ceiling.text)} />

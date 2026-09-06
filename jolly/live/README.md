@@ -108,6 +108,83 @@ adapter failed**.
 Useful knobs: `MARK3_FORCE_HEAVY=1`, `MARK3_ONLY=ecom,oms`, `MARK3_SKIP=…`,
 `MARK3_HEAVY_EVERY_S`, `MARK3_MAX_WORKERS`, `MARK3_ADAPTER_TIMEOUT_S`.
 
+## The two DAILY jobs — not adapters, and never inside the loop
+
+Two of Mark 4's inputs are read **once a day** and written into `live/state/` as ordinary
+adapter-shaped envelopes. Neither is under `live/adapters/`, so `collect.py`'s discovery
+never sees them and the 3-minute loop never runs them. That is deliberate on both counts:
+
+| script | writes | why daily |
+|---|---|---|
+| `live/demand_baseline_sap.py` | `live/state/demand_baseline.json` | three months of SAP billing — **the ONE allowed SAP read** in the live planner (RULE 0 keeps SAP out of the loop). See `../reference/DEMAND-BASELINE-SOURCE.md`. |
+| `live/dispatch_lag.py` | `live/state/dispatch_lag.json` | 30 days of `gate-core sales-dispatch`, ~6 pages of 100 rows. R21 says the lag is refreshed daily, never every 3 minutes. |
+
+**`freeze_live.py` only ever READS them**, through one helper (`daily_file()`) with one
+freshness rule:
+
+- **fresh** — the envelope is `ok`, and no more than **8 days** old. Used.
+- **stale `<n>`d** / **missing** / **wrong-month** — the freeze falls back, and the
+  fallback is named in `honesty.assumed` and on the site's assumptions page:
+  - no usable baseline → expected orders are the plan sheet's weekly buckets, which have
+    no month-end bunching in them at all;
+  - no usable lag file → `factory_dispatch.LAG_NOTE`, the single measurement taken by
+    hand on 2026-09-03 (`lag.static: true`).
+- **wrong-month** is the baseline's own rule: its window must end on the last day of the
+  month *before* today. That is what stops a September file being planned on in October.
+
+Overrides for tests and one-off runs: `MARK4_DEMAND_BASELINE`, `MARK4_DISPATCH_LAG`
+(and `MARK4_RULEBOOK`) point the freeze at a different file.
+
+`dispatch_lag.py` publishes **statistics only** — median/p90/max/mean days, a histogram
+and a per-company split. No plate, no bill number, no driver, no customer: the gate rows
+carry all four and `live/state/` is served over HTTPS. It masks on write
+(`adapters/_mask.py`) as a second line, and `live/_dispatch_lag_test.py` asserts that
+none of them reaches the file.
+
+```bash
+python3 live/dispatch_lag.py            # ~6 pages, 40 s budget, writes the envelope
+python3 live/dispatch_lag.py --print    # measure and print, write nothing
+python3 live/demand_baseline_sap.py     # the SAP read — VPS only, daily, never here
+```
+
+## `live/state/` IS NOT IN GIT
+
+`live/.gitignore` excludes the whole directory: it is rewritten every three minutes and
+committing it would make the VPS's daily `git pull` fight its own loop. So **a fresh
+clone has no state.json and no daily files**, and **the offline chain cannot be run on a
+fresh clone at all**. It needs a box that has collected at least once.
+
+This used to say to copy `site-live/fixtures/state.json` into `live/state/`. That does not
+work and never did: that file is the SITE's fixture — the published plan, refreshed by
+`npm run fixtures` — and every source in it carries `data: {}`. The freeze reads it, finds
+no finished goods and dies rc=2 ("REFUSING TO WRITE — opening.fg ..."), which is the freeze
+doing its job. The remedy the recipe then offered needed a factory login, contradicting the
+sentence above it that the offline chain needs none. What it costs: on a fresh clone the
+end-to-end tests in `live/_gen_mark4_test.py` SKIP — they are written to skip when there is
+no `live/state/plan/`, so the suite is green and 14 tests did not run. Green is not the same
+as run; check the skip count.
+
+So, honestly:
+
+```bash
+# on the VPS, or any box whose live/state/ has a real state.json in it:
+python3 live/freeze_live.py && rm -f sim/days-live/day-*.json && \
+  SIM_INPUTS=sim/live-inputs.json SIM_TAG=-live python3 engine/august_sim.py && \
+  python3 live/gen_live.py
+
+# on a fresh clone, one collect first — this one DOES need a factory login:
+cp live/fixtures/demand_baseline.json live/state/demand_baseline.json   # no SAP login needed
+rm -f live/state/.cadence.json && bash live/loop.sh                     # one cycle, all sources
+```
+
+`live/fixtures/demand_baseline.json` **is** tracked — it is the 2026-09-06 pull
+(Jun-Aug 2026, 3,176,798 L, 125 SKUs) kept so the freeze's tests and a fresh clone have a
+real baseline to read without a SAP login. It is a fixture, not a feed: on the VPS the
+daily cron overwrites `live/state/demand_baseline.json` and that is the file the plan uses.
+
+A fresh clone's freeze also **REFUSES (rc=2)** until the hourly stock set has run once —
+`rm live/state/.cadence.json`, then one `loop.sh`. Correct, not a bug.
+
 **`MARK3_ONLY` / `MARK3_SKIP` make the run DIAGNOSTIC**: per-source files are
 written, `state.json` and `.cadence.json` are **not**. A one-source run must
 never become the published view — it would delete every other source from the
@@ -136,6 +213,17 @@ MAILTO=""
 # daily re-login: factory + OMS (both refresh tokens die in 7 days) and an
 # ecom doctor. Non-zero exit = a login was skipped or failed — worth mailing.
 17 4 * * * /root/jivo-courier/jolly/live/keepalive.sh >/dev/null 2>&1
+
+# ---- Mark 4 DAILY inputs (read once a day, never inside the 3-minute loop) ----
+# The invoice-to-gate lag off ji.jivo.in's gate log, last 30 days (R21). Runs after
+# the keepalive so the factory token is fresh. The freeze falls back to the static
+# 3 Sep note when this file is missing or over 8 days old, and says so on the site.
+30 4 * * * cd /root/jivo-courier/jolly && python3 live/dispatch_lag.py >>live/state/daily.log 2>&1
+
+# Three months of GT/MT billing — THE ONE ALLOWED SAP READ (RULE 0). Reaches HANA
+# through connections/hana-vps-direct.env. The freeze falls back to the plan sheet's
+# weekly buckets when this file is missing, stale or from the wrong month.
+40 4 * * * cd /root/jivo-courier/jolly && python3 live/demand_baseline_sap.py >>live/state/daily.log 2>&1
 
 # keep the checkout current (adapters and reference docs ship through main)
 23 5 * * * cd /root/jivo-courier && git pull --ff-only >/dev/null 2>&1

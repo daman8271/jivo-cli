@@ -7,11 +7,13 @@
 
 WHAT IT IS
 ==========
-`engine/august_sim.py` is CALIBRATED (2,122,639 L simulated against 2,119,237 L
-actual on August — 0.16%) and is NEVER modified. It reads exactly one JSON. This
-script writes that JSON — `sim/live-inputs.json` — from `live/state/state.json`
-every cycle, so the same untouched engine runs on a plant position that is minutes
-old instead of a 31-August photograph.
+`engine/august_sim.py` is CALIBRATED (against the plant's real August; the measured
+figure and the hashes it was measured against are pinned in
+`reference/august-calibration.json`, rebuilt by `engine/calibrate_august.py`) and is
+NEVER modified. It reads exactly one JSON. This script writes that JSON —
+`sim/live-inputs.json` — from `live/state/state.json` every cycle, so the same
+untouched engine runs on a plant position that is minutes old instead of a
+31-August photograph.
 
 "Live" means three things and only these three:
   * a fresh OPENING (stock, finished goods, the invoiced-not-trucked pile) each cycle
@@ -25,7 +27,39 @@ minutes would put the whole calibration at the mercy of one bad API page.
 
 RULE 0 (../CLAUDE.md): NOTHING here touches SAP. No sapb1, no hana-sql, no
 sap-b1/, no saphist. Every number below comes from `live/state/`, which comes from
-the factory / OMS / ecom / EXIM CLIs.
+the factory / OMS / ecom / EXIM CLIs. `live/state/demand_baseline.json` is a FILE a
+daily cron wrote (live/demand_baseline_sap.py, the one allowed SAP read); this script
+reads the file and never makes the call.
+
+MARK 4 — THE RULEBOOK (2026-09-06)
+==================================
+This file embeds `reference/mark4-rulebook.json` whole as `rulebook`, and its PRESENCE
+in the inputs is what switches engine/august_sim.py into rulebook mode. Without it the
+engine is Mark 3 in every line, which is why a missing or unreadable rulebook REFUSES
+here (rc=2) instead of quietly producing the old plan with today's date on it.
+
+What that changes in this file, all of it detailed in PHASE4-FREEZE-LIVE.md:
+  * `lines` is keyed by the RULEBOOK's slots and holds its PLANNING speeds. The Tin Head
+    carries 15L/3L/5L and no other line carries a 15 L key at all (AC02) — Mark 3 keyed
+    it "TIN" and let the engine derive a 15 L rate as the 5 L head / 3, which is how a
+    15-litre tin came to be planned on Clear Pack.
+  * `rules.efficiency` is 1.0 (A01). A planning speed is ALREADY 80% of the rating and
+    capped at the best sustained August hour; the old 0.5 on top of it plans the plant
+    at half. The engine refuses a rulebook run at any other efficiency.
+  * `rules.shift_hours` is the rulebook's 10, not the loop's 12 (R02).
+  * expected orders come from three months of outside billing, week-of-month shaped
+    (R17/R18) — see THE DAILY FILES below — and every plan row the baseline knows
+    carries `trailing_l_per_month`, which is how R19 ranks the expected-only tier.
+  * `rulebook_applied` records, per ruling, whether this run put it into effect.
+
+THE DAILY FILES — read here, written by cron, never called from here
+====================================================================
+  live/state/demand_baseline.json   live/demand_baseline_sap.py   (SAP billing, R17)
+  live/state/dispatch_lag.json      live/dispatch_lag.py          (ji.jivo.in gate, R21)
+Both are adapter-shaped and both go through one helper, `daily_file()`, with one rule:
+ok, and no more than 8 days old, and (for the baseline) a window ending on the last day
+of last month. Anything else is a declared fallback that is named in honesty.assumed —
+the plan sheet's weekly buckets, and the static 3 Sep lag note. Never a refusal.
 
 WHAT IT REFUSES TO DO
 =====================
@@ -120,17 +154,24 @@ lines                   {line: {pack: PIECES/HOUR}} — see LINE RATES below.
 rules                   carried, with invoice_truck_lag_days set from the MEASURED
                         median in factory_dispatch.lag_note.
 
-LINE RATES — THE DOUBLE-DERATE TRAP
-===================================
-The engine multiplies whatever is in `lines` by `rules.efficiency` (0.50) at run
-time (`rate = sp[slot] * EFF`). So `lines` holds the PRE-efficiency number, and
-storing a rate that has already been derated would derate it TWICE — the trap
-named in ../CLAUDE.md. Order of preference per (line, pack):
-  1. MEASURED_RATES below — the August observations that REFUTED the app's rating
-     (Clear Pack 5 L rated 3,000, observed 1,000; Tin Head has no config row at all)
-  2. the live ji.jivo.in line-config rated speed, VERBATIM, not multiplied
-  3. the carried sep-inputs value
-`lines_basis` says which of the three every slot got.
+LINE RATES — THE DOUBLE-DERATE TRAP, AND HOW MARK 4 CLOSES IT
+=============================================================
+The engine multiplies whatever is in `lines` by `rules.efficiency` at run time
+(`rate = sp[slot] * EFF`), so a rate that has already been derated gets derated TWICE —
+the trap named in ../CLAUDE.md.
+
+MARK 4 closes it by making the multiplication a no-op: `lines` holds the rulebook's
+PLANNING speeds — min(80% x the app's rating, the best sustained August hour over at
+least three runs) — and `rules.efficiency` is 1.0. The cut happens once, in the
+rulebook, and never again here. `lines_basis` says "planning" and `lines_basis_kind`
+carries the rulebook's own word for how each one was arrived at (capped / rated /
+typical / carried / derived). `build_lines_mark4()` does this.
+
+MARK 3's rule is GONE from this file: it stored a PRE-efficiency rate (an August
+observation, else the app's rating verbatim, else the carried table) for the engine to
+halve. It could not run any more — the rulebook is mandatory here — and the only thing
+it still did was write two honesty sentences about a derate this plan does not do. See
+the tombstone above build_lines_mark4() and, for the -sep freeze, engine/freeze_sep.py.
 
 PIECES_MADE_MTD — A DECLARED GAP, NOT A ZERO
 ============================================
@@ -177,6 +218,38 @@ try:
 except Exception:                                           # pragma: no cover
     def pack_litres(sku):                                   # type: ignore
         return None, "plan_units unavailable"
+# R15 — the pack and the bottle come from the RECIPE, and there is ONE implementation of
+# that rule (engine/pack_class.py). The rulebook pre-computes it for the plan sheet's 84
+# rows; this file calls the same function for anything the sheet does not carry (A18).
+from pack_class import pack_class                            # type: ignore  # noqa: E402
+
+# ---------------------------------------------------------------------------
+# MARK 4 — THE RULEBOOK, and the two DAILY files that feed it
+#
+# reference/mark4-rulebook.json is the plant's machine rulebook: which line may fill
+# which pack in which bottle, at what planning speed, for how many hours, with which
+# demand. The freeze EMBEDS it whole, and its presence in sim/live-inputs.json is what
+# switches engine/august_sim.py into rulebook mode. There is no other switch — a repo
+# path would couple the engine to the checkout and make the August calibration and the
+# -sep run ambiguous.
+#
+# It is generated: edit reference/build_mark4_rulebook.py, never the JSON.
+# ---------------------------------------------------------------------------
+RULEBOOK_PATH = os.environ.get("MARK4_RULEBOOK") or os.path.join(
+    JOLLY, "reference", "mark4-rulebook.json")
+
+# The two files a DAILY cron writes and this file only ever READS. Both are
+# adapter-shaped (live/README.md) and both live in live/state/, which is gitignored —
+# a fresh clone copies live/fixtures/demand_baseline.json in before running the chain.
+#   live/demand_baseline_sap.py -> demand_baseline.json   (the one allowed SAP read)
+#   live/dispatch_lag.py        -> dispatch_lag.json      (ji.jivo.in gate log, R21)
+# NEITHER is ever called from here: R21 says the lag is daily and RULE 0 keeps SAP out
+# of the loop. A missing or stale file is a declared fallback, never a refusal.
+DAILY_FILE_ENV = {
+    "demand_baseline": "MARK4_DEMAND_BASELINE",
+    "dispatch_lag": "MARK4_DISPATCH_LAG",
+}
+DAILY_MAX_AGE_DAYS = 8          # a weekly cron that missed one run is still usable
 
 # ---------------------------------------------------------------------------
 # THE OIL NAME MAP — every entry is a DECLARED ASSUMPTION, written down here.
@@ -243,21 +316,89 @@ def load_synonyms(path=SYNONYMS_CSV):
         pass
     return out
 
+def load_rulebook(path=None):
+    """The Mark 4 rulebook, or a refusal. There is no third outcome.
+
+    A plan built without it is Mark 3: it puts 15 L tins on Clear Pack, derives a 15 L
+    rate from the 5 L head, runs 12-hour sessions nobody works and derates the planning
+    speeds a second time. Every one of those looks fine in the output. So a missing or
+    unreadable rulebook stops the freeze rather than silently producing the old plan
+    wearing a Mark 4 date.
+    """
+    p = path or RULEBOOK_PATH
+    try:
+        rb = load(p)
+    except OSError as exc:
+        die(f"the Mark 4 rulebook is not readable at {p} ({exc.strerror}). Without it "
+            "this freeze would write a Mark 3 plan — 15 L on Clear Pack again, a derived "
+            "15 L rate and a 12-hour shift. Rebuild it: python3 reference/build_mark4_rulebook.py")
+    except ValueError as exc:
+        die(f"the Mark 4 rulebook at {p} is not valid JSON ({exc}). It is GENERATED — "
+            "rebuild it with python3 reference/build_mark4_rulebook.py, never hand-edit it.")
+    if not isinstance(rb, dict) or not rb.get("version") or not rb.get("lines"):
+        die(f"the Mark 4 rulebook at {p} has no version or no lines block — it is not a "
+            "rulebook. Rebuild it: python3 reference/build_mark4_rulebook.py")
+    return rb
+
+
+def daily_file(name, today, max_age_days=DAILY_MAX_AGE_DAYS, month_ok=None):
+    """One of the DAILY inputs, with its freshness stated. Never raises, never dies.
+
+    Returns (data, mode, age_days, fetched_at) where mode is one of:
+        "fresh"        — the file is there, ok, and no older than `max_age_days`
+        "stale <n>d"   — it is there and readable, and too old to plan on
+        "wrong-month"  — it is fresh but describes a window this month cannot use
+        "missing"      — no file, unreadable file, or an envelope with ok:false
+
+    Every consumer of this helper has a declared fallback and says so in honesty, so a
+    missing daily file degrades the plan by one named sentence and never refuses it.
+    `age_days` is floored at 0: the loop reads a state.json that can be a few minutes
+    older than a file written this morning, and "-1 days old" is not a freshness.
+    """
+    path = os.environ.get(DAILY_FILE_ENV.get(name, "")) or os.path.join(STATE_DIR, f"{name}.json")
+    try:
+        env = load(path)
+    except (OSError, ValueError):
+        return None, "missing", None, path
+    if not isinstance(env, dict) or not env.get("ok") or not isinstance(env.get("data"), dict):
+        return None, "missing", None, path
+    at = parse_dt(env.get("fetched_at"))
+    age = max(0, (today - at.date()).days) if at else None
+    fetched_at = env.get("fetched_at")
+    if age is None or age > max_age_days:
+        return env["data"], (f"stale {age}d" if age is not None else "missing"), age, fetched_at
+    if month_ok is not None and not month_ok(env["data"]):
+        return env["data"], "wrong-month", age, fetched_at
+    return env["data"], "fresh", age, fetched_at
+
+
+def week_of_month5(d: date) -> int:
+    """The demand baseline's FIVE buckets: 1 = days 1-7 … 5 = days 29-31.
+
+    NOT the same as week_of_month() below, which caps at four because EXIM's plan sheet
+    has four columns. Bucket 5 is the whole point of R17 — 134,695 L a day against
+    20,317 in bucket 1 — so it cannot be folded into bucket 4.
+    """
+    return min(5, (d.day - 1) // 7 + 1)
+
+
 # EXIM sells and stores oil by WEIGHT; the engine counts LITRES. 0.91 kg/L is the
 # adapter's own declared constant (exim.inbound.kg_per_litre) and is re-read from
 # state at run time; this is only the fallback if that key is absent.
 KG_PER_LITRE_DEFAULT = 0.91
 
-# reference/PLAN-AND-LINES.md + the August observations that refuted the app's
-# ratings. PRE-efficiency: the engine multiplies these by rules.efficiency itself.
-MEASURED_RATES = {
-    ("Clear Pack", "5L"): 1000.0,   # rated 3,000 REFUTED; observed median 831/hr
-    ("Clear Pack", "4L"): 1000.0,   # same head, size-changeable 1 L / 4 L / 5 L
-    ("Tin Head",   "TIN"): 215.0,   # August peak. Tin Head has NO line-config row.
-}
+# The book this plan makes for. ji.jivo.in's gate is ONE gate carrying three companies, and
+# dispatch_lag.py splits every measurement by company for exactly this reason. This engine
+# plans JIVO Oil and nothing else, so it takes JIVO Oil's own lag — never the merged
+# headline (CLAUDE.md: "Dispatch litres are three companies — Oil is the split").
+PLAN_BOOK = "JIVO_OIL"
 
 OMS_DEAD_STATUSES = {"COMPLETED", "REJECTED", "BILLING_REJECTED", "BILLING REJECTED"}
 FORECAST_CUSTOMER = "(forecast — not yet ordered)"
+# What a FORECAST row was shaped from. The plan sheet's weekly buckets are the Mark 3
+# fallback; three months of outside billing is the Mark 4 baseline (R17/R18/A09).
+FORECAST_BASIS_SHEET = "plan-sheet-weekly"
+FORECAST_BASIS_BILLING = "gt-mt-3m-billing"
 OVERDUE_SPREAD_DAYS = 5          # Mark 2's day-1 rule for arrivals already late
 
 # ---------------------------------------------------------------------------
@@ -394,6 +535,13 @@ class Freeze:
     def __init__(self):
         self.warnings = []
         self.assumed = []
+        # sentence -> the plan mode it is true in: "legacy" | "rulebook" | "both".
+        # THE POSITIVE CONTRACT the engine drops by (engine/august_sim.py, honesty block).
+        # It replaced a keyword blocklist there that struck any sentence containing
+        # "derate" / "of rated" / "rules.efficiency" / "50% again" — words a TRUE sentence
+        # about planning speeds cannot avoid. What is true in both modes is the default,
+        # so a sentence has to be deliberately tagged before anything can delete it.
+        self.assumed_modes = {}
         self.provenance = {}
         self.carry = {}
         self.carry_used = []
@@ -404,9 +552,17 @@ class Freeze:
         if msg not in self.warnings:
             self.warnings.append(msg)
 
-    def assume(self, msg):
+    def assume(self, msg, mode="both"):
+        """Record an assumption THIS run made, and the plan mode it is true in.
+
+        mode="both" (the default) is a sentence that holds however the engine is run.
+        "rulebook" or "legacy" is a sentence the other mode must not publish — the engine
+        drops it by this tag and names it in summary.rulebook.honesty_dropped."""
+        if mode not in ("legacy", "rulebook", "both"):
+            die(f"honesty mode {mode!r} — it is legacy, rulebook or both")
         if msg not in self.assumed:
             self.assumed.append(msg)
+        self.assumed_modes[msg] = mode
 
     # ---------------------------------------------------------------- sources
     def load_state(self):
@@ -614,6 +770,11 @@ def build():
     plan_rows = base["plan"]
     plan = {p["code"]: p for p in plan_rows}
     realise = base["realise"]
+    # Which codes had a MAY-JUL realise rate of their own before this run started. A18
+    # rows get a rate out of the billing baseline further down and `realise` is the same
+    # object, so the money block has to remember the difference or every rupee would
+    # claim to come from the plan sheet (R16/A12 publishes the split).
+    sheet_realise_codes = set(realise)
     items = base["items"]
     bom, blends = base["bom"], base["blends"]
     DEF_R = 148.33                                    # the engine's own default ₹/L
@@ -622,6 +783,107 @@ def build():
     for b, kids in blends.items():
         oils.add(b)
         oils.update(c for c, _ in kids)
+
+    # ======================================================= THE RULEBOOK ====
+    # Embedded whole, and its presence in the inputs is what makes this a Mark 4 plan.
+    rb = load_rulebook()
+    sku_pack = dict(rb.get("sku_pack") or {})
+
+    # A10/R20 — the 1-litre carton went from 16 pieces to 20 and SAP opened a NEW item
+    # code for the same oil in the bigger box. FG0000461 IS FG0000142's product: the
+    # godown holds it, the plant books it today, and the plan sheet has never heard of
+    # it, so without this every piece of it reads as finished goods the plan does not
+    # recognise and every litre of it is made twice. The alias moves stock and production
+    # onto the planned code and is published so the site can say "running now: FG0000461,
+    # which is FG0000142's product". The BOM is NOT touched — the 20-piece carton item is
+    # not in this month's frozen recipe, so the plan still buys the 16-piece carton.
+    ALIAS = dict(((rb.get("carton_change") or {}).get("known_new_code") or {}))
+
+    def alias(code):
+        return ALIAS.get(code, code)
+
+    # ------------------------------------------- the demand baseline (R17) ---
+    # Usable only when it describes the month BEFORE this one: the shape is "what the
+    # last three completed months did", and a window that has not rolled over is last
+    # month's answer to this month's question. Wrong month -> the plan sheet, said out
+    # loud. The freshness rule protects October from a September file.
+    want_to = (today.replace(day=1) - timedelta(days=1)).isoformat()
+    want_months = int(f((rb.get("demand") or {}).get("months"), 3)) or 3
+
+    def baseline_month_ok(d):
+        w = d.get("window") or {}
+        return str(w.get("to")) == want_to and int(f(w.get("months"))) == want_months
+
+    baseline, bl_mode, bl_age, bl_at = daily_file("demand_baseline", today,
+                                                  month_ok=baseline_month_ok)
+    bl_usable = bl_mode == "fresh" and bool((baseline or {}).get("skus"))
+    # FRESH IS NOT USABLE. The daily SAP read can answer ok:true with no SKU rows — a
+    # right-month file written this morning that nothing can be planned from — and both
+    # the fallback reason and the honesty sentence then said "demand_baseline.json is
+    # fresh" while telling the operator to go and run the job that had just run. The
+    # state the plan reports has to be the state that made it fall back.
+    bl_state = ("fresh but carries no SKU rows" if bl_mode == "fresh" and not bl_usable
+                else bl_mode)
+
+    # ------------------------------------ A18 — the SKUs the sheet never had ---
+    # Appended BEFORE anything else reads `plan`, so one definition of "a code this plan
+    # can build" runs through the whole freeze: the OMS filter, the ecom split, the
+    # expected stream, the FG split and the engine all see the same set.
+    nonplan = {"candidates": 0, "appended": 0, "appended_l_per_month": 0,
+               "skipped": [], "skipped_l_per_month": 0}
+    a18_rows = []
+    if bl_usable:
+        a18_rows, a18_packs, nonplan = expected_only_rows(baseline, plan, bom, items,
+                                                          oils, realise)
+        for row in a18_rows:
+            plan_rows.append(row)
+            plan[row["code"]] = row
+        sku_pack.update(a18_packs)
+        if a18_rows:
+            F.assume(f"{len(a18_rows)} SKU(s) the plant SELLS are not on the plan sheet and "
+                     f"are carried as expected-only rows worth "
+                     f"{nonplan['appended_l_per_month']:,} L a month — their pack comes from "
+                     "SAP's own recipe and their rate from what they billed for (A18)")
+        if nonplan["skipped"]:
+            F.assume(f"{len(nonplan['skipped'])} SKU(s) worth "
+                     f"{nonplan['skipped_l_per_month']:,} L a month sold in the last three "
+                     "months and are in NO day of this plan: this month's frozen master data "
+                     "has no recipe for them, so nothing here knows what they are made of. "
+                     "They are named in demand_baseline.nonplan.skipped (A18)")
+
+    # R19/B08 — a SKU nobody has ordered yet is ranked by its TRAILING monthly litres.
+    # The engine reads it off the plan row; nothing wrote that field until now, so the
+    # whole expected tier ranked by the order the rows happened to sit in.
+    trailing_set = 0
+    if bl_usable:
+        for code, sku in (baseline.get("skus") or {}).items():
+            if code in plan:
+                plan[code]["trailing_l_per_month"] = round(f(sku.get("litres_per_month")))
+                trailing_set += 1
+
+    # ------------------------------------------ AC06 — a class for every row ---
+    # The rulebook pre-computes the sheet's rows; anything it did not see is classed here
+    # by the SAME function (engine/pack_class.py), never by a second copy of the rule.
+    derived_packs = []
+    for code, p in plan.items():
+        if code in sku_pack:
+            continue
+        pc = pack_class(code, bom, items, p.get("litres_per_piece"), p.get("pack_type", ""))
+        sku_pack[code] = dict(sku=p.get("sku"), litres_per_piece=p.get("litres_per_piece"),
+                              sheet_pack_type=p.get("pack_type"), derived_by="freeze", **pc)
+        derived_packs.append(code)
+    unclassed = sorted(c for c, v in sku_pack.items()
+                       if c in plan and (v.get("slot") is None or v.get("family") == "UNKNOWN"))
+    if unclassed:
+        die("pack class (R15/AC06) — no machine slot can be worked out for "
+            f"{', '.join(unclassed)}. The engine would carry them as UNKNOWN, which makes "
+            "them eligible on no line at all and drops them out of the plan with no error "
+            "anywhere. Their BOM names no container this file recognises: fix the recipe "
+            "or rule on the pack, then rebuild reference/mark4-rulebook.json.")
+    if derived_packs:
+        F.assume(f"{len(derived_packs)} plan row(s) are not in the rulebook's own pack table "
+                 "and were classed here by the same rule (the BOM's container child, R15): "
+                 + ", ".join(derived_packs[:8]) + ("…" if len(derived_packs) > 8 else ""))
 
     prod, prod_mode, prod_env = F.source("factory_production")
     disp, disp_mode, disp_env = F.source("factory_dispatch")
@@ -674,6 +936,26 @@ def build():
     for wh in ("BH-PF", "BH-BT"):
         for row in ((detail or {}).get(wh) or []):
             names.setdefault(row.get("item_code"), row.get("item_name"))
+    # ---- A10: the carton change, applied to the godown ---------------------------
+    # Done BEFORE fg_other_l is worked out, so the aliased pieces are counted as the
+    # planned product they are and not as "other FG in the way".
+    fg_alias_applied = {}
+    for new_code, planned in sorted(ALIAS.items()):
+        pieces = f(fg.pop(new_code, 0.0))
+        if pieces <= 0:
+            continue
+        fg[planned] = fg.get(planned, 0.0) + pieces
+        fg_alias_applied[new_code] = {"to": planned, "pieces": round(pieces),
+                                      "name": names.get(new_code) or plan.get(planned, {}).get("sku")}
+        names.pop(new_code, None)
+    if fg_alias_applied:
+        F.assume("the 1-litre carton changed from 16 pieces to 20 and SAP opened a new code "
+                 "for the same oil, so " + ", ".join(
+                     f"{n} ({v['pieces']:,} pieces) is counted as {v['to']}"
+                     for n, v in sorted(fg_alias_applied.items()))
+                 + ". The recipe is NOT changed — this month's frozen BOM has no 20-piece "
+                   "carton item, so the plan still buys the 16-piece one (A10/R20)")
+
     fg_other_l, fg_other_unparsed = 0.0, 0
     for code, qty in fg.items():
         if code in plan:
@@ -750,7 +1032,7 @@ def build():
     # same page, from the same day.
     #
     # RULED (2026-09-03): INCLUDE them, and say so loudly. The plant is running on that
-    # packaging today, and Mark 2's August run — the one calibrated to 0.16% — counted
+    # packaging today, and Mark 2's August run — the calibrated one — counted
     # them. Dropping them now would move the calibration out from under the engine.
     # But "non-moving" may well mean unusable, and if it does the codes below are the
     # ones that disappear, so the size of the exposure is published rather than argued
@@ -1301,18 +1583,34 @@ def build():
                              cheap_l=f(cheap_l) if cheap_l is not None else None,
                              fg_l=fg_plan_l + fg_other_l)
 
+    # ------------------------------------------- the invoice-to-gate lag (R21) --
+    # MEASURED DAILY off ji.jivo.in's gate log by live/dispatch_lag.py, which is a cron
+    # script and not an adapter — R21 says daily in as many words, and a 30-day gate read
+    # does not fit inside a 3-minute loop. When that file is missing or stale the plan
+    # falls back to factory_dispatch.LAG_NOTE: ONE measurement, taken by hand on
+    # 2026-09-03 off page 1 of 4. It is a real number and it is three days older every
+    # three days, so the fallback is always named.
+    lag_file, lag_mode, lag_age, lag_at = daily_file("dispatch_lag", today)
     lag_note = (disp or {}).get("lag_note") or {}
-    lag_days = lag_note.get("median_days")
-    if lag_days is None:
-        lag_days = base["rules"]["invoice_truck_lag_days"]
-        F.assume(f"invoice-to-truck lag kept at the carried {lag_days} days — "
-                 "factory_dispatch.lag_note carried no measured median this cycle")
-    else:
-        lag_days = int(lag_days)
+    lag_days, out_lag, lag_live, lag_say = select_lag(
+        lag_file, lag_mode, lag_age, lag_at, lag_note, base["rules"]["invoice_truck_lag_days"])
+    F.assume(lag_say)
+    F.provenance["dispatch_lag"] = {
+        "source": "live/state/dispatch_lag.json" if lag_live else "factory_dispatch.LAG_NOTE",
+        "fetched_at": lag_at if lag_live else out_lag["measured_on"],
+        "server_at": None, "mode": lag_mode, "age_days": lag_age,
+        "note": out_lag["source"],
+    }
 
     # --------------------------------------------------------- orders -------
     orders, backlog = [], []
     real_pieces = {}
+    # R18 — the expected stream is netted by the REAL TRADE book only. ecom is on its own
+    # POs and the billing baseline excluded e-commerce in the first place, so netting it
+    # too would take the same litres out twice. Kept apart from real_pieces for that one
+    # reason, and dated inside the horizon because demand due in October is not this
+    # month's cover.
+    oms_pieces = {}
     order_rows_by_channel = {}
 
     def add_order(row):
@@ -1359,6 +1657,8 @@ def build():
                    "channel": str(ln.get("category") or "TRADE").upper(), "_src": "OMS"}
             add_order(row)
             real_pieces[code] = real_pieces.get(code, 0.0) + pieces
+            if today <= date.fromisoformat(row["date"]) <= d1:
+                oms_pieces[code] = oms_pieces.get(code, 0.0) + pieces
             oms_kept += 1
             if created < today:
                 backlog.append(dict(row, date=created.isoformat()))
@@ -1446,40 +1746,145 @@ def build():
                 ") split onto FG codes by the open-PO mix",
     }
 
-    # -- 3. FORECAST — the plan, net of the two real streams ------------------
-    weekly = load_weekly_buckets(F)
+    # -- 3. EXPECTED ORDERS — three months of outside billing, week-shaped ----
+    # R17/R18: the month's GT/MT orders are PREDICTED from what those customers actually
+    # bought, not waited for. The plan sheet's weekly buckets stay as the fallback and
+    # every fallback says so on the assumptions page.
     fc_rows = 0
     fc_pieces = 0.0
-    for code, p in plan.items():
-        net = f(p.get("pieces")) - real_pieces.get(code, 0.0)
-        if net < 1:
-            continue
-        profile = forecast_profile(code, weekly, working_days, today, F)
-        if not profile:
-            continue
-        lpp = f(p["litres_per_piece"], 1.0) or 1.0
-        rate = f(realise.get(code), DEF_R)
-        for d, w in profile.items():
-            pieces = net * w
-            if pieces < 1:
-                continue
-            add_order({"docnum": f"FCST-W{week_of_month(d)}-{code}", "date": d.isoformat(),
-                       "due": d.isoformat(), "customer": FORECAST_CUSTOMER, "code": code,
-                       "pieces": pieces, "value": pieces * lpp * rate,
-                       "channel": "FORECAST", "_src": "FORECAST"})
+    fc_basis = FORECAST_BASIS_SHEET
+    exp_stats = {}
+    if bl_usable:
+        rows, exp_stats = expected_stream(baseline, plan, today, d1, oms_pieces,
+                                          want_months, realise, DEF_R)
+        for row in rows:
+            add_order(row)
             fc_rows += 1
-            fc_pieces += pieces
-    F.assume("the remainder of the monthly plan, net of every real order this run can see, is "
-             "carried as FORECAST rows — they are NOT orders and are tagged three ways "
-             "(channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)')")
+            fc_pieces += row["pieces"]
+        fc_basis = FORECAST_BASIS_BILLING
+        F.assume("expected orders are three months of OUTSIDE billing per SKU "
+                 f"({', '.join(baseline.get('channels_included') or [])}; e-commerce, "
+                 "branches, staff, cash sales and the inter-company cards left out), shaped "
+                 "by which week of the month those customers actually buy in and netted by "
+                 "the real trade order book. They are NOT orders and are tagged three ways "
+                 "(channel=FORECAST, docnum FCST-*, customer "
+                 f"'{FORECAST_CUSTOMER}')")
+        if exp_stats.get("sku_shape_pooled"):
+            F.assume(f"{exp_stats['sku_shape_pooled']} SKU(s) did not sell in all "
+                     f"{want_months} months of the window, so their month is shaped by the "
+                     "WHOLE book's week-of-month pattern rather than their own (A09)")
+        if exp_stats.get("dropped_subpiece_l", 0) >= 1:
+            F.assume(f"{exp_stats['dropped_subpiece_l']:,.0f} L of expected demand fell out "
+                     "as sub-one-bottle daily slices — the expected stream is a FLOOR by "
+                     "that much")
+        if exp_stats.get("negative_slice_l", 0) <= -1:
+            F.assume(f"{abs(exp_stats['negative_slice_l']):,.0f} L of NEGATIVE expected demand "
+                     "was dropped — week buckets where the three months of billing are net "
+                     "returns. A return is not an order to make something, so it neither "
+                     "creates a row nor reduces one")
+    else:
+        weekly = load_weekly_buckets(F)
+        for code, p in plan.items():
+            net = f(p.get("pieces")) - real_pieces.get(code, 0.0)
+            if net < 1:
+                continue
+            profile = forecast_profile(code, weekly, working_days, today, F)
+            if not profile:
+                continue
+            lpp = f(p["litres_per_piece"], 1.0) or 1.0
+            rate = f(realise.get(code), DEF_R)
+            for d, w in profile.items():
+                pieces = net * w
+                if pieces < 1:
+                    continue
+                add_order({"docnum": f"FCST-W{week_of_month(d)}-{code}", "date": d.isoformat(),
+                           "due": d.isoformat(), "customer": FORECAST_CUSTOMER, "code": code,
+                           "pieces": pieces, "value": pieces * lpp * rate,
+                           "channel": "FORECAST", "_src": "FORECAST",
+                           "basis": FORECAST_BASIS_SHEET})
+                fc_rows += 1
+                fc_pieces += pieces
+        F.assume("the remainder of the monthly plan, net of every real order this run can see, "
+                 "is carried as FORECAST rows — they are NOT orders and are tagged three ways "
+                 "(channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)')")
+        F.assume("expected orders are the plan sheet's weekly buckets — "
+                 f"live/state/demand_baseline.json is {bl_state}; run "
+                 "live/demand_baseline_sap.py (a DAILY job on the VPS, never in the loop) "
+                 "to plan from what the trade actually bought (R17)")
     if not orders:
         die("orders — no OMS line, no ecom row and no forecast bucket survived. The engine "
             "asserts on an empty demand stream; writing this file would only move the failure.")
 
     recon["orders"] = {"rows": len(orders), "by_channel": order_rows_by_channel,
                        "oms_lines": oms_kept, "ecom_rows": ec_rows, "forecast_rows": fc_rows,
-                       "backlog_rows": len(backlog),
+                       "backlog_rows": len(backlog), "forecast_basis": fc_basis,
                        "real_pieces": sum(real_pieces.values()), "forecast_pieces": fc_pieces}
+
+    # ------------------------------------------ demand_baseline, published ---
+    # Everything about where the expected stream came from, including the three internal
+    # reconciliations — the SKU rows, the channel split and the week buckets each have to
+    # add back up to the window total, and a baseline that does not is a baseline nobody
+    # should plan on (AC08).
+    def _pct_of_total(part, whole):
+        return round(100.0 * part / whole, 2) if whole else None
+
+    bl_tot = f(((baseline or {}).get("totals") or {}).get("litres"))
+    bl_skus = (baseline or {}).get("skus") or {}
+    bl_months = int(f(((baseline or {}).get("window") or {}).get("months"), want_months)) or want_months
+    out_baseline = {
+        "present": baseline is not None,
+        "mode": bl_mode,
+        "usable": bl_usable,
+        "fetched_at": bl_at if baseline is not None else None,
+        "age_days": bl_age,
+        "path": os.environ.get(DAILY_FILE_ENV["demand_baseline"])
+                or os.path.join(STATE_DIR, "demand_baseline.json"),
+        "window": (baseline or {}).get("window"),
+        "months": bl_months,
+        "months_expected": want_months,
+        "source": (baseline or {}).get("basis"),
+        "channel_field": (baseline or {}).get("channel_field"),
+        "channels_included": (baseline or {}).get("channels_included"),
+        "channels_excluded": (baseline or {}).get("channels_excluded"),
+        "intercompany_excluded": (baseline or {}).get("intercompany_excluded"),
+        "totals": (baseline or {}).get("totals"),
+        "by_channel": (baseline or {}).get("by_channel"),
+        "week_of_month": (baseline or {}).get("week_of_month"),
+        "reconciliation": {
+            "skus_vs_totals_pct": _pct_of_total(
+                sum(f(s.get("litres_per_month")) * bl_months for s in bl_skus.values()), bl_tot),
+            "channels_vs_totals_pct": _pct_of_total(
+                sum(f(v.get("litres")) for v in ((baseline or {}).get("by_channel") or {}).values()),
+                bl_tot),
+            "weeks_vs_totals_pct": _pct_of_total(
+                sum(f(v.get("litres")) for v in ((baseline or {}).get("week_of_month") or {}).values()),
+                bl_tot),
+            "note": ("each is that block's litres as a % of the window total — 100% means the "
+                     "SKU rows, the channel split and the week buckets all add back up"),
+        },
+        "used_for_forecast": bool(bl_usable and fc_basis == FORECAST_BASIS_BILLING),
+        "fallback_reason": (None if bl_usable else
+                            f"demand_baseline.json is {bl_state}" +
+                            (f" (window {(baseline or {}).get('window')}, wanted a window "
+                             f"ending {want_to} over {want_months} months)"
+                             if bl_mode == "wrong-month" else "")),
+        "expected_rows": fc_rows,
+        "expected_litres": round(exp_stats.get("litres", 0.0)),
+        "expected_skus": exp_stats.get("skus", 0),
+        "netted_oms_pieces": round(exp_stats.get("netted_oms_pieces", 0.0)),
+        # Sub-one-bottle slices only, so it can never publish a negative "dropped litres".
+        "dropped_subpiece_l": round(exp_stats.get("dropped_subpiece_l", 0.0)),
+        # Negative day slices out of week buckets that are net returns — dropped for the
+        # same reason and counted apart, signed, so the sign says what it is.
+        "negative_slice_l": round(exp_stats.get("negative_slice_l", 0.0)),
+        "sku_shape_own": exp_stats.get("sku_shape_own", 0),
+        "sku_shape_pooled": exp_stats.get("sku_shape_pooled", 0),
+        "trailing_rows_set": trailing_set,
+        "nonplan": nonplan,
+    }
+    if baseline is not None and not bl_usable:
+        F.warn(f"the demand baseline is {bl_state} — expected orders fall back to the plan "
+               "sheet's weekly buckets, which have no month-end bunching in them at all")
 
     # ------------------------------------------------- inbound_prebooked ----
     inbound, inb_prov, qty_by_src = {}, {}, {}
@@ -1663,26 +2068,102 @@ def build():
                         "exim_otw_l": otw_l, "po_lead_l": po_l, "qc_lines": qc_accepted}
 
     # ---------------------------------------------------------- lines -------
-    lines, lines_basis, lines_unslotted = build_lines(F, prod, prod_mode, prod_env, base, plan)
-    prov("lines", "factory_production", prod_mode, prod_env,
-         "measured August rates where they exist, else the ji.jivo.in rated speed VERBATIM "
-         "(the engine applies rules.efficiency itself — storing rated x efficiency here would "
-         "derate twice), else the carried table")
+    # THE RULEBOOK'S table, keyed by the slots the rulebook names each line for. The live
+    # ji.jivo.in configs are still read — but as a WATCH, published as lines_app_rated_now
+    # and compared, never fed in (A01: the planning speed already carries the 80% and the
+    # August cap, and the cap did not move when somebody retyped a rating).
+    cfgs, cfg_mode = F.block("factory_production", prod, prod_mode, prod_env,
+                             "line_configs", lambda v: isinstance(v, list) and bool(v))
+    lines, lines_basis, lines_basis_kind, lines_speeds, lines_multi = build_lines_mark4(
+        F, rb, cfgs, base)
+    lines_app_now, lines_unslotted = app_rated_now(cfgs, F)
+    if not cfgs:
+        F.assume("ji.jivo.in's line configs were not readable this run, so the plan cannot "
+                 "check the rulebook's ratings against what the app lists today — the "
+                 "planning speeds are used unchanged either way")
+    rating_moved = []
+    for ln, slots in sorted(lines_app_now.items()):
+        for slot, now in sorted(slots.items()):
+            was = ((lines_speeds.get(ln) or {}).get("speeds") or {}).get(slot, {}).get("rated")
+            if was is not None and abs(f(now) - f(was)) > 0.5:
+                rating_moved.append(f"{ln} {slot} {f(was):g} -> {f(now):g}")
+    if rating_moved:
+        F.assume("the app's listed speed has changed since the rulebook was built ("
+                 + "; ".join(rating_moved) + "); the plan keeps the rulebook's speed until "
+                 "it is rebuilt (python3 reference/build_mark4_rulebook.py)")
+    if lines_unslotted:
+        F.warn("line configs whose name is neither a pack size nor a known machine, so they "
+               "set no rating to compare: " + "; ".join(
+                   f"{ln} {rows}" for ln, rows in lines_unslotted.items()))
+    prov("lines", "reference/mark4-rulebook.json", "rulebook " + str(rb.get("version")), None,
+         "PLANNING speeds (A01): min(80% x the app's rating, the best sustained August hour "
+         "over at least 3 runs). Already post-efficiency — rules.efficiency is 1.0 and the "
+         "engine refuses a rulebook run at anything else. The live ji.jivo.in ratings are "
+         f"read for comparison only and published as lines_app_rated_now [{cfg_mode}]")
     recon["lines"] = {ln: {p: lines_basis[ln][p] for p in sorted(lines_basis[ln])}
                       for ln in sorted(lines_basis)}
 
     # ---------------------------------------------------------- rules -------
     rules = dict(base["rules"])
     rules["invoice_truck_lag_days"] = lag_days
+    # R02/R03/R04 — the shift is the RULEBOOK's, not the loop's and not the plan sheet's.
+    # 10 working hours a session, one line gets a second session, Sunday makes nothing.
+    # Mark 3 ran 12 h because live/loop.sh exported it, which put 24 h on the line that
+    # also took the night. No litre figure for that is quoted here: it moves with the
+    # inputs (measured at +11% once and at a LOSS on 2026-09-06, because a storage-bound
+    # month gives the hours back). The ruling is the reason, not the arithmetic.
+    shift = rb.get("shift") or {}
+    rules["shift_hours"] = shift.get("hours_per_session")
+    rules["shift_hours_basis"] = shift.get("source")
+    rules["sessions_per_day_max"] = shift.get("sessions_per_day_max")
+    rules["night_lines_max"] = shift.get("night_lines_max")
+    rules["sundays_off"] = shift.get("sundays_off")
+    rules["working_days_basis"] = shift.get("working_days_basis")
+    # A01 — THE DOUBLE-DERATE, closed. `lines` now holds PLANNING speeds, which are the
+    # 80% and the August cap already applied; multiplying by 0.5 again ran the plant at
+    # half and every check still passed.
+    # The rate the engine falls back to for a plan row with no price of its own. It is
+    # engine/august_sim.py's own DEF_R and it is worth about a crore and a half on the
+    # month's sheet, so it is PUBLISHED rather than retyped a third time downstream.
+    rules["default_realise_rs_per_l"] = DEF_R
+    rules["efficiency"] = 1.0
+    rules["efficiency_basis"] = (
+        "planning speeds carry the 80% and the August cap (A01); the engine multiplies "
+        "by 1.0. rules.efficiency 0.5 is a Mark 3 number and the engine refuses a "
+        "rulebook run that carries it.")
+    changeover = rb.get("changeover") or {}
+    rules["line_clearance_min"] = f(changeover.get("clearance_min"),
+                                    base["rules"]["line_clearance_min"])
+    rules["flush_litres"] = f(changeover.get("flush_l_per_oil_change"),
+                              base["rules"]["flush_litres"])
+    rules["one_product_per_line_per_session"] = changeover.get("one_product_per_line_per_session")
+    rules["changeover_rule"] = changeover.get("rule")
+    # The engine takes ONE lag number and it must be the book it plans for. `lag_book` and
+    # `lag_all_books_*` ride beside it so the site can show the merged gate without the
+    # engine ever being fed it.
+    rules["invoice_truck_lag_p90_days"] = out_lag["p90_days"]
+    rules["invoice_truck_lag_book"] = out_lag["book"]
+    rules["invoice_truck_lag_book_say"] = out_lag["book_say"]
+    rules["invoice_truck_lag_all_books_days"] = out_lag["all_books"]["median_days"]
+    rules["invoice_truck_lag_all_books_p90_days"] = out_lag["all_books"]["p90_days"]
+    if lag_live:
+        rules["invoice_truck_lag_basis"] = (
+            f"measured daily off the gate log, {out_lag['rows']} dispatched "
+            f"{'JIVO Oil ' if out_lag['book'] == PLAN_BOOK else ''}rows, {out_lag['window']}")
+    else:
+        rules["invoice_truck_lag_basis"] = (
+            f"measured once by hand on {out_lag['measured_on']} "
+            f"({out_lag['rows']} rows, {out_lag['window']}, all books merged) — "
+            f"live/state/dispatch_lag.json is {lag_mode}")
     app_lines = ((prod or {}).get("lines") or [])
     app_hours = sorted({f(l.get("standard_hours_per_day")) for l in app_lines
                         if l.get("is_active") and f(l.get("standard_hours_per_day")) > 0})
     if app_hours:
         rules["standard_hours_per_day_app"] = app_hours if len(app_hours) > 1 else app_hours[0]
         rules["standard_hours_per_day_app_basis"] = (
-            "ji.jivo.in's own standard hours per line. rules.shift_hours is a DECISION "
-            "(PLAN-AND-LINES.md: 12 h is the floor, not the answer) and overrides this — "
-            "the field is published so the two are not confused.")
+            "ji.jivo.in's own standard hours per line. rules.shift_hours is the RULEBOOK's "
+            "(R02: 10 hours a session, 20 for a day plus a night) and overrides this — the "
+            "field is published so the two are not confused.")
     # THE CEILING IS A DECLARED FACT, NOT AN ASSUMPTION (Daman, 2026-09-04).
     # Mark 2 carried Daman's own capacity sheet as "assumed, never measured (Q2)" and
     # Mark 3 inherited the flag, so every "% of the godown" on the site was badged OUR
@@ -1696,10 +2177,99 @@ def build():
     rules["storage_ceiling_declared_by"] = STORAGE_CEILING_DECLARED_BY
     prov("storage_ceiling", "reference/STORAGE-CAPACITY.md", "declared", None,
          STORAGE_CEILING_BASIS)
-    if lag_note.get("median_days") is not None:
-        F.assume(f"the {lag_days}-day invoice-to-truck lag is the MEASURED median off the gate "
-                 f"log ({lag_note.get('rows')} rows, {lag_note.get('measured_window')}); the "
-                 f"tail runs to {lag_note.get('max_days')} days and the plan ignores it")
+
+    # --------------------------------------- the open dispatch book (R21/B09) --
+    # Gurvinder's question, in his words: "for the open dispatch book, how many days of
+    # pendency are there?" Days of work at the pace the gate has actually kept — the open
+    # book divided by the mean of the last recorded days. Entirely ji.jivo.in (R01).
+    # The two populations are NOT one: `open_l_all_books` is all three companies' open
+    # dispatch plans, `oil_pile_l` is the Oil share the engine is actually given.
+    hist_days = ((hist or {}).get("days") or [])
+    dispatch_book = dispatch_pendency((disp or {}).get("invoiced_not_dispatched"),
+                                      hist_days, standing)
+    prov("dispatch_book", "factory_dispatch + factory_history", disp_mode, disp_env,
+         dispatch_book["basis"])
+    if dispatch_book["pendency_days_all"] is None:
+        F.warn("days of pendency on the open dispatch book cannot be worked out this run — "
+               + (dispatch_book["basis_missing"] or "the open book did not answer"))
+
+    # ------------------------------------------------- money (R16/A12/B10) ---
+    # R16: the plant is asked for a rupee figure a day against a floor and a target, and
+    # A12 fixes the rate as `realise`. The COUNT is goods receipts, not the MES: the MES
+    # sees about two-thirds of the plant and the receipts see the rest. Every rupee says
+    # which rate priced it, so a default-rate share is visible instead of hidden in a total.
+    money_rb = rb.get("money") or {}
+    bl_rate = {}
+    for code, sku in ((baseline or {}).get("skus") or {}).items():
+        litres_m = f(sku.get("litres_per_month"))
+        if litres_m > 0:
+            bl_rate[code] = f(sku.get("inr_per_month")) / litres_m
+    money_split = {"realise_rs": 0.0, "baseline_rs": 0.0, "default_rs": 0.0}
+    money_unvalued = 0.0
+    alias_booked_pcs = {}          # A10: production booked on the NEW carton code
+
+    def value_of(code, pieces):
+        """Pieces of one item code -> rupees, accumulating the rate split and A10 hits."""
+        nonlocal money_unvalued
+        rs, key, unvalued, c = price_pieces(code, pieces, plan, items, realise,
+                                            sheet_realise_codes, bl_rate, ALIAS, DEF_R)
+        if c != code and pieces:
+            alias_booked_pcs[code] = alias_booked_pcs.get(code, 0.0) + pieces
+        money_unvalued += unvalued
+        if key:
+            money_split[key] += rs
+        return rs
+
+    mtd_rs, mtd_days = 0.0, 0
+    for d in hist_days:
+        by_item = d.get("booked_by_item")
+        if not isinstance(by_item, dict) or not by_item:
+            continue
+        mtd_days += 1
+        for code, pcs in by_item.items():
+            mtd_rs += value_of(code, f(pcs))
+    # Snapshot BEFORE today is priced: mtd_by_basis has to split the month-to-date figure
+    # beside it and nothing else, or the shares add up to more than the total they explain.
+    mtd_split = dict(money_split)
+    mtd_unvalued = money_unvalued
+    booked_today = ((prod or {}).get("booked_today") or {})
+    today_rs = 0.0
+    for code, row in (booked_today.get("by_item") or {}).items():
+        today_rs += value_of(code, f((row or {}).get("pcs")))
+    today_split = {k: money_split[k] - mtd_split[k] for k in money_split}
+    money = {
+        "target_rs_per_day": money_rb.get("target_inr_per_day"),
+        "floor_rs_per_day": money_rb.get("floor_inr_per_day"),
+        "target_basis": money_rb.get("basis"),
+        "mtd_made_rs": round(mtd_rs),
+        "mtd_days": mtd_days,
+        "mtd_basis": ("goods receipts per item for every day already gone this month "
+                      "(ji.jivo.in, factory_history.booked_by_item), pieces x litres per "
+                      "piece x realise. The MES sees about two-thirds of the plant; the "
+                      "receipts see the rest, so this is the fuller count."),
+        "mtd_by_basis": {k: round(v) for k, v in mtd_split.items()},
+        "mtd_unvalued_pcs": round(mtd_unvalued),
+        "today_booked_rs": round(today_rs),
+        "today_booked_by_basis": {k: round(v) for k, v in today_split.items()},
+        "today_booked_basis": booked_today.get("note"),
+        "today_booked_pcs": booked_today.get("pcs"),
+        "unvalued_pcs_total": round(money_unvalued),
+    }
+    if alias_booked_pcs:
+        F.assume("the plant is booking production on the new 20-piece carton code — "
+                 + ", ".join(f"{n} {p:,.0f} pieces this month" for n, p in sorted(alias_booked_pcs.items()))
+                 + f" — and it is counted and valued as {', '.join(sorted(set(alias(n) for n in alias_booked_pcs)))}, "
+                   "the product the plan sheet carries. The recipe is NOT changed: this "
+                   "month's frozen BOM has no 20-piece carton item, so the plan still buys "
+                   "the 16-piece one (A10/R20)")
+    if money_unvalued:
+        F.assume(f"{money_unvalued:,.0f} booked piece(s) this month are on codes with no pack "
+                 "size this file can read, so the rupees made month-to-date are a FLOOR")
+    if money_split["default_rs"] > 0:
+        F.assume(f"₹{money_split['default_rs']:,.0f} of the month's production is priced at the "
+                 f"engine's default ₹{DEF_R}/L — those codes have neither a May-Jul realise "
+                 "rate nor three months of billing behind them (A12)")
+    prov("money", "factory_history + factory_production", hist_mode, hist_env, money["mtd_basis"])
 
     # ------------------------------------------------------------ meta ------
     booked = ((prod or {}).get("booked_today") or {})
@@ -1726,6 +2296,10 @@ def build():
         "generated_by": "live/freeze_live.py",
         "state_collected_at": F.state.get("collected_at"),
         "state_completed_at": F.state.get("completed_at"),
+        # WS3 step 1 asks for it here by name. It is also at provenance.rulebook.version
+        # and rulebook.version, so nothing was lost — but a consumer following the spec
+        # read None, and this file refuses to run without a rulebook, so it is never null.
+        "rulebook_version": rb.get("version"),
     }
     # Says the same thing as pieces_made_mtd_basis three lines above, because the
     # SITE renders this one and the two must not contradict each other. The month
@@ -1747,6 +2321,74 @@ def build():
     elif hist_mode != "live":
         F.assume("the days already gone are from a %s read, not this cycle's" % hist_mode)
 
+    # ------------------------------------------------- rulebook_applied -----
+    # Which rulings this run actually put into effect, and which fell back. The engine
+    # adds its own flags to sim/summary-live.json and gen merges the two, so the
+    # assumptions page ("Taken as fact", R26) can say per ruling whether the plan in front
+    # of the reader was built with it — never "we intend to".
+    rb["sku_pack"] = sku_pack                 # the sheet's rows plus anything derived here
+    F.provenance["rulebook"] = {
+        "source": os.path.relpath(RULEBOOK_PATH, JOLLY),
+        "version": rb.get("version"), "written": rb.get("written"),
+        "fetched_at": None, "server_at": None, "mode": "embedded",
+        "note": ("generated by reference/build_mark4_rulebook.py — never hand-edited. Its "
+                 "presence in these inputs is what makes the engine run rulebook mode."),
+    }
+    F.provenance["demand_baseline"] = {
+        "source": out_baseline["path"], "fetched_at": out_baseline["fetched_at"],
+        "server_at": None, "mode": bl_mode, "age_days": bl_age,
+        "note": ("written daily by live/demand_baseline_sap.py — the ONE allowed SAP read "
+                 "(reference/DEMAND-BASELINE-SOURCE.md). This file only reads it; a missing "
+                 "or stale file falls back to the plan sheet's weekly buckets."),
+    }
+    channels = ", ".join((baseline or {}).get("channels_included") or [])
+    rulebook_applied = {
+        "A01": {"in_effect": True, "note": (
+            "the machine speeds are the rulebook's PLANNING speeds and rules.efficiency is "
+            "1.0, so nothing is derated twice")},
+        "A09": {"in_effect": out_baseline["used_for_forecast"], "note": (
+            f"expected orders are {want_months} months of outside billing, week-of-month "
+            f"shaped, netted by the real trade book — {fc_rows:,} rows, "
+            f"{out_baseline['expected_litres']:,} L" if out_baseline["used_for_forecast"]
+            else f"expected orders fell back to the plan sheet's weekly buckets: "
+                 f"{out_baseline['fallback_reason']}")},
+        "A17": {"in_effect": out_baseline["used_for_forecast"], "note": (
+            f"the outside channels counted are {channels}; e-commerce, branches, staff, cash "
+            "sales and the inter-company cards are left out"
+            if out_baseline["used_for_forecast"] else
+            "no baseline this run, so no channel filter was applied")},
+        "A18": {"in_effect": bool(nonplan["appended"]), "note": (
+            f"{nonplan['appended']} sold-but-unplanned SKU(s) appended as expected-only plan "
+            f"rows ({nonplan['appended_l_per_month']:,} L a month); "
+            f"{len(nonplan['skipped'])} more ({nonplan['skipped_l_per_month']:,} L a month) "
+            "could not be: they are named with their reason in demand_baseline.nonplan.skipped")},
+        "A10": {"in_effect": bool(fg_alias_applied or alias_booked_pcs), "note": "; ".join(
+            ([", ".join(f"{n} counted as {v['to']} ({v['pieces']:,} pieces of finished goods)"
+                        for n, v in sorted(fg_alias_applied.items()))]
+             if fg_alias_applied else
+             ["no stock of the new carton code in the godown this cycle"])
+            + ([", ".join(f"{n} booked {p:,.0f} pieces this month, valued as {alias(n)}"
+                          for n, p in sorted(alias_booked_pcs.items()))]
+               if alias_booked_pcs else []))},
+        "R16": {"in_effect": True, "note": (
+            f"target ₹{f(money['target_rs_per_day']):,.0f} a day, floor "
+            f"₹{f(money['floor_rs_per_day']):,.0f}, both read from the rulebook; "
+            f"₹{money['mtd_made_rs']:,} booked over {money['mtd_days']} day(s) so far")},
+        "R21": {"in_effect": lag_live, "note": (
+            f"the lag is measured daily off the gate log and the plan runs on JIVO OIL's own "
+            f"— median {out_lag['median_days']} d, p90 {out_lag['p90_days']} d over "
+            f"{out_lag['rows']} Oil rows ({out_lag['window']}); the merged all-books gate is "
+            f"{out_lag['all_books']['median_days']} d / p90 "
+            f"{out_lag['all_books']['p90_days']} d and is published beside it, not used"
+            if lag_live and out_lag["book"] == PLAN_BOOK else
+            f"the lag is measured daily off the gate log — median {out_lag['median_days']} d, "
+            f"p90 {out_lag['p90_days']} d over {out_lag['rows']} rows ({out_lag['window']}); "
+            f"this cycle's file carries no JIVO Oil row, so it is the merged gate"
+            if lag_live else
+            f"the lag is the one-off {out_lag['measured_on']} measurement, all books merged "
+            f"— live/state/dispatch_lag.json is {lag_mode}")},
+    }
+
     # --------------------------------------------------------- assemble -----
     opening = {
         "stock": stock,
@@ -1754,6 +2396,8 @@ def build():
         "fg_litres": round(fg_plan_l + fg_other_l),
         "fg_plan_l": round(fg_plan_l),
         "fg_other_l": round(fg_other_l),
+        # A10 — the new 20-piece carton code, counted as the planned product it is.
+        "fg_alias_applied": fg_alias_applied,
         # What the engine eats.
         "standing_l": round(standing),
         # The 14-day bills window, INFORMATION ONLY — see provenance.standing_wide_14d.
@@ -1833,6 +2477,22 @@ def build():
         "inbound_provenance": inb_prov,
         "lines": lines,
         "lines_basis": lines_basis,
+        # The rulebook's own word for HOW each planning speed was arrived at — capped /
+        # rated / typical / carried / derived. Published beside lines_basis so a consumer
+        # can say "80% of its rating, capped at its best August hour" without re-deriving it.
+        "lines_basis_kind": lines_basis_kind,
+        # Everything behind each speed: the app rating, the August median / best / run
+        # count, the planning figure, the prose basis and the structured planning_rule the
+        # site's AC05 check recomputes — plus the slot -> bottle-family -> preference map.
+        "lines_speeds": lines_speeds,
+        # B19 — containers an hour for a SKU whose recipe holds more than one container,
+        # on the lines that have a RECORD of filling one. The engine reads this instead of
+        # `lines` for those SKUs and schedules them nowhere else.
+        "lines_multi": lines_multi,
+        # What Mark 3 fed the engine, kept for comparison. NOT used.
+        "lines_carried_mark3": base["lines"],
+        # What ji.jivo.in lists TODAY. Read, compared, published — never fed in (A01).
+        "lines_app_rated_now": lines_app_now,
         "lines_unmapped_configs": lines_unslotted,
         "rules": rules,
         "actuals_for_scoring": {
@@ -1852,11 +2512,33 @@ def build():
                 + " — counted only for the oils EXIM has no tank for",
                 "the invoiced-but-not-trucked Oil pile (factory dispatch plans)",
                 "the live OMS order book and the ecom open-PO book",
-                "the invoice-to-truck lag, measured off the gate log",
+            ] + ([
+                "three months of outside billing (SAP, read once a day into a file)"
+            ] if out_baseline["used_for_forecast"] else []) + [
+                ("the invoice-to-gate lag, measured daily off the gate log" if lag_live else
+                 "the invoice-to-gate lag, measured once off the gate log"),
+                "what the plant has already booked this month (ji.jivo.in goods receipts)",
                 "BOMs, blends, realise May-Jul, and the monthly plan (carried)",
             ],
             "assumed": F.assumed,
+            # Which mode each sentence above is true in. engine/august_sim.py reads this
+            # and drops only what is tagged for the mode it is NOT running; a sentence
+            # with no tag is "both" and survives. The engine does not republish the map.
+            "assumed_modes": dict(F.assumed_modes),
         },
+        # ------------------------------------------------- MARK 4 ------------
+        # The rulebook, embedded WHOLE. Its presence is the switch: engine/august_sim.py
+        # runs rulebook mode iff S["rulebook"] is there, and every legacy path (August,
+        # -sep) is untouched because neither carries it.
+        "rulebook": rb,
+        "rulebook_applied": rulebook_applied,
+        # A10 — {new code: the planned code it is}. The site says "running now: FG0000461,
+        # which is FG0000142's product" instead of a code nobody's plan has heard of.
+        "plan_code_aliases": ALIAS,
+        "demand_baseline": out_baseline,
+        "lag": out_lag,
+        "dispatch_book": dispatch_book,
+        "money": money,
         "provenance": F.provenance,
         "warnings": F.warnings,
         # carried verbatim — BOM and master data, not a live position
@@ -1935,6 +2617,332 @@ def forecast_profile(code, weekly, working_days, today, F):
     return {d: w / tot for d, w in weights.items() if w > 0} if tot > 0 else {}
 
 
+# ------------------------------------------------- the demand baseline (R17) -
+# THE RULING (R17/R18, meeting 10:19-11:02, Daman 2026-09-06): never plan from POs
+# alone. GT/MT bunches its orders into the last days of the month — the baseline
+# measures 134,695 L a day in days 29-31 against 20,317 in days 1-7 — so a PO-only
+# plan is empty at month end and the buffer runs dry. Expected orders come from three
+# months of OUTSIDE billing per SKU, week-of-month shaped, netted by the real OMS book.
+#
+# The numbers come out of live/state/demand_baseline.json, which a DAILY cron writes
+# (live/demand_baseline_sap.py, the one allowed SAP read). This file only reads it.
+def baseline_shape(sku, pooled, months):
+    """({1..5: share}, "own" | "pooled") — how this SKU's month is distributed.
+
+    A SKU's OWN week shape is only usable when it sold in EVERY month of the window: one
+    month of history through five buckets is a shape of one sale, and it would put the
+    whole year on whichever week that sale happened to fall in. Everything else takes the
+    pooled shape — the same bunching, measured across the whole book (A09).
+    """
+    own = sku.get("by_week") or {}
+    tot = sum(f(v) for v in own.values())
+    if int(f(sku.get("months_seen"))) >= months and tot > 0:
+        return {w: f(own.get(str(w))) / tot for w in range(1, 6)}, "own"
+    return {w: f((pooled.get(str(w)) or {}).get("share")) for w in range(1, 6)}, "pooled"
+
+
+def expected_stream(baseline, plan, today, last_day, oms_pieces, months, realise, def_r):
+    """The FORECAST rows the billing baseline implies for the rest of the month.
+
+    Returns (rows, stats). PURE: no state, no clock, no I/O — the shaping is the part
+    that has to be testable, and the netting rule is the part that gets argued about.
+
+    Per SKU: monthly litres x its week-of-month share, divided by the CALENDAR days that
+    bucket has in THIS month, summed over the days still to come. Then netted by the real
+    OMS pieces already on the book for the same SKU (floored at zero — an over-ordered SKU
+    does not create negative demand), and the remainder spread back over the same days in
+    the same proportion. **e-com is never netted** (R18): its POs are its own stream and
+    the baseline excluded e-commerce billing in the first place, so subtracting one from
+    the other would take the same litres out twice.
+    """
+    days = [today + timedelta(days=i) for i in range((last_day - today).days + 1)]
+    first = today.replace(day=1)
+    # The bucket's CALENDAR days in this month, not the days still left in it: the share
+    # is a share of the whole bucket, so dividing it by a shrinking denominator would
+    # inflate the daily rate every time the month got shorter.
+    bucket_days = {}
+    for i in range((month_end(first) - first).days + 1):
+        w = week_of_month5(first + timedelta(days=i))
+        bucket_days[w] = bucket_days.get(w, 0) + 1
+    pooled = baseline.get("week_of_month") or {}
+    rows = []
+    stats = {"rows": 0, "litres": 0.0, "skus": 0, "netted_oms_pieces": 0.0,
+             "dropped_subpiece_l": 0.0, "negative_slice_l": 0.0,
+             "sku_shape_own": 0, "sku_shape_pooled": 0,
+             "skus_known_not_planned": 0}
+    for code, sku in sorted((baseline.get("skus") or {}).items()):
+        if code not in plan:
+            stats["skus_known_not_planned"] += 1
+            continue
+        monthly = f(sku.get("litres_per_month"))
+        if monthly <= 0:
+            continue
+        share, kind = baseline_shape(sku, pooled, months)
+        stats["sku_shape_own" if kind == "own" else "sku_shape_pooled"] += 1
+        per_day = {}
+        for d in days:
+            n = bucket_days.get(week_of_month5(d), 0)
+            if n:
+                per_day[d] = monthly * share.get(week_of_month5(d), 0.0) / n
+        total = sum(per_day.values())
+        if total <= 0:
+            continue
+        lpp = f(plan[code]["litres_per_piece"], 1.0) or 1.0
+        booked_l = f(oms_pieces.get(code)) * lpp
+        net = max(0.0, total - booked_l)
+        stats["netted_oms_pieces"] += min(booked_l, total) / lpp
+        if net <= 0:
+            continue
+        stats["skus"] += 1
+        rate = f(realise.get(code), def_r)
+        for d, weight in per_day.items():
+            litres = net * weight / total
+            pieces = litres / lpp
+            if litres < 0:
+                # A week bucket whose three months carry net RETURNS gives a NEGATIVE day
+                # slice. It is dropped like a sub-bottle slice — a negative order is not an
+                # order — but it is not one, and putting it in that counter published
+                # `dropped_subpiece_l: -2,734`, a negative count of dropped litres that
+                # reads as a bug on the site. Two different facts, two counters.
+                stats["negative_slice_l"] += litres
+                continue
+            if pieces < 1:
+                stats["dropped_subpiece_l"] += litres    # too small to be one bottle
+                continue
+            rows.append({"docnum": f"FCST-W{week_of_month5(d)}-{code}", "date": d.isoformat(),
+                         "due": d.isoformat(), "customer": FORECAST_CUSTOMER, "code": code,
+                         "pieces": pieces, "value": pieces * lpp * rate,
+                         "channel": "FORECAST", "_src": "FORECAST",
+                         "basis": FORECAST_BASIS_BILLING})
+            stats["rows"] += 1
+            stats["litres"] += litres
+    return rows, stats
+
+
+def select_lag(lag_file, lag_mode, lag_age, lag_at, lag_note, carried_days):
+    """The invoice-to-gate lag and where it came from. Returns (days, block, live, say).
+
+    R21 wants it measured daily. live/dispatch_lag.py does that off the gate log; when its
+    file is fresh this uses it, and when it is not, the plan falls back to
+    factory_dispatch.LAG_NOTE — ONE measurement, taken by hand on 2026-09-03 off page 1 of
+    4. The fallback is a real number that gets a day older every day, so `static` and the
+    sentence are not decoration: they are how anybody reading the plan knows which it is.
+
+    THE BOOK THE PLAN RUNS ON IS OIL, not the merged gate (fixed 2026-09-06). This engine
+    plans one company: JIVO Oil. It reads the Oil pile, it bills Oil litres, and the lag it
+    is given decides how long each of those litres sits in the godown before a truck takes
+    it away. Up to now it was handed `all` — the merged three-book gate — and dispatch_lag.py
+    says in its own docstring that the three books are NOT one population:
+    `by_company.JIVO_OIL` is the plan's lag, `all` is published beside it because the gate is
+    one gate. CLAUDE.md says the same in the other direction: "Dispatch litres are three
+    companies — Oil is the split, never the merged headline."
+
+    The merged figure is 2 days / p90 9; Oil's is 3 days / p90 11. The plan opens at 100% of
+    the declared godown ceiling, so a day of lag is a day of headroom, and the merged number
+    was buying the plan a day of storage that JIVO Oil's own gate log does not give it.
+    Beverages is 313 of the 551 rows and turns its trucks fastest, so the merged median was
+    mostly a Beverages measurement being spent on Oil stock.
+
+    `all` is not dropped. It is published beside the plan's lag as `all_books`, and `book`
+    names which one the plan ran on, so the page can show both and say which is which.
+    """
+    stats_of = lambda s: {"median_days": (s or {}).get("median_days"),
+                          "p90_days": (s or {}).get("p90_days"),
+                          "max_days": (s or {}).get("max_days"),
+                          "mean_days": (s or {}).get("mean_days"),
+                          "rows": (s or {}).get("n")}
+    fresh = (lag_file or {}) if lag_mode == "fresh" else {}
+    by_company = fresh.get("by_company") or {}
+    all_stats = fresh.get("all") or {}
+    oil_stats = by_company.get(PLAN_BOOK) or {}
+    # Oil first; the merged gate only if this cycle's file carries no Oil rows at all.
+    plan_stats = oil_stats if oil_stats.get("median_days") is not None else all_stats
+    plan_book = PLAN_BOOK if plan_stats is oil_stats else "ALL_BOOKS"
+    if plan_stats.get("median_days") is not None:
+        window = (fresh.get("window") or {})
+        block = dict(stats_of(plan_stats))
+        block.update({
+            "book": plan_book,
+            "book_say": ("JIVO Oil's own gate rows — the book this plan makes for"
+                         if plan_book == PLAN_BOOK else
+                         "all three books merged, because this cycle's gate log carries no "
+                         "JIVO Oil row to measure"),
+            "all_books": dict(stats_of(all_stats)),
+            "window": f"{window.get('from')}..{window.get('to')}",
+            "measured_on": fresh.get("measured_on") or lag_at,
+            "by_company": by_company,
+            "source": "live/state/dispatch_lag.json (ji.jivo.in gate log, measured daily)",
+            "static": False, "age_days": lag_age,
+            "method": fresh.get("method"), "caveat": fresh.get("caveat"),
+        })
+        days = int(round(f(block["median_days"])))
+        merged = block["all_books"]
+        beside = ""
+        if merged.get("median_days") is not None and plan_book == PLAN_BOOK:
+            beside = (f". The merged all-books gate is {merged['median_days']} d median / "
+                      f"p90 {merged['p90_days']} d over {merged['rows']} rows — published "
+                      "beside it, NOT what the plan runs on: the three books are not one "
+                      "queue and this plan makes Oil")
+        return days, block, True, (
+            f"the {days}-day invoice-to-gate lag is measured DAILY off the gate log and is "
+            f"JIVO OIL's own ({block['rows']} dispatched Oil rows, {block['window']}); the "
+            f"p90 is {block['p90_days']} days and the tail runs to {block['max_days']} — the "
+            f"plan uses the median and ignores the tail{beside}"
+            if plan_book == PLAN_BOOK else
+            f"the {days}-day invoice-to-gate lag is measured DAILY off the gate log, but this "
+            f"cycle's file carries NO JIVO Oil row, so it is the merged all-books gate "
+            f"({block['rows']} rows, {block['window']}) standing in for Oil's own")
+    note = lag_note or {}
+    days = note.get("median_days")
+    days = carried_days if days is None else int(days)
+    block = {
+        "median_days": note.get("median_days"), "p90_days": note.get("p90_days"),
+        "max_days": note.get("max_days"), "mean_days": note.get("mean_days"),
+        "rows": note.get("rows"), "window": note.get("measured_window"),
+        "measured_on": note.get("measured_on"), "by_company": {},
+        "book": "ALL_BOOKS", "all_books": stats_of(None),
+        "book_say": ("the one-off hand measurement was never split by book, so it is all "
+                     "three merged standing in for Oil's own"),
+        "source": "factory_dispatch.LAG_NOTE (measured once, by hand)",
+        "static": True, "age_days": lag_age,
+        "method": note.get("method"), "caveat": note.get("caveat"),
+    }
+    return days, block, False, (
+        f"the invoice-to-gate lag is the one-off {note.get('measured_on') or '3 Sep'} "
+        f"measurement, all three books merged and never split — "
+        f"live/state/dispatch_lag.json is {lag_mode}; run live/dispatch_lag.py "
+        "(a DAILY job, never in the 3-minute loop) to measure it off the last 30 days of the "
+        "gate log and get JIVO Oil's own (R21)")
+
+
+def dispatch_pendency(ind, hist_days, standing_l):
+    """How many days of work the open dispatch book is (R21/B09).
+
+    Gurvinder's question in his own words. The open book divided by the pace the gate has
+    actually kept over the last recorded days — every figure from ji.jivo.in (R01). NULL
+    with a reason when no day has a gate figure yet: a plant that has dispatched nothing on
+    record has an INFINITE pendency, not a zero one, and publishing 0 would read as "clear".
+    The three books are NOT one queue, so the Oil line uses the Oil pile and the Oil pace.
+    """
+    ind = ind or {}
+    rec_all = [f(d["dispatched_all_l"]) for d in (hist_days or [])
+               if d.get("dispatched_all_l") is not None][-7:]
+    rec_oil = [f(d["dispatched_oil_l"]) for d in (hist_days or [])
+               if d.get("dispatched_oil_l") is not None][-7:]
+    daily_all = (sum(rec_all) / len(rec_all)) if rec_all else None
+    daily_oil = (sum(rec_oil) / len(rec_oil)) if rec_oil else None
+    open_all = f(ind.get("litres")) if ind.get("litres") is not None else None
+    return {
+        "open_l_all_books": round(open_all) if open_all is not None else None,
+        "open_bills": ind.get("bills"),
+        "oil_pile_l": round(f(standing_l)),
+        "trailing_days": len(rec_all),
+        "trailing_daily_all_l": round(daily_all) if daily_all else None,
+        "trailing_daily_oil_l": round(daily_oil) if daily_oil else None,
+        "pendency_days_all": (round(open_all / daily_all, 1)
+                              if (open_all is not None and daily_all) else None),
+        "pendency_days_oil": (round(f(standing_l) / daily_oil, 1) if daily_oil else None),
+        "basis": (
+            "open dispatch plans from ji.jivo.in (dispatch-plans dispatch-fulfilment-summary, "
+            "PENDING + BOOKED, all three books) divided by the mean litres the gate actually "
+            f"passed over the last {len(rec_all)} recorded day(s) (factory_history). The Oil "
+            "line uses the Oil pile the engine is given and the Oil gate figure — the three "
+            "books are not one queue."),
+        "basis_missing": (None if rec_all else
+                          "no day already gone this month carries a gate figure yet, so days "
+                          "of pendency cannot be worked out — factory_history is HOURLY and a "
+                          "cold box fills it in over the first hours"),
+    }
+
+
+def price_pieces(code, pieces, plan, items, realise, sheet_codes, bl_rate, aliases, def_r):
+    """(rupees, which_rate, unvalued_pieces, planned_code) for one item code's pieces.
+
+    A12 fixes the rate as `realise`. Three rates in order, and WHICH one is published
+    rather than folded into a total: the plan sheet's own May-Jul realise, then the SKU's
+    ₹/L out of three months of billing, then the engine's default. A10 is applied first —
+    the new 20-piece carton code is the planned product, priced as the planned product.
+    """
+    c = aliases.get(code, code)
+    if c in plan:
+        lpp = f(plan[c].get("litres_per_piece"))
+    else:
+        lpp = f(pack_litres(((items.get(c) or {}).get("name")) or "")[0])
+    if lpp <= 0:
+        return 0.0, None, pieces, c
+    if c in sheet_codes:
+        rate, key = f(realise.get(c), def_r), "realise_rs"
+    elif c in bl_rate:
+        rate, key = f(bl_rate[c]), "baseline_rs"
+    else:
+        rate, key = def_r, "default_rs"
+    return pieces * lpp * rate, key, 0.0, c
+
+
+def expected_only_rows(baseline, plan, bom, items, oils, realise):
+    """A18 — SKUs the plant SELLS that the plan sheet never mentions, as pieces-0 rows.
+
+    27% of the outside litres in the baseline (844,054 L over three months) are on codes
+    the September sheet does not carry. Ignoring them plans a month that cannot serve a
+    quarter of its own demand. Inventing them is worse, so a row is appended ONLY when
+    the engine could actually build it: SAP's own BOM names it, that BOM names an oil, and
+    engine/pack_class.py can say which pack and which bottle it is. A drum is out by R14 —
+    it is filled by hand, not scheduled. Everything else is published, by name and with
+    the reason, in `nonplan.skipped`: demand the plan cannot place is still demand.
+
+    Returns (rows, packs, nonplan). `rows` are plan rows, `packs` their sku_pack entries.
+    """
+    def oil_of(code):
+        o = [(c, per) for c, per in bom.get(code, []) if c in oils]
+        return max(o, key=lambda x: x[1])[0] if o else None
+
+    rows, packs, skipped = [], {}, []
+    for code, sku in sorted((baseline.get("skus") or {}).items()):
+        if code in plan:
+            continue
+        name = str(sku.get("name") or code)
+        if code not in bom:
+            skipped.append({"code": code, "name": name, "reason": "no BOM",
+                            "litres_per_month": round(f(sku.get("litres_per_month")))})
+            continue
+        if oil_of(code) is None:
+            skipped.append({"code": code, "name": name, "reason": "no oil in BOM",
+                            "litres_per_month": round(f(sku.get("litres_per_month")))})
+            continue
+        pc = pack_class(code, bom, items, f(sku.get("litres_per_piece")) or None, "")
+        if pc["slot"] is None or pc["family"] == "UNKNOWN":
+            skipped.append({"code": code, "name": name, "reason": "pack not classed",
+                            "litres_per_month": round(f(sku.get("litres_per_month")))})
+            continue
+        if pc["slot"] == "DRUM":
+            skipped.append({"code": code, "name": name, "reason": "drum — filled by hand (R14)",
+                            "litres_per_month": round(f(sku.get("litres_per_month")))})
+            continue
+        head = str(sku.get("type") or "").upper()
+        rows.append({
+            "code": code, "sku": name,
+            "head": head if head in ("PREMIUM", "COMMODITY") else "OTHER",
+            "category": sku.get("sub_group") or "",
+            "pack_type": ("TIN" if pc["family"] == "TIN" else
+                          "POUCH" if pc["slot"] == "POUCH" else "PET"),
+            "litres_per_piece": f(sku.get("litres_per_piece"), 1.0) or 1.0,
+            "pieces": 0, "litres": 0.0,
+            "expected_only": True, "source": "demand_baseline A18",
+            "trailing_l_per_month": round(f(sku.get("litres_per_month"))),
+        })
+        packs[code] = dict(sku=name, litres_per_piece=f(sku.get("litres_per_piece")),
+                           sheet_pack_type=None, derived_by="freeze", **pc)
+        if code not in realise:
+            monthly_l = f(sku.get("litres_per_month"))
+            if monthly_l > 0:
+                realise[code] = round(f(sku.get("inr_per_month")) / monthly_l, 2)
+    nonplan = {"candidates": len(skipped) + len(rows), "appended": len(rows),
+               "appended_l_per_month": round(sum(r["trailing_l_per_month"] for r in rows)),
+               "skipped": skipped,
+               "skipped_l_per_month": round(sum(s["litres_per_month"] for s in skipped))}
+    return rows, packs, nonplan
+
+
 # ---------------------------------------------------------------- lines -----
 # ji.jivo.in's line configs are keyed by PACK SIZE, not by SKU: every row measured
 # 2026-09-03 carries sku_code "" and a config_name of "1 LTR" / "5 LTR" / "Hitech".
@@ -1964,96 +2972,111 @@ def config_slot(name):
     return "15L"
 
 
-def slot_of(p):
-    """The engine's own slot(), reproduced so `lines` is keyed the way it reads them."""
-    pt = str(p.get("pack_type", "")).upper()
-    sku = str(p.get("sku", "")).upper()
-    l = f(p.get("litres_per_piece"))
-    if "DRUM" in pt:
-        return "DRUM"
-    if "TIN" in pt or "KGS" in sku:
-        return "TIN"
-    if "POUCH" in pt or "POUCH" in sku:
-        return "POUCH"
-    for cap, name in ((1.05, "1L"), (2.05, "2L"), (3.05, "3L"), (4.05, "4L"), (5.05, "5L")):
-        if l <= cap:
-            return name
-    return "15L"
+# slot_of() and build_lines() USED TO LIVE HERE — the Mark 3 line table: the engine's
+# legacy slot vocabulary reproduced by hand, and a rate chosen per (line, pack) from
+# MEASURED_RATES / the app's rating / the carried August table, all PRE-efficiency for
+# the engine to derate by 0.5.
+#
+# Both are gone (Mark 4, 2026-09-06). The rulebook is not optional in this file — a
+# missing one REFUSES — so neither could ever run again, and the only thing they still
+# did that nothing else does was write the two honesty sentences the engine now has to
+# strip ("the engine then derates everything by 50% again", "the engine applies
+# rules.efficiency (0.5) on top of it"). A dead path whose distinctive behaviour is
+# publishing a false sentence about the plan beside it is not a fallback worth keeping.
+# The R15 replacement for slot_of() is engine/pack_class.py, which is the ONE
+# implementation of "which pack is this"; build_lines_mark4() is the line table.
+# git log this file for the code.
 
 
-def build_lines(F, prod, prod_mode, prod_env, base, plan):
-    """{line: {pack: pieces/hour}} + a parallel basis map.
+def app_rated_now(cfgs, F):
+    """{line: {slot: rated}} — what ji.jivo.in lists TODAY, in the rulebook's vocabulary.
 
-    PRE-EFFICIENCY, always: the engine multiplies by rules.efficiency at run time.
+    Published, never fed in. The rulebook's planning speeds were built against the config
+    dump of 2026-09-06 (reference/app-line-configs-2026-09-06.json); if somebody retypes a
+    rating tomorrow the plan must not silently move with it, because the August cap that
+    sits on top of the rating did not move. So the live rating is carried beside the
+    planning speed and any disagreement is said out loud — the fix is to rebuild the
+    rulebook, not to let the freeze drift.
     """
-    carried = base["lines"]
-    cfgs, cfg_mode = F.block("factory_production", prod, prod_mode, prod_env,
-                             "line_configs", lambda v: isinstance(v, list) and bool(v))
     rated, unslotted = {}, {}
-    if cfgs:
-        for c in cfgs:
-            if not c.get("is_active"):
-                continue
-            ln = c.get("line_name")
-            speed = f(c.get("rated_speed"))
-            if not ln or speed <= 0:
-                continue
-            slot = config_slot(c.get("config_name"))
-            if slot is None and c.get("sku_code") in plan:
-                slot = slot_of(plan[c["sku_code"]])       # the per-SKU path, for when it returns
-            if slot:
-                rated.setdefault(ln, {}).setdefault(slot, []).append(speed)
-            else:
-                unslotted.setdefault(ln, []).append((c.get("config_name"), speed))
-        for ln, slot in PARALLEL_MACHINE_LINES.items():
-            rows = unslotted.get(ln)
-            if rows and slot not in rated.get(ln, {}):
-                total = sum(sp for _n, sp in rows)
-                rated.setdefault(ln, {})[slot] = [total]
-                unslotted.pop(ln, None)
-                F.assume(f"{ln} runs {len(rows)} machines side by side "
-                         f"({', '.join(str(n) for n, _sp in rows)}); their rated speeds are "
-                         f"SUMMED into one {slot} rate ({total:g}/hr), never averaged")
-        if unslotted:
-            F.warn("line configs whose name is neither a pack size nor a known machine, so "
-                   "they set no rate: " + "; ".join(
-                       f"{ln} {[n for n, _s in rows]}" for ln, rows in unslotted.items()))
-    else:
-        F.assume("ji.jivo.in line configs were not available this run, so every line rate is "
-                 "the carried August-calibrated table")
+    for c in (cfgs or []):
+        if not c.get("is_active"):
+            continue
+        ln, speed = c.get("line_name"), f(c.get("rated_speed"))
+        if not ln or speed <= 0:
+            continue
+        slot = config_slot(c.get("config_name"))
+        if slot:
+            rated.setdefault(ln, {}).setdefault(slot, []).append(speed)
+        else:
+            unslotted.setdefault(ln, []).append((c.get("config_name"), speed))
+    for ln, slot in PARALLEL_MACHINE_LINES.items():           # Pouch = two machines, SUMMED
+        rows = unslotted.get(ln)
+        if rows and slot not in rated.get(ln, {}):
+            rated.setdefault(ln, {})[slot] = [sum(sp for _n, sp in rows)]
+            unslotted.pop(ln, None)
+    out = {}
+    for ln, slots in rated.items():
+        out[ln] = {}
+        for slot, vals in slots.items():
+            vals = sorted(vals)
+            out[ln][slot] = vals[len(vals) // 2]              # median of that slot's configs
+    return out, {ln: [n for n, _s in rows] for ln, rows in unslotted.items()}
 
-    lines, basis = {}, {}
-    for ln, packs in carried.items():                  # keep the carried shape as the spine
-        lines[ln], basis[ln] = {}, {}
-        for pack, val in packs.items():
-            m = MEASURED_RATES.get((ln, pack))
-            if m is not None:
-                lines[ln][pack], basis[ln][pack] = m, "measured"
-            elif rated.get(ln, {}).get(pack):
-                vals = sorted(rated[ln][pack])
-                lines[ln][pack] = vals[len(vals) // 2]  # median of that slot's configs
-                basis[ln][pack] = "rated"
-            else:
-                lines[ln][pack], basis[ln][pack] = f(val), "carried"
-    for ln, packs in rated.items():                    # a slot the app knows and we did not
-        for pack, vals in packs.items():
-            if ln in lines and pack not in lines[ln]:
-                vals = sorted(vals)
-                lines[ln][pack] = vals[len(vals) // 2]
-                basis[ln][pack] = "rated"
-    if any(b == "measured" for p in basis.values() for b in p.values()):
-        F.assume("Clear Pack 5 L and Tin Head run at OBSERVED August rates, not their app "
-                 "rating (Clear Pack 5 L was rated 3,000/hr and measured 1,000; Tin Head has "
-                 "no config row at all) — and the engine then derates everything by "
-                 f"{base['rules']['efficiency'] * 100:.0f}% again")
-    if any(b == "rated" for p in basis.values() for b in p.values()):
-        F.assume("line rates marked `rated` are ji.jivo.in's own rating carried VERBATIM; the "
-                 "rating has measured 17%-327% of reality, and the engine applies "
-                 f"rules.efficiency ({base['rules']['efficiency']}) on top of it")
-    if any(b == "carried" for p in basis.values() for b in p.values()):
-        F.assume("line rates marked `carried` are the August-calibrated table — the live "
-                 "configs had no row for that line and pack size")
-    return lines, basis, {ln: [n for n, _s in rows] for ln, rows in unslotted.items()}
+
+def build_lines_mark4(F, rb, cfgs, base):
+    """`lines` from the RULEBOOK's planning speeds (A01) — the Mark 4 line table.
+
+    Two things change and both are traps Mark 3 walked into:
+
+    1. THE KEYS. `lines[line][slot]` now holds exactly the slots the rulebook names that
+       line for — Tin Head carries 15L / 3L / 5L and NOTHING carries a 15 L key it was not
+       given (AC02). Mark 3 keyed the Tin Head "TIN", one bucket for every tin from 3 L to
+       15 kg, and then let engine/august_sim.py DERIVE a 15 L rate as the 5 L slot / 3 on
+       every line that had a 5 L head — which is how a 15-litre tin came to be planned on
+       Clear Pack.
+    2. THE NUMBER. A planning speed is POST-efficiency: min(80% x the app's rating, the
+       best sustained August hour over at least three runs). `rules.efficiency` is
+       therefore 1.0 and the engine refuses to run a rulebook at anything else — storing
+       these speeds under the old 0.5 would derate them a second time and plan the plant
+       at half (2.01 M L instead of 3.19 M).
+
+    A slot with no planning speed is SKIPPED, not guessed: Clear Pack 2 L and 6 Head 3 L
+    have no rating and no August run, and the rulebook says so in as many words
+    ("NO RATE — needs a ruling"). The engine reads a missing rate as "this machine cannot
+    fill this pack", which is the truthful reading until somebody rules on it.
+    """
+    lines, basis, kinds, speeds, multi = {}, {}, {}, {}, {}
+    no_rate = []
+    for ln, spec in (rb.get("lines") or {}).items():
+        blocks = spec.get("speeds") or {}
+        speeds[ln] = {"app_line_id": spec.get("app_line_id"), "slots": spec.get("slots") or {},
+                      "notes": spec.get("notes") or [], "speeds": blocks,
+                      "speeds_multi": spec.get("speeds_multi") or {},
+                      "aug_litres_by_slot": spec.get("aug_litres_by_slot") or {}}
+        for slot, sp in blocks.items():
+            planning = sp.get("planning")
+            if planning is None:
+                no_rate.append(f"{ln} {slot}")
+                continue
+            lines.setdefault(ln, {})[slot] = f(planning)
+            basis.setdefault(ln, {})[slot] = "planning"
+            kinds.setdefault(ln, {})[slot] = (sp.get("planning_rule") or {}).get("kind")
+        # B19 — a SKU whose recipe holds more than one container fills at the COMBO rate,
+        # on the lines that have a record of running one. The engine reads this table
+        # instead of `lines` for those SKUs and will not schedule them anywhere else.
+        for slot, sp in (spec.get("speeds_multi") or {}).items():
+            if sp.get("planning") is not None:
+                multi.setdefault(ln, {})[slot] = f(sp["planning"])
+    if no_rate:
+        F.assume("these machine-and-pack pairs have no planning speed in the rulebook — no "
+                 "app rating and no August run — so the plan treats them as pairs the plant "
+                 "cannot run, rather than inventing a rate: " + ", ".join(sorted(no_rate)))
+    F.assume("each machine is planned at the rulebook's PLANNING speed, which is already "
+             f"{f((rb.get('efficiency') or {}).get('planning_factor'), 0.8) * 100:.0f}% of "
+             "its listed rating and never faster than the best hour it held in August — so "
+             "the plan multiplies it by 1.0 and cuts it no further (A01)")
+    return lines, basis, kinds, speeds, multi
 
 
 # ------------------------------------------------------------ reconcile -----
@@ -2142,14 +3165,64 @@ def reconcile(F, out, recon, path):
     for src, n in sorted(r["by_src"].items(), key=lambda kv: -r["qty_by_src"].get(kv[0], 0)):
         a(f"     {src:<14}{n:>7,} bookings {r['qty_by_src'].get(src, 0):>16,.0f}  (L for RM, pieces for PM)")
     a(f"     EXIM on the way{r['exim_otw_l']:>14,.0f} L    open contracts {r['po_lead_l']:>12,.0f} L")
-    a("  LINE RATES (pieces/hour BEFORE the engine's "
-      f"{out['rules']['efficiency'] * 100:.0f}% derate)")
+    b = out["demand_baseline"]
+    a(f"  DEMAND BASELINE   [{b['mode']}] {b['window'] and b['window'].get('from')}.."
+      f"{b['window'] and b['window'].get('to')}   used for expected orders: "
+      f"{'YES' if b['used_for_forecast'] else 'NO — ' + str(b['fallback_reason'])}")
+    if b["used_for_forecast"]:
+        a(f"     expected       {b['expected_litres']:>14,} L over {b['expected_rows']:,} rows"
+          f" / {b['expected_skus']} SKU(s)   shape own {b['sku_shape_own']} · pooled "
+          f"{b['sku_shape_pooled']}")
+        a(f"     netted OMS     {b['netted_oms_pieces']:>14,} pieces   (ecom is NEVER netted "
+          "— R18)   trailing set on {} plan row(s)".format(b["trailing_rows_set"]))
+        r = b["reconciliation"]
+        a(f"     reconciles     skus {r['skus_vs_totals_pct']}% · channels "
+          f"{r['channels_vs_totals_pct']}% · weeks {r['weeks_vs_totals_pct']}% of the "
+          "window total")
+        n = b["nonplan"]
+        a(f"     A18            {n['appended']} appended ({n['appended_l_per_month']:,} L/mo)"
+          f" · {len(n['skipped'])} skipped ({n['skipped_l_per_month']:,} L/mo)")
+    a(f"  LINE RATES — the rulebook's PLANNING speeds, pieces/hour, already post-efficiency "
+      f"(rules.efficiency {out['rules']['efficiency']:g})")
     for ln in sorted(out["lines"]):
-        bits = ", ".join(f"{p} {out['lines'][ln][p]:g} [{out['lines_basis'][ln][p]}]"
+        bits = ", ".join(f"{p} {out['lines'][ln][p]:g} [{out['lines_basis_kind'][ln][p]}]"
                          for p in sorted(out["lines"][ln]))
         a(f"     {ln:<14} {bits}")
-    a(f"  invoice->truck lag {out['rules']['invoice_truck_lag_days']} d (measured median)   "
-      f"assumptions this run: {len(out['honesty']['assumed'])}   warnings: {len(out['warnings'])}")
+    for ln in sorted(out["lines_multi"]):
+        bits = ", ".join(f"{p} {out['lines_multi'][ln][p]:g}"
+                         for p in sorted(out["lines_multi"][ln]))
+        a(f"     {ln:<14} COMBO SETS {bits}")
+    a(f"  SHIFT             {out['rules']['shift_hours']} h a session, "
+      f"{out['rules']['sessions_per_day_max']} session(s) a day max, "
+      f"{out['rules']['night_lines_max']} line at night, Sundays off: "
+      f"{out['rules']['sundays_off']}")
+    lg = out["lag"]
+    a(f"  INVOICE->GATE LAG median {lg['median_days']} d · p90 {lg['p90_days']} d · max "
+      f"{lg['max_days']} d over {lg['rows']} rows ({lg['window']})   "
+      f"[{lg['book']} — THE PLAN'S BOOK] "
+      f"[{'MEASURED DAILY' if not lg['static'] else 'MEASURED ONCE — static'}]")
+    if lg["all_books"]["median_days"] is not None:
+        a(f"     beside it     all three books merged: median "
+          f"{lg['all_books']['median_days']} d · p90 {lg['all_books']['p90_days']} d over "
+          f"{lg['all_books']['rows']} rows — published, NOT what the engine was given")
+    db = out["dispatch_book"]
+    _open_l = "{:,}".format(db["open_l_all_books"]) if db["open_l_all_books"] is not None else "?"
+    a(f"  OPEN DISPATCH BOOK {_open_l} L all "
+      f"books / Oil pile {db['oil_pile_l']:,} L   pendency all "
+      f"{db['pendency_days_all']} d · Oil {db['pendency_days_oil']} d "
+      f"(last {db['trailing_days']} recorded day(s))")
+    m = out["money"]
+    a(f"  MONEY             ₹{m['mtd_made_rs']:,} booked over {m['mtd_days']} day(s); today "
+      f"₹{m['today_booked_rs']:,}   target ₹{f(m['target_rs_per_day']):,.0f}/day, floor "
+      f"₹{f(m['floor_rs_per_day']):,.0f}")
+    a(f"     by rate        realise ₹{m['mtd_by_basis']['realise_rs']:,} · billing "
+      f"₹{m['mtd_by_basis']['baseline_rs']:,} · default ₹{m['mtd_by_basis']['default_rs']:,}"
+      f"   unvalued {m['mtd_unvalued_pcs']:,} pcs")
+    a("  RULEBOOK " + str(out["rulebook"]["version"]) + "   in effect: " + ", ".join(
+        f"{k}{'' if v['in_effect'] else ' (fallback)'}"
+        for k, v in sorted(out["rulebook_applied"].items())))
+    a(f"  assumptions this run: {len(out['honesty']['assumed'])}   "
+      f"warnings: {len(out['warnings'])}")
     for w in out["warnings"]:
         a(f"     ! {w}")
     a("=" * 78)

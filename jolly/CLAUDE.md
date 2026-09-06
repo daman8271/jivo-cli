@@ -111,6 +111,66 @@ It still cannot run the loop, reach the source systems, or deploy Vercel.
 
 ---
 
+## MARK 4 — the rulebook, and the page that shows it
+
+Mark 3 answered *what will happen*. Mark 4 answers **why it says that**, because
+Gurvinderjeet Singh cannot check a plan he cannot see the reasoning behind.
+
+**The rulebook IS the spec.** `reference/MARK4-RULEBOOK.md` and
+`reference/mark4-rulebook.json` are **generated** — edit
+`reference/build_mark4_rulebook.py` and rebuild, never the two outputs. It holds
+the settled rulings (`R*`), what the computer takes on top of them (`A*`), and
+the acceptance list. The engine reads the JSON; `freeze_live.py` puts
+`rules.shift_hours` into the freeze and `engine/august_sim.py` takes its hours
+from there. **`SIM_HOURS` is an override, not a default** — `live/loop.sh` no
+longer sets one, the engine refuses a session longer than the rulebook allows,
+and any override that is used is recorded in `sim/summary-live.json` as
+`hours_override`. A 3-minute cycle silently running a longer day than the plant
+ruled is the bug that made this rule exist.
+
+**Two jobs run once a day, outside the 3-minute loop**, and both write a file
+the loop only reads:
+- `live/demand_baseline_sap.py` — what the trade really bought over the last few
+  months, which is what "expected orders" now means. It is **the one allowed SAP
+  read** (RULE 0 stands: it is a customer-buying question, not a factory one).
+- `live/dispatch_lag.py` — how long a bill takes to reach a gate, measured off
+  ji.jivo.in's own gate log. The lag is **measured daily** now, not once.
+
+**`plan/assumptions.json` is the new file and `/assumptions` is the new page.**
+Every settled ruling, every assumption *with whether it is in effect this run
+and why*, the choices the build had to make, the speed behind every machine and
+pack, which pack may go on which line, where the month's sheet disagrees with
+the recipe, and every open question with its status. Gurvinder answers by
+writing a line starting `Answer:` under a question in
+`out/QUESTIONS-FOR-GURVINDER-*.md`; the chain reads that file every cycle.
+
+**What changed on the site** (`site-live/`, deployed as its own NEW Vercel
+project **`jivo-mark4`** — `jivo-mark3` stays where it is, as Mark 3): the front
+page is **money against your own target, then machine by machine**. The dispatch headline is **how many days of work sit in the open
+book and how long a bill waits** — what left the gate today is a fold at the
+bottom, because a good gate day with a growing book still fills the godown. The
+speed basis has five words (`capped` / `rated` / `typical` / `carried` /
+`derived`) plus `none` for a pack nobody has rated — and `none` is shown in red,
+never hidden and never rendered as a zero. `overview.json` no longer carries
+`warnings`; they live in `honesty.json` and the footer reads them from there.
+
+**`live/state/` is never committed** — nor is `site-live/node_modules` or
+`.next`. `site-live/fixtures/` is the one committed snapshot. **Two different
+commands, and they are not interchangeable:**
+
+- `npm run fixtures` copies `site-live/fixtures/` → `public/fixtures/` and
+  nothing else. `prebuild` and `predev` run it, so a fresh clone builds green
+  offline. It does **not** read `live/state/`, so it can never refresh the
+  snapshot.
+- `npm run fixtures:pull` (`node scripts/sync-fixtures.mjs --pull`) is the one
+  that refreshes the committed snapshot from `live/state/plan/`, then copies.
+  Opt-in on purpose: `live/state/` is gitignored and absent on Vercel and in a
+  fresh clone, and a `prebuild` that quietly rewrote committed files would make
+  `npm run build` a source change. **Run it after the chain, before committing**,
+  or the committed fixtures and the generator drift apart.
+
+---
+
 ## THE ONE RULE THAT DEFINED MARK 2 (superseded in Mark 3)
 
 > **Only day 1 is observed. Every later day is COMPUTED from the day before plus
@@ -123,9 +183,21 @@ what actually happened on a later date to improve it — that breaks the whole
 premise.
 
 Why it is worth trusting: the same engine, standing on 1 August knowing nothing
-later, predicted **2,122,639 L** against the plant's actual **2,119,237 L**.
-**0.16% off.** That calibration is the only reason these numbers get to have an
+later, predicted **2,124,866 L** against the plant's actual **2,119,237 L**.
+**0.27% off.** That calibration is the only reason these numbers get to have an
 opinion.
+
+**It is a measurement, so it is pinned to what measured it.** `sim/summary.json`
+is a working file — a bare `python3 engine/august_sim.py` rewrites it — and the
+claim was read straight out of it until 2026-09-06, by which time it had drifted
+to 2,122,639 L / 0.16% while the engine in the tree made 2,124,866 L / 0.27%.
+Nothing failed, because nothing looked. The figure now lives in
+**`reference/august-calibration.json`**, written by `python3
+engine/calibrate_august.py`, stamped with the sha256 of the engine and inputs it
+was measured against. `gen_live.py` reads that file, refuses the run if it is
+missing, and publishes `reproducible: false` with a warning naming the file that
+moved if the engine has changed since. **Re-measure it in the same commit as any
+engine change**, and never retype the number here — copy it from the artefact.
 
 ---
 
@@ -181,6 +253,26 @@ monthly plan dated into forecast buckets. Forecast rows are triple-tagged
 
 **The day-1 order pile is real, not a bug.** 40 of 47 open plan-SKU orders were
 already overdue on 31 Aug. That is the state of the book.
+
+**The storage ceiling is not just a number, it is the rule that MAKES the plan
+(B20).** `engine/august_sim.py` caps every run to the room left in the godown
+(`cap = min(cap, headroom / litres per piece)`), decrements it litre by litre
+through the day, and stops the plant when it hits nothing. On 2026-09-06 that one
+line held production back on 19 of 22 working days, made 28.3% of the sheet and
+left 58 of 84 products unmade — and it appeared in no ruling, no assumption and no
+build choice. It is **B20** now, and `overview.storage_cap` carries the run's own
+arithmetic. Two things follow: a run the ceiling stops **emits a held-up row with
+`binder: STORAGE`** (before that it vanished, and 11 of 18 held-back days published
+"nothing is stuck" with machines idle), and **no night session is rostered on a
+full godown** (22 opened sessions did 10.5 hours of work between them).
+
+**The invoice→gate lag the engine is fed is JIVO OIL's, never the merged gate.**
+`live/state/dispatch_lag.json` carries `all` (2 d / p90 9) and
+`by_company.JIVO_OIL` (3 d / p90 11); `freeze_live.PLAN_BOOK` picks Oil and the
+merged figure is published beside it as `lag.all_books`, labelled. Beverages is
+313 of the 551 rows and turns its trucks fastest, so the merged median was mostly
+a Beverages measurement being spent on Oil stock — and with the godown at 100% on
+day 1, that extra day of room was worth 60,979 L and ₹48.7 lakh of plan.
 
 **The storage ceiling is a DECLARED FACT: 827,000 L working / 923,000 L peak** —
 Daman's capacity sheet (reference/STORAGE-CAPACITY.md, 2026-08-29), **reaffirmed

@@ -1,14 +1,134 @@
 # Phase 4 — `live/freeze_live.py`: the engine on live state
 
 **Decision (Fable, 2026-09-03):** the calibrated simulator (`engine/august_sim.py`,
-0.16% on August) is **not modified**. It reads one inputs JSON. Phase 4 writes
+0.27% on August — the figure is pinned in `reference/august-calibration.json`, see
+`../CLAUDE.md`) is **not modified**. It reads one inputs JSON. Phase 4 writes
 that JSON from `live/state/state.json` every cycle — `sim/live-inputs.json` —
 and the engine runs on it unchanged (`SIM_INPUTS=sim/live-inputs.json
 SIM_TAG=-live`). "Live" = a fresh opening position every 3 minutes, a horizon
 of *now → month-end*, and demand/arrivals that come from the live systems
 instead of a 31-August photo.
 
-RULE 0 in `../CLAUDE.md` applies: nothing in this file is sourced from SAP.
+RULE 0 in `../CLAUDE.md` applies: nothing in this file is sourced from SAP —
+with the one named exception below, which is a FILE a daily cron wrote, never a
+call made from here.
+
+---
+
+## MARK 4 — what the freeze now writes on top of all of this (2026-09-06)
+
+**The switch is the inputs, not the checkout.** `freeze_live.py` embeds
+`reference/mark4-rulebook.json` whole as `rulebook`, and
+`engine/august_sim.py` runs rulebook mode **iff `S["rulebook"]` is present**.
+The August calibration and the `-sep` path carry no rulebook, so every line of
+the legacy engine executes exactly as before. **A missing or unreadable
+rulebook stops the freeze (rc=2)** — a Mark 3 plan wearing a Mark 4 date puts
+15-litre tins back on Clear Pack and nothing in the output would say so.
+
+| new key | what it is |
+|---|---|
+| `rulebook` | the whole rulebook, `sku_pack` merged with anything this file had to class itself |
+| `rulebook_applied` | `{A01, A09, A10, A17, A18, R16, R21} -> {in_effect, note}` — which rulings this run actually put into effect, and what fell back. The engine adds its own flags in `sim/summary-live.json`; gen merges the two |
+| `lines` | keyed by the **rulebook's** slots: Tin Head carries `15L`/`3L`/`5L`, and no line carries a `15L` key it was not given (AC02). A slot with no planning speed is SKIPPED, not guessed |
+| `lines_basis` / `lines_basis_kind` | `"planning"` for every slot, plus the rulebook's own word for how it was arrived at (`capped`/`rated`/`typical`/`carried`/`derived`) |
+| `lines_speeds` | everything behind each speed: rating, August median/best/runs, the planning figure, the prose basis, the structured `planning_rule`, and the slot → bottle-family → preference map |
+| `lines_multi` | containers/hour for a combo-set SKU, on the lines with a record of filling one (B19). The engine reads this instead of `lines` when `fills_per_piece > 1` |
+| `lines_carried_mark3` / `lines_app_rated_now` | what Mark 3 fed in, and what ji.jivo.in lists today. Published, compared, **never fed in** |
+| `demand_baseline` | the whole provenance of the expected stream (below) |
+| `lag` | median / p90 / max / mean days, rows, window, `static` |
+| `dispatch_book` | the open book, the Oil pile, and days of pendency at the recent gate pace |
+| `money` | target and floor from the rulebook, month-to-date and today's rupees, split by which rate priced them |
+| `plan_code_aliases` / `opening.fg_alias_applied` | A10, the 16 → 20 piece carton change |
+
+**`rules` changes, and they matter:**
+
+- `shift_hours` **10** and `sundays_off` from the rulebook (R02/R04), plus
+  `sessions_per_day_max`, `night_lines_max`.
+- `efficiency` **1.0**, with `efficiency_basis` saying why. The speeds in
+  `lines` are PLANNING speeds — 80% of the rating, capped at the best sustained
+  August hour — so the 0.5 is already inside them. **The engine refuses a
+  rulebook run at any other efficiency**: derating twice plans the plant at half
+  (2.01 M L instead of 3.19 M) and every check still passes.
+- `line_clearance_min` and `flush_litres` from `rulebook.changeover`.
+- `invoice_truck_lag_days` + `invoice_truck_lag_p90_days` + a basis string.
+
+**`live/loop.sh` no longer forces 12 h.** `SIM_HOURS` / `SIM_SUNDAYS_OFF` are
+passed through only when somebody sets them. The engine takes its hours from
+`rules.shift_hours`, and it REFUSES an override longer than the rulebook's
+session — so the old `SIM_HOURS` default would not merely inflate the published
+plan by 11%, it would stop the chain dead every cycle.
+
+### Expected orders — the demand baseline (R17/R18/A09/A17/A18)
+
+`live/state/demand_baseline.json`, written **daily** by
+`live/demand_baseline_sap.py` (the one allowed SAP read;
+`../reference/DEMAND-BASELINE-SOURCE.md`). The freeze **only reads the file** —
+it never makes the call, and nothing in the 3-minute loop touches SAP.
+
+Per SKU: monthly litres × its week-of-month share ÷ that bucket's calendar days
+this month, summed over the days still to come, **netted by the real OMS book**
+(floored at zero) and spread back proportionally. **e-com is never netted** —
+its POs are their own stream and the baseline excluded e-commerce billing to
+begin with. A SKU that sold in every month of the window uses its **own** week
+shape; anything else takes the **pooled** one. Rows are triple-tagged exactly as
+before and carry `basis: "gt-mt-3m-billing"`.
+
+Two more things come out of the same file:
+
+- **R19** — `plan[code].trailing_l_per_month` on every row the baseline knows.
+  Without it the engine ranks the expected-only tier by the order the rows
+  happen to sit in; `summary-live.json`'s `rulebook.trailing_source` says which
+  it used.
+- **A18** — SKUs the plant sells that the plan sheet never had are appended as
+  `pieces: 0, expected_only: true` rows, but **only** when SAP's BOM names them,
+  that BOM names an oil, and `engine/pack_class.py` can class the pack (drums
+  are out, R14). Everything else is published by name with its reason in
+  `demand_baseline.nonplan.skipped` — demand the plan cannot place is still
+  demand. *Today all 61 land in `skipped` with "no BOM": `sim/sep-inputs.json`
+  carries recipes for the 84 plan codes only.*
+
+Missing / stale / wrong-month → the plan sheet's weekly buckets, said in
+`honesty.assumed` and on the assumptions page, with `used_for_forecast: false`.
+
+### The invoice-to-gate lag (R21)
+
+`live/state/dispatch_lag.json`, written **daily** by `live/dispatch_lag.py` off
+`gate-core sales-dispatch` — `gate_out_date − sap_doc_date` per DISPATCHED row
+over the last 30 days. Fresh → `rules.invoice_truck_lag_days` is that median and
+`lag.static` is `false`. Missing or stale → `factory_dispatch.LAG_NOTE`, the
+single by-hand measurement of 2026-09-03, `lag.static: true`, and a sentence
+naming the file. Both files' freshness rule is the same helper (`daily_file()`,
+8 days); see `README.md`.
+
+### honesty in rulebook mode — the sentence carries its own mode
+
+The Mark 3 block said "the engine then derates everything by 50% again" and "the
+engine applies `rules.efficiency` (0.5) on top of it". Both are **false** here,
+and both are gone from this file.
+
+How the engine drops what does not belong to its mode is a **positive contract,
+not a keyword blocklist** (fixed 2026-09-06). `F.assume(text, mode=...)` records
+`"legacy" | "rulebook" | "both"` — **`"both"` is the default**, so a sentence has
+to be deliberately tagged before anything can delete it — and the freeze publishes
+the map as `honesty.assumed_modes`. `engine/august_sim.py` drops only what is
+tagged for the mode it is NOT running, names it in `rulebook.honesty_dropped`, and
+never republishes the map itself.
+
+What it replaced: the engine matched each sentence against `("derate",
+"rules.efficiency", "of rated", "50% again")`. Those are words a TRUE sentence
+about planning speeds cannot avoid, so "every line is planned at 80% **of rated**
+capacity, capped by its best August hour (R05/A01)" and "the plan never
+**derates** a planning speed a second time (A01)" were silently deleted when this
+file wrote them, and the engine then printed a warning blaming this file for the
+text it had just eaten.
+
+This freeze only ever writes rulebook inputs (a missing rulebook is a refusal, not
+a fallback), so **nothing it writes may be tagged `legacy`** —
+`live/_freeze_mark4_test.py` asserts that, that every sentence carries a mode, and
+separately that no sentence claims the 50% derate, which is the thing the old
+filter was really there to catch.
+
+---
 
 ## What the engine reads (from `engine/august_sim.py`, verified)
 
@@ -81,8 +201,10 @@ distinct downstream**:
    rows), `docnum = "EC-<platform>-<date>"`. **This replaces Mark 2's even
    ecom spread.** Amazon August-dated PENDING is stale backlog: include only
    rows with `po_month` = current month, and note the excluded litres.
-3. **FORECAST** (the monthly plan, net of 1+2 by FG code for the rest of the
-   month): weekly buckets where the plan has them, else spread evenly across
+3. **FORECAST** — **SUPERSEDED IN MARK 4** by the demand baseline above; what follows is
+   the fallback the freeze still uses when that file is missing, stale or from the wrong
+   month. The monthly plan, net of 1+2 by FG code for the rest of the
+   month: weekly buckets where the plan has them, else spread evenly across
    the remaining working days. Triple-tag exactly as Mark 2 did
    (`channel=FORECAST`, `docnum FCST-*`, customer `(forecast — not yet ordered)`).
    Never let forecast exceed plan-minus-real per code (floor at 0).
@@ -108,6 +230,10 @@ date and leave `backlog` for docs the cursor never saw (rare).
 Every entry carries provenance in a parallel `inbound_provenance {date:{code:src}}`.
 
 ### lines
+**SUPERSEDED IN MARK 4** — see the rulebook table above; `lines` now comes from
+`rulebook.lines[..].speeds[..].planning` and the live configs are a WATCH only. What
+follows is the Mark 3 rule, still what the `-sep` path uses.
+
 From `factory_production.line_configs` → `{line: {pack: pieces_per_hour}}`, but
 **rated speed is wrong in both directions** (Tin Head 15 L measured 3.3× its
 rating; Clear Pack 5 L at 17%). Use the measured August pieces/hr table in
@@ -117,6 +243,10 @@ rating; Clear Pack 5 L at 17%). Use the measured August pieces/hr table in
 Emit `lines_basis {line: {pack: "measured|rated×eff|carried"}}`.
 
 ### rules
+**SUPERSEDED IN MARK 4** for `shift_hours`, `efficiency`, `line_clearance_min`,
+`flush_litres` and the lag — all of those now come from the rulebook and the daily lag
+file. The ceiling paragraph below is unchanged and still correct.
+
 Carry Mark 2's; override `invoice_truck_lag_days` from the measured median;
 `storage_ceiling_l` = 827,000 — **Daman's declared limit** (STORAGE-CAPACITY.md,
 reaffirmed 2026-09-04: "no guess now"; Q2 closed). Never badge it as assumed.
@@ -125,7 +255,9 @@ reaffirmed 2026-09-04: "no guess now"; Q2 closed). Never badge it as assumed.
 `provenance.{opening_fg, opening_pm, opening_oil, standing, orders, inbound,
 lines}` = source + `fetched_at` + `server_at` + `"live" | "last-good <ts>" |
 "carried"`. `honesty.assumed[]` lists every mapping/fallback used **this cycle**
-(oil-name map entries actually exercised, lead-day fallbacks actually applied).
+(oil-name map entries actually exercised, lead-day fallbacks actually applied), and
+`honesty.assumed_modes` says which plan mode each of those sentences is true in — see
+"honesty in rulebook mode" above.
 
 ## Rulings applied on top of this design (2026-09-03, after the first live cycles)
 
@@ -174,8 +306,10 @@ is built to a temp name and moved into place only after every check has passed.
 ## Runtime
 `live/loop.sh` step order per cycle: `collect.py` → `freeze_live.py` (writes
 `sim/live-inputs.json`, refuses to write if any of opening.fg / standing / orders
-is neither live nor last-good) → `engine/august_sim.py` with
-`SIM_INPUTS=sim/live-inputs.json SIM_TAG=-live SIM_HOURS=12 SIM_SUNDAYS_OFF=1`
+is neither live nor last-good, or if the rulebook is unreadable) →
+`engine/august_sim.py` with `SIM_INPUTS=sim/live-inputs.json SIM_TAG=-live`
+(**no `SIM_HOURS`, no `SIM_SUNDAYS_OFF`** — the rulebook decides; set either one
+and it is a scenario the gen gate refuses to publish)
 → `site-sep/scripts/gen-data.py` (its 55 cross-checks stay the gate) → copy
 `site-sep/data/*.json` into `live/state/plan/` so the publisher serves them.
 Budget: sim ≈ seconds, gen ≈ seconds; the whole chain must stay under the

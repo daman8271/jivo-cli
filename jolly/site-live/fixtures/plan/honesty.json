@@ -1,31 +1,41 @@
 {
  "meta": {
-  "collected_at": "2026-09-05T16:37:03+05:30",
-  "as_of": "2026-09-05T16:37:03+05:30",
+  "collected_at": "2026-09-05T15:32:25+05:30",
+  "as_of": "2026-09-05T15:32:25+05:30",
   "horizon": [
    "2026-09-05",
    "2026-09-30"
   ],
   "rolling": true,
   "forward": true,
-  "generated": "2026-09-05T11:07:15+00:00",
+  "generated": "2026-09-06T07:01:33+00:00",
   "generated_by": "live/gen_live.py"
  },
  "forward_rule": "A ROLLING RE-PLAN from a LIVE opening. Only the opening is observed; every day after today is computed. Nothing past today has happened.",
  "measured": [
   "finished goods in BH-PF and BH-BT (ji.jivo.in, live, this cycle)",
-  "packaging in BH-BS, BH-PM, BH-NM, BH-SDL, GP-NM, GP-PM, GP-FG (ji.jivo.in, live)",
+  "packaging in BH-BS, BH-PM, BH-NM, BH-SDL, GP-NM, GP-PM (ji.jivo.in, live)",
   "bulk oil in the EXIM tanks (manual daily dip reading)",
-  "drummed oil in BH-LO, BH-CRUDE, BH-EX, BH-GJ — counted only for the oils EXIM has no tank for",
+  "drummed oil in BH-LO, BH-CRUDE, BH-EX — counted only for the oils EXIM has no tank for",
   "the invoiced-but-not-trucked Oil pile (factory dispatch plans)",
   "the live OMS order book and the ecom open-PO book",
-  "the invoice-to-truck lag, measured off the gate log",
+  "three months of outside billing (SAP, read once a day into a file)",
+  "the invoice-to-gate lag, measured daily off the gate log",
+  "what the plant has already booked this month (ji.jivo.in goods receipts)",
   "BOMs, blends, realise May-Jul, and the monthly plan (carried)",
   "the 4 day(s) of this month already gone, to 4 Sep — records read off the factory's own systems, not the plan"
  ],
  "assumed": [
+  "61 SKU(s) worth 281,350 L a month sold in the last three months and are in NO day of this plan: this month's frozen master data has no recipe for them, so nothing here knows what they are made of. They are named in demand_baseline.nonplan.skipped (A18)",
+  "oms half-failed this cycle and its partial live payload was used — orders detail 3123: exit 4, no JSON on stdout; orders detail 3124: exit 4, no JSON on stdout; orders detail 3125: exit 4, no JSON on stdout; orders dashboard: e",
+  "fg_stock carried from the last hourly read at 2026-09-03T16:08:44.776074+05:30 — it is fetched once an hour, not every cycle",
+  "fg_stock_detail carried from the last hourly read at 2026-09-03T16:08:44.776074+05:30 — it is fetched once an hour, not every cycle",
   "1 non-plan finished-goods code(s) in the godown have a pack size this file cannot read from the name, so opening.fg_other_l is a floor",
-  "NM rooms counted as available — open question for Daman; if 'non-moving' means unusable, 40 BOM codes / 117,257 pcs (PM0000183, PM0000184, PM0000126 among them) vanish and the plan changes materially. BH-NM, GP-NM hold 2,570,685 pcs of packaging in all; GODOWNS.md lists them as allowed AND calls them 'not available' in the same document, and Mark 2's calibrated August run counted them",
+  "fg_stock_meta carried from the last hourly read at 2026-09-03T16:08:44.776074+05:30 — it is fetched once an hour, not every cycle",
+  "pm_stock_meta carried from the last hourly read at 2026-09-03T16:08:44.776074+05:30 — it is fetched once an hour, not every cycle",
+  "NM rooms counted as available — open question for Daman; if 'non-moving' means unusable, 41 BOM codes / 655,666 pcs (PM0000075, PM0000183, PM0000184 among them) vanish and the plan changes materially. BH-NM, GP-NM hold 2,568,761 pcs of packaging in all; GODOWNS.md lists them as allowed AND calls them 'not available' in the same document, and Mark 2's calibrated August run counted them",
+  "packaging rooms read from an older cycle rather than this one: BH-BS (carried 2026-09-03T16:08:44.776074+05:30), BH-NM (carried 2026-09-03T16:08:44.776074+05:30), BH-PM (carried 2026-09-03T16:08:44.776074+05:30), BH-SDL (carried 2026-09-03T16:08:44.776074+05:30), GP-NM (carried 2026-09-03T16:08:44.776074+05:30), GP-PM (carried 2026-09-03T16:08:44.776074+05:30)",
+  "packaging on hand EXCLUDES GP-FG — those rooms have not answered yet, so their codes read zero here even if the room is full",
   "oil name map used: CANOLA + CANOLA 2B -> RM0000002 (CANOLA COLD PRESS LOOSE OIL OLD)",
   "oil name map used: MUSTARD KACHI GHANI + MUSTARD KACHI GHANI 2B -> RM0000003 (MUSTARD LOOSE OIL)",
   "oil name map used: RICE BRAN REFINED -> RM0000007 (RICE BRAN REFINED OIL)",
@@ -37,116 +47,131 @@
   "oil name map used: VIRGIN COCONUT OIL -> RM0000037 (COCONUT EXTRA VIRGIN OIL)",
   "oil name map used: COCONUT OIL 2B -> RM0000043 (COCONUT OIL)",
   "oil name map used: SESAME 2 -> RM0000054 (SEASAME OIL)",
-  "synonym merge in the raw-material store: RM0000066 PEANUT OIL 292,779 L is counted as RM0000011 GROUNDNUT LOOSE OIL, so RM0000011's book figure is 301,563 L over BH-LO — ruled in reference/oil-synonyms.csv by Daman, 2026-08-29",
-  "RM0000002 CANOLA COLD PRESS LOOSE OIL OLD: opening stock is the EXIM TANK dip of 121,500 L. The raw-material store's 1,144 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
-  "RM0000003 MUSTARD LOOSE OIL: opening stock is the EXIM TANK dip of 126,500 L. The raw-material store's 17,043 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
-  "RM0000007 RICE BRAN REFINED OIL: opening stock is the EXIM TANK dip of 34,000 L. The raw-material store's 13,918 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
-  "RM0000011 GROUNDNUT LOOSE OIL: opening stock is the EXIM TANK dip of 115,000 L. The raw-material store's 301,563 L for the same oil (which includes RM0000066 PEANUT OIL 292,779 L merged into RM0000011 per reference/oil-synonyms.csv (Daman, 2026-08-29)) is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
+  "raw-material rooms read from an older cycle rather than this one: BH-CRUDE (carried 2026-09-03T16:08:44.776074+05:30), BH-EX (carried 2026-09-03T16:08:44.776074+05:30), BH-LO (carried 2026-09-03T16:08:44.776074+05:30)",
+  "drummed oil EXCLUDES BH-GJ — those rooms have not answered yet, so bulk oil is a FLOOR",
+  "synonym merge in the raw-material store: RM0000066 PEANUT OIL 259,526 L is counted as RM0000011 GROUNDNUT LOOSE OIL, so RM0000011's book figure is 275,111 L over BH-LO — ruled in reference/oil-synonyms.csv by Daman, 2026-08-29",
+  "RM0000002 CANOLA COLD PRESS LOOSE OIL OLD: opening stock is the EXIM TANK dip of 116,500 L. The raw-material store's 3,744 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
+  "RM0000003 MUSTARD LOOSE OIL: opening stock is the EXIM TANK dip of 177,000 L. The raw-material store's 112,643 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
+  "RM0000007 RICE BRAN REFINED OIL: opening stock is the EXIM TANK dip of 34,000 L. The raw-material store's 24,110 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
+  "RM0000011 GROUNDNUT LOOSE OIL: opening stock is the EXIM TANK dip of 96,000 L. The raw-material store's 275,111 L for the same oil (which includes RM0000066 PEANUT OIL 259,526 L merged into RM0000011 per reference/oil-synonyms.csv (Daman, 2026-08-29)) is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
   "RM0000013 POMACE OLIVE LOOSE OIL IMPORTED: opening stock is the EXIM TANK dip of 89,300 L. The raw-material store's 55,288 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
-  "RM0000025 SOYABEAN REFINED LOOSE OIL: opening stock is the EXIM TANK dip of 142,000 L. The raw-material store's 237,129 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
-  "RM0000037 COCONUT EXTRA VIRGIN OIL: opening stock is the EXIM TANK dip of 9,000 L. The raw-material store's 4,585 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
+  "RM0000025 SOYABEAN REFINED LOOSE OIL: opening stock is the EXIM TANK dip of 74,000 L. The raw-material store's 187,195 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
+  "RM0000037 COCONUT EXTRA VIRGIN OIL: opening stock is the EXIM TANK dip of 10,200 L. The raw-material store's 4,585 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
   "RM0000054 SEASAME OIL: opening stock is the EXIM TANK dip of 12,000 L. The raw-material store's 3,040 L for the same oil is SAP's BOOK view of that same tank oil and is NOT added — EXIM is the bulk-oil truth (ruled 2026-09-03). It is published for information in opening.oil_book_l",
-  "no EXIM tank exists for RM0000015 LOOSE OIL COLD PRESS/REFINED 35,295 L, RM0000009 REFINED SUNFLOWER OIL 14,545 L, RM0000053 LOOSE OIL SESAME SEED OIL (TOASTED) 13,105 L, RM0000001 LOOSE REFINED OLIVE OIL 12,564 L, RM0000021 LOOSE OIL GOLD 8,177 L, RM0000040 SO OLIVE OIL 1,661 L, RM0000030 REFINED COTTON OIL 179 L — for these, and only these, opening stock is the raw-material store's own figure. It is a BOOK figure and lags the floor",
+  "no EXIM tank exists for RM0000015 LOOSE OIL COLD PRESS/REFINED 35,295 L, RM0000001 LOOSE REFINED OLIVE OIL 25,314 L, RM0000053 LOOSE OIL SESAME SEED OIL (TOASTED) 13,105 L, RM0000021 LOOSE OIL GOLD 8,177 L, RM0000009 REFINED SUNFLOWER OIL 3,045 L, RM0000040 SO OLIVE OIL 1,661 L, RM0000030 REFINED COTTON OIL 179 L — for these, and only these, opening stock is the raw-material store's own figure. It is a BOOK figure and lags the floor",
   "NO weight->litre conversion was made this run: every raw-material row that counted was already in litres. The rooms' weighed rows — RM0000049 AKHROT WALNUT 11.50 KGS, RM0000051 JIVO ROSEMARY LEAVE 26.65 KGS — are NOT oils in this month's recipes, so they are reported in opening.rm_store_other instead of being divided by 0.91 kg/L and counted as bulk oil",
   "15 raw-material row(s) are not plan oils and are counted nowhere — they are listed with their own qty and unit in opening.rm_store_other so nothing in those rooms disappears silently",
   "SF0000009 REFINED CANOLA OIL 15 KG TIN — 3,249 PCS in BH-LO (~48.7 t by the name's own pack size) — is left out of oil on hand entirely. Unconverted tins, not litres",
-  "the invoiced-but-not-trucked Oil pile is the ALL-COMPANY cheap backlog (290,562 L) apportioned by the Oil share of the last heavy company split (82.0%, read 2026-09-05T16:09:01.862640+05:30) = 238,238 L. The two endpoints count different populations, so the share is a proportion carried across, NOT a subset of either figure",
+  "the invoiced-but-not-trucked Oil pile is the ALL-COMPANY cheap backlog (285,002 L) apportioned by the Oil share of the last heavy company split (75.6%, read 2026-09-03T16:08:38.530638+05:30) = 215,424 L. The two endpoints count different populations, so the share is a proportion carried across, NOT a subset of either figure",
   "the WIDE 14-day figure is NOT fed to the engine: it counts every Oil bill in a 14-day invoice window whose dispatch plan never reached DISPATCHED, and the dock module records only about 45% of dispatches (Daman, 2026-09-03), so it includes bills that physically left. It is published as opening.standing_l_wide_14d",
+  "the 3-day invoice-to-gate lag is measured DAILY off the gate log and is JIVO OIL's own (131 dispatched Oil rows, 2026-08-07..2026-09-06); the p90 is 11 days and the tail runs to 40 — the plan uses the median and ignores the tail. The merged all-books gate is 2 d median / p90 9 d over 551 rows — published beside it, NOT what the plan runs on: the three books are not one queue and this plan makes Oil",
+  "₹4,835,715 of OMS line value was zeroed on price-outlier lines (kept as pieces) — the rate is outside the 3-1,000 ₹/L band",
   "ecom gives litres by DATE and litres by FG code but never the two together, so each dated row is split across FG codes in the proportion of that platform group's OPEN-PO mix (Amazon separately from q-commerce)",
   "ecom order value is DERIVED as litres x the May-Jul realise rate — ecom's dated demand carries no money",
   "1,179 L of ecom demand fell out as sub-one-bottle slices when each dated row was split across that platform's FG mix — the ecom stream is a FLOOR by that much (0.11% of it)",
-  "EXIM gives the ecom half of the plan no weekly split, so it is spread evenly across the working days left (Mark 2's rule, kept)",
-  "the remainder of the monthly plan, net of every real order this run can see, is carried as FORECAST rows — they are NOT orders and are tagged three ways (channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)')",
-  "8 line(s) sitting in the factory's QC queue are still INSPECTION_PENDING / NO_ARRIVAL_SLIP, not ACCEPTED, so none of that material is booked as arriving — a pending line is not a delivery",
+  "expected orders are three months of OUTSIDE billing per SKU (GT, MT, ROI, CORPORATE, HORECA, CSD, REFERENCE; e-commerce, branches, staff, cash sales and the inter-company cards left out), shaped by which week of the month those customers actually buy in and netted by the real trade order book. They are NOT orders and are tagged three ways (channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)')",
+  "21 SKU(s) did not sell in all 3 months of the window, so their month is shaped by the WHOLE book's week-of-month pattern rather than their own (A09)",
+  "518 L of expected demand fell out as sub-one-bottle daily slices — the expected stream is a FLOOR by that much",
+  "3,252 L of NEGATIVE expected demand was dropped — week buckets where the three months of billing are net returns. A return is not an order to make something, so it neither creates a row nor reduces one",
+  "14 line(s) sitting in the factory's QC queue are still INSPECTION_PENDING / NO_ARRIVAL_SLIP, not ACCEPTED, so none of that material is booked as arriving — a pending line is not a delivery",
   "QC-cleared packaging is booked to land tomorrow and QC-cleared bulk oil the day after — measured behaviour (packaging clears in about an hour, tankers sit in QC for days)",
   "open bulk POs are booked as arriving at order date + the oil lead time. They are BLANKET contracts drawn down in part-loads, so the remaining balance is not a scheduled delivery — treat it as an upper bound on oil arriving",
   "EXIM bulk-PO quantities are undeclared units and are read as METRIC TONNES (the rates are ~₹150,000 per unit), converted at 0.91 kg/L; the remaining contract lands at order date + the measured oil lead time",
   "open bulk POs are de-duplicated on po_number before differencing — contract_qty is the PO header repeated on every truck line",
   "222,527 L of open-contract balance was NOT booked a second time: every open_bulk_pos line carries a GRPO number, so load_qty counts only RECEIVED trucks, and the tankers already on the way (grpo_number null) are still inside the undrawn balance. They are booked once, at their own ETA",
-  "Pouch Machine runs 2 machines side by side (Hitech, Samarpan); their rated speeds are SUMMED into one POUCH rate (4200/hr), never averaged",
-  "Clear Pack 5 L and Tin Head run at OBSERVED August rates, not their app rating (Clear Pack 5 L was rated 3,000/hr and measured 1,000; Tin Head has no config row at all) — and the engine then derates everything by 50% again",
-  "line rates marked `rated` are ji.jivo.in's own rating carried VERBATIM; the rating has measured 17%-327% of reality, and the engine applies rules.efficiency (0.5) on top of it",
-  "the 2-day invoice-to-truck lag is the MEASURED median off the gate log (96 rows, 2026-08-15..2026-09-03); the tail runs to 14 days and the plan ignores it",
+  "line_configs carried from the last hourly read at 2026-09-03T16:08:44.776074+05:30 — it is fetched once an hour, not every cycle",
+  "these machine-and-pack pairs have no planning speed in the rulebook — no app rating and no August run — so the plan treats them as pairs the plant cannot run, rather than inventing a rate: 6 Head 3L, Clear Pack 2L",
+  "each machine is planned at the rulebook's PLANNING speed, which is already 80% of its listed rating and never faster than the best hour it held in August — so the plan multiplies it by 1.0 and cuts it no further (A01)",
+  "the plant is booking production on the new 20-piece carton code — FG0000461 17,200 pieces this month — and it is counted and valued as FG0000142, the product the plan sheet carries. The recipe is NOT changed: this month's frozen BOM has no 20-piece carton item, so the plan still buys the 16-piece one (A10/R20)",
+  "₹582,758 of the month's production is priced at the engine's default ₹148.33/L — those codes have neither a May-Jul realise rate nor three months of billing behind them (A12)",
   "month-to-date production is not netted off the plan — what has already been made this month is read and shown as records, but the plan is not reduced by it on this run, so pieces_made_mtd is null",
-  "the plan runs every machine at 50% of its listed speed — the pace the factory really kept in August. Where the listed speed is one we measured ourselves, the plan runs it at 50% of even that — on the careful side"
+  "each machine is planned at 80% of its listed speed, and never faster than the best it kept for 3 hours or more in August"
  ],
  "provenance": {
   "opening_fg": {
    "source": "factory_production",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30",
-   "mode": "live",
+   "fetched_at": "2026-09-05T15:32:27.066090+05:30",
+   "server_at": null,
+   "mode": "carried 2026-09-03T16:08:44.776074+05:30",
    "note": "dashboards stock BH-PF + BH-BT, one warehouse per call, FG codes only"
   },
   "packaging_non_moving": {
    "source": "factory_production",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30",
-   "mode": "live",
+   "fetched_at": "2026-09-05T15:32:27.066090+05:30",
+   "server_at": null,
+   "mode": "carried 2026-09-03T16:08:44.776074+05:30",
    "note": "BH-NM and GP-NM are COUNTED as available packaging (ruled 2026-09-03). reference/GODOWNS.md allow-lists them and, in its Traps section, calls them 'not available' — an unresolved contradiction, open question for Daman. Mark 2's calibrated August run counted them, so this run does too."
   },
   "opening_pm": {
    "source": "factory_production",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30",
-   "mode": "live",
-   "note": "dashboards stock, ONE WAREHOUSE PER CALL, over GODOWNS.md's packaging allow-list: BH-BS, BH-PM, BH-NM, BH-SDL, GP-NM, GP-PM, GP-FG"
+   "fetched_at": "2026-09-05T15:32:27.066090+05:30",
+   "server_at": null,
+   "mode": "carried 2026-09-03T16:08:44.776074+05:30",
+   "note": "dashboards stock, ONE WAREHOUSE PER CALL, over GODOWNS.md's packaging allow-list: BH-BS, BH-PM, BH-NM, BH-SDL, GP-NM, GP-PM (missing: GP-FG)"
   },
   "opening_oil": {
    "source": "exim",
-   "fetched_at": "2026-09-05T16:37:03+05:30",
-   "server_at": "2026-09-05T15:45:08.936971+05:30",
+   "fetched_at": "2026-09-05T15:32:25+05:30",
+   "server_at": "2026-09-04T13:18:30.994192+05:30",
    "mode": "live",
    "note": "tanks by_oil litres — a MANUAL DAILY DIP READING, not a sensor; mapped to RM codes by name (OIL_NAME_TO_RM), synonyms applied"
   },
   "opening_oil_drums": {
    "source": "factory_production",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30",
-   "mode": "live",
-   "note": "dashboards stock, one warehouse per call, over the raw-material rooms BH-LO, BH-CRUDE, BH-EX, BH-GJ; each row converted by ITS OWN uom (L as-is, KG/MT via EXIM's 0.91 kg/L) and ONLY for oils this month's recipes use. An oil that EXIM has a tank for takes the TANK figure, never both (ruled 2026-09-03); the store's own figure for it is published as opening.oil_book_l. Everything else in those rooms is named in opening.rm_store_other and counted nowhere"
+   "fetched_at": "2026-09-05T15:32:27.066090+05:30",
+   "server_at": null,
+   "mode": "carried 2026-09-03T16:08:44.776074+05:30",
+   "note": "dashboards stock, one warehouse per call, over the raw-material rooms BH-LO, BH-CRUDE, BH-EX; each row converted by ITS OWN uom (L as-is, KG/MT via EXIM's 0.91 kg/L) and ONLY for oils this month's recipes use. An oil that EXIM has a tank for takes the TANK figure, never both (ruled 2026-09-03); the store's own figure for it is published as opening.oil_book_l. Everything else in those rooms is named in opening.rm_store_other and counted nowhere"
   },
   "standing": {
    "source": "factory_dispatch",
-   "fetched_at": "2026-09-05T16:37:03.456586+05:30",
-   "server_at": "2026-09-05T16:29:00.513552+05:30",
+   "fetched_at": "2026-09-05T15:32:25.034846+05:30",
+   "server_at": "2026-09-05T15:30:57.280229+05:30",
    "mode": "live",
-   "note": "the CHEAP pile 290,562 L (dispatch-fulfilment-summary backlog, PENDING+BOOKED, all three books) x the Oil share 0.8199 of the last heavy bills read (2026-09-05T16:09:01.862640+05:30)"
+   "note": "the CHEAP pile 285,002 L (dispatch-fulfilment-summary backlog, PENDING+BOOKED, all three books) x the Oil share 0.7559 of the last heavy bills read (2026-09-03T16:08:38.530638+05:30)"
   },
   "standing_wide_14d": {
    "source": "factory_dispatch",
-   "fetched_at": "2026-09-05T16:37:03.456586+05:30",
-   "server_at": "2026-09-05T16:29:00.513552+05:30",
-   "mode": "carried 2026-09-05T16:09:01.862640+05:30",
+   "fetched_at": "2026-09-05T15:32:25.034846+05:30",
+   "server_at": "2026-09-05T15:30:57.280229+05:30",
+   "mode": "carried 2026-09-03T16:08:38.530638+05:30",
    "note": "invoiced_not_dispatched.by_company[JIVO_OIL].litres —  INFORMATION ONLY: not fed to the engine, because the dock module records only ~45% of dispatches so this window includes bills that physically left."
+  },
+  "dispatch_lag": {
+   "source": "live/state/dispatch_lag.json",
+   "fetched_at": "2026-09-06T08:53:43.778144+05:30",
+   "server_at": null,
+   "mode": "fresh",
+   "age_days": 0,
+   "note": "live/state/dispatch_lag.json (ji.jivo.in gate log, measured daily)"
   },
   "orders": {
    "source": "oms",
-   "fetched_at": "2026-09-05T16:37:05+05:30",
+   "fetched_at": "2026-09-05T15:32:27+05:30",
    "server_at": null,
-   "mode": "live",
+   "mode": "live-partial",
    "note": "orders_recent, one row per LINE, qty is PIECES (C-0001); statuses Completed/Rejected/Billing Rejected excluded; price-outlier lines keep pieces, lose value"
   },
   "orders_ecom": {
    "source": "ecom",
-   "fetched_at": "2026-09-05T16:37:03.455488+05:30",
+   "fetched_at": "2026-09-05T15:32:25.034739+05:30",
    "server_at": "2026-09-05",
    "mode": "live",
    "note": "dated_demand (q-comm: delivery_date else po_expiry_date else po_date; Amazon: expiry_date else order_date) split onto FG codes by the open-PO mix"
   },
   "inbound": {
    "source": "factory_inbound + exim",
-   "fetched_at": "2026-09-05T16:37:04.642006+05:30",
+   "fetched_at": "2026-09-05T15:32:26.514819+05:30",
    "server_at": null,
    "mode": "live / live",
    "note": "QC-accepted lines + EXIM trucks on the way + the remaining open bulk contracts; anything already overdue is spread over the next 5 working days"
   },
   "lines": {
-   "source": "factory_production",
-   "fetched_at": "2026-09-05T16:37:05.541484+05:30",
-   "server_at": "2026-09-05T16:37:07.071456+05:30",
-   "mode": "live",
-   "note": "measured August rates where they exist, else the ji.jivo.in rated speed VERBATIM (the engine applies rules.efficiency itself — storing rated x efficiency here would derate twice), else the carried table"
+   "source": "reference/mark4-rulebook.json",
+   "fetched_at": null,
+   "server_at": null,
+   "mode": "rulebook mark4-2026-09-06",
+   "note": "PLANNING speeds (A01): min(80% x the app's rating, the best sustained August hour over at least 3 runs). Already post-efficiency — rules.efficiency is 1.0 and the engine refuses a rulebook run at anything else. The live ji.jivo.in ratings are read for comparison only and published as lines_app_rated_now [carried 2026-09-03T16:08:44.776074+05:30]"
   },
   "storage_ceiling": {
    "source": "reference/STORAGE-CAPACITY.md",
@@ -155,20 +180,54 @@
    "mode": "declared",
    "note": "DECLARED LIMIT — Daman's capacity sheet, 2026-08-29 (reference/STORAGE-CAPACITY.md): BH-BT 502 T + BH-PF 421 T = 923 T peak, 450 T + 377 T = 827 T working; tonne = litre (C-0050); reaffirmed as fact 2026-09-04. BH-BT + BH-PF only. The owner's own limit, not an estimate."
   },
+  "dispatch_book": {
+   "source": "factory_dispatch + factory_history",
+   "fetched_at": "2026-09-05T15:32:25.034846+05:30",
+   "server_at": "2026-09-05T15:30:57.280229+05:30",
+   "mode": "live",
+   "note": "open dispatch plans from ji.jivo.in (dispatch-plans dispatch-fulfilment-summary, PENDING + BOOKED, all three books) divided by the mean litres the gate actually passed over the last 4 recorded day(s) (factory_history). The Oil line uses the Oil pile the engine is given and the Oil gate figure — the three books are not one queue."
+  },
+  "money": {
+   "source": "factory_history + factory_production",
+   "fetched_at": "2026-09-05T15:32:02+05:30",
+   "server_at": null,
+   "mode": "live",
+   "note": "goods receipts per item for every day already gone this month (ji.jivo.in, factory_history.booked_by_item), pieces x litres per piece x realise. The MES sees about two-thirds of the plant; the receipts see the rest, so this is the fuller count."
+  },
   "history": {
    "source": "factory_history",
-   "fetched_at": "2026-09-05T16:37:04+05:30",
+   "fetched_at": "2026-09-05T15:32:02+05:30",
    "server_at": null,
    "mode": "live",
    "note": "the days already gone this month, read off ji.jivo.in — records, not the plan. Not used by the engine on this run."
+  },
+  "rulebook": {
+   "source": "reference/mark4-rulebook.json",
+   "version": "mark4-2026-09-06",
+   "written": "2026-09-06",
+   "fetched_at": null,
+   "server_at": null,
+   "mode": "embedded",
+   "note": "generated by reference/build_mark4_rulebook.py — never hand-edited. Its presence in these inputs is what makes the engine run rulebook mode."
+  },
+  "demand_baseline": {
+   "source": "/root/mark4/jivo-cli/jolly/live/state/demand_baseline.json",
+   "fetched_at": "2026-09-06T05:30:06+05:30",
+   "server_at": null,
+   "mode": "fresh",
+   "age_days": 0,
+   "note": "written daily by live/demand_baseline_sap.py — the ONE allowed SAP read (reference/DEMAND-BASELINE-SOURCE.md). This file only reads it; a missing or stale file falls back to the plan sheet's weekly buckets."
   }
  },
  "warnings": [
-  "40 packaging codes this month's recipes need have stock ONLY in the NON-MOVING rooms BH-NM, GP-NM — 117,257 pieces, biggest first: PM0000183 LABEL 500 MLS EXTRA LIGHT FRONT 25,882, PM0000184 LABEL 500 MLS EXTRA LIGHT BACK 25,882, PM0000126 LABEL 500 MLS COLD PRESS FRONT 8,142, PM0000471 CAPS 5 LTR BLUE 7,725, PM0000504 LABEL 1 LTR POMACE BACK ZANO 5,866, PM0000159 LABEL 1 LTR EXTRA VIRGIN BACK 5,086. They are COUNTED as available here. If Daman rules that non-moving means unusable, every one of those codes goes to zero and blocks its whole product.",
-  "raw-material rooms hold stock that is NOT an oil in this month's recipes. It is named in opening.rm_store_other and counted nowhere — never converted, never invented: RM0000034 16,106.00 LTR LOOSE OIL RICE BRAN & OLIVE, RM0000043 9,909.13 LTR COCONUT OIL, RM0000012 8,700.00 LTR EXTRA LIGHT OLIVE LOSSE OIL IMPORTED, SF0000009 3,249.00 PCS REFINED CANOLA OIL 15 KG TIN, RM0000006 3,046.70 PCS DESI GHEE, RM0000039 2,100.68 LTR A-2 COW GHEE, RM0000008 1,432.00 LTR LOOSE OIL EXTRA LIGHT OLIVE, RM0000010 730.57 LTR POMACE OLIVE LOOSE OIL BOM, RM0000004 534.04 LTR LOOSE OIL EXTRA VIRGIN OLIVE, RM0000056 162.00 LTR JAITOON OIL (LOOSE), RM0000055 160.00 PCS VEGETABLE OIL (15 KGS) PER TIN, RM0000022 53.17 LTR PAIN OIL, RM0000051 26.65 KGS JIVO ROSEMARY LEAVE, RM0000049 11.50 KGS AKHROT WALNUT, SC0000051 1.75 PCS VITAMIN AD2 PREMIX FOR OIL FORTIFICATION.",
+  "oms reported ok:false (orders detail 3123: exit 4, no JSON on stdout; orders detail 3124: exit 4, no JSON on stdout; orders detail 3125: exit 4, no JSON on stdout; orders dashboard: e); its partial live data is used and each block is checked on its own",
+  "41 packaging codes this month's recipes need have stock ONLY in the NON-MOVING rooms BH-NM, GP-NM — 655,666 pieces, biggest first: PM0000075 TAPE LOGO PRINTED 538,408, PM0000183 LABEL 500 MLS EXTRA LIGHT FRONT 25,882, PM0000184 LABEL 500 MLS EXTRA LIGHT BACK 25,882, PM0000126 LABEL 500 MLS COLD PRESS FRONT 8,142, PM0000471 CAPS 5 LTR BLUE 7,725, PM0000504 LABEL 1 LTR POMACE BACK ZANO 5,866. They are COUNTED as available here. If Daman rules that non-moving means unusable, every one of those codes goes to zero and blocks its whole product.",
+  "packaging room(s) not read this cycle — no live answer, no last-good, no carry: GP-FG. A room only just added to the list is NOT YET READ, not unavailable — it fills in on the next hourly cycle, and it is never a reason to refuse the whole plan. Until then packaging on hand is a FLOOR by whatever they hold, and a missing room understates stock, which is the direction that invents a stock-out.",
+  "raw-material room(s) not read this cycle — no live answer, no last-good, no carry: BH-GJ. A room that has only just been added to the list is NOT YET READ, not unavailable: it fills in on the next hourly cycle. Until then, drummed oil in it is invisible to this plan.",
+  "raw-material rooms hold stock that is NOT an oil in this month's recipes. It is named in opening.rm_store_other and counted nowhere — never converted, never invented: RM0000034 16,106.00 LTR LOOSE OIL RICE BRAN & OLIVE, RM0000043 9,909.13 LTR COCONUT OIL, RM0000012 8,700.00 LTR EXTRA LIGHT OLIVE LOSSE OIL IMPORTED, SF0000009 3,249.00 PCS REFINED CANOLA OIL 15 KG TIN, RM0000006 3,046.70 PCS DESI GHEE, RM0000039 2,100.68 LTR A-2 COW GHEE, RM0000008 1,432.00 LTR LOOSE OIL EXTRA LIGHT OLIVE, RM0000010 730.57 LTR POMACE OLIVE LOOSE OIL BOM, RM0000004 494.04 LTR LOOSE OIL EXTRA VIRGIN OLIVE, RM0000056 162.00 LTR JAITOON OIL (LOOSE), RM0000055 160.00 PCS VEGETABLE OIL (15 KGS) PER TIN, RM0000022 53.17 LTR PAIN OIL, RM0000051 26.65 KGS JIVO ROSEMARY LEAVE, RM0000049 11.50 KGS AKHROT WALNUT, SC0000051 1.75 PCS VITAMIN AD2 PREMIX FOR OIL FORTIFICATION.",
   "SF0000009 REFINED CANOLA OIL 15 KG TIN: 3,249 PCS in BH-LO — the item name says 15 kg a tin, so that is roughly 48.7 TONNES of canola sitting in the raw-material store as FINISHED TINS. It is NOT converted to litres and NOT counted anywhere in this plan: a pack size read off an item name is not a measurement, and this file does not invent litres. It is oil the plan cannot see until somebody rules on it.",
-  "for scale: the WIDE 14-day figure (1,260,051 L) is 152% of the whole declared godown on its own. It is published for information and is NOT what the engine was given.",
-  "22 live OMS order line(s) (70,008 pieces) are on codes the September plan does not carry — the engine cannot build them, so they are not in the demand stream",
+  "for scale: the WIDE 14-day figure (1,244,508 L) is 150% of the whole declared godown on its own. It is published for information and is NOT what the engine was given.",
+  "3 live OMS order line(s) (285 pieces) are on codes the September plan does not carry — the engine cannot build them, so they are not in the demand stream",
   "71,100 L of ecom demand is required AFTER September 2026 — every litre of it is an unexpired open PO, it is simply not due this month, so it is not in this month's demand stream",
   "1,595,702 L of EXIM oil is under loading or still in contract and is NOT booked as arriving — only trucks already on the way are",
   "1,295,022 L is booked to arrive from OPEN BULK POs (contract quantity minus what has been drawn down). JIVO's oil POs are BLANKET orders drawn down over many part-loads — the adapter says so itself — so this is the undrawn balance of a contract, NOT a shipment on its way. It is the loosest number in this freeze and it makes oil look more available than it is."
@@ -177,7 +236,7 @@
   {
    "id": "rolling-replan",
    "rule": "only today is live. The days before it are records read off the factory's own systems — what was filled and what left the gate. Every later day is worked out by the computer from today's count plus what the plan decides, and re-worked every few minutes",
-   "as_of": "2026-09-05T16:37:03+05:30",
+   "as_of": "2026-09-05T15:32:25+05:30",
    "days_left": 26,
    "days_gone": 4
   },
@@ -190,7 +249,7 @@
    "not_read": 0,
    "source": {
     "source": "factory_history",
-    "fetched_at": "2026-09-05T16:37:04+05:30",
+    "fetched_at": "2026-09-05T15:32:02+05:30",
     "server_at": null,
     "mode": "live",
     "note": "the days already gone this month, read off ji.jivo.in — records, not the plan. Not used by the engine on this run."
@@ -207,12 +266,12 @@
   {
    "id": "orders-mixed",
    "rule": "each day's new orders MIX confirmed orders with expected orders (not ordered yet) — always split them. On a quiet day the new orders are 100% expected.",
-   "forecast_share_litres_pct": 24.91
+   "forecast_share_litres_pct": 21.61
   },
   {
    "id": "two-oil-series",
    "rule": "'oil in stock' on the Summary (every oil) and on the day pages (only the oils in this month's recipes) are two different counts — never draw them as one line.",
-   "opening_oil_l": 752200
+   "opening_oil_l": 754900
   },
   {
    "id": "forecast-tags",
@@ -229,39 +288,19 @@
   {
    "id": "standing-measured",
    "rule": "stock billed but not yet on a truck IS counted here — read live off the factory's own dispatch plans, not guessed at nothing. Mark 2 put it at nothing and said so; this is the real pile",
-   "billed_not_gone_l": 238238,
-   "pct_of_ceiling": 28.8
+   "billed_not_gone_l": 215424,
+   "pct_of_ceiling": 26.0
   },
   {
    "id": "day1-pile",
    "rule": "the pile of orders on day 1 is real, not a fault — it is the live order book as it stands right now.",
    "source": {
     "source": "oms",
-    "fetched_at": "2026-09-05T16:37:05+05:30",
+    "fetched_at": "2026-09-05T15:32:27+05:30",
     "server_at": null,
-    "mode": "live",
+    "mode": "live-partial",
     "note": "orders_recent, one row per LINE, qty is PIECES (C-0001); statuses Completed/Rejected/Billing Rejected excluded; price-outlier lines keep pieces, lose value"
    }
-  },
-  {
-   "id": "observed-then-derated",
-   "rule": "the plan runs every machine at 50% of its listed speed — the pace the factory really kept in August. Where the listed speed is one we measured ourselves, the plan runs it at 50% of even that — on the careful side",
-   "efficiency": 0.5,
-   "measured_slots": [
-    "Clear Pack 4L",
-    "Clear Pack 5L",
-    "Tin Head TIN"
-   ]
-  },
-  {
-   "id": "unproducible",
-   "rule": "4 products in this month's target have no machine (nothing fills 3-litre bottles or drums) — show them on the Stock and Order by when pages, do not hide them.",
-   "codes": [
-    "FG0000034",
-    "FG0000043",
-    "FG0000328",
-    "FG0000006"
-   ]
   },
   {
    "id": "realise-outlier",
@@ -284,17 +323,78 @@
    "rule": "bulk oil comes from the tank yard's own daily readings, taken by hand — not a meter, and not always today's.",
    "source": {
     "source": "exim",
-    "fetched_at": "2026-09-05T16:37:03+05:30",
-    "server_at": "2026-09-05T15:45:08.936971+05:30",
+    "fetched_at": "2026-09-05T15:32:25+05:30",
+    "server_at": "2026-09-04T13:18:30.994192+05:30",
     "mode": "live",
     "note": "tanks by_oil litres — a MANUAL DAILY DIP READING, not a sensor; mapped to RM codes by name (OIL_NAME_TO_RM), synonyms applied"
    }
+  },
+  {
+   "id": "speed-planning",
+   "rule": "each machine is planned at 80% of its listed speed, and never faster than the best it kept for 3 hours or more in August",
+   "planning_factor": 0.8,
+   "min_runs_for_cap": 3,
+   "sustained_hours": 3.0,
+   "efficiency": 1.0
+  },
+  {
+   "id": "night-line",
+   "rule": "one machine, and only one, runs a second shift each day. The plan names it and says why it was picked — the plant can overrule it.",
+   "line": "Clear Pack",
+   "reason": "the most ordered litres still unmade after the day session",
+   "outcome": "0.5 h worked on Clear Pack, 2,694 L in 1 run(s)",
+   "hours_used_today": 0.5,
+   "nights_in_this_run": 2,
+   "nights_that_worked": 2,
+   "night_hours_in_this_run": 10.5
+  },
+  {
+   "id": "dispatch-pendency",
+   "rule": "the dispatch headline is how many days of work sit in the open book at the pace the gate has been keeping, and how long a bill takes to reach it — not what left today.",
+   "pendency_days_all": 1.5,
+   "lag_median_days": 3,
+   "lag_p90_days": 11,
+   "lag_static": false
+  },
+  {
+   "id": "money-target",
+   "rule": "the day is measured in rupees of goods filled, against the plant's own floor and target — both read from the rulebook, neither typed.",
+   "target_rs_per_day": 25000000,
+   "floor_rs_per_day": 20000000,
+   "basis": "litres made x realise per SKU (A12)"
+  },
+  {
+   "id": "manual-fill",
+   "rule": "the drums are filled by hand and are not put on any machine — show them as that, never as a machine that is missing.",
+   "codes": [
+    "FG0000006",
+    "FG0000034",
+    "FG0000328"
+   ],
+   "display": "filled by hand, not scheduled here"
+  },
+  {
+   "id": "expected-orders-basis",
+   "rule": "orders nobody has placed yet are worked out from what the trade really bought over the last few months — read once a day, never inside this loop, and marked three ways wherever they appear.",
+   "present": true,
+   "used": true,
+   "window": {
+    "from": "2026-06-01",
+    "to": "2026-08-31",
+    "months": 3
+   },
+   "months": 3,
+   "fallback_reason": null
   }
  ],
  "august_calibration": {
-  "sim_made_l": 2122639,
+  "sim_made_l": 2124866,
   "actual_made_l": 2119237,
-  "delta_pct": 0.16,
+  "delta_pct": 0.27,
+  "measured_on": "2026-09-06",
+  "reproducible": true,
+  "changed_since_measured": [],
+  "source": "reference/august-calibration.json (engine/calibrate_august.py)",
   "note": "tested on August: the same computer plan was run for August and came this close to what the factory really made — that is why these numbers can be trusted"
  },
  "not_here": {
