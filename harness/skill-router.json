@@ -59,6 +59,43 @@
    ]
   },
   {
+   "skill": "jivo-consumables-direct-indirect-expense",
+   "when": "CONSUMABLES / DIRECT or INDIRECT EXPENSE bill that DID come through a PO + GRPO - ink & make-up cartridges, chemicals, housekeeping, refreshment, stationery, lab, RMC/concrete, hardware; also the CAPEX bills on the same tray (GroupMask 1 vs 5). The printed PO number picks the book, not the buyer GSTIN",
+   "patterns": [
+    "consumable",
+    "direct expense",
+    "indirect expense",
+    "expense bill",
+    "\\br ?& ?m\\b",
+    "\\brnm\\b",
+    "housekeep",
+    "refreshment",
+    "staff welfare",
+    "station(a|e)ry",
+    "paper rim",
+    "cartridge",
+    "\\bink\\b",
+    "make ?up for",
+    "caustic",
+    "\\bhypo\\b",
+    "\\balum\\b",
+    "\\bthinner\\b",
+    "dpd tablet",
+    "ph booster",
+    "\\brmc\\b",
+    "concrete",
+    "\\bpeb\\b",
+    "\\bwip\\b",
+    "hardware item",
+    "building (item|material)",
+    "wire seal",
+    "barcode label",
+    "wax ribbon",
+    "bubble wrap",
+    "lab (consumable|chemical|testing)"
+   ]
+  },
+  {
    "skill": "jivo-ap-service-draft",
    "when": "vendor bill with NO goods receipt behind it - services, job work, repairs, professional fees, plate charges",
    "patterns": [
@@ -260,6 +297,21 @@
     "(bilt[iy]|gr no).*(invoice|ar invoice|sale invoice)",
     "mark.*(received|receiving)",
     "(bilt[iy]|gr|receiving).*(missing|blank|khali|pending|left)"
+   ]
+  },
+  {
+   "skill": "jivo-cancel-document",
+   "when": "CANCEL / reverse / 'delete' a POSTED document (invoice, GRPO, credit note, delivery, order) - right-click -> Cancel. Finds it in all three books by DocNum (C-0073), dry-runs, gets the operator's word, reports original + reversal. Never payments or journal entries",
+   "patterns": [
+    "\\bcancel",
+    "cancell?ation",
+    "\\breverse\\b",
+    "\\bvoid\\b",
+    "\\bundo\\b",
+    "(delete|remove|hata|hatao|udao|nikal).{0,30}(invoice|bill|grpo|order|credit note|debit note|delivery|document|post|entry)",
+    "(invoice|bill|grpo|order|credit note|delivery|entry|post|document).{0,30}(cancel|delete|remove|hata|hatao|udao|nikal|galat|wrong)",
+    "cancel (kar|karo|kardo|karna)",
+    "galat (post|entry|bill|invoice)"
    ]
   }
  ]
