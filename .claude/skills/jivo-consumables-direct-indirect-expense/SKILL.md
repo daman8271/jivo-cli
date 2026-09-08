@@ -25,8 +25,11 @@ Plumbing: `acc/_playbook/sap <args>` (bridge + operator login + write log), or
 
 ## How to recognise it
 
-A GRPO with `DocType = dDocument_Items` whose line has **both** an `ItemCode` in the
-`CG*` range **and** an `AccountCode` on the line. `WarehouseCode` is the non-stock
+A GRPO with `DocType = dDocument_Items` whose line has **both** a generic-head
+`ItemCode` **and** an `AccountCode` on the line. Most are `CG*` (consumables/expense
+heads) but **`FA*` codes arrive on the same tray** — `FA0000408 WATER TAMK 5000 LTR`
+(Oil, → `5680010`), `FA0000429 ADAPTATION KIT` (Bev, → `1204003 PLANT & MACHINERY-WATER`).
+Do not filter on `CG` alone. `WarehouseCode` is the non-stock
 warehouse (`BH-FA` at Bhakharpur). The item is a generic *expense head*; what the
 vendor actually supplied is written in the line's **`U_Remarks`**, not in the item name.
 
@@ -136,9 +139,12 @@ fixed-asset line is not a direct expense even though it came in on the same tray
 
 **4 · A capex GRPO may carry `TaxCode CG+SG@0` with the GST folded into `UnitPrice`.**
 SHREE RAM's paper charges CGST+SGST ₹2,578.50; the GRPO booked 3 × 5,634.50 = 16,903.50
-+ 0.50 round = the paper's ₹16,904 with `VatSum 0`. All five posted Shree Ram A/P
-invoices read `VatSum 0` — settled practice, and correct: ITC on civil works is blocked
-under s.17(5), so the tax is capitalised. **Copy the GRPO. Do not "fix" the tax** — and
++ 0.50 round = the paper's ₹16,904 with `VatSum 0`. **All 9 of this vendor's A/P
+invoices since 2026-08-01 read `VatSum 0`** — that is the current PEB-shed run's
+practice, and correct: ITC on civil works is blocked under s.17(5), so the tax is
+capitalised. It is **not** a universal rule for the vendor — of 125 posted invoices, 7
+do carry GST (counted live 2026-09-08). So check the recent run, not a `--top 5` sample:
+an unordered `--top 5` is what produced an earlier wrong "all five" claim here. **Copy the GRPO. Do not "fix" the tax** — and
 do not read `VatSum 0` as an error to report.
 
 **5 · A paper "case of 4 cartridges" is 4 pieces on the GRPO.** Domino's 1-case lines
@@ -163,6 +169,42 @@ pdftoppm -r 200 -jpeg -jpegopt quality=72 "<scan>.pdf" pg && magick pg-1.jpg -re
 ```
 An `Attachments2` row can never be deleted, so a refused upload leaves a permanent
 orphan. Harmless — but compress *before* the first POST and there is none.
+
+**8 · The series follows the DocDate's MONTH, and DocDate is the gate-in date.** A bill
+gated in during August but keyed in September needs **August's** series, not this
+month's. Gupta 1386 (gate 26-Aug) went on Oil branch 2 series **3684**, while the same
+day's September bills went on **3685**. August was still open — proven by draft 56553,
+created 2026-09-08 on series 3684. Check, don't assume the current month.
+
+**9 · Freight may be an ADDITIONAL EXPENSE, not a line — copy it as one.** Sidel
+18S0008475's ₹8,439 packing-and-freight sits on the GRPO as
+`DocumentAdditionalExpenses`, `ExpenseCode 6`, `DistributeExpense tYES`,
+`DistributionMethod aedm_Quantity`, `Stock tYES` — so it is distributed into the asset
+value and never touches its own freight account. Hand-rolling it as a second item line
+misstates both the asset and the tax base. Carry it across the same way, referencing the
+GRPO:
+```json
+"DocumentAdditionalExpenses": [
+  {"ExpenseCode": 6, "LineTotal": 8439, "TaxCode": "IGST@18",
+   "BaseDocType": 20, "BaseDocEntry": <grpoEntry>, "BaseDocLine": 0,
+   "DistributionMethod": "aedm_Quantity"}
+]
+```
+Proven live on draft 16040 (total came back at the paper's ₹3,41,892 exactly). The
+posted precedent 625033168 carries the same shape. Other Sidel bills put the freight on
+its *own* line instead (18S0008488) — so **read the GRPO, do not assume either shape**.
+
+**10 · GRPO `LineNum` is NOT contiguous — `BaseLine` must be the real number.** Sidel
+18S0008488's two GRPO lines are `LineNum` **6** and **14** (the GRPO drew from scattered
+PO lines). `BaseLine: 0,1` would point at lines that do not exist. Read `LineNum` off
+each line; never enumerate.
+
+**11 · A vendor-name search can miss the vendor entirely.** The real Beverages card for
+AK Engineering is spelled **`AK ENIGNEERING`** (VENDA001452) — a name sweep for
+`%A%K%ENG%` returns nothing, because "ENIGNEERING" contains no "ENG". Oil holds a
+correctly-spelled twin (`VENDA001764 AK ENGINEERING`) with **zero documents**, created
+the same day. Name-matching would have booked the bill in the wrong book against an
+empty card. The printed PO number found it. This is C-0073 in one bill.
 
 ## The item catalogue — a starting map, never an answer
 
@@ -227,16 +269,26 @@ on `ATC1` exactly like Oil** — verified 2026-09-08, so stamp there too — and
   attachment pointer set it needs `--with-attachment`; `PATCH`ing `AttachmentEntry` back
   to `null` is the cleaner route.
 
-## Worked examples — 2026-09-08, all three live, attached and read back
+## Worked examples — 2026-09-08, eleven bills, all live, attached and read back
 
-| Draft | Book | Vendor | Ref | Total | GRPO ← PO | The lesson |
+Every one drafted under **USER07 (HARSH)**, every one verified: total to the paisa,
+`BaseType 20` links, all four dimensions, and the PDF downloading back off the share.
+
+| Draft | Book | Vendor | Ref | Total | GRPO ← PO | What it taught |
 |---|---|---|---|---|---|---|
-| **56551** / 626094112 | Oil | DOMINO PRINTECH | 602627124886 | ₹1,09,230 | 2026096546 ← 220926000 | 6 lines, `5100015` direct expense; case→4 pcs; 24 paise of rounding |
-| **56552** / 626094112 | Oil | SHREE RAM RMC | SRR/26-27/1003 | ₹16,904 | 2026096547 ← 220926023 | capex `1212016`; `CG+SG@0`, GST in the price, no ITC |
-| **16031** / 626099402 | **Bev** | JN ENTERPRISES | 210 | ₹8,054 | 2026098045 ← **826228027** | the printed PO picked the book; Dim2 `08-2026` from the bill date; 1 MB attachment cap |
+| **56551** | Oil | DOMINO PRINTECH | 602627124886 | 1,09,230 | 2026096546 ← 220926000 | `5100015` direct expense; case→4 pcs; 24p rounding |
+| **56552** | Oil | SHREE RAM RMC | SRR/26-27/1003 | 16,904 | 2026096547 ← 220926023 | capex `1212016`; `CG+SG@0`, GST in price |
+| **56556** | Oil | GUPTA CEMENT STORE | 1386 | 35,400 | 2026086950 ← 220826163 | **August gate-in → August series 3684**; `FA*` item; `5680010` CETP |
+| **56557** | Oil | SHREE RAM RMC | SRR/26-27/1009 | 28,173 | 2026096548 ← 220926023 | same PO as 1003, drew the remaining 5 cubic |
+| **56558** | Oil | RAM BHAJ SURESH KUMAR | 270 | 956 | 2026096549 ← 220926022 | cartage inside the R&M line; gate counted 4 of 5 pieces |
+| **56560** | Oil | RAM BHAJ SURESH KUMAR | 269 | 2,938 | 2026096550 ← 220926021 | handwritten **"Common" → `FACT_COM`** (C-0027), overriding the GRPO's `Factory` |
+| **16031** | Bev | JN ENTERPRISES | 210 | 8,054 | 2026098045 ← **826228027** | the printed PO picked the book; Dim2 `08-2026`; 1 MB cap |
+| **16037** | Bev | GUPTA CEMENT STORE | 1445 | 7,682 | 2026098051 ← 926228007 | "cement" bill with no cement; 15 lines; `for Pasteuriser (Beverage) Plant` |
+| **16038** | Bev | AK ENIGNEERING | 1102 | 11,800 | 2026098046 ← 826228024 | the misspelled vendor card; name search fails, PO wins |
+| **16039** | Bev | SIDEL INDIA | 18S0008488 | 2,412 | 2026098050 ← 126228016 | **`BaseLine` 6 and 14**, not 0 and 1 |
+| **16040** | Bev | SIDEL INDIA | 18S0008475 | 3,41,892 | 2026098049 ← 626228001 | freight as an **additional expense**; capex `1204003` |
 
-All three were made under **USER07 (HARSH)**, `sap-b1/cli/user07.env` and
-`user07-bev.env`, and all three stopped at the draft for a human to Add.
+All eleven stopped at the draft for a human to press Add.
 
 ## A batch of scans — fan out to parallel agents, JSON back
 
