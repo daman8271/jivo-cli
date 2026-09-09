@@ -1,0 +1,17 @@
+# Review timing and verified carton matching — 9 September 2026
+
+Live release dpl_DtVkREnX968x73Aq2zfFopRs2qjD at https://jivo-mark4-astha.vercel.app/?reviewDate=2026-09-09#today-review . Logged-out HTTP 200 verified.
+
+Added visible actual timing intervals and source-observation-bounded elapsed durations; stop gaps are excluded. Missing, reversed or conflicting intervals suppress durations. Actual interval totals are not verified uptime. Planned filling/day/night/setup hours are visible outside collapsed details; start/end clocks render only if saved. Old archives are not rewritten.
+
+The original 9 September archive has JP20h, Clear Pack1h42m,10Head1h13m,6Head2h7m filling, but no start/end timestamps. A private current-input capture test produced4runs with clocks. Updated independent baseline-capture runtime libraries to the current timestamped engine. Existing archive hash stayed 22aeb344a5d390d0700f45d8a857597f1278ed64f7124a4b0f0a4933f12b9549. Runtime backup /root/mark4-timing-20260909/runtime-lib-before.
+
+Review family matching now reuses verified carton-evidence.json mappings; FG0000142 and FG0000461 match as1Lgroundnut variants while bottle/litre quantities are preserved. Other unverified codes and different bottle sizes stay distinct. Generic family labels do not assert that a substitution happened on every historical run. Daman's9September10Head explanation is separately dated in review-explanations.json and clarifications.md:16-piece packing unavailable,20-piece used. Neither variant was actually present in that day's archived runs; archive match is not invented.
+
+Read Factory live reports-daily-production for9September and run-detail for the actual10Head FG0000461 run. Full detail has required_qty, rated_speed, total_running_minutes, status and timing segments; no expected finish or planned total run hours field. Active segment starts11:22:54.364924IST with nullend; prior closed segment11:19:00.524399→11:20:18.436432 has duration_minutes1. Therefore1min is closed-segment recorded time, not total elapsed time or future duration. No predicted finish was invented.
+
+Verification:16focused tests passed; typecheck, VPSwebpackbuild and finalVercelbuild passed. Independent reviewer caught two cases, bothfixed:empty segment-array fallback must still detect overlap, and historical old-pack runs must not falsely claim an actual16→20change. Public desktop/mobile rendered intervals, planned hours and owner explanation inspected; no consoleerrors. Screenshots /root/mark4-timing-20260909/timing-{desktop,mobile}.png.
+
+Follow-up: TodayReview and LiveShiftBoard now reuse the RunTiming components. Live actual cards explicitly show that expected finish and total planned hours are not supplied; the completed-segment factory counter remains separately labelled and excludes the open interval. Daman’s dated packing explanation appears in both. Typecheck and 16 focused tests passed after extraction; independent review found no material regressions.
+
+Final deployment verified at 1440 × 1000 and 390 × 844. The mobile document width equals the viewport width, with no horizontal overflow. JP, Clear Pack and 10 Head each render actual and planned timing boxes; 10 Head renders Daman’s explanation. No browser console errors. Logged-out HTTP 200 confirmed. Final Shift board screenshots: /root/mark4-timing-20260909/shift-timing-desktop.png and shift-timing-mobile.png.

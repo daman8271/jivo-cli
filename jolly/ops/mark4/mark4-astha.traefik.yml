@@ -1,0 +1,19 @@
+http:
+  routers:
+    mark4-astha-inputs:
+      rule: "Host(`mark4-astha.srv1685505.hstgr.cloud`)"
+      entryPoints: [websecure]
+      middlewares: [mark4-astha-ratelimit]
+      service: mark4-astha-inputs
+      tls:
+        certResolver: letsencrypt
+  middlewares:
+    mark4-astha-ratelimit:
+      rateLimit:
+        average: 30
+        burst: 60
+  services:
+    mark4-astha-inputs:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8794"

@@ -1,0 +1,77 @@
+[press] Pressed Escape
+
+[js] {"dialogClosed":true,"focus":"MUSTARD KACHI GHANI 1 LTR 20 PCS20 h · 86,400 pieces"}
+
+[goto] Navigated to https://jivo-mark4-astha.vercel.app/#plan (unknown)
+
+[js] {"view":"#plan","h1":"The rest of the month.","alerts":[],"overflow":false,"rows":0}
+
+[goto] Navigated to https://jivo-mark4-astha.vercel.app/#machines (unknown)
+
+[js] {"view":"#machines","h1":"Know the machine first.","alerts":[],"overflow":false,"rows":0}
+
+[goto] Navigated to https://jivo-mark4-astha.vercel.app/#materials (unknown)
+
+[js] {"view":"#materials","h1":"Give the lines what they need.","alerts":[],"overflow":false,"rows":527}
+
+[goto] Navigated to https://jivo-mark4-astha.vercel.app/#dispatch (unknown)
+
+[js] {"view":"#dispatch","h1":"Space opens when trucks leave.","alerts":[],"overflow":false,"rows":25}
+
+[goto] Navigated to https://jivo-mark4-astha.vercel.app/#demand (unknown)
+
+[js] {"view":"#demand","h1":"Prepare before the orders arrive.","alerts":[],"overflow":false,"rows":84}
+
+[goto] Navigated to https://jivo-mark4-astha.vercel.app/#actuals (unknown)
+
+[js] {"view":"#actuals","h1":"Keep the real days in view.","alerts":[],"overflow":false,"rows":18}
+
+[goto] Navigated to https://jivo-mark4-astha.vercel.app/#rules (unknown)
+
+[js] {"view":"#rules","h1":"Everything this plan believes.","alerts":[],"overflow":false,"rows":13}
+
+[viewport] Viewport set to 375x812
+
+[screenshot] Screenshot saved (viewport): /tmp/mark4-final-mobile.png
+
+[js] {"width":375,"scrollWidth":375,"ruleCount":"15 rules shown"}
+
+[viewport] Viewport set to 768x1024
+
+[goto] Navigated to https://jivo-mark4-astha.vercel.app/#plan (unknown)
+
+[screenshot] Screenshot saved (viewport): /tmp/mark4-final-tablet.png
+
+[js] {"width":768,"scrollWidth":768,"hasEarlierActuals":true,"hasBlockerHint":true}
+
+Final release continuation, 6 September 2026, public production URL. Parent observed these results directly through the isolated VPS gstack browser.
+
+[network-failure] Temporarily replaced window.fetch in this test page with a rejected promise. Automatic refresh returned:
+{"alerts":["QA simulated connection failure The previous plan is still shown.Retry"],"hasCalendar":true,"injected":true}
+[network-recovery] Restored original window.fetch and clicked Refresh data:
+{"alerts":[],"hasCalendar":true}
+
+[scenario] On Shift board, selected No night shift and clicked Recalculate plan. After the actual API response:
+{"saved":"{\"nightLine\":null,\"efficiency\":0.8,\"allowProposedSupply\":false,\"allowProvisionalRecipes\":false}","selection":"none","hasNightRun":false,"alerts":[]}
+[reload] Full browser reload, then read the rendered plan and saved scenario again:
+{"saved":"{\"nightLine\":null,\"efficiency\":0.8,\"allowProposedSupply\":false,\"allowProvisionalRecipes\":false}","selection":"none","hasNightRun":false,"alerts":[]}
+
+[dispatch-labels] Read current public Dispatch page:
+{"medianLabel":true,"oldestLabel":true,"caveat":true,"oldBadLabel":false,"alerts":[]}
+The matching labels are Median age of open invoices, Oldest open invoice, and not completed truck waits. Typical observed wait is absent.
+
+[materials-search] Filled Search materials with PM0000914. Exactly one body row remained, containing PM0000914, No dated production shortfall, and a separately labelled proposed purchase. Search did not hide a positive purchase simply because its first blocking gap was zero.
+
+[today] Returned to the public Shift board:
+{"view":"#today","title":"JIVO Mark 4 · Production planner","h1":"A plan for every line.","alerts":[],"overflow":false,"sourceVisible":true}
+
+[visual-review] Parent opened and visually reviewed final-desktop.png (1440x1000), mark4-final-mobile.png (375x812), and mark4-final-tablet.png (768x1024), stored privately under ../.mark4-local/study/. Machine cards, controls, mobile rule cards, and tablet actual/forward calendar remain legible. Navigation intentionally scrolls horizontally at compact widths; the document itself has no horizontal overflow.
+
+[logged-out-http] curl --silent --show-error --head https://jivo-mark4-astha.vercel.app
+HTTP/2 200; content-type: text/html; server: Vercel; no login redirect.
+Observed date: Sun, 06 Sep 2026 00:26:48 GMT.
+[input-health] https://mark4-astha.srv1685505.hstgr.cloud/healthz
+{"ok":true,"retainedLastGood":false}
+[feed-tests] ssh vps, /root/mark4-astha/app:
+python3 -m unittest discover -s scripts -p test_feed.py
+Ran 15 tests in 1.545s; OK; exit code 0. Includes retained-last-good headers, original source dates, strict routes, and private-field filtering.

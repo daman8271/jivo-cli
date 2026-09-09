@@ -1,0 +1,14 @@
+[Unit]
+Description=Astha original e-commerce and OMS order reconciliation
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/mark4-astha/app
+ExecStart=/usr/bin/python3 /root/mark4-astha/app/scripts/collect_demand.py --raw-dir /root/mark4-astha/demand-audit --out /root/mark4-astha/state/demand-supplement.json --ecom-bin /root/jivo-courier/ecom-cli/jivo-ecom-pp-cli.linux --ecom-config /root/mark4-astha/demand-audit/ecom.toml --oms-bin /root/jivo-courier/oms-cli/oms-pp-cli.linux --oms-config /root/mark4-astha/demand-audit/oms.toml --oms-frontier 3168 --auth-env /root/mark4-astha/demand-audit/auth.env
+TimeoutStartSec=1800
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/root/mark4-astha

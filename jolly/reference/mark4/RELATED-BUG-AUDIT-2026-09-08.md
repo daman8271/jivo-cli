@@ -1,0 +1,11 @@
+# MARK IV related scheduling audit — 8 September 2026
+
+Public deployment: dpl_BvzyZeo1syQVbrMB7msq3FDMxq9Z, https://jivo-mark4-astha.vercel.app. Logged-out HTTP200, public advice API guard/setup/reason checks and rendered next-batch duration/setup verified.
+
+Resolved: separate live advice scheduler bypassed campaign minimum; stopped/current-unmapped setup appeared zero; advice hid actual short filling time; automatic night considered only top10 products before feasibility and required one SKU individually exceed daytime capacity; Machines labelled setup-inclusive totals as running time. Live advice now shares campaignEligible, grants short-tail exception only for verified active matching SKU, uses nullable setup with basis, and consumes no stock on rejected choices. Whole sales-unit rounding can make a new next batch slightly over one hour. Saved original daily baselines remain historical and unchanged.
+
+Auto-night now previews10h and20h, at most2 campaigns per line, copied stock/storage, actual setup, campaign guard and positive added production with actual night filling. Still a bounded greedy heuristic, not a global optimizer. Original independent fixtures now produce36000 vs18000 (11th available SKU) and28800 vs16200 (two8h campaigns;17h occupied including1hsetup).
+
+Validation:119/119 full-suite tests; final wording-only shift-board edit rerun24/24; TypeScript and VPS production build passed; final Vercel build passed. Independent reviewer no outstandingP1/P2 in scope.369 runs across eight night settings satisfy checked quantity/time/stock/storage/shift/campaign invariants on one fixed live-input snapshot; model runtime2.3–2.8s per setting. Existing partial-source warnings retained.
+
+Evidence VPS: /root/mark4-related-test-20260908.log; /root/mark4-related-final-shift-tests-20260908.log; /root/mark4-related-audit-final-invariants.json; /root/mark4-related-typecheck-20260908.log; /root/mark4-related-build-20260908.log. Runtime owned source updated with backup /root/mark4-related-runtime-backup-20260908. Mark3 unchanged. Final deployment includes two truthful-reason string edits after initial VPSbuild; final shift tests and deployed browser/API confirm those strings.

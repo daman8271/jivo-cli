@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-05T23:53:41.739291+00:00",
+  "status": "insufficient_history",
+  "ranking_available": false,
+  "window": {
+    "requested_from": "2026-06-01",
+    "requested_to": "2026-08-31",
+    "full_months_requested": 3,
+    "full_months_verified": 0
+  },
+  "source": {
+    "system": "OMS orders, not realised sales",
+    "cache": "Existing production OMS detail cache, inspected on VPS without modifying it",
+    "cache_observed_orders": 523,
+    "cache_id_min": 2623,
+    "cache_id_max": 3168,
+    "cache_created_from": "2026-08-10T07:07:14.629078Z",
+    "cache_created_to": "2026-09-05T10:23:14.615094Z",
+    "last_heavy_success_at": "2026-09-06T05:03:03+05:30",
+    "account_auth": "isolated copied config refreshed successfully; original config unchanged"
+  },
+  "coverage": [
+    {
+      "month": "2026-06",
+      "status": "not_read",
+      "observed_order_count": null
+    },
+    {
+      "month": "2026-07",
+      "status": "not_read",
+      "observed_order_count": null
+    },
+    {
+      "month": "2026-08",
+      "status": "partial",
+      "observed_order_count": 421,
+      "observed_from": "2026-08-10",
+      "note": "First nine days missing; no complete month attested."
+    },
+    {
+      "month": "2026-09",
+      "status": "month_in_progress",
+      "observed_order_count": 102
+    }
+  ],
+  "limitations": [
+    "Cache mixes company IDs and line categories; counts above are cache coverage counts, not Oil GT/MT order totals.",
+    "Neither the cached normalized lines nor headers provide a verified GT/MT-versus-ecommerce classification field. Customer identity alone would require an approved channel map.",
+    "The authenticated dashboard reports three account-scoped orders and empty state_item_sales; it is not complete company history.",
+    "Missing June/July data are not zero demand. The partial August cache cannot support a three-month average or a complete-month rank."
+  ],
+  "decision": "Keep the user monthly plan as the forecast. Do not label it an OMS trailing average or use this incomplete evidence to fabricate historical product priority.",
+  "ranking": [],
+  "next_evidence_needed": [
+    "Complete June, July and August order-detail coverage, with gap/deletion accounting.",
+    "Oil scope and explicit channel classification excluding ecommerce.",
+    "Chosen eligible order statuses and cancellation handling, disclosed as order-volume forecasting."
+  ]
+}
