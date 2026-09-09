@@ -1,0 +1,18 @@
+[Unit]
+Description=Astha factory-reported machine activity every minute
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/mark4-astha/app
+ExecStart=/usr/bin/python3 /root/mark4-astha/app/scripts/collect_factory_now.py --cli /root/jivo-courier/factory-cli/jivo-factory-pp-cli.linux --config /root/.config/jivo-factory-pp-cli/config.toml --output /root/mark4-astha/state/factory-now.json --interval 60
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/root/mark4-astha
+
+[Install]
+WantedBy=multi-user.target

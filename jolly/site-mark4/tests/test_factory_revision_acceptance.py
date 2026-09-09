@@ -1,0 +1,45 @@
+"""Independent factory-evidence acceptance tests against the current TypeScript engine.
+Run: python3 tests/test_factory_revision_acceptance.py (from site-mark4).
+No application implementation is modified; Node strips the existing TypeScript.
+"""
+import json,pathlib,subprocess,unittest
+ROOT=pathlib.Path(__file__).resolve().parents[1]
+JS=r'''
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {withActualValues,recordedLabour,evaluateInbound,comparableInboundUnit} from './lib/evidence.ts';
+import {normalizeProducts,buildModel,validateScenario,assertInvariants} from './lib/model.ts';
+const fixture=JSON.parse(fs.readFileSync('./data/iteration-2-factory-evidence.json','utf8'));
+const candidatePath=process.env.MARK4_ACCEPTANCE_INPUT;
+const seed=JSON.parse(fs.readFileSync(candidatePath||'./data/seed.json','utf8'));
+const live=structuredClone(seed);
+if(!candidatePath){live.inboundEvents=fixture.data.inboundEvents;live.supplements={...live.supplements,recordedLabour:fixture.data.recordedLabour};}
+for(const row of fixture.data.openOrderLines)live.items[row.code]={name:row.name,uom:row.unit};
+const mk=(extra={})=>({...structuredClone(live),plan:[{code:'FGTEST',sku:'TEST 5 LTR',category:'test',pack_type:'PET',litres_per_piece:5,pieces:100}],realise:{FGTEST:100},valuation:{asOf:'2026-09-06',priceBasis:'Dated test selling realisation',litresPerPiece:{FGTEST:5},rupeesPerLitre:{FGTEST:120}},...extra});
+const checks={};const test=(name,fn)=>{try{fn();checks[name]={ok:true}}catch(e){checks[name]={ok:false,error:e.message}}};
+test('booked pieces use pack conversion and same current price as future',()=>{const input=mk();const d={date:'2026-09-01',made_booked_l:50,made_mes_l:null,booked_by_item:{FGTEST:10},complete:true};const actual=withActualValues([d],input)[0];assert.equal(actual.bookedValue.value,6000);assert.equal(actual.bookedValue.valuedLitres,50);const p=normalizeProducts(input).products.find(p=>p.code==='FGTEST');assert.ok(p);assert.equal(p.valuePerLitre,120);assert.equal(actual.bookedValue.value,p.valuePerLitre*50)});
+test('MES uses per-item litres without pack multiplication',()=>{const d={date:'2026-09-01',made_booked_l:null,made_mes_l:50,booked_by_item:null,mes_by_item_l:{FGTEST:50},complete:true};assert.equal(withActualValues([d],mk())[0].mesValue.value,6000)});
+test('unpriced or unreconciled history cannot headline a complete value',()=>{const input=mk();const base={date:'2026-09-01',made_booked_l:55,made_mes_l:null,booked_by_item:{FGTEST:10,FGUNKNOWN:1},complete:false};let r=withActualValues([base],input)[0].bookedValue;assert.equal(r.value,null);assert.equal(r.coverage,'partial');assert.equal(r.knownValue,6000);r=withActualValues([{...base,booked_by_item:{FGTEST:10},made_booked_l:60}],input)[0].bookedValue;assert.equal(r.value,null);assert.equal(r.reconciled,false);assert.equal(r.unvaluedLitres,10)});
+test('observed zero remains zero; unread stays unavailable',()=>{const base={date:'2026-09-01',made_booked_l:null,made_mes_l:null,booked_by_item:null,complete:false};assert.equal(withActualValues([base],mk())[0].bookedValue.value,null);assert.equal(withActualValues([{...base,made_booked_l:0,booked_by_item:{}}],mk())[0].bookedValue.value,0)});
+test('actual machine labour totals reconcile all 21 recorded runs',()=>{let total=0,count=0;for(const line of ['10 Head','6 Head','Clear Pack','JP Machine','Tin Head']){const rows=fixture.data.recordedLabour.runs.filter(r=>r.line===line);const summary=recordedLabour(live,line);assert.equal(summary.runCount,rows.length);assert.ok(Math.abs(summary.totalCost-rows.reduce((s,r)=>s+r.labourCost,0))<.001);total+=summary.totalCost;count+=summary.runCount}assert.equal(count,21);assert.ok(Math.abs(total-245135.79)<.01);assert.equal(recordedLabour(live,'Pouch Machine').totalCost,null)});
+test('labour duplicated source ID is credited once but legitimate identical rows survive',()=>{const row={id:'same',line:'10 Head',date:'2026-09-01',code:'FGTEST',litres:50,labourCost:100};const input=mk({supplements:{recordedLabour:{asOf:null,windowFrom:null,windowTo:null,basis:'test',runs:[row,row,{...row,id:undefined},{...row,id:undefined}]}}});assert.equal(recordedLabour(input,'10 Head').runCount,3);assert.equal(recordedLabour(input,'10 Head').totalCost,300)});
+test('all undated live factory POs remain visible with no stock credit',()=>{const evaluated=evaluateInbound(live,'2026-09-30');assert.equal(evaluated.length,live.inboundEvents.length);assert.equal(evaluated.filter(r=>r.included&&r.source!=='exim_transit').length,0);assert.equal(evaluated.filter(r=>r.source==='factory_po'&&r.code.startsWith('RM')).length,19)});
+test('one chosen packaging receipt date credits exactly one outstanding line',()=>{const source=live.inboundEvents.find(r=>r.source==='factory_po'&&r.code==='PM0000121'&&r.quantity>0);assert.ok(source);const date='2026-09-08';const evaluated=evaluateInbound(live,'2026-09-30',{[source.id]:date});const rows=evaluated.filter(r=>r.included&&r.source!=='exim_transit');assert.equal(rows.length,1);assert.equal(rows[0].quantity,source.quantity);assert.equal(rows[0].appliedAt,date);assert.equal(rows[0].conditional,true)});
+test('repeated event IDs deduplicate and conflicting IDs fail',()=>{const source=live.inboundEvents.find(r=>r.source==='factory_po'&&r.code.startsWith('PM')&&r.quantity>0);const input=mk({inboundEvents:[source,source]});assert.equal(evaluateInbound(input,'2026-09-30').length,1);input.inboundEvents=[source,{...source,quantity:source.quantity+1}];assert.throws(()=>evaluateInbound(input,'2026-09-30'),/Conflicting/)});
+test('MTS oil and unreconciled EXIM-overlap orders cannot receive assumed dates',()=>{const oil=live.inboundEvents.find(r=>r.source==='factory_po'&&r.code.startsWith('RM'));assert.ok(oil);assert.equal(oil.stockIncluded,null);assert.throws(()=>evaluateInbound(live,'2026-09-30',{[oil.id]:'2026-09-08'}));const input=mk({inboundEvents:[{...oil,stockIncluded:false,unit:'MTS'}]});assert.equal(comparableInboundUnit(input.inboundEvents[0],input),false);assert.throws(()=>evaluateInbound(input,'2026-09-30',{[oil.id]:'2026-09-08'}))});
+test('received cancelled and stock-included rows reject date overrides',()=>{const row=live.inboundEvents.find(r=>r.source==='factory_po'&&r.code.startsWith('PM')&&r.quantity>0);for(const extra of [{status:'received'},{status:'cancelled'},{stockIncluded:true}]){const input=mk({inboundEvents:[{...row,...extra}]});assert.equal(evaluateInbound(input,'2026-09-30')[0].included,false);assert.throws(()=>evaluateInbound(input,'2026-09-30',{[row.id]:'2026-09-08'}))}});
+test('bad dates and outdated scenario IDs fail explicitly',()=>{assert.throws(()=>validateScenario({arrivalDates:{x:'2026-09-31'}}));assert.throws(()=>evaluateInbound(live,'2026-09-30',{missing:'2026-09-08'}));const row=live.inboundEvents.find(r=>r.source==='factory_po'&&r.code.startsWith('PM'));assert.throws(()=>evaluateInbound(live,'2026-09-30',{[row.id]:'2026-10-01'}))});
+test('live booked transaction values reconcile by SKU and remain separate from MES',()=>{for(const day of fixture.data.historyDays){assert.ok(Math.abs(day.booked_recorded_value.value-Object.values(day.booked_by_item_value_inr).reduce((s,v)=>s+v,0))<.1);assert.ok(Math.abs(day.mes_litres-Object.values(day.mes_by_item_l).reduce((s,v)=>s+v,0))<.001);assert.match(day.booked_recorded_value.basis,/receipt date/)}assert.equal(fixture.data.sourceDisagreements.reduce((s,r)=>s+r.headerVersusSegmentsMismatchCount,0),27)});
+test('PO outstanding excludes at-gate quantities exactly once',()=>{for(const row of fixture.data.openOrderLines){assert.ok(Math.abs(row.remainingQuantity-row.unpostedAtGateQuantity-row.notYetAtGateQuantity)<.001);assert.ok(row.notYetAtGateQuantity>=0)}const ids=fixture.data.inboundEvents.map(r=>r.id);assert.equal(new Set(ids).size,ids.length)});
+test('whole planner adds chosen receipt once and preserves stock invariants',()=>{const source=live.inboundEvents.find(r=>r.source==='factory_po'&&r.code==='PM0000121'&&r.quantity>0);const model=buildModel(live,{nightLine:null,allowProposedSupply:false,allowProvisionalRecipes:false,arrivalDates:{[source.id]:'2026-09-08'}});assertInvariants(model);const receipts=model.days.flatMap(d=>d.arrivals.filter(a=>a.code===source.code));assert.ok(Math.abs(receipts.reduce((s,a)=>s+a.quantity,0)-source.quantity)<.001);assert.equal(model.inboundEvents.filter(e=>e.included&&e.source!=='exim_transit').length,1)});
+console.log(JSON.stringify(checks));
+'''
+class FactoryRevisionAcceptance(unittest.TestCase):
+    def test_independent_engine_acceptance(self):
+        result=subprocess.run(['node','--experimental-strip-types','--input-type=module','-e',JS],cwd=ROOT,text=True,capture_output=True,timeout=45)
+        self.assertEqual(result.returncode,0,result.stderr)
+        checks=json.loads(result.stdout)
+        for name,result in checks.items():
+            with self.subTest(name=name):self.assertTrue(result['ok'],result.get('error'))
+        print(json.dumps(checks,indent=2))
+if __name__=='__main__':unittest.main()

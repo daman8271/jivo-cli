@@ -1,0 +1,19 @@
+[Unit]
+Description=Astha factory orders, production composition and recorded labour
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/mark4-astha/app
+Environment=MARK4_FACTORY_REFERENCE_ROOT=/root/jivo-courier/jolly
+ExecStart=/usr/bin/python3 /root/mark4-astha/app/scripts/collect_factory_supplement.py --config /root/.config/jivo-factory-pp-cli/config.toml --cache-dir /root/mark4-astha/revision2-factory/cache --output /root/mark4-astha/state/factory-supplement.json --interval 60 --identity-output /root/mark4-astha/demand-audit/factory-identity.json
+Restart=on-failure
+RestartSec=15
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/root/mark4-astha
+
+[Install]
+WantedBy=multi-user.target

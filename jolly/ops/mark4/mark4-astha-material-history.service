@@ -1,0 +1,18 @@
+[Unit]
+Description=Astha historical Factory receipt coverage for current material POs
+After=network-online.target mark4-astha-material-orders.service
+
+[Service]
+Type=simple
+WorkingDirectory=/root/mark4-astha/app
+ExecStart=/usr/bin/python3 /root/mark4-astha/app/scripts/collect_material_supply.py --mode history --config /root/.config/jivo-factory-pp-cli/config.toml --cache-dir /root/mark4-astha/private/material-supply --source-root /root/jivo-courier/jolly --interval 3600
+Restart=on-failure
+RestartSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/root/mark4-astha
+
+[Install]
+WantedBy=multi-user.target

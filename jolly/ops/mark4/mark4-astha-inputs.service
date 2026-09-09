@@ -1,0 +1,17 @@
+[Unit]
+Description=Astha Mark 4 sanitized planning inputs
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/mark4-astha
+ExecStart=/usr/bin/python3 /root/mark4-astha/feed/serve_inputs.py --source-root /root/jivo-courier/jolly --port 8794 --supplement-root /root/mark4-astha/state
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/root/mark4-astha
+
+[Install]
+WantedBy=multi-user.target

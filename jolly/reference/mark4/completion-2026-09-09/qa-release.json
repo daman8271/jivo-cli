@@ -1,0 +1,153 @@
+{
+  "status": "PASS",
+  "checkedAt": "2026-09-08T20:58:57.639Z",
+  "inputAsOf": "2026-09-09T02:21:02+05:30",
+  "materialAsOf": "2026-09-08T20:52:01.830278+00:00",
+  "checks": [
+    {
+      "name": "EXIM only policy",
+      "pass": true,
+      "actual": "exim_only"
+    },
+    {
+      "name": "Zero factory RM credited",
+      "pass": true,
+      "actual": 0
+    },
+    {
+      "name": "Opening oil equals mapped EXIM",
+      "pass": true,
+      "actual": {
+        "oil": 814200,
+        "exim": 814200
+      }
+    },
+    {
+      "name": "Temporary packaging contracts",
+      "pass": true,
+      "actual": 24
+    },
+    {
+      "name": "Temporary packaging enabled",
+      "pass": true,
+      "actual": 24
+    },
+    {
+      "name": "Temporary packaging toggle disables credit",
+      "pass": true,
+      "actual": 0
+    },
+    {
+      "name": "Recorded mode excludes all estimates",
+      "pass": true,
+      "actual": 0
+    },
+    {
+      "name": "Fixed expiry disables packaging",
+      "pass": true,
+      "actual": true
+    },
+    {
+      "name": "v2 readiness keeps same QA day; no added day",
+      "pass": true,
+      "actual": 26
+    },
+    {
+      "name": "No starts before asOf, no Sunday, duration conservation",
+      "pass": true,
+      "actual": 36
+    },
+    {
+      "name": "No same-line overlap including next setup",
+      "pass": true,
+      "actual": 0
+    },
+    {
+      "name": "Independent chronological stock never negative",
+      "pass": true,
+      "actual": {
+        "runs": 36,
+        "materialReservations": 224,
+        "includedReceipts": 26
+      }
+    },
+    {
+      "name": "8 September dispatch totals preserve raw and operational split",
+      "pass": true,
+      "actual": {
+        "date": "2026-09-08",
+        "gateEntryCount": 10,
+        "tripCount": 10,
+        "complete": true,
+        "combinedLitres": 125474.6,
+        "wellnessLitres": 80449.6,
+        "martLitres": 45025,
+        "beveragesLitres": 40783.2,
+        "wellnessStorageLitres": 54076,
+        "operationalWellnessLitres": 54076,
+        "operationalMartLitres": 71398.6,
+        "operationalUnclassifiedLitres": 0
+      }
+    },
+    {
+      "name": "Truck totals reconcile combined headline",
+      "pass": true,
+      "actual": {
+        "trips": 18,
+        "litres": 125474.6
+      }
+    },
+    {
+      "name": "Only BH-BT BH-PF storage; no fabricated reconciliation",
+      "pass": true,
+      "actual": {
+        "scope": [
+          "BH-BT",
+          "BH-PF"
+        ],
+        "recordedFgLitres": 591451,
+        "physicalReconciliation": {
+          "complete": false,
+          "calculatedClosingLitres": null,
+          "physicalClosingLitres": null,
+          "varianceLitres": null,
+          "missing": [
+            "Stock deduction timing",
+            "Complete movements between matching stock readings",
+            "Matching physical closing count"
+          ]
+        }
+      }
+    }
+  ],
+  "plannedLitres": 601329,
+  "limitations": [
+    "Actual source replay checks 36 run chronology; 10 focused synthetic tests also directly prove same-day QA use, evening hours, Sunday closure, overnight receipts and expiry.",
+    "Physical storage reconciliation remains explicitly unknown because source movement/deduction timing is not complete.",
+    "This checks staged model and live source feeds; deployed frontend visual verification is separate."
+  ],
+  "defaultModelDurationMs": 5208.730184,
+  "defaultModelLitres": 601329,
+  "dispatchSelector": {
+    "all": {
+      "litres": 125474.6,
+      "trips": 10,
+      "rows": 10
+    },
+    "wellness": {
+      "litres": 54076,
+      "trips": 5,
+      "rows": 5
+    },
+    "mart": {
+      "litres": 71398.6,
+      "trips": 5,
+      "rows": 5
+    }
+  },
+  "focusedHourlyTests": {
+    "pass": 10,
+    "fail": 0,
+    "durationMs": 258
+  }
+}

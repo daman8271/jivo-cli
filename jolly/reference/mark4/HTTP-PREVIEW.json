@@ -1,0 +1,81 @@
+{
+  "base": "http://127.0.0.1:3404",
+  "checks": [
+    {
+      "check": "nonempty default model",
+      "status": 200,
+      "seconds": 0.95,
+      "engine": "Mark 4 independent deterministic planner \u00b7 v1",
+      "source": "2026-09-06T05:42:02+05:30"
+    },
+    {
+      "check": "model private field/path/JWT scan",
+      "passed": true
+    },
+    {
+      "check": "invalid efficiency",
+      "status": 400
+    },
+    {
+      "check": "invalid nightLine",
+      "status": 400
+    },
+    {
+      "check": "invalid sourceUrl",
+      "status": 400
+    },
+    {
+      "check": "invalid efficiency",
+      "status": 400
+    },
+    {
+      "check": "invalid allowProposedSupply",
+      "status": 400
+    },
+    {
+      "check": "malformed JSON",
+      "status": 400
+    },
+    {
+      "check": "oversize body",
+      "status": 413
+    },
+    {
+      "check": "scenario",
+      "settings": {
+        "nightLine": null,
+        "efficiency": 0.8,
+        "allowProposedSupply": false,
+        "allowProvisionalRecipes": false
+      },
+      "status": 200,
+      "seconds": 0.69,
+      "plannedLitres": 562388.6065
+    },
+    {
+      "check": "scenario",
+      "settings": {
+        "nightLine": "JP Machine",
+        "efficiency": 0.8,
+        "allowProposedSupply": true,
+        "allowProvisionalRecipes": false
+      },
+      "status": 200,
+      "seconds": 5.65,
+      "plannedLitres": 1605763.9305
+    },
+    {
+      "check": "scenario",
+      "settings": {
+        "nightLine": "auto",
+        "efficiency": 0.8,
+        "allowProposedSupply": false,
+        "allowProvisionalRecipes": true
+      },
+      "status": 200,
+      "seconds": 14.5,
+      "plannedLitres": 567928.6065
+    }
+  ],
+  "passed": true
+}

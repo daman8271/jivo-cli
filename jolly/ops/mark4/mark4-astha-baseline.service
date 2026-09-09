@@ -1,0 +1,14 @@
+[Unit]
+Description=Save the first valid Astha plan for each IST day, once
+After=network-online.target mark4-astha-inputs.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/root/mark4-astha/app
+ExecStart=/usr/bin/node --experimental-strip-types scripts/capture_shift_baseline.ts --feed http://127.0.0.1:8794/inputs.json --directory /root/mark4-astha/state/baselines
+TimeoutStartSec=50
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/root/mark4-astha
