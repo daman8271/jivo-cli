@@ -131,6 +131,41 @@ function Test-Launches($exe) {
 # step both need it. install-sshd.ps1 deletes and recreates the sshd service, so
 # it is safe to run over an existing (broken) inbox OpenSSH -- afterwards the
 # service points at Program Files\OpenSSH-<arch>\sshd.exe.
+# install-sshd.ps1 creates ssh-agent BEFORE sshd, and on some boxes
+# New-Service dies there with "The stub received bad data" -- leaving a complete
+# OpenSSH on disk and NO sshd service (Shahrukh's box, 2026-09-09). ssh-agent is
+# a client convenience; sshd does not need it. So whenever install-sshd.ps1 has
+# not produced the service, register it ourselves through sc.exe, which talks to
+# the SCM directly and does not hit that bug. Returns a route note, or throws.
+function Register-SshdWithSc {
+  if (Get-Service sshd -ErrorAction SilentlyContinue) { return $null }
+  $sshdExe = @("$env:ProgramFiles\OpenSSH-$arch\sshd.exe",
+               "$env:ProgramFiles\OpenSSH\sshd.exe",
+               "$env:WINDIR\System32\OpenSSH\sshd.exe") |
+             Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+  if (-not $sshdExe) { throw 'no sshd.exe on disk to register' }
+  # host keys first: sshd refuses to start without them, and a service that
+  # cannot start is indistinguishable from one that was never created.
+  $kg = Join-Path (Split-Path $sshdExe) 'ssh-keygen.exe'
+  if (-not (Test-Path $kg)) { $kg = $script:KEYGEN }
+  if ($kg -and (Test-Path $kg)) { & $kg -A 2>&1 | Out-Null }
+  & sc.exe stop   sshd 2>&1 | Out-Null      # clear a half-made service
+  & sc.exe delete sshd 2>&1 | Out-Null
+  Start-Sleep -Milliseconds 700
+  # LocalSystem deliberately: it already holds SeAssignPrimaryToken and SeTcb,
+  # the privileges install-sshd.ps1 grants by hand and without which sshd cannot
+  # log anyone in.
+  $mk = & sc.exe create sshd binPath= "`"$sshdExe`"" DisplayName= "OpenSSH SSH Server" start= auto obj= LocalSystem 2>&1
+  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
+    $t = ("$($mk -join ' ')" -replace '\s+',' ').Trim()
+    if ($t.Length -gt 200) { $t = $t.Substring(0,200) }
+    throw ("sc.exe create said: " + $t)
+  }
+  & sc.exe description sshd "SSH protocol based service (registered by the JIVO fleet installer)" 2>&1 | Out-Null
+  & sc.exe failure sshd reset= 86400 actions= restart/5000/restart/10000/restart/30000 2>&1 | Out-Null
+  $script:KEYGEN = Find-Exe 'ssh-keygen.exe'
+  return "sc.exe: registered $sshdExe myself (install-sshd.ps1 had failed before creating sshd)"
+}
 function Install-OpenSshZip {
   [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
   $zurl = "https://github.com/PowerShell/Win32-OpenSSH/releases/download/10.0.0.0p2-Preview/OpenSSH-$arch.zip"
@@ -152,7 +187,10 @@ function Install-OpenSshZip {
   # %ProgramData%\ssh permissions need fixing, stops to ASK. Unattended, that is
   # a hang with no output -- exactly what this step must never do.
   $ir = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& '$inst' -Confirm:`$false" 2>&1
-  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) { throw "install-sshd.ps1 said: $($ir -join ' ')" }
+  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
+    try { $n = Register-SshdWithSc; if ($n) { $script:sshRoutes += $n } }
+    catch { throw ("install-sshd.ps1 said: $($ir -join ' ') || then " + $_.Exception.Message) }
+  }
   # Re-resolve. The inbox dir may now be marked broken, so this lands on the fresh copy.
   $script:SSH    = Find-Exe 'ssh.exe'
   $script:KEYGEN = Find-Exe 'ssh-keygen.exe'
@@ -1045,7 +1083,10 @@ if ($dead) {
     if (-not (Test-Path $inst)) { throw "install-sshd.ps1 missing at $inst" }
     # -Confirm:$false -- the script is ConfirmImpact=High and would otherwise stop to ask before fixing %ProgramData%\ssh permissions
     $ir = & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -Command "& '$inst' -Confirm:`$false" 2>&1
-    if (-not (Get-Service sshd -EA SilentlyContinue)) { throw "install-sshd.ps1 said: $(Short ($ir -join ' '))" }
+    if (-not (Get-Service sshd -EA SilentlyContinue)) {
+      try { $n = Register-SshdWithSc; if ($n) { $script:sshRoutes += $n } }
+      catch { throw ("install-sshd.ps1 said: $(Short ($ir -join ' ')) || then " + $_.Exception.Message) }
+    }
     $script:exe = Get-ExePath (Get-CimInstance Win32_Service -Filter "Name='sshd'" -EA SilentlyContinue).PathName
     $exe = $script:exe
     Trail "reinstalled - the service now points at $exe"
@@ -1178,7 +1219,26 @@ Step 'openssh-server' {
   }
 
   if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
-    throw ("OpenSSH Server could not be installed. Routes tried >> " + ($script:sshRoutes -join '  >>  '))
+    # Say WHY, and say what to do about it. A pending servicing operation is the
+    # one cause the operator can actually clear, and it makes every route above
+    # fail in a different-looking way (windows-update stalls, msiexec 1603,
+    # New-Service "stub received bad data"), so name it explicitly.
+    $pend = @()
+    if (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending') { $pend += 'component-store reboot pending' }
+    if (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired') { $pend += 'Windows Update reboot required' }
+    try { if ((Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager' -Name PendingFileRenameOperations -EA Stop).PendingFileRenameOperations) { $pend += 'files queued for rename on reboot' } } catch { }
+    try { if (Get-Process TiWorker,TrustedInstaller -EA SilentlyContinue) { $pend += 'TrustedInstaller/TiWorker still running (Windows is installing something right now)' } } catch { }
+    $msg = "OpenSSH Server could not be installed. Routes tried >> " + ($script:sshRoutes -join '  >>  ')
+    if ($pend.Count) {
+      $msg += ("`r`n  WHY: " + ($pend -join '; ') +
+               "`r`n  FIX: reboot this PC, then run this installer again. Windows refuses to" +
+               "`r`n       register a service while it is mid-update, and every route above" +
+               "`r`n       fails for that one reason.")
+    } else {
+      $msg += ("`r`n  FIX: reboot this PC and run this installer again. If it still fails," +
+               "`r`n       send the Desktop log jivo-vps-tunnel-log.txt to Daman.")
+    }
+    throw $msg
   }
 
   # sshd reads C:\ProgramData\ssh\sshd_config, and it is the SHIPPED default that
