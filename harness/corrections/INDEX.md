@@ -81,6 +81,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 ## factory
 - **[C-0007]** Factory API: a GET can write. Never send an invented parameter value to it. GET /marketplace/settings/?channel=X creates a row; treat any key-lookup endpoint returning a single object with id/created_at as suspected get_or_create and do not probe it with a novel key.
 - **[C-0076]** ji.jivo.in: 'not DISPATCHED' ≠ 'still in godown' — the dock module records ~45% of loads. For storage use dispatch-fulfilment-summary's PENDING+BOOKED backlog, never the bills window.
+- **[C-0086]** Wellness planner: use only BH-BT and BH-PF for FG stock, storage and dispatch space. Exclude GP-FG/GP-FGM; keep packaging scope separate.
 - **[C-0080]** Oil FG godown (BH-BT + BH-PF) = 827,000 L working / 923,000 L peak — Daman's declared limit (STORAGE-CAPACITY.md: 450+377 / 502+421 T). State as fact; never badge 'assumed' or 'guess'.
 ## sales
 - **[C-0003]** Segment the range on OITM.U_TYPE (PREMIUM/COMMODITY/OTHERS) and U_Sub_Group (variety), never item-name matching — e.g. COLD PRESS 1 LTR is SAP-tagged CANOLA with no 'canola' in the name.
