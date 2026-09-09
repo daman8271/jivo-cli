@@ -86,9 +86,104 @@ def q(entity, flt=None, select=None, orderby=None, top=None, company=None):
         raise RuntimeError(f"{entity}: {e}")
 
 
+def q_all(entity, flt=None, select=None, company=None):
+    """Like q(), but follows odata.nextLink to the end of the set.
+
+    A separate module-level door on purpose: the 194Q sweep must total EVERY
+    invoice in the financial year, and a single page would silently understate
+    the year and clear a vendor that is over the threshold. Kept at module level
+    so the characterization fixture can script it, exactly like q().
+    """
+    try:
+        return SAP.query_all(entity, filter=flt, select=select, company=company or COMPANY)
+    except SapUnreachable as e:
+        raise Unreachable(str(e).splitlines()[0])
+    except SapError as e:
+        raise RuntimeError(f"{entity}: {e}")
+
+
 def hana(sql):
     """Optional cross-check via hana-sql (read-only). Returns rows (tab-split) or None."""
     return HANA.rows(sql) if HANA else None
+
+
+def pan_of_vendor(cardcode):
+    """The seller's PAN, and where it came from — C-0037, widened by C-0085.
+
+    CRD7.TaxId0 is the documented source and it is EMPTY for 155 of the 408
+    vendors with Oil purchases in FY26-27, which silently disabled the per-PAN
+    aggregation for 38% of them. Every GSTIN embeds the PAN at characters 3-12,
+    so an address GSTIN is a second, equally good source: it recovers 98 of
+    those 155 (coverage 62% -> 86%, measured 2026-09-08). Both are read off the
+    BusinessPartner, so no extra rights are needed.
+    """
+    try:
+        rows = q("BusinessPartners", f"CardCode eq '{cardcode}'")
+    except (RuntimeError, Unreachable):
+        return None, None
+    if not rows:
+        return None, None
+    bp = rows[0]
+    for t in (bp.get("BPFiscalTaxIDCollection") or []):
+        pan = (t.get("TaxId0") or "").strip().upper()
+        if len(pan) == 10:
+            return pan, "CRD7.TaxId0"
+    for adr in (bp.get("BPAddresses") or []):
+        g = (adr.get("GSTIN") or "").strip().upper()
+        if len(g) == 15:
+            return g[2:12], f"GSTIN {g}"
+    return None, None
+
+
+def seller_cards(cardcode, pan, schema):
+    """Every CardCode that belongs to this PAN — one seller can hold several.
+
+    TPAC is the proven case: VENDA000937 + VENDA000939 on PAN AAGCT4816J, each
+    under Rs 50 lakh, together Rs 66 lakh and over since 2026-07-13 (C-0037).
+    The Service Layer cannot filter on a nested collection (a lambda in $filter
+    is rejected, `[SAP 201] Invalid symbol in the filter condition`), so the
+    sibling lookup goes through HANA. Without HANA we measure the one card and
+    say so rather than pretending the group was checked.
+    """
+    if not pan:
+        return [cardcode], "(no PAN)"
+    if not HANA:
+        return [cardcode], "(no HANA on this box — this card only, siblings on the same PAN NOT checked)"
+    try:
+        rows = hana(
+            f'SELECT DISTINCT "CardCode" FROM ('
+            f' SELECT "CardCode" FROM {schema}.CRD7 WHERE UPPER(TRIM("TaxId0"))=\'{pan}\''
+            f' UNION ALL'
+            f' SELECT "CardCode" FROM {schema}.CRD1 WHERE LENGTH(TRIM(COALESCE("GSTRegnNo",\'\')))=15'
+            f' AND UPPER(SUBSTRING(TRIM("GSTRegnNo"),3,10))=\'{pan}\')')
+    except Exception as e:
+        return [cardcode], f"(PAN lookup failed: {str(e).splitlines()[0][:80]} — siblings NOT checked)"
+    if not rows:
+        return [cardcode], "(PAN lookup returned nothing — siblings NOT checked)"
+    cards = sorted({r[0].strip() for r in rows if r and r[0].strip()} | {cardcode})
+    return cards, "on this PAN"
+
+
+def fytd_purchases(cards, fy0, fy1):
+    """Financial-year purchases from this seller: A/P invoices net of GST, net of credit notes.
+
+    Net of GST because 194Q is deducted on the purchase value; net of credit
+    notes because a returned consignment was never a purchase. Cancelled
+    documents are excluded on both sides. Returns (amount, error).
+    """
+    total = 0.0
+    window = f"DocDate ge '{fy0}' and DocDate lt '{fy1}' and Cancelled eq 'tNO'"
+    for cc in cards:
+        for entity, sign in (("PurchaseInvoices", 1.0), ("PurchaseCreditNotes", -1.0)):
+            try:
+                rows = q_all(entity, f"CardCode eq '{cc}' and {window}", "DocEntry,DocTotal,VatSum")
+            except Unreachable as e:
+                return 0.0, str(e)
+            except RuntimeError as e:
+                return 0.0, str(e)
+            for r in rows:
+                total += sign * (float(r.get("DocTotal") or 0) - float(r.get("VatSum") or 0))
+    return total, None
 
 
 def main():
@@ -371,21 +466,62 @@ def main():
             print(f"        remarks: {t.get('Comments')!r}")
         if tmpl:
             subtype = collections.Counter(t["DocumentSubType"] for t in tmpl).most_common(1)[0][0]
-    # The batch decides TDS from precedent (rules.tds_proposal); here the operator
-    # is looking at the vendor's last three invoices printed above and decides for
-    # themselves, which is what SKILL.md tells them to do.
-    wt_liable = bool(bp and bp["SubjectToWithholdingTax"] == "boYES")
-    wt_rate = None
+    # 4b. 194Q — the Rs 50 lakh threshold. C-0085: this runs on EVERY entry.
+    #
+    # It is deliberately placed AFTER the precedent print above and allowed to
+    # overrule it. The vendor's last three invoices are a symptom, not the rule
+    # (C-0036): a vendor that carried no TDS on all three may have crossed the
+    # line since, and SAP will never say so — it deducts whenever WTCode 1031 is
+    # set and stays silent when it is not. The seller is a PAN, not a CardCode
+    # (C-0037), so every card sharing the PAN is aggregated first.
+    print("\n[4b] 194Q threshold — Rs 50 lakh test (C-0085, runs on every entry)")
+    wt_liable, wt_rate, tds_194q = False, None, None
+    if bp:
+        pan, pan_src = pan_of_vendor(bp["CardCode"])
+        cards, card_src = seller_cards(bp["CardCode"], pan, company_eff)
+        if pan:
+            print(f"    seller PAN {pan} (from {pan_src}) · {len(cards)} card(s) {card_src}: {', '.join(cards)}")
+            if "NOT checked" in card_src:
+                warnings.append(f"194Q: could not list the other cards on PAN {pan} {card_src} — a sibling card's purchases are NOT in the total below")
+        else:
+            print(f"    no PAN on this vendor (CRD7.TaxId0 and every address GSTIN are empty) — measuring CardCode {bp['CardCode']} alone")
+            warnings.append(f"194Q: no PAN for {bp['CardCode']} — the per-PAN aggregation C-0037 asks for could NOT run; a second card for this seller would be invisible")
+        fy0, fy1 = rules.fy_bounds(a.gate_date or (grpo["DocDate"][:10] if grpo else dt.date.today()))
+        fytd, fy_err = fytd_purchases(cards, fy0, fy1)
+        if fy_err:
+            problems.append(f"194Q: could not measure FY purchases ({fy_err}) — TDS undecided, do not send")
+        else:
+            this_bill = float(rules.gross_of(lines).taxable) if (grpo and lines) else 0.0
+            tds_194q = rules.tds_194q_decision(fytd, this_bill)
+            print(f"    FY {fy0[:4]}-{fy1[2:4]} purchases (net of GST, net of credit notes): {inr(tds_194q['fytd_before'])}"
+                  f" + this bill {inr(this_bill)} = {inr(tds_194q['fytd_after'])} vs threshold {inr(tds_194q['threshold'])}")
+            if tds_194q["liable"]:
+                wt_liable = True
+                print(f"    → OVER the threshold by {inr(tds_194q['excess'])}: TDS 194Q {rules.TDS_194Q_RATE}% APPLIES (WTCode {tds_194q['wtcode']}), about {inr(tds_194q['tds_due_on_excess'])} on the excess")
+                if tds_194q["crosses_on_this_bill"]:
+                    warnings.append("194Q: THIS bill is the one that crosses Rs 50 lakh — the vendor's earlier invoices correctly carry no TDS; this one must")
+            else:
+                print(f"    → UNDER the threshold, {inr(tds_194q['headroom'])} of headroom: no 194Q TDS on this bill")
+
+            # Where the threshold and the old precedent-based reading disagree, say so.
+            precedent_tds = any(float(t.get("WTAmount") or 0) > 0 for t in tmpl)
+            if precedent_tds and not wt_liable:
+                warnings.append("194Q: this vendor's recent invoices carry TDS but the PAN is UNDER Rs 50 lakh this FY — either a card is missing from the PAN group, or those deductions were not due (cf. C-0036)")
+            if wt_liable and not precedent_tds:
+                warnings.append("194Q: the vendor's last invoices carry no TDS, but the threshold says it is due — the threshold wins (C-0085); do not copy the precedent")
+
     if wt_liable:
-        codes = [w.get("WTCode") for w in bp.get("BPWithholdingTaxCollection") or []]
-        if codes:
-            try:
-                wc = q("WithholdingTaxCodes", f"WTCode eq '{codes[0]}'")
-                if wc:
-                    wt_rate = wc[0].get("Rate")
-                    print(f"    TDS code {codes[0]} {wc[0].get('WTName') or ''} rate {wt_rate}%")
-            except RuntimeError as e:
-                warnings.append(f"could not read TDS rate ({e}) — expected TDS not estimated")
+        codes = [w.get("WTCode") for w in bp.get("BPWithholdingTaxCollection") or []] if bp else []
+        if not codes:
+            codes = [rules.TDS_194Q_WTCODE]
+            problems.append(f"194Q applies but WTCode {rules.TDS_194Q_WTCODE} is not on the vendor card — an admin must add it in SAP before the deduction can compute")
+        try:
+            wc = q("WithholdingTaxCodes", f"WTCode eq '{codes[0]}'")
+            if wc:
+                wt_rate = wc[0].get("Rate")
+                print(f"    TDS code {codes[0]} {wc[0].get('WTName') or ''} rate {wt_rate}%")
+        except RuntimeError as e:
+            warnings.append(f"could not read TDS rate ({e}) — expected TDS not estimated")
 
     # 5. numbering series for the posting month
     print("\n[5] numbering series for the posting month")

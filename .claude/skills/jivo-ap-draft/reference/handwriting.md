@@ -23,6 +23,7 @@ the same people write the same things on every bill.
 | `GE-2026-9529` | gate-entry register number | `Comments` | SSY 26-27/1450 |
 | a bare 5-digit number (`54906`) | a `Drafts` DocEntry — Accounts already keyed it | **stop: precheck exit 2**, read that draft back | Frystal NINV/26-27/0826 |
 | a 10-digit `2026086644` | a GRPO DocNum | `--grpo` | many |
+| a bare 4-digit number in the top corner (`3502`, `3474`, `4855`), blue pen | the **gate-entry serial** — the tail of `GE-2026-<n>`, the same number FactoryApp writes into the GRPO's Comments (`Gate Entry: GE-2026-3502`) | `Comments` as `GE-2026-<n>`; confirm it against the GRPO's comments, which carry it verbatim when the GRPO came from FactoryApp | AG POLY 902/27502290 → 56484 and THE TIN 26-27/109 → 56486 (both confirmed in the GRPO); AG POLY 902/27502214 → 56485 (hand-keyed GRPO, no GE in its comments — taken from the paper) |
 | `Approved by Chopra sir on mail 24/08/26` | authority to book | `Comments`, verbatim | Ashok Diwan 1256 |
 | `OK` / tick in the top corner | stores checked it | nothing — do not treat as approval | Ashok Diwan 1256 |
 | `Disc @ 0.50` on a fuel bill | ₹0.50 **per litre on diesel only** — decode from the arithmetic | net onto the diesel lines | Om Sai 2495 |

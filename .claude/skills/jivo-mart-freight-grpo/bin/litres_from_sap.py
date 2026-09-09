@@ -22,14 +22,14 @@ import subprocess, re, sys, json, argparse, os, collections
 ROOT = subprocess.run(['git', 'rev-parse', '--show-toplevel'], capture_output=True,
                       text=True).stdout.strip() or os.getcwd()
 HANA = os.path.join(ROOT, 'hana-sql', 'hana-sql')
-ENV = os.path.join(ROOT, 'connections', 'hana-office-bridge.env')
+ENV = os.path.join(ROOT, 'connections', 'hana-new.env')
 
 # the block's wording -> the Dim1 master's OcrCode (OOCR DimCode=1)
 DIM1 = {'SUNFLOWER': 'SUNFLOWR', 'GROUNDNUT': 'GROUNDNT', 'RICE BRAN': 'RICEBRAN'}
 NON_OIL = {'TIN', 'CAPS', 'CAP', 'CARTON', 'BOX', 'LABEL'}
 
 # "5 LTR", "1L", "250 ML", and the "1 LTR +1 LTR COMBO" that is 2 L a piece
-PACK = re.compile(r'(\d+(?:\.\d+)?)\s*(LTR|LITRE|LTRS|L|ML)\b')
+PACK = re.compile(r'(\d+(?:\.\d+)?)\s*(LTRS|LTR|LITRES|LITRE|MLS|ML|L)\b')
 
 
 def pack_litres(name):
@@ -37,7 +37,7 @@ def pack_litres(name):
     hits = PACK.findall(name.upper())
     if not hits:
         return None
-    vals = [float(n) / (1000.0 if u == 'ML' else 1.0) for n, u in hits]
+    vals = [float(n) / (1000.0 if u in ('ML', 'MLS') else 1.0) for n, u in hits]
     # a combo names both halves ("1 LTR +1 LTR COMBO") -> one piece is the sum
     return sum(vals) if '+' in name else vals[0]
 
