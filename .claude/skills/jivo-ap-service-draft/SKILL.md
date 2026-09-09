@@ -64,10 +64,19 @@ below are through it.
    follow C-0017 and say so.
 7. **Comments** (≤254): `Bill <ref> dt <date> period <a-b> | GATE ENTRY NO <n> dt <date> |
    <qty summary: Petrol 110.150 Ltr Diesel 549.689 Ltr> | <approval as written>`.
-8. **Dry-run → operator's go → `--yes`:**
+8. **Dry-run, then `--yes` — same turn, do not stop in between:**
    `acc/_playbook/sap draft purchase-invoice --dry-run --data-file <payload.json>` then
    `--yes`. Exit 7 = look, don't resend. A 400 with `1120009` = add `CostingCode3`; with
    `-10`/`-4002` = wrong series/subtype flavour.
+
+   **🔴 Never end your turn on the dry-run** and never ask "shall I send it?". The
+   preview catches a wrong branch/series/total *before* it reaches the books; it is
+   not a gate on the operator (RULE 0). A draft posts nothing — no stock, no ledger
+   entry — until a human presses Add in the SAP B1 client, so there is nothing to
+   protect them from by stopping. Only stop if the preview shows a real fault
+   (wrong vendor, branch, series, or a total that does not match the paper) or the
+   precheck told you to. Daman, 2026-09-09: *"it is not directly making the drafts
+   but confirming for their confirmation — should not happen like this."*
 9. **Attach the scan** — `jivo-ap-draft/reference/attachments-upload.md` (steps 1, 4, 5,
    6; there is no base document to copy). Stamp `U_CHK2 OK` or the pointer is refused.
 10. **Read back:** `readback.py <DocEntry> --expect-total <net>` — its "not drawn from a

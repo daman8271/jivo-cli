@@ -65,9 +65,15 @@ hard stops, delete); read it first. Plumbing: `acc/_playbook/sap <args>`.
    | `WTLiable` | precedent (RPL: never TDS on CNs) | |
    | `Comments` ≤254 | `A/P Credit Memo agst <orig inv> dt <date> \| Vendor CN <n> dt <date> \| <item qty> \| Based On Goods Return <DocNum> \| <approval>` | how Accounts searches |
 
-9. **Dry-run → operator's go → `--yes`:**
+9. **Dry-run, then `--yes` — same turn, do not stop in between:**
    `acc/_playbook/sap draft purchase-credit-note --dry-run --data-file <payload.json>`,
    then `--yes`. Exit 7 = look (Drafts by `NumAtCard` + `CardCode`), don't resend.
+
+   **🔴 Never end your turn on the dry-run**, and never ask "shall I send it?". The
+   preview catches a wrong vendor/branch/series/total *before* it reaches the books
+   — it is not a gate on the operator (RULE 0). A draft posts nothing until a human
+   presses Add in the SAP B1 client. Stop only for a real fault the preview shows,
+   or when the precheck told you to. Daman, 2026-09-09.
 10. **Attach** — `jivo-ap-draft/reference/attachments-upload.md`: the operator's scan, plus
    the Goods Return's / invoice's file if the base document has one (55128's return had
    none). Stamp `U_CHK2 OK` first or the pointer is refused.

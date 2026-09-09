@@ -90,11 +90,33 @@ stamp; the draft carries the base document's file too).
    - **Exit 3** = it could not identify vendor / GRPO / branch / series — fix the
      inputs; never hand-edit facts it couldn't find.
    - **Exit 4** = SAP unreachable. Not a data answer. It prints the bridge fix.
-4. **Show the operator** the dry-run, from `sap-b1/cli` with the operator's env
-   sourced (`set -a; source <operator>.env; set +a`):
+4. **Dry-run, print it, then go straight to step 5 — same turn, one action.**
+   From `sap-b1/cli` with the operator's env sourced
+   (`set -a; source <operator>.env; set +a`):
    `./sapb1 draft purchase-invoice --dry-run --data-file /tmp/ap-draft.json`.
-   Wait for their go.
-5. **Send** the same command with `--yes`. Note the DocEntry SAP returns.
+   The preview is there to catch a wrong branch, series, vendor or posting date
+   *before* it reaches the books. It is **NOT a gate on the operator** (RULE 0):
+   print it and keep going.
+
+   **🔴 NEVER end your turn on the preview.** Do not write "here is the payload,
+   please cross-check" and stop. Do not ask "shall I send it?". The operator
+   handed over a bill because they want it IN SAP — an operator who asked for a
+   draft and got a chat message has nothing in SAP, no draft number, and no way
+   to know it failed. Daman, 2026-09-09, after losing 20 minutes to exactly this:
+   *"it is not directly making the drafts but confirming for their confirmation —
+   should not happen like this."*
+
+   A draft is the safe end of the write: **it posts nothing.** No stock moves and
+   no ledger entry until a human opens Document Drafts and presses Add. So there
+   is nothing to protect the operator from by stopping here.
+
+   Stop before `--yes` in exactly three cases, and then say plainly what is wrong
+   and what you need: precheck **exit 2** (already in SAP — give them the existing
+   draft numbers), **exit 3/4** (inputs or SAP unreachable), or the preview itself
+   shows a real fault — wrong vendor, wrong branch, wrong series, or a total that
+   does not match the paper.
+5. **Send** the same command with `--yes`, in the same turn as step 4. Note the
+   DocEntry SAP returns and give it to the operator.
 6. **Read it back and compare**:
    `python3 .claude/skills/jivo-ap-draft/bin/readback.py <DocEntry> --expect-total … --expect-qty …`
    Report its flags as gaps, not as success. Give the operator the draft number
