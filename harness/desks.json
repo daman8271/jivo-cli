@@ -9,6 +9,14 @@
         "User57"
       ],
       "note": "Mahak - GRPO desk. Nothing from this desk reaches the approver: `add-draft` is refused, and a GRPO is POSTED LIVE rather than drafted (`sapb1 post PurchaseDeliveryNotes`), because a drafted GRPO lands in Bhawani's queue and SAP refuses this login a GRPO draft in JIVO_MART anyway (-6006). Every other doctype still stops at the draft and the operator presses Add herself in the SAP B1 client. Daman 2026-09-03, GRPO route changed 2026-09-04."
+    },
+    {
+      "who": [
+        "SHAHRUKH-INVENT",
+        "shahrukh",
+        "USER27"
+      ],
+      "note": "Shahrukh - SAP data entry, always through USER07 (HARSH) by Daman's instruction 2026-09-09 (\"only give him user 07\", \"always draft pls\"). Drafts-only because USER07 is named on ZERO Always-terms approval templates (OWTM.Conds='N') in ANY of the three books - checked live 2026-09-09: Oil has only 67 Delivery + 103 API AP AUTO (USER39), Mart only 48, Bev only 39/46/68, and none list USER07. With no template SAP does not submit, it POSTS LIVE and unapproved (C-0034). So `add-draft` must never run here; a human presses Add in the SAP B1 client."
     }
   ],
   "skill_sets": {
@@ -24,10 +32,25 @@
       ".claude/skills/jivo-bev-freight-grpo",
       ".claude/skills/cli-hub",
       ".claude/skills/press-desktop",
-      ".claude/skills/jivo-summary-pdf"
+      ".claude/skills/jivo-summary-pdf",
+      ".claude/skills/jivo-cancel-document"
     ],
     "submit-to-approver": [
       ".claude/skills/jivo-add-and-new"
+    ],
+    "cancel-posted": [
+      ".claude/skills/jivo-cancel-document"
+    ],
+    "other-operator-logins": [
+      "sap-b1/cli/lovepreet-veerji.env",
+      "sap-b1/cli/navdeep-user36.env",
+      "sap-b1/cli/user19-oil.env",
+      "sap-b1/cli/user19-mart.env",
+      "sap-b1/cli/user19-bev.env",
+      "sap-b1/cli/user39-oil.env",
+      "sap-b1/cli/user39-mart.env",
+      "sap-b1/cli/user5.env",
+      "sap-b1/accounts-kit/.env.pre-migration-2026-08-17.bak"
     ]
   },
   "exclude": [
@@ -87,9 +110,23 @@
         "User57"
       ],
       "sets": [
-        "submit-to-approver"
+        "submit-to-approver",
+        "cancel-posted"
       ],
-      "note": "Mahak - drafts only, so the skill that submits to the approver never loads. Daman 2026-09-03"
+      "note": "Mahak - drafts only, so the skill that submits to the approver never loads, and neither does the one that cancels a posted document: `sapb1 cancel` refuses on this desk anyway (GUARD 0), and hiding the skill stops the AI reaching for it. Daman 2026-09-03, cancel added 2026-09-05"
+    },
+    {
+      "who": [
+        "SHAHRUKH-INVENT",
+        "shahrukh",
+        "USER27"
+      ],
+      "sets": [
+        "submit-to-approver",
+        "cancel-posted",
+        "other-operator-logins"
+      ],
+      "note": "Shahrukh - drafts only, so the submit and cancel-a-posted-document skills never load. Also USER07 ONLY (Daman 2026-09-09): every other operator's .env is hidden from this box by sparse-checkout so a pull cannot bring it back."
     }
   ]
 }
