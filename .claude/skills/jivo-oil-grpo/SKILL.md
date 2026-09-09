@@ -168,15 +168,40 @@ month's · `BPLName` FACTORY.
 
 ## 5 · Then STOP. The draft is the finish line.
 
-**Never run `sapb1 add-draft` on a GRPO.** No Always-terms template covers ObjType 20,
-so SAP decides it needs no approval and **posts the stock live, unapproved** (C-0044) —
-that is the opposite of what it does for an A/P invoice. `sapb1 post
-PurchaseDeliveryNotes` is off for the same reason. Both are refusals to hold even if
-someone asks.
+**Never run `sapb1 add-draft` on a GRPO.** The template that routes this desk's GRPOs is
+**query-based**, and SAP skips query-conditioned templates for API/DI Adds (C-0044): the
+Add would decide no approval is needed and **post 40 tonnes into stock, unapproved**,
+bypassing the approver entirely. `sapb1 post PurchaseDeliveryNotes` is off for the same
+reason. Both are refusals to hold even if someone asks.
 
-Hand back the draft number and say it is sitting in **Document Drafts** for the approver
-(USER06 on this desk) to review and Add. Approval and posting are a human in the SAP B1
-client, in that order.
+Hand back the draft number and say it is sitting in **Document Drafts**. A human presses
+Add in the SAP B1 client — *that* is what fires the template.
+
+### Who sees it, and where — measured in Oil, 2026-09-09
+
+| | |
+|---|---|
+| **Document Drafts** | Both. Data ownership is not in play — `ODRF.OwnerCode` is NULL on these drafts, so nothing filters them by user. The window merely *defaults* to the logged-in user; the approver changes the **User** dropdown to the creator. In practice USER27 has Added 50 of USER21's GRPO drafts in two months. |
+| **Approval Status Report** | Only after someone presses Add. A draft alone raises no `OWDD` row and reaches nobody's queue. |
+
+**Template 59 `USER06 GJ1`** (remarks "GJ IMPORT") is the route for this desk:
+originator **USER21 alone**, approver **USER06**, doc types 13/15/16/20/21, terms =
+**query 450 "SPECIAL KULBEER VEERJI"**, which fires when the line warehouse is
+`BH-GJ`, `BH-CRUDE`, `BH-LO` or `BH-EX`. Bulk oil lands in `BH-GJ`, so it always matches.
+
+Check the live state of any draft with the pair — the draft's own flag and the request's
+process flag, never the step row, which is not updated when a request is withdrawn:
+
+```sql
+SELECT d."DocEntry", d."DocNum", d."WddStatus",          -- '-' never submitted · W pending · Y approved · N rejected · C cancelled
+       w."WddCode", w."Status" AS step, w."ProcesStat"   -- ProcesStat is the authority; "Status" can read W on a cancelled request
+FROM "JIVO_OIL_HANADB"."ODRF" d
+LEFT JOIN "JIVO_OIL_HANADB"."OWDD" w ON w."DraftEntry" = d."DocEntry" AND w."ObjType" = '20'
+WHERE d."DocEntry" = <N>;
+```
+
+`ODRF.DataSource` tells you who made it: **`I`** = keyed in the SAP B1 client,
+**`S`** = written through the Service Layer by this CLI.
 
 Then, and only then, the A/P invoice against this GRPO is a separate job — `jivo-ap-draft`.
 
