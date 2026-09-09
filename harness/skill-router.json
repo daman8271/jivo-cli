@@ -205,6 +205,20 @@
    ]
   },
   {
+   "skill": "jivo-oil-grpo",
+   "when": "a tanker of LOOSE / BULK oil - the supplier's tax invoice (qty in KG, gate-in stamp, ball-pen shortage) plus the JIVO PO it came against. Daman calls it 'oil GRPO'. Not the transporter's freight bill",
+   "patterns": [
+    "oil grpo",
+    "\\bgrpo\\b.*\\b(tanker|bulk|loose)\\b",
+    "\\b(tanker|bulk|loose)\\b.*\\bgrpo\\b",
+    "refined (soyabean|soybean|rice bran|palm|mustard|sunflower|canola) oil",
+    "soyabean refined loose",
+    "gate entry no",
+    "\\bshot\\b *[-–] *\\d+ *kg",
+    "\\bshortage\\b.*\\bkg\\b"
+   ]
+  },
+  {
    "skill": "jivo-oil-freight-grpo",
    "group": "freight",
    "when": "TRANSPORTER freight bill / bilty / LR billed to JIVO OIL - raise the freight GRPOs. The BILL-TO decides the book: Oil sale invoices 626xxxxxx",
