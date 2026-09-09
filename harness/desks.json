@@ -25,6 +25,13 @@
         "USER22"
       ],
       "note": "Vishal (VISHAL TYAGI) - RM/PM entry desk, accounts-centric, always through USER07 (HARSH). Daman 2026-09-09: \"he will be RMPM, basically account-centric from user 7 only\". Drafts-only for the same reason as Shahrukh: USER07 is named on ZERO Always-terms approval templates (OWTM.Conds='N') in any of the three books, so `add-draft` would not submit - SAP would POST IT LIVE and unapproved (C-0034). His own login USER22 (InternalKey 31) IS an originator on the delivery templates (Oil 67, Bev 46), but it is not used on this box and the guard is per-box, not per-doctype. A human presses Add in the SAP B1 client."
+    },
+    {
+      "who": [
+        "HR-IT",
+        "priya"
+      ],
+      "note": "Priya - GRPO desk (HR-IT), SAP login USER19 (GURCHARAN, InternalKey 28). Daman 2026-09-09: \"she will be mainly responsible for putting up the GRPOs\". Drafts-only because NO Always-terms approval template (OWTM.Conds='N') covers a GRPO (TransType 20) in ANY of the three books - checked live 2026-09-09: Oil has only 67 Delivery (15) + 103 API AP AUTO (18), Mart only 48 (18), Bev only 39/46 Delivery (15) + 68 (18), and USER19 is an originator on none of them. With no template SAP does not submit, it POSTS LIVE and unapproved (C-0034). And per Daman 2026-09-08 a GRPO is never live-posted either - `post PurchaseDeliveryNotes` is off. So this desk BUILDS the draft and a human presses Add in the SAP B1 client. Note USER19 is shared with Mahak (PC-AUDIT-05), so SAP cannot tell their work apart."
     }
   ],
   "skill_sets": {
@@ -148,6 +155,17 @@
         "other-operator-logins"
       ],
       "note": "Vishal - drafts only, so the submit and cancel-a-posted-document skills never load. Also USER07 ONLY (Daman 2026-09-09): every other operator's .env is hidden by sparse-checkout so a pull cannot bring it back."
+    },
+    {
+      "who": [
+        "HR-IT",
+        "priya"
+      ],
+      "sets": [
+        "submit-to-approver",
+        "cancel-posted"
+      ],
+      "note": "Priya - drafts only, so the skill that submits to the approver never loads, and neither does the cancel-a-posted-document skill. She KEEPS other-operator-logins: user19-*.env is her own login, not somebody else's. Daman 2026-09-09."
     }
   ]
 }
