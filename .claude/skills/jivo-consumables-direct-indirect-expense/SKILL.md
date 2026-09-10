@@ -256,13 +256,14 @@ on `ATC1` exactly like Oil** — verified 2026-09-08, so stamp there too — and
 
 - **Never `sapb1 post` this, or anything else document-shaped** — `post` refuses
   documents outright, and it would bypass the approver.
-- **`add-draft` reaches the approver from an Oil login the template names, and nowhere
-  else.** The only Always-terms A/P templates are Oil **103**, Mart **48**, Bev **68**,
-  and each names **USER39** alone. From USER07/HARSH the submit is refused (guard 5c),
-  and in Mart/Bev an API Add **posts live** (`OADM.EnbApprDI='N'`, C-0074). So on this
-  class the honest finish is usually: draft it, attach both papers, tell the operator the
-  draft number, and a person presses **Add** in the SAP B1 client. Say that plainly —
-  and say that Bhawani's approval still does not post it.
+- **`add-draft` reaches the approver from a login the template names, and nowhere else.**
+  The only Always-terms A/P templates are Oil **103**, Mart **48**, Bev **68**, and each
+  names **USER39 (MUQEEM) and USER08 (DIVJOT)** — read back 2026-09-10, and all three
+  books now route an API Add to approval (`OADM.EnbApprDI='Y'` everywhere, C-0088
+  superseding C-0074). From those two logins, submit it. From **USER07/HARSH** the submit
+  is still refused (guard 5c) and the honest finish on this class is: draft it, attach both
+  papers, tell the operator the draft number, and a person presses **Add** in the SAP B1
+  client. Say that plainly — and say that Bhawani's approval still does not post it.
 - **A drafts-only desk finishes at the draft** — `harness/desks.json` → `drafts_only`.
 - **Exit 7** = sent, outcome unknown → query `Drafts` by `NumAtCard`; do not re-send.
 - If the draft is wrong: `sapb1 delete draft <DocEntry> --dry-run` first. With an

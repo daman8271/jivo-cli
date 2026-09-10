@@ -85,10 +85,13 @@ create documents for a living. Daman authorised this on 2026-08-22.
   no Always-terms template covering the login and the doctype, it decides the
   document needs no approval and posts it LIVE. Verified live: the only
   Always-terms A/P-invoice templates are Oil **103**, Mart **48**, Bev **68**,
-  and each names **USER39 alone**. So a box logged in as anyone else stops at
-  the draft — attach the bill, say it is waiting, and a person presses Add in the
-  SAP B1 client (that route does consult the template). Getting a login added is
-  an admin's ten minutes in Approval Templates → Originators, never a flag here.
+  and each names **USER39 (MUQEEM) and USER08 (DIVJOT)** — Divjot was added
+  2026-09-10 on Daman's instruction; before that it was USER39 alone. Those two
+  reach Bhawani from any of the three books. **A box logged in as anyone else
+  still stops at the draft** — attach the bill, say it is waiting, and a person
+  presses Add in the SAP B1 client (that route does consult the template).
+  Getting a login added is an admin's ten minutes in Approval Templates →
+  Originators, never a flag here.
 
   **The one exception — a DRAFTS-ONLY desk, where this whole rule is OFF.**
   `harness/desks.json` → `drafts_only` names the boxes whose operator submits and
