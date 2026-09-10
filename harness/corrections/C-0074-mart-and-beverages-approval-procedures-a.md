@@ -4,7 +4,7 @@ date: 2026-09-02
 author: Daman's session 2026-09-02 (incident: Mart A/P 12210 posted live from draft 40128)
 area: accounts
 severity: high
-status: active
+status: superseded
 supersedes: 
 tags: [sap-approval, add-draft, mart, beverages]
 ---
