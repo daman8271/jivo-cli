@@ -31,9 +31,21 @@ import (
 //	 WHERE T0."Active" = 'Y' AND T0."Conds" = 'N' AND T3."TransType" = 18
 //
 // Oil 103, Mart 48, Beverages 68 — all named "API AP AUTO (USER39)", all
-// Always terms, and every one of them lists exactly ONE originator: USER39.
-// So an A/P invoice submitted by USER39 reaches Bhawani, and the same submit by
-// USER08 (Divjot's login) or any other user posts live. Query-based templates —
+// Always terms, approver USER03 (BHAWANI), A/P invoice only.
+//
+// Re-measured 2026-09-10 with the same query, after Daman asked for Divjot to
+// get Add & New too ("we dont wnana post to ledger but directly to bhawani").
+// USER08 (DIVJOT, USERID 17 in all three books) was PATCHed onto all three
+// templates alongside USER39 (MUQEEM, USERID 53 in Oil/Mart, 50 in Bev), so
+// each now reads:
+//
+//	Oil  103 -> USER39,USER08   approver USER03
+//	Mart  48 -> USER39,USER08   approver USER03
+//	Bev   68 -> USER39,USER08   approver USER03
+//
+// So an A/P invoice submitted by EITHER of those two reaches Bhawani, and the
+// same submit by USER07, USER19 or any other login still posts live — which is
+// why the rest of this guard stays exactly as it was. Query-based templates —
 // Conds='Y', e.g. Oil 6 "SCHEME FACTORY", which does list every USERnn — are
 // skipped entirely for a DI/Service Layer Add and cannot save it.
 //
@@ -43,8 +55,10 @@ import (
 // 2026-09-03), so there is no fact to read at run time under the very login
 // that needs checking. A guard that cannot read its fact must fail closed, and
 // failing closed for everyone would have taken Muqeem's working desk down with
-// Divjot's broken one. So the evidenced list is compiled in, and it is
-// overridable by one env assertion for the day an admin widens a template.
+// Divjot's then-broken one. So the evidenced list is compiled in, and it is
+// overridable by one env assertion for the day an admin widens a template
+// before this table is rebuilt — which is how Divjot's desk ran until the
+// binaries shipped on 2026-09-10.
 type approvalTemplate struct {
 	CompanyDB   string
 	ObjectCode  string // DocObjectCode as SAP spells it, e.g. "oPurchaseInvoices"
@@ -58,9 +72,9 @@ type approvalTemplate struct {
 // only with the query above in hand.
 func verifiedApprovalTemplates() []approvalTemplate {
 	return []approvalTemplate{
-		{CompanyDB: "JIVO_OIL_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "103", Name: "API AP AUTO (USER39)", Originators: []string{"USER39"}},
-		{CompanyDB: "JIVO_MART_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "48", Name: "API AP AUTO (USER39)", Originators: []string{"USER39"}},
-		{CompanyDB: "JIVO_BEVERAGES_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "68", Name: "API AP AUTO (USER39)", Originators: []string{"USER39"}},
+		{CompanyDB: "JIVO_OIL_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "103", Name: "API AP AUTO (USER39)", Originators: []string{"USER39", "USER08"}},
+		{CompanyDB: "JIVO_MART_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "48", Name: "API AP AUTO (USER39)", Originators: []string{"USER39", "USER08"}},
+		{CompanyDB: "JIVO_BEVERAGES_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "68", Name: "API AP AUTO (USER39)", Originators: []string{"USER39", "USER08"}},
 	}
 }
 

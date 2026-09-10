@@ -29,19 +29,37 @@ func TestTemplateGuardPassesForAVerifiedOriginator(t *testing.T) {
 	}
 }
 
-func TestTemplateGuardRefusesDivjotsLoginInOil(t *testing.T) {
-	// The case this guard exists for. USER08 is on no Always-terms template, so
-	// SAP would find none and post the invoice into the books unapproved.
+func TestTemplateGuardPassesForDivjotsLoginInEveryBook(t *testing.T) {
+	// USER08 (DIVJOT) was added as an originator on all three Always-terms A/P
+	// templates on 2026-09-10 — Oil 103, Mart 48, Bev 68 — read back out of
+	// OWTM/WTM3/WTM1 as "USER39,USER08" with approver USER03 in each. Before
+	// that this same case was a refusal, and it must not silently become one
+	// again if somebody trims the table.
+	for _, db := range []string{"JIVO_OIL_HANADB", "JIVO_MART_HANADB", "JIVO_BEVERAGES_HANADB"} {
+		pf := templatePreflight(actionSubmit)
+		checkAddApprovalTemplate(pf, &config.Config{CompanyDB: db, User: "USER08"})
+		if len(pf.Problems) != 0 {
+			t.Errorf("USER08 is an originator for an A/P invoice in %s; guard refused anyway: %v", db, pf.Problems)
+		}
+	}
+}
+
+func TestTemplateGuardStillRefusesALoginOnNoTemplate(t *testing.T) {
+	// The case this guard exists for, re-anchored on a login that really is on
+	// nothing: USER07 (HARSH) was measured on ZERO Always-terms templates in
+	// all three books on 2026-09-09, which is why Shahrukh's and Vishal's desks
+	// are drafts-only. SAP would find no template and post the invoice into the
+	// books unapproved.
 	pf := templatePreflight(actionSubmit)
-	checkAddApprovalTemplate(pf, &config.Config{CompanyDB: "JIVO_OIL_HANADB", User: "USER08"})
+	checkAddApprovalTemplate(pf, &config.Config{CompanyDB: "JIVO_OIL_HANADB", User: "USER07"})
 	if len(pf.Problems) != 1 {
-		t.Fatalf("USER08 is on no template for an A/P invoice in Oil — expected exactly one refusal, got %d: %v", len(pf.Problems), pf.Problems)
+		t.Fatalf("USER07 is on no template for an A/P invoice in Oil — expected exactly one refusal, got %d: %v", len(pf.Problems), pf.Problems)
 	}
 	p := pf.Problems[0]
 	if p.Guard != "template" {
 		t.Errorf("guard name = %q, want \"template\"", p.Guard)
 	}
-	for _, want := range []string{"USER08", "103", "USER39", "posts it LIVE"} {
+	for _, want := range []string{"USER07", "103", "USER39", "USER08", "posts it LIVE"} {
 		if !strings.Contains(p.Msg, want) {
 			t.Errorf("refusal does not mention %q, so the operator cannot act on it:\n%s", want, p.Msg)
 		}
@@ -72,11 +90,14 @@ func TestTemplateGuardIsSilentOnTheApprovedClick(t *testing.T) {
 }
 
 func TestTemplateGuardAcceptsTheBoxAssertion(t *testing.T) {
-	// The day an admin adds USER08 to template 103, the box says so in its .env
-	// and nothing has to be rebuilt.
+	// The day an admin widens a template, the box says so in its .env and
+	// nothing has to be rebuilt. This is how Divjot's desk ran on 2026-09-10
+	// between the SAP change and the new binaries, and how the next login
+	// added to template 103 will run. Asserted with USER07 because USER08 is
+	// now in the compiled table and would pass without the env.
 	t.Setenv(approvalOriginatorEnv, "103")
 	pf := templatePreflight(actionSubmit)
-	checkAddApprovalTemplate(pf, &config.Config{CompanyDB: "JIVO_OIL_HANADB", User: "USER08"})
+	checkAddApprovalTemplate(pf, &config.Config{CompanyDB: "JIVO_OIL_HANADB", User: "USER07"})
 	if len(pf.Problems) != 0 {
 		t.Fatalf("%s=103 asserts the grant; guard refused anyway: %v", approvalOriginatorEnv, pf.Problems)
 	}
