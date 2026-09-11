@@ -5,17 +5,40 @@ import LineHeatStrip, { type HeatHead, type HeatRow } from "@/components/LineHea
 import {
   cr, dlabel, fmt, getBuild, getHonesty, getLines, getOverview,
   getQuestions, getScenarios, getSpine, money, tonnes,
+  litresProse, packSizesWords, plainWords, speedFraction, speedPhrase,
 } from "@/lib/data";
+import type { SlotSpec } from "@/lib/types";
 
 export const metadata = {
-  title: "Lines",
+  title: "Machines",
   description:
-    "Each filling line's planned September — hours, litres, oil changes and slot rates, with the derates stated honestly.",
+    "Each filling machine's September plan — hours run, litres, oil changes, how busy it is, and the speed the plan runs it at (measured, not the maker's number).",
 };
 
-// hours with one decimal, Indian grouping (UI formatting only)
+// ---- formatting helpers (words only — every figure still comes from data/*.json)
+// hours with one decimal, Indian grouping
 const h1f = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+// litres in a sentence ("27.65 lakh litres"), "half" for a 50% speed, and the
+// pack words for products no machine can fill all come from lib — one voice.
 const BASIS_TONE: Record<string, string> = { rated: "zinc", observed: "amber", derived: "blue" };
+// where a speed comes from — plain words for lines.json's rate_basis
+const BASIS_WORD: Record<string, string> = {
+  rated: "the maker's speed",
+  observed: "watched on the machine — real",
+  derived: "worked out, not measured",
+};
+// the bottle size a worked-out speed was taken from, read out of the data's own note
+const derivedSource = (note: string) => note.match(/from the (\S+) head/i)?.[1] ?? null;
+// the note column, in plain words, from rate_basis (the raw note is engine vocabulary)
+function slotNote(s: SlotSpec, half: string) {
+  if (s.rate_basis === "observed")
+    return `Someone watched the machine do this. The plan then runs it at ${half} of that again.`;
+  if (s.rate_basis === "derived") {
+    const src = derivedSource(s.note);
+    return `Nobody has measured this size. Worked out from the ${src ? `${src} speed` : "speed of another bottle size"} — same litres per hour.`;
+  }
+  return `The maker's speed. The plan runs it at ${half} of this.`;
+}
 
 export default function LinesPage() {
   const L = getLines();
@@ -28,12 +51,13 @@ export default function LinesPage() {
 
   const shift = baseline.shift_hours;
   const eff = Math.round(L.efficiency * 100);
+  const half = speedFraction(eff);
   const workingDays = spine.filter((d) => d.working).length;
   const sundays = spine.length - workingDays;
   const capLine = shift * workingDays;
   const capAll = capLine * L.lines.length;
 
-  // ---- per line, per day — aggregated from the run ledger in lines.json
+  // ---- per machine, per day — aggregated from the run ledger in lines.json
   const rows: HeatRow[] = L.lines.map((ln) => {
     const byDate = new Map<string, { h: number; fill: number; litres: number; runs: number; flush: number }>();
     for (const r of L.runs_by_line[ln.name] ?? []) {
@@ -70,32 +94,39 @@ export default function LinesPage() {
     util: d.util,
   }));
 
-  // ---- month totals across the six lines
+  // ---- month totals across the machines
   const hoursOnAll = L.lines.reduce((s, l) => s + l.hours_on_line, 0);
   const changeMinAll = L.lines.reduce((s, l) => s + l.flush_minutes, 0);
   // the month total comes from lines.json total_litres (the summary's own figure) —
-  // per-line litres are rounded per line, so their sum can drift a few litres from it
+  // per-machine litres are rounded per machine, so their sum can drift a few litres from it
   const litresAll = L.total_litres;
   const valueAll = L.lines.reduce((s, l) => s + l.value_rs, 0);
   const runsAll = L.lines.reduce((s, l) => s + l.runs, 0);
   const busiest = [...L.lines].sort((a, b) => b.hours_on_line - a.hours_on_line)[0];
   const biggest = [...L.lines].sort((a, b) => b.litres - a.litres)[0];
+  const busyPct = Math.round((hoursOnAll / capAll) * 100);
 
-  // ---- changeover kinds per machine, from the build list (same sim, same runs)
+  // ---- changeover kinds per machine, from the run list (same plan, same runs)
   const rules = B.meta.rules;
   const oilChanges = B.meta.totals.oil_changes;
   const clearancesOnly = B.meta.totals.clearances_only;
   const chg = new Map<string, { oil: number; clr: number }>();
+  let oilChangeMin = 0;
+  let oilChangeN = 0;
   for (const d of B.days)
     for (const m of d.machines)
       for (const r of m.runs) {
         const c = r.changeover_before;
         if (!c) continue;
         const e = chg.get(m.machine) ?? { oil: 0, clr: 0 };
-        if (c.kind === "OIL CHANGE") e.oil += 1;
-        else e.clr += 1;
+        if (c.kind === "OIL CHANGE") {
+          e.oil += 1;
+          oilChangeMin += c.minutes;
+          oilChangeN += 1;
+        } else e.clr += 1;
         chg.set(m.machine, e);
       }
+  const avgOilChange = oilChangeN > 0 ? Math.round(oilChangeMin / oilChangeN) : 0;
 
   const observed = L.lines.flatMap((l) =>
     l.slots.filter((s) => s.rate_basis === "observed").map((s) => ({ line: l.name, ...s }))
@@ -103,88 +134,102 @@ export default function LinesPage() {
   const derivedSlots = L.lines.flatMap((l) =>
     l.slots.filter((s) => s.rate_basis === "derived").map((s) => ({ line: l.name, ...s }))
   );
-  const speedsProv = H.measured.find((m) => m.toLowerCase().includes("line speeds")) ?? "";
+  const derivedSources = [...new Set(derivedSlots.map((s) => derivedSource(s.note)).filter(Boolean))] as string[];
+  // honesty.json says "realise May-Jul" — keep the months, drop the office word
   const realiseProv = H.measured.find((m) => m.toLowerCase().includes("realise")) ?? "";
+  const priceWindow = realiseProv.replace(/realise/i, "").trim();
+  const aug = H.august_calibration;
 
   const unpro = O.unproducible;
   const unproLitres = unpro.reduce((s, u) => s + u.plan_litres, 0);
-  const unproSlots = [...new Set(unpro.map((u) => u.slot_needed))].join(" or ");
+  const unproPacks = packSizesWords(unpro);
 
   return (
     <div>
       <div className="flex items-baseline justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">
-            Lines <SimBadge kind="plan" />
+            Machines <SimBadge kind="plan" />
           </h1>
-          <p className="text-sm text-zinc-400 mt-1 max-w-3xl">
-            {L.lines.length} filling lines, {shift} h shifts, {workingDays} working days ({sundays} Sundays off).{" "}
-            {fmt(runsAll)} planned runs would fill {fmt(litresAll)} L. A line takes any oil — only the pack size ties a
-            SKU to a machine. None of this has been run.
+          <p className="text-sm text-zinc-300 mt-1 max-w-3xl">
+            {L.lines.length} machines. {shift}-hour shifts. {workingDays} working days, {sundays} Sundays off. Together
+            they make {litresProse(litresAll)} in {fmt(runsAll)} runs. Nothing here has happened yet — this is the
+            computer&rsquo;s plan.
           </p>
-        </div>
-        <div className="text-xs text-zinc-500 text-right">
-          speeds: {speedsProv} <SimBadge kind="measured" />
-          <br />
-          runs: {L.measured_from} <SimBadge kind="simulated" />
+          <p className="text-xs text-zinc-500 mt-1 max-w-3xl">
+            Any machine can take any oil. Only the bottle size decides which machine a product goes on.
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mt-5">
         <Card
-          title="Hours on the lines"
+          title="Hours the machines run"
           value={`${h1f(hoursOnAll)} h`}
-          sub={`of ${fmt(capAll)} h offered — ${Math.round((hoursOnAll / capAll) * 100)}% used`}
+          sub={`of ${fmt(capAll)} h available — ${busyPct}% busy`}
           tone="text-amber-300"
         />
-        <Card title="Would fill" value={`${fmt(litresAll)} L`} sub={`${tonnes(litresAll)} · ${fmt(runsAll)} runs`} />
-        <Card title="Value of that fill" value={cr(valueAll)} sub={`priced at ${realiseProv} (measured)`} />
+        <Card title="Litres to make" value={`${fmt(litresAll)} L`} sub={`${tonnes(litresAll)} · ${fmt(runsAll)} runs`} />
+        <Card
+          title="Worth"
+          value={cr(valueAll)}
+          sub={priceWindow ? `at real selling prices (${priceWindow})` : "at real selling prices"}
+        />
         <Card
           title="Oil changes"
           value={fmt(oilChanges)}
-          sub={`+ ${clearancesOnly} clearance-only · ${fmt(changeMinAll)} min of changeover`}
+          sub={`+ ${clearancesOnly} bottle-size changes · ${fmt(changeMinAll)} min lost in all`}
         />
         <Card
-          title="Busiest line"
+          title="Busiest machine"
           value={busiest.name}
-          sub={`${h1f(busiest.hours_on_line)} h on line · ${biggest.name} fills the most (${fmt(biggest.litres)} L)`}
+          sub={`${h1f(busiest.hours_on_line)} h running · ${biggest.name} makes the most (${fmt(biggest.litres)} L)`}
         />
+      </div>
+
+      <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-4">
+        <p className="text-sm text-zinc-100">
+          Machines run at {speedPhrase(eff)} — that is what we measured, not a fault.
+        </p>
+        <p className="text-xs text-zinc-400 mt-1 max-w-4xl">
+          Tested on August: the computer said {litresProse(aug.sim_made_l)}, the factory made {litresProse(aug.actual_made_l)}.
+          The speeds are explained lower down.
+        </p>
       </div>
 
       {q4 && (
         <div className="mt-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-4">
           <div className="flex items-center gap-2 flex-wrap">
-            <Pill tone="amber">open question Q{q4.n}</Pill>
-            <Pill tone="red">{q4.priority}</Pill>
-            <span className="text-xs text-zinc-500">affects every hour on this page</span>
+            <Pill tone="amber">open question {q4.n}</Pill>
+            <Pill tone="red">{q4.priority === "blocking" ? "must be answered" : q4.priority}</Pill>
+            <span className="text-xs text-zinc-500">changes every hour on this page</span>
           </div>
           <p className="text-sm text-zinc-300 mt-2 leading-relaxed max-w-4xl">
-            &ldquo;{q4.one_liner}&rdquo;
+            &ldquo;{plainWords(q4.one_liner)}&rdquo;
           </p>
           <p className="text-xs text-zinc-500 mt-2 max-w-4xl">
-            Every hour here is charged against the simulator&rsquo;s {shift}-hour working day. Until Q{q4.n} is
-            answered, that clock is an assumption <SimBadge kind="assumed" /> — if the lines really run later than the
-            plan&rsquo;s day, the utilisation and idle-hour figures move with the answer.
+            This plan counts a {shift}-hour working day. That is our guess — not measured. If the machines really run
+            later than that, the busy % and the idle hours on this page change with it.
           </p>
         </div>
       )}
 
       <Section
-        title="Utilisation, day by day"
-        right={<span className="text-xs text-zinc-500">hover a cell · click to open the day</span>}
+        title="How busy each machine is, day by day"
+        right={<span className="text-xs text-zinc-500">point at a box to see it · click to open the day</span>}
       >
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
           <LineHeatStrip rows={rows} days={heads} shift={shift} />
           <p className="text-xs text-zinc-500 mt-4">
-            Each cell is how much of the {shift}-hour shift that line would be busy — filling plus the minutes an oil
-            change or line clearance costs. A grey dash is a line standing idle on a working day; the bottom row is all{" "}
-            {L.lines.length} lines together as the simulator&rsquo;s utilisation percentage. This is the plan&rsquo;s
-            timetable, not a log.
+            Each box shows how much of the {shift}-hour shift that machine is busy — filling, plus the minutes lost to
+            oil changes and cleaning. A grey dash means the machine has nothing to run that day. The bottom row is
+            all {L.lines.length} machines together, as busy %. This is the computer&rsquo;s timetable, not a record of
+            what happened.
           </p>
         </div>
       </Section>
 
-      <Section title="Each line's September">
+      <Section title="Each machine's September">
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {L.lines.map((l) => {
             const pct = Math.round((l.hours_on_line / capLine) * 100);
@@ -210,15 +255,15 @@ export default function LinesPage() {
                   <div className="h-full bg-amber-500/70 rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
                 </div>
                 <div className="text-[11px] text-zinc-500 mt-1 tabular-nums">
-                  {pct}% used · {h1f(l.hours_run)} h filling + {fmt(l.flush_minutes)} min changeover
+                  {pct}% busy · {h1f(l.hours_run)} h filling + {fmt(l.flush_minutes)} min oil changes and cleaning
                 </div>
                 <dl className="grid grid-cols-2 gap-y-2 mt-4 text-sm">
                   <div>
-                    <dt className="text-[11px] uppercase tracking-wider text-zinc-500">Would fill</dt>
+                    <dt className="text-[11px] uppercase tracking-wider text-zinc-500">Will make</dt>
                     <dd className="tabular-nums">{fmt(l.litres)} L</dd>
                   </div>
                   <div>
-                    <dt className="text-[11px] uppercase tracking-wider text-zinc-500">Value</dt>
+                    <dt className="text-[11px] uppercase tracking-wider text-zinc-500">Worth</dt>
                     <dd className="tabular-nums">{money(l.value_rs)}</dd>
                   </div>
                   <div>
@@ -230,14 +275,15 @@ export default function LinesPage() {
                   <div>
                     <dt className="text-[11px] uppercase tracking-wider text-zinc-500">Oil changes</dt>
                     <dd className="tabular-nums">
-                      {c.oil} <span className="text-zinc-500 text-xs">+ {c.clr} clearance-only</span>
+                      {c.oil} <span className="text-zinc-500 text-xs">+ {c.clr} bottle-size only</span>
                     </dd>
                   </div>
                 </dl>
                 <div className="text-xs text-zinc-500 mt-4 pt-3 border-t border-zinc-800">
-                  Effective pace {fmt(rate)} L/h across the month <SimBadge kind="derived" note="litres ÷ filling hours — computed, not observed" />
+                  Works out to {fmt(rate)} L per hour of filling — litres ÷ filling hours, not measured.
                 </div>
                 <div className="text-[11px] text-zinc-600 mt-2 space-y-0.5">
+                  <div className="uppercase tracking-wider text-[10px]">Biggest products</div>
                   {l.top_skus.slice(0, 3).map((s) => (
                     <div key={s.sku} className="truncate tabular-nums">
                       {fmt(s.litres)} L · {s.sku}
@@ -248,17 +294,24 @@ export default function LinesPage() {
             );
           })}
         </div>
+        <p className="text-[11px] text-zinc-500 mt-3">
+          The tags are the bottle sizes each machine can fill. Orange = speed watched on the machine. Blue = speed
+          worked out, not measured. Grey = the maker&rsquo;s speed.
+        </p>
       </Section>
 
-      <Section title="What the plan fills at">
+      <Section title="How fast the machines fill">
         <div className="rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-4">
           <div className="text-xs uppercase tracking-wider text-amber-300/90">
-            Two slots are derated twice — say it right
+            Machines run at {speedPhrase(eff)} — that is what we measured
           </div>
           <p className="text-sm text-zinc-300 mt-2 leading-relaxed max-w-4xl">
-            Most slots carry a <em>rated</em> speed, and the sim plans them at {eff}% of it — the derate the August
-            backtest calibrated (replayed on August, the engine landed {fmt(H.august_calibration.sim_made_l)} L against{" "}
-            {fmt(H.august_calibration.actual_made_l)} L actually made) <SimBadge kind="assumed" />. But{" "}
+            Every machine has a speed written down — the maker&rsquo;s speed. The plan runs each machine at {half} of
+            it. This is not a fault. We tested it on August: the computer said {litresProse(aug.sim_made_l)}, the factory
+            made {litresProse(aug.actual_made_l)}.
+          </p>
+          <p className="text-sm text-zinc-300 mt-2 leading-relaxed max-w-4xl">
+            Two speeds are different:{" "}
             {observed.map((s, i) => (
               <span key={`${s.line}-${s.slot}`}>
                 {i > 0 && " and "}
@@ -266,10 +319,11 @@ export default function LinesPage() {
                   {s.line} {s.slot}
                 </span>
               </span>
-            ))}{" "}
-            are stored at rates someone <em>watched the line do</em> — and the plan derates those by {eff}% again. So
-            their planned pace is <span className="text-amber-300">the observed rate, then {eff}% efficiency</span> —
-            not {eff}% of rated:
+            ))}
+            . For these, nobody used the maker&rsquo;s number. Someone stood at the machine and wrote down what it
+            really did. The plan then cuts that speed to {half} again. Say it right:{" "}
+            <span className="text-amber-300">the speed someone watched, then {half} of that</span> — not
+            &ldquo;{half} of the maker&rsquo;s speed&rdquo;.
           </p>
           <div className="grid sm:grid-cols-2 gap-3 mt-3">
             {observed.map((s) => (
@@ -278,23 +332,22 @@ export default function LinesPage() {
                   {s.line} <Pill tone="amber">{s.slot}</Pill>
                 </div>
                 <div className="text-sm tabular-nums mt-1">
-                  {fmt(s.stored_rate_per_hr)} pcs/hr observed → plan runs {fmt(s.effective_rate_per_hr)} pcs/hr
+                  watched: {fmt(s.stored_rate_per_hr)} pieces/hr → plan runs: {fmt(s.effective_rate_per_hr)} pieces/hr
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-[11px] text-zinc-500 mt-3 italic max-w-4xl">Data register: {L.efficiency_note}</p>
         </div>
 
         <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-900/40 overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wider text-zinc-500 border-b border-zinc-800">
-                <th className="py-3 px-4 font-medium">Line</th>
-                <th className="py-3 px-4 font-medium">Slot</th>
-                <th className="py-3 px-4 font-medium text-right">Stored rate</th>
-                <th className="py-3 px-4 font-medium">Basis</th>
-                <th className="py-3 px-4 font-medium text-right">Plan fills at</th>
+                <th className="py-3 px-4 font-medium">Machine</th>
+                <th className="py-3 px-4 font-medium">Bottle size</th>
+                <th className="py-3 px-4 font-medium text-right">Speed written down</th>
+                <th className="py-3 px-4 font-medium">Where it comes from</th>
+                <th className="py-3 px-4 font-medium text-right">Plan runs at</th>
                 <th className="py-3 px-4 font-medium">Note</th>
               </tr>
             </thead>
@@ -312,11 +365,11 @@ export default function LinesPage() {
                       <Pill tone={BASIS_TONE[s.rate_basis] ?? "zinc"}>{s.slot}</Pill>
                     </td>
                     <td className="py-2.5 px-4 text-right tabular-nums whitespace-nowrap">
-                      {fmt(s.stored_rate_per_hr)} <span className="text-zinc-600 text-xs">pcs/hr</span>
+                      {fmt(s.stored_rate_per_hr)} <span className="text-zinc-600 text-xs">pieces/hr</span>
                     </td>
                     <td className="py-2.5 px-4">
                       <span
-                        className={`text-xs uppercase tracking-wide ${
+                        className={`text-xs ${
                           s.rate_basis === "observed"
                             ? "text-amber-300"
                             : s.rate_basis === "derived"
@@ -324,13 +377,13 @@ export default function LinesPage() {
                               : "text-zinc-400"
                         }`}
                       >
-                        {s.rate_basis}
+                        {BASIS_WORD[s.rate_basis] ?? s.rate_basis}
                       </span>
                     </td>
                     <td className="py-2.5 px-4 text-right tabular-nums whitespace-nowrap">
-                      {fmt(s.effective_rate_per_hr)} <span className="text-zinc-600 text-xs">pcs/hr</span>
+                      {fmt(s.effective_rate_per_hr)} <span className="text-zinc-600 text-xs">pieces/hr</span>
                     </td>
-                    <td className="py-2.5 px-4 text-xs text-zinc-500 min-w-[260px]">{s.note}</td>
+                    <td className="py-2.5 px-4 text-xs text-zinc-500 min-w-[260px]">{slotNote(s, half)}</td>
                   </tr>
                 ))
               )}
@@ -340,44 +393,48 @@ export default function LinesPage() {
         <p className="text-xs text-zinc-500 mt-3 max-w-4xl">
           {derivedSlots.length > 0 && (
             <>
-              The {derivedSlots.map((s) => `${s.line} ${s.slot}`).join(", ")} rates are DERIVED — no measured rate
-              exists for that pack, so the sim declares the assumption instead of inventing a speed.{" "}
+              Nobody has measured a speed for {derivedSlots.map((s) => `${s.line} ${s.slot}`).join(", ")}. The plan
+              works those out from the{" "}
+              {derivedSources.length === 1 ? `${derivedSources[0]} speed` : "speed of another bottle size"} and says
+              so — it does not invent a number.{" "}
             </>
           )}
-          A slot missing from a line means that pack size is not set up there.
+          A bottle size not listed under a machine means that machine cannot fill it.
         </p>
       </Section>
 
-      <Section title="The changeover bill — time, not material">
+      <Section title="Oil changes cost time, not oil">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Card
-            title="Changeover time"
+            title="Time lost to oil changes and cleaning"
             value={`${h1f(changeMinAll / 60)} h`}
-            sub={`${fmt(changeMinAll)} min — ${Math.round((changeMinAll / 60 / hoursOnAll) * 100)}% of time on the lines`}
+            sub={`${fmt(changeMinAll)} min — ${Math.round((changeMinAll / 60 / hoursOnAll) * 100)}% of all machine time`}
             tone="text-amber-300"
           />
           <Card
-            title="Line-days lost to it"
+            title="Machine-days lost"
             value={h1f(changeMinAll / 60 / shift)}
-            sub={`full ${shift}-hour line-days of switching`}
+            sub={`full ${shift}-hour machine-days`}
           />
           <Card
             title="Oil changes"
             value={fmt(oilChanges)}
-            sub={`+ ${clearancesOnly} pack-size-only clearances`}
+            sub={`+ ${clearancesOnly} bottle-size changes, same oil`}
           />
           <Card
-            title="Flush oil cycled"
+            title="Wash oil"
             value={`${fmt(oilChanges * rules.flush_litres)} L`}
-            sub={`${fmt(rules.flush_litres)} L per change — run through and REUSED, not consumed`}
+            sub={`${fmt(rules.flush_litres)} L per change — it comes back, not wasted`}
           />
         </div>
         <div className="mt-3 rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
           <p className="text-sm text-zinc-300 leading-relaxed max-w-4xl">
-            The rule the sim charges: <span className="text-zinc-100">{rules.note}</span>. So the flush is not a
-            material cost — the {fmt(rules.flush_litres)} L of the next oil comes back — but every switch still pays
-            its minutes, and {fmt(oilChanges)} oil changes add up to {h1f(changeMinAll / 60)} hours the lines
-            aren&rsquo;t filling.
+            One oil change in this plan: wash the machine with{" "}
+            <span className="text-zinc-100">{fmt(rules.flush_litres)} L of the next oil</span>, then clean for about{" "}
+            <span className="text-zinc-100">{Math.round(rules.line_clearance_min)} min</span>. About {avgOilChange} min
+            in all. The wash oil comes back — it is not wasted. The minutes are gone. {fmt(oilChanges)} oil changes add
+            up to {h1f(changeMinAll / 60)} hours when the machines are not filling. A bottle-size change on the same
+            oil is cleaning only.
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 mt-4">
             {L.lines.map((l) => {
@@ -388,7 +445,7 @@ export default function LinesPage() {
                   <div className="flex justify-between tabular-nums text-zinc-400">
                     <span>{l.name}</span>
                     <span>
-                      {c.oil} changes · {fmt(l.flush_minutes)} min
+                      {c.oil} oil changes · {fmt(l.flush_minutes)} min
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden mt-1">
@@ -399,9 +456,9 @@ export default function LinesPage() {
             })}
           </div>
           <p className="text-[11px] text-zinc-600 mt-3">
-            The day-by-day switching order, changeover by changeover, is written out for the floor on the{" "}
+            The order of runs and oil changes, day by day, is on the{" "}
             <Link href="/build" className="text-zinc-400 hover:text-amber-300 underline underline-offset-2">
-              build list
+              run list
             </Link>
             .
           </p>
@@ -411,15 +468,21 @@ export default function LinesPage() {
       {unpro.length > 0 && (
         <div className="mt-8 rounded-xl border border-red-500/20 bg-red-500/[0.04] p-4">
           <p className="text-sm text-zinc-300 max-w-4xl">
-            <span className="text-red-300 font-medium">What no line can do:</span> nothing here is configured for a{" "}
-            {unproSlots} slot, so {unpro.length} plan SKUs — {fmt(unproLitres)} L of the month&rsquo;s plan — cannot be
-            produced at all. They are not hidden in the bars above; they never reach a line.{" "}
+            <span className="text-red-300 font-medium">No machine can fill these:</span> {unpro.length} products in this
+            month&rsquo;s target need {unproPacks} — {fmt(unproLitres)} L in all. No machine here is set up for that
+            size. They are not in the bars above. They never reach a machine.{" "}
             <Link href="/materials" className="text-red-300 hover:text-red-200 underline underline-offset-2">
-              See them on Materials →
+              See them on Stock →
             </Link>
           </p>
         </div>
       )}
+
+      <p className="text-[11px] text-zinc-600 mt-8 max-w-4xl">
+        Where these numbers come from: machine speeds were watched on the machines in August, from the factory app.
+        The runs, hours and litres are the computer&rsquo;s plan for September — none of it has happened. Stock was
+        counted on {dlabel(O.meta.frozen)} evening.
+      </p>
     </div>
   );
 }

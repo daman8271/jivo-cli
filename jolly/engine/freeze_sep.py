@@ -21,6 +21,9 @@ from datetime import date, timedelta
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HANA = os.path.join(REPO, "hana-sql", "hana-sql")
+# git tracks the darwin/arm64 build of hana-sql; a pull on a Linux box overwrites the
+# local build with it (2 Sep). A Linux binary lives under its own name, out of git's way.
+if os.path.exists(HANA + ".linux") and os.uname().sysname == "Linux": HANA = HANA + ".linux"
 CO = "JIVO_OIL_HANADB"
 # ROLLING: SIM_ASOF makes today the new day 1 and re-plans only what is left of the
 # month. Unset it and the freeze is the original 1 Sept eve-of-month snapshot.

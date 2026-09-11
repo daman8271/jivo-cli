@@ -1,6 +1,6 @@
 "use client";
 
-// Day picker for the build list. The day sections are server-rendered and passed
+// Day picker for the run list. The day sections are server-rendered and passed
 // in as children — this component only decides which one is visible on screen.
 // Print behaviour: whatever is visible prints. One day selected = that day's
 // sheet; "All days" = the whole month, one day per page (see the page's print CSS).
@@ -13,7 +13,7 @@ export type BuildDayMeta = {
   wd: string; // weekday initial
   working: boolean;
   litres: number;
-  label: string; // "Tuesday 2026-09-01"
+  label: string; // "Tuesday 1 Sep"
 };
 
 const inr = (n: number) => Math.round(n).toLocaleString("en-IN");
@@ -47,7 +47,7 @@ export default function BuildDayTabs({ days, children }: { days: BuildDayMeta[];
             <button
               key={d.n}
               onClick={() => pick(d.n)}
-              title={d.working ? `${d.label} — ${inr(d.litres)} L planned` : `${d.label} — plant off`}
+              title={d.working ? `${d.label} — ${inr(d.litres)} L to make` : `${d.label} — factory closed`}
               className={`shrink-0 w-9 py-1 rounded-md text-center border transition-colors ${
                 sel === d.n
                   ? "bg-amber-500/20 border-amber-500/40"
@@ -68,7 +68,8 @@ export default function BuildDayTabs({ days, children }: { days: BuildDayMeta[];
           ))}
         </div>
         <div className="text-[10px] text-zinc-600 mt-1">
-          Printing: the day on screen prints alone; pick &ldquo;All days&rdquo; to print the month — one day per sheet.
+          To print: the day on screen prints by itself. Pick &ldquo;All days&rdquo; to print the whole month — one
+          day per sheet.
         </div>
       </div>
 

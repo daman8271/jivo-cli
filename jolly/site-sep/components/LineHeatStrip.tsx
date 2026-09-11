@@ -1,9 +1,10 @@
 "use client";
 
-// Utilisation heat strip for /lines — one row per filling line, one column per
-// planned day. Colour intensity = hours the line is busy (filling + changeover)
-// out of the shift. Every number shown comes from data/lines.json + spine.json
-// via the server page; this component only renders what it is handed.
+// "How busy" strip for the Machines page — one row per filling machine, one
+// column per planned day. Colour = hours the machine is busy (filling + oil
+// changes and cleaning) out of the shift. Every number shown comes from
+// data/lines.json + spine.json via the server page; this component only
+// renders what it is handed.
 
 import Link from "next/link";
 import { useState } from "react";
@@ -12,11 +13,11 @@ export type HeatCell = {
   day: number; // 1-based day index, links to /days/{day}
   label: string; // "Tue 1 Sep"
   working: boolean;
-  hours: number; // on-line hours: filling + changeover minutes
+  hours: number; // busy hours: filling + oil-change/cleaning minutes
   fillHours: number; // filling only
   litres: number;
   runs: number;
-  flushMin: number;
+  flushMin: number; // minutes lost to oil changes and cleaning
 };
 export type HeatRow = { line: string; cells: HeatCell[] };
 export type HeatHead = { day: number; wd: string; working: boolean; util: number };
@@ -70,7 +71,7 @@ export default function LineHeatStrip({
             ))}
           </div>
 
-          {/* one heat row per line */}
+          {/* one heat row per machine */}
           {rows.map((row) => (
             <div key={row.line} className="grid items-center gap-x-[2px] mt-[3px]" style={{ gridTemplateColumns: cols }}>
               <div className="text-[11px] text-zinc-400 pr-2 truncate">{row.line}</div>
@@ -81,7 +82,7 @@ export default function LineHeatStrip({
                   <Link
                     key={c.day}
                     href={`/days/${c.day}`}
-                    aria-label={`${row.line}, ${c.label}, ${c.hours.toFixed(1)} of ${shift} hours`}
+                    aria-label={`${row.line}, ${c.label}, busy ${c.hours.toFixed(1)} of ${shift} hours`}
                     onMouseEnter={(e) => enter(e, row.line, c)}
                     onFocus={(e) => enter(e, row.line, c)}
                     onMouseLeave={() => setHover(null)}
@@ -105,12 +106,12 @@ export default function LineHeatStrip({
             </div>
           ))}
 
-          {/* all-lines utilisation, from the spine */}
+          {/* all machines together, from the spine */}
           <div
             className="grid items-center gap-x-[2px] mt-2 pt-2 border-t border-zinc-900"
             style={{ gridTemplateColumns: cols }}
           >
-            <div className="text-[10px] uppercase tracking-wider text-zinc-600 pr-2">All lines %</div>
+            <div className="text-[10px] uppercase tracking-wider text-zinc-600 pr-2">All machines busy %</div>
             {days.map((d) => (
               <div
                 key={d.day}
@@ -127,7 +128,7 @@ export default function LineHeatStrip({
 
       {/* legend */}
       <div className="flex items-center gap-3 mt-3 text-[10px] text-zinc-500">
-        <span>quiet</span>
+        <span>empty</span>
         <span className="flex gap-[3px]">
           {[0.2, 0.4, 0.6, 0.8, 1].map((f) => (
             <span
@@ -137,9 +138,9 @@ export default function LineHeatStrip({
             />
           ))}
         </span>
-        <span>the full {shift} h shift</span>
+        <span>busy the whole {shift} h shift</span>
         <span className="ml-3 inline-block h-3 w-6 rounded-[2px] border border-zinc-800" style={{ backgroundImage: HATCH }} />
-        <span>Sunday, plant off</span>
+        <span>Sunday — factory closed</span>
       </div>
 
       {hover && (
@@ -159,22 +160,21 @@ export default function LineHeatStrip({
             {hover.cell.hours > 0 ? (
               <div className="mt-1 text-[11px] text-zinc-400 tabular-nums space-y-0.5">
                 <div>
-                  {hover.cell.hours.toFixed(1)} h of {shift} h on the line —{" "}
-                  {Math.round((hover.cell.hours / shift) * 100)}%
+                  busy {hover.cell.hours.toFixed(1)} of {shift} hours — {Math.round((hover.cell.hours / shift) * 100)}%
                 </div>
                 <div>
-                  {hover.cell.fillHours.toFixed(1)} h filling · {hover.cell.flushMin} min changeover ·{" "}
+                  {hover.cell.fillHours.toFixed(1)} h filling · {hover.cell.flushMin} min oil changes and cleaning ·{" "}
                   {hover.cell.runs} {hover.cell.runs === 1 ? "run" : "runs"}
                 </div>
-                <div>{inr(hover.cell.litres)} L planned</div>
+                <div>{inr(hover.cell.litres)} L to make</div>
               </div>
             ) : (
               <div className="mt-1 text-[11px] text-zinc-500">
-                {hover.cell.working ? "Nothing planned on this line." : "Sunday — the plant is off."}
+                {hover.cell.working ? "Nothing to run on this machine." : "Sunday — the factory is closed."}
               </div>
             )}
             <div className="mt-2 pt-2 border-t border-zinc-800 text-[10px] text-zinc-600">
-              Planned, not run — click to open the day
+              Plan only — has not happened. Click to open the day.
             </div>
           </div>
         </div>

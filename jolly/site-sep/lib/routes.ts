@@ -1,13 +1,14 @@
 // The site's route map — one place, imported by both the client Nav and
 // server pages (a "use client" module can't export plain data to server code).
+// Labels are floor words (PLAIN-LANGUAGE.md swap list). The URLs never change.
 export const ROUTES: [string, string][] = [
-  ["/", "Overview"],
+  ["/", "Summary"],
   ["/days", "Day by day"],
-  ["/lines", "Lines"],
-  ["/storage", "Storage"],
-  ["/materials", "Materials"],
-  ["/order-by", "Order-by"],
-  ["/build", "Build list"],
-  ["/whatsapp", "WhatsApp"],
-  ["/floor", "Floor 3D"],
+  ["/lines", "Machines"],
+  ["/storage", "Godown"],
+  ["/materials", "Stock"],
+  ["/order-by", "Order by when"],
+  ["/build", "Run list"],
+  ["/whatsapp", "Messages (not sent)"],
+  ["/floor", "Floor map"],
 ];

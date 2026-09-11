@@ -2,15 +2,16 @@ import Link from "next/link";
 import type { LoopChain, LoopsData } from "../lib/types";
 import { fmt, dlabel } from "../lib/data";
 import { Pill } from "./Card";
-import SimBadge from "./SimBadge";
 
 type ResolvedChain = LoopChain & {
   unblocked_day: string;
   first_run_after_unblock: NonNullable<LoopChain["first_run_after_unblock"]>;
 };
 
-// THE LOOP — one real blocker→order→land→run chain from the sim's own event
-// stream, picked deterministically: the largest order among fully resolved chains.
+// STUCK → ORDERED → ARRIVED → RUNNING — one example chain from the plan's own
+// events (simulated, nothing happened), picked deterministically: the largest
+// order among chains that got all the way to a run. On this site "real" means
+// counted in SAP, so never call the example "real". Words: PLAIN-LANGUAGE.md.
 export default function OverviewLoop({
   loops,
   leadDays,
@@ -24,24 +25,28 @@ export default function OverviewLoop({
   if (resolved.length === 0) return null;
   const pick = resolved.reduce((a, b) => (b.qty > a.qty ? b : a));
 
-  const unit = pick.kind === "OIL" ? "L" : "pcs";
-  const kindWord = pick.kind === "OIL" ? "oil" : "packaging";
-  const kindLead = pick.kind === "OIL" ? leadDays.oil : leadDays.packaging;
+  const isOil = pick.kind === "OIL";
+  const unit = isOil ? "L" : "pcs";
+  const kindWord = isOil ? "Oil" : "Packing material";
+  const kindLead = isOil ? leadDays.oil : leadDays.packaging;
   const leadMin = Math.min(...loops.chains.map((c) => c.lead_days));
   const leadMax = Math.max(...loops.chains.map((c) => c.lead_days));
-  const unresolvedN = loops.ordered_events - loops.resolved_chains;
+  const afterMonth = loops.ordered_events - loops.resolved_chains;
   const waited = pick.waited_days ?? pick.lead_days;
   const run = pick.first_run_after_unblock;
+  const nProducts = pick.fg_codes_blocked.length;
 
   const steps: { tag: string; date: string; body: React.ReactNode }[] = [
     {
-      tag: "Blocked",
+      tag: "Stuck",
       date: dlabel(pick.ordered_day),
       body: (
         <>
-          <span className="text-zinc-100 font-medium tabular-nums">{pick.fg_codes_blocked.length} SKUs</span> want{" "}
-          <span className="text-zinc-200">{pick.name}</span>{" "}
-          <span className="text-zinc-500">({pick.code})</span> and the store cannot feed them.
+          <span className="text-zinc-100 font-medium tabular-nums">
+            {nProducts} {nProducts === 1 ? "product" : "products"}
+          </span>{" "}
+          need <span className="text-zinc-200">{pick.name.toLowerCase()}</span>{" "}
+          <span className="text-zinc-500">({pick.code})</span>. There is not enough in stock.
         </>
       ),
     },
@@ -54,37 +59,36 @@ export default function OverviewLoop({
           <span className="text-zinc-100 font-medium tabular-nums">
             {fmt(pick.qty)} {unit}
           </span>{" "}
-          the same day. <Pill tone={pick.kind === "OIL" ? "amber" : "blue"}>{pick.kind}</Pill>
+          the same day. <Pill tone={isOil ? "amber" : "blue"}>{isOil ? "oil" : "packing material"}</Pill>
         </>
       ),
     },
     {
-      tag: "The wait",
-      date: `${pick.lead_days} days pass`,
+      tag: "Waiting",
+      date: `${pick.lead_days} days`,
       body: (
         <>
-          The measured {kindWord} lead time is{" "}
-          <span className="text-zinc-100 font-medium tabular-nums">{kindLead} days</span> — the sim assumes supply
-          arrives exactly on it.
+          {kindWord} takes <span className="text-zinc-100 font-medium tabular-nums">{kindLead} days</span> to arrive
+          — measured, real. The plan guesses it arrives exactly on time.
         </>
       ),
     },
     {
-      tag: "Lands",
+      tag: "Arrived",
       date: dlabel(pick.lands),
       body: (
         <>
-          The material arrives and the blocker clears on {dlabel(pick.unblocked_day)} — after{" "}
+          The material arrives. The products are free to run from {dlabel(pick.unblocked_day)} — after{" "}
           <span className="text-zinc-100 font-medium tabular-nums">{waited} days</span> of waiting.
         </>
       ),
     },
     {
-      tag: "Runs",
+      tag: "Running",
       date: dlabel(run.day),
       body: (
         <>
-          First run out of the clear: <span className="text-zinc-200">{run.sku}</span> —{" "}
+          First run after that: <span className="text-zinc-200">{run.sku}</span> —{" "}
           <span className="text-zinc-100 font-medium tabular-nums">{fmt(run.litres)} L</span>.
         </>
       ),
@@ -111,20 +115,19 @@ export default function OverviewLoop({
         ))}
       </ol>
       <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
-        Every order the plan raises follows that same loop — a shortage the plan never orders against simply stays
-        short.{" "}
+        Every order in the plan goes the same way. If the planner does not order, the shortage stays.{" "}
         <span className="text-zinc-300 tabular-nums">
           {loops.resolved_chains} of {loops.ordered_events}
         </span>{" "}
-        order-chains land and unblock inside September — <span className="tabular-nums">{loops.ran_after_unblock}</span>{" "}
-        of those see the freed SKU run again before month-end, <span className="tabular-nums">{loops.landed_no_run}</span>{" "}
-        clear too late in the schedule to run — and <span className="tabular-nums">{unresolvedN}</span> land only after
-        30 Sep. Leads run <span className="tabular-nums">{leadMin}–{leadMax} days</span> ({leadDays.packaging}{" "}
-        d packaging, {leadDays.oil} d oil — measured). Watch the chains land day by day on the{" "}
+        orders arrive within September. <span className="tabular-nums">{loops.ran_after_unblock}</span> of those
+        products run again before month end. <span className="tabular-nums">{loops.landed_no_run}</span> arrive too late
+        in the month to run. <span className="tabular-nums">{afterMonth}</span> arrive only after September.
+        Arrival takes <span className="tabular-nums">{leadMin}–{leadMax} days</span> ({leadDays.packaging} days for
+        packing material, {leadDays.oil} days for oil — measured, real). See each one arrive on the{" "}
         <Link href="/days" className="text-amber-300 hover:underline">
           day pages
         </Link>
-        . <SimBadge kind="simulated" note={loops.note} />
+        . All of this is the computer plan — none of it has happened.
       </p>
     </div>
   );

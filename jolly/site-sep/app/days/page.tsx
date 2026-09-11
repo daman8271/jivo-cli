@@ -1,4 +1,4 @@
-import { getSpine, getOverview, getLoops, getStorage, fmt, cr, dlabel } from "../../lib/data";
+import { getSpine, getOverview, getLoops, fmt, cr, dlabel } from "../../lib/data";
 import SimBadge from "../../components/SimBadge";
 import { Card } from "../../components/Card";
 import { SpineChart, SpineCards, SpineLegend } from "../../components/DaySpine";
@@ -6,60 +6,63 @@ import { SpineChart, SpineCards, SpineLegend } from "../../components/DaySpine";
 export const metadata = {
   title: "Day by day",
   description:
-    "The 30-day spine of the September plan — planned fill, invoicing, line use and godown occupancy for every day.",
+    "The September plan, one day at a time — litres made, litres billed, machines busy and how full the godown is. A plan made by computer; nothing here has happened.",
 };
 
 export default function Days() {
   const S = getSpine();
   const o = getOverview();
   const loops = getLoops();
-  const st = getStorage();
   const roofDays = S.filter((d) => d.storage_pct >= 100);
+  const workingDays = S.filter((d) => d.working).length;
+  const offDays = S.length - workingDays;
+  const stockDate = dlabel(o.meta.frozen);
+  const lastDay = dlabel(S[S.length - 1].date);
 
   return (
     <div>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">Day by day — the 30-day spine</h1>
+        <h1 className="text-2xl font-bold">Day by day — all {S.length} days</h1>
         <SimBadge kind="plan" />
       </div>
       <p className="mt-2 max-w-4xl text-sm text-zinc-400">
-        {o.meta.forward_rule} Day 1 opens from the measured 31-Aug close; every later day is computed from the day
-        before plus the planner&apos;s algorithm. Each column links to that day&apos;s full page — runs and changeovers,
-        news of the day, blockers, the order loop, the storage waterfall.
+        Only the stock counted on {stockDate} is real. Every day below is the computer&apos;s plan, built on the day
+        before it. Nothing has happened yet. Click a day to see what runs on each machine, what arrives, what is
+        stuck, and how full the godown is.
       </p>
 
       <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Card title="Planned fill" value={`${fmt(o.totals.made_l)} L`} sub={`${cr(o.totals.value_rs)} across ${o.totals.working_days} working days`} />
-        <Card title="Planned invoicing" value={`${fmt(o.totals.shipped_l)} L`} sub="orders + forecast served" />
-        <Card title="Runs" value={fmt(o.totals.runs)} sub={`${fmt(o.totals.oil_changes)} oil changes on the lines`} />
-        <Card title="Line use, median" value={`${o.totals.util_median}%`} sub={`peak day ${dlabel(o.totals.peak_day.date)} — ${fmt(o.totals.peak_day.made_l)} L`} />
+        <Card title="Made this month" value={`${fmt(o.totals.made_l)} L`} sub={`${cr(o.totals.value_rs)} · ${o.totals.working_days} working days`} />
+        <Card title="Billed this month" value={`${fmt(o.totals.shipped_l)} L`} sub="confirmed orders + expected orders" />
+        <Card title="Runs" value={fmt(o.totals.runs)} sub={`${fmt(o.totals.oil_changes)} oil changes`} />
+        <Card title="Machines busy, typical day" value={`${o.totals.util_median}%`} sub={`biggest day ${dlabel(o.totals.peak_day.date)} — ${fmt(o.totals.peak_day.made_l)} L`} />
         <Card
-          title="Godown at the roof"
+          title="Godown full"
           value={roofDays.length === 1 ? "1 day" : `${roofDays.length} days`}
           sub={
             roofDays.length > 0
-              ? `${roofDays.map((d) => dlabel(d.date)).join(", ")} — roof is assumed (${st.ceiling.open_question})`
-              : `roof is assumed (${st.ceiling.open_question})`
+              ? `${roofDays.map((d) => dlabel(d.date)).join(", ")} — the limit is Daman's number, not measured`
+              : "never full this month — but the limit is Daman's number, not measured"
           }
           tone={roofDays.length > 0 ? "text-red-400" : ""}
         />
         <Card
-          title="Loops landed in-month"
+          title="Stuck items that arrive this month"
           value={`${loops.resolved_chains} of ${loops.chains.length}`}
-          sub={`blocker → order → land chains that unblock by 30 Sep — ${loops.ran_after_unblock} run the freed SKU again in-month`}
+          sub={`ordered → arrived by ${lastDay}, so the product can run again — the plan runs ${loops.ran_after_unblock} of them again before the month ends`}
         />
       </div>
 
       <div className="mt-3 rounded-lg border border-sky-500/20 bg-sky-500/5 px-3 py-2 text-xs text-sky-200/90">
-        <SimBadge kind="forecast" />{" "}
-        <span className="tabular-nums font-semibold">{o.demand.forecast_share_litres_pct}%</span> of the demand stream by
-        litres is FORECAST, not orders — {o.demand.note}
+        <span className="tabular-nums font-semibold">{o.demand.forecast_share_litres_pct}%</span> of what customers want this
+        month is <span className="font-semibold">expected — not ordered yet</span>. Those orders are blue on every day
+        page, so they never mix with confirmed orders.
       </div>
 
       <section className="mt-7">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-lg font-semibold">The spine, four signals per day</h2>
-          <span className="text-xs text-zinc-500">every panel scales to its own peak — click a column to open the day</span>
+          <h2 className="text-lg font-semibold">Four things, every day</h2>
+          <span className="text-xs text-zinc-500">each row scales to its own biggest day — click a column to open the day</span>
         </div>
         <div className="mt-3 overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
           <SpineChart spine={S} />
@@ -71,13 +74,19 @@ export default function Days() {
         <div className="flex items-baseline justify-between">
           <h2 className="text-lg font-semibold">All {S.length} days</h2>
           <span className="text-xs text-zinc-500">
-            {S.filter((d) => d.working).length} working · {S.filter((d) => !d.working).length} Sundays off
+            {workingDays} working · {offDays} Sundays off
           </span>
         </div>
         <div className="mt-3">
           <SpineCards spine={S} />
         </div>
       </section>
+
+      <p className="mt-8 text-[11px] text-zinc-600">
+        Where these numbers come from: stock and open orders from SAP on {stockDate}; every later day is the computer
+        plan, built on the day before. Tested on August — the computer said {fmt(o.august.sim_made_l)} L, the factory
+        made {fmt(o.august.actual_made_l)} L.
+      </p>
     </div>
   );
 }

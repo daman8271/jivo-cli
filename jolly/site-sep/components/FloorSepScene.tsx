@@ -1,26 +1,28 @@
 "use client";
 
-// Floor 3D — September FORWARD PLAN. Ported from the August site's
-// FloorScene (three.js + OrbitControls, canvas-sprite labels), with the
-// September honesty rules baked in: block colour = the oil on the line,
-// pulsing beacons = oil changes, ghost trucks = FORECAST dispatches (not yet
-// ordered), and the godown ceiling is labelled ASSUMED wherever it appears.
-// Every figure comes through props from data/*.json — nothing typed here.
+// Floor map — the September plan drawn on the factory floor. Ported from the
+// August site's FloorScene (three.js + OrbitControls, canvas-sprite labels),
+// with the September honesty rules kept: block colour = the oil on the
+// machine, blinking beacons = oil changes, see-through trucks = expected
+// orders nobody has placed yet, and the godown limit is marked as Daman's
+// number (not measured) wherever it appears. Every figure comes through
+// props from data/*.json — nothing is typed here. Words are plain by rule:
+// see PLAIN-LANGUAGE.md.
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-/** Biggest run on one line for one day (aggregated by the server page). */
+/** Biggest run on one machine for one day (aggregated by the server page). */
 export type OnLine = {
-  sku: string;
+  sku: string; // product name
   head: string;
   oil: string | null; // oil NAME (mapped server-side from the RM code), or null
   pieces: number;
   litres: number;
   runs: number;
-  flushes: number;
+  flushes: number; // oil changes on this machine that day
 } | null;
 
 /** One plan day, flattened by the server page from data/days/day-NN.json. */
@@ -29,26 +31,27 @@ export type FloorDay = {
   date: string;
   weekday: string;
   working: boolean;
-  hours: number[]; // hours planned on each line, LINES order
+  hours: number[]; // hours planned on each machine, LINES order
   onLine: OnLine[];
-  util: number;
+  util: number; // machines busy %
   madeL: number;
   shippedL: number;
-  pct: number; // storage.pct against the ASSUMED ceiling
+  pct: number; // storage.pct against the godown limit (Daman's number, not measured)
   physicalL: number;
   ceilingL: number;
-  headroomL: number;
-  loadsReal: number; // dispatched_real.length — real orders
-  loadsFcst: number; // dispatched_forecast.length — FORECAST rows, not ordered
+  headroomL: number; // space left in the godown
+  loadsReal: number; // dispatched_real.length — customer-ordered loads
+  loadsFcst: number; // dispatched_forecast.length — expected, not ordered yet
   runs: number;
   oilChanges: number; // runs that day with flush_min > 0
+  blocked: number; // products stuck for material that day (blocked.length)
   note: string | null;
 };
 
 export type OilLegendItem = { name: string; litres: number };
 
 const LABELS = ["JP Machine", "Clear Pack", "10 Head", "6 Head", "Pouch", "Tin Head"];
-const TRUCK_SLOTS = 5; // per kind (real / forecast) — a drawing cap, not a figure
+const TRUCK_SLOTS = 5; // per kind (ordered / expected) — a drawing cap, not a figure
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /* ---------- formatting (hand-rolled so server and client agree) ---------- */
@@ -64,7 +67,7 @@ function shortDate(iso: string) {
   return `${Number(p[2])} ${MONTHS[Number(p[1]) - 1]}`;
 }
 
-/* ---------- storage tone (same thresholds for box and text) ---------- */
+/* ---------- godown tone (same thresholds for box and text) ---------- */
 
 function tone(pct: number) {
   return pct >= 90 ? "red" : pct >= 75 ? "amber" : "green";
@@ -128,8 +131,10 @@ function ctxOf(l: Label) {
   return ctx;
 }
 
-function drawLineLabel(l: Label, name: string, hours: number, on: OnLine) {
-  const key = `${name}|${hours.toFixed(1)}|${on ? on.sku + on.pieces + (on.oil ?? "") : "idle"}`;
+/** The floating label over one machine: name, product, pieces and hours, oil, oil changes. */
+function drawLineLabel(l: Label, name: string, hours: number, on: OnLine, working: boolean, blocked: number) {
+  const idleWord = !working ? "closed" : blocked > 0 ? "waiting for material" : "not running";
+  const key = `${name}|${hours.toFixed(1)}|${on && hours > 0 ? on.sku + on.pieces + (on.oil ?? "") + on.flushes : idleWord}`;
   if (l.key === key) return;
   l.key = key;
   const ctx = ctxOf(l);
@@ -142,26 +147,31 @@ function drawLineLabel(l: Label, name: string, hours: number, on: OnLine) {
     const sku = on.sku.length > 26 ? on.sku.slice(0, 25) + "…" : on.sku;
     ctx.font = `700 44px ${FONT}`;
     ctx.fillStyle = on.head === "PREMIUM" ? "#fcd34d" : "#e4e4e7";
-    ctx.fillText(sku, w, 92);
+    ctx.fillText(sku, w, 90);
     ctx.font = `600 36px ${FONT}`;
     ctx.fillStyle = "#fbbf24";
-    const flush = on.flushes > 0 ? `  ⚑${on.flushes}` : "";
-    ctx.fillText(`${on.pieces.toLocaleString("en-IN")} pcs · ${hours.toFixed(1)}h${flush}`, w, 140);
+    ctx.fillText(`${on.pieces.toLocaleString("en-IN")} pcs · ${hours.toFixed(1)} h`, w, 134);
     if (on.oil) {
       const oil = on.oil.length > 24 ? on.oil.slice(0, 23) + "…" : on.oil;
       ctx.font = `600 30px ${FONT}`;
       ctx.fillStyle = cssOf(oilColorHex(on.oil));
-      ctx.fillText(`${oil}${on.runs > 1 ? `  +${on.runs - 1} more` : ""}`, w, 178);
+      ctx.fillText(`${oil}${on.runs > 1 ? `  +${on.runs - 1} more` : ""}`, w, 170);
+    }
+    if (on.flushes > 0) {
+      ctx.font = `600 28px ${FONT}`;
+      ctx.fillStyle = "#fbbf24";
+      ctx.fillText(`⚑ ${on.flushes} oil change${on.flushes === 1 ? "" : "s"}`, w, 206);
     }
   } else {
-    ctx.font = `700 64px ${FONT}`;
+    ctx.font = `700 ${idleWord.length > 12 ? 44 : 60}px ${FONT}`;
     ctx.fillStyle = "#52525b";
-    ctx.fillText("idle", w, 120);
+    ctx.fillText(idleWord, w, 120);
   }
   l.tex.needsUpdate = true;
 }
 
-function drawGodownLabel(l: Label, d: FloorDay, assumed: boolean, q: string) {
+/** The label over the godown: how full, out of the limit — and that the limit is not measured. */
+function drawGodownLabel(l: Label, d: FloorDay, assumed: boolean) {
   const key = `${d.pct}|${d.physicalL}`;
   if (l.key === key) return;
   l.key = key;
@@ -173,18 +183,19 @@ function drawGodownLabel(l: Label, d: FloorDay, assumed: boolean, q: string) {
   ctx.fillText("GODOWN", w, 50);
   ctx.font = `700 110px ${FONT}`;
   ctx.fillStyle = TONE_CSS[tone(d.pct)];
-  ctx.fillText(`${d.pct}%`, w, 160);
+  ctx.fillText(`${d.pct}% full`, w, 160);
   ctx.font = `500 38px ${FONT}`;
   ctx.fillStyle = "#a1a1aa";
   ctx.fillText(`${inr(d.physicalL)} L of ${inr(d.ceilingL)} L`, w, 216);
   if (assumed) {
     ctx.font = `600 32px ${FONT}`;
     ctx.fillStyle = "#fbbf24";
-    ctx.fillText(`ceiling ASSUMED (${q}) — not measured`, w, 262);
+    ctx.fillText("limit is Daman's number — not measured", w, 262);
   }
   l.tex.needsUpdate = true;
 }
 
+/** The label over the truck gate: loads with a customer order, and loads only expected. */
 function drawDockLabel(l: Label, real: number, fcst: number) {
   const key = `${real}|${fcst}`;
   if (l.key === key) return;
@@ -194,13 +205,13 @@ function drawDockLabel(l: Label, real: number, fcst: number) {
   const w = l.canvas.width / 2;
   ctx.font = `600 40px ${FONT}`;
   ctx.fillStyle = "#a1a1aa";
-  ctx.fillText("DOCK", w, 46);
-  ctx.font = `700 60px ${FONT}`;
+  ctx.fillText("TRUCKS OUT", w, 46);
+  ctx.font = `700 44px ${FONT}`;
   ctx.fillStyle = real > 0 ? "#e4e4e7" : "#71717a";
-  ctx.fillText(`${inr(real)} real load${real === 1 ? "" : "s"}`, w, 116);
+  ctx.fillText(`${inr(real)} truck${real === 1 ? "" : "s"} — customer ordered`, w, 116);
   ctx.font = `600 40px ${FONT}`;
   ctx.fillStyle = fcst > 0 ? "#a78bfa" : "#52525b";
-  ctx.fillText(`${inr(fcst)} forecast — not yet ordered`, w, 172);
+  ctx.fillText(`${inr(fcst)} expected — not ordered yet`, w, 172);
   l.tex.needsUpdate = true;
 }
 
@@ -212,13 +223,11 @@ export default function FloorSepScene({
   days,
   shiftH,
   ceilingAssumed,
-  ceilingQ,
   oilLegend,
 }: {
   days: FloorDay[];
-  shiftH: number; // derived server-side from the day files (max planned line hours)
-  ceilingAssumed: boolean;
-  ceilingQ: string;
+  shiftH: number; // worked out server-side from the day files (max planned machine hours)
+  ceilingAssumed: boolean; // the godown limit is Daman's number, not measured
   oilLegend: OilLegendItem[];
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -307,7 +316,7 @@ export default function FloorSepScene({
     (grid.material as THREE.Material).opacity = 0.55;
     scene.add(grid);
 
-    /* six line blocks — height = planned hours, colour = the oil on the line */
+    /* six machine blocks — height = planned hours, colour = the oil on the machine */
     const GREY = new THREE.Color(IDLE_HEX);
     const blockGeo = new THREE.BoxGeometry(5.4, 1, 4.2);
     blockGeo.translate(0, 0.5, 0);
@@ -346,7 +355,7 @@ export default function FloorSepScene({
       scene.add(block);
       blocks.push(block);
 
-      // changeover beacon — pulses on days this line changes oil
+      // oil-change beacon — blinks on days this machine changes oil
       const beacon = new THREE.Mesh(
         beaconGeo,
         new THREE.MeshStandardMaterial({
@@ -361,7 +370,7 @@ export default function FloorSepScene({
       scene.add(beacon);
       beacons.push(beacon);
 
-      const lab = makeLabel(512, 224, 8.6);
+      const lab = makeLabel(512, 240, 8.6);
       lab.sprite.material.depthTest = false;
       lab.sprite.renderOrder = 10;
       lab.sprite.position.set(x, 6.4, -2.6);
@@ -369,7 +378,7 @@ export default function FloorSepScene({
       lineLabels.push(lab);
     }
 
-    /* godown at the back — its ceiling is an ASSUMED figure (labelled so) */
+    /* godown at the back — its limit is Daman's number, not measured (labelled so) */
     const G_W = 28,
       G_H = 9,
       G_D = 10,
@@ -404,7 +413,7 @@ export default function FloorSepScene({
     godownFill.scale.y = 0.1;
     scene.add(godownFill);
 
-    /* red ring at the top of the ASSUMED ceiling */
+    /* red line at the top of the godown limit */
     const ringMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: new THREE.Color(0xef4444), emissiveIntensity: 0.7, roughness: 0.6 });
     const ringX = new THREE.BoxGeometry(G_W + 0.5, 0.18, 0.18);
     const ringZ = new THREE.BoxGeometry(0.18, 0.18, G_D + 0.5);
@@ -428,7 +437,7 @@ export default function FloorSepScene({
     godownLabel.sprite.position.set(0, G_H + 4.6, G_Z);
     scene.add(godownLabel.sprite);
 
-    /* dock + trucks at the front — real loads solid, FORECAST loads ghosted */
+    /* truck gate at the front — ordered loads solid, expected loads see-through */
     const DOCK_Z = 15;
     const dock = new THREE.Mesh(new THREE.BoxGeometry(40, 0.6, 6.5), new THREE.MeshStandardMaterial({ color: 0x141417, roughness: 1 }));
     dock.position.set(0, 0.3, DOCK_Z + 1.5);
@@ -479,11 +488,11 @@ export default function FloorSepScene({
         target = nd;
         for (let i = 0; i < 6; i++) {
           const on = nd.onLine?.[i] ?? null;
-          drawLineLabel(lineLabels[i], LABELS[i], nd.hours[i] ?? 0, on);
+          drawLineLabel(lineLabels[i], LABELS[i], nd.hours[i] ?? 0, on, nd.working, nd.blocked ?? 0);
           targetOil[i].setHex(on && (nd.hours[i] ?? 0) > 0 ? oilColorHex(on.oil) : IDLE_HEX);
           flushes[i] = on ? on.flushes : 0;
         }
-        drawGodownLabel(godownLabel, nd, ceilingAssumed, ceilingQ);
+        drawGodownLabel(godownLabel, nd, ceilingAssumed);
         drawDockLabel(dockLabel, nd.loadsReal, nd.loadsFcst);
       },
     };
@@ -514,7 +523,7 @@ export default function FloorSepScene({
         b.material.emissiveIntensity = 0.55 * t;
         lineLabels[i].sprite.position.y = Math.max(6.4, 0.4 + b.scale.y + 1.6);
 
-        // changeover beacon — flashes while this day has an oil change on the line
+        // oil-change beacon — blinks while this day has an oil change on the machine
         const bc = beacons[i];
         const on = target.working && flushes[i] > 0;
         bc.visible = on;
@@ -606,7 +615,7 @@ export default function FloorSepScene({
           <div className="text-2xl font-semibold leading-tight tabular-nums">{shortDate(d.date)}</div>
           <div className="text-xs text-zinc-500">
             {d.weekday}
-            {d.working ? "" : " — plant closed"}
+            {d.working ? "" : " — factory closed"}
           </div>
         </div>
         <input
@@ -615,23 +624,25 @@ export default function FloorSepScene({
           max={days.length}
           step={1}
           value={day}
-          aria-label="Day of the September plan"
+          aria-label="Which day of September"
           onChange={(e) => {
             setPlaying(false);
             setDay(Number(e.target.value));
           }}
           className="min-w-[16rem] flex-1 accent-violet-500"
         />
-        <div className="shrink-0 text-xs tabular-nums text-zinc-500">Day {day} of {days.length}</div>
+        <div className="shrink-0 text-xs tabular-nums text-zinc-500">
+          Day {day} of {days.length} — slide to change the day
+        </div>
       </div>
 
       <div ref={mountRef} className="relative mt-4 h-[420px] w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950 md:h-[560px]">
         <div className="pointer-events-none absolute left-3 top-3 z-10 rounded border border-violet-500/40 bg-violet-950/75 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-violet-300">
-          FORWARD PLAN — SIMULATED · nothing here has happened
+          THE COMPUTER&apos;S PLAN · nothing here has happened yet
         </div>
         {noWebGL && (
           <div className="flex h-full items-center justify-center px-6 text-center text-sm text-zinc-500">
-            This browser can&apos;t draw 3D. The day&apos;s numbers are still below.
+            This browser cannot draw the 3D map. The day&apos;s numbers are below.
           </div>
         )}
       </div>
@@ -639,42 +650,42 @@ export default function FloorSepScene({
       <div className="mt-3 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm tabular-nums">
         <span className="text-zinc-400">{shortDate(d.date)}</span>
         <span>
-          would make <span className="font-semibold text-amber-300">{inr(d.madeL)} L</span>
+          makes <span className="font-semibold text-amber-300">{inr(d.madeL)} L</span>
         </span>
         <span>
-          would ship <span className="font-semibold text-zinc-100">{inr(d.shippedL)} L</span>
+          bills <span className="font-semibold text-zinc-100">{inr(d.shippedL)} L</span>
         </span>
         <span>
-          lines <span className="font-semibold text-zinc-100">{d.util}%</span>{" "}
-          <span className="text-zinc-500">of the {shiftH}-hour shift</span>
+          machines busy <span className="font-semibold text-zinc-100">{d.util}%</span>{" "}
+          <span className="text-zinc-500">of a {shiftH}-hour shift</span>
         </span>
         <span>
-          godown <span className={`font-semibold ${TONE_TXT[t]}`}>{d.pct}%</span>{" "}
+          godown <span className={`font-semibold ${TONE_TXT[t]}`}>{d.pct}% full</span>{" "}
           <span className="text-zinc-500">
-            ({inr(d.headroomL)} L free{ceilingAssumed ? " · ceiling assumed" : ""})
+            ({inr(d.headroomL)} L space left{ceilingAssumed ? " · limit not measured" : ""})
           </span>
         </span>
         <span>
-          loads <span className="font-semibold text-zinc-100">{inr(d.loadsReal)} real</span>
-          <span className="text-violet-300"> + {inr(d.loadsFcst)} forecast</span>
+          trucks <span className="font-semibold text-zinc-100">{inr(d.loadsReal)} customer ordered</span>
+          <span className="text-violet-300"> + {inr(d.loadsFcst)} expected, not ordered yet</span>
         </span>
         <span>
-          oil changes <span className="font-semibold text-amber-300">⚑{d.oilChanges}</span>
+          oil changes <span className="font-semibold text-amber-300">{d.oilChanges}</span>
         </span>
         <Link href={`/days/${d.n}`} className="text-violet-300 hover:underline">
-          open day {d.n} →
+          see day {d.n} →
         </Link>
       </div>
 
       {d.note && (
         <div className="mt-2 text-sm text-amber-300/90">
-          <span className="text-zinc-500">Call the plan takes that day — </span>
+          <span className="text-zinc-500">What the plan decided that day — </span>
           {d.note}
         </div>
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-zinc-800 pt-3 text-xs text-zinc-500">
-        <span className="text-zinc-400">Oil key (block colour = the biggest run&apos;s oil):</span>
+        <span className="text-zinc-400">Colour = the oil on that machine (its biggest run of the day):</span>
         {oilLegend.map((o) => (
           <span key={o.name} className="inline-flex items-center gap-1.5">
             <span className="inline-block h-2 w-2 rounded-sm align-middle" style={{ backgroundColor: cssOf(oilColorHex(o.name)) }} />
@@ -684,26 +695,26 @@ export default function FloorSepScene({
       </div>
 
       <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-xs text-zinc-500">
-        <span>block height = planned hours, out of the {shiftH}-hour shift</span>
+        <span>block height = hours the machine runs that day, out of a {shiftH}-hour shift</span>
         <span>
           <span className="mr-1 inline-block h-2 w-2 rounded-sm bg-zinc-600 align-middle" />
-          grey = line idle
+          grey = not running (factory closed, or waiting for material)
         </span>
         <span>
           <span className="mr-1 inline-block h-2 w-2 rotate-45 rounded-[2px] bg-amber-400 align-middle" />
-          pulsing beacon = an oil change on that line that day
+          blinking yellow light = an oil change on that machine that day
         </span>
         <span>
           <span className="mr-1 inline-block h-2 w-2 rounded-sm bg-violet-500/40 align-middle" />
-          ghost truck = FORECAST dispatch — not yet ordered
+          see-through purple truck = expected order — not ordered yet
         </span>
-        <span>thin cage = the full shift, for scale</span>
+        <span>thin outline = a full {shiftH}-hour shift, for scale</span>
         <span>
-          godown fill = share of the {inr(d.ceilingL)} L ceiling{ceilingAssumed ? ` — ASSUMED (${ceilingQ})` : ""}; red
-          ring = the top of it
+          godown colour = how full it is, out of {inr(d.ceilingL)} L
+          {ceilingAssumed ? " — Daman's number, not measured" : ""}. The red line is the top.
         </span>
-        <span>one truck = one load, up to {TRUCK_SLOTS} of each drawn</span>
-        <span>drag to orbit, scroll to zoom</span>
+        <span>one truck = one load (up to {TRUCK_SLOTS} of each drawn)</span>
+        <span>drag to turn, scroll to zoom</span>
       </div>
     </div>
   );

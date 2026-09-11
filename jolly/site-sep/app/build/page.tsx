@@ -5,9 +5,9 @@ import BuildDaySection from "@/components/BuildDaySection";
 import { dlabel, fmt, getBuild, getOverview, tonnes } from "@/lib/data";
 
 export const metadata = {
-  title: "Build list",
+  title: "Run list",
   description:
-    "Gautam's day-by-day build lists for the September plan — runs in sequence with oil changes and clearances called out.",
+    "Gautam's day-by-day run list for September — every machine, every run in order, every oil change called out.",
 };
 
 // Print: the selected day prints alone; "All days" prints the month one day per
@@ -40,6 +40,7 @@ export default function BuildPage() {
   const rules = B.meta.rules;
   const fcShare = Math.round(O.demand.forecast_share_litres_pct);
   const peak = O.totals.peak_day;
+  const firstDay = B.days[0]?.date ?? O.meta.as_of;
 
   const metas: BuildDayMeta[] = B.days.map((d, i) => ({
     n: i + 1,
@@ -57,15 +58,16 @@ export default function BuildPage() {
       <div className="flex items-baseline justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">
-            Build list <SimBadge kind="plan" />
+            Run list <SimBadge kind="plan" />
           </h1>
-          <p className="text-sm text-zinc-400 mt-1 max-w-3xl">
-            Gautam&rsquo;s page — {B.meta.month}, machine by machine, run by run, changeover by changeover. Written for{" "}
-            <span className="text-zinc-200">{r.name}</span> ({r.title}
+          <p className="text-sm text-zinc-300 mt-1 max-w-3xl">
+            Gautam&rsquo;s run list for {B.meta.month}. Machine by machine, run by run, oil change by oil change.
+          </p>
+          <p className="text-xs text-zinc-500 mt-1 max-w-3xl">
+            Written for <span className="text-zinc-200">{r.name}</span> ({r.title}
             {r.number_masked ? (
               <>
-                , <span className="tabular-nums">{r.display}</span> — number masked, September has no approval to show
-                it
+                , <span className="tabular-nums">{r.display}</span> — number withheld, nobody has approved showing it
               </>
             ) : (
               <>, {r.display}</>
@@ -73,45 +75,49 @@ export default function BuildPage() {
             ).
           </p>
         </div>
-        <div className="text-xs text-zinc-500 text-right max-w-xs">source: {B.meta.source}</div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
         <Card title="Working days" value={`${t.working_days}`} sub={`of ${t.days} days — Sundays off`} />
         <Card
-          title="Runs to make"
+          title="Runs"
           value={fmt(t.runs)}
-          sub={`${fmt(t.oil_changes)} oil changes + ${t.clearances_only} clearance-only switches`}
+          sub={`${fmt(t.oil_changes)} oil changes + ${t.clearances_only} bottle-size changes`}
         />
-        <Card title="To fill" value={`${fmt(t.litres)} L`} sub={`${tonnes(t.litres)} across the month`} tone="text-amber-300" />
-        <Card title="Biggest day" value={dlabel(peak.date)} sub={`${fmt(peak.made_l)} L planned`} />
+        <Card title="To make" value={`${fmt(t.litres)} L`} sub={`${tonnes(t.litres)} this month`} tone="text-amber-300" />
+        <Card title="Biggest day" value={dlabel(peak.date)} sub={`${fmt(peak.made_l)} L`} />
       </div>
 
       {/* how to read the list */}
       <div className="mt-4 grid md:grid-cols-3 gap-3 text-xs">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
-          <div className="uppercase tracking-wider text-zinc-500 text-[10px]">The changeover rule</div>
-          <p className="text-zinc-300 mt-1.5 leading-relaxed">{rules.note}. The flush oil comes back — the minutes don&rsquo;t.</p>
+          <div className="uppercase tracking-wider text-zinc-500 text-[10px]">An oil change</div>
+          <p className="text-zinc-300 mt-1.5 leading-relaxed">
+            Costs time, not oil. Wash the machine with {fmt(rules.flush_litres)} L of the next oil, then clean for
+            about {Math.round(rules.line_clearance_min)} min. The wash oil comes back. A bottle-size change on the
+            same oil is cleaning only.
+          </p>
         </div>
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3">
-          <div className="uppercase tracking-wider text-zinc-500 text-[10px]">
-            The{" "}
-            <span className="normal-case tracking-normal text-[10px] px-1 py-px rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">
-              PO-backed
-            </span>{" "}
-            tag
-          </div>
+          <div className="uppercase tracking-wider text-zinc-500 text-[10px]">The green tag on a run</div>
           <p className="text-zinc-300 mt-1.5 leading-relaxed">
-            When that run was scheduled, the SKU still had open pieces on a <em>real</em> customer order. Untagged runs
-            build to the monthly plan&rsquo;s FORECAST demand <SimBadge kind="forecast" /> — about {fcShare}% of
-            September&rsquo;s demand stream by litres is forecast, not orders.
+            <span className="px-1 py-px rounded border border-emerald-500/40 text-emerald-300 bg-emerald-500/10">
+              has a customer order
+            </span>{" "}
+            — a customer has really ordered this run. No tag — the run is for orders we expect but nobody has placed
+            yet. Those are shown in blue as{" "}
+            <span className="px-1 py-px rounded border border-sky-500/40 text-sky-300 bg-sky-500/10">
+              expected — not ordered yet
+            </span>
+            . About {fcShare}% of what customers want this month is expected, not ordered.
           </p>
         </div>
         <div className="rounded-xl border border-violet-500/25 bg-violet-500/[0.05] p-3">
           <div className="uppercase tracking-wider text-violet-300 text-[10px]">This is a plan</div>
           <p className="text-zinc-300 mt-1.5 leading-relaxed">
-            Nothing below has been run. Only the 1-September opening is observed; every later day is computed, and the
-            sequence re-plans as POs land — those days carry a &ldquo;plan changed&rdquo; note.
+            Nothing below has been run. Only the stock at the start of {dlabel(firstDay)} is real. Every later day is
+            worked out from the day before. When material arrives, the list changes — those days say &ldquo;plan
+            changed&rdquo;.
           </p>
         </div>
       </div>
@@ -119,10 +125,15 @@ export default function BuildPage() {
       <div className="mt-6">
         <BuildDayTabs days={metas}>
           {B.days.map((d, i) => (
-            <BuildDaySection key={d.date} n={i + 1} day={d} />
+            <BuildDaySection key={d.date} n={i + 1} day={d} rules={rules} />
           ))}
         </BuildDayTabs>
       </div>
+
+      <p className="bl-noprint text-[11px] text-zinc-600 mt-8 max-w-4xl">
+        Where this comes from: the computer&rsquo;s day-by-day plan for {B.meta.month}. Stock was counted on{" "}
+        {dlabel(O.meta.frozen)} evening. Everything after that is worked out, not recorded.
+      </p>
     </div>
   );
 }

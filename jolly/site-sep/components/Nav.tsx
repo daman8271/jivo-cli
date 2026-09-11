@@ -19,9 +19,9 @@ export default function Nav() {
         </Link>
         <span
           className="text-[10px] font-semibold tracking-wider px-1.5 py-px rounded border bg-violet-500/15 text-violet-300 border-violet-500/30"
-          title="September has not happened. Everything on this site is a forward plan produced by the calibrated simulator."
+          title="Nothing here has happened yet. This is the computer's plan for September."
         >
-          FORWARD PLAN
+          COMPUTER PLAN
         </span>
         <nav className="flex gap-1 text-sm ml-auto overflow-x-auto">
           {ROUTES.map(([h, l]) => {

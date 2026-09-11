@@ -38,3 +38,12 @@ export const tonnes = (l: number) => `${((l * 0.91) / 1000).toFixed(1)} T`; // o
 
 const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 export const dlabel = (iso: string) => `${Number(iso.slice(8, 10))} ${MON[Number(iso.slice(5, 7)) - 1]}`;
+
+// ---- plain-language helpers — defined in ./types (pure, client-safe), re-exported
+// here so server pages get them from the same import as the data and formatters.
+export {
+  PLAIN_KIND, plainKind, plainChannel, PLAIN_EVENT, plainEvent, lakhCrore, litresProse, rupeesProse,
+  plural, joinAnd, packWords, packSizesWords, materialWord, speedFraction, speedPhrase, slotNames,
+  plainWords, plainHonestyNote,
+} from "./types";
+export type { HonestyFacts } from "./types";

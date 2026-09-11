@@ -1,13 +1,15 @@
 "use client";
 
-// WhatsApp — September FORWARD PLAN. Every message in data/whatsapp.json is a
-// simulated DRAFT (assumed:true, dir:"out"): nothing was sent, nobody replied,
-// and this component may never invent a reply. Numbers arrive already masked
-// at the data layer and are rendered verbatim — never unmasked.
+// Messages (not sent). Every message in data/whatsapp.json was written by the
+// planner and never sent (assumed:true, dir:"out"); nobody replied, and this
+// component never invents a reply. Phone numbers arrive already masked from
+// the data and are shown exactly as they are. Words are made plain here at
+// render time; the data underneath does not change.
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Pill } from "@/components/Card";
+import { plainWords } from "@/lib/types";
 import type { WaData, WaMsg, WaThread } from "@/lib/types";
 
 const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -32,15 +34,8 @@ function initials(name: string) {
 
 const firstName = (name: string) => name.replace(/\(.*?\)/g, "").trim().split(/\s+/)[0];
 
-const TAG_TONE: Record<string, string> = {
-  "build-list": "zinc",
-  unblocked: "green",
-  "packaging-zero": "red",
-  ordered: "blue",
-  "oil-short": "red",
-  weekly: "violet",
-  storage: "amber",
-};
+// Plain words inside a message body come from lib's plainWords (SKU → product,
+// flush → oil change, lines → machines). Whole words only — numbers are never touched.
 
 /** WhatsApp-style *bold* segments — asterisk pairs on one line become <strong>. */
 function waText(text: string) {
@@ -74,16 +69,22 @@ export default function WaSepClient({
   meta,
   dayN,
   dailyName,
+  tagLabels,
+  tagTones,
 }: {
   threads: WaThread[];
   meta: WaData["meta"];
   dayN: Record<string, number>;
   dailyName: string | null;
+  tagLabels: Record<string, string>;
+  tagTones: Record<string, string>;
 }) {
   const [sel, setSel] = useState<string>(threads[0]?.name ?? "");
   const pane = useRef<HTMLDivElement>(null);
 
-  // a freshly opened thread starts at the top, not where the last one was left
+  const label = (tag: string) => tagLabels[tag] ?? tag.replace(/-/g, " ");
+
+  // a freshly opened conversation starts at the top, not where the last one was left
   useEffect(() => {
     if (pane.current) pane.current.scrollTop = 0;
   }, [sel]);
@@ -97,14 +98,25 @@ export default function WaSepClient({
 
   if (!active) return null;
 
-  const activeDraftCount = active.messages.filter((m) => m.dir === "out").length;
+  const activeCount = active.messages.filter((m) => m.dir === "out").length;
+
+  // the kinds of message everyone except the daily person gets, for the footer line
+  const stuckKinds: string[] = [];
+  for (const t of threads) {
+    if (t.name === dailyName) continue;
+    for (const m of t.messages) {
+      if (m.tag === "build-list") continue;
+      const l = label(m.tag);
+      if (!stuckKinds.includes(l)) stuckKinds.push(l);
+    }
+  }
 
   return (
     <div className="mt-4 grid gap-4 md:h-[calc(100vh-24rem)] md:min-h-[540px] md:grid-cols-[21rem_1fr]">
-      {/* LEFT — recipients (name + role, numbers masked at the data layer) */}
+      {/* LEFT — the people (name + role; phone numbers arrive masked from the data) */}
       <div className="max-h-[46vh] overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900/40 md:max-h-none">
         <div className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-900/95 px-4 py-2.5 text-xs uppercase tracking-wider text-zinc-500 backdrop-blur">
-          {threads.length} recipients · {meta.sent} drafts · {meta.assumed_replies} replies
+          {threads.length} people · {meta.sent} messages · {meta.assumed_replies} replies
         </div>
         <ul>
           {threads.map((t) => {
@@ -129,7 +141,7 @@ export default function WaSepClient({
                     <span className="flex items-center gap-2">
                       <span className="truncate text-sm font-medium text-zinc-100">{t.name}</span>
                       <span
-                        title="simulated drafts addressed to this person — none were sent"
+                        title="messages written for this person — none were sent"
                         className="ml-auto shrink-0 rounded-full bg-violet-500/15 px-2 py-0.5 text-[11px] text-violet-300"
                       >
                         {t.count}
@@ -137,7 +149,7 @@ export default function WaSepClient({
                     </span>
                     <span className="mt-0.5 block truncate text-[11px] text-zinc-500">{t.title}</span>
                     <span className="mt-0.5 flex items-center gap-2">
-                      <span className="font-mono text-[11px] text-zinc-400" title={meta.masking_note}>
+                      <span className="font-mono text-[11px] text-zinc-400" title="phone number">
                         {t.display}
                       </span>
                       <span
@@ -145,7 +157,7 @@ export default function WaSepClient({
                           daily ? "bg-emerald-500/15 text-emerald-300" : "bg-zinc-800 text-zinc-500"
                         }`}
                       >
-                        {daily ? "DAILY" : "EXCEPTION-ONLY"}
+                        {daily ? "EVERY DAY" : "ONLY WHEN STUCK"}
                       </span>
                     </span>
                   </span>
@@ -155,17 +167,16 @@ export default function WaSepClient({
           })}
         </ul>
         <div className="px-4 py-3 text-[11px] leading-relaxed text-zinc-500">
-          Routing: the production incharge gets the build list every planned working day; everyone else is messaged only
-          when something breaks their way — packaging at zero, an order going out, oil short, the weekly readout, a
-          storage push.
+          {dailyName ? `${firstName(dailyName)} gets the run list every day. ` : ""}
+          Everyone else only when something is stuck{stuckKinds.length ? ` — ${stuckKinds.join(", ")}` : ""}.
         </div>
       </div>
 
-      {/* RIGHT — the thread of drafts */}
+      {/* RIGHT — the conversation, one side only: nothing came back */}
       <div ref={pane} className="overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
         <div className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-900/95 backdrop-blur">
           <div className="flex items-center gap-2 border-b border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-[11px] font-semibold tracking-wide text-violet-300">
-            SIMULATED — drafts, not sent · nothing was delivered · {meta.assumed_replies} replies
+            NOT SENT — written by the computer · nobody got these · {meta.assumed_replies} replies
           </div>
           <div className="flex items-center gap-3 px-4 py-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-violet-500/20 text-sm font-semibold text-violet-300">
@@ -176,17 +187,19 @@ export default function WaSepClient({
               <div className="flex flex-wrap items-center gap-x-2 text-xs text-zinc-500">
                 <span className="truncate">{active.title}</span>
                 <span>·</span>
-                <span className="font-mono text-zinc-300" title={meta.masking_note}>
+                <span className="font-mono text-zinc-300" title="phone number">
                   {active.display}
                 </span>
               </div>
             </div>
             <div className="ml-auto shrink-0 text-right text-xs text-zinc-400">
               <div>
-                <span className="text-violet-300">{activeDraftCount} drafts</span> ·{" "}
+                <span className="text-violet-300">{activeCount} messages</span> ·{" "}
                 <span className="text-zinc-500">{meta.assumed_replies} replies</span>
               </div>
-              <div className="text-zinc-600">{active.name === dailyName ? "daily build list" : "exception-only"}</div>
+              <div className="text-zinc-600">
+                {active.name === dailyName ? "gets the run list every day" : "only when something is stuck"}
+              </div>
             </div>
           </div>
         </div>
@@ -229,20 +242,20 @@ export default function WaSepClient({
                               : "rounded-bl-sm border border-zinc-700/60 bg-zinc-800 text-zinc-100"
                         }`}
                       >
-                        {waText(m.text)}
+                        {waText(plainWords(m.text))}
                       </div>
                       <div className="mt-1 flex flex-wrap items-center justify-end gap-2">
                         {m.assumed && (
                           <span
-                            title="assumed:true in the data — the planner would send this; it was never sent"
+                            title="The computer wrote this. It was never sent."
                             className="rounded border border-dashed border-violet-400/40 bg-violet-500/10 px-1.5 py-px text-[10px] font-semibold tracking-wider text-violet-300"
                           >
-                            ✎ DRAFT — NOT SENT
+                            NOT SENT
                           </span>
                         )}
-                        <Pill tone={TAG_TONE[m.tag] ?? "zinc"}>{m.tag}</Pill>
+                        <Pill tone={tagTones[m.tag] ?? "zinc"}>{label(m.tag)}</Pill>
                         <span className="text-[10px] text-zinc-600">
-                          {out ? `would go to ${firstName(active.name)}` : firstName(active.name)}
+                          {out ? `for ${firstName(active.name)}` : firstName(active.name)}
                         </span>
                       </div>
                     </div>
@@ -252,12 +265,12 @@ export default function WaSepClient({
             );
           })}
 
-          {/* the honest end of every thread: no replies exist, none are invented */}
+          {/* the honest end of every conversation: no replies exist, none are invented */}
           <div className="flex items-center gap-3 pt-2">
             <span className="h-px flex-1 border-t border-dashed border-zinc-800" />
             <span className="max-w-[80%] text-center text-[11px] leading-relaxed text-zinc-500">
-              End of drafts. {meta.assumed_replies} replies exist — nothing was actually sent, so nothing came back, and
-              no reply has been invented here.
+              End of messages. {meta.assumed_replies} replies — nothing was sent, so nothing came back. No reply is
+              made up here.
             </span>
             <span className="h-px flex-1 border-t border-dashed border-zinc-800" />
           </div>

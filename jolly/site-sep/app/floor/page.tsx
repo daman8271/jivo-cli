@@ -1,13 +1,15 @@
-import { getAllDays, getBuild, getLines, getOverview, getStorage, fmt, cr, dlabel } from "../../lib/data";
+import {
+  getAllDays, getBuild, getLines, getMaterials, getOverview, getStorage, fmt, cr, dlabel, plainHonestyNote, slotNames, plural,
+} from "../../lib/data";
+import type { HonestyFacts } from "../../lib/data";
 import { LINES } from "../../lib/types";
 import SimBadge from "../../components/SimBadge";
 import { Card, Section, Pill } from "../../components/Card";
 import FloorSepScene, { type FloorDay, type OilLegendItem } from "../../components/FloorSepScene";
 
 export const metadata = {
-  title: "Floor 3D",
-  description:
-    "The planned September on the factory floor in 3D — lines, oils, oil changes and dispatches, day by day.",
+  title: "Floor map",
+  description: "The September plan drawn on the factory floor — machines, oils, oil changes and trucks, one day at a time.",
 };
 
 export default function FloorPage() {
@@ -15,14 +17,17 @@ export default function FloorPage() {
   const o = getOverview();
   const St = getStorage();
   const L = getLines();
+  const lead = getMaterials().lead_days;
 
-  // oil RM code → oil name, read off the build list's own runs
+  const countedOn = dlabel(o.meta.frozen); // the day the stock was counted
+
+  // oil RM code → oil name, read off the run list's own runs
   const oilName: Record<string, string> = {};
   for (const bd of getBuild().days)
     for (const m of bd.machines)
       for (const r of m.runs) if (r.oil && r.oil_name) oilName[r.oil] = r.oil_name;
 
-  // the shift length, derived from the day files themselves (max planned line hours)
+  // the shift length, worked out from the day files themselves (max planned machine hours)
   let maxH = 0;
   for (const d of all) for (const ln of LINES) maxH = Math.max(maxH, d.line_hours[ln] ?? 0);
   const shiftH = Math.round(maxH * 10) / 10;
@@ -58,6 +63,7 @@ export default function FloorPage() {
     loadsFcst: d.dispatched_forecast.length,
     runs: d.runs.length,
     oilChanges: d.runs.filter((r) => r.flush_min > 0).length,
+    blocked: d.blocked.length,
     note: d.decisions[0]?.text ?? null,
   }));
 
@@ -76,87 +82,105 @@ export default function FloorPage() {
   const busiest = all.reduce((a, b) => (b.line_util > a.line_util ? b : a));
   const honesty = all[0].honesty;
 
+  // The measured / guess notes in the data are one-liners written for engineers.
+  // lib's plainHonestyNote says each one in floor words — the same words the day
+  // pages use. Every figure inside a line is read from the data, here.
+  const facts: HonestyFacts = {
+    stockDate: countedOn,
+    products: o.plan.skus,
+    leadOil: lead.oil,
+    leadPack: lead.packaging,
+    lagDays: St.invoice_truck_lag_days,
+    efficiency: L.efficiency,
+    expectedPct: o.demand.forecast_share_litres_pct,
+    observedSlots: slotNames(L, "observed"),
+    derivedSlots: slotNames(L, "derived"),
+  };
+
   return (
     <div>
       <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold">The floor, day by day</h1>
-        <SimBadge kind="plan" />
+        <h1 className="text-2xl font-bold">Floor map</h1>
+        <SimBadge kind="plan" note="The computer's plan for September. Nothing here has happened yet." />
       </div>
+      <p className="mt-1 max-w-3xl text-sm text-zinc-300">
+        {L.lines.length} machines, one godown, one truck gate. Press Play to watch September run, one day per second.
+      </p>
       <p className="mt-1 max-w-3xl text-sm text-zinc-400">
-        {L.lines.length} filling lines, one godown, one dock — the September <em>plan</em> drawn to scale. None of this has
-        happened: it is the simulator&apos;s schedule, {fmt(o.totals.runs)} runs and {o.totals.oil_changes} oil changes
-        over {o.totals.working_days} planned working days. Pull the slider or press Play to watch the month the plan
-        would run, one day per second; drag to walk around it. Block colour is the oil on the line; the beacons flash
-        where the line changes oil that day.
+        None of this has happened. It is the computer&apos;s plan: {fmt(o.totals.runs)} runs and {o.totals.oil_changes}{" "}
+        oil changes over {o.totals.working_days} working days. Block colour is the oil on the machine. The yellow light
+        blinks where a machine changes oil that day. Drag to walk around.
       </p>
 
       <div className="mt-6">
-        <FloorSepScene
-          days={days}
-          shiftH={shiftH}
-          ceilingAssumed={St.ceiling.assumed}
-          ceilingQ={St.ceiling.open_question}
-          oilLegend={oilLegend}
-        />
+        <FloorSepScene days={days} shiftH={shiftH} ceilingAssumed={St.ceiling.assumed} oilLegend={oilLegend} />
       </div>
 
-      <Section title="The planned month behind the scene">
+      <Section title="The month in four numbers">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Card
-            title="Planned output"
+            title="Made in September"
             value={`${fmt(o.totals.made_l)} L`}
-            sub={`${cr(o.totals.value_rs)} across ${o.totals.working_days} working days — simulated`}
+            sub={`${cr(o.totals.value_rs)} in ${o.totals.working_days} working days — the plan, not done yet`}
           />
           <Card
-            title="Planned dispatches"
+            title="Billed"
             value={`${fmt(o.totals.shipped_l)} L`}
-            sub={`${o.demand.forecast_share_litres_pct}% of the demand stream is FORECAST (by litres)`}
+            sub={`about ${Math.round(o.demand.forecast_share_litres_pct)}% of what customers want is expected — not ordered yet`}
           />
           <Card
-            title="Busiest planned day"
+            title="Busiest day"
             value={dlabel(busiest.date)}
             tone="text-amber-300"
-            sub={`${busiest.line_util}% of the shift used — ${busiest.runs.length} runs`}
+            sub={`machines busy ${busiest.line_util}% — ${busiest.runs.length} runs`}
           />
           <Card
-            title="Godown at the assumed cap"
-            value={`${o.storage.days_ge_100.length} of ${o.totals.days} days`}
+            title="Days the godown is full"
+            value={`${o.storage.days_ge_100.length} of ${o.totals.days}`}
             tone="text-red-400"
-            sub={`${o.storage.days_ge_95} days ≥95% of the ${fmt(o.storage.ceiling_l)} L ceiling — assumed (${St.ceiling.open_question})`}
+            sub={`${o.storage.days_ge_95} ${plural(o.storage.days_ge_95, "day", "days")} at 95% or more of ${fmt(o.storage.ceiling_l)} L${
+              St.ceiling.assumed ? " — Daman's number, not measured" : ""
+            }`}
           />
         </div>
       </Section>
 
-      <Section title="What is measured, what is assumed">
+      <Section title="What is measured — real, and what is our guess">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4">
-          <div className="text-xs uppercase tracking-wider text-zinc-500">Measured (31 Aug opening)</div>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="text-xs uppercase tracking-wider text-zinc-500">Measured — real</div>
+          <ul className="mt-2 space-y-1.5 text-sm text-zinc-300">
             {honesty.measured.map((m) => (
-              <Pill key={m} tone="green">
-                {m}
-              </Pill>
+              <li key={m} className="flex items-start gap-2">
+                <Pill tone="green">real</Pill>
+                <span>{plainHonestyNote(m, facts)}</span>
+              </li>
             ))}
-          </div>
-          <div className="mt-4 text-xs uppercase tracking-wider text-zinc-500">Assumed (declared)</div>
-          <div className="mt-2 flex flex-wrap gap-2">
+          </ul>
+          <div className="mt-4 text-xs uppercase tracking-wider text-zinc-500">Our guess — not measured</div>
+          <ul className="mt-2 space-y-1.5 text-sm text-zinc-300">
             {honesty.assumed.map((a) => (
-              <Pill key={a} tone="amber">
-                {a}
-              </Pill>
+              <li key={a} className="flex items-start gap-2">
+                <Pill tone="amber">guess</Pill>
+                <span>{plainHonestyNote(a, facts)}</span>
+              </li>
             ))}
-          </div>
+          </ul>
           <p className="mt-4 text-sm text-zinc-400">
-            The blocks are hours of planned running, not output — a tall block on a slow line makes fewer litres than a
-            short one on a fast line. Height is drawn against the full {shiftH}-hour shift, and the plan already runs
-            every line at an efficiency of {Math.round(L.efficiency * 100)}%: {L.efficiency_note}.
+            A tall block means more hours, not more litres. A slow machine makes fewer litres in the same hours. Blocks
+            are drawn against a {shiftH}-hour shift.
           </p>
           <p className="mt-2 text-sm text-zinc-400">
-            The godown ceiling the red ring marks ({fmt(St.ceiling.working_l)} L working, {fmt(St.ceiling.peak_l)} L
-            peak) is {St.ceiling.source} — open question {St.ceiling.open_question}. Ghost trucks are FORECAST demand
-            rows: volume the plan expects but nobody has ordered yet.
+            The red line is the godown limit: {fmt(St.ceiling.working_l)} L normally, up to {fmt(St.ceiling.peak_l)} L
+            packed tight.{St.ceiling.assumed ? " That is Daman's number — not measured." : ""} See-through trucks are
+            expected orders — nobody has ordered them yet.
           </p>
         </div>
       </Section>
+
+      <p className="mt-4 text-xs text-zinc-500">
+        Where this comes from: the day-by-day plan files, the machine list and the godown file that the planner writes.
+        Every number on this page is read from them.
+      </p>
     </div>
   );
 }

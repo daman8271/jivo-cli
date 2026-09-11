@@ -1,46 +1,44 @@
-// The measured/assumed discipline, made visible. Every simulated or assumed
-// object in data/*.json carries a flag; pages render this badge next to it.
-const KINDS: Record<string, { label: string; cls: string; title: string }> = {
+import { PLAIN_KIND } from "../lib/types";
+
+// The "is this real?" tag. Every object in data/*.json that the computer made
+// up, guessed, measured or worked out carries a kind; pages put this badge next
+// to it. Kind names never change (pages pass them) — only the words shown do.
+const KINDS: Record<string, { cls: string; title: string }> = {
   plan: {
-    label: "PLAN",
     cls: "bg-violet-500/15 text-violet-300 border-violet-500/30",
-    title: "September has not happened — this is the simulator's forward plan, not a record.",
+    title: "This is the computer's plan for September. Nothing here has happened yet.",
   },
   simulated: {
-    label: "SIMULATED",
     cls: "bg-violet-500/15 text-violet-300 border-violet-500/30",
-    title: "Produced by the calibrated simulator. Nothing here has been done.",
+    title: "The computer worked this out. Nobody has done it yet.",
   },
   assumed: {
-    label: "ASSUMED",
     cls: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-    title: "A declared assumption, not a measurement.",
+    title: "Our guess. Nobody measured this.",
   },
   forecast: {
-    label: "FORECAST",
     cls: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-    title: "Not yet ordered — the plan as dated demand buckets (channel=FORECAST, docnum FCST-*).",
+    title: "This month's target, not a customer order. Nobody has ordered it yet.",
   },
   measured: {
-    label: "MEASURED",
     cls: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-    title: "Pulled from SAP / the factory app on 31 Aug — an observed fact.",
+    title: "A real figure — taken from SAP or the factory app on the day the stock was counted.",
   },
   derived: {
-    label: "DERIVED",
     cls: "bg-zinc-700/40 text-zinc-300 border-zinc-600/40",
-    title: "Computed from measured inputs, not directly observed.",
+    title: "Not measured directly — worked out from other measured numbers.",
   },
 };
 
 export default function SimBadge({ kind = "simulated", note }: { kind?: string; note?: string }) {
   const k = KINDS[kind] ?? KINDS.simulated;
+  const label = PLAIN_KIND[kind] ?? PLAIN_KIND.simulated;
   return (
     <span
       title={note || k.title}
       className={`inline-block align-middle text-[10px] font-semibold tracking-wider px-1.5 py-px rounded border ${k.cls}`}
     >
-      {k.label}
+      {label}
     </span>
   );
 }

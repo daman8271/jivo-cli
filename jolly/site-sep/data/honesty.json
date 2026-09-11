@@ -13,7 +13,7 @@
   "the un-bucketed ecom plan volume spreads evenly across working days — EXIM gives it no weekly split",
   "supply arrives exactly on its lead time",
   "2-day invoice-to-truck lag",
-  "every line runs at its stored rate × 50% efficiency — Clear Pack 5L and Tin Head are stored at OBSERVED rates, so for them that is the observed rate derated again ('observed rate, then 50% efficiency'), never '50% of rated'",
+  "the plan runs every machine at 50% of its listed speed — that is the pace the factory really kept in August, not a fault. Clear Pack 5L and Tin Head are listed at the speed we measured, so the plan runs them at 50% of even that — on the careful side",
   "15 L PET fills at the 5 L slot's litres/hour (pieces/hr divided by 3) — DERIVED, no measured 15 L rate exists",
   "standing_l=0: stock invoiced on/before 31 Aug but not yet gated out is uncounted (optimistic on day-1 space)"
  ],
@@ -29,55 +29,55 @@
  "label_rules": [
   {
    "id": "po-open-value",
-   "rule": "book.po_open_value is CUMULATIVE booked order value, never decremented — if shown, label it 'cumulative value ordered', NEVER 'open PO value'."
+   "rule": "the planner's 'PO value' counter is the total ordered since day 1 and only ever goes up — if shown, call it 'total ordered this month', NEVER 'pending order value'."
   },
   {
    "id": "po-open-litres",
-   "rule": "book.po_open_l is not unshipped-order litres — prefer the computed open_real_l_computed (ordered − shipped from rows), shipped alongside it in the spine."
+   "rule": "the planner's 'open litres' counter is not what is still to be sent — use the 'still to be sent' figure (confirmed orders minus billed), which sits next to it in the day-by-day data."
   },
   {
    "id": "orders-mixed",
-   "rule": "summary days[].new_orders MIXES real orders and forecast rows — always split by channel; on quiet days it is 100% FORECAST.",
+   "rule": "each day's new orders MIX confirmed orders with expected orders (not ordered yet) — always split them. On a quiet day the new orders are 100% expected.",
    "forecast_share_litres_pct": 64.3
   },
   {
    "id": "two-oil-series",
-   "rule": "opening.oil_l (all-RM oils) and the day files' oil_on_hand_l (BOM-relevant oils) use DIFFERENT definitions — never chart them as one series.",
+   "rule": "'oil in stock' on the Summary (every oil) and on the day pages (only the oils in this month's recipes) are two different counts — never draw them as one line.",
    "opening_oil_l": 806143
   },
   {
    "id": "forecast-tags",
-   "rule": "FORECAST rows are triple-tagged (channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)') — keep them visually distinct everywhere."
+   "rule": "expected orders (not ordered yet) are marked in the data — keep them looking different from confirmed orders everywhere."
   },
   {
    "id": "ceiling-assumed",
-   "rule": "the storage ceiling is Daman's spreadsheet figure, NOT a measured capacity — mark it assumed wherever it appears (open question Q2).",
+   "rule": "the godown limit is Daman's number from his spreadsheet — not measured. Say so wherever it appears (open question Q2).",
    "working_l": 827000,
    "peak_l": 923000
   },
   {
    "id": "standing-zero",
-   "rule": "standing_l=0 at open is a declared OPTIMISTIC assumption — invoiced-but-not-gated-out stock is uncounted (C-0054)."
+   "rule": "stock billed by 31 Aug but not yet trucked is not counted on day 1 — our guess, on the hopeful side. The godown is really fuller than shown."
   },
   {
    "id": "ecom-spread",
-   "rule": "the ecom half of the plan has NO weekly dating in EXIM — it is spread evenly across working days as a DECLARED ASSUMPTION (FCST-W0 rows)."
+   "rule": "the e-com part of this month's target has no week-by-week dates — it is spread evenly across the working days. Our guess, not measured."
   },
   {
    "id": "day1-pile",
-   "rule": "the day-1 order pile is MEASURED reality, not a bug — most of the open backlog was already overdue on 31 Aug.",
+   "rule": "the pile of orders on day 1 is real, not a bug — most pending customer orders were already late on 31 Aug.",
    "provenance_quote": "Two streams: (1) the SAP ORDR open backlog, real orders, dated by PROMISE (DocDueDate; measured 2026-08-31: 131 of 138 open docs already overdue, so most enter day 1 — the state of the book, not an assumption); (2) the plan as a FORECAST for demand not yet ordered, net of the backlog: EXIM's weekly buckets where they exist (trade 1,890,300 L), plus the un-bucketed ecom volume (2,433,000 L — EXIM has no ecom weekly split) spread evenly across the month's working days as week 0. ASSUMPTION: the even ecom spread. Stream 2 is a projection, tagged channel=FORECAST so it can be separated on the site. NOT the OMS mirror (dead, unjoinable). SCOPE: the backlog counted here covers the 84 plan SKUs only — open FG orders on non-plan codes are outside the sim's world (it cannot produce them) and are counted separately in opening.backlog_nonplan_*. VALUE BASIS: order value = OpenQty x unit Price, the open pieces' worth — SUM(LineTotal) was refuted (it includes the delivered part of part-shipped lines; Rs 14.4 Cr / 44% overstatement).",
    "plan_sku_backlog_docs": 47,
    "plan_sku_backlog_docs_overdue": 40
   },
   {
    "id": "observed-then-derated",
-   "rule": "Clear Pack 5L and Tin Head are stored at OBSERVED rates and the sim derates by 50% again — say 'observed rate, then 50% efficiency', never '50% of rated'.",
+   "rule": "Clear Pack 5L and Tin Head have no maker's speed in the plan — the speed listed for them is the one we measured, and the plan runs them at 50% of even that. Never call it '50% of the maker's speed'.",
    "efficiency": 0.5
   },
   {
    "id": "unproducible",
-   "rule": "four plan SKUs are UNPRODUCIBLE (no 3L PET or DRUM line configured) — surface them honestly on Materials/Order-by.",
+   "rule": "4 products in this month's target have no machine (nothing fills 3-litre bottles or drums) — show them on the Stock and Order by when pages, do not hide them.",
    "codes": [
     "FG0000034",
     "FG0000043",
@@ -87,29 +87,29 @@
   },
   {
    "id": "realise-outlier",
-   "rule": "realise for FG0000155 is an inherited outlier vs its own order-book price — do not headline it unqualified.",
+   "rule": "FG0000155's selling price per litre is an odd inherited figure, far from its own order book — never show it as a headline without saying so.",
    "detail": {
     "code": "FG0000155",
     "sku": "EXTRA VIRGIN 2 LTR 10 PCS HANDLE",
     "realise_rs_per_l": 1162.07,
     "order_book_rs_per_l": 350.0,
     "ratio": 3.32,
-    "note": "inherited realise outlier — never headline this SKU's realise unqualified"
+    "note": "this product's selling price per litre is an odd inherited figure — never show it as a headline without saying so"
    }
   },
   {
    "id": "whatsapp-simulated",
-   "rule": "the whole WhatsApp feed is SIMULATED (assumed:true on every message, zero replies) — render as simulated drafts, never as sent/received traffic."
+   "rule": "every message on the Messages page was written by the computer and NEVER sent — nobody replied. Show them as unsent drafts, never as real chat."
   },
   {
    "id": "numbers-masked",
-   "rule": "no real phone number anywhere — masked at the data layer; September has no approval to show them."
+   "rule": "no real phone number anywhere — hidden in the data. There is no approval to show them."
   }
  ],
  "august_calibration": {
   "sim_made_l": 2122639,
   "actual_made_l": 2119237,
   "delta_pct": 0.16,
-  "note": "the same engine backtested on August landed this close to actual — the basis for trusting the September plan"
+  "note": "tested on August: the same computer plan was run for August and came this close to what the factory really made — that is why these numbers can be trusted"
  }
 }

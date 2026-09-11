@@ -11,7 +11,7 @@
  },
  "zero_definitions": {
   "literal": {
-   "definition": "on_hand exactly 0 and nothing on order",
+   "definition": "nothing in stock and nothing on order",
    "items": 6,
    "zero_pack": 6,
    "zero_oil": 0,
@@ -20,7 +20,7 @@
    "blocked_value_note": "deduplicated across SKUs (one SKU counted once however many zero items block it); per-item sum would be 4530289"
   },
   "august_rule": {
-   "definition": "cover < 1% (August's zero-cover rule: a sliver of stock allowed)",
+   "definition": "almost nothing — stock plus what is on order is under 1% of the month's need (August's rule: a sliver still counts as nothing)",
    "items": 11,
    "skus_blocked": 19,
    "blocked_value_rs": 107653164,
@@ -45,9 +45,9 @@
    "chase_codes": [
     "PM0000309"
    ],
-   "note": "7 items open the month at on_hand exactly 0 = 6 with nothing on order (the literal-zero count) + 1 already covered by a live PO to chase"
+   "note": "7 items had nothing in stock on 31 Aug: 6 with nothing on order, plus 1 already on a PO — chase those"
   },
-  "note": "two different zero definitions live in order-by-sep.json — label whichever you show"
+  "note": "there are two ways to count 'nothing in stock' — say which one you are showing"
  },
  "rows": [
   {
@@ -5113,7 +5113,7 @@
    "plan_pieces": 150,
    "plan_litres": 30000.0,
    "slot_needed": "DRUM",
-   "reason": "no line is configured for the DRUM slot",
+   "reason": "no machine can fill drums",
    "value_est_rs": 6000000,
    "value_est_derived": true
   },
@@ -5125,7 +5125,7 @@
    "plan_pieces": 6667,
    "plan_litres": 20000.0,
    "slot_needed": "3L",
-   "reason": "no line is configured for the 3L slot",
+   "reason": "no machine can fill 3-litre bottles",
    "value_est_rs": 3809600,
    "value_est_derived": true
   },
@@ -5137,7 +5137,7 @@
    "plan_pieces": 75,
    "plan_litres": 15000.0,
    "slot_needed": "DRUM",
-   "reason": "no line is configured for the DRUM slot",
+   "reason": "no machine can fill drums",
    "value_est_rs": 3534300,
    "value_est_derived": true
   },
@@ -5149,11 +5149,11 @@
    "plan_pieces": 5,
    "plan_litres": 1000.0,
    "slot_needed": "DRUM",
-   "reason": "no line is configured for the DRUM slot",
+   "reason": "no machine can fill drums",
    "value_est_rs": 300000,
    "value_est_derived": true
   }
  ],
- "unproducible_note": "plan SKUs no configured line can fill (no 3L PET or DRUM slot exists) — surfaced honestly, not hidden",
+ "unproducible_note": "products in this month's target that no machine can fill (there is no machine for 3-litre bottles or drums) — shown, not hidden",
  "synonyms": "merged (reference/oil-synonyms.csv; freeze already canonical — no alias codes present)"
 }

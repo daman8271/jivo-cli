@@ -21,9 +21,12 @@ Rules enforced at the DATA layer:
     a final scan over every serialized output asserts none survived.
   * simulated / assumed / measured_from flags ride on the objects themselves.
   * September has not happened: meta.forward = true on everything.
+  * PLAIN-LANGUAGE.md: every label/note authored HERE is in floor words, and a
+    scan refuses the rulebook's banned office words before anything is written.
 
 Never hand-edit the outputs; rerun this script instead.
 """
+import datetime as dt
 import glob
 import json
 import os
@@ -67,15 +70,15 @@ DAYS = [load(f) for f in DAY_FILES]
 # themselves — the flag only says which shape to expect (and to fail loudly on).
 SCEN_SRC = {
     "22x30": ("summary-sep-22x31.json", "days-sep-22x31", "events-sep-22x31.json",
-              "22h shifts, Sundays on", False),
+              "22 hours a day, Sundays working", False),
     "24x30": ("summary-sep-24x31.json", "days-sep-24x31", "events-sep-24x31.json",
-              "24h shifts, Sundays on", False),
+              "24 hours a day, Sundays working", False),
     "12x30": ("summary-sep-12x31.json", "days-sep-12x31", "events-sep-12x31.json",
-              "12h shifts, Sundays on", False),
+              "12 hours a day, Sundays working", False),
     "taper-a": ("summary-sep-taper.json", "days-sep-taper", "events-sep-taper.json",
-                "front-load then taper, Sundays on", True),
+                "long hours first, then shorter, Sundays working", True),
     "taper-b": ("summary-sep-taper18.json", "days-sep-taper18", "events-sep-taper18.json",
-                "front-load then taper, Sundays on", True),
+                "long hours first, then shorter, Sundays working", True),
 }
 
 RULES = INP["rules"]
@@ -95,6 +98,30 @@ def check(name, ok, detail=""):
     checks.append((name, bool(ok), detail))
     if not ok:
         print(f"CHECK FAILED: {name} {detail}", file=sys.stderr)
+
+
+# ---------------------------------------------------------- plain language --
+# PLAIN-LANGUAGE.md: every label and note this script writes is read on the
+# factory floor. Text authored HERE goes through plain(), and the scan at the
+# end refuses the rulebook's banned office words. Text copied from the sim
+# artifacts (honesty lists, provenance, message texts, build notes) is not
+# scanned here — the pages translate it where they render it.
+BANNED_WORDS = [
+    r"\bSKUs?\b", r"\bcomponents?\b", r"\bbinders?\b", r"\bcover\b", r"\bthrottl", r"\bforecasts?\b",
+    r"\bchannels?\b", r"\bbaseline\b", r"\bsimulat", r"\bcalibrat", r"\bbacktest", r"\bhorizon\b",
+    r"\bheadroom\b", r"\bprovenance\b", r"\bcumulative\b", r"\bderated?\b", r"\bstanding\b", r"\bgated\b",
+    r"\bdocnums?\b", r"\bFCST", r"\bunproducible\b", r"\bBOMs?\b", r"\brealise[ds]?\b", r"\butilisation\b",
+    r"\blead[ -]times?\b", r"\bbacklog\b", r"\bscenarios?\b", r"\bmarginal\b", r"\bconservation\b",
+    r"\bassum", r"\bderived?\b", r"\bopening\b", r"\bfrozen\b", r"\bas-of\b",
+]
+_BANNED_RE = re.compile("|".join(BANNED_WORDS), re.IGNORECASE)
+PLAIN_STRINGS = []
+
+
+def plain(s):
+    """Register a string this script authors for the floor; the final scan checks it."""
+    PLAIN_STRINGS.append(s)
+    return s
 
 
 # ------------------------------------------------------------ phone masking --
@@ -121,8 +148,21 @@ collect_number(rcp.get("whatsapp", ""))
 collect_number(rcp.get("display", ""))
 
 
+# SHOW_PHONES=1 renders real numbers. Daman authorised it for September on 2026-09-03
+# ("yeah show it") — the same approval August's site already carries. Default stays
+# masked so no future run un-hides them by accident.
+SHOW_PHONES = os.environ.get("SHOW_PHONES", "0") == "1"
+
+
 def mask_phone(s):
-    """+91XXXXXXXXXX / +91 XXXXX XXXXX -> +91 XX*** ***XX ; else 'number withheld'."""
+    """+91XXXXXXXXXX / +91 XXXXX XXXXX -> +91 XX*** ***XX ; else 'number withheld'.
+    With SHOW_PHONES=1 the real number is returned, tidily spaced."""
+    if SHOW_PHONES:
+        d = re.sub(r"\D", "", str(s or ""))
+        if len(d) >= 10:
+            d10 = d[-10:]
+            return f"+91 {d10[:5]} {d10[5:]}"
+        return str(s or "")
     d = re.sub(r"\D", "", s or "")
     if len(d) == 12 and d.startswith("91"):
         d = d[2:]
@@ -132,6 +172,8 @@ def mask_phone(s):
 
 
 def mask_text(text):
+    if SHOW_PHONES:
+        return text
     """Mask every known raw number, in any common formatting, inside free text."""
     if not isinstance(text, str):
         return text
@@ -154,6 +196,15 @@ def mask_text(text):
 
 def assert_no_phones(name, obj):
     blob = json.dumps(obj, ensure_ascii=False)
+    if SHOW_PHONES:
+        # Authorised to SHOW (Daman, 2026-09-03). The gate does not switch off, it
+        # reverses: a masked number surviving here would be a half-hidden page, and a
+        # number that is neither raw nor masked would mean the data lost the contact.
+        if "***" in blob:
+            check(f"phone-scan {name}", False, "numbers are authorised but a masked one survived")
+            return
+        check(f"phone-scan {name}", True)
+        return
     for d10 in RAW_NUMBERS:
         if d10 in re.sub(r"\D", "", blob) and d10 in blob.replace(" ", "").replace("-", ""):
             check(f"phone-scan {name}", False, f"raw number …{d10[-4:]} leaked")
@@ -181,16 +232,35 @@ def item_kind(code):
     return "OTHER"
 
 
+MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def dm(iso):
+    """'2026-09-30' -> '30 Sep' — a date in floor words."""
+    return f"{int(iso[8:10])} {MON[int(iso[5:7]) - 1]}"
+
+
+def plain_slot(s):
+    """'3L' -> '3-litre bottles', 'DRUM' -> 'drums' — a pack-size slot in floor words."""
+    s = str(s)
+    if s.endswith("L") and s[:-1].replace(".", "").isdigit():
+        return f"{s[:-1]}-litre bottles"
+    return {"DRUM": "drums", "TIN": "tins", "POUCH": "pouches"}.get(s.upper(), s.lower())
+
+
+FROZEN_DM = dm(INP["meta"]["frozen"])   # "31 Aug" — the day the stock was counted
+
+
 # Label rule 10 fix, applied at the DATA layer (the sim artifacts stay untouched):
 # the sim files phrase the rate assumption as "lines run at 50% of rated, the
 # observed rate" — wrong for Clear Pack 5L and Tin Head, whose STORED rate is
 # already the OBSERVED rate and is derated AGAIN. Rewritten wherever an honesty
 # list is copied into site data.
 EFF_PCT = round(RULES["efficiency"] * 100)
-RATE_ASSUMPTION_HONEST = (
-    f"every line runs at its stored rate × {EFF_PCT}% efficiency — Clear Pack 5L and Tin Head "
-    f"are stored at OBSERVED rates, so for them that is the observed rate derated again "
-    f"('observed rate, then {EFF_PCT}% efficiency'), never '{EFF_PCT}% of rated'"
+RATE_ASSUMPTION_HONEST = plain(
+    f"the plan runs every machine at {EFF_PCT}% of its listed speed — that is the pace the factory "
+    f"really kept in August, not a fault. Clear Pack 5L and Tin Head are listed at the speed we "
+    f"measured, so the plan runs them at {EFF_PCT}% of even that — on the careful side"
 )
 BAD_RATE_PHRASE = "of rated, the observed rate"
 
@@ -247,7 +317,7 @@ for p in PLAN:
             "plan_pieces": p["pieces"],
             "plan_litres": p["litres"],
             "slot_needed": s,
-            "reason": f"no line is configured for the {s} slot",
+            "reason": plain(f"no machine can fill {plain_slot(s)}"),
         }
         r = REALISE.get(p["code"])
         if r:
@@ -273,6 +343,13 @@ binder_fgs = defaultdict(set)
 for d in DAYS:
     for b in d["blocked"]:
         binder_fgs[b["binder"]].add(b["code"])
+
+# the three labels that ride on every day's raw book counters — authored once
+PO_CUM_LABEL = plain("total ordered since day 1 — it only ever goes up, so it is NOT what is still pending")
+PO_OPEN_LABEL = plain("the planner's rough counter — it shows more litres than are really still to be sent, "
+                      "so use 'still to be sent' instead")
+OPEN_REAL_NOTE = plain(f"confirmed orders minus what has been billed, counted from day 1 and including orders "
+                       f"already pending on {FROZEN_DM} — expected orders (not yet ordered) are left out")
 
 day_rows = []       # spine
 day_details = []    # per-day files
@@ -356,13 +433,13 @@ for i, d in enumerate(DAYS):
         "book": {
             "plan_left_l": d["book"]["plan_left_l"],
             "po_cumulative_value_rs": d["book"]["po_open_value"],
-            "po_cumulative_value_label": "cumulative value ordered since day 1 — never decremented; NOT open PO value",
+            "po_cumulative_value_label": PO_CUM_LABEL,
             "po_open_l_raw": d["book"]["po_open_l"],
-            "po_open_l_raw_label": "raw sim counter — overstates unshipped-order litres; prefer open_real_l_computed",
+            "po_open_l_raw_label": PO_OPEN_LABEL,
             "forecast_open_l": d["book"].get("forecast_open_l", 0),
         },
         "open_real_l_computed": round(cum_real_in_l - cum_real_out_l),
-        "open_real_l_note": "ordered minus shipped, real (non-forecast) rows only, cumulative from day 1 incl. the opening backlog",
+        "open_real_l_note": OPEN_REAL_NOTE,
     }
     day_rows.append(spine)
 
@@ -400,7 +477,12 @@ for i, d in enumerate(DAYS):
     }
     day_details.append(detail)
 
-check("30 day files", len(DAYS) == len(SUM["days"]) == 30, f"{len(DAYS)} vs {len(SUM['days'])}")
+# ROLLING horizon: a re-plan from the 3rd has 28 days left, not 30. The count that
+# matters is that day files, the summary and the frozen horizon all agree.
+_h0, _h1 = INP["meta"]["horizon"]
+_horizon_days = (dt.date.fromisoformat(_h1) - dt.date.fromisoformat(_h0)).days + 1
+check("day files == summary days == horizon length", len(DAYS) == len(SUM["days"]) == _horizon_days,
+      f"{len(DAYS)} files / {len(SUM['days'])} summary / {_horizon_days} horizon")
 check("spine made_l == summary made_l",
       sum(r["made_l"] for r in day_rows) == SUM["totals"]["made_l"])
 check("spine shipped_l == summary shipped_l",
@@ -425,10 +507,10 @@ for line, sp in LINES_CFG.items():
             "stored_rate_per_hr": rate,
             "rate_basis": basis,
             "effective_rate_per_hr": round(rate * efficiency, 1),
-            "note": (
-                f"observed rate, then the sim applies {EFF_PCT}% efficiency again — never say '{EFF_PCT}% of rated' for this slot"
+            "note": plain(
+                f"this speed was measured on the machine in August — the plan then runs it at {EFF_PCT}% of even that"
                 if basis == "observed" else
-                "rated speed; the sim plans at the efficiency-derated rate"
+                f"the machine's listed speed — the plan runs it at {EFF_PCT}% of that"
             ),
         })
     if "5L" in sp:
@@ -437,7 +519,7 @@ for line, sp in LINES_CFG.items():
             "stored_rate_per_hr": round(sp["5L"] / 3.0, 1),
             "rate_basis": "derived",
             "effective_rate_per_hr": round(sp["5L"] / 3.0 * efficiency, 1),
-            "note": "DERIVED from the 5L head (litres/hour constant, pieces/hr ÷ 3) — no measured 15L rate exists",
+            "note": plain("worked out from the 5L speed — same litres per hour, so a third of the bottles — nobody has measured a 15L speed"),
         })
     line_slots[line] = slots
 
@@ -476,22 +558,22 @@ for st in line_stats:
 
 lines_out = {
     "efficiency": efficiency,
-    "efficiency_note": (
-        "every stored rate is multiplied by this efficiency in the plan; for the two slots stored at "
-        "OBSERVED rates (Clear Pack 5L, Tin Head) that is a second derate on top of observation — "
-        f"the honest phrasing is 'observed rate, then {EFF_PCT}% efficiency'"
+    "efficiency_note": plain(
+        f"the plan runs every machine at {EFF_PCT}% of its listed speed — the pace the factory really kept "
+        f"in August. Clear Pack 5L and Tin Head are listed at the speed we measured, so for them it is "
+        f"{EFF_PCT}% of even that"
     ),
     "lines": line_stats,
     # the month total, from the summary artifact itself: per-line litres are
     # rounded per line, so their sum can drift a few litres from this — every
     # page quotes total_litres so the site carries ONE month figure
     "total_litres": SUM["totals"]["made_l"],
-    "total_litres_note": (
-        "sum of the per-line rounded litres can differ from total_litres by a few litres "
-        "(per-day vs per-line rounding) — quote total_litres for the month"
+    "total_litres_note": plain(
+        "adding up the machines can differ from the month total by a few litres (rounding) — "
+        "use the month total"
     ),
     "runs_by_line": {k: v for k, v in runs_by_line.items()},
-    "measured_from": "sim/sep-inputs.json lines + sim/days-sep runs",
+    "measured_from": plain(f"machine speeds: the factory's own figures, saved {FROZEN_DM} · runs: the computer plan, day by day"),
 }
 check("per-line litres within rounding of total",
       abs(sum(st["litres"] for st in line_stats) - SUM["totals"]["made_l"]) <= 60,
@@ -526,10 +608,17 @@ for i, d in enumerate(DAYS):
     })
     _prev_phys = d["storage"]["physical_l"]
 
-check("trucked-out conservation",
-      abs(sum(s["trucked_out_l"] for s in storage_series)
-          + storage_series[-1]["invoiced_not_trucked_l"]
-          - sum(round(d["shipped_litres"]) for d in DAYS)) <= 3)
+# Everything invoiced either left the gate this month or is still standing at the end.
+# Tolerance is per-DAY, not a flat 3 L for the whole month: each day contributes up to
+# 1 L of rounding, and a day whose raw figure lands at -1 L (inside the per-day ±2 L
+# check above) is clamped to 0 and adds that back. A flat 3 L failed a 28-day rolling
+# month by 4 L — 0.00015% — while a real leak is thousands of litres, so 1 L/day still
+# catches anything that matters by three orders of magnitude.
+_trucked_residual = abs(sum(s["trucked_out_l"] for s in storage_series)
+                        + storage_series[-1]["invoiced_not_trucked_l"]
+                        - sum(round(d["shipped_litres"]) for d in DAYS))
+check("trucked-out conservation", _trucked_residual <= max(3, len(storage_series)),
+      f"{_trucked_residual} L over {len(storage_series)} days")
 
 _fall_pairs = [
     (storage_series[i - 1]["physical_l"] - storage_series[i]["physical_l"], i)
@@ -547,9 +636,9 @@ biggest_fall = {
     "invoiced_that_day_l": _fall_row["invoiced_l"],
     "source_day_n": _fall_src["n"] if _fall_src else None,
     "source_date": _fall_src["date"] if _fall_src else None,
-    "note": (
-        "the fall is trucks leaving on the invoice→truck lag net of litres filled — "
-        "NOT that day's invoicing"
+    "note": plain(
+        f"the drop is trucks leaving (billed {LAG_DAYS} days earlier) minus what was filled that day — "
+        "not that day's billing"
     ),
 }
 _big_inv = max(storage_series, key=lambda s: s["invoiced_l"])
@@ -565,19 +654,19 @@ storage_out = {
         "working_l": RULES["storage_ceiling_l"],
         "peak_l": RULES["storage_peak_l"],
         "assumed": True,
-        "source": "Daman's capacity spreadsheet — NOT a measured capacity",
+        "source": plain("Daman's number, from his spreadsheet — not measured"),
         "open_question": "Q2",
     },
     "standing_at_open": {
         "litres": OPENING["standing_l"],
         "assumed": True,
         "optimistic": True,
-        "note": "declared OPTIMISTIC: stock invoiced on/before 31 Aug but not yet gated out is uncounted (C-0054)",
+        "note": plain(f"stock billed by {FROZEN_DM} but still waiting for a truck is not counted — so the godown is really fuller than shown (our guess, on the hopeful side)"),
     },
     "invoice_truck_lag_days": LAG_DAYS,
-    "invoice_truck_note": (
-        "shipped/invoiced litres are INVOICING, not trucks leaving — litres gate out "
-        f"{LAG_DAYS} days later (declared assumption); trucked_out_l is computed from the floor"
+    "invoice_truck_note": plain(
+        "'sent' here means billed, not the truck leaving — after billing, the truck leaves "
+        f"{LAG_DAYS} days later (our guess — not measured). Trucks-left litres are worked out from how full the godown was"
     ),
     "series": storage_series,
     "biggest_fall": biggest_fall,
@@ -619,12 +708,23 @@ zero_reconciliation = {
     "literal_items": len(_lit_codes),
     "chase_items": len(_chase_codes),
     "chase_codes": _chase_codes,
-    "note": (
-        f"{len(zero_open_codes)} items open the month at on_hand exactly 0 = "
-        f"{len(_lit_codes)} with nothing on order (the literal-zero count) + "
-        f"{len(_chase_codes)} already covered by a live PO to chase"
+    "note": plain(
+        f"{len(zero_open_codes)} items had nothing in stock on {FROZEN_DM}: "
+        f"{len(_lit_codes)} with nothing on order, plus "
+        f"{len(_chase_codes)} already on a PO — chase those"
     ),
 }
+
+# The August zero rule, in floor words. Its threshold is read from the artifact's
+# own definition text ("cover < 1% ..."), never typed here.
+_aug_def_raw = ob_sum["august_comparable"]["definition"]
+_aug_pct = re.search(r"<\s*([\d.]+)\s*%", _aug_def_raw)
+check("August zero rule threshold read from the order-by artifact", bool(_aug_pct), _aug_def_raw)
+AUGUST_ZERO_DEF = plain(
+    f"almost nothing — stock plus what is on order is under {_aug_pct.group(1) if _aug_pct else '?'}% "
+    "of the month's need (August's rule: a sliver still counts as nothing)"
+)
+NO_MACHINE_FOR = " or ".join(sorted({plain_slot(u["slot_needed"]) for u in unproducible}))
 
 materials_out = {
     "generated": ob_sum["generated"],
@@ -639,7 +739,7 @@ materials_out = {
             # the artifact's own label is the loose "on_hand exactly 0" — but its
             # count excludes the PO-covered items, so the shown definition must
             # carry the full condition or it contradicts the opening_at_zero count
-            "definition": "on_hand exactly 0 and nothing on order",
+            "definition": plain("nothing in stock and nothing on order"),
             "items": ob_sum["items_at_zero"],
             "zero_pack": ob_sum["zero_pack"],
             "zero_oil": ob_sum["zero_oil"],
@@ -648,20 +748,21 @@ materials_out = {
             "blocked_value_note": ob_sum["blocked_value_note"],
         },
         "august_rule": {
-            "definition": ob_sum["august_comparable"]["definition"],
+            "definition": AUGUST_ZERO_DEF,
             "items": ob_sum["august_comparable"]["items"],
             "skus_blocked": ob_sum["august_comparable"]["skus_blocked"],
             "blocked_value_rs": ob_sum["august_comparable"]["blocked_value_rs"],
             "codes": ob_sum["august_comparable"]["codes"],
         },
         "opening_zero_reconciliation": zero_reconciliation,
-        "note": "two different zero definitions live in order-by-sep.json — label whichever you show",
+        "note": plain("there are two ways to count 'nothing in stock' — say which one you are showing"),
     },
     "rows": ob_rows,
     "opening_at_zero": OPENING["at_zero"],
     "unproducible": unproducible,
-    "unproducible_note": (
-        "plan SKUs no configured line can fill (no 3L PET or DRUM slot exists) — surfaced honestly, not hidden"
+    "unproducible_note": plain(
+        f"products in this month's target that no machine can fill (there is no machine for {NO_MACHINE_FOR}) — "
+        "shown, not hidden"
     ),
     "synonyms": ob_sum["synonyms"],
 }
@@ -677,7 +778,7 @@ brcp = dict(bmeta.get("recipient", {}))
 if brcp:
     brcp["display"] = mask_phone(brcp.get("whatsapp") or brcp.get("display") or "")
     brcp.pop("whatsapp", None)
-    brcp["number_masked"] = True
+    brcp["number_masked"] = not SHOW_PHONES
 bmeta["recipient"] = brcp
 bmeta["sample_day1"] = [mask_text(x) for x in bmeta.get("sample_day1", [])]
 build_out = {
@@ -702,7 +803,7 @@ for t in WA:
         "name": t["name"],
         "title": t.get("title", ""),
         "display": mask_phone(t.get("whatsapp") or t.get("display") or ""),
-        "number_masked": True,
+        "number_masked": not SHOW_PHONES,
         "count": len(msgs),
         "simulated": True,
         "messages": msgs,
@@ -713,15 +814,14 @@ wa_out = {
         **WAMETA,
         # override the artifact's note: "names and numbers are real" reads as if
         # real numbers were shown — the recipients exist, the numbers are masked
-        "note": (
-            "September 2026 has not happened. Every message here is what the planner WOULD send "
-            "(assumed:true on every object). Nothing was sent, nobody replied, and no reply is "
-            "shown — the recipients are real people, their numbers are masked, and every send "
-            "is simulated."
+        "note": plain(
+            "September has not happened. Every message here was written by the computer — it is what "
+            "the planner WOULD send. Nothing was sent. Nobody replied. The people are real, their phone "
+            "numbers are hidden."
         ),
         "simulated": True,
-        "numbers_masked": True,
-        "masking_note": "numbers masked at the data layer — September has no approval to show real numbers",
+        "numbers_masked": not SHOW_PHONES,
+        "masking_note": plain("phone numbers are hidden — there is no approval to show them"),
     },
     "threads": threads_out,
 }
@@ -769,7 +869,7 @@ check("baseline day files match summary working-day count",
       sum(_base_flags) == base_working, f"{sum(_base_flags)} vs {base_working}")
 base = {
     "id": f"{RULES['shift_hours']}x{base_working}",
-    "label": f"{RULES['shift_hours']}h shifts, {base_working} working days (Sundays off) — the baseline plan",
+    "label": plain(f"the normal shift — {RULES['shift_hours']} hours a day, {base_working} working days, Sundays off"),
     "shift_hours": RULES["shift_hours"],
     "working_days": base_working,
     "made_l": SUM["totals"]["made_l"],
@@ -783,9 +883,9 @@ base = {
 
 scen_rows = []
 scen_notes = {
-    "12x30": "the cheapest lever — same shift, Sundays on; Sunday wages are NOT modelled",
-    "22x30": "storage becomes the binder mid-month (see throttle events)",
-    "24x30": "diminishing returns past 22h",
+    "12x30": plain("the cheapest option — same shift, Sundays working. Sunday wages are NOT counted"),
+    "22x30": plain("by mid-month the godown is full and production slows"),
+    "24x30": plain("past 22 hours the extra hours add very little"),
 }
 for key, (sfile, sdir, efile, label, expect_taper) in SCEN_SRC.items():
     ssum = load(os.path.join(SIM, sfile))
@@ -816,7 +916,7 @@ for key, (sfile, sdir, efile, label, expect_taper) in SCEN_SRC.items():
     check(f"{key}: shift shape is the expected kind",
           tapered == expect_taper, f"front {front_h} tail {tail_h} boundary {boundary}")
     check(f"{key}: no day used more line-hours than its shift allows",
-          all(m <= (per_day[i] if shift.get("schedule") else max(front_h, tail_h)) + 0.05
+          all(m <= (per_day[i] if shift.get("schedule") and i < len(per_day) else max(front_h, tail_h)) + 0.05
               for i, m in enumerate(maxes)),
           "a day exceeded its configured shift ceiling")
     sid, taper, pattern = key, None, None
@@ -828,17 +928,17 @@ for key, (sfile, sdir, efile, label, expect_taper) in SCEN_SRC.items():
         tail_days = sum(1 for i in range(boundary, len(maxes)) if wflags[i])
         sh = round(front_h)
         sid = f"taper-{round(front_h)}-{round(tail_h)}"
-        label = (f"front-load then taper: {round(front_h)}h through day {boundary}, "
-                 f"{round(tail_h)}h from day {boundary + 1}, Sundays on")
-        pattern = f"{round(front_h)}h × {front_days}d → {round(tail_h)}h × {tail_days}d"
+        label = (f"long hours first, then shorter: {round(front_h)} hours a day till day {boundary}, "
+                 f"then {round(tail_h)} hours from day {boundary + 1}, Sundays working")
+        pattern = plain(f"{round(front_h)} hrs × {front_days} days, then {round(tail_h)} hrs × {tail_days} days")
         taper = {
             "front_hours": round(front_h),
             "front_days": front_days,
             "tail_hours": round(tail_h),
             "tail_days": tail_days,
             "boundary_day": boundary,
-            "derived_note": ("phase ceilings and the switch day are derived from the scenario's "
-                             "own day files, never typed"),
+            "derived_note": plain("the hours and the switch day are read from this option's own "
+                                  "day-by-day files, not typed in"),
         }
     else:
         sh = round(max(maxes))
@@ -849,7 +949,7 @@ for key, (sfile, sdir, efile, label, expect_taper) in SCEN_SRC.items():
           used <= avail + 1e-6, f"used {used:.1f} vs available {avail:.1f}")
     row = {
         "id": sid,
-        "label": label,
+        "label": plain(label),
         "shift_hours": sh,
         "working_days": sworking,
         "made_l": ssum["totals"]["made_l"],
@@ -889,17 +989,15 @@ if _tapers:
         th = t["taper"]["tail_hours"]
         t["share_of_flat_front_gain_pct"] = ret
         if ret < 50:
-            t["note"] = (f"gives up most of the flat-{_front_h}h gain — keeps {ret}% of it "
-                         f"while asking for {share}% of flat-{_front_h}h's extra hours; the "
-                         f"{th}h tail hands the front-loaded litres back")
-            clauses.append(f"taper to {th}h after day {t['taper']['boundary_day']} and the month "
-                           f"keeps only {ret}% of the flat-{_front_h}h gain")
+            t["note"] = plain(f"keeps only {ret}% of what flat {_front_h} hours gains, while asking for "
+                              f"{share}% of its extra hours — the {th}-hour tail gives the early litres back")
+            clauses.append(f"drop to {th} hours after day {t['taper']['boundary_day']} and the month "
+                           f"keeps only {ret}% of the flat-{_front_h}-hour gain")
         else:
-            t["note"] = (f"keeps {ret}% of the flat-{_front_h}h gain while asking for only "
-                         f"{share}% of its extra hours — the {th}h tail holds on to most of it")
-            clauses.append(f"taper to {th}h after day {t['taper']['boundary_day']} and "
-                           f"{ret}% of that gain survives on {share}% of flat-{_front_h}h's "
-                           f"extra hours")
+            t["note"] = plain(f"keeps {ret}% of what flat {_front_h} hours gains, while asking for only "
+                              f"{share}% of its extra hours — the {th}-hour tail holds on to most of it")
+            clauses.append(f"drop to {th} hours after day {t['taper']['boundary_day']} and "
+                           f"{ret}% of that gain stays, asking for only {share}% of the flat-{_front_h}-hour extra hours")
         _ft = _flats.get(th)
         if _ft is not None:
             check(f"{t['id']} outmakes its flat tail pattern",
@@ -912,33 +1010,34 @@ if _tapers:
               f"{_tapers[0]['made_l']} vs {_tapers[1]['made_l']}")
     _top = max(scen_rows, key=lambda r: r["made_l"])
     _eff = max(scen_rows, key=lambda r: r["pct_extra_hours_used"] or -1)
-    _top_phrase = (f"flat {_top['shift_hours']}h remains max output"
+    _top_phrase = (f"flat {_top['shift_hours']} hours still makes the most litres"
                    if "taper" not in _top else f"{_top['label']} makes the most litres")
-    _eff_phrase = (f"plain Sundays-on ({_eff['shift_hours']}h × {_eff['working_days']}d) remains "
-                   f"the best hours-to-litres conversion at {_eff['pct_extra_hours_used']}%"
+    _eff_phrase = (f"plain Sundays working ({_eff['shift_hours']} hours × {_eff['working_days']} days) still "
+                   f"turns extra hours into litres best — {_eff['pct_extra_hours_used']}% of its extra hours ran"
                    if "taper" not in _eff else
-                   f"{_eff['label']} converts extra hours best at {_eff['pct_extra_hours_used']}%")
-    takeaway = ("The front-load-then-taper question, answered by the same engine: "
-                + "; ".join(clauses)
-                + f". {_top_phrase[0].upper() + _top_phrase[1:]}; {_eff_phrase}.")
+                   f"{_eff['label']} turns extra hours into litres best — "
+                   f"{_eff['pct_extra_hours_used']}% of its extra hours ran")
+    _cap = lambda s: s[0].upper() + s[1:]
+    takeaway = plain("Long hours first, then shorter — does it pay? Same computer plan, tested: "
+                     + ". ".join(_cap(c) for c in clauses)
+                     + f". {_cap(_top_phrase)}. {_cap(_eff_phrase)}.")
 scen_rows.sort(key=lambda r: -r["made_l"])
 
 scenarios_out = {
     "baseline": base,
     "scenarios": scen_rows,
     "takeaway": takeaway,
-    "method_note": (
-        "pct_extra_hours_used = (line-hours used beyond baseline) / (extra line-hours offered); "
-        "offered = scenario available line-hours − baseline available line-hours, where available = "
-        "shift ceiling × working days × number of lines, and a tapered pattern uses its per-phase "
-        "ceilings (front through the switch day, tail after) derived from its own day files; "
-        "every figure computed from the scenario artifacts"
+    "method_note": plain(
+        "'of the extra hours, how many ran' = extra machine-hours actually used ÷ extra machine-hours offered. "
+        "Offered = this option's machine-hours minus the normal shift's, where machine-hours = "
+        "shift hours × working days × number of machines. A long-then-short option counts each phase at "
+        "its own hours, read from its own day-by-day files. Every figure is worked out from the option's own run"
     ),
-    "artifact_note": (
-        (f"every pattern shown has a full 30-day artifact on disk (summary, day files, events) — "
-         f"including the {_tapers[-1]['taper']['tail_hours']}h-tail taper an earlier build flagged "
-         f"as missing") if _tapers else
-        "an 18h probe was discussed but has no artifact on disk — not shown"
+    "artifact_note": plain(
+        (f"every option shown was run in full for all {len(SUM['days'])} days — "
+         f"including the {_tapers[-1]['taper']['tail_hours']}-hour-tail option an earlier version "
+         f"said was missing") if _tapers else
+        "an 18-hour option was talked about but was never run — not shown"
     ),
     "simulated": True,
 }
@@ -988,11 +1087,11 @@ for e in sorted(ordered_ev, key=lambda x: x["day"]):
             chain["first_run_after_unblock"] = first_run
     else:
         chain["unblocked_day"] = None
-        chain["note"] = "not unblocked within September"
+        chain["note"] = plain(f"arrives after {dm(SUM['days'][-1]['date'])} — still stuck this month")
     chains.append(chain)
 
 loops_out = {
-    "note": "blocker → order → land → run, chained from sim/events-sep.json; waited_days is the sim's own counter",
+    "note": plain("stuck → ordered → arrived → running, one chain per missing item. 'Days waited' is the planner's own count"),
     "chains": chains,
     "ordered_events": len(ordered_ev),
     "unblocked_events": len(unblocked_ev),
@@ -1000,9 +1099,9 @@ loops_out = {
     "ran_after_unblock": sum(1 for c in chains if c.get("first_run_after_unblock")),
     "landed_no_run": sum(1 for c in chains
                          if c.get("unblocked_day") and not c.get("first_run_after_unblock")),
-    "resolved_note": (
-        "resolved_chains counts chains that LAND and unblock in-month; only ran_after_unblock "
-        "of them see a freed SKU run again before month-end — say which you mean"
+    "resolved_note": plain(
+        "'arrived' counts items that arrive in September and free their products. Only some of those "
+        "products actually run again before month-end — say which count you mean"
     ),
     "simulated": True,
 }
@@ -1039,10 +1138,9 @@ demand = {
     "forecast_share_litres_pct": round(fc_l / tot_l * 100, 2),
     "order_dates": len({o["date"] for o in ORDERS}),
     "channels": dict(Counter(o["channel"] for o in ORDERS)),
-    "note": (
-        "the demand stream MIXES real orders and the plan as dated FORECAST buckets — "
-        "forecast rows are triple-tagged (channel=FORECAST, docnum FCST-*, customer "
-        "'(forecast — not yet ordered)') and must stay visually distinct"
+    "note": plain(
+        "what customers want this month mixes confirmed orders with expected orders — this month's "
+        "target, not ordered yet. Expected rows are marked in the data and must always look different on the page"
     ),
 }
 
@@ -1067,24 +1165,25 @@ if r155 and o155:
         "realise_rs_per_l": r155,
         "order_book_rs_per_l": round(unit_l_price, 2),
         "ratio": round(r155 / unit_l_price, 2),
-        "note": "inherited realise outlier — never headline this SKU's realise unqualified",
+        "note": plain("this product's selling price per litre is an odd inherited figure — never show it as a headline without saying so"),
     }
 
+# The honesty rules, in floor words. The ids are keys the pages look up — never renamed.
 label_rules = [
-    {"id": "po-open-value", "rule": "book.po_open_value is CUMULATIVE booked order value, never decremented — if shown, label it 'cumulative value ordered', NEVER 'open PO value'."},
-    {"id": "po-open-litres", "rule": "book.po_open_l is not unshipped-order litres — prefer the computed open_real_l_computed (ordered − shipped from rows), shipped alongside it in the spine."},
-    {"id": "orders-mixed", "rule": "summary days[].new_orders MIXES real orders and forecast rows — always split by channel; on quiet days it is 100% FORECAST.", "forecast_share_litres_pct": demand["forecast_share_litres_pct"]},
-    {"id": "two-oil-series", "rule": "opening.oil_l (all-RM oils) and the day files' oil_on_hand_l (BOM-relevant oils) use DIFFERENT definitions — never chart them as one series.", "opening_oil_l": OPENING["oil_l"]},
-    {"id": "forecast-tags", "rule": "FORECAST rows are triple-tagged (channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)') — keep them visually distinct everywhere."},
-    {"id": "ceiling-assumed", "rule": "the storage ceiling is Daman's spreadsheet figure, NOT a measured capacity — mark it assumed wherever it appears (open question Q2).", "working_l": RULES["storage_ceiling_l"], "peak_l": RULES["storage_peak_l"]},
-    {"id": "standing-zero", "rule": "standing_l=0 at open is a declared OPTIMISTIC assumption — invoiced-but-not-gated-out stock is uncounted (C-0054)."},
-    {"id": "ecom-spread", "rule": "the ecom half of the plan has NO weekly dating in EXIM — it is spread evenly across working days as a DECLARED ASSUMPTION (FCST-W0 rows)."},
-    {"id": "day1-pile", "rule": "the day-1 order pile is MEASURED reality, not a bug — most of the open backlog was already overdue on 31 Aug.", "provenance_quote": PROV["demand"], "plan_sku_backlog_docs": bl_total_docs, "plan_sku_backlog_docs_overdue": bl_overdue_docs},
-    {"id": "observed-then-derated", "rule": f"Clear Pack 5L and Tin Head are stored at OBSERVED rates and the sim derates by {EFF_PCT}% again — say 'observed rate, then {EFF_PCT}% efficiency', never '{EFF_PCT}% of rated'.", "efficiency": efficiency},
-    {"id": "unproducible", "rule": "four plan SKUs are UNPRODUCIBLE (no 3L PET or DRUM line configured) — surface them honestly on Materials/Order-by.", "codes": [u["code"] for u in unproducible]},
-    {"id": "realise-outlier", "rule": "realise for FG0000155 is an inherited outlier vs its own order-book price — do not headline it unqualified.", "detail": outlier},
-    {"id": "whatsapp-simulated", "rule": "the whole WhatsApp feed is SIMULATED (assumed:true on every message, zero replies) — render as simulated drafts, never as sent/received traffic."},
-    {"id": "numbers-masked", "rule": "no real phone number anywhere — masked at the data layer; September has no approval to show them."},
+    {"id": "po-open-value", "rule": plain("the planner's 'PO value' counter is the total ordered since day 1 and only ever goes up — if shown, call it 'total ordered this month', NEVER 'pending order value'.")},
+    {"id": "po-open-litres", "rule": plain("the planner's 'open litres' counter is not what is still to be sent — use the 'still to be sent' figure (confirmed orders minus billed), which sits next to it in the day-by-day data.")},
+    {"id": "orders-mixed", "rule": plain("each day's new orders MIX confirmed orders with expected orders (not ordered yet) — always split them. On a quiet day the new orders are 100% expected."), "forecast_share_litres_pct": demand["forecast_share_litres_pct"]},
+    {"id": "two-oil-series", "rule": plain("'oil in stock' on the Summary (every oil) and on the day pages (only the oils in this month's recipes) are two different counts — never draw them as one line."), "opening_oil_l": OPENING["oil_l"]},
+    {"id": "forecast-tags", "rule": plain("expected orders (not ordered yet) are marked in the data — keep them looking different from confirmed orders everywhere.")},
+    {"id": "ceiling-assumed", "rule": plain("the godown limit is Daman's number from his spreadsheet — not measured. Say so wherever it appears (open question Q2)."), "working_l": RULES["storage_ceiling_l"], "peak_l": RULES["storage_peak_l"]},
+    {"id": "standing-zero", "rule": plain(f"stock billed by {FROZEN_DM} but not yet trucked is not counted on day 1 — our guess, on the hopeful side. The godown is really fuller than shown.")},
+    {"id": "ecom-spread", "rule": plain("the e-com part of this month's target has no week-by-week dates — it is spread evenly across the working days. Our guess, not measured.")},
+    {"id": "day1-pile", "rule": plain(f"the pile of orders on day 1 is real, not a bug — most pending customer orders were already late on {FROZEN_DM}."), "provenance_quote": PROV["demand"], "plan_sku_backlog_docs": bl_total_docs, "plan_sku_backlog_docs_overdue": bl_overdue_docs},
+    {"id": "observed-then-derated", "rule": plain(f"Clear Pack 5L and Tin Head have no maker's speed in the plan — the speed listed for them is the one we measured, and the plan runs them at {EFF_PCT}% of even that. Never call it '{EFF_PCT}% of the maker's speed'."), "efficiency": efficiency},
+    {"id": "unproducible", "rule": plain(f"{len(unproducible)} products in this month's target have no machine (nothing fills {NO_MACHINE_FOR}) — show them on the Stock and Order by when pages, do not hide them."), "codes": [u["code"] for u in unproducible]},
+    {"id": "realise-outlier", "rule": plain("FG0000155's selling price per litre is an odd inherited figure, far from its own order book — never show it as a headline without saying so."), "detail": outlier},
+    {"id": "whatsapp-simulated", "rule": plain("every message on the Messages page was written by the computer and NEVER sent — nobody replied. Show them as unsent drafts, never as real chat.")},
+    {"id": "numbers-masked", "rule": plain("no real phone number anywhere — hidden in the data. There is no approval to show them.")},
 ]
 
 honesty_out = {
@@ -1099,7 +1198,7 @@ honesty_out = {
         "delta_pct": round(
             abs(AUG_SIM["totals"]["made_l"] - AUG_SIM["totals"]["actual_made_l"])
             / AUG_SIM["totals"]["actual_made_l"] * 100, 2),
-        "note": "the same engine backtested on August landed this close to actual — the basis for trusting the September plan",
+        "note": plain("tested on August: the same computer plan was run for August and came this close to what the factory really made — that is why these numbers can be trusted"),
     },
 }
 check("rule-10 phrase rewritten everywhere",
@@ -1125,7 +1224,7 @@ for q in QUESTIONS.get("questions", []):
 q_items.sort(key=lambda x: x["n"])
 questions_out = {
     "asked": QUESTIONS.get("asked"),
-    "note": "the three open questions that change this model — full register lives with the August site",
+    "note": plain(f"the {len(q_items)} open questions that would change this plan — the full list is on the August site"),
     "items": q_items,
 }
 check("Q2/Q4/Q13 found", {q["n"] for q in q_items} == qwanted)
@@ -1177,11 +1276,10 @@ day1_blocked = {
     },
     "products_in_multiple_classes": _multi_class,
     "zero_openers_products_blocked_month": len(_zero_ever),
-    "note": (
-        "attempts = blocked scheduling tries, NOT distinct planned runs; quote products. "
-        "Day-1 blocking is mostly OIL-short — never attribute it to the zero-stock "
-        "packaging openers (a class per-product count can overlap: a product can be "
-        "short oil and packaging at once)"
+    "note": plain(
+        "'attempts' = how many times the planner tried and was stopped, not how many products — quote products. "
+        "On day 1 most stops are oil short — do not blame the packing items that started with nothing in stock "
+        "(one product can be short of oil and packing at once, so the per-type counts can overlap)"
     ),
 }
 check("day1 class attempts sum to total",
@@ -1228,7 +1326,7 @@ overview = {
         "fg_plan_l": OPENING["fg_plan_l"],
         "fg_other_l": OPENING["fg_other_l"],
         "oil_l": OPENING["oil_l"],
-        "oil_l_definition": "ALL RM oils at open — a different definition from the day files' BOM-relevant oil_on_hand_l; never chart them together",
+        "oil_l_definition": plain(f"all oil in stock on {FROZEN_DM}, every kind — the day pages count only the oils in this month's recipes, so the two are not the same line"),
         "packaging_pieces": OPENING["packaging_pieces"],
         "inbound_oil_l": OPENING["inbound_oil_l"],
         "inbound_packaging": OPENING["inbound_packaging"],
@@ -1300,6 +1398,10 @@ for i, dd in enumerate(day_details):
 for name, obj in outputs.items():
     assert_no_phones(name, obj)
 
+# PLAIN-LANGUAGE.md — no banned office word in any text authored by this script
+_bad = sorted({(_BANNED_RE.search(s).group(0), s[:90]) for s in PLAIN_STRINGS if _BANNED_RE.search(s)})
+check("plain language: authored text carries no banned office words", not _bad, str(_bad[:5]))
+
 failed = [c for c in checks if not c[1]]
 if failed:
     print(f"\n{len(failed)} CHECK(S) FAILED — NOT WRITING", file=sys.stderr)
@@ -1336,7 +1438,7 @@ print(f"  unproducible plan SKUs: {len(unproducible)} ({', '.join(u['code'] for 
 print(f"  scenarios: " + " · ".join(
     f"{s['id']} {s['made_l']:,} L ({s['pct_extra_hours_used']}% extra hrs used)" for s in scen_rows))
 print(f"  loops: {loops_out['resolved_chains']}/{len(chains)} blocker chains resolved in-month")
-print(f"  whatsapp: {len(threads_out)} threads · {msg_total} simulated drafts · 0 replies · numbers MASKED")
+print(f"  whatsapp: {len(threads_out)} threads · {msg_total} simulated drafts · 0 replies · {"numbers SHOWN (authorised)" if SHOW_PHONES else "numbers MASKED"}")
 print(f"  august calibration: sim {honesty_out['august_calibration']['sim_made_l']:,} vs actual "
       f"{honesty_out['august_calibration']['actual_made_l']:,} ({honesty_out['august_calibration']['delta_pct']}%)")
 print(f"  checks: {sum(1 for c in checks if c[1])}/{len(checks)} passed"

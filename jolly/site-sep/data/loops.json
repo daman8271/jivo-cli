@@ -1,5 +1,5 @@
 {
- "note": "blocker → order → land → run, chained from sim/events-sep.json; waited_days is the sim's own counter",
+ "note": "stuck → ordered → arrived → running, one chain per missing item. 'Days waited' is the planner's own count",
  "chains": [
   {
    "code": "RM0000002",
@@ -813,7 +813,7 @@
    ],
    "simulated": true,
    "unblocked_day": null,
-   "note": "not unblocked within September"
+   "note": "arrives after 30 Sep — still stuck this month"
   },
   {
    "code": "PM0000060",
@@ -850,7 +850,7 @@
    ],
    "simulated": true,
    "unblocked_day": null,
-   "note": "not unblocked within September"
+   "note": "arrives after 30 Sep — still stuck this month"
   },
   {
    "code": "PM0000003",
@@ -888,7 +888,7 @@
    ],
    "simulated": true,
    "unblocked_day": null,
-   "note": "not unblocked within September"
+   "note": "arrives after 30 Sep — still stuck this month"
   },
   {
    "code": "PM0000060",
@@ -904,7 +904,7 @@
    ],
    "simulated": true,
    "unblocked_day": null,
-   "note": "not unblocked within September"
+   "note": "arrives after 30 Sep — still stuck this month"
   }
  ],
  "ordered_events": 43,
@@ -912,6 +912,6 @@
  "resolved_chains": 39,
  "ran_after_unblock": 32,
  "landed_no_run": 7,
- "resolved_note": "resolved_chains counts chains that LAND and unblock in-month; only ran_after_unblock of them see a freed SKU run again before month-end — say which you mean",
+ "resolved_note": "'arrived' counts items that arrive in September and free their products. Only some of those products actually run again before month-end — say which count you mean",
  "simulated": true
 }

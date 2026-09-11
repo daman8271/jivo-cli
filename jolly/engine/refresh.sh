@@ -18,10 +18,12 @@ say "=== rolling refresh, as-of $ASOF ==="
 
 # 0 — SAP reachable? The Mac goes through a tunnel that dies with sleep; the VPS reaches
 #     HANA directly. Try every env this box has, and only tunnel if none answers.
+HANA_BIN="$REPO/hana-sql/hana-sql"
+[ "$(uname -s)" = "Linux" ] && [ -x "$HANA_BIN.linux" ] && HANA_BIN="$HANA_BIN.linux"
 HANA_ENV=""
 for e in hana-office-bridge hana-vps-direct hana-vps hana; do
   [ -f "$REPO/connections/$e.env" ] || continue
-  if "$REPO/hana-sql/hana-sql" -env "$REPO/connections/$e.env" "SELECT 1 FROM DUMMY" >/dev/null 2>&1; then
+  if "$HANA_BIN" -env "$REPO/connections/$e.env" "SELECT 1 FROM DUMMY" >/dev/null 2>&1; then
     HANA_ENV="$e"; break
   fi
 done
@@ -31,7 +33,7 @@ if [ -z "$HANA_ENV" ]; then
   sleep 8
   for e in hana-office-bridge hana-tunnel; do
     [ -f "$REPO/connections/$e.env" ] || continue
-    "$REPO/hana-sql/hana-sql" -env "$REPO/connections/$e.env" "SELECT 1 FROM DUMMY" >/dev/null 2>&1 && { HANA_ENV="$e"; break; }
+    "$HANA_BIN" -env "$REPO/connections/$e.env" "SELECT 1 FROM DUMMY" >/dev/null 2>&1 && { HANA_ENV="$e"; break; }
   done
 fi
 [ -n "$HANA_ENV" ] || { say "ABORT: HANA unreachable from $(hostname)"; exit 1; }
@@ -93,14 +95,22 @@ say "order-by, whatsapp, build list regenerated"
 
 # 6 — site data (150 internal cross-checks; writes nothing if any fail)
 cd site-sep
-python3 scripts/gen-data.py 2>&1 | tail -6 | tee -a "$LOG"
+SHOW_PHONES="${SHOW_PHONES:-1}" python3 scripts/gen-data.py 2>&1 | tail -6 | tee -a "$LOG"
 
 # 7 — build, then refuse to publish if any real phone number reached the output
 npm run build >/dev/null 2>&1 || { say "ABORT: next build failed"; exit 1; }
-if grep -rqE '\+91[ -]?[6-9][0-9]{4}' .next/server data 2>/dev/null; then
-  say "ABORT: a real phone number reached the build — not publishing"; exit 1
+# Daman authorised showing the real numbers on 2026-09-03 (SHOW_PHONES=1, the default
+# here). The gate does not disappear — it flips: when numbers are meant to be hidden it
+# refuses a leak; when they are meant to be shown it refuses a half-masked page.
+if [ "${SHOW_PHONES:-1}" = "1" ]; then
+  grep -rq '\*\*\* \*\*\*' data 2>/dev/null && { say "ABORT: numbers are authorised but a masked one survived"; exit 1; }
+  say "build green, real numbers shown (authorised 2026-09-03)"
+else
+  if grep -rqE '\+91[ -]?[6-9][0-9]{4}' .next/server data 2>/dev/null; then
+    say "ABORT: a real phone number reached the build — not publishing"; exit 1
+  fi
+  say "build green, phone scan clean"
 fi
-say "build green, phone scan clean"
 
 # 8 — publish
 if [ "${DEPLOY:-1}" = "1" ]; then

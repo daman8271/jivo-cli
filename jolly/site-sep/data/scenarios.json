@@ -1,7 +1,7 @@
 {
  "baseline": {
   "id": "12x26",
-  "label": "12h shifts, 26 working days (Sundays off) — the baseline plan",
+  "label": "the normal shift — 12 hours a day, 26 working days, Sundays off",
   "shift_hours": 12,
   "working_days": 26,
   "made_l": 2765370,
@@ -15,7 +15,7 @@
  "scenarios": [
   {
    "id": "24x30",
-   "label": "24h shifts, Sundays on",
+   "label": "24 hours a day, Sundays working",
    "shift_hours": 24,
    "working_days": 30,
    "made_l": 4063317,
@@ -28,12 +28,12 @@
    "pct_extra_hours_used": 36.1,
    "days_storage_ge_95": 22,
    "storage_throttle_events": 5,
-   "note": "diminishing returns past 22h",
+   "note": "past 22 hours the extra hours add very little",
    "simulated": true
   },
   {
    "id": "22x30",
-   "label": "22h shifts, Sundays on",
+   "label": "22 hours a day, Sundays working",
    "shift_hours": 22,
    "working_days": 30,
    "made_l": 3977016,
@@ -46,12 +46,12 @@
    "pct_extra_hours_used": 42.4,
    "days_storage_ge_95": 21,
    "storage_throttle_events": 4,
-   "note": "storage becomes the binder mid-month (see throttle events)",
+   "note": "by mid-month the godown is full and production slows",
    "simulated": true
   },
   {
    "id": "taper-22-18",
-   "label": "front-load then taper: 22h through day 13, 18h from day 14, Sundays on",
+   "label": "long hours first, then shorter: 22 hours a day till day 13, then 18 hours from day 14, Sundays working",
    "shift_hours": 22,
    "working_days": 30,
    "made_l": 3784733,
@@ -64,22 +64,22 @@
    "pct_extra_hours_used": 44.4,
    "days_storage_ge_95": 14,
    "storage_throttle_events": 3,
-   "note": "keeps 84.1% of the flat-22h gain while asking for only 80% of its extra hours — the 18h tail holds on to most of it",
+   "note": "keeps 84.1% of what flat 22 hours gains, while asking for only 80% of its extra hours — the 18-hour tail holds on to most of it",
    "simulated": true,
-   "pattern": "22h × 13d → 18h × 17d",
+   "pattern": "22 hrs × 13 days, then 18 hrs × 17 days",
    "taper": {
     "front_hours": 22,
     "front_days": 13,
     "tail_hours": 18,
     "tail_days": 17,
     "boundary_day": 13,
-    "derived_note": "phase ceilings and the switch day are derived from the scenario's own day files, never typed"
+    "derived_note": "the hours and the switch day are read from this option's own day-by-day files, not typed in"
    },
    "share_of_flat_front_gain_pct": 84.1
   },
   {
    "id": "taper-22-12",
-   "label": "front-load then taper: 22h through day 13, 12h from day 14, Sundays on",
+   "label": "long hours first, then shorter: 22 hours a day till day 13, then 12 hours from day 14, Sundays working",
    "shift_hours": 22,
    "working_days": 30,
    "made_l": 3318072,
@@ -92,22 +92,22 @@
    "pct_extra_hours_used": 38.7,
    "days_storage_ge_95": 9,
    "storage_throttle_events": 2,
-   "note": "gives up most of the flat-22h gain — keeps 45.6% of it while asking for 51% of flat-22h's extra hours; the 12h tail hands the front-loaded litres back",
+   "note": "keeps only 45.6% of what flat 22 hours gains, while asking for 51% of its extra hours — the 12-hour tail gives the early litres back",
    "simulated": true,
-   "pattern": "22h × 13d → 12h × 17d",
+   "pattern": "22 hrs × 13 days, then 12 hrs × 17 days",
    "taper": {
     "front_hours": 22,
     "front_days": 13,
     "tail_hours": 12,
     "tail_days": 17,
     "boundary_day": 13,
-    "derived_note": "phase ceilings and the switch day are derived from the scenario's own day files, never typed"
+    "derived_note": "the hours and the switch day are read from this option's own day-by-day files, not typed in"
    },
    "share_of_flat_front_gain_pct": 45.6
   },
   {
    "id": "12x30",
-   "label": "12h shifts, Sundays on",
+   "label": "12 hours a day, Sundays working",
    "shift_hours": 12,
    "working_days": 30,
    "made_l": 2994749,
@@ -120,12 +120,12 @@
    "pct_extra_hours_used": 82.7,
    "days_storage_ge_95": 3,
    "storage_throttle_events": 0,
-   "note": "the cheapest lever — same shift, Sundays on; Sunday wages are NOT modelled",
+   "note": "the cheapest option — same shift, Sundays working. Sunday wages are NOT counted",
    "simulated": true
   }
  ],
- "takeaway": "The front-load-then-taper question, answered by the same engine: taper to 12h after day 13 and the month keeps only 45.6% of the flat-22h gain; taper to 18h after day 13 and 84.1% of that gain survives on 80% of flat-22h's extra hours. Flat 24h remains max output; plain Sundays-on (12h × 30d) remains the best hours-to-litres conversion at 82.7%.",
- "method_note": "pct_extra_hours_used = (line-hours used beyond baseline) / (extra line-hours offered); offered = scenario available line-hours − baseline available line-hours, where available = shift ceiling × working days × number of lines, and a tapered pattern uses its per-phase ceilings (front through the switch day, tail after) derived from its own day files; every figure computed from the scenario artifacts",
- "artifact_note": "every pattern shown has a full 30-day artifact on disk (summary, day files, events) — including the 18h-tail taper an earlier build flagged as missing",
+ "takeaway": "Long hours first, then shorter — does it pay? Same computer plan, tested: Drop to 12 hours after day 13 and the month keeps only 45.6% of the flat-22-hour gain. Drop to 18 hours after day 13 and 84.1% of that gain stays, asking for only 80% of the flat-22-hour extra hours. Flat 24 hours still makes the most litres. Plain Sundays working (12 hours × 30 days) still turns extra hours into litres best — 82.7% of its extra hours ran.",
+ "method_note": "'of the extra hours, how many ran' = extra machine-hours actually used ÷ extra machine-hours offered. Offered = this option's machine-hours minus the normal shift's, where machine-hours = shift hours × working days × number of machines. A long-then-short option counts each phase at its own hours, read from its own day-by-day files. Every figure is worked out from the option's own run",
+ "artifact_note": "every option shown was run in full for all 30 days — including the 18-hour-tail option an earlier version said was missing",
  "simulated": true
 }

@@ -9,7 +9,7 @@
   ],
   "forward": true,
   "forward_rule": "A FORWARD PLAN, not a backtest. September has not happened. Only the 1-Sept opening is observed.",
-  "generated": "2026-09-01T13:18:21+00:00"
+  "generated": "2026-09-03T09:56:34+00:00"
  },
  "totals": {
   "made_l": 2765370,
@@ -53,14 +53,14 @@
    "MART": 1,
    "FORECAST": 1908
   },
-  "note": "the demand stream MIXES real orders and the plan as dated FORECAST buckets — forecast rows are triple-tagged (channel=FORECAST, docnum FCST-*, customer '(forecast — not yet ordered)') and must stay visually distinct"
+  "note": "what customers want this month mixes confirmed orders with expected orders — this month's target, not ordered yet. Expected rows are marked in the data and must always look different on the page"
  },
  "opening": {
   "fg_litres": 437526,
   "fg_plan_l": 380641,
   "fg_other_l": 56885,
   "oil_l": 806143,
-  "oil_l_definition": "ALL RM oils at open — a different definition from the day files' BOM-relevant oil_on_hand_l; never chart them together",
+  "oil_l_definition": "all oil in stock on 31 Aug, every kind — the day pages count only the oils in this month's recipes, so the two are not the same line",
   "packaging_pieces": 12177431,
   "inbound_oil_l": 1639518,
   "inbound_packaging": 7162866,
@@ -108,46 +108,46 @@
   },
   "products_in_multiple_classes": 2,
   "zero_openers_products_blocked_month": 1,
-  "note": "attempts = blocked scheduling tries, NOT distinct planned runs; quote products. Day-1 blocking is mostly OIL-short — never attribute it to the zero-stock packaging openers (a class per-product count can overlap: a product can be short oil and packaging at once)"
+  "note": "'attempts' = how many times the planner tried and was stopped, not how many products — quote products. On day 1 most stops are oil short — do not blame the packing items that started with nothing in stock (one product can be short of oil and packing at once, so the per-type counts can overlap)"
  },
  "august": {
   "sim_made_l": 2122639,
   "actual_made_l": 2119237,
   "delta_pct": 0.16,
-  "note": "the same engine backtested on August landed this close to actual — the basis for trusting the September plan"
+  "note": "tested on August: the same computer plan was run for August and came this close to what the factory really made — that is why these numbers can be trusted"
  },
  "scenarios_mini": [
   {
    "id": "24x30",
-   "label": "24h shifts, Sundays on",
+   "label": "24 hours a day, Sundays working",
    "made_l": 4063317,
    "delta_made_l": 1297947,
    "pct_extra_hours_used": 36.1
   },
   {
    "id": "22x30",
-   "label": "22h shifts, Sundays on",
+   "label": "22 hours a day, Sundays working",
    "made_l": 3977016,
    "delta_made_l": 1211646,
    "pct_extra_hours_used": 42.4
   },
   {
    "id": "taper-22-18",
-   "label": "front-load then taper: 22h through day 13, 18h from day 14, Sundays on",
+   "label": "long hours first, then shorter: 22 hours a day till day 13, then 18 hours from day 14, Sundays working",
    "made_l": 3784733,
    "delta_made_l": 1019363,
    "pct_extra_hours_used": 44.4
   },
   {
    "id": "taper-22-12",
-   "label": "front-load then taper: 22h through day 13, 12h from day 14, Sundays on",
+   "label": "long hours first, then shorter: 22 hours a day till day 13, then 12 hours from day 14, Sundays working",
    "made_l": 3318072,
    "delta_made_l": 552702,
    "pct_extra_hours_used": 38.7
   },
   {
    "id": "12x30",
-   "label": "12h shifts, Sundays on",
+   "label": "12 hours a day, Sundays working",
    "made_l": 2994749,
    "delta_made_l": 229379,
    "pct_extra_hours_used": 82.7
@@ -178,7 +178,7 @@
    "plan_pieces": 150,
    "plan_litres": 30000.0,
    "slot_needed": "DRUM",
-   "reason": "no line is configured for the DRUM slot",
+   "reason": "no machine can fill drums",
    "value_est_rs": 6000000,
    "value_est_derived": true
   },
@@ -190,7 +190,7 @@
    "plan_pieces": 6667,
    "plan_litres": 20000.0,
    "slot_needed": "3L",
-   "reason": "no line is configured for the 3L slot",
+   "reason": "no machine can fill 3-litre bottles",
    "value_est_rs": 3809600,
    "value_est_derived": true
   },
@@ -202,7 +202,7 @@
    "plan_pieces": 75,
    "plan_litres": 15000.0,
    "slot_needed": "DRUM",
-   "reason": "no line is configured for the DRUM slot",
+   "reason": "no machine can fill drums",
    "value_est_rs": 3534300,
    "value_est_derived": true
   },
@@ -214,7 +214,7 @@
    "plan_pieces": 5,
    "plan_litres": 1000.0,
    "slot_needed": "DRUM",
-   "reason": "no line is configured for the DRUM slot",
+   "reason": "no machine can fill drums",
    "value_est_rs": 300000,
    "value_est_derived": true
   }

@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 
-// Planned godown occupancy, day by day — a FORWARD PLAN series (nothing here has
-// happened). Adapted from the August site's StStorageChart; September adds the
-// peak-ceiling line and forward-plan wording. Every number arrives via props
-// from data/*.json — nothing is typed here.
+// How full the godown is, day by day — the computer's PLAN for September (nothing
+// here has happened). Adapted from the August site's StStorageChart; September adds
+// the squeezed-limit line and plan wording. Every number arrives via props from
+// data/*.json — nothing is typed here.
 export type StoragePoint = {
   n: number; date: string; dow: string; working: boolean;
   fg: number; inv: number; physical: number; pct: number; headroom: number;
@@ -44,18 +44,18 @@ export default function StorageChart({ points, workingL, peakL }: { points: Stor
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-zinc-400 mb-2">
-        <span className="flex items-center gap-2"><span className="inline-block w-4 h-2.5 rounded-sm" style={{ background: "rgba(56,189,248,.38)", boxShadow: "inset 0 0 0 1px #38bdf8" }} />Finished goods in the godown</span>
-        <span className="flex items-center gap-2"><span className="inline-block w-4 h-2.5 rounded-sm" style={{ background: "repeating-linear-gradient(45deg,#f59e0b,#f59e0b 2px,transparent 2px,transparent 5px)", boxShadow: "inset 0 0 0 1px rgba(245,158,11,.7)" }} />Invoiced, still on the floor</span>
-        <span className="flex items-center gap-2"><span className="inline-block w-4 h-0.5" style={{ background: "#ef4444" }} />Working ceiling {nf(ceiling)} L (assumed)</span>
+        <span className="flex items-center gap-2"><span className="inline-block w-4 h-2.5 rounded-sm" style={{ background: "rgba(56,189,248,.38)", boxShadow: "inset 0 0 0 1px #38bdf8" }} />Stock in the godown, not yet billed</span>
+        <span className="flex items-center gap-2"><span className="inline-block w-4 h-2.5 rounded-sm" style={{ background: "repeating-linear-gradient(45deg,#f59e0b,#f59e0b 2px,transparent 2px,transparent 5px)", boxShadow: "inset 0 0 0 1px rgba(245,158,11,.7)" }} />Billed, truck not left yet</span>
+        <span className="flex items-center gap-2"><span className="inline-block w-4 h-0.5" style={{ background: "#ef4444" }} />Godown full — {nf(ceiling)} L (Daman&apos;s number, not measured)</span>
         {peakL > ceiling && (
-          <span className="flex items-center gap-2"><span className="inline-block w-4 h-0.5" style={{ background: "#f87171", opacity: .8, backgroundImage: "repeating-linear-gradient(90deg,#f87171,#f87171 3px,transparent 3px,transparent 6px)" }} />Peak {nf(peakL)} L (assumed)</span>
+          <span className="flex items-center gap-2"><span className="inline-block w-4 h-0.5" style={{ background: "#f87171", opacity: .8, backgroundImage: "repeating-linear-gradient(90deg,#f87171,#f87171 3px,transparent 3px,transparent 6px)" }} />Squeezed hard — {nf(peakL)} L (not measured)</span>
         )}
-        <span className="flex items-center gap-2"><span className="inline-block w-4 h-0.5" style={{ background: "#fbbf24", opacity: .9 }} />95% line</span>
-        <span className="flex items-center gap-2 text-amber-300"><span>▲</span>Sim capped production</span>
+        <span className="flex items-center gap-2"><span className="inline-block w-4 h-0.5" style={{ background: "#fbbf24", opacity: .9 }} />95% — nearly full</span>
+        <span className="flex items-center gap-2 text-amber-300"><span>▲</span>Godown full, the plan made less</span>
       </div>
 
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto select-none" role="img"
-        aria-label={`Planned litres on the godown floor each day of September 2026 against the assumed ${nf(ceiling)} litre working ceiling`}>
+        aria-label={`Litres in the godown on each day of September 2026, against the ${nf(ceiling)} litre limit we take as full — Daman's number, not measured`}>
         <defs>
           <pattern id="sepStHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <rect width="7" height="7" fill="#f59e0b" opacity="0.10" />
@@ -85,10 +85,10 @@ export default function StorageChart({ points, workingL, peakL }: { points: Stor
         {peakL > ceiling && (
           <>
             <line x1={PL} y1={y(peakL)} x2={W - PR} y2={y(peakL)} stroke="#f87171" strokeWidth="1.4" strokeDasharray="3 5" opacity="0.8" />
-            <text x={PL + 6} y={y(peakL) - 5} fontSize="11" fill="#f87171" opacity="0.85">peak {nf(peakL)} L — assumed</text>
+            <text x={PL + 6} y={y(peakL) - 5} fontSize="11" fill="#f87171" opacity="0.85">squeezed hard {nf(peakL)} L — not measured</text>
           </>
         )}
-        <text x={W - PR} y={y(ceiling) - 7} textAnchor="end" fontSize="12" fill="#f87171">WORKING CEILING {nf(ceiling)} L · ASSUMED</text>
+        <text x={W - PR} y={y(ceiling) - 7} textAnchor="end" fontSize="12" fill="#f87171">GODOWN FULL {nf(ceiling)} L · DAMAN&apos;S NUMBER, NOT MEASURED</text>
         <text x={PL + 6} y={y(safety) - 6} fontSize="11" fill="#fbbf24" opacity="0.9">95% — {nf(safety)} L</text>
 
         <line x1={PL} y1={BASE} x2={W - PR} y2={BASE} stroke="#52525b" strokeWidth="1" />
@@ -110,17 +110,17 @@ export default function StorageChart({ points, workingL, peakL }: { points: Stor
       <div className="mt-3 border-t border-zinc-800 pt-3 grid grid-cols-2 md:grid-cols-6 gap-3 text-sm">
         <div>
           <div className="text-[11px] uppercase tracking-wider text-zinc-500">{cur.dow} {shortDate(cur.date)}</div>
-          <div className="text-zinc-200 font-medium">{cur.working ? "Working day" : "Sunday — closed"}</div>
+          <div className="text-zinc-200 font-medium">{cur.working ? "Working day" : "Sunday — factory closed"}</div>
         </div>
-        <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">On the floor (planned)</div><div className="text-zinc-100 font-semibold">{nf(cur.physical)} L <span className="text-zinc-500 font-normal">({cur.pct}%)</span></div></div>
-        <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">Of that, invoiced</div><div className="text-amber-300 font-semibold">{nf(cur.inv)} L</div></div>
-        <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">Room left</div><div className="text-zinc-100 font-semibold">{nf(cur.headroom)} L</div></div>
+        <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">In the godown (plan)</div><div className="text-zinc-100 font-semibold">{nf(cur.physical)} L <span className="text-zinc-500 font-normal">({cur.pct}% full)</span></div></div>
+        <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">Of that, billed — truck not left</div><div className="text-amber-300 font-semibold">{nf(cur.inv)} L</div></div>
+        <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">Space left</div><div className="text-zinc-100 font-semibold">{nf(cur.headroom)} L</div></div>
         <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">Made (plan)</div><div className="text-zinc-100 font-semibold">{cur.made ? `${nf(cur.made)} L` : "—"}</div></div>
-        <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">Invoiced (plan)</div><div className="text-zinc-100 font-semibold">{cur.shipped ? `${nf(cur.shipped)} L` : "—"}</div></div>
+        <div><div className="text-[11px] uppercase tracking-wider text-zinc-500">Billed (plan)</div><div className="text-zinc-100 font-semibold">{cur.shipped ? `${nf(cur.shipped)} L` : "—"}</div></div>
       </div>
       <div className="mt-2 text-[11px] text-zinc-600">
-        Hover or tap any day to move the readout. Every value is the simulator&apos;s plan — none of it has happened.
-        {cur.throttle ? " ▲ On this day the sim capped production to what could ship." : ""}
+        Tap or hover on any day to see its numbers. All of this is the computer&apos;s plan — none of it has happened yet.
+        {cur.throttle ? " ▲ On this day the godown was full, so the plan made less." : ""}
       </div>
     </div>
   );

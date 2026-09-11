@@ -30,9 +30,9 @@
  "book": {
   "plan_left_l": 2186499,
   "po_cumulative_value_rs": 163071636,
-  "po_cumulative_value_label": "cumulative value ordered since day 1 — never decremented; NOT open PO value",
+  "po_cumulative_value_label": "total ordered since day 1 — it only ever goes up, so it is NOT what is still pending",
   "po_open_l_raw": 913519,
-  "po_open_l_raw_label": "raw sim counter — overstates unshipped-order litres; prefer open_real_l_computed",
+  "po_open_l_raw_label": "the planner's rough counter — it shows more litres than are really still to be sent, so use 'still to be sent' instead",
   "forecast_open_l": 921628
  },
  "open_real_l_computed": 807335,
@@ -2589,7 +2589,7 @@
    "the un-bucketed ecom plan volume spreads evenly across working days — EXIM gives it no weekly split",
    "supply arrives exactly on its lead time",
    "2-day invoice-to-truck lag",
-   "every line runs at its stored rate × 50% efficiency — Clear Pack 5L and Tin Head are stored at OBSERVED rates, so for them that is the observed rate derated again ('observed rate, then 50% efficiency'), never '50% of rated'",
+   "the plan runs every machine at 50% of its listed speed — that is the pace the factory really kept in August, not a fault. Clear Pack 5L and Tin Head are listed at the speed we measured, so the plan runs them at 50% of even that — on the careful side",
    "15 L PET fills at the 5 L slot's litres/hour (pieces/hr divided by 3) — DERIVED, no measured 15 L rate exists",
    "standing_l=0: stock invoiced on/before 31 Aug but not yet gated out is uncounted (optimistic on day-1 space)"
   ]
