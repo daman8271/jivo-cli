@@ -5,9 +5,9 @@ import type { JobSummary, MachineId, PlanCommand, PlanningChange, ProductChoice 
 import { revisionKey } from "../lib/use-dashboard";
 import { MACHINE_IDS, number } from "./board-parts";
 
-export default function PlanEditor({ date, revision, products, authenticated, busy, jobs, onSave, onUnlock }: {
-  date: string; revision: number | null; products: ProductChoice[]; authenticated: boolean; busy: boolean; jobs: JobSummary[];
-  onSave: (command: PlanCommand) => Promise<JobSummary | null>; onUnlock: () => void;
+export default function PlanEditor({ date, revision, products, busy, jobs, onSave }: {
+  date: string; revision: number | null; products: ProductChoice[]; busy: boolean; jobs: JobSummary[];
+  onSave: (command: PlanCommand) => Promise<JobSummary | null>;
 }) {
   const [machine, setMachine] = useState<MachineId>("JP Machine");
   const [code, setCode] = useState("");
@@ -61,7 +61,6 @@ export default function PlanEditor({ date, revision, products, authenticated, bu
   }
   return <aside className="plan-editor" aria-labelledby="edit-heading">
     <div className="editor-heading"><div><h2 id="edit-heading">Revise tomorrow</h2><p>Choose the work. Review what fits.</p></div><span className="revision-label">{revision === null ? "New draft" : `From r${revision}`}</span></div>
-    {!authenticated && <div className="unlock-note"><span>Unlock to save your changes.</span><button className="text-button" onClick={onUnlock}>Unlock editing</button></div>}
     <fieldset disabled={busy || saving} className="editor-fields">
       <label>Machine<select value={machine} onChange={event => { setMachine(event.target.value as MachineId); setCode(""); setUnit("pieces"); }}>{MACHINE_IDS.map(id => <option key={id}>{id}</option>)}</select></label>
       <label>Product<select value={code} onChange={event => { setCode(event.target.value); setUnit("pieces"); }}><option value="">Choose a compatible product</option>{choices.map(p => <option key={p.code} value={p.code}>{p.name} ({p.code})</option>)}</select></label>
@@ -77,7 +76,6 @@ export default function PlanEditor({ date, revision, products, authenticated, bu
     {changes.length > 0 && <div className="pending-changes"><h3>{changes.length} unsaved {changes.length === 1 ? "change" : "changes"}</h3><ul>{changes.map((change, index) => <li key={index}><span>{changeLabel(change)}</span><button className="icon-button" aria-label={`Remove change ${index + 1}`} disabled={saving} onClick={() => setChanges(previous => previous.filter((_, i) => i !== index))}>×</button></li>)}</ul></div>}
     {stale && <div className="inline-error" role="alert">A newer revision is available. Review it before applying these changes.<button className="text-button" disabled={saving} onClick={() => setBaseRevision(revision)}>Use these changes on r{revision}</button></div>}
     <button className="button primary full-width" disabled={!changes.length || busy || saving || stale} onClick={async () => {
-      if (!authenticated) { onUnlock(); return; }
       const job = await onSave({ date, expectedRevision: baseRevision, idempotencyKey: revisionKey(), changes });
       if (job) { setPendingJob(job.id); setSavedMessage(null); }
     }}>{saving ? "Calculating draft…" : "Save revision draft"}</button>

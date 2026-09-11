@@ -31,7 +31,6 @@ export function useDashboard() {
   const [snapshot, setSnapshot] = useState<PlanningSnapshot | null>(null);
   const [plans, setPlans] = useState<Record<string, PlansResponse>>({});
   const [jobs, setJobs] = useState<JobSummary[]>([]);
-  const [authenticated, setAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +65,6 @@ export function useDashboard() {
 
   useEffect(() => {
     void reload();
-    void api<{ authenticated: boolean }>("/api/session").then(s => setAuthenticated(s.authenticated)).catch(() => setAuthenticated(false));
     const interval = setInterval(() => { if (document.visibilityState === "visible") void reload(); }, 45000);
     return () => clearInterval(interval);
   }, [reload]);
@@ -117,16 +115,6 @@ export function useDashboard() {
     return accepted.job;
   }), [act]);
 
-  const unlock = useCallback(async (passcode: string) => act(async () => {
-    const result = await api<{ authenticated: boolean }>("/api/session", "POST", { passcode });
-    setAuthenticated(result.authenticated);
-    return result.authenticated;
-  }), [act]);
-
-  const lock = useCallback(async () => act(async () => {
-    await api("/api/session", "DELETE"); setAuthenticated(false); return true;
-  }), [act]);
-
   const approve = useCallback(async (revision: PlanRevision) => act(async () => {
     const result = await api<PlanRevision>(`/api/plans/${revision.date}/approve`, "POST", { expectedRevision: revision.revision, idempotencyKey: revisionKey() });
     setNotice(`Revision ${revision.revision} is now the agreed plan.`);
@@ -135,7 +123,7 @@ export function useDashboard() {
   }), [act, reload]);
 
   return {
-    snapshot, plans, jobs, authenticated, loading, busy, error, notice, reload, unlock, lock, approve,
+    snapshot, plans, jobs, loading, busy, error, notice, reload, approve,
     dismissNotice: () => setNotice(null),
     refresh: () => startJob("/api/refresh", {}),
     review: (date: string) => startJob("/api/ai/review", { date, idempotencyKey: revisionKey() }),
