@@ -27,7 +27,7 @@ ruled on never silently starts counting as stock.
 
 | Role | Codes |
 |---|---|
-| **Finished goods** | `BH-BT` · `BH-PF` · `GP-FG` |
+| **Finished goods — Wellness only** | `BH-BT` · `BH-PF` |
 | **Oil + packaging** | `BH-BS` · `BH-PM` · `BH-LO` · `BH-NM` · `BH-SDL` · `GP-NM` · `GP-FG` · `GP-PM` |
 | **NOT ours** | `BH-OT` (Param) |
 | **IGNORED — closed, do not raise again** | `BH-PP` (Daman, 2026-08-29) |
@@ -40,6 +40,8 @@ ruled on never silently starts counting as stock.
 > worker); filtering those out zeroed half a million litres of real inbound oil.
 
 ---
+
+> **Wellness FG scope — Daman, 9 September 2026:** Finished goods, storage and dispatch-space reconciliation use **BH-BT and BH-PF only**. Exclude Gupta/GP-FG and GP-FGM from these calculations. Older FG inclusions below are superseded. Packaging has its own separately approved allow-list; this FG correction does not change it. Bulk oil remains EXIM-only; BH-LO and BH-GJ balances are not added. A mixed-company billed backlog is not verified BH-only physical occupancy.
 
 ## The four that count
 
@@ -147,10 +149,16 @@ ruled on never silently starts counting as stock.
 - **`BH-BS` is packaging, not finished goods.** The name says "Basement" and the
   finished-goods basement is `BH-BT` "New Basement". Reading `BH-BS` as FG returns
   zero and inflates every production requirement.
-- **`BH-LO` holds the loose oil** — 808,933 L, the tanks. Not `BH-OT`.
+- **`BH-LO` is a factory/book loose-oil location, not a second tank balance.**
+  Daman's 30-August EXIM-only ruling (C-0056) supersedes using this balance for
+  planning oil. Read EXIM quantities and grades; missing mappings stay unresolved.
 - **`BH-PP` and `BH-FU` are inactive but still hold stock.** `BH-PP` carries
   5,003,454 PM. Inactive does not mean empty.
-- **`BH-NM` / `GP-NM` are non-moving** — 2.65 M PM parked between them. Not available.
+- **`BH-NM` / `GP-NM` are non-moving but explicitly included by Daman.** His
+  29-August 12:50:52 message adds both rooms (`harness/questions/log.jsonl:1136`).
+  The earlier "Not available" sentence contradicted that instruction and is
+  corrected on 9 September. Keep the recorded warehouse allow-list; individual
+  rejected or otherwise held material is not made usable by a warehouse name.
 - **`BH-WST` is wastage.** Never count it as stock.
 
 ---

@@ -1,0 +1,777 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-05T23:50:47.024980+00:00",
+  "source": {
+    "system": "ji.jivo.in factory application",
+    "scope": "Oil, all ten 1 L / 16-piece rows in captured monthly plan",
+    "commands": [
+      "production-execution sap-items --search <targeted product family> --company oil --json --no-input --no-cache",
+      "production-execution sap-bom --item-code <exact code> --company oil --json --no-input --no-cache"
+    ],
+    "coverage": "Every baseline 1 L / 16-piece plan row searched by product family. Broad 1 LTR search caps at50; targeted searches used instead. Absence is search evidence, not proof that no SKU can exist."
+  },
+  "summary": {
+    "baseline_16_piece_products": 10,
+    "verified": 1,
+    "blocked": 9,
+    "catalog_counterparts": 6
+  },
+  "notes": [
+    "User policy is all 1 L / 16-piece cartons transition to20; missing recipe evidence does not waive that policy. Block unresolved packaging transitions explicitly.",
+    "Mappings preserve bottles and litres, not carton count. Never add old and new actual production twice.",
+    "Generic RM0000001 olive components appear in old source recipes; do not overwrite curated oil/blend identities with these generic recipe components.",
+    "New carton price is unverified and omitted. Costs, staff, customer, contacts and document identifiers are omitted."
+  ],
+  "mappings": [
+    {
+      "old_code": "FG0000142",
+      "old_name": "COLD PRESS GROUNDNUT OIL 1 LTR 16 PCS",
+      "new_code": "FG0000461",
+      "new_name": "COLD PRESS GROUNDNUT OIL 1 LTR 20 PCS",
+      "status": "verified",
+      "reason": "Matching oil, bottle, cap and labels verified per piece in both live recipes; carton and tape use the new recipe.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000011",
+          "name": "GROUNDNUT LOOSE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000085",
+          "name": "CAPS 1 OR 2 LTR WHITE AND YELLOW WITH LOGO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000425",
+          "name": "LABEL 1 LTR GROUNDNUT FRONT",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000426",
+          "name": "LABEL 1 LTR GROUNDNUT BACK",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000003",
+          "name": "CARTON 1 LTR POMACE 16 PCS",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 0.9652,
+          "quantity_per_piece": 0.060325
+        }
+      ],
+      "replacement_components": [
+        {
+          "code": "RM0000011",
+          "name": "GROUNDNUT LOOSE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 20.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 20.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000085",
+          "name": "CAPS 1 OR 2 LTR WHITE AND YELLOW WITH LOGO",
+          "unit": "PCS",
+          "quantity_per_case": 20.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000425",
+          "name": "LABEL 1 LTR GROUNDNUT FRONT",
+          "unit": "PCS",
+          "quantity_per_case": 20.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000426",
+          "name": "LABEL 1 LTR GROUNDNUT BACK",
+          "unit": "PCS",
+          "quantity_per_case": 20.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000914",
+          "name": "CARTON 1 LTR 20 PCS 52 GM OLIVE",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.05
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 1.2,
+          "quantity_per_piece": 0.06
+        }
+      ],
+      "evidence": {
+        "catalog_query": "GROUNDNUT",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 7,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:49:24.482903+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000028",
+      "old_name": "POMACE OLIVE 1 LTR 16 PCS",
+      "new_code": "FG0000466",
+      "new_name": "POMACE OLIVE 1 LTR 20 PCS",
+      "status": "blocked",
+      "reason": "The 20-piece product exists in the factory catalog, but its recipe returned zero components; substitution is blocked until its recipe is available.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000001",
+          "name": "LOOSE REFINED OLIVE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.0352,
+          "quantity_per_piece": 1.0022
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000079",
+          "name": "CAPS 1 & 2 LTR FULL GREEN WITH LOGO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000107",
+          "name": "LABEL 1 LTR POMACE BACK",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000108",
+          "name": "LABEL 1 LTR POMACE FRONT",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000003",
+          "name": "CARTON 1 LTR POMACE 16 PCS",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 0.9652,
+          "quantity_per_piece": 0.060325
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "POMACE OLIVE 1",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:49:24.794157+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000005",
+      "old_name": "EXTRA LIGHT OLIVE 1 LTR 16 PCS",
+      "new_code": "FG0000462",
+      "new_name": "EXTRA LIGHT OLIVE 1 LTR 20 PCS",
+      "status": "blocked",
+      "reason": "The 20-piece product exists in the factory catalog, but its recipe returned zero components; substitution is blocked until its recipe is available.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000001",
+          "name": "LOOSE REFINED OLIVE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000060",
+          "name": "CAPS 1 & 2 LTR WHITE AND BLUE WITH LOGO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000018",
+          "name": "LABEL 1 LTR EXTRA LIGHT FRONT",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000017",
+          "name": "LABEL 1 LTR EXTRA LIGHT BACK",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 0.9652,
+          "quantity_per_piece": 0.060325
+        },
+        {
+          "code": "PM0000003",
+          "name": "CARTON 1 LTR POMACE 16 PCS",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "EXTRA LIGHT OLIVE 1",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:49:25.127558+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000150",
+      "old_name": "SANO POMACE OLIVE 1 LTR 16 PCS",
+      "new_code": null,
+      "new_name": null,
+      "status": "blocked",
+      "reason": "No 20-piece counterpart was returned by the targeted factory catalog search; exact brand/product replacement remains unverified.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000001",
+          "name": "LOOSE REFINED OLIVE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.032,
+          "quantity_per_piece": 1.002
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000408",
+          "name": "CAPS 1 & 2 LTR WHITE AND GREEN PLAIN",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000386",
+          "name": "LABEL 1 LTR POMACE FRONT SANO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000385",
+          "name": "LABEL 1 LTR POMACE BACK SANO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000657",
+          "name": "CARTON 1 LTR 16 PCS SANO",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "PM0000074",
+          "name": "TAPE CELLO",
+          "unit": "MTR",
+          "quantity_per_case": 0.9652,
+          "quantity_per_piece": 0.060325
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "SANO POMACE",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:50:06.872986+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000042",
+      "old_name": "EXTRA VIRGIN OLIVE 1 LTR 16 PCS",
+      "new_code": "FG0000465",
+      "new_name": "EXTRA VIRGIN OLIVE 1 LTR 20 PCS",
+      "status": "blocked",
+      "reason": "The 20-piece product exists in the factory catalog, but its recipe returned zero components; substitution is blocked until its recipe is available.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "PM0000159",
+          "name": "LABEL 1 LTR EXTRA VIRGIN BACK",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000003",
+          "name": "CARTON 1 LTR POMACE 16 PCS",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "RM0000001",
+          "name": "LOOSE REFINED OLIVE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.04,
+          "quantity_per_piece": 1.0025
+        },
+        {
+          "code": "PM0000158",
+          "name": "LABEL 1 LTR EXTRA VIRGIN FRONT",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000079",
+          "name": "CAPS 1 & 2 LTR FULL GREEN WITH LOGO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000195",
+          "name": "PET BOTTLE 1 LTR 52 GMS GREEN",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 0.9652,
+          "quantity_per_piece": 0.060325
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "EXTRA VIRGIN OLIVE",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:49:25.437471+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000227",
+      "old_name": "RICE BRAN OIL 1 LTR 16 PCS",
+      "new_code": "FG0000467",
+      "new_name": "RICE BRAN OIL 1 LTR 20 PCS",
+      "status": "blocked",
+      "reason": "The 20-piece product exists in the factory catalog, but its recipe returned zero components; substitution is blocked until its recipe is available.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000007",
+          "name": "RICE BRAN REFINED OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000079",
+          "name": "CAPS 1 & 2 LTR FULL GREEN WITH LOGO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000522",
+          "name": "LABEL 1 LTR RICE BRAN OIL FRONT",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000523",
+          "name": "LABEL 1 LTR RICE BRAN OIL BACK",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000003",
+          "name": "CARTON 1 LTR POMACE 16 PCS",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 0.9652,
+          "quantity_per_piece": 0.060325
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "RICE BRAN OIL 1",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:49:25.767688+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000228",
+      "old_name": "SO OLIVE OIL 1 LTR 16 PCS",
+      "new_code": null,
+      "new_name": null,
+      "status": "blocked",
+      "reason": "No 20-piece counterpart was returned by the targeted factory catalog search; exact brand/product replacement remains unverified.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000040",
+          "name": "SO OLIVE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000408",
+          "name": "CAPS 1 & 2 LTR WHITE AND GREEN PLAIN",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000784",
+          "name": "LABEL 1 LTR SO OLIVE BLENDED OLIVE OIL BACK",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000785",
+          "name": "LABEL 1 LTR SO OLIVE BLENDED OLIVE OIL FRONT",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000003",
+          "name": "CARTON 1 LTR POMACE 16 PCS",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "PM0000074",
+          "name": "TAPE CELLO",
+          "unit": "MTR",
+          "quantity_per_case": 0.9652,
+          "quantity_per_piece": 0.060325
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "SO OLIVE",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:50:07.322195+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000189",
+      "old_name": "ZANO POMACE OLIVE 1 LTR 16 PCS",
+      "new_code": null,
+      "new_name": null,
+      "status": "blocked",
+      "reason": "No 20-piece counterpart was returned by the targeted factory catalog search; exact brand/product replacement remains unverified.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000001",
+          "name": "LOOSE REFINED OLIVE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000408",
+          "name": "CAPS 1 & 2 LTR WHITE AND GREEN PLAIN",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000503",
+          "name": "LABEL 1 LTR POMACE FRONT ZANO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000504",
+          "name": "LABEL 1 LTR POMACE BACK ZANO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000409",
+          "name": "CARTON 1 LTR POMACE 16 PCS PLAIN",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 0.96,
+          "quantity_per_piece": 0.06
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "ZANO POMACE",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:50:07.072949+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000116",
+      "old_name": "EXTRA VIRGIN COCONUT OIL 1 LTR 16 PCS",
+      "new_code": "FG0000463",
+      "new_name": "EXTRA VIRGIN COCONUT OIL 1 LTR 20 PCS",
+      "status": "blocked",
+      "reason": "The 20-piece product exists in the factory catalog, but its recipe returned zero components; substitution is blocked until its recipe is available.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000037",
+          "name": "COCONUT EXTRA VIRGIN OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000060",
+          "name": "CAPS 1 & 2 LTR WHITE AND BLUE WITH LOGO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000121",
+          "name": "PET BOTTLE 1 LTR 52 GMS POMACE",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000344",
+          "name": "LABEL 1 LTR EXTRA VIRGIN COCONUT FRONT",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000345",
+          "name": "LABEL 1 LTR EXTRA VIRGIN COCONUT BACK",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000003",
+          "name": "CARTON 1 LTR POMACE 16 PCS",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 0.9652,
+          "quantity_per_piece": 0.060325
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "COCONUT OIL 1",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:49:26.090734+00:00"
+      }
+    },
+    {
+      "old_code": "FG0000187",
+      "old_name": "ZANO EXTRA VIRGIN OLIVE1 LTR 16 PCS",
+      "new_code": null,
+      "new_name": null,
+      "status": "blocked",
+      "reason": "No 20-piece counterpart was returned by the targeted factory catalog search; exact brand/product replacement remains unverified.",
+      "old_pieces_per_case": 16,
+      "new_pieces_per_case": 20,
+      "litres_per_piece": 1,
+      "source_components": [
+        {
+          "code": "RM0000001",
+          "name": "LOOSE REFINED OLIVE OIL",
+          "unit": "LTR",
+          "quantity_per_case": 16.0352,
+          "quantity_per_piece": 1.0022
+        },
+        {
+          "code": "PM0000195",
+          "name": "PET BOTTLE 1 LTR 52 GMS GREEN",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000408",
+          "name": "CAPS 1 & 2 LTR WHITE AND GREEN PLAIN",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000499",
+          "name": "LABEL 1 LTR EXTRA VIRGIN FRONT ZANO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000500",
+          "name": "LABEL 1 LTR EXTRA VIRGIN BACK ZANO",
+          "unit": "PCS",
+          "quantity_per_case": 16.0,
+          "quantity_per_piece": 1.0
+        },
+        {
+          "code": "PM0000409",
+          "name": "CARTON 1 LTR POMACE 16 PCS PLAIN",
+          "unit": "PCS",
+          "quantity_per_case": 1.0,
+          "quantity_per_piece": 0.0625
+        },
+        {
+          "code": "PM0000075",
+          "name": "TAPE LOGO PRINTED",
+          "unit": "MTR",
+          "quantity_per_case": 0.96,
+          "quantity_per_piece": 0.06
+        }
+      ],
+      "replacement_components": [],
+      "evidence": {
+        "catalog_query": "ZANO EXTRA VIRGIN",
+        "old_bom_component_count": 7,
+        "new_bom_component_count": 0,
+        "checked_at": "2026-09-05T23:50:47.024980+00:00",
+        "source_file_observed_at": "2026-09-05T23:50:07.515360+00:00"
+      }
+    }
+  ]
+}

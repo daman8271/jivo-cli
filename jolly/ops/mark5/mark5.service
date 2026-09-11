@@ -1,0 +1,26 @@
+[Unit]
+Description=JIVO MARK V persistent planning service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/mark5/app
+EnvironmentFile=/root/mark5/private/service.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/usr/bin/python3 /root/mark5/app/service/server.py --host 127.0.0.1 --port 8795 --db /root/mark5/data/mark5.sqlite
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/root/mark5/data /root/mark5/private/codex
+TasksMax=96
+MemoryMax=1200M
+CPUQuota=150%
+
+[Install]
+WantedBy=multi-user.target

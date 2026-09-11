@@ -1,0 +1,143 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "explanation": {
+      "type": "string"
+    },
+    "changes": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "prioritize_sku"
+              },
+              "code": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "code"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "set_line_enabled"
+              },
+              "machineId": {
+                "type": "string",
+                "enum": [
+                  "JP Machine",
+                  "Clear Pack",
+                  "10 Head",
+                  "6 Head",
+                  "Tin Head",
+                  "Hitech",
+                  "Samarpan"
+                ]
+              },
+              "enabled": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "type",
+              "machineId",
+              "enabled"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "set_night_line"
+              },
+              "machineId": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "JP Machine",
+                      "Clear Pack",
+                      "10 Head",
+                      "6 Head",
+                      "Tin Head",
+                      "Hitech",
+                      "Samarpan",
+                      "auto"
+                    ]
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "machineId"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "set_run"
+              },
+              "machineId": {
+                "type": "string",
+                "enum": [
+                  "JP Machine",
+                  "Clear Pack",
+                  "10 Head",
+                  "6 Head",
+                  "Tin Head",
+                  "Hitech",
+                  "Samarpan"
+                ]
+              },
+              "code": {
+                "type": "string"
+              },
+              "pieces": {
+                "type": "number"
+              },
+              "shift": {
+                "type": "string",
+                "enum": [
+                  "day",
+                  "night"
+                ]
+              }
+            },
+            "required": [
+              "type",
+              "machineId",
+              "code",
+              "pieces",
+              "shift"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "explanation",
+    "changes"
+  ]
+}

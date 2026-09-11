@@ -1,0 +1,19 @@
+http:
+  routers:
+    mark5-planning:
+      rule: "Host(`mark5.srv1685505.hstgr.cloud`)"
+      entryPoints: [websecure]
+      middlewares: [mark5-ratelimit]
+      service: mark5-planning
+      tls:
+        certResolver: letsencrypt
+  middlewares:
+    mark5-ratelimit:
+      rateLimit:
+        average: 30
+        burst: 60
+  services:
+    mark5-planning:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8795"
