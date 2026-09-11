@@ -1,0 +1,430 @@
+---
+name: cash-voucher
+description: Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills and GRPO prints — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Books ONE A/P invoice draft PER VOUCHER against the holder's FACTORY IMPREST card, copied from that voucher's GRPO so the G/L comes from the GRPO and not from the wording. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft).
+---
+
+# Cash voucher → one A/P draft per voucher, copied from its GRPO
+
+Internal skill. Taught by Daman line by line on **2026-09-10**, against Arvinder
+sir's cash sheet dated 04-09-2026. **Every rule below is a correction he made to
+a draft I had already built.** Follow them; do not re-derive them — the section
+"What I got wrong" at the end records what re-deriving costs.
+
+Shared rules live in `jivo-ap-draft`; RULE 0 in `CLAUDE.md` governs the write.
+
+**What this class is:** a factory cash holder (Arvinder) pays dozens of small
+things in cash out of a ₹5-lakh float and writes a numbered voucher slip for
+each. A Zoho sheet lists them all. Each voucher becomes **its own A/P invoice
+against his FACTORY IMPREST card**, reducing the float JIVO already advanced him.
+
+It is **not** an expense claim: nobody is being reimbursed, and the sheet's rows
+name the people he *paid*, not the claimant. The claimant is the sheet's title.
+
+---
+
+## The paper — four documents per voucher
+
+A DocScanner pack per voucher, typically 3 pages, plus the sheet:
+
+| Paper | What it gives you |
+|---|---|
+| **Supplier's bill** (Estimate Bill / handwritten yellow slip) | the **document date**, the bill ref, the line items, JIVO's gate stamp (`G.No.`) |
+| **The cash voucher slip** (JIVO WELLNESS VOUCHER, No. + Dated) | the **voucher number**, the **posting date**, the **costing date**, and the handwritten **budget** mark |
+| **The GRPO print** (SAP "Goods Receipt Note") | the **G/L account**, item, dims, tax, HSN, qty, price — and the `DocEntry` to copy from |
+| **The cash sheet** ("front sheet") | the **bunch** total, and the `Unit` column |
+
+---
+
+## 🔴 RULE 0 — ONE DRAFT PER VOUCHER, COPIED FROM ITS GRPO
+
+**Daman: "create an entry under indirect expenses, pick the GL from GRPO, make
+sure separate entry pass for every voucher, attachment must be made with that of
+the cash voucher, and in remarks proper voucher number along with the amount must
+be mentioned."**
+
+A cash voucher that bought **goods** was raised as a **PO → GRPO against the
+imprest card** before it reached you. The A/P invoice is a **copy of that GRPO**:
+
+```json
+{"BaseType": 20, "BaseEntry": <grpoDocEntry>, "BaseLine": <n>}
+```
+
+`DocType` is **`dDocument_Items`**, not service. One line per GRPO line.
+
+**What the copy brings, and you must not touch:** the item, the **G/L account**,
+the tax code, the HSN entry, the warehouse, the quantity, the price, **Dim1** and
+**Dim5**.
+
+**What the copy gets WRONG and you must set by hand on every line:**
+
+| Field | Set to | Why the copy is wrong |
+|---|---|---|
+| `CostingCode2` (Dim2, costing date) | month of the **voucher slip's** date | copy carries the GRPO's month |
+| `CostingCode3` (Dim3, budget) | from the **slip's handwritten mark** | copy carries the GRPO's `Factory` |
+| `U_Remarks` | `VCH <no> - RS <amount>` | copy carries nothing |
+
+### Never pick the G/L from the wording — it is wrong about half the time
+
+Measured on this sheet, guessing from the row's words versus reading the GRPO:
+
+| Vch | Row wording | Guessed | GRPO's item → actual G/L |
+|---|---|---|---|
+| 437 | "some chemical for park maintain use" | R&M Building 5650001 ❌ | `CG0000005` HOUSEKEEPING → **5680015 HOUSE KEEPING** |
+| 435 | "mcb for G.C lab use" | Lab & Testing 5680013 ❌ | `CG0000003` → **5650016 R&M PLANT & MACHINERY** |
+| 436 | "tape roll for w.g plant use" | Stationery 5680012 ❌ | `CG0000021` TAPE ROLL → **5100006 PACKAGING MATERIALS** |
+| 434 | "room temp machine" | R&M Plant 5650016 ❌ | `CG0000007` → **5650001 R&M OFFICE & BUILDING** |
+
+**Four wrong out of nine.** The item on the GRPO decides the head. §7's map is a
+last resort for a voucher with no GRPO at all, and nothing more.
+
+### Find the voucher's GRPO
+
+Open GRPOs on the imprest card carry `NumAtCard` = **`<amount>/<dd-mm-yy>`**
+(`5190/31-08-26`) — the supplier's bill reference. Match the amount, confirm with
+the `G.No.` printed in the GRPO's Remarks against the gate stamp on the bill.
+
+```sql
+SELECT h."DocEntry", h."DocNum", h."DocDate", h."NumAtCard", h."DocTotal",
+       l."ItemCode", l."Dscription", l."AcctCode", l."OcrCode", l."OcrCode3"
+FROM   <DB>.OPDN h JOIN <DB>.PDN1 l ON l."DocEntry" = h."DocEntry"
+WHERE  h."CardCode" = '<imprest card>' AND h."CANCELED" = 'N'
+  AND  h."DocStatus" = 'O' AND l."LineNum" = 0
+ORDER  BY h."DocDate";
+```
+
+`DocStatus 'O'` + line `TargetType = -1` = not yet copied. A **closed** GRPO
+already has its A/P — never copy it twice.
+
+---
+
+## 1 · Dates — THREE papers, THREE different dates
+
+**This is where the most corrections landed.** SAP's screen labels do not match
+the OData field names, and I got them backwards:
+
+| SAP B1 screen | OData field | Reads from | Voucher 437 |
+|---|---|---|---|
+| **Posting Date** | **`DocDate`** | the **cash voucher slip** | slip 01/09/26 → **2026-09-01** |
+| **Document Date** | **`TaxDate`** | the **supplier's bill** | bill 31-08-26 → **2026-08-31** |
+| — | `DocDueDate` | follows `DocDate` | 2026-09-01 |
+| Costing date = Dim2 | `CostingCode2` | the **voucher slip** | 01/09/26 → **`09-2026`** |
+| — | `Series` | the month **`DocDate`** lands in | **3325** (Sep) |
+
+So a voucher routinely **posts in one month against a bill from the previous
+one**, and costs to the posting month. That is correct, not a mismatch to fix.
+Precedent confirms it: posted doc 50035 has posting date 06-08-2026 against
+document date 31-07-2026.
+
+**There is no "Costing Date" column.** Checked every column and UDF of `ODRF` and
+`DRF1` — none is it. The costing date **is** Dimension 2, written as the
+`MM-YYYY` code. Confirm the code is active in `OOCR` `DimCode = 2` first.
+
+**Series (BPL 2, A/P invoice, `NNM1 ObjectCode 18`)** — the `HR_B` family, not
+`HR_D`:
+
+| Month | Oil | Bev |
+|---|---|---|
+| Jul-26 | 3323 | 2677 |
+| Aug-26 | 3324 | 2678 |
+| Sep-26 | **3325** | **2679** |
+| Oct-26 | 3326 | 2680 |
+
+Probe an unknown month rather than guessing — a wrong number is refused safely
+with `[SAP -10] 10000521 … define the numbering series`. Check the period is open
+(`OFPR.PeriodStat = 'N'`).
+
+⚠️ **Patching `Series` silently resets `TaxDate` to `DocDate`.** It happened on
+56767: one PATCH set `DocDate` 01-09 + `Series` 3325 + `TaxDate` 31-08, and the
+read-back showed `TaxDate` had become 01-09. **Send `TaxDate` again in a second
+PATCH and read it back.**
+
+## 2 · `NumAtCard` (Vendor Ref. No.) — the bunch is that table's OWN total
+
+```
+<MON> YY / <bunch> / <this document's total>
+```
+
+**The bunch is the printed Total of the table the voucher sits in — NOT the two
+tables added together.** Daman: *"bunch no. is wrong — 39940 was the bunch for
+ours but it is written here 49097."*
+
+The 04-09-2026 sheet has **two** bunches:
+
+| Table | Bunch | Example |
+|---|---|---|
+| `Common` / `Canola` → **Oil** | **39940** | `AUG 26/39940/5190` (vch 437) |
+| `Wg` → **Beverages** | **9157** | `<MON> 26/9157/<amount>` |
+
+**Month prefix follows the DOCUMENT date (the bill), not the posting date.**
+Voucher 437 posts 01-09-2026 but its bill is 31-08-26, so the prefix is
+**`AUG 26`**. Precedent 50035 proves it: posted 06-08-2026, document date
+31-07-2026, `NumAtCard` `JUL 26/32820/3800`. Three letters — `AUG 26`, never
+`AUGUST 26` or `SEPT`.
+
+*A trap for whoever reads the history: grouping posted docs on the middle token
+does show some complete batches summing to it across two books (`64544` = Oil
+48,934 + Bev 15,610, exact). That is not the rule. Take the bunch off the sheet.*
+
+## 3 · `U_Remarks` = voucher number **AND** amount
+
+**`VCH 437 - RS 5190`**, on **every** line of the draft. `NVARCHAR(100)`.
+
+Older posted lines carry the bare number (230, 226, 205 …). Daman changed this on
+2026-09-10 — **the amount goes in too**, on every line.
+
+## 4 · Dim3, the budget — read the paper, never the GRPO (C-0027)
+
+The **voucher slip** carries a handwritten allocation mark, and the cash sheet
+repeats it in the `Unit` column. `Common` → **`FACT_COM`** (FACTORY COMMON).
+The GRPO says `Factory`; **the paper overrides it, every time.**
+
+Daman: *"Budget is wrong on all. It should be common."* — draft 56767 had been
+built as a clean GRPO copy and carried `Factory` on all four lines, even though
+the slip had `Common` underlined in the CREDIT block **and** the sheet's `Unit`
+column said `Common`. Two independent tellings, both ignored because the copy
+looked complete.
+
+`Canola` → **ASK.** Not yet confirmed; do not assume `Factory`.
+
+## 5 · Whose imprest — the card differs per book
+
+| Book | CardCode | Name |
+|---|---|---|
+| Oil (`JIVO_OIL_HANADB`) | **`ORGV000465`** | ARVINDER SINGH IMPREST JWPL0115 FACTORY IMPREST 5 LAKH |
+| Beverages (`JIVO_BEVERAGES_HANADB`) | **`ORGV000245`** | same name |
+| Mart (`JIVO_MART_HANADB`) | `ORGV000217` | same name |
+
+`ORGV000019` (plain, no "FACTORY IMPREST") is the decoy — never use it. **Never
+clone a CardCode across books** ([[sap-named-connections]]). Match names in code,
+not by OData filter (`toupper` unsupported; C-0036).
+
+Other holders carry this class historically: `ORGV000041` BHUPINDER SINGH GINNI,
+`ORGV000207` LOVPREET SINGH.
+
+## 6 · The `Unit` column — which book
+
+| Unit | Book |
+|---|---|
+| **`Wg`** (water / beverage / "w.g plant") | **Beverages** |
+| **`Canola`** | **Oil** |
+| **`Common`** | **Oil** (and Dim3 `FACT_COM`, §4) |
+
+**Dim1 and Dim5 come from the GRPO** — do not derive them. The Bev GRPOs of
+29–31 Aug 2026 carry Dim1 **`DRINKS`**, not the `WATER` the posted service lines
+use; both are live Bev codes. Only a voucher with no GRPO needs a Dim1 chosen,
+and then it is `CANOLA` (Oil) / `WATER` (Bev), with `HR` for Dim5.
+
+## 7 · Expense-head map — ONLY for a voucher with no GRPO
+
+**Read RULE 0 first.** If the voucher has a GRPO this table is wrong by
+construction. Use it only when no open GRPO matches, and **say out loud** that
+you picked the head rather than inherited it.
+
+| Row says | Account |
+|---|---|
+| kitchen — vegetables, wood, tissue paper, canteen | 5630004 REFRESHMENT |
+| medicine, hospital, safety shoes | 5630003 STAFF WELFARE |
+| plant/machine repair, motor rewind, lathe work, welding repair | 5650016 R&M PLANT & MACHINERY |
+| building fittings, park/grounds upkeep, hardware | 5650001 R&M OFFICE & BUILDING |
+| housekeeping, cleaning/treatment chemicals | 5680015 HOUSE KEEPING |
+| packing tape, wrap | 5100006 PACKAGING MATERIALS EXPENSES |
+| puncture, service, repair — **four-wheelers** | 5650002 R&M VEHICLE *(vehicle Dim1)* |
+| fuel/CNG — four-wheelers | 5650015 FUEL - VEHICLES *(vehicle Dim1)* |
+| Fastag, toll | 5660005 TOLL EXPENSE - VEHICLES |
+| taxi, trip, factory→city travel, **every two-wheeler cost** (C-0067) | 5690002 CONVEYANCE *(Dim1 `CANOLA`/`WATER`, never a vehicle — C-0070)* |
+| porter/coolie charge, unloading, loading | 5670002 UNLOADING/LOADING CHARGES-INDIRECT |
+| internet, mobile recharge | 5680003 TELEPHONE MOBILE AND INTERNET |
+| printer cartridge, paper, stationery | 5680012 PRINTING AND STATIONERY |
+| lab chemicals, GC/lab parts, testing | 5680013 LAB AND TESTING |
+| courier, parcel | 5680023 POSTAGE & COURIER |
+| legal papers, notary, stamp | 5680025 LEGAL AND PROFESSIONAL |
+| CETP / effluent | 5680010 CETP CHARGES |
+| electricity, bank charge paid in cash | 5680011 / 5610003 |
+
+`5680000 GENERAL EXPENSES` is not a bucket (C-0071).
+
+### A staff ADVANCE row is not an expense
+
+"cash paid advance to <name> (deduct of <month> salary)" goes to that person's own
+**`<NAME> ADVANCE JWPL####`** account — precedent `11133156 SACHIN ADVANCE
+JWPL2159` ₹1,000, `11133259 RIJVAN ADVANCE JWPL2764` ₹2,500.
+
+**If no such account exists for them, HOLD that row and say so.** Do not park it
+in an expense head or a generic staff debtor. Voucher 429 (₹5,000 to Mahesh
+Kumar, new driver) was held for exactly this. Creating the ledger is master data,
+an admin's job. State the arithmetic: *"₹34,940 entered + ₹5,000 held = ₹39,940
+printed."*
+
+## 8 · Attach — the voucher, the GRPO's file, and the front sheet
+
+**Three lines on the draft's OWN `Attachments2` row.** Never point two documents
+at one row.
+
+| Line | File |
+|---|---|
+| 1 | the **cash voucher pack** — slip + supplier's bill (+ GRPO print), named `CASH-VCH-<no>-<dd-mm-yyyy>.pdf` |
+| 2 | the **GRPO's own file** — download `Attachments2(<grpo AtcEntry>)/$value` and re-upload |
+| 3 | the **cash sheet / front sheet** — `CASH-SHEET-FRONT-<HOLDER>-<date>.pdf` |
+
+Daman, 2026-09-10: *"this front sheet — this also normally goes through it."*
+The cash sheet goes on **every** voucher's draft, in both books.
+
+Follow `jivo-ap-draft/reference/attachments-upload.md`; `-H "Expect:"` is
+load-bearing. Class-specific traps:
+
+- **`[SAP -1116] (1120026) Attachment Size Should be Less Than 1 MB`** — the cap
+  is **per FILE, not per row** (761 + 115 + 463 KB on one row was accepted).
+  Re-render a fat photographed pack:
+  `pdftoppm -r 100 -jpeg -jpegopt quality=45 pack.pdf out/pg` then
+  `magick out/pg-*.jpg -quality 45 pack-small.pdf` (13 pages, 4.1 MB → 738 KB).
+  **Spot-check a page** — the voucher number and amount must stay readable — and
+  say in the report that the attached copy is a re-render.
+- Stamp `U_CHK = <size KB>`, `U_CHK2 = 'OK'` on **every** line *before* patching
+  `AttachmentEntry`, or SAP refuses with `-1116 (1120025)` (C-0082). Every book's
+  `ATC1` has both UDFs.
+- SAP **auto-renames** a filename already on the share (name + ddmmyyyy + time).
+  Harmless; the file is correct.
+- A refused `AttachmentEntry` patch leaves an **orphan `Attachments2` row**. It is
+  harmless and cannot be deleted from this CLI — report it, don't hide it.
+- Prove it: pull `$value` back and `cmp`. For any line but the first the filename
+  selector must be **quoted**: `$value?filename='NAME.pdf'`.
+
+## 9 · Editing a draft after the fact
+
+- **Field-only PATCH is safe** — dims, remarks, dates, `NumAtCard`. Send the
+  **complete** `DocumentLines` array with every `LineNum` (a partial collection
+  rewrites what you omit), then read the whole line back. Verified on 56767:
+  G/L, Dim1/5, tax, HSN, prices, remarks, `AttachmentEntry`, `DocTotal` all
+  survived.
+- **Changing the line COUNT by PATCH corrupts the price fields** — rebuild
+  instead (`jivo-service-vehicle-expense` §8): detach
+  (`{"AttachmentEntry": null}`) → `sapb1 delete draft` → create fresh. Detaching
+  first means the `--with-attachment` override is not needed and all six delete
+  guards pass on a same-day draft of your own.
+- **All drafts in one series share the same provisional `DocNum`.** Four drafts in
+  series 3325 all read `626093102`. **Report `DocEntry`, never `DocNum`.**
+
+## 10 · ₹10,000 cap
+
+**Daman, 2026-09-10: "10k is the hard limit."** No cash-voucher document may
+exceed **₹10,000**.
+
+With one draft per voucher (RULE 0) this almost never bites — a single voucher is
+rarely over ₹10,000. **If one is, stop and tell the operator.** Do not split the
+voucher and do not merge vouchers to pack documents. Context, not a lecture:
+s.40A(3) disallows cash expenditure over ₹10,000 to one person in one day.
+
+## 11 · Read the sheet — and prove the reading
+
+**The sheet prints its own Total per table. Sum your transcription and match it
+before building anything.** Phone scans are skewed, so voucher numbers sit
+visually a line above their data and an off-by-one looks plausible. The printed
+total is the checksum — on the 04-09-2026 sheet both tables tied to the rupee
+(9,157 and 39,940), and that, not careful reading, is what proved the alignment.
+
+- Render at 500 dpi and crop into bands; `-r 200` is not enough for the Amount
+  column.
+- Cross-check any voucher whose slip you have against its own bills
+  (405 = 705 + 150 + 400 + 532 = 1,787 ✓).
+- **A repeated pencil mark on every row is a tick-off, not a dimension.** Only a
+  mark that *varies* between rows carries information (contrast
+  `jivo-service-vehicle-expense` §2, where TR/BO/F genuinely set Dim3).
+- If a table prints no total, say so — do not proceed as if it had.
+
+## 12 · Stop at the draft
+
+`WddStatus` stays `-`. The draft reaches nobody until a human presses **Add** in
+*Purchasing – A/P → Purchasing Reports → Document Drafts Report* (tick **A/P
+Invoice**, **Open Only**, **User = the creating login**, and a **posting-date
+range that covers the posting date** — a September filter will not show an
+August-posted draft). `ODRF.OwnerCode` is NULL, so anyone can Add it once the
+User dropdown is changed.
+
+`sapb1 add-draft` is **only** for a login an Always-terms template names (Oil 103
+/ Mart 48 / Bev 68 → USER39, USER08). From USER07 or any other login it refuses,
+and that refusal is correct — `jivo-add-and-new`, C-0078.
+
+---
+
+## Worked example — voucher 437, end to end
+
+Paper: **Estimate Bill** from NEW SWAMI KHAD & BEEJ BHANDAR (Ganaur) ₹5,190 dated
+31-08-26, gate stamp `G.No.639` · **voucher slip 437** dated 01/09/26 "Cash Paid
+to Jasmeet ji for Purchase Some Chemical for Park Maintain use ₹5190/-", marked
+`Common`, ₹100 revenue stamp · **GRPO print** 2026086899 (DocEntry 26374, PO
+220826156) · the cash sheet.
+
+```json
+{ "CardCode": "ORGV000465", "DocType": "dDocument_Items",
+  "DocumentSubType": "bod_None",
+  "DocDate": "2026-09-01", "TaxDate": "2026-08-31", "DocDueDate": "2026-09-01",
+  "NumAtCard": "AUG 26/39940/5190", "Series": 3325,
+  "BPL_IDAssignedToInvoice": 2, "SalesPersonCode": 7, "WTLiable": "tNO",
+  "Comments": "BEING EXPENSE BOOKED AGAINST HOUSE KEEPING 5190/-, CASH VCH 437 DT 01-09-26, BILL 5190/31-08-26 NEW SWAMI KHAD & BEEJ BHANDAR, G.NO.639",
+  "DocumentLines": [
+    {"BaseType":20,"BaseEntry":26374,"BaseLine":0,"U_Remarks":"VCH 437 - RS 5190","CostingCode2":"09-2026","CostingCode3":"FACT_COM"},
+    {"BaseType":20,"BaseEntry":26374,"BaseLine":1,"U_Remarks":"VCH 437 - RS 5190","CostingCode2":"09-2026","CostingCode3":"FACT_COM"},
+    {"BaseType":20,"BaseEntry":26374,"BaseLine":2,"U_Remarks":"VCH 437 - RS 5190","CostingCode2":"09-2026","CostingCode3":"FACT_COM"},
+    {"BaseType":20,"BaseEntry":26374,"BaseLine":3,"U_Remarks":"VCH 437 - RS 5190","CostingCode2":"09-2026","CostingCode3":"FACT_COM"}
+  ] }
+```
+
+→ draft **56767**, ₹5,190, VatSum 0. Read back: `CG0000005` / **5680015 HOUSE
+KEEPING** / `CANOLA` / `HR` / `IGST@0` / HSN 237 / LocCode 2 all inherited from
+the GRPO; Dim2 and Dim3 set by hand. Attachment row 176525 carries the voucher
+pack (761 KB), the GRPO's bill photo (115 KB) and the front sheet (463 KB), all
+`U_CHK2='OK'` and all read back byte-identical.
+
+`Comments` shape, **≤ 254 characters** (`[SAP -8112] … Value too long` above it):
+
+```
+BEING EXPENSE BOOKED AGAINST <HEAD> <total>/-, CASH VCH <no> DT <dd-mm-yy>,
+BILL <ref> <SUPPLIER>, G.NO.<n>
+```
+
+---
+
+## What I got wrong, so nobody repeats it
+
+Every one of these was a correction Daman made to draft 56767 **after** I had
+built it and reported it as finished.
+
+| # | Field | I had | Correct | Root cause |
+|---|---|---|---|---|
+| 1 | Document shape | one draft per book, grouped to fill the ₹10k cap | **one draft per voucher** | invented a grouping rule from posted history instead of asking |
+| 2 | G/L | hand-picked from the row's wording | **from the GRPO's item** | never looked for a GRPO; assumed the class was service-only |
+| 3 | Dim3 budget | inherited the GRPO's `Factory` | **`FACT_COM`** from the slip's "Common" | treated a GRPO copy as authoritative for *everything* (C-0027 was in context and ignored) |
+| 4 | Dim2 costing | inherited the GRPO's `08-2026` | **`09-2026`** from the slip's date | same |
+| 5 | Vendor ref bunch | `49097` (both tables added) | **`39940`** (that table's own Total) | trusted an inference from history over the sheet in hand |
+| 6 | Posting date | 31-08-2026 | **01-09-2026** (slip's date) | mapped SAP's screen label "Document Date" to `DocDate` instead of `TaxDate` |
+
+**The pattern in all six: a derived rule beat the paper in front of me.** The
+paper wins. When a GRPO and a slip disagree, the slip wins for Dim2/Dim3 and the
+GRPO wins for the G/L — and when neither is clear, ask instead of inferring.
+
+---
+
+## Pre-flight — tick before `--yes`
+
+- [ ] transcription **summed and matched to that table's printed Total**
+- [ ] **every voucher searched for an open GRPO** (amount + `G.No.`); where one
+      exists the draft is a **copy** and no G/L, item, tax, HSN, Dim1 or Dim5 is
+      set by hand
+- [ ] **one draft per voucher** — never grouped, never split
+- [ ] FACTORY IMPREST `ORGV…` for **this book** — not the plain twin, not another
+      book's code
+- [ ] `DocDate` (posting) = the **voucher slip's** date
+- [ ] `TaxDate` (document) = the **supplier's bill** date
+- [ ] `Series` = `HR_B<MMYY>` for **`DocDate`**'s month, period open; if `Series`
+      was patched, **`TaxDate` re-sent and read back**
+- [ ] `CostingCode2` = month of the **slip's** date, on every line
+- [ ] `CostingCode3` = the **slip's** mark (`Common` → `FACT_COM`), on every line
+- [ ] `U_Remarks` = `VCH <no> - RS <amount>`, on every line
+- [ ] `NumAtCard` = `<bill's MON> YY/<that table's Total>/<this doc's total>`
+- [ ] `VatSum` 0; `WTLiable` tNO
+- [ ] `Comments` ≤ 254 chars
+- [ ] attachment row carries **voucher pack + GRPO's file + front sheet**, every
+      file < 1 MB, `U_CHK2='OK'` on each, `$value` read back and `cmp`'d
+- [ ] advance rows on a named `ADVANCE` ledger or **held**, with the arithmetic
+      stated
+- [ ] `DocEntry` reported, never `DocNum`
