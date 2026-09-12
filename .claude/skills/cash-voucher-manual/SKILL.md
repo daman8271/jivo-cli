@@ -1,6 +1,6 @@
 ---
 name: cash-voucher-manual
-description: CASH VOUCHER TYPE 3 — the voucher with NO GRPO and NO BILL, just the slip. Use when a JIVO WELLNESS voucher slip arrives on its own, or a cash-sheet row has no paper behind it — punctures, car and bike repairs, conveyance, porter and coolie charges, kitchen and refreshment, medical, staff welfare, small hardware. Books ONE A/P service draft per voucher against the holder's FACTORY IMPREST card, expense head picked from the wording, tax code Exampt, vendor ref = the bunch reference off the cash sheet. Not for a voucher with a Goods Receipt Note behind it (cash-voucher-1-grpo) and not for one with a registered vendor's GST invoice (cash-voucher-bill).
+description: CASH VOUCHER TYPE 3 — the voucher with NO GRPO and NO BILL, just the slip. Use when a JIVO WELLNESS voucher slip arrives on its own, or a cash-sheet row has no paper behind it — punctures, car and bike repairs, conveyance, porter and coolie charges, kitchen and refreshment, medical, staff welfare, small hardware. GROUPS many such vouchers onto ONE A/P service draft against the holder's FACTORY IMPREST card - one line per voucher, whole amount on one head picked from the wording, no document over Rs 10,000 and never spanning a month; tax code Exampt, vendor ref = the bunch reference off the cash sheet. Not for a voucher with a Goods Receipt Note behind it (cash-voucher-1-grpo) and not for one with a registered vendor's GST invoice (cash-voucher-bill).
 ---
 
 # Cash voucher · TYPE 3 · the MANUAL voucher — slip only
@@ -69,6 +69,28 @@ paper that can justify any of them is the slip and its row on the cash sheet.
 
 `DocType` is **`dDocument_Service`** — `AccountCode`, no `ItemCode`, and
 **`UnitPrice`, never `LineTotal`**.
+
+## 0 · Shape — these vouchers are GROUPED, one line each
+
+**This type does NOT get one draft per voucher** (Daman, 2026-09-12). Many manual
+vouchers ride on **one A/P against the imprest card**, subject to three limits:
+**≤ ₹10,000 per document**, **never spanning a month**, and **never splitting one
+voucher across two documents**. Full rule, with the worked split of the
+04-09-2026 sheet into ₹7,403 (Aug) + ₹1,236 (Sep): `cash-voucher` →
+**Document shape**.
+
+`DocDate` = the **latest voucher date in the group**; `Series` = `HR_B` for that
+month; `NumAtCard`'s third token = **this document's** total.
+
+**One voucher = one line, whole amount, one head.** Voucher 420 (₹2,770 of printer
+cartridges + a ₹600 LED stand) is **one line of ₹3,370 on `5680012`** — not two.
+Split a voucher into two lines **only when the parts take different dimensions**:
+vouchers 448/449 list food, fuel and toll, and fuel and toll carry the **vehicle**
+Dim1 while food carries `CANOLA`, so those genuinely need separate lines. A
+different-sounding name is not a reason.
+
+`U_Remarks` on every line = **that line's own voucher number**, so a nine-line
+document still traces line-by-line back to nine slips.
 
 ## 1 · Whose imprest, and whose name on the document
 
@@ -149,6 +171,13 @@ cash vouchers use.
 Nothing is inherited, so the **wording of the slip is all you have**. Use the map
 in `cash-voucher` §7, and state in your report that you *chose* the head.
 
+**🔴 Then check the head against the card's own history before you send it** —
+`cash-voucher` → **Before you use a head you CHOSE**. A head this card has never
+used is wrong until proven otherwise. That one query caught voucher 443, where
+"some legal documents" (stamp paper + notary for a rent agreement) had gone to
+LEGAL AND PROFESSIONAL instead of **PRINTING AND STATIONERY** — an account
+Arvinder's imprest card has never touched in its life.
+
 Voucher 446: "Car Puncture" → **`5650002` REPAIR & MAINTENANCE VEHICLE**.
 
 **The four-wheeler / two-wheeler split is a real fork (C-0067, C-0070):**
@@ -195,7 +224,7 @@ Where the voucher names no vehicle and no variety: **`CANOLA`** for Oil,
 | Dim | Field | Value |
 |---|---|---|
 | 2 | `CostingCode2` | `MM-YYYY` of the **slip's** date — `09-2026` for voucher 446 |
-| 3 | `CostingCode3` | **`FACT_COM`** when the slip is marked **Common**, else `Factory` |
+| 3 | `CostingCode3` | **`Del Bkhp`** if a **dispatch invoice** is attached; else **`FACT_COM`** if the slip says **Common**; else `Factory` — full order in `cash-voucher` → **Dim3, the budget** |
 | 5 | `CostingCode5` | `HR` |
 
 **🔴 Dim2 and the `NumAtCard` month legitimately disagree.** Voucher 446 is
@@ -312,13 +341,20 @@ this type the answer is usually **the cash sheet**.
 - [ ] `TaxCode` **`Exampt`**, `VatSum` 0
 - [ ] head chosen from the wording, four-wheeler vs two-wheeler fork checked, and
       **said out loud** that it was chosen
+- [ ] every chosen head has **prior use on this card** (zero-history check); a
+      head the card has never used is stopped, not sent
 - [ ] Dim1 = the **vehicle** if the slip brackets one (match on the registration
       digits), else `CANOLA`/`WATER`
 - [ ] Dim2 = the **slip's** month (may differ from the `NumAtCard` month — fine)
+- [ ] Dim3 decided in order: **dispatch invoice → `Del Bkhp`**, else Common →
+      `FACT_COM`, else `Factory` (a supplier's bill is NOT a dispatch invoice)
 - [ ] Dim3 from the **tile-zoomed** slip; Dim5 `HR`
 - [ ] `U_Remarks` = the **bare voucher number**; description empty; `Comments` blank
 - [ ] `UnitPrice` set, not `LineTotal`
-- [ ] document **≤ ₹10,000**
+- [ ] **grouped** ≤ ₹10,000 per document, group never spans a month, no voucher
+      split across two documents; `DocDate` = the latest voucher date in the group
+- [ ] **one line per voucher**, whole amount on one head — two lines only when the
+      parts take different dimensions
 - [ ] advance rows on a named `ADVANCE` ledger or **held**, arithmetic stated
 - [ ] slip attached, < 1 MB, `U_CHK2='OK'`, `$value` `cmp`'d
 - [ ] **`DocEntry`** reported with the Document Drafts Report filters

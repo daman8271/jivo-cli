@@ -1,6 +1,6 @@
 ---
 name: cash-voucher
-description: PARENT skill for JIVO cash vouchers — routes to the right TYPE. Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Books ONE A/P invoice draft PER VOUCHER against the holder's FACTORY IMPREST card, copied from that voucher's GRPO so the G/L comes from the GRPO and not from the wording. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft).
+description: PARENT skill for JIVO cash vouchers — routes to the right TYPE. Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Routes each voucher to its type, then GROUPS the plain ones onto one A/P invoice against the holder's FACTORY IMPREST card - many vouchers, one line each, no document over Rs 10,000 and never spanning a month. A voucher with a GRPO behind it, or one made out to its own vendor, keeps its own draft. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft).
 ---
 
 # Cash voucher → one A/P draft per voucher, copied from its GRPO
@@ -58,6 +58,57 @@ that was the main mistake on 2026-09-12.
 Set by Daman on **2026-09-12**. These override anything type-specific below or in
 a child skill.
 
+### Document shape — GROUP the plain vouchers, ONE LINE each
+
+**Daman, 2026-09-12, superseding the one-draft-per-voucher rule below:**
+*"We can write this all together in one AP — except the GRPO ones and the
+vouchers which have different parties. Make sure the total of an AP invoice
+does not exceed ₹10,000; if you have multiple vouchers just divide it in 2 or
+3 APs."*
+
+| Voucher | Document |
+|---|---|
+| type 3 · MANUAL, and any type-1 voucher whose G/L you keyed by hand | **grouped** — many vouchers on ONE A/P against the imprest card |
+| **type 1 · GRPO** (a real `BaseType 20` copy) | **its own draft**, always — a copy carries one GRPO |
+| **type 2 · BILL** (its own party) | **its own draft**, always — a different `CardCode` cannot share a document |
+
+**Three limits on a group, in this order:**
+
+1. **≤ ₹10,000 per DOCUMENT.** Over that, split into 2 or 3 A/Ps. (s.40A(3).)
+2. **Never span a month.** A document has one posting date, one series and one
+   period. The 04-09-2026 sheet split into **August → `HR_B0826`** (₹7,403) and
+   **September → `HR_B0926`** (₹1,236). Do not push an August voucher into a
+   September document to balance the cap.
+3. **Never split ONE voucher across two documents.** The voucher is atomic; the
+   group is what flexes.
+
+`DocDate` = the **latest voucher date in the group**. `NumAtCard`'s third token
+is **this document's own total**, not a voucher's — `AUG 26/39940/7403`.
+
+### One voucher = ONE line, under ONE head
+
+**Daman, 2026-09-12, on voucher 420:** *"In row 2 and 3 you divided voucher 420
+into printing-and-stationery and repair-and-maintenance-office. Instead we just
+book it under printing and stationery with the whole amount."*
+
+Voucher 420 is ₹3,370 — a printer-cartridge bill of ₹2,770 and a ₹600 LED stand.
+I gave it two lines on two heads. **It gets one line of ₹3,370 on `5680012`.**
+The head that describes the voucher takes the whole amount; a sub-item that rode
+along on the same purchase does not earn its own head. (Draft 56910, keyed by
+hand, does exactly this — I had the answer in front of me and split anyway.)
+
+**The one exception — the voucher itemises genuinely different expense types
+that carry different dimensions.** Vouchers 448 and 449 are dispatch trips that
+list food, CNG and toll separately; fuel and toll take the **vehicle** Dim1 and
+food takes `CANOLA`, so they cannot share a line. Two lines there is right, and
+56910 splits them the same way.
+
+**The test:** would the two parts take different **dimensions**? Then split.
+Only a different-sounding *name* is not enough.
+
+Every line carries `U_Remarks` = **its own voucher's number**, so each line
+traces back to one slip even inside a group of nine.
+
 ### Tax code — `Exampt`, unless a bill in the pack shows GST
 
 **Daman: "tax code would be Exempt unless there is GST on any bill provided —
@@ -75,6 +126,33 @@ cash vouchers use `Exampt` (56884, 56910, 56911 all `Exampt`).
 **This applies even when the line is a GRPO copy.** The copy arrives carrying the
 GRPO's code, usually `IGST@0`; override it to `Exampt` unless a GST bill is in the
 pack. Both are 0%, so no amount moves.
+
+### Dim3, the budget — decide in this order
+
+**Daman, 2026-09-12:** *"If any voucher has an invoice attached to it then its
+budget would be DEL-BHKR. Right now it is 449 and 448."*
+
+| # | If | `CostingCode3` |
+|---|---|---|
+| 1 | the voucher has an **invoice** attached to it | **`Del Bkhp`** (Delivery Bhakharpur) |
+| 2 | the slip is marked **Common** | **`FACT_COM`** (Factory Common) |
+| 3 | neither | **`Factory`** |
+
+**"Invoice" here means the DISPATCH invoice, not a supplier's bill.** Vouchers 448
+and 449 are the `No.9959` material-dispatch trips — the driver's food, CNG and
+toll for a delivery run — and each slip carries the JIVO **sale invoice** for the
+consignment it served. That is what moves the cost to Delivery Bhakharpur.
+
+A supplier's own bill does **not** trigger it, and that is measured on this same
+sheet: vouchers 416 (electrician's bill), 420 (two shop bills) and 430 (clinic
+slip) all have paper attached and all stay on `Factory` / `FACT_COM`.
+
+⚠️ **Untested: a slip marked `Common` that ALSO carries a dispatch invoice.** No
+voucher on the 04-09-2026 sheet is both. Ask rather than assume the order above
+resolves it.
+
+Confirm any code is live before sending it:
+`SELECT "OcrCode","OcrName" FROM <DB>.OOCR WHERE "DimCode"=3 AND "Active"='Y';`
 
 ### Vendor Ref. No. — `<MON> YY/<bunch>/<this document's total>`
 
@@ -130,7 +208,12 @@ A DocScanner pack per voucher, typically 3 pages, plus the sheet:
 
 ---
 
-## 🔴 RULE 0 — ONE DRAFT PER VOUCHER, COPIED FROM ITS GRPO
+## 🔴 RULE 0 — a GRPO voucher is COPIED FROM ITS GRPO, in its own draft
+
+> ⚠️ **The "one draft per voucher" half of this rule was superseded on
+> 2026-09-12** — plain (type-3) vouchers are now GROUPED onto one A/P under the
+> ₹10,000 cap. See **Document shape** above. A voucher that is a real GRPO copy
+> still gets its own draft, and that is what the rest of this section is about.
 
 **Daman: "create an entry under indirect expenses, pick the GL from GRPO, make
 sure separate entry pass for every voucher, attachment must be made with that of
@@ -309,11 +392,41 @@ Other holders carry this class historically: `ORGV000041` BHUPINDER SINGH GINNI,
 use; both are live Bev codes. Only a voucher with no GRPO needs a Dim1 chosen,
 and then it is `CANOLA` (Oil) / `WATER` (Bev), with `HR` for Dim5.
 
+### 🔴 Before you use a head you CHOSE, ask the card if it has ever used it
+
+One query, and it is not optional. It caught the only wrong head in a batch of
+nine on 2026-09-12, with no false alarms:
+
+```sql
+SELECT l."AcctCode", a."AcctName", COUNT(*) AS TIMES_USED, MAX(h."DocDate") AS LAST_USED
+FROM   <DB>.OPCH h JOIN <DB>.PCH1 l ON l."DocEntry" = h."DocEntry"
+JOIN   <DB>.OACT a ON a."AcctCode" = l."AcctCode"
+WHERE  h."CardCode" = '<the card you are booking to>'
+  AND  l."AcctCode" IN ('<every head you chose>')
+GROUP  BY l."AcctCode", a."AcctName";
+```
+
+**A head with `TIMES_USED` = 0 on that card is wrong until proven otherwise.**
+Stop and re-read the slip, or ask. Measured on Arvinder's imprest card, the eight
+correct heads had 13–81 uses each; the wrong one had **zero**.
+
+Run it against **the card the document is made out to** — a head with no history
+on the imprest card can be perfectly normal on a vendor's card (`5670001` FREIGHT
+AND CARTAGE is zero on the imprest card and routine on SmartShift's).
+
 ## 7 · Expense-head map — ONLY for a voucher with no GRPO
 
 **Read RULE 0 first.** If the voucher has a GRPO this table is wrong by
-construction. Use it only when no open GRPO matches, and **say out loud** that
-you picked the head rather than inherited it.
+construction. Use it only when no open GRPO matches, **say out loud** that you
+picked the head rather than inherited it, and **run the zero-history check
+above on every head you take from this table** — the table is a starting guess,
+the card's own history is the evidence.
+
+⚠️ **This table is worded in the operator's language, and the operator's words do
+not name JIVO's accounts.** "Some legal documents" meant stamp paper and a notary
+stamp, which is **stationery**; JIVO's LEGAL AND PROFESSIONAL head carries
+advocates' and auditors' fees. Matching the narration's vocabulary to an account
+name is the single most reliable way to get this wrong.
 
 | Row says | Account |
 |---|---|
@@ -332,7 +445,8 @@ you picked the head rather than inherited it.
 | printer cartridge, paper, stationery | 5680012 PRINTING AND STATIONERY |
 | lab chemicals, GC/lab parts, testing | 5680013 LAB AND TESTING |
 | courier, parcel | 5680023 POSTAGE & COURIER |
-| legal papers, notary, stamp | 5680025 LEGAL AND PROFESSIONAL |
+| legal papers, notary, stamp paper, rent/lease agreement, affidavit typing | **5680012 PRINTING AND STATIONERY** — *not* Legal & Professional (Daman, 2026-09-12, voucher 443) |
+| a professional FIRM's fee — advocate, auditor, consultant, retainer, director | 5680025 LEGAL AND PROFESSIONAL |
 | CETP / effluent | 5680010 CETP CHARGES |
 | electricity, bank charge paid in cash | 5680011 / 5610003 |
 
@@ -404,7 +518,9 @@ load-bearing. Class-specific traps:
 **Daman, 2026-09-10: "10k is the hard limit."** No cash-voucher document may
 exceed **₹10,000**.
 
-With one draft per voucher (RULE 0) this almost never bites — a single voucher is
+Since 2026-09-12 vouchers are **grouped**, so this is now the live constraint on
+every document, not a theoretical one — it is what decides how many A/Ps a sheet
+becomes. A single voucher is
 rarely over ₹10,000. **If one is, stop and tell the operator.** Do not split the
 voucher and do not merge vouchers to pack documents. Context, not a lecture:
 s.40A(3) disallows cash expenditure over ₹10,000 to one person in one day.
@@ -505,7 +621,12 @@ GRPO wins for the G/L — and when neither is clear, ask instead of inferring.
 - [ ] **every voucher searched for an open GRPO** (amount + `G.No.`); where one
       exists the draft is a **copy** and no G/L, item, tax, HSN, Dim1 or Dim5 is
       set by hand
-- [ ] **one draft per voucher** — never grouped, never split
+- [ ] plain vouchers **grouped** ≤ ₹10,000, never spanning a month, no single
+      voucher split across documents; GRPO copies and own-party vouchers alone
+- [ ] **one line per voucher**, whole amount on one head — split only when the
+      parts take different dimensions
+- [ ] every CHOSEN head run through the **zero-history check** against the card
+      the document is made out to; nothing with `TIMES_USED` = 0 sent
 - [ ] FACTORY IMPREST `ORGV…` for **this book** — not the plain twin, not another
       book's code
 - [ ] `DocDate` (posting) = the **voucher slip's** date

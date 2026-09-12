@@ -58,7 +58,10 @@ Stop and use the parent skill `cash-voucher`.
 
 ## 🔴 THE RULE — copy the GRPO, and override exactly three things
 
-`DocType` is **`dDocument_Items`**. One draft **per voucher**, never grouped.
+`DocType` is **`dDocument_Items`**. One draft **per voucher**, never grouped —
+and unlike a type-3 voucher this is still true after 2026-09-12: a `BaseType 20`
+copy carries exactly one GRPO, so it cannot share a document. Plain vouchers ARE
+grouped now; see `cash-voucher` → **Document shape**.
 Lines are sent as a copy:
 
 ```json
@@ -172,6 +175,12 @@ on 2026-09-10 — the amount goes in too.
 
 ## 4 · Dim3, the budget — the paper overrides the GRPO (C-0027)
 
+**Decide in order: a voucher carrying a DISPATCH INVOICE takes `Del Bkhp`;
+otherwise a slip marked Common takes `FACT_COM`; otherwise `Factory`.** Added
+2026-09-12 — full rule and the supplier-bill exclusion in `cash-voucher` →
+**Dim3, the budget**. The GRPO's own value never decides this.
+
+
 The **voucher slip** carries a handwritten allocation mark, and the cash sheet
 repeats it in the `Unit` column. `Common` → **`FACT_COM`** (FACTORY COMMON).
 The GRPO says `Factory`; the paper wins, every time.
@@ -281,7 +290,7 @@ load-bearing. Traps:
 ## 9 · ₹10,000 cap
 
 **Daman: "10k is the hard limit."** No cash-voucher document may exceed
-**₹10,000**. With one draft per voucher this almost never bites. **If a single
+**₹10,000**. A GRPO voucher is still its own draft, so this rarely bites here — but it is the live constraint on the grouped type-3 documents. **If a single
 voucher is over, stop and tell the operator** — do not split the voucher and do
 not merge vouchers. Context, not a lecture: s.40A(3) disallows cash expenditure
 over ₹10,000 to one person in one day.

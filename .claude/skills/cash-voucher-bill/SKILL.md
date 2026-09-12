@@ -96,6 +96,13 @@ field is set by hand:
 
 ---
 
+## 0 · This type is NEVER grouped
+
+Plain (type-3) vouchers are grouped onto one A/P since 2026-09-12. **This type is
+not**, and the reason is mechanical rather than a preference: the document is
+made out to the **vendor**, and two vendors cannot share one `CardCode`. One
+bill, one draft — even when three Porter receipts arrive on the same day.
+
 ## 1 · Dates — the stamp posts it, the bill dates it
 
 **Daman, 2026-09-12: "Always take the stamp date as a posting date, okay, and
