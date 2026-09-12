@@ -220,6 +220,36 @@ INTERNET**, which is what the map says and what the precedent used.
 
 `5680000 GENERAL EXPENSES` is not a bucket (C-0071).
 
+### The commonest type-2 voucher is a Porter / courier trip
+
+A **SmartShift (Porter)** receipt is a registered vendor's GST invoice, so it is
+this type — `CardCode` **`VENDA000531`**, `NumAtCard` = the **`CRN…`** number
+printed on it.
+
+| Field | Value |
+|---|---|
+| G/L | **`5680028` FREIGHT INWARD-INDIRECT** — goods coming IN. *Not* `5670001`, which is the Delhi **sales-dispatch** flow (Dim5 `DL`, Dim3 `Sales RE`) |
+| Tax | **reverse charge** — the receipt adds no GST to the fare, so `RIGST@5` when the supplier is out of state (GSTIN `07…` vs a Haryana place of supply) and `RCGSG@5` intra-state. `VatSum` 0 |
+
+Precedent: cash-sheet freight vouchers sit on `5680028` with RCM codes and a
+bunch-format `NumAtCard` (`JUN 26/35366/700`), SmartShift among them.
+
+**Careful — the ₹ on the bill must equal the ₹ on the voucher.** A supplier's
+invoice for a different amount is the *consignment* the trip carried, not what the
+cash bought; that voucher is type 3. Voucher 441 (₹186 Rapido fare, clipped to a
+₹24,780 Chanchal chemicals bill) is the worked case.
+
+### The bill's PERIOD may split the amount across two months
+
+This type is where period bills arrive — internet, AMC, subscriptions. If the
+bill's period crosses a month end, the amount is **prorated by days into one line
+per month**, each carrying its own `CostingCode2`. Voucher 421 (12 Aug → 12 Sep,
+₹1,000 + 18%) is **625.00 / `08-2026`** and **375.00 / `09-2026`**.
+
+Full recipe and the day-count convention: `cash-voucher` → **A bill for a PERIOD
+that crosses a month**. The header — `DocDate`, `TaxDate`, `Series`, `NumAtCard`
+— does not change.
+
 ## 8 · Tax — take it off the bill, do not compute it
 
 Read the bill's own tax block and mirror it.

@@ -1,6 +1,6 @@
 ---
 name: cash-voucher
-description: PARENT skill for JIVO cash vouchers — routes to the right TYPE. Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Routes each voucher to its type, then GROUPS the plain ones onto one A/P invoice against the holder's FACTORY IMPREST card - many vouchers, one line each, no document over Rs 10,000 and never spanning a month. A voucher with a GRPO behind it, or one made out to its own vendor, keeps its own draft. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft).
+description: PARENT skill for JIVO cash vouchers — routes to the right TYPE. Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Routes each voucher to its type, then GROUPS the plain ones onto one A/P invoice against the holder's FACTORY IMPREST card - many vouchers per document, one line per expense head each voucher touches, no document over Rs 10,000 and never spanning a month. A voucher with a GRPO behind it, or one made out to its own vendor, keeps its own draft. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft).
 ---
 
 # Cash voucher → one A/P draft per voucher, copied from its GRPO
@@ -85,29 +85,30 @@ does not exceed ₹10,000; if you have multiple vouchers just divide it in 2 or
 `DocDate` = the **latest voucher date in the group**. `NumAtCard`'s third token
 is **this document's own total**, not a voucher's — `AUG 26/39940/7403`.
 
-### One voucher = ONE line, under ONE head
+### A voucher's LINES follow its contents — one line per expense head
 
-**Daman, 2026-09-12, on voucher 420:** *"In row 2 and 3 you divided voucher 420
-into printing-and-stationery and repair-and-maintenance-office. Instead we just
-book it under printing and stationery with the whole amount."*
+**Daman ruled on this twice on 2026-09-12, and the SECOND ruling is the live
+one.** He first said voucher 420 should be a single ₹3,370 line on PRINTING AND
+STATIONERY; later the same day he reversed it — *"in voucher 420 the amount
+should be divided into printing and repair and maintenance office and building;
+600 should be on office and 2770 in printing."* **It is split.**
 
-Voucher 420 is ₹3,370 — a printer-cartridge bill of ₹2,770 and a ₹600 LED stand.
-I gave it two lines on two heads. **It gets one line of ₹3,370 on `5680012`.**
-The head that describes the voucher takes the whole amount; a sub-item that rode
-along on the same purchase does not earn its own head. (Draft 56910, keyed by
-hand, does exactly this — I had the answer in front of me and split anyway.)
+| Voucher | Lines |
+|---|---|
+| **420** ₹3,370 — a ₹2,770 computer-shop bill + a ₹600 LED stand from an electrical shop | **two** — `5680012` 2,770 and `5650001` 600 |
+| **448 / 449** — a dispatch trip itemising food, CNG and toll | **two each** — food `5630004`, fuel `5650015`, toll `5660005`; the vehicle Dim1 only on the fuel and toll lines |
+| a voucher whose items all belong to one head | **one** |
 
-**The one exception — the voucher itemises genuinely different expense types
-that carry different dimensions.** Vouchers 448 and 449 are dispatch trips that
-list food, CNG and toll separately; fuel and toll take the **vehicle** Dim1 and
-food takes `CANOLA`, so they cannot share a line. Two lines there is right, and
-56910 splits them the same way.
+**The rule: one line per EXPENSE HEAD the voucher touches, each at its own
+amount.** Read the *bills behind* the voucher, not just its narration — 420's
+narration is one sentence but its two bills belong in two different heads.
 
-**The test:** would the two parts take different **dimensions**? Then split.
-Only a different-sounding *name* is not enough.
+⚠️ **The hand-keyed precedent 56910 disagrees**: it merges 420 into a single
+₹3,370 stationery line. **Daman's ruling overrides it.** Do not "correct" a split
+voucher back to one line because an older document merged it.
 
-Every line carries `U_Remarks` = **its own voucher's number**, so each line
-traces back to one slip even inside a group of nine.
+Every line carries `U_Remarks` = **its own voucher's number**, so each line traces
+back to one slip even inside a group of nine.
 
 ### Tax code — `Exampt`, unless a bill in the pack shows GST
 
@@ -392,6 +393,86 @@ Other holders carry this class historically: `ORGV000041` BHUPINDER SINGH GINNI,
 use; both are live Bev codes. Only a voucher with no GRPO needs a Dim1 chosen,
 and then it is `CANOLA` (Oil) / `WATER` (Bev), with `HR` for Dim5.
 
+### A bill for a PERIOD that crosses a month — split it by days
+
+**Daman, 2026-09-12, on voucher 421:** *"We need to divide the amount month-wise
+as the bill splits, 12 Aug to 12 Sep — divide the amount as per the number of
+days, and make them in 2 rows."*
+
+Any bill that buys a stretch of time — internet, AMC, subscription, rent, an
+insurance or service contract — prints its period. When that period straddles a
+month end, the cost does **not** all belong to the month you post it in.
+
+**Recipe**
+
+1. Read the period off the bill (`12 AUG 2026 TO 12 SEP 2026`).
+2. Count the days that fall in each calendar month, **inclusive of both end
+   dates**: Aug 12→31 = **20**, Sep 1→12 = **12**, total **32**.
+3. Prorate the **taxable** value (not the GST-inclusive total) by those days, and
+   **put any rounding remainder on the last line** so the lines sum exactly.
+4. One line per month, each with `CostingCode2` = **that month's** `MM-YYYY`.
+   Everything else — account, tax code, Dim1, Dim3, Dim5, `U_Remarks` — is
+   identical on every line.
+5. GST follows each line on its own. Check `VatSum` and `DocTotal` are unchanged.
+
+Voucher 421, ₹1,000 + 18%:
+
+| Line | Days | Taxable | GST | `CostingCode2` |
+|---|---|---|---|---|
+| 0 | Aug 20 | **625.00** | 112.50 | `08-2026` |
+| 1 | Sep 12 | **375.00** | 67.50 | `09-2026` |
+| | 32 | 1,000.00 | **180.00** | DocTotal **1,180** ✓ |
+
+⚠️ **`DocDate`, `TaxDate`, `Series` and `NumAtCard` do NOT change** — the document
+is still one bill posted once. Only the **costing month** differs per line.
+
+⚠️ On an existing draft this **changes the line count, so it is a rebuild, not a
+PATCH** (a patched line count corrupts the price fields). Detach, delete,
+recreate, then point the new draft back at the **same** `Attachments2` row.
+
+### A FUEL line carries the quantity off the pump slip — `U_Recvd_Qty`
+
+**Daman, 2026-09-12:** *"In the voucher consisting fuel we need to update its
+received quantity — you can see the amount from the attachment."*
+
+A `5650015 FUEL - VEHICLES` line is not finished at the rupees. The pump / CNG
+cash memo prints **rate × quantity = amount**, and the **quantity** goes on the
+line in **`U_Recvd_Qty`** (the line UDF; `Quantity` itself stays 0 on a service
+line and cannot hold it).
+
+Voucher 449, BPCL KMP CNG memo: rate **97.80**, quantity **5.04**, amount
+**492.91** → line `5650015` ₹493 with **`U_Recvd_Qty` = 5.04**.
+
+- **Indian pump slips are often in Devanagari numerals** — `९७.८०` is 97.80,
+  `५.०४` is 5.04, `९९५९` is the truck number 9959. Read them as digits.
+- **Prove the reading: rate × quantity must equal the printed amount.** 97.80 ×
+  5.04 = 492.91. If it does not tie, you have misread a digit — do not send it.
+- The rupees on the voucher may be the memo's amount **rounded** (492.91 → 493).
+  The voucher's figure is what the line totals; the memo's is what proves the
+  quantity.
+- Same idea for any metered purchase on a cash voucher (diesel, petrol, CNG).
+  A toll or Fastag line has no quantity — leave it 0.
+
+### Find an account by NAME, never by code prefix
+
+The root cause of the 2026-09-12 freight error. Looking for an inward-freight
+head I ran `AcctCode LIKE '567%'` because the outward one is `5670001`, got three
+accounts, and picked the least-wrong of them. The right account is **`5680028`
+FREIGHT INWARD-INDIRECT** — a different prefix entirely, and it never appeared.
+
+**JIVO's chart does not group by meaning.** Freight heads alone are spread across
+`5100002` (inward direct), `5300001` (outward export), `5500001` (import),
+`5670001` (outward indirect) and `5680028` (inward indirect).
+
+```sql
+SELECT "AcctCode","AcctName","Postable" FROM <DB>.OACT
+WHERE  UPPER("AcctName") LIKE '%FREIGHT%' OR UPPER("AcctName") LIKE '%CARTAGE%';
+```
+
+Search every word the thing could be called, across the whole chart, and read the
+full list before choosing. A prefix filter silently hides the right answer and
+leaves you confidently picking from the wrong shortlist.
+
 ### 🔴 Before you use a head you CHOSE, ask the card if it has ever used it
 
 One query, and it is not optional. It caught the only wrong head in a batch of
@@ -440,7 +521,9 @@ name is the single most reliable way to get this wrong.
 | fuel/CNG — four-wheelers | 5650015 FUEL - VEHICLES *(vehicle Dim1)* |
 | Fastag, toll | 5660005 TOLL EXPENSE - VEHICLES |
 | taxi, trip, factory→city travel, **every two-wheeler cost** (C-0067) | 5690002 CONVEYANCE *(Dim1 `CANOLA`/`WATER`, never a vehicle — C-0070)* |
-| porter/coolie charge, unloading, loading | 5670002 UNLOADING/LOADING CHARGES-INDIRECT |
+| freight / cartage / porter / courier moving goods **IN** to JIVO — a Porter (SmartShift) trip, a tempo, an auto carrying purchased goods or samples | **5680028 FREIGHT INWARD-INDIRECT** with an **RCM** tax code (`RIGST@5` inter-state, `RCGSG@5` intra-state) |
+| freight on goods going **OUT** to a customer — sales dispatch | 5670001 FREIGHT AND CARTAGE OUTWARD-INDIRECT (the Delhi sales flow: Dim5 `DL`, Dim3 `Sales RE`) |
+| **porter / coolie LABOUR** — men loading or unloading, no vehicle hired | 5670002 UNLOADING/LOADING CHARGES-INDIRECT |
 | internet, mobile recharge | 5680003 TELEPHONE MOBILE AND INTERNET |
 | printer cartridge, paper, stationery | 5680012 PRINTING AND STATIONERY |
 | lab chemicals, GC/lab parts, testing | 5680013 LAB AND TESTING |
@@ -623,8 +706,13 @@ GRPO wins for the G/L — and when neither is clear, ask instead of inferring.
       set by hand
 - [ ] plain vouchers **grouped** ≤ ₹10,000, never spanning a month, no single
       voucher split across documents; GRPO copies and own-party vouchers alone
-- [ ] **one line per voucher**, whole amount on one head — split only when the
-      parts take different dimensions
+- [ ] **one line per expense head the voucher touches**, each at its own amount —
+      read the bills behind the voucher, not just its narration
+- [ ] any **fuel** line carries `U_Recvd_Qty` from the pump slip, and rate ×
+      quantity was checked against the printed amount
+- [ ] any bill for a **period crossing a month end** split by days, one line per
+      month with its own `CostingCode2`; lines sum to the taxable value exactly
+- [ ] any head looked up by **searching `OACT` on the NAME**, never a code prefix
 - [ ] every CHOSEN head run through the **zero-history check** against the card
       the document is made out to; nothing with `TIMES_USED` = 0 sent
 - [ ] FACTORY IMPREST `ORGV…` for **this book** — not the plain twin, not another

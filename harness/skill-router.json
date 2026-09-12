@@ -215,6 +215,19 @@
    ]
   },
   {
+   "skill": "cash-voucher-jv",
+   "when": "The JOURNAL VOUCHER that closes the cash holder's imprest after a type-2 cash voucher went to a real VENDOR. Debit the vendor, credit the FACTORY IMPREST card, memo 'AMOUNT TRANSFER TO ARVINDER FROM <party> <amt>/- BUNCH NO. (<bunch>)', branch Factory, no dimensions. A journal VOUCHER is a draft; never post a journal ENTRY",
+   "patterns": [
+    "journal voucher",
+    "\\bjv\\b",
+    "credit arvinder",
+    "transfer to arvinder",
+    "close.*imprest",
+    "imprest.*(transfer|close)",
+    "amount transfer to arvinder"
+   ]
+  },
+  {
    "skill": "cash-voucher",
    "when": "a CASH SHEET of numbered cash vouchers, or a DocScanner pack of JIVO WELLNESS voucher slips with their bills and GRPO prints. ONE A/P draft PER VOUCHER, copied from that voucher's GRPO so the G/L comes from the GRPO's item. Posting date = the slip; document date = the bill; Dim2 = the slip's month; Dim3 from the slip's Common mark; NumAtCard bunch = that table's own Total",
    "patterns": [
