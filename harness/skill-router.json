@@ -173,6 +173,40 @@
    ]
   },
   {
+   "skill": "cash-voucher-1-grpo",
+   "when": "CASH VOUCHER TYPE 1 - the voucher that HAS an existing GRPO behind it. A JIVO WELLNESS voucher slip + supplier's bill + a SAP Goods Receipt Note printout, or a cash-sheet row whose amount matches an open GRPO on the FACTORY IMPREST card. One A/P draft per voucher, COPIED from that GRPO so the G/L comes from the GRPO's item",
+   "patterns": [
+    "goods receipt note",
+    "\\bgrpo\\b.*(voucher|cash)",
+    "(voucher|cash).*\\bgrpo\\b",
+    "cash voucher 1",
+    "cash-voucher-1",
+    "voucher with grpo",
+    "grpo print"
+   ]
+  },
+  {
+   "skill": "cash-voucher",
+   "when": "a CASH SHEET of numbered cash vouchers, or a DocScanner pack of JIVO WELLNESS voucher slips with their bills and GRPO prints. ONE A/P draft PER VOUCHER, copied from that voucher's GRPO so the G/L comes from the GRPO's item. Posting date = the slip; document date = the bill; Dim2 = the slip's month; Dim3 from the slip's Common mark; NumAtCard bunch = that table's own Total",
+   "patterns": [
+    "cash sheet",
+    "cash-sheet",
+    "cash voucher",
+    "cash vouchers",
+    "\\bvoucher no\\b",
+    "voucher number",
+    "cash paid to",
+    "\\bimprest\\b.*\\bsheet\\b",
+    "factory imprest",
+    "front sheet",
+    "arvinder.*(sheet|voucher|cash)",
+    "(sheet|voucher).*arvinder",
+    "cash.*(entry|entries).*(sheet|voucher)",
+    "cash sheet ki entry",
+    "docscanner"
+   ]
+  },
+  {
    "skill": "jivo-service-vehicle-expense",
    "when": "an EMPLOYEE expense claim / reimbursement voucher (conveyance, fuel, toll, travel) - IMPREST vendor accounts",
    "patterns": [

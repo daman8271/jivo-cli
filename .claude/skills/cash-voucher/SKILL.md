@@ -1,6 +1,6 @@
 ---
 name: cash-voucher
-description: Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills and GRPO prints — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Books ONE A/P invoice draft PER VOUCHER against the holder's FACTORY IMPREST card, copied from that voucher's GRPO so the G/L comes from the GRPO and not from the wording. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft).
+description: PARENT skill for JIVO cash vouchers — routes to the right TYPE. Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Books ONE A/P invoice draft PER VOUCHER against the holder's FACTORY IMPREST card, copied from that voucher's GRPO so the G/L comes from the GRPO and not from the wording. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft).
 ---
 
 # Cash voucher → one A/P draft per voucher, copied from its GRPO
@@ -21,6 +21,31 @@ It is **not** an expense claim: nobody is being reimbursed, and the sheet's rows
 name the people he *paid*, not the claimant. The claimant is the sheet's title.
 
 ---
+
+
+---
+
+## 🧭 FIRST — which TYPE is this voucher?
+
+Cash vouchers split by **whether the purchase already went through a GRPO**. The
+types do not share a payload, so pick one before building anything.
+
+| Type | When | Skill |
+|---|---|---|
+| **1 · GRPO** | a GRPO printout is in the pack, **or** the row's amount matches an **open** GRPO on the imprest card | **`cash-voucher-1-grpo`** ← load this |
+| *(more types to be named by Daman)* | no GRPO behind the row — conveyance, medical, porter charges, punctures, staff advances | not yet split out; the sections below still cover it |
+
+**Search all three books before calling a GRPO missing (C-0073).** Open GRPOs on
+the card carry `NumAtCard` = `<amount>/<dd-mm-yy>`; confirm the match with the
+`G.No.` printed in the GRPO's `Comments` against the gate stamp on the bill.
+
+```sql
+SELECT h."DocEntry", h."DocNum", h."DocDate", h."NumAtCard", h."DocTotal",
+       l."ItemCode", l."AcctCode"
+FROM   <DB>.OPDN h JOIN <DB>.PDN1 l ON l."DocEntry" = h."DocEntry"
+WHERE  h."CardCode" = '<imprest card>' AND h."CANCELED" = 'N'
+  AND  h."DocStatus" = 'O' AND l."LineNum" = 0;
+```
 
 ## The paper — four documents per voucher
 
