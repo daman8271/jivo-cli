@@ -186,6 +186,35 @@
    ]
   },
   {
+   "skill": "cash-voucher-bill",
+   "when": "CASH VOUCHER TYPE 2 - the voucher whose paper is a REGISTERED VENDOR'S GST TAX INVOICE and there is NO GRPO behind it. A JIVO WELLNESS voucher slip clipped to a printed tax invoice with a GSTIN and CGST/SGST. The A/P goes to the REAL VENDOR on the letterhead, never the imprest card, so the input credit lands on that vendor's GSTIN. Service draft, bod_GSTTaxInvoice; posting date = the gate stamp, document date = the bill, vendor ref = the bill number, remarks = the bare voucher number",
+   "patterns": [
+    "cash voucher bill",
+    "cash-voucher-bill",
+    "cash voucher 2",
+    "cash-voucher-2",
+    "voucher.*(tax invoice|gst bill)",
+    "(tax invoice|gst bill).*voucher",
+    "voucher.*(no grpo|without grpo)",
+    "jivo wellness voucher.*gstin"
+   ]
+  },
+  {
+   "skill": "cash-voucher-manual",
+   "when": "CASH VOUCHER TYPE 3 - the MANUAL voucher: NO GRPO and NO BILL, just the JIVO WELLNESS slip (or a cash-sheet row with no paper behind it) - punctures, vehicle repairs, conveyance, porter charges, kitchen, medical, small hardware. Service draft on the holder's FACTORY IMPREST card, expense head picked from the wording, TaxCode Exampt, vendor ref = the bunch reference off the cash sheet, Dim1 = the vehicle the slip brackets",
+   "patterns": [
+    "cash voucher manual",
+    "cash-voucher-manual",
+    "cash voucher 3",
+    "cash-voucher-3",
+    "voucher.*(no bill|without bill|no grpo and no bill)",
+    "(puncture|pancher).*voucher",
+    "voucher.*(puncture|pancher)",
+    "slip only.*voucher",
+    "voucher slip alone"
+   ]
+  },
+  {
    "skill": "cash-voucher",
    "when": "a CASH SHEET of numbered cash vouchers, or a DocScanner pack of JIVO WELLNESS voucher slips with their bills and GRPO prints. ONE A/P draft PER VOUCHER, copied from that voucher's GRPO so the G/L comes from the GRPO's item. Posting date = the slip; document date = the bill; Dim2 = the slip's month; Dim3 from the slip's Common mark; NumAtCard bunch = that table's own Total",
    "patterns": [

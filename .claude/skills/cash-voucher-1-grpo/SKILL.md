@@ -76,6 +76,13 @@ the tax code, the HSN entry, the warehouse, the quantity, the price, **Dim1**,
 | `CostingCode2` (Dim2, costing date) | month of the **voucher slip's** date | the GRPO's month |
 | `CostingCode3` (Dim3, budget) | the **slip's** handwritten mark | the GRPO's `Factory` |
 | `U_Remarks` | `VCH <no> - RS <amount>` | nothing |
+| **`TaxCode`** | **`Exampt`**, unless a **GST bill** is in the pack | the GRPO's code, usually `IGST@0` |
+
+⚠️ **The `TaxCode` override is new (Daman, 2026-09-12)** and it is the one thing
+you now change that the copy supplied. *"Tax code would be Exempt unless there is
+GST on any bill provided — for all the cash vouchers."* Both codes are 0%, so no
+amount moves. Everything else the copy brings still stands untouched. Full rule:
+`cash-voucher` → **Rules that hold for EVERY cash-voucher type**.
 
 ### Never pick the G/L from the wording — measured 4 wrong out of 9
 

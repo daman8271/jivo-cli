@@ -33,7 +33,77 @@ types do not share a payload, so pick one before building anything.
 | Type | When | Skill |
 |---|---|---|
 | **1 · GRPO** | a GRPO printout is in the pack, **or** the row's amount matches an **open** GRPO on the imprest card | **`cash-voucher-1-grpo`** ← load this |
-| *(more types to be named by Daman)* | no GRPO behind the row — conveyance, medical, porter charges, punctures, staff advances | not yet split out; the sections below still cover it |
+| **2 · BILL** | no GRPO, and the paper is a **registered vendor's GST tax invoice** — a GSTIN and CGST/SGST on it | **`cash-voucher-bill`** ← load this |
+| **3 · MANUAL** | **no GRPO and no bill** — the slip alone. Punctures, vehicle repairs, conveyance, porter charges, kitchen, medical, small hardware | **`cash-voucher-manual`** ← load this |
+
+**The three types share almost nothing. Do not carry a rule from one to another** —
+that was the main mistake on 2026-09-12.
+
+| | **1 · GRPO** | **2 · BILL** | **3 · MANUAL** |
+|---|---|---|---|
+| Books to | imprest card | **the real vendor** | imprest card |
+| Doc shape | items, copied `BaseType 20` | service, `bod_GSTTaxInvoice` | service, `bod_None` |
+| Posting date | the **slip** | the **gate stamp** | the **slip** |
+| Document date | the **bill** | the **bill** | the **slip** (same day) |
+| Series | `HR_B` | **`HR_G`** | `HR_B` |
+| Tax | `Exampt` | **the bill's own GST** | `Exampt` |
+| Vendor ref | `<MON> YY/<bunch>/<total>` | **the invoice number** | `<MON> YY/<bunch>/<total>` |
+| G/L | **from the GRPO's item** | chosen from the head | chosen from the wording |
+| Remarks | `VCH <no> - RS <amount>` | the bare number | the bare number |
+
+---
+
+## ⚖️ Rules that hold for EVERY cash-voucher type
+
+Set by Daman on **2026-09-12**. These override anything type-specific below or in
+a child skill.
+
+### Tax code — `Exampt`, unless a bill in the pack shows GST
+
+**Daman: "tax code would be Exempt unless there is GST on any bill provided —
+for all the cash vouchers. This would be applicable for all skills."**
+
+| The pack contains | `TaxCode` |
+|---|---|
+| no bill, or a kacha / estimate / handwritten slip with no GST | **`Exampt`** |
+| a registered vendor's **GST tax invoice** | **the bill's own code** — `CG+SG@18`, `IGST@…` — mirrored, never computed |
+
+The code is spelled **`Exampt`** in SAP (`OSTC`), not "Exempt". Oil also carries
+`IGST@0` and `CG+SG@0` at 0% — **do not reach for those**; the recent hand-keyed
+cash vouchers use `Exampt` (56884, 56910, 56911 all `Exampt`).
+
+**This applies even when the line is a GRPO copy.** The copy arrives carrying the
+GRPO's code, usually `IGST@0`; override it to `Exampt` unless a GST bill is in the
+pack. Both are 0%, so no amount moves.
+
+### Vendor Ref. No. — `<MON> YY/<bunch>/<this document's total>`
+
+Daman, 2026-09-12, on voucher 446: *"vendor ref no. we need to create:
+month / yy / bunch total / the total amount of entry … like in this draft it would
+have been: AUG 26 39940 / 150."*
+
+```
+AUG 26/39940/150
+ │      │      └─ THIS document's total, not the bunch's
+ │      └─ the printed Total of the table this voucher sits in
+ └─ the BUNCH's month — one value for every voucher in that bunch
+```
+
+**The month belongs to the bunch, not to the voucher.** Voucher 446 is dated
+**02/09/2026** and still takes **`AUG 26`**, because it sits in the AUG bunch that
+the 04-09-2026 sheet closed. Confirming evidence: draft 56884 is a **July**-dated
+voucher (425) in the same bunch and also carries `AUG 26`.
+
+⚠️ *Three drafts on bunch 39940 carry `SEP 26` (56876, 56877, 56911). Each is
+independently suspect — 56877 pairs a `SEP 26` prefix with a `08-2026` Dim2, and
+56911 carries voucher 446's remarks and dimensions at ₹1,050 where the sheet says
+₹150. Treat them as keying slips, not as a second rule. **If a sheet's bunch month
+is not obvious, ask Daman — do not derive it from the voucher's date.***
+
+**The exception is `cash-voucher-bill`:** a registered vendor's bill has its own
+reference, so that type carries **the invoice number** and no bunch at all.
+
+---
 
 **Search all three books before calling a GRPO missing (C-0073).** Open GRPOs on
 the card carry `NumAtCard` = `<amount>/<dd-mm-yy>`; confirm the match with the
