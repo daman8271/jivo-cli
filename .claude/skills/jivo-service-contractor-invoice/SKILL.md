@@ -186,7 +186,7 @@ on an unknown field.
 
 `sapb1 add-draft` refuses (exit 9) for any login SAP's Always-terms A/P
 template does not name — verified live 2026-09-08: the only ones are
-**Oil 103 / Mart 48 / Bev 68, each naming USER39 (MUQEEM) alone**. USER07
+**Oil 103 / Mart 48 / Bev 68, each naming USER39 (MUQEEM) and USER08 (DIVJOT)** (Divjot added 2026-09-10). USER07
 (HARSH) *is* on the condition-based template "USER03 AP" (Oil 40 / Mart 17 /
 Bev 1), but **SAP skips condition-based templates for API documents and would
 post the invoice LIVE**, past Bhawani. So from USER07 these finish as drafts

@@ -65,8 +65,10 @@ in any book, which is why the Shahrukh, Vishal, Priya and Mahak desks are drafts
 Guard 5c refuses those before anything is sent (exit 9) — leave the draft attached and let
 a person press Add in the SAP B1 client, which does consult the query templates.
 
-**It does NOT cover anything else** — a credit memo, an outgoing payment, any other
-document type, or any other login. Those have **no matching template**, so `add-draft`
+**It does NOT cover anything else** — an outgoing payment, any other document type, or
+any other login. (Oil 103 also lists A/P Credit Memo since 2026-09-15, but that only
+matters for an Add in the SAP client — `add-draft` itself still takes A/P invoice drafts
+only.) Those have **no matching template**, so `add-draft`
 would **post them live**. Stop and say so rather than trying. Check first:
 
 ```sql
@@ -180,10 +182,23 @@ person. Rule, accuracy and traps: **`jivo-ap-draft/reference/jsap-routing.md`**.
 - **`add-draft` cannot be undone from this CLI**, and it never approves on anyone's behalf.
 - **Never write unprompted** (RULE 0). Asked = do it. Not asked = don't touch it.
 
-## Known side effect
+## The double-request side effect — FIXED in Oil 2026-09-15
 
-Template 103 also catches the ~20 A/P invoices a month USER39 keys **by hand** in the
-client, which already match template 41 — so Bhawani sees **two requests** for those.
-Harmless, and the fix when it matters is a dedicated robot login. Mention it if she asks.
+Until 2026-09-15 an A/P invoice Added **from the SAP client** by USER39 or USER08 matched
+template 103 (Always) AND the condition-based "USER03 AP" templates (Oil 40 / 41) — all
+three route to stage 13 = USER03 — so Bhawani got **two requests for one draft**, and the
+draft posted only when she approved both. Measured live 2026-09-15: 23 Oil A/P drafts
+carrying two open requests (15 × 41+103, 8 × 40+103). The CLI's own submit was never
+the cause: a Service Layer Add consults only the Always template.
+
+Fix applied 2026-09-15 (Daman, write log `queries/daman/sap-writes.jsonl`): Oil 103 now
+lists **A/P Credit Memo** as well as A/P Invoice, and **USER08 and USER39 were removed as
+originators from Oil 40 and 41** — so their A/P invoices and credit memos reach Bhawani
+through 103 alone, from either route. Read back: 40 = 32 originators, 41 = 37, neither
+names 17 or 53. Requests that already existed stay: Bhawani approves both on those.
+
+Mart (template 17 "USER03 AP" + 48) and Beverages (1 "USER03 AP" / 2 "USER03 INVOICE"
++ 68) had the same overlap — 20 and 2 doubled drafts on 2026-09-15 — and still do until
+the same change is made there. Check `ApprovalTemplates` before assuming.
 
 Full background: `acc/ADD-AND-NEW-PLAN.md`. Correction: **C-0034**.

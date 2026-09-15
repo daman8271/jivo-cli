@@ -49,6 +49,19 @@ import (
 // Conds='Y', e.g. Oil 6 "SCHEME FACTORY", which does list every USERnn — are
 // skipped entirely for a DI/Service Layer Add and cannot save it.
 //
+// Re-measured 2026-09-15 (manager, all three books) after Daman found Bhawani
+// receiving TWO requests per A/P invoice draft. An Add from the SAP client
+// consults every template, and the condition-based "USER03 AP" ones (Oil 40 and
+// 41, Mart 17, Bev 1 and 2) also named USER08/USER39 and also route to USER03 —
+// so one draft raised one request per matching template, and posted only when
+// all were approved (23 Oil, 20 Mart, 2 Bev drafts sat like that). Fixed in
+// Oil that day: 103 now also covers atdtApCreditMemo, and USER08/USER39 were
+// removed from 40 and 41 (B1S-ReplaceCollectionsOnPatch, logged in
+// queries/daman/sap-writes.jsonl). The table below is unchanged by that — it
+// speaks for oPurchaseInvoices, the only kind add-draft accepts — and the
+// Service Layer Add was never the doubling route: it consults only the Always
+// template.
+//
 // Why the table lives here in code and not in a live read: the Service Layer
 // refuses ApprovalTemplates to an operator login ("[SAP -3000] The logged-on
 // user does not have permission to use this object" — verified under USER39 on
