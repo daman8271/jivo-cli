@@ -632,11 +632,13 @@ Pre-checks worth running before you send anything:
 3. **The series exists for *this* branch, *this* month, and is not exhausted**
    (`NextNumber <= LastNum`, `Locked='N'`, `IsForCncl='N'`). → [[Numbering-Series]]
 
-**What the CLI cannot do:** no `PUT`, no OData actions (`Invoices(9)/Cancel`,
-`Orders(1)/Close`). `sapb1 add-draft <DocEntry>` *does* exist in the current binary and
-presses Add on a draft — which is a live posting nothing here can undo, and which the
-project `CLAUDE.md` still describes as refused. Read the discrepancy as a stale doc, not
-as permission: an A/R invoice becomes real when a human adds it. → [[Document-Drafts]]
+**What the CLI cannot do:** no `PUT`; the only OData actions it reaches are
+`Cancel` on the 14 marketing document sets (`sapb1 cancel <doctype> <DocEntry>`,
+guarded, SAP posts a reversal) and `SaveDraftToDocument` (`sapb1 add-draft`);
+`Orders(1)/Close` and every other action stay refused. `sapb1 add-draft <DocEntry>` presses Add on a draft — a live posting nothing here can
+undo — and the project `CLAUDE.md` documents it as one of the six write commands, with
+the approval-template rule that decides whether the draft reaches the approver or posts
+LIVE. An A/R invoice becomes real when a human adds it. → [[Document-Drafts]]
 
 ---
 
