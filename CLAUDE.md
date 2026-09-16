@@ -87,7 +87,11 @@ create documents for a living. Daman authorised this on 2026-08-22.
   Always-terms A/P-invoice templates are Oil **103**, Mart **48**, Bev **68**,
   and each names **USER39 (MUQEEM) and USER08 (DIVJOT)** — Divjot was added
   2026-09-10 on Daman's instruction; before that it was USER39 alone. Those two
-  reach Bhawani from any of the three books. **A box logged in as anyone else
+  reach Bhawani from any of the three books. **Oil 103 also names USER07 (HARSH)
+  since 2026-09-16** (Daman: "do it for Harsh also") and covers A/P credit memos
+  too; the same day those three logins came OFF Oil's condition templates 40 and
+  41, which had been sending Bhawani a second request for the same draft. Mart
+  and Beverages still carry the old overlap until Daman okays the same change. **A box logged in as anyone else
   still stops at the draft** — attach the bill, say it is waiting, and a person
   presses Add in the SAP B1 client (that route does consult the template).
   Getting a login added is an admin's ten minutes in Approval Templates →

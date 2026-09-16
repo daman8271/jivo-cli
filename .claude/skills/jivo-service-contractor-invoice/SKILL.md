@@ -5,6 +5,19 @@ description: Use when a LABOUR / SERVICE CONTRACTOR's monthly bill arrives and m
 
 # Labour / service contractor bill → A/P invoice draft (JIVO, all three books)
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Internal skill. Built from the live batch of **2026-09-08**: 19 bills off five
 scans → **16 drafts** (Oil 56568-56577, Mart 40297, Bev 16041-16045),
 ₹10,69,925 billed / ₹10,15,675 payable after 194C TDS, all attached and
@@ -179,19 +192,22 @@ ACC_ENV=user07.env acc/_playbook/sap draft purchase-invoice --data-file <p.json>
 page per draft — split the tray scan first — per
 `jivo-ap-draft/reference/attachments-upload.md`; `-H "Expect:"` is
 load-bearing. **`ATC1` carries `U_CHK`/`U_CHK2` in Oil AND Beverages but NOT
-in Mart** — stamp `U_CHK2 OK` in Oil/Bev, skip it in Mart or the PATCH fails
-on an unknown field.
+in Mart** — stamp `U_CHK2 OK` in Oil/Bev, skip those two in Mart or the PATCH fails
+on an unknown field. **`CopyToTargetDoc: "tYES"` goes on every line in ALL three books** (C-0090)
+— in Mart it is the only field in that PATCH.
 
 ## Then STOP unless the login is on an Always-terms template
 
 `sapb1 add-draft` refuses (exit 9) for any login SAP's Always-terms A/P
 template does not name — verified live 2026-09-08: the only ones are
-**Oil 103 / Mart 48 / Bev 68, each naming USER39 (MUQEEM) and USER08 (DIVJOT)** (Divjot added 2026-09-10). USER07
-(HARSH) *is* on the condition-based template "USER03 AP" (Oil 40 / Mart 17 /
-Bev 1), but **SAP skips condition-based templates for API documents and would
-post the invoice LIVE**, past Bhawani. So from USER07 these finish as drafts
-and **a person presses Add in Document Drafts** — that route does consult the
-condition template, so Bhawani gets them. Say this out loud; do not go
+**Oil 103 / Mart 48 / Bev 68, each naming USER39 (MUQEEM) and USER08 (DIVJOT)** (Divjot added 2026-09-10), **and Oil 103 also names USER07 (HARSH) since 2026-09-16**.
+In Mart and Beverages USER07 is still only on the condition-based "USER03 AP"
+template (Mart 17 / Bev 1), and **SAP skips condition-based templates for API
+documents and would post the invoice LIVE**, past Bhawani. And the Vishal and
+Shahrukh desks are drafts-only by desk policy in every book regardless. So from
+USER07 these finish as drafts and **a person presses Add in Document Drafts** —
+that route does consult the templates, so Bhawani gets them (in Oil through 103
+alone; USER07 came off Oil 40/41 the same day). Say this out loud; do not go
 hunting for another route.
 
 ## Pre-flight

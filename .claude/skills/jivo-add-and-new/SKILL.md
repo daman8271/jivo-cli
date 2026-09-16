@@ -5,6 +5,19 @@ description: USE AUTOMATICALLY whenever an Accounts operator hands over one or m
 
 # Add & New — enter the bill AND send it to the approver
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 **The operator does not want to see the draft.** They want the bill entered and sitting
 in **BHAWANI's** Approval Status Report (SAP user `USER03`, USERID 12). She is the
 checker. Their job ends when she has it.
@@ -59,11 +72,14 @@ refuses the submit itself if a company is ever switched back off. If you want to
 SELECT "EnbApprDI" FROM "<COMPANY>".OADM;   -- 'Y' in all three as of 2026-09-10
 ```
 
-**🔴 What has NOT changed: any other login still posts LIVE.** The templates name
-USER39 and USER08 and nobody else. USER07 and USER19 are on **no** Always-terms template
-in any book, which is why the Shahrukh, Vishal, Priya and Mahak desks are drafts-only.
-Guard 5c refuses those before anything is sent (exit 9) — leave the draft attached and let
-a person press Add in the SAP B1 client, which does consult the query templates.
+**🔴 What has NOT changed: any other login still posts LIVE.** Mart 48 and Bev 68 name
+USER39 and USER08 and nobody else. **Oil 103 also names USER07 (HARSH) since 2026-09-16**
+(Daman: "do it for Harsh also"). USER19 is on **no** Always-terms template in any book, and
+USER07 is on none in Mart or Beverages. The Shahrukh and Vishal desks (both USER07) stay
+**drafts-only by desk policy** (`harness/desks.json`) until Daman lifts it — the template
+reason for that policy is gone in Oil, the policy itself is not. Guard 5c refuses the rest
+before anything is sent (exit 9) — leave the draft attached and let a person press Add in
+the SAP B1 client, which does consult the query templates.
 
 **It does NOT cover anything else** — an outgoing payment, any other document type, or
 any other login. (Oil 103 also lists A/P Credit Memo since 2026-09-15, but that only

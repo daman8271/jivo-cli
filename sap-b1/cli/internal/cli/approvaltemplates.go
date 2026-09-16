@@ -62,6 +62,12 @@ import (
 // Service Layer Add was never the doubling route: it consults only the Always
 // template.
 //
+// 2026-09-16, Oil only: USER07 (HARSH, USERID 16 in all three books) was added
+// to 103 on Daman's word ("do it for Harsh also") and removed from 40 and 41,
+// read back the same minute — Oil 103 now names USER39, USER08, USER07. Mart 48
+// and Bev 68 are unchanged. The Vishal and Shahrukh desks that use USER07 are
+// still drafts-only through desks.json, which refuses before this guard runs.
+//
 // Why the table lives here in code and not in a live read: the Service Layer
 // refuses ApprovalTemplates to an operator login ("[SAP -3000] The logged-on
 // user does not have permission to use this object" — verified under USER39 on
@@ -85,7 +91,7 @@ type approvalTemplate struct {
 // only with the query above in hand.
 func verifiedApprovalTemplates() []approvalTemplate {
 	return []approvalTemplate{
-		{CompanyDB: "JIVO_OIL_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "103", Name: "API AP AUTO (USER39)", Originators: []string{"USER39", "USER08"}},
+		{CompanyDB: "JIVO_OIL_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "103", Name: "API AP AUTO (USER39)", Originators: []string{"USER39", "USER08", "USER07"}},
 		{CompanyDB: "JIVO_MART_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "48", Name: "API AP AUTO (USER39)", Originators: []string{"USER39", "USER08"}},
 		{CompanyDB: "JIVO_BEVERAGES_HANADB", ObjectCode: "oPurchaseInvoices", WtmCode: "68", Name: "API AP AUTO (USER39)", Originators: []string{"USER39", "USER08"}},
 	}
