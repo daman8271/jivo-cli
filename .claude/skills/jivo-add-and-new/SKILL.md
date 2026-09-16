@@ -72,11 +72,15 @@ refuses the submit itself if a company is ever switched back off. If you want to
 SELECT "EnbApprDI" FROM "<COMPANY>".OADM;   -- 'Y' in all three as of 2026-09-10
 ```
 
-**🔴 What has NOT changed: any other login still posts LIVE.** The templates name
-USER39 and USER08 and nobody else. USER07 and USER19 are on **no** Always-terms template
-in any book, which is why the Shahrukh, Vishal, Priya and Mahak desks are drafts-only.
-Guard 5c refuses those before anything is sent (exit 9) — leave the draft attached and let
-a person press Add in the SAP B1 client, which does consult the query templates.
+**🔴 What has NOT changed: any other login still posts LIVE.** Mart 48 and Bev 68 name
+USER39 and USER08 and nobody else. **Oil 103 also names USER07 (HARSH) since 2026-09-16**
+(Daman: "do it for Harsh also"). USER19 is on **no** Always-terms template in any book, and
+USER07 is on none in Mart or Beverages. The Shahrukh and Vishal desks (both USER07) stay
+**drafts-only by desk policy** (`harness/desks.json`) — the template reason for that policy is
+gone in Oil, and Daman kept the policy anyway on 2026-09-16: "let him make only drafts pls".
+Do not lift it because a template now names USER07. Guard 5c refuses the rest
+before anything is sent (exit 9) — leave the draft attached and let a person press Add in
+the SAP B1 client, which does consult the query templates.
 
 **It does NOT cover anything else** — an outgoing payment, any other document type, or
 any other login. (Oil 103 also lists A/P Credit Memo since 2026-09-15, but that only
