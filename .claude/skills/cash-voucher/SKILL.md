@@ -5,6 +5,19 @@ description: PARENT skill for JIVO cash vouchers — routes to the right TYPE. U
 
 # Cash voucher → one A/P draft per voucher, copied from its GRPO
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Internal skill. Taught by Daman line by line on **2026-09-10**, against Arvinder
 sir's cash sheet dated 04-09-2026. **Every rule below is a correction he made to
 a draft I had already built.** Follow them; do not re-derive them — the section
@@ -572,8 +585,9 @@ load-bearing. Class-specific traps:
   **Spot-check a page** — the voucher number and amount must stay readable — and
   say in the report that the attached copy is a re-render.
 - Stamp `U_CHK = <size KB>`, `U_CHK2 = 'OK'` on **every** line *before* patching
-  `AttachmentEntry`, or SAP refuses with `-1116 (1120025)` (C-0082). Every book's
-  `ATC1` has both UDFs.
+  `AttachmentEntry`, or SAP refuses with `-1116 (1120025)` (C-0082). Oil and Bev
+  `ATC1` have both UDFs; Mart has neither. **Same PATCH: `CopyToTargetDoc = 'tYES'`
+  on every line, every book** (C-0090).
 - SAP **auto-renames** a filename already on the share (name + ddmmyyyy + time).
   Harmless; the file is correct.
 - A refused `AttachmentEntry` patch leaves an **orphan `Attachments2` row**. It is

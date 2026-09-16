@@ -42,12 +42,3 @@ route; the SAP-client Add is.
       total Rs 2,083,083.00
 
 Skills updated: jivo-add-and-new (side-effect section rewritten), jivo-service-contractor-invoice (USER08 on the Always templates). CLI: comment in approvaltemplates.go.
-
-## 2026-09-16 — "do it for Harsh also"
-
-USER07 (HARSH, Vishal's and Shahrukh's login) added to Oil 103 — now USER39, USER08, USER07 —
-and removed from Oil 40 (32→31 originators) and 41 (37→36). Read back: in Oil only 103 now
-routes his A/P invoices and credit memos to Bhawani. Guard-5c table and all binaries rebuilt;
-the no-template test is re-anchored on USER19. The Vishal and Shahrukh desks stay drafts-only
-in `harness/desks.json` until Daman lifts that. Mart 48 and Bev 68 still do not name USER07;
-Mart 17 and Bev 1/2 still overlap for Divjot and Muqeem — all waiting for Daman's okay.

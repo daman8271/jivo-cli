@@ -5,6 +5,19 @@ description: Use when a tanker of LOOSE / BULK oil arrives and the goods receipt
 
 # Oil GRPO — a tanker of bulk oil, from the supplier's invoice + the PO
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Internal skill. Built 2026-09-09 on **ARORA AGRI `AABV/26-27/308`** — 42,200 kg
 refined soyabean against PO **220826145**, gate entry 87 — taught through by Daman
 the same evening. The draft this skill produces was written blind and came out
@@ -99,12 +112,13 @@ sap-b1/cli/sapb1 query Attachments2 --orderby "AbsoluteEntry desc" --top 1 --jso
 curl -sk --http1.1 -H "Expect:" -b "$S/ck" -X PATCH "$H/b1s/v1/Attachments2(<AE>)" -F "files=@$S/PO-220826145.pdf;type=application/pdf"     # 204, line 2 = the PO
 ```
 
-Then stamp both lines or SAP refuses the draft with 1120025 (C-0082):
+Then stamp both lines or SAP refuses the draft with 1120025 (C-0082) — and tick Copy to
+Target Document on each (C-0090), so the bill follows this GRPO onto the A/P invoice:
 
 ```bash
 sap-b1/cli/sapb1 patch "Attachments2(<AE>)" --data '{"Attachments2_Lines":[
-  {"AbsoluteEntry":<AE>,"LineNum":1,"U_CHK":<KB1>,"U_CHK2":"OK"},
-  {"AbsoluteEntry":<AE>,"LineNum":2,"U_CHK":<KB2>,"U_CHK2":"OK"}]}' --yes
+  {"AbsoluteEntry":<AE>,"LineNum":1,"U_CHK":<KB1>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"},
+  {"AbsoluteEntry":<AE>,"LineNum":2,"U_CHK":<KB2>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}]}' --yes
 ```
 
 Name the files after what they are (`AABV-26-27-308.pdf`, `PO-220826145.pdf`) — that

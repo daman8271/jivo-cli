@@ -5,6 +5,19 @@ description: Use when an operator wants a payment to a vendor entered in SAP B1 
 
 # Outgoing payment draft (JIVO, SAP B1)
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Internal skill for the jivo-cli toolkit. Built 2026-08-25 from live entries:
 AWL AGRI BUSINESS ₹1,25,04,080 (advance, on-account), DHANLAXMI EDIBLES
 ₹74,45,802 (advance), ASHOK KITAB GHAR ₹6,868 (bill settlement), and
@@ -387,7 +400,7 @@ cd mail-cli
 output matches the prints already on JIVO's posted payments (`Jivo Wellness Mail
 - <subject>.pdf`). It is read-only on the mailbox. Then upload and point the
 draft at it — recipe in `jivo-ap-draft/reference/attachments-upload.md`: POST
-`/Attachments2` with `-H 'Expect:'`, stamp `U_CHK`/`U_CHK2`, set
+`/Attachments2` with `-H 'Expect:'`, stamp `U_CHK`/`U_CHK2` + `CopyToTargetDoc tYES` (C-0090), set
 `AttachmentEntry`, read `$value` back.
 
 Line order: **mail is line 1**; for a contract advance the **PO is line 2**.

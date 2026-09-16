@@ -5,6 +5,19 @@ description: Use when transporter BILTY / G.R. / LR sheets or signed invoice cop
 
 # A/R invoice — completing the receiving from the bilty
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 A transporter's bilty (G.R. / LR) is the paper proof the customer received the
 goods. Completing an A/R invoice means **five** things on that invoice:
 
@@ -52,6 +65,7 @@ ran a day later (invoice 14/07 → bilty 15/07). Read it off the paper every tim
 | `1300014` | `U_Recv_Date` must not be earlier than `DocDate`. |
 | `1300012` | same shape for dispatch (`U_Disp_Qty` / `U_Dipatch_Date`). |
 | `1120025` | Oil only: every attachment line needs `U_CHK` (size KB) + `U_CHK2='OK'`. |
+| C-0090 | Not a guard — Daman's rule: every attachment line in every book gets `CopyToTargetDoc='tYES'`. `bin/attach_scan.py` sets it and warns if SAP refuses. |
 
 ## 🔴 A wrong bilty number does NOT matter — leave it
 

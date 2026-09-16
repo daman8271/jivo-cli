@@ -5,6 +5,19 @@ description: Use when a landlord's rent invoice arrives for JIVO and must be ent
 
 # Landlord rent invoice → A/P draft (JIVO)
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Internal skill. Built from the live run 2026-09-01 (USER07): three Rajouri
 Garden landlords → Mart drafts **40119 / 40120 / 40121**, cloned from posted
 precedent 8709. Shared rules live in `jivo-ap-draft`; RULE 0 in `CLAUDE.md`
@@ -81,7 +94,9 @@ separately; the landlord is paid the face amount.
 Follow `jivo-ap-draft/reference/attachments-upload.md` (`-H "Expect:"`, and
 grep the `AbsoluteEntry` — the response is not valid JSON). **In Mart skip the
 `U_CHK`/`U_CHK2` stamp** — `ATC1` has no such UDF there, confirmed again on
-2026-09-01 against the rent precedent's own attachment row.
+2026-09-01 against the rent precedent's own attachment row. **Do NOT skip the PATCH
+itself:** Mart still gets `{"Attachments2_Lines":[{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}]}`
+(C-0090) — every book, every line.
 
 ## Watch for: stale drafts pile up on rent vendors
 

@@ -5,6 +5,19 @@ description: Use when an operator hands over a vendor bill that has NO goods rec
 
 # A/P draft for a service / expense bill — no GRPO (JIVO, SAP B1)
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Internal skill. Built from the Om Sai fuel bill 2495 → draft 55130 on 2026-08-24, and
 from Daman's corrections on it the same evening ("no place of supply, no location, no
 quantity" — all three were fields the paper carried and the payload dropped).
@@ -78,7 +91,8 @@ below are through it.
    precheck told you to. Daman, 2026-09-09: *"it is not directly making the drafts
    but confirming for their confirmation — should not happen like this."*
 9. **Attach the scan** — `jivo-ap-draft/reference/attachments-upload.md` (steps 1, 4, 5,
-   6; there is no base document to copy). Stamp `U_CHK2 OK` or the pointer is refused.
+   6; there is no base document to copy). Stamp `U_CHK2 OK` or the pointer is refused,
+   and `CopyToTargetDoc tYES` on every line in every book (C-0090).
 10. **Read back:** `readback.py <DocEntry> --expect-total <net>` — its "not drawn from a
    GRPO" flags are a **false positive for this document class**; say so. Then verify by
    query: `DocTotal` exact, every line has `LocationCode`, `CostingCode3`, `U_Recvd_Qty`,

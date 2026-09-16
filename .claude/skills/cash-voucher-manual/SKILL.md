@@ -5,6 +5,19 @@ description: CASH VOUCHER TYPE 3 — the voucher with NO GRPO and NO BILL, just 
 
 # Cash voucher · TYPE 3 · the MANUAL voucher — slip only
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Daman named this type on **2026-09-12**: **"cash-voucher-manual"**. *"These are
 basically without GRPO or any bills."*
 
@@ -262,7 +275,7 @@ is over, **stop and tell the operator** — never split a voucher, never merge t
 The pack is the slip alone; there is no bill and no GRPO file to add. Name it
 `CASH-VCH-<no>-<dd-mm-yyyy>.pdf`, one line on the draft's own `Attachments2` row.
 Follow `jivo-ap-draft/reference/attachments-upload.md` — `-H "Expect:"` is
-load-bearing, stamp `U_CHK`/`U_CHK2` (Oil only) **before** pointing the draft at
+load-bearing, stamp `U_CHK`/`U_CHK2` (Oil/Bev) plus `CopyToTargetDoc tYES` (every book, C-0090) **before** pointing the draft at
 the row, each file under 1 MB, and `cmp` the `$value` read-back.
 
 Daman's standing rule for the sheet-batch (`cash-voucher` §8) is that the **front

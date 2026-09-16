@@ -59,5 +59,5 @@ share:
 
 Recipe: `jivo-ap-draft/reference/attachments-upload.md`. Beverages lands on
 `\\10.10.101.52\Attachments_Bev\JIVO_BEVERAGES\Attachments`. Stamp `U_CHK`
-(size KB) and `U_CHK2` = `OK` on **every** line (C-0026) — JIVO's 1120025
+(size KB), `U_CHK2` = `OK` and `CopyToTargetDoc` = `tYES` (C-0090) on **every** line (C-0026) — JIVO's 1120025
 "Select OK in Approve Column" guard refuses the Add otherwise.

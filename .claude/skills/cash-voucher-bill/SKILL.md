@@ -5,6 +5,19 @@ description: CASH VOUCHER TYPE 2 — the voucher whose paper is a REGISTERED VEN
 
 # Cash voucher · TYPE 2 · the voucher WITH A VENDOR'S BILL
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Daman named this type on **2026-09-12**: **"cash voucher bill"**. It is the type
 where the cash holder paid a **registered vendor** who issued a **proper GST tax
 invoice**, and nothing went through PO → GRPO.
@@ -290,7 +303,8 @@ Follow `jivo-ap-draft/reference/attachments-upload.md`. The traps that bit here:
 - **`-H "Expect:"` is load-bearing** on the upload POST.
 - **Oil only:** stamp `U_CHK = <size KB>`, `U_CHK2 = 'OK'` on every attachment
   line **before** patching `AttachmentEntry`, or SAP refuses with `-1116 (1120025)`
-  (C-0082). Mart has no such UDFs.
+  (C-0082). Mart has no such UDFs. **Every book, same PATCH: `CopyToTargetDoc = 'tYES'`
+  on every line** (C-0090) — in Mart it is the only field.
 - Each **file** must be under 1 MB. Voucher 421's pack was 922 KB and went as-is;
   re-render a fatter one per `cash-voucher` §8 and say the attached copy is a
   re-render.

@@ -5,6 +5,19 @@ description: Use when an operator hands over a vendor's tax invoice (PDF, photo,
 
 # A/P invoice draft from a vendor invoice (JIVO, SAP B1)
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Internal skill for the jivo-cli toolkit. Everything here was learned on live data
 on 2026-08-21: Frystal NINV/26-27/0826 turned out to be Neetu's existing Draft 54906;
 SSY 26-27/1450 became Drafts 54937 **and** 54938 — the same document twice, under two
@@ -188,7 +201,8 @@ command proven live: **`reference/attachments-upload.md`**. In short:
 2. Download the GRPO's file (`GET Attachments2(<grpoAE>)/$value`) and `PATCH Attachments2(N)`
    multipart to append it as line 2.
 3. Stamp every line `U_CHK = <size KB>`, `U_CHK2 = "OK"` — JIVO guard **1120025** refuses
-   the draft pointer otherwise (`[-1116] Select "OK" in Approve Column`).
+   the draft pointer otherwise (`[-1116] Select "OK" in Approve Column`) — **and
+   `CopyToTargetDoc = "tYES"` on every line, every book** (C-0090; Mart: that field only).
 4. `PATCH Drafts(<DocEntry>) {"AttachmentEntry": N}` (dry-run, then `--yes`).
 5. Read back draft **and** GRPO; `TargetPath` must be the Windows UNC
    (`\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments`) so the client can open it.

@@ -86,19 +86,31 @@ curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(N)/\$value?filename='332.pdf'" -o "$
 That is the same auto-rename visible on hand-keyed rows (Mart NCR-330 line 2). A name
 that is free keeps its clean form (`332.pdf`).
 
-## 4. Stamp every line — JIVO guard 1120025 "Select OK in Approve Column"
+## 4. Stamp every line — Approve tick (1120025) + Copy to Target Document (C-0090)
 
-**Oil only.** `ATC1` carries the `U_CHK` / `U_CHK2` UDFs in `JIVO_OIL_HANADB` and
-**not in Mart** (measured 2026-08-27: Oil has both, Mart has neither). In Mart skip this
-step — the PATCH would fail on an unknown field. Verify the same for Beverages before
-assuming.
+**This PATCH is never skipped, in any book.** Two things go on every line:
 
-`SBO_SP_TransactionNotification` refuses a draft that points at an attachment line
-whose `U_CHK2` is null. Human-keyed rows carry `U_CHK = <size KB>`, `U_CHK2 = 'OK'`.
+- **`CopyToTargetDoc = "tYES"` — ALL THREE books, every line, every document.**
+  Daman, 2026-09-16: whatever we attach must carry the "Copy to Target Document" tick, so
+  the file follows the document when it is copied onward (GRPO → A/P invoice, draft →
+  posted). An API upload lands **`tNO`** by default — measured: row 174394 read back `tNO`,
+  and of Oil's API-uploaded rows (`CopyToProd='Y'`) since 2026-08-20, 1,488 are `N` vs 423 `Y`.
+- **`U_CHK = <size KB>`, `U_CHK2 = "OK"` — Oil and Beverages only.** `ATC1` carries these
+  UDFs in `JIVO_OIL_HANADB` and `JIVO_BEVERAGES_HANADB` and **not in Mart**
+  (`SYS.TABLE_COLUMNS`, re-checked 2026-09-16). Sending them in Mart fails the PATCH on
+  an unknown field. `SBO_SP_TransactionNotification` refuses a draft that points at a line
+  whose `U_CHK2` is null.
 
 ```bash
-acc/_playbook/sap patch "Attachments2(N)" --data '{"Attachments2_Lines":[{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB1>,"U_CHK2":"OK"},{"AbsoluteEntry":N,"LineNum":2,"U_CHK":<KB2>,"U_CHK2":"OK"}]}' --yes
+# Oil / Beverages — one object per line
+acc/_playbook/sap patch "Attachments2(N)" --data '{"Attachments2_Lines":[{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB1>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"},{"AbsoluteEntry":N,"LineNum":2,"U_CHK":<KB2>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}]}' --yes
+
+# Mart — the tick alone
+acc/_playbook/sap patch "Attachments2(N)" --data '{"Attachments2_Lines":[{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"},{"AbsoluteEntry":N,"LineNum":2,"CopyToTargetDoc":"tYES"}]}' --yes
 ```
+
+Proven live 2026-09-16, HTTP 204 each, stamp values kept on read-back: Oil 177767
+(tick alone) and 177765 (tick + stamp together), Mart 59273, Beverages 43223.
 
 ## 5. Point the draft at the row
 
@@ -111,7 +123,7 @@ acc/_playbook/sap patch "Drafts(<DocEntry>)" --data '{"AttachmentEntry": N}' --y
 
 ```bash
 acc/_playbook/sap query Drafts --filter "DocEntry eq <DocEntry>" --select "DocEntry,NumAtCard,AttachmentEntry" --json    # → N
-curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(N)"     # every line: TargetPath = \\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments (Windows UNC → the client opens it), U_CHK2 OK
+curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(N)"     # every line: TargetPath = \\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments (Windows UNC → the client opens it), U_CHK2 OK, CopyToTargetDoc tYES (any tNO = not done)
 curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(N)/\$value" -o "$S/rb.pdf" -w "%{http_code}\n"; cmp "$S/rb.pdf" "$S/VENDOR-REF-DATE.pdf" && echo byte-identical
 # re-read the base document's AttachmentEntry: unchanged
 curl -sk -b "$S/ck" -X POST "$H/b1s/v1/Logout" -o /dev/null; rm -f "$S/ck" "$S/loginresp.json" "$S/rb.pdf"

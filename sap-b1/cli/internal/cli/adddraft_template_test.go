@@ -46,47 +46,26 @@ func TestTemplateGuardPassesForDivjotsLoginInEveryBook(t *testing.T) {
 
 func TestTemplateGuardStillRefusesALoginOnNoTemplate(t *testing.T) {
 	// The case this guard exists for, re-anchored on a login that really is on
-	// nothing: USER19 (GURCHARAN, Mahak's GRPO desk) was on ZERO Always-terms
-	// templates in all three books on 2026-09-09 and still was on 2026-09-16.
-	// (USER07 used to be the anchor here; it was added to Oil 103 on 2026-09-16
-	// — see TestTemplateGuardPassesForHarshInOilOnly.) SAP would find no
-	// template and post the invoice into the books unapproved.
+	// nothing: USER07 (HARSH) was measured on ZERO Always-terms templates in
+	// all three books on 2026-09-09, which is why Shahrukh's and Vishal's desks
+	// are drafts-only. SAP would find no template and post the invoice into the
+	// books unapproved.
 	pf := templatePreflight(actionSubmit)
-	checkAddApprovalTemplate(pf, &config.Config{CompanyDB: "JIVO_OIL_HANADB", User: "USER19"})
+	checkAddApprovalTemplate(pf, &config.Config{CompanyDB: "JIVO_OIL_HANADB", User: "USER07"})
 	if len(pf.Problems) != 1 {
-		t.Fatalf("USER19 is on no template for an A/P invoice in Oil — expected exactly one refusal, got %d: %v", len(pf.Problems), pf.Problems)
+		t.Fatalf("USER07 is on no template for an A/P invoice in Oil — expected exactly one refusal, got %d: %v", len(pf.Problems), pf.Problems)
 	}
 	p := pf.Problems[0]
 	if p.Guard != "template" {
 		t.Errorf("guard name = %q, want \"template\"", p.Guard)
 	}
-	for _, want := range []string{"USER19", "103", "USER39", "USER08", "USER07", "posts it LIVE"} {
+	for _, want := range []string{"USER07", "103", "USER39", "USER08", "posts it LIVE"} {
 		if !strings.Contains(p.Msg, want) {
 			t.Errorf("refusal does not mention %q, so the operator cannot act on it:\n%s", want, p.Msg)
 		}
 	}
 	if strings.Contains(strings.ToLower(p.Msg), "--force") {
 		t.Error("the refusal must not advertise an override; there is none")
-	}
-}
-
-func TestTemplateGuardPassesForHarshInOilOnly(t *testing.T) {
-	// USER07 (HARSH) was added to Oil 103 on 2026-09-16 ("do it for Harsh
-	// also") and read back as USER39,USER08,USER07 with approver USER03. Mart
-	// 48 and Bev 68 were NOT changed that day, so the same login must still be
-	// refused there — the guard is per book, and a pass in Oil is not evidence
-	// for Mart.
-	pf := templatePreflight(actionSubmit)
-	checkAddApprovalTemplate(pf, &config.Config{CompanyDB: "JIVO_OIL_HANADB", User: "USER07"})
-	if len(pf.Problems) != 0 {
-		t.Errorf("USER07 is an originator on Oil 103 since 2026-09-16; guard refused anyway: %v", pf.Problems)
-	}
-	for _, db := range []string{"JIVO_MART_HANADB", "JIVO_BEVERAGES_HANADB"} {
-		pf := templatePreflight(actionSubmit)
-		checkAddApprovalTemplate(pf, &config.Config{CompanyDB: db, User: "USER07"})
-		if len(pf.Problems) != 1 {
-			t.Errorf("USER07 is on no Always-terms template in %s — expected one refusal, got %d: %v", db, len(pf.Problems), pf.Problems)
-		}
 	}
 }
 

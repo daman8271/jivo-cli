@@ -5,6 +5,19 @@ description: Use when a labour contractor's loading / unloading bill arrives for
 
 # Loading / unloading labour bill → A/P invoice draft (JIVO Oil / Bev)
 
+> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
+> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
+> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
+> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
+> **in all three books**, before pointing the document at the row:
+> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
+> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
+>
+> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
+> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
+> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+
 Internal skill. Built from the live maiden runs 2026-09-01: BHORIA oil bill
 90059 → Oil draft 55786 (cloned from posted 49636/49170; later deleted on
 Daman's order) and water bill 48634 → **Bev draft 15816** (cloned from Bev
@@ -32,7 +45,7 @@ trails. What flips with that one word:
 | TDS `WTCode` (194C 1%) | `1023` | `1230` |
 | Series (Aug-26) | 3324 | 2678 |
 | Rate basis | ₹/kg (× 0.910 check!) | ₹/litre (no conversion) |
-| Attach stamp | `U_CHK` KB + `U_CHK2 OK` | `U_CHK2 OK` only |
+| Attach stamp | `U_CHK` KB + `U_CHK2 OK` + `CopyToTargetDoc tYES` | `U_CHK2 OK` + `CopyToTargetDoc tYES` |
 
 Everything else below is identical in both books (measured on the posted
 precedents of each).
@@ -104,7 +117,7 @@ Attach the **whole scan** — bill page plus every dispatch-register page — pe
 `jivo-ap-draft/reference/attachments-upload.md` (no base document: scan
 alone). **Trap found on the maiden run: curl multipart to `Attachments2`
 returns `206 Bad Post content` until you add `-H "Expect:"`** (curl's
-`Expect: 100-continue` breaks the SL). Stamp `U_CHK`/`U_CHK2 OK`, PATCH the
+`Expect: 100-continue` breaks the SL). Stamp `U_CHK`/`U_CHK2 OK` + `CopyToTargetDoc tYES` (C-0090), PATCH the
 draft's `AttachmentEntry`, verify byte-identical read-back.
 
 Then `jivo-add-and-new` applies as everywhere — submit with

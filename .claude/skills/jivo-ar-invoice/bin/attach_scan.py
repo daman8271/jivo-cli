@@ -117,10 +117,18 @@ def main():
             print(f"  FAIL  {inv} upload {r.stdout.strip()} {r.stderr.strip()[:100]}")
             fail += 1; continue
         ae = json.load(open(up))["AbsoluteEntry"]
-        subprocess.run([SAPB1, "patch", f"Attachments2({ae})", "--yes", "--data",
-                        json.dumps({"Attachments2_Lines": [
-                            {"AbsoluteEntry": ae, "LineNum": 1, "U_CHK": kb, "U_CHK2": "OK"}]})],
-                       capture_output=True, text=True, env=env, cwd=REPO)
+        # C-0090: Copy to Target Document on every line, every book (an API
+        # upload lands tNO). U_CHK/U_CHK2 exist in Oil and Bev only - Mart
+        # refuses the whole PATCH on an unknown field, so leave them out there.
+        line = {"AbsoluteEntry": ae, "LineNum": 1, "CopyToTargetDoc": "tYES"}
+        if "MART" not in company.upper():
+            line.update({"U_CHK": kb, "U_CHK2": "OK"})
+        s = subprocess.run([SAPB1, "patch", f"Attachments2({ae})", "--yes", "--data",
+                            json.dumps({"Attachments2_Lines": [line]})],
+                           capture_output=True, text=True, env=env, cwd=REPO)
+        if s.returncode != 0:
+            print(f"  WARN  {inv} row {ae}: Copy to Target / Approve stamp NOT set - "
+                  f"{(s.stderr or s.stdout).strip().splitlines()[-1][:120]}")
         p = subprocess.run([SAPB1, "patch", f"Invoices({de})", "--yes", "--data",
                             json.dumps({"AttachmentEntry": ae})],
                            capture_output=True, text=True, env=env, cwd=REPO)
