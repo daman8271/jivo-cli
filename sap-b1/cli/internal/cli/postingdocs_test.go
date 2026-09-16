@@ -18,6 +18,13 @@ func TestPostRefusesEveryLivePostingDocument(t *testing.T) {
 		"JournalEntries",
 		"InventoryGenEntries", "InventoryGenExits", "StockTransfers",
 		"InventoryTransferRequests", "InventoryCountings",
+		"InventoryPostings", "InventoryOpeningBalances", "MaterialRevaluation", "LandedCosts",
+		"CorrectionInvoice", "CorrectionInvoiceReversal",
+		"CorrectionPurchaseInvoice", "CorrectionPurchaseInvoiceReversal",
+		"SelfInvoices", "SelfCreditMemos", "PurchaseTaxInvoices", "SalesTaxInvoices",
+		"BillOfExchangeTransactions",
+		"AssetCapitalization", "AssetCapitalizationCreditMemo", "AssetManualDepreciation",
+		"AssetRetirement", "AssetTransfer",
 	} {
 		if _, err := validateWriteEntitySet(set, "POST"); err == nil {
 			t.Errorf("post %s was allowed — that creates a live document in the ledger", set)
@@ -93,7 +100,7 @@ func TestEveryDraftableDocTypeIsBlockedLive(t *testing.T) {
 func TestGRPOIsThePostableException(t *testing.T) {
 	for _, spelling := range []string{"PurchaseDeliveryNotes", "purchasedeliverynotes", "PURCHASEDELIVERYNOTES"} {
 		if _, err := validateWriteEntitySet(spelling, "POST"); err != nil {
-			t.Errorf("post %q must be allowed — SAP refuses the draft route for Mart's GRPO desk; got: %v", spelling, err)
+			t.Errorf("post %q must still pass the company-blind check (the carve-out is closed per company, by refuseLivePostInMart); got: %v", spelling, err)
 		}
 	}
 	if len(postableLive) != 1 {
@@ -103,5 +110,72 @@ func TestGRPOIsThePostableException(t *testing.T) {
 		if _, err := validateWriteEntitySet(set, "POST"); err == nil {
 			t.Errorf("post %s came unblocked alongside the GRPO carve-out — that is the C-0034 accident again", set)
 		}
+	}
+}
+
+// Daman, 2026-09-16: in JIVO MART nothing is ever posted directly to the ledger.
+// Every carve-out postableLive opens elsewhere is shut in Mart, however the
+// company name was typed. The 13 live Mart GRPOs of 2026-09-04 (DocEntry
+// 14012-14024) went in through exactly this hole.
+func TestMartClosesEveryCarveOut(t *testing.T) {
+	if len(postableLive) == 0 {
+		t.Fatal("postableLive is empty — this test no longer proves anything; drop refuseLivePostInMart's carve-out logic together with it")
+	}
+	for set := range postableLive {
+		for _, db := range []string{"JIVO_MART_HANADB", "jivo_mart_hanadb", "  JIVO_MART_HANADB "} {
+			if err := refuseLivePostInMart(set, "POST", db); err == nil {
+				t.Errorf("post %s in %q was allowed — nothing in Mart may be posted straight to the ledger", set, db)
+			}
+		}
+	}
+}
+
+func TestMartRefusalNamesTheDraftRoute(t *testing.T) {
+	err := refuseLivePostInMart("PurchaseDeliveryNotes", "POST", "JIVO_MART_HANADB")
+	if err == nil {
+		t.Fatal("post PurchaseDeliveryNotes in Mart must be refused")
+	}
+	for _, want := range []string{"JIVO MART", "DRAFT", "sapb1 draft grpo", "no flag"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("Mart refusal is missing %q:\n%s", want, err)
+		}
+	}
+}
+
+// The Mart rule must not leak into the other two books, into PATCH, or into
+// master data in Mart itself.
+func TestMartRuleStaysInMart(t *testing.T) {
+	for _, db := range []string{"JIVO_OIL_HANADB", "JIVO_BEVERAGES_HANADB", "TESTDB"} {
+		if err := refuseLivePostInMart("PurchaseDeliveryNotes", "POST", db); err != nil {
+			t.Errorf("%s: the Mart rule refused a non-Mart company: %v", db, err)
+		}
+	}
+	if err := refuseLivePostInMart("PurchaseDeliveryNotes", "PATCH", "JIVO_MART_HANADB"); err != nil {
+		t.Errorf("PATCH is not a new entry and must not be refused here: %v", err)
+	}
+	for _, set := range []string{"BusinessPartners", "Items", "Drafts", "PaymentDrafts", "Attachments2"} {
+		if err := refuseLivePostInMart(set, "POST", "JIVO_MART_HANADB"); err != nil {
+			t.Errorf("post %s in Mart must still work, got: %v", set, err)
+		}
+	}
+}
+
+// End to end through the real command: the refusal is wired into `post`, it
+// fires before --dry-run and before --yes, and not one request reaches SAP.
+func TestPostCommandRefusesLiveGRPOInMart(t *testing.T) {
+	f := newFakeSAP(t)
+	withTTY(t, false)
+	for _, extra := range []string{"--yes", "--dry-run"} {
+		_, _, err := execWrite(t, "", "post", "PurchaseDeliveryNotes", "--company", "JIVO_MART_HANADB", extra,
+			"--data", `{"CardCode":"VENDA000001"}`)
+		requireUsageError(t, err, "JIVO MART", "sapb1 draft grpo")
+	}
+	if f.hits != 0 {
+		t.Fatalf("%d request(s) reached SAP; a refused Mart post must send nothing", f.hits)
+	}
+	// And the same command against Oil is untouched by the Mart rule.
+	if _, _, err := execWrite(t, "", "post", "PurchaseDeliveryNotes", "--company", "JIVO_OIL_HANADB", "--dry-run",
+		"--data", `{"CardCode":"VENDA000001"}`); err != nil {
+		t.Errorf("post PurchaseDeliveryNotes --dry-run in Oil was refused; the Mart rule leaked: %v", err)
 	}
 }

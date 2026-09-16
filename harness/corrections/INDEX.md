@@ -25,6 +25,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0056]** EXIM is the ONLY source for oil quantity, tanks and grades. SAP is MISSING oil items entirely (no 2B grades exist there) - it is never a fallback and never a cross-check. EXIM down = say so, do not quote SAP.
 - **[C-0057]** Kundli electricity is ONE plant bill shared Oil+Beverages, and water production is the heavy user - Bev books ~Rs 15.8L/mth, Oil ~Rs 11.7L/mth. Charge each company its own power only; never load the whole bill on Oil.
 - **[C-0073]** A half-search is not an answer: never say a GRPO/invoice/draft/PO/vendor is 'not found' until ALL THREE companies (Oil, Mart, Beverages) are searched. Then say exactly what was checked and try the next key yourself — an operator who hears 'not found' concludes the tool cannot do it and stops.
+- **[C-0091]** JIVO MART: never post an entry directly to the ledger. Every Mart document (GRPO, A/P, credit note, payment, JV) goes in as a DRAFT; if SAP refuses the draft, stop - never fall back to sapb1 post.
 ## accounts
 - **[C-0013]** INV1: HsnEntry and SacEntry are mutually exclusive - goods carry HSN, services carry SAC. A blank HsnEntry is only a defect if SacEntry is also empty. Never flag missing HSN without checking SAC.
 - **[C-0014]** Buyer GSTIN is INV12.BpGSTN (invoice level, 15 chars). OCRD.LicTradNum is EMPTY for all customers and CRD7.TaxId0 is the 10-char PAN - never use either to decide B2B vs B2C.

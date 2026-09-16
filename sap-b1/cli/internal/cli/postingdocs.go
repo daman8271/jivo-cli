@@ -74,8 +74,42 @@ type postingDocTarget struct {
 // that creates money out of a keystroke — A/P and A/R invoices, credit notes,
 // payments, journal entries, free-hand stock movements — is still refused, and
 // still has no flag.
+//
+// It no longer exists in JIVO MART. USER19 has drafted GRPOs in Mart since
+// 2026-09-08 (Drafts 40246-40259), so the "live or nothing" premise is gone
+// there, and on 2026-09-16 Daman ruled that nothing in Mart is ever posted
+// straight to the ledger. refuseLivePostInMart closes every entry of this map
+// for that company — including any entry added here later.
 var postableLive = map[string]string{
-	"purchasedeliverynotes": "GRPO — draft route refused by SAP for USER19 in Mart (-6006); Daman 2026-09-04",
+	"purchasedeliverynotes": "GRPO — opened for USER19's Mart desk (-6006 on drafts), Daman 2026-09-04; closed in Mart 2026-09-16",
+}
+
+// refuseLivePostInMart is Daman's rule of 2026-09-16: in JIVO MART no entry is
+// ever posted directly to the ledger. Every Mart document goes in as a draft.
+//
+// validateWriteEntitySet has already refused every posting document except the
+// postableLive carve-outs, and it cannot see the company, so the carve-outs are
+// closed here, where it can. The 13 Mart GRPOs posted live through that
+// carve-out on 2026-09-04 (DocEntry 14012-14024) are why this is code and not a
+// sentence. There is no flag.
+func refuseLivePostInMart(entitySet, method, companyDB string) error {
+	if !strings.EqualFold(method, "POST") || !isMartCompany(companyDB) {
+		return nil
+	}
+	if _, carved := postableLive[strings.ToLower(entitySet)]; !carved {
+		return nil
+	}
+	return &errs.UsageError{Msg: fmt.Sprintf(
+		"refusing to POST %s in %s: in JIVO MART nothing is ever posted directly to the ledger (Daman, 2026-09-16). Every Mart entry goes in as a DRAFT.\n"+
+			"  Use `sapb1 draft grpo --company %s` instead. A person presses Add in SAP B1 → Document Drafts.\n"+
+			"  If SAP refuses the draft, stop and say so. Do not look for another route to a live document in Mart. There is no flag for this.",
+		entitySet, companyDB, companyDB)}
+}
+
+// isMartCompany matches the Mart book however its name was typed on --company
+// or in .env.
+func isMartCompany(companyDB string) bool {
+	return strings.Contains(strings.ToUpper(strings.TrimSpace(companyDB)), "JIVO_MART")
 }
 
 // livePostingDocuments is keyed by lower-cased entity set. The marketing
@@ -101,6 +135,27 @@ func livePostingDocuments() map[string]postingDocTarget {
 		"stocktransfers":            {noun: "stock transfer", instead: "A stock transfer moves stock between warehouses. It is keyed by a person in Inventory → Inventory Transactions."},
 		"inventorytransferrequests": {noun: "stock transfer request", instead: "Keyed by a person in Inventory → Inventory Transactions → Inventory Transfer Request."},
 		"inventorycountings":        {noun: "inventory counting", instead: "A counting document adjusts stock on hand. It is keyed by a person in Inventory → Inventory Transactions → Inventory Counting Transactions."},
+		// Found 2026-09-16 while closing Mart: the catalog lets `post` create
+		// these, each one writes a journal entry, and none was on this list. No
+		// write log line has ever touched any of them.
+		"inventorypostings":                 {noun: "inventory posting", instead: "An inventory posting writes stock differences to the ledger. It is keyed by a person in Inventory → Inventory Transactions → Inventory Posting."},
+		"inventoryopeningbalances":          {noun: "inventory opening balance", instead: "An opening balance posts stock value to the ledger. It is keyed by a person in Inventory → Inventory Transactions."},
+		"materialrevaluation":               {noun: "inventory revaluation", instead: "A revaluation re-prices stock in the ledger. It is keyed by a person in Inventory → Inventory Transactions → Inventory Revaluation."},
+		"landedcosts":                       {noun: "landed cost", instead: "Landed costs post to stock and the ledger. They are keyed by a person in Purchasing → Landed Costs."},
+		"correctioninvoice":                 {noun: "A/R correction invoice", instead: "Keyed by a person in Sales A/R → A/R Correction Invoice."},
+		"correctioninvoicereversal":         {noun: "A/R correction invoice reversal", instead: "Keyed by a person in Sales A/R → A/R Correction Invoice Reversal."},
+		"correctionpurchaseinvoice":         {noun: "A/P correction invoice", instead: "Keyed by a person in Purchasing A/P → A/P Correction Invoice."},
+		"correctionpurchaseinvoicereversal": {noun: "A/P correction invoice reversal", instead: "Keyed by a person in Purchasing A/P → A/P Correction Invoice Reversal."},
+		"selfinvoices":                      {noun: "self invoice", instead: "Keyed by a person in the SAP B1 client."},
+		"selfcreditmemos":                   {noun: "self credit memo", instead: "Keyed by a person in the SAP B1 client."},
+		"purchasetaxinvoices":               {noun: "A/P tax invoice", instead: "Keyed by a person in the SAP B1 client."},
+		"salestaxinvoices":                  {noun: "A/R tax invoice", instead: "Keyed by a person in the SAP B1 client."},
+		"billofexchangetransactions":        {noun: "bill of exchange transaction", instead: "Keyed by a person in Banking → Bill of Exchange."},
+		"assetcapitalization":               {noun: "asset capitalization", instead: "Keyed by a person in Financials → Fixed Assets → Capitalization."},
+		"assetcapitalizationcreditmemo":     {noun: "asset capitalization credit memo", instead: "Keyed by a person in Financials → Fixed Assets."},
+		"assetmanualdepreciation":           {noun: "manual depreciation", instead: "Keyed by a person in Financials → Fixed Assets → Manual Depreciation."},
+		"assetretirement":                   {noun: "asset retirement", instead: "Keyed by a person in Financials → Fixed Assets → Retirement."},
+		"assettransfer":                     {noun: "asset transfer", instead: "Keyed by a person in Financials → Fixed Assets → Transfer."},
 	} {
 		m[set] = t
 	}

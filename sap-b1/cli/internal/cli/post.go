@@ -23,6 +23,10 @@ posted here is live the moment SAP accepts it — it hits stock and the ledger,
 and this CLI cannot delete or cancel it. (sapb1 delete removes DRAFTS only;
 nothing here can undo a post.)
 
+In JIVO MART (JIVO_MART_HANADB) nothing is ever posted directly to the ledger
+(Daman, 2026-09-16): post refuses every document there, the GRPO included.
+Every Mart entry is a draft.
+
 Where post earns its keep is master data and other non-posting objects that
 have no draft equivalent, e.g.:
 
@@ -68,6 +72,9 @@ func runPost(cmd *cobra.Command, entitySetArg string, wf writeFlags) error {
 	// even reads the payload, let alone opens a session.
 	entitySet, err := validateWriteEntitySet(entitySetArg, "POST")
 	if err != nil {
+		return err
+	}
+	if err := refuseLivePostInMart(entitySet, "POST", cfg.CompanyDB); err != nil {
 		return err
 	}
 
