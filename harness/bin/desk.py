@@ -212,7 +212,9 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
     if not base:
         base = ["/*"]
-    block = [BEGIN, *[f"!/{p}/" for p in paths], END]
+    # No trailing slash: "!/x/" matches only a directory, so a single file
+    # (another operator's .env) stayed on the box. "!/x" matches both.
+    block = [BEGIN, *[f"!/{p}" for p in paths], END]
     content = "\n".join(base + block) + "\n"
     still_present = [p for p in paths if (REPO / p).exists()]
     if sf.exists() and sf.read_text(encoding="utf-8") == content and not still_present:
