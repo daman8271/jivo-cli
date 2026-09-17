@@ -8,8 +8,19 @@ Everything except the bill itself is pulled live from SAP. Nothing is written to
 SAP by this script — it only reads and writes local files.
 
 Built 2026-08-27 from ARNAV bill ATS-402 (44 bilties, Rs 3,12,135 -> drafts 15671-15714).
+
+Checked here, and nothing is built if any fails (Daman + Mahak 2026-09-17):
+  Litres (C-0095)   from the tax invoice only: the printed litre Total read by
+                    jivo-oil-freight-grpo/bin/parse_invoices.py (--invoices); calculated only
+                    when the invoice prints no litre table.
+  Labour (C-0062)   each bilty's labour + freight must equal its total; the GRPO carries the total.
+  Month (C-0093)    each line = the month of its own sale invoice date.
 """
 import argparse, collections, csv, json, os, re, subprocess, sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                '..', '..', 'jivo-oil-freight-grpo', 'bin'))
+import freight_checks as fc
 
 # JIVO WELLNESS + JIVO MART cards IN THE BEVERAGES BOOK (verified 2026-08-31 from
 # that book's OCRD). Never reuse another book's list — CUSTA000877 is JIVO MART-RJ
@@ -85,7 +96,13 @@ WHERE I."DocNum" IN ({inlist})''', exe)
                                              name=r["CARDNAME"], cancelled=r["CANCELED"],
                                              shipstate=r["SHIPSTATE"], shipto=r["SHIPTO"],
                                              cat=collections.Counter()))
-        e["cat"][r["CATEG"] or "?"] += litres(r["DESCR"], float(r["QTY"]))
+        g = (r["CATEG"] or "").strip().upper()
+        if g not in fc.LIQUID and g != "GIFT PACK":      # cartons, caps, powder: 0 L (C-0095)
+            continue
+        try:
+            e["cat"][r["CATEG"]] += litres(r["DESCR"], float(r["QTY"]))
+        except ValueError:
+            e.setdefault("unknown", []).append(r["DESCR"])
     return inv
 
 
@@ -119,6 +136,8 @@ The sheet name inside the workbook is the bill number (ATS:402 -> sheet '402')."
     ap.add_argument("--taxcode", default="RIGST@5",
                     help="from the TRANSPORTER's GSTIN state vs the 06 branch, never the "
                          "destination (C-0049). Delhi transporter -> RIGST@5")
+    ap.add_argument("--invoices", required=True,
+                    help="invoices.json from parse_invoices.py, run on every invoice's PDF (C-0095)")
     ap.add_argument("--out", default="payloads")
     ap.add_argument("--ignore-existing", action="store_true",
                     help="build payloads even for bilties already in SAP (use after a delete)")
@@ -126,6 +145,10 @@ The sheet name inside the workbook is the bill number (ATS:402 -> sheet '402')."
     a = ap.parse_args()
 
     rows = [l.rstrip("\n").split("\t") for l in open(a.bill) if l.strip()]
+    for r in rows:                  # a stopped run must never leave an old payload to send
+        old = os.path.join(a.out, r[2] + ".json")
+        if os.path.exists(old):
+            os.remove(old)
     allinv, bilties = [], []
     for r in rows:
         allinv += expand(r[3])
@@ -133,11 +156,43 @@ The sheet name inside the workbook is the bill number (ATS:402 -> sheet '402')."
     inv = fetch_invoices(allinv, a.hana)
     seen = existing_grpos(bilties, a.hana)
 
+    # C-0095: litres from the tax invoice (printed Total; calculated only when none is printed)
+    allinv = fc.clean(allinv)
+    stops = fc.repeated([allinv])
+    stops += [f"invoice {i} not in Beverages OINV (wrong company? check the consignees)"
+              for i in dict.fromkeys(allinv) if i not in inv]
+    stops += [f"invoice {i} is CANCELLED" for i in dict.fromkeys(allinv)
+              if i in inv and inv[i]["cancelled"] == "Y"]
+    zero = {i for i in inv if not inv[i]["cat"] and not inv[i].get("unknown")}   # nothing sold by the litre
+    ready = [i for i in dict.fromkeys(allinv) if i in inv and i not in zero]
+    parsed = json.load(open(a.invoices))
+    litres_of, bad, notes = fc.pick_litres(
+        ready, parsed,
+        {i: {'litres': None if inv[i].get("unknown") else round(sum(inv[i]["cat"].values()), 2),
+             'why': 'no bottle size in: ' + '; '.join(inv[i].get("unknown", [])[:2])} for i in ready})
+    stops += bad + fc.skipped_but_printed(zero, parsed)
+
+    def dim1(i):          # the invoice's litre table, else SAP's dominant group
+        p = parsed.get(i) or {}
+        if p.get('ok_total') and p.get('ok_pairing') and p.get('dim1'):
+            return p['dim1']
+        return inv[i]["cat"].most_common(1)[0][0] if inv[i]["cat"] else None
+    stops += [f"invoice {i}: no variety (Dim1) from the invoice or SAP — read it by eye"
+              for i in ready if not dim1(i)]
+    for r in rows:                                   # C-0062: labour + freight = total
+        if abs(float(r[7] or 0) + float(r[8] or 0) - float(r[9])) > 0.5:
+            stops.append(f"bilty {r[2]}: labour {r[7]} + freight {r[8]} is not the total {r[9]}")
+    if stops:
+        sys.exit("NOT BUILT — fix these first:\n  " + "\n  ".join(stops))
+
     problems, out = [], []
     for r in rows:
         _srl, bdate, bilty, cell, wt, dest, to, _lab, _fr, tot = r[:10]
         tot = float(tot)
-        invs = expand(cell)
+        invs = [i for i in expand(cell) if i not in zero]          # no litre product -> no line
+        if not invs:
+            problems.append(f"bilty {bilty}: nothing sold by the litre on it — no GRPO")
+            continue
 
         for i in invs:
             if i not in inv:
@@ -151,7 +206,7 @@ The sheet name inside the workbook is the bill number (ATS:402 -> sheet '402')."
             problems.append(f"bilty {bilty}: already in SAP as {seen[bilty]} — skipped")
             continue
 
-        lts = [sum(inv[i]["cat"].values()) for i in invs]
+        lts = [litres_of[i] for i in invs]                           # C-0095
         total_l = sum(lts)
         if total_l <= 0:
             problems.append(f"bilty {bilty}: zero litres")
@@ -192,8 +247,8 @@ The sheet name inside the workbook is the bill number (ATS:402 -> sheet '402')."
                 "LocationCode": 2,
                 "SACEntry": 3,                   # 996812 freight; constant in Bev, unlike Oil
                 "SalesPersonCode": 3,
-                "CostingCode": e["cat"].most_common(1)[0][0],   # Dim1 = dominant category
-                "CostingCode2": e["date"][5:7] + "-" + e["date"][:4],  # Dim2 = INVOICE month
+                "CostingCode": dim1(iv),                        # Dim1 = dominant category
+                "CostingCode2": fc.month(e["date"]),  # Dim2 = that line's INVOICE month (C-0093)
                 "CostingCode3": "Del Bkhp",
                 "CostingCode5": dim5,
                 "WTLiable": "tNO",               # a GRPO never deducts TDS (C-0039)
@@ -226,6 +281,7 @@ The sheet name inside the workbook is the bill number (ATS:402 -> sheet '402')."
     print(f"payloads built : {len(out)}  ({sum(len(d['DocumentLines']) for _, d in out)} lines) -> {a.out}/")
     print(f"paper total    : Rs {paper:,.2f}")
     print(f"payload total  : Rs {built:,.2f}  {'TIES' if abs(paper-built) < 0.01 else '*** DOES NOT TIE ***'}")
+    problems += notes
     print(f"\nchecks: {'all clean' if not problems else str(len(problems)) + ' to look at'}")
     for p in problems:
         print("  ! " + p)

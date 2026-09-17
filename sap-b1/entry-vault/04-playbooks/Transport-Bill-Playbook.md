@@ -178,7 +178,7 @@ Mart — same PAN `ACBPY4022H`** — and its 22 Mart bills still carry no TDS.
 |---|---|---:|
 | `AcctCode` | **`5670001`** FREIGHT AND CARTAGE OUTWARD-INDIRECT | 1,077 of 1,093 (98.5 %). Others: `5100002` freight inward-direct 8 · `1212013` building WIP 6 · `5680028` 1 · `5500001` import 1 |
 | Dim1 `OcrCode` | **the variety** — MUSTARD, OLIVE, CANOLA, SOYABEAN, GROUNDNT … | 100 %, 20 distinct |
-| Dim2 `OcrCode2` | **Effective Month `MM-YYYY` — the DISPATCH month, per line, not the bill's month** | 100 %. One July bill carried 05-2026, 06-2026 and 07-2026 lines. → C-0033, C-0035 |
+| Dim2 `OcrCode2` | **Effective Month `MM-YYYY` — each line keeps its GRPO line's month = that line's sale invoice month, not the bill's month** | 100 %. One July bill carried 05-2026, 06-2026 and 07-2026 lines. **Keep it as copied — never overwrite with the bill's month.** → C-0033, **C-0093**, **C-0094** |
 | Dim3 `OcrCode3` | **book-local**: Oil `Del Bkhp` (1,077) · Mart `SUPPLY-C` (530) · Bev `Del Bkhp` (815) | 100 %. **Never `FACT_COM`** — that is the factory-bill code (C-0027) |
 | Dim4 `OcrCode4` | **Oil: empty. Mart: always set** — `SC-BHKR` 305 · `SC-WARH` 225 | Oil 0 of 1,093; Mart 530 of 530 |
 | Dim5 `OcrCode5` | **destination state** | 1,085 of 1,093 |
@@ -256,7 +256,7 @@ never on the GSTIN column (C-0014). → [[Business-Partner-Master]]
 - [ ] tax shape read off the paper: RCM (header `VatSum` 0) vs forward charge
 - [ ] TDS written by `jivo-tds apply`; `jivo-tds check` passed after sending
 - [ ] `DocTotal` = freight − TDS (GTA) reconciles to the bill
-- [ ] read back Dim2 per line = the **dispatch** month; Dim3 = the book's code; Dim5 = destination
+- [ ] read back Dim2 per line = that line's **sale invoice** month (C-0093); Dim3 = the book's code; Dim5 = destination
 - [ ] scan attached, `U_CHK2 = OK`
 - [ ] **`add-draft`, then `WddStatus = 'W'`**
 

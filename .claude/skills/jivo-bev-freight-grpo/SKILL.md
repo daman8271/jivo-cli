@@ -79,8 +79,21 @@ Sanity-check the transcription before going further: every row's
 
 ```bash
 python3 .claude/skills/jivo-bev-freight-grpo/bin/build.py <bill.tsv> \
-    --vendor VENDA000948 --series <month series> --out payloads
+    --vendor VENDA000948 --series <month series> --invoices invoices.json --out payloads
 ```
+
+`invoices.json` comes from `.claude/skills/jivo-oil-freight-grpo/bin/parse_invoices.py` run on the
+folder of that bill's **tax invoice PDFs** — litres come from the invoice only (**C-0095**).
+**Nothing is built** if an invoice's PDF is missing, or if any row's `labour + freight` is not
+its `total` (**C-0062** — the GRPO carries the total, labour included).
+
+**Where these come from — not from Mahak's typing.** She hands over one PDF (or a pack of
+scans). Read the **labour** off the transporter's bill (its labour / loading / hamali column)
+and write it yourself. The **tax invoice PDFs** are usually in the same pack; if one is not,
+find it in mail (`mail-cli/jmail search --text <invoice no> --with-attachments`, then
+`jmail pull`) — Oil from `logistics@` / `ppc.ho@`, Mart in the *Factory Dispatch Sheet* mail,
+Beverages from `beverages@`. Only if it is in neither, ask her for that invoice in one plain line.
+Run `parse_invoices.py` on the folder of PDFs to make `invoices.json`.
 
 It reads SAP for the invoice date, consignee, ship-to state and litres, applies every
 rule in §3, refuses any bilty already posted or drafted, and prints a check report.
@@ -125,7 +138,7 @@ One line per invoice on the bilty:
 | `SACEntry` | **`3`** = SAC `996812` freight | **constant in Bev** — 2,406/2,406 ARNAV lines. Oil's 2-vs-40 split (C-0049) does not apply |
 | `SalesPersonCode` | `3` | |
 | `CostingCode` Dim1 | the invoice's **dominant Product Category** — in practice always `WATER` | 50/50 on ATS-402, 393/400 on precedent |
-| `CostingCode2` Dim2 | **the month of the INVOICE date**, `MM-YYYY` | Daman: "invoice date is the factory month". Holds 2,100/2,334. **Not the bilty month** — 12 of ATS-402's 50 lines are `07-2026` under an August bilty |
+| `CostingCode2` Dim2 | **the month of THAT LINE's tax (sale) invoice date**, `MM-YYYY` | **C-0093**. Daman: "invoice date is the factory month". Holds 2,100/2,334. **Never the bilty month** — 12 of ATS-402's 50 lines are `07-2026` under an August bilty |
 | `CostingCode3` Dim3 | `Del Bkhp` | 100% |
 | `CostingCode5` Dim5 | **the state of the SHIP-TO address on the AR invoice** | §6 |
 | `WTLiable` | `tNO` | a GRPO never deducts TDS (C-0039) |
@@ -134,15 +147,14 @@ One line per invoice on the bilty:
 | `U_CardCode` | the invoice's **bill-to** CardCode | §6 |
 | `U_Sub_Account` | **`SALES`** for an outside customer · **`BST`** when the invoice is billed to JIVO WELLNESS or JIVO MART — per line, off `U_ARNO` (**C-0063**). `build.py` uses the **Beverages book's** card list; CardCodes differ per book | |
 | `U_Remarks` | `BILTY NO <n>` | |
-| `U_UNE_LTS` | litres on that invoice | §4 |
+| `U_UNE_LTS` | the litre Total printed on that tax invoice | §4, **C-0095** |
 | `U_UNE_CALI` / `U_UNE_CUNT` / `U_UNE_SCHI` | `Y` / `Y` / `N` | |
 
-## 4 · Litres — in Beverages you CAN compute them
+## 4 · Litres — from the tax invoice
 
-**This is the one place Beverages departs from C-0047.** In Oil the litre figure must be
-read off the AR invoice PDF because `OITM` volume fields are NULL and packs are sold by
-weight. In Beverages every SKU is a bottle with its volume printed in the item name and
-quantity in PCS (C-0001), so:
+**Litres come from the tax invoice only** (**C-0095**, Daman 17 Sept): the printed Total of its
+Litre column, read by `parse_invoices.py` (checked on 4 invoices of 16 Sept, 3,000 L each, rows
+= Total). Only an invoice that prints no litre table is calculated:
 
 > **litres = Σ (pack volume from the item name × quantity)**, and a
 > `GIFT PACK 10 BOTTLES WHEAT GRASS` counts as **2.0 L** (10 × 200 ML).
@@ -157,15 +169,15 @@ misses are a transposition on bilty 7275 where the computed figure is the correc
 **Split the bill's TOTAL across the invoices litre-wise, last line absorbing the
 rounding** (C-0048), so the document ties to the bilty to the rupee.
 
-### Verify against the PDF for anything that isn't plain water
+### When the printed Total and the calculation differ
 
-The mailbox is the authority; compute is the fast path. Pull the PDF for every invoice
-carrying a `DRINKS` or `GIFT PACK` line — that is where the historical misses cluster.
+The builder uses the printed Total and prints a note. The historical calculation misses
+cluster on `DRINKS` and `GIFT PACK` lines, so a note there is normal.
 
 **Beverages AR invoices come from `beverages@jivo.in`**, not `ppc.ho@jivo.in` (that is
 the Oil path).
 
-> **⚠ Read the Product Category block by its HEADER, never by position.** Beverages prints
+> **⚠ The reader goes by the HEADER, never by position** (and so must you, reading by eye). Beverages prints
 > it in **two different column orders** — `Category | Gross Wt | Liter` *and*
 > `Category | Litre | Gross Wt` — and sometimes with no `Total` row at all. Taking the
 > first number blind gives you the weight: on invoice `626088122` that is **53,898**
@@ -239,7 +251,7 @@ hana-sql/hana-sql 'SELECT D."NumAtCard",D."DocEntry",D."DocTotal",D."VatSum",D."
 - [ ] Σ `DocTotal` = the bill footer
 - [ ] `VatSum` 0 and `WTSum` 0 on every header
 - [ ] Series / BPL / DocType right on every one
-- [ ] Σ `U_UNE_LTS` = the litres you computed
+- [ ] Σ `U_UNE_LTS` = the invoices' printed litre Totals
 
 **Then hand over the DocEntry list and stop.** A human presses Add in the SAP client —
 and on a GRPO that **Add posts it live**; there is no approver step (**C-0044**, unlike
@@ -256,5 +268,5 @@ The A/P invoice against the transporter's bill copies these GRPOs — that is
 ---
 
 Related: [[GRPO-Playbook]], [[Transport-Bill-Playbook]], [[jivo-add-and-new]],
-corrections C-0025, C-0030, C-0033, C-0035, C-0038, C-0039, C-0044, C-0045, C-0047,
+corrections C-0025, C-0030, C-0033, C-0035, C-0038, C-0039, C-0044, C-0093, C-0095,
 C-0048, C-0049.

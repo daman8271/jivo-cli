@@ -137,7 +137,8 @@ name is what the operator sees on the share.
   "U_VehicleNoM": "RJ47GA7522",       // invoice header: Motor Vehicle No
   "DocumentLines": [
     { "BaseType": 22, "BaseEntry": 13509, "BaseLine": 0,
-      "Quantity": 42.09, "UnitPrice": 149389.4037, "PackageQuantity": 43 }
+      "Quantity": 42.09, "UnitPrice": 149389.4037, "PackageQuantity": 43,
+      "CostingCode2": "09-2026" }      // month of TaxDate — the supplier's invoice (C-0093)
   ]
 }
 ```
@@ -153,8 +154,9 @@ sap-b1/cli/sapb1 draft grpo --data-file $S/grpo.json --yes
 - `BaseType 22 / BaseEntry <PO DocEntry> / BaseLine 0` is what pulls the item, warehouse,
   `LocationCode 2`, `CostingCode` (Dim1), `IGST@5`, `HSNEntry` and account `1103006` across.
   Set **UnitPrice**, never `LineTotal` — SAP recomputes the total from price × quantity.
-- **No Dim2.** Bulk-oil GRPOs carry Dim1 only; C-0035 (Effective Month on every line) is
-  an A/P-invoice rule and does not apply here. Twelve precedents have `CostingCode2` null.
+- **Dim2 = the month of `TaxDate`** — the supplier's tax invoice date, on every line, `MM-YYYY`
+  (**C-0093**, Daman 17 Sept: every GRPO). Never the gate-in `DocDate`. Older precedents
+  left it null; that is no longer the rule. First draft under this rule: read back `OcrCode2`.
 - **No TDS.** `WTLiable` stays `tNO` — a GRPO never deducts (C-0039). 194Q is decided on
   the A/P invoice that copies this GRPO (C-0085).
 

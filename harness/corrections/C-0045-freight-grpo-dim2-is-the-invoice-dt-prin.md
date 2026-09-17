@@ -4,7 +4,7 @@ date: 2026-08-27
 author: measured 2026-08-27, reconciling C-0038 (Daman)
 area: accounts
 severity: high
-status: active
+status: superseded
 supersedes: C-0042
 tags: [grpo]
 ---

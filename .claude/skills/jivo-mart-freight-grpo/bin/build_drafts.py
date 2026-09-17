@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Build JIVO MART freight-GRPO draft payloads from a transporter's bill.
 
-One draft per BILTY (LR), one line per SALE INVOICE, freight split pro-rata on
-litres in WHOLE RUPEES (Mart's own convention — posted GRPO 13733).
+One draft per BILTY (LR), one line per SALE INVOICE, the LR's FREIGHT + LABOUR split
+pro-rata on litres in WHOLE RUPEES (Mart's own convention — posted GRPO 13733;
+labour rides with freight, C-0062).
 
 MART IS NOT OIL. The tax is ON the document (forward charge), Dim3 is SUPPLY-C,
 Dim4 is set, and PDN1 has no U_BiltyDate column at all.
@@ -13,20 +14,32 @@ Input: bill spec JSON —
   "vendor":  "VENDA001018",
   "bill":    "NCR-349",
   "series":  2116,               # NNM1 series for the BILTY month
-  "dim2":    "07-2026",
   "salesperson": 36,
   "tax_code": "IGST@18",         # clone from that vendor's own Mart GRPO
   "bpl": 1, "location": 1, "dim4": "SC-WARH",  # from OUR bill-to address (C-0064)
   "bilties": [
-    {"bilty":"NCR-3226","date":"2026-07-13","dim5":"WB","freight":45091.00,
+    {"bilty":"NCR-3226","date":"2026-07-13","dim5":"WB",
+     "freight":45091.00, "labour":0,          # BOTH required — labour 0 only if none
      "invoices":["707260200","706260939"]}
   ]
 }
-plus litres JSON from litres_from_sap.py and a {invoice: CardCode} map.
+plus invoices.json from ../../jivo-oil-freight-grpo/bin/parse_invoices.py (run on EVERY
+invoice's PDF — Mart prints the same litre table, headed "Liter") and a {invoice: CardCode} map.
 
-Usage: build_drafts.py bill.json litres.json customers.json [-o drafts.json]
+Checked here, never typed (jivo-oil-freight-grpo/bin/freight_checks.py):
+  Effective Month (C-0093)  each line = the month of ITS OWN sale invoice date.
+  Litres (C-0095)           from the tax invoice only: its printed litre Total; an invoice
+                            that prints no litre table is calculated, bottles x size.
+  Dim1 (C-0058)             biggest category on the invoice's litre table (SAP groups if unread).
+  Packaging only            an invoice with only cartons/caps gets no line.
+
+Usage: build_drafts.py bill.json invoices.json customers.json [-o drafts.json]
 """
-import json, argparse
+import json, argparse, os, sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                '..', '..', 'jivo-oil-freight-grpo', 'bin'))
+import freight_checks as fc
 
 ITEM_DESC   = "EDIBLE OIL"
 ACCOUNT     = "5670001"        # FREIGHT AND CARTAGE
@@ -50,8 +63,11 @@ BST_CARDS_MART = {
 }
 
 
-def build(bill, lit, cust):
+def build(bill, inv, cust):
     bst = set(bill.get('bst_cards', BST_CARDS_MART))
+    if 'dim2' in bill:
+        raise SystemExit("remove \"dim2\" from bill.json — Effective Month comes from each "
+                         "line's own sale invoice date, never typed and never the bilty (C-0093)")
     # "billed_to": "DL" | "HR" fills bpl/location/dim4 from OUR address (C-0064)
     if bill.get('billed_to'):
         a = OUR_ADDRESS[bill['billed_to'].upper()]
@@ -60,38 +76,68 @@ def build(bill, lit, cust):
         if f not in bill:
             raise SystemExit(f"{f} not set — read OUR bill-to address off the bill (C-0064), "
                              f"or pass \"billed_to\": \"DL\"/\"HR\"")
+    for b in bill['bilties']:
+        b['invoices'] = fc.clean(b['invoices'])
+        if isinstance(b.get('labour'), bool) or not isinstance(b.get('labour'), (int, float)):
+            raise SystemExit(f"bilty {b['bilty']}: give \"labour\" (0 if the bill has none) — "
+                             f"the GRPO amount is freight + labour (C-0062)")
+
+    twice = fc.repeated(b['invoices'] for b in bill['bilties'])
+    if twice:
+        raise SystemExit("NOT BUILT — fix these first:\n  " + "\n  ".join(twice))
+    cust = {str(k): v for k, v in cust.items()}
+    company = bill['company']
+    everyone = sorted({i for b in bill['bilties'] for i in b['invoices']})
+    dates = fc.invoice_dates(company, everyone)
+    calc = fc.calculate(company, everyone)
+    packaging = {i for i in everyone if calc[i]['packaging_only']}
+    needs = [i for i in everyone if i not in packaging]
+    litres, problems, warnings = fc.pick_litres(needs, inv, calc)
+    problems += fc.skipped_but_printed(packaging, inv)
+
+    def dim1(i):                                                             # C-0058
+        p = inv.get(i)
+        if p and p.get('ok_total') and p.get('ok_pairing') and p.get('dim1_known', True) and p.get('dim1'):
+            return p['dim1']
+        return calc[i]['dim1']
+    for i in needs:
+        if not dim1(i):
+            problems.append(f"invoice {i}: no variety (Dim1) from the PDF or SAP — read it by eye")
+    if problems:
+        raise SystemExit("NOT BUILT — fix these first:\n  " + "\n  ".join(problems))
+
     drafts, skipped = [], []
     for b in bill['bilties']:
-        invs = []
-        for i in b['invoices']:
-            if i not in lit:
-                raise SystemExit(f"invoice {i} missing from litres.json")
-            if lit[i]['packaging_only']:
-                skipped.append((b['bilty'], i))
-                continue
-            invs.append(i)
+        invs = [i for i in b['invoices'] if i not in packaging]
+        skipped += [(b['bilty'], i) for i in b['invoices'] if i in packaging]
         if not invs:
             skipped.append((b['bilty'], 'WHOLE BILTY — packaging only'))
             continue
-        litres = [lit[i]['total_litres'] for i in invs]
-        total, lines, run = sum(litres), [], 0
-        for k, (i, l) in enumerate(zip(invs, litres)):
-            amt = round(b['freight'] - run) if k == len(invs) - 1 else round(b['freight'] * l / total)
+        amount = round(b['freight'] + b['labour'])       # C-0062; Mart keys whole rupees
+        if abs(amount - (b['freight'] + b['labour'])) > 0.001:
+            warnings.append(f"bilty {b['bilty']}: freight + labour {b['freight'] + b['labour']:,.2f} "
+                            f"rounded to {amount:,} (Mart GRPOs are whole rupees)")
+        l_each = [litres[i] for i in invs]
+        total, lines, run = sum(l_each), [], 0
+        if total <= 0:
+            raise SystemExit(f"bilty {b['bilty']}: 0 litres across its invoices — cannot split")
+        for k, (i, l) in enumerate(zip(invs, l_each)):
+            amt = round(amount - run) if k == len(invs) - 1 else round(amount * l / total)
             run += amt
             lines.append({
                 "ItemDescription": ITEM_DESC, "AccountCode": ACCOUNT,
                 "LineTotal": float(amt), "TaxCode": bill['tax_code'],
                 "LocationCode": bill.get('location', 2),
-                "CostingCode": lit[i]['dim1'], "CostingCode2": bill['dim2'],
+                "CostingCode": dim1(i), "CostingCode2": fc.month(dates[i]),  # C-0058, C-0093
                 "CostingCode3": DIM3, "CostingCode4": bill['dim4'],
                 "CostingCode5": b['dim5'], "WTLiable": "tYES",
                 "U_BilltyNumber": b['bilty'], "U_ARNO": i,
-                "U_UNE_LTS": l,
+                "U_UNE_LTS": l,                                                    # C-0095
                 "U_Sub_Account": "BST" if cust[i] in bst else SUB_ACCOUNT,
                 "U_CardCode": cust[i], "U_Remarks": REMARKS,
                 "U_UNE_CUNT": "Y", "U_UNE_SCHI": "N",
             })
-        assert round(sum(x['LineTotal'] for x in lines), 2) == round(b['freight'], 2)
+        assert round(sum(x['LineTotal'] for x in lines), 2) == round(amount, 2)
         drafts.append({
             "DocObjectCode": "oPurchaseDeliveryNotes", "DocType": "dDocument_Service",
             "CardCode": bill['vendor'],
@@ -102,16 +148,18 @@ def build(bill, lit, cust):
             "SalesPersonCode": bill.get('salesperson', 36),
             "DocumentLines": lines,
         })
-    return drafts, skipped
+    return drafts, skipped, warnings
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('bill'); ap.add_argument('litres'); ap.add_argument('customers')
+    ap.add_argument('bill'); ap.add_argument('invoices'); ap.add_argument('customers')
     ap.add_argument('-o', '--out', default='drafts.json')
     a = ap.parse_args()
+    if os.path.exists(a.out):
+        os.remove(a.out)          # a stopped run must never leave an old drafts file to send
     bill = json.load(open(a.bill))
-    drafts, skipped = build(bill, json.load(open(a.litres)), json.load(open(a.customers)))
+    drafts, skipped, warnings = build(bill, json.load(open(a.invoices)), json.load(open(a.customers)))
     print(f"{bill['vendor']}  bill {bill['bill']}  {bill['company']}  "
           f"series {bill['series']}  tax {bill['tax_code']}")
     sub = 0
@@ -122,9 +170,11 @@ def main():
         for x in d['DocumentLines']:
             tag = '  <- BST' if x['U_Sub_Account'] == 'BST' else ''
             print(f"      inv {x['U_ARNO']}  {x['U_UNE_LTS']:>9,.0f} L  Dim1 {x['CostingCode']:<9}"
-                  f" {x['LineTotal']:>10,.2f}  {x['U_CardCode']}{tag}")
+                  f" month {x['CostingCode2']}  {x['LineTotal']:>10,.2f}  {x['U_CardCode']}{tag}")
     for b, i in skipped:
         print(f"\n  SKIPPED {b}: {i}")
+    for w in warnings:
+        print(f"\n  NOTE {w}")
     rate = float(''.join(c for c in bill['tax_code'] if c.isdigit()) or 0)
     print(f"\n  {len(drafts)} draft(s)  SUBTOTAL {sub:,.2f}  + tax@{rate:.0f}% "
           f"{sub*rate/100:,.2f}  = {sub*(1+rate/100):,.2f}   <- must equal the bill's NET")

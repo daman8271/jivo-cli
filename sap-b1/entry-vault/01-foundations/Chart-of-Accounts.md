@@ -229,7 +229,7 @@ like.
 > `5670001` is the transporter account: **98.5 % of every transport A/P line** lands here
 > (1,077 of 1,093, Oil FY26-27). Since 2026-06-01 the live TDS codes on it are **`1024`**
 > (2 %, → `2133018`) and **`1023`** (1 %, → `2133016`), not the 194x pair. Dimensions on
-> these lines are Dim1 = variety, Dim2 = **dispatch month**, Dim3 = `Del Bkhp` (Oil/Bev) or
+> these lines are Dim1 = variety, Dim2 = **each line's sale invoice month** (C-0093), Dim3 = `Del Bkhp` (Oil/Bev) or
 > `SUPPLY-C` (Mart), Dim5 = destination state. → [[Transport-Bill-Playbook]]
 
 | 3 | `5690002` | CONVEYANCE | 265 | 0 | 16,86,811 | never | — |

@@ -48,12 +48,9 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0039]** GRPO never deducts TDS — WTSum=0 on all 3,923 Oil service GRPOs. Set line WtLiable so the A/P invoice inherits the liability; never put a TDS figure on a GRPO.
 - **[C-0041]** Service GRPOs (DocType S) post NO journal: TransId NULL on all 3,923 Oil docs — no expense, no GRNI, no accrual. Only item GRPOs credit 2140001. Open service GRPOs are a commitment, not a balance.
 - **[C-0044]** sapb1 add-draft on a GRPO POSTS IT LIVE, it does not submit — no active Always-terms template covers ObjType 20 and query-conditioned ones are skipped for API docs. C-0034 is A/P-only.
-- **[C-0045]** Freight GRPO Dim2 = the month of the 'Invoice DT' PRINTED ON THE BILTY (389/407 lines), not the bilty's own date (318/407). Read it off the paper — never query the AR invoice (C-0038).
-- **[C-0047]** Freight GRPO U_UNE_LTS is PRINTED on JIVO's AR invoice PDF (Product Category block -> Total Litre), mailed to logistics@jivo.in. Read it; never compute it — OITM volume fields are NULL on every FG.
 - **[C-0049]** Freight GRPO tax code follows the TRANSPORTER's GSTIN state vs the 06 branch (ARNAV Delhi=RIGST@5, DPTC Haryana=GST05R), never the destination. Weight packs: a 700g pouch = 0.769 L, not the invoice's printed total.
 - **[C-0058]** Freight GRPO Dim1: sum the Litre column per category in the invoice's Product Category block and take the biggest TOTAL; same category at two pack sizes is added, never treated as separate rows.
 - **[C-0059]** Freight GRPO: skip a sale invoice whose Product Category block is only TIN/CAPS/CARTON; enter it if it has ANY oil, packaging rows included. Packaging rows are 0 litres so they never change U_UNE_LTS or Dim1.
-- **[C-0060]** Freight GRPO U_UNE_LTS = the printed Total of the Litre column in the sale invoice's Product Category block. Never the Gross Wt column, never computed from pack sizes.
 - **[C-0061]** Transporter bill: look up EVERY invoice number to find its company; a bilty whose sale invoice lives in another book is keyed in THAT book against that transporter's CardCode there. Never merge two companies into one GRPO.
 - **[C-0062]** Freight GRPO line total = the bilty's freight PLUS its labour/loading. GRPOs foot to the bill's G. TOTAL gross; TDS comes off at the A/P invoice, never on the GRPO.
 - **[C-0063]** Freight GRPO: U_Sub_Account = BST when the line's sale invoice is billed to JIVO WELLNESS or JIVO MART; SALES for any outside customer. Decide per line from U_ARNO, never per document.
@@ -77,6 +74,9 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0089]** Pick and Ship Logistics (PAN AAQCP4145A: Oil VENDA001661, Mart VENDA001018, Bev VENDA001346): book WTLiable tNO, no TDS, despite master WTCode 1024 and tYES precedent - Daman, until further notice.
 - **[C-0090]** Upload every attachment, any book, any document, with `sapb1 attach <file>...` (ticks CopyToTargetDoc tYES + U_CHK2 OK in Oil/Bev, reads back, fails otherwise) - never curl; API uploads land tNO.
 - **[C-0092]** 194C Rs 1L/yr aggregate: total Oil + Beverages TOGETHER (one entity, JIVO WELLNESS) and JIVO MART separately from zero. Rs 30,000 test is per bill. Mart deducts too, WTCode 1023 at 1%.
+- **[C-0093]** Every GRPO: Dim2 (Effective Month) = MM-YYYY of EACH LINE's tax invoice date - freight: the sale invoice in U_ARNO; tanker/goods: supplier's TaxDate. Never the bilty date.
+- **[C-0094]** Transport A/P copied from freight GRPOs: keep each line's Dim2 (Effective Month) exactly as its GRPO line has it - never overwrite with the bill/DocDate month (C-0035 is goods A/P only).
+- **[C-0095]** Freight GRPO litres: the Litre Total printed on the tax invoice (page 2's if it runs over); no litre table (CSD) = qty x bottle size, never x 'N PCS'. Never the dispatch sheet.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
 - **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).

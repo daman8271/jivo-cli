@@ -26,8 +26,8 @@ afternoon after the previous attempt got Dim1 and litres wrong.
 
 **The Oil job is a three-paper job and the middle paper is the one people skip.**
 Beverages collapses to one sheet ([[jivo-bev-freight-grpo]]); Oil does not, because
-**litres and variety exist only on JIVO's own AR invoice PDF** — they cannot be
-computed and cannot be queried out of SAP.
+**litres and variety are printed on JIVO's own AR invoice PDF** — and every litre
+figure comes from that invoice and nowhere else (**C-0095**).
 
 | Paper | Where it comes from | What only it can tell you |
 |---|---|---|
@@ -122,13 +122,18 @@ caught on bill `678`. The block's wording is not the master's code either: `SUNF
 → **`SUNFLOWR`**, `GROUNDNUT` → **`GROUNDNT`**, `RICE BRAN` → **`RICEBRAN`**. The script
 maps those and stops on anything it does not recognise rather than sending it.
 
-If either fails, **open the PDF and read the block by eye**. Do not build from it.
+If the invoice has **no litre block at all** (CSD / institutional invoices from
+`ppc.ho@jivo.in` print none), the reader records that and `build_drafts.py` calculates its
+litres from SAP (bottles × bottle size). The reader follows a table onto **page 2** and takes
+that page's Total (Mahak). If a table still reads badly, the printed Total is used only when
+the bottle calculation agrees; otherwise the builder names the invoice — open the PDF, and if
+its Total is clear put it in `invoices.json` as `total_printed` with `ok_total`/`ok_pairing` true.
 
 ### The three rules the block decides
 
 | | Rule | |
 |---|---|---|
-| **`U_UNE_LTS`** | the printed **`Total` of the Litre column**. Never the Gross Wt (packaging-inclusive: 6,300 L ships as 6,257.83 kg), never computed from pack sizes (67 % accurate) | **C-0060** |
+| **`U_UNE_LTS`** | the printed **`Total` of the Litre column** (page 2's Total if it runs over). No litre table (CSD): **quantity × bottle size**, quantity = bottles, **never × the "16 PCS"** (`1 LTR 16 PCS` × 2 = **2 L**). Never the Gross Wt, never the dispatch sheet | **C-0095** |
 | **Dim1** | sum the Litre column **per category**, biggest **total** wins. Same category at two pack sizes is **added**. `626070718`: CANOLA 2,000+800=**2,800** beats SUNFLOWER 2,000 and OLIVE 700+800=1,500 | **C-0058** |
 | **skip** | an invoice whose block is **only** TIN / CAPS / CARTON gets **no line at all**. Any oil present and it goes in, packaging rows included — they are 0 L, so they change nothing | **C-0059** |
 
@@ -137,13 +142,33 @@ maps it. Check any new category against `OOCR` `DimCode=1` before trusting it.
 
 ## 4 · Build the drafts
 
-**One draft per BILTY. One line per SALE INVOICE. Freight pro-rata on litres, last line
-absorbs the rounding.** Proved exact on the template: `25645` split 64,000 over
+**One draft per BILTY. One line per SALE INVOICE. Freight + labour pro-rata on litres,
+last line absorbs the rounding.** Proved exact on the template: `25645` split 64,000 over
 4,500/3,000 L → 38,400/25,600; `25646` split 63,902 over 9,000/325 L → 61,675/2,227.
 
 ```bash
 .claude/skills/jivo-oil-freight-grpo/bin/build_drafts.py bill.json invoices.json customers.json
 ```
+
+Two things the builder now **demands**, because leaving them out is what went wrong
+(Daman + Mahak, 17 Sept):
+
+- **`"labour"` on every bilty in `bill.json`** — the bill's labour/loading figure, `0` only if
+  the bill has none. The line amount is **freight + labour** (**C-0062**). 55 GRPO drafts
+  went out without it and ₹83,908 was added back by hand at posting.
+- **every invoice's tax invoice PDF, read into `invoices.json`** — litres come from the
+  invoice only. A missing one stops the build and names it.
+
+**Where these come from — not from Mahak's typing.** She hands over one PDF (or a pack of
+scans). Read the **labour** off the transporter's bill (its labour / loading / hamali column)
+and write it yourself. The **tax invoice PDFs** are usually in the same pack; if one is not,
+find it in mail (`mail-cli/jmail search --text <invoice no> --with-attachments`, then
+`jmail pull`) — Oil from `logistics@` / `ppc.ho@`, Mart in the *Factory Dispatch Sheet* mail,
+Beverages from `beverages@`. Only if it is in neither, ask her for that invoice in one plain line.
+Run `parse_invoices.py` on the folder of PDFs to make `invoices.json`.
+
+It also sets, and never takes from you: **Effective Month** per line from each sale
+invoice's date (**C-0093**), and **no line** for an invoice with only cartons/caps (**C-0059**).
 
 `customers.json` is `{invoice: CardCode}` straight out of `OINV` — it feeds
 `U_CardCode`, decides `SALES` vs `BST`, and the customer's ship-to `State` in `CRD1` is
@@ -174,12 +199,12 @@ your second, independent read on Dim5.
 | `TaxCode` | **depends on the transporter's own state — clone it.** Interstate (vendor GSTIN `07` Delhi → Oil `06`): `RIGST@5`. Intrastate (vendor GSTIN `06` Haryana): **`GST05R`**. Set `tax_code` in `bill.json` | both are reverse charge; header `VatSum` stays 0 either way |
 | `LocationCode` | `2` | C-0025 |
 | Dim1 `CostingCode` | §3 | **C-0058** |
-| Dim2 `CostingCode2` | the **dispatch** month `MM-YYYY`, off the bilty date | not the GRPO's own month |
+| Dim2 `CostingCode2` | **the month of THAT LINE's sale invoice date** `MM-YYYY` — **never the bilty date**. One bilty can carry two months | **C-0093**. `build_drafts.py` reads each invoice's date from SAP and refuses a typed `dim2` |
 | Dim3 `CostingCode3` | `Del Bkhp`. **Never `FACT_COM`** | |
 | Dim4 | Oil: **empty** | |
 | Dim5 `CostingCode5` | the **destination state** — look it up, never spell it | Bihar `BH`, Odisha `OR`, Uttarakhand `UK`, Karnataka `KN` |
 | `U_BilltyNumber` · `U_BiltyDate` · `U_ARNO` | bilty · bilty date · **the sale invoice number** | |
-| `U_UNE_LTS` | §3 | **C-0060** |
+| `U_UNE_LTS` | §3 — from the tax invoice | **C-0095** |
 | **`U_Sub_Account`** | **`SALES`** for an outside customer · **`BST`** when that line's sale invoice is billed to **JIVO WELLNESS or JIVO MART** | **SAP refuses the document without it.** Decided **per line** off `U_ARNO` — one bilty can carry both (**C-0063**) |
 | **`U_CardCode`** | the **customer** on that sale invoice | not the vendor |
 | `U_Remarks` | `BILTY NO <bilty>` | |
@@ -192,7 +217,7 @@ Invoice No and Sub Account`. That refusal is clean — nothing is created.
 ### Two shapes the ABHIMAN bill did not have
 
 **A LABOUR column.** MAHAVIR bills freight and labour separately and foots them to a
-`G. TOTAL`. **Both go on the GRPO** — the bilty's line is freight + labour — because the
+`G. TOTAL`. **Both go on the GRPO** — put the labour in the bilty's `"labour"` and the builder adds it — because the
 A/P invoice that copies these must tie to the vendor's G. Total. Evidence: every past
 MAHAVIR A/P is exactly **99 %** of the GRPO total it was built from (4,000→3,960;
 22,500→22,275; 63,894→63,255) — that 1 % is 194C transporter TDS at the invoice, so the
@@ -252,6 +277,6 @@ The A/P invoice against the transporter's bill copies these GRPOs — that is
 
 Related: [[GRPO-Playbook]] §4/§4A, [[jivo-bev-freight-grpo]], [[Transport-Bill-Playbook]],
 [[jivo-add-and-new]]. Corrections **C-0058** (Dim1 = biggest category total, supersedes
-C-0048), **C-0059** (packaging-only invoice gets no line), **C-0060** (`U_UNE_LTS` is the
-printed Total), **C-0061** (a bill can span two companies), **C-0062** (freight + labour),
-**C-0063** (BST when JIVO-to-JIVO), C-0025, C-0026, C-0033, C-0038, C-0044.
+C-0048), **C-0059** (packaging-only invoice gets no line), **C-0095** (litres come from the tax
+invoice only), **C-0061** (a bill can span two companies), **C-0062** (freight + labour),
+**C-0063** (BST when JIVO-to-JIVO), C-0025, C-0026, C-0033, C-0038, C-0044, **C-0093** (effective month = each line's tax invoice month).

@@ -140,38 +140,49 @@ SELECT T0."DocNum",T0."Series",T0."BPLId",T0."SlpCode",T1."AcctCode",T1."TaxCode
 
 (`BPLId`, `LocCode` and Dim4 are **not** in that list — see the table above.)
 
-## 2 · Litres and Dim1 — computed, not read
+## 2 · Litres and Dim1 — from the tax invoice
 
-**This is where Mart departs from Oil.** C-0060 says read the printed `Total` off the AR
-invoice PDF — but Mart's invoice PDFs are not reliably in any mailbox we can reach. So:
+**Litres come from the tax invoice only** (**C-0095**, Daman 17 Sept). Mart invoices print the
+same Product Category table as Oil, headed `CATEGORY | Liter | Gross Weight`, and the Oil
+reader reads it:
 
 ```bash
-.claude/skills/jivo-mart-freight-grpo/bin/litres_from_sap.py 707260200 706260939 -o litres.json
+.claude/skills/jivo-oil-freight-grpo/bin/parse_invoices.py ./inv -o invoices.json
 ```
 
-> **litres = Σ (pack volume from the item name × Quantity)**, Quantity in PIECES (C-0001);
-> category = `OITM.U_Sub_Group`, which is what the invoice's Product Category block prints.
+`U_UNE_LTS` = the printed **Total** of the Liter column. Checked on the 9 invoices of posted
+GRPO `2009264540`: every printed Total equals the litres that were posted. An invoice that
+prints no litre table is calculated = quantity × bottle size (quantity is **bottles**, C-0001;
+never × the `16 PCS` in a name; Mart bundles like `1 LTR +1 LTR COMBO` or `5 + 1 LTR` count
+both halves). An invoice with **only cartons / caps** gets **no line**.
 
-Two things that decide the answer:
-
-- **A `+` combo is one piece of the summed volume.** `COLD PRESS 1 LTR +1 LTR COMBO 10
-  SETS PLAIN` at qty 40 is **80 L**, not 40. Without that, `706260939` computes 2,096
-  instead of 2,176 and the whole freight split shifts.
-- **Dim1 is the biggest category TOTAL** (**C-0058**), summed across pack sizes:
-  `706260939` = MUSTARD 1,484 · OLIVE 436 · CANOLA 160 · RICE BRAN 96 → **MUSTARD**.
-
-**⚠ Validated on ONE document.** Always check against the transporter's weight column —
-2,780 kg ÷ 2,776 L = **1.0014 kg/L**, and bottled oil should land ≈ 0.90–1.05. A miss
-there means the parse is wrong. If a line has no parseable pack size the script stops.
+**Dim1 is the biggest category TOTAL on that table** (**C-0058**) —
+`706260939` = MUSTARD 1,484 · OLIVE 436 · CANOLA 160 · RICE BRAN 96 → **MUSTARD**.
 
 ## 3 · Build, preview, send
 
 ```bash
-.claude/skills/jivo-mart-freight-grpo/bin/build_drafts.py bill.json litres.json customers.json
+.claude/skills/jivo-mart-freight-grpo/bin/build_drafts.py bill.json invoices.json customers.json
 cd sap-b1/cli
 ./sapb1 draft grpo --company JIVO_MART_HANADB --dry-run --data "$(cat draft.json)"
 ./sapb1 draft grpo --company JIVO_MART_HANADB --yes     --data "$(cat draft.json)"
 ```
+
+**Every bilty needs `"labour"`** in `bill.json` (`0` only if the bill has none): the line
+amount is **freight + labour** (**C-0062**) — put the bill's loading/hamali figure there, and
+not also inside `"freight"`.
+
+**Where these come from — not from Mahak's typing.** She hands over one PDF (or a pack of
+scans). Read the **labour** off the transporter's bill (its labour / loading / hamali column)
+and write it yourself. The **tax invoice PDFs** are usually in the same pack; if one is not,
+find it in mail (`mail-cli/jmail search --text <invoice no> --with-attachments`, then
+`jmail pull`) — Oil from `logistics@` / `ppc.ho@`, Mart in the *Factory Dispatch Sheet* mail,
+Beverages from `beverages@`. Only if it is in neither, ask her for that invoice in one plain line.
+Run `parse_invoices.py` on the folder of PDFs to make `invoices.json`.
+
+**Effective month (Dim2) is not an input** (**C-0093**): the builder reads each sale
+invoice's date from SAP and gives every line the month of **its own** invoice — never the
+bilty date. One LR often carries two months (GRPO `2009264540`: five Aug invoices, four Sep).
 
 `customers.json` is `{invoice: CardCode}` out of `OINV`; it also decides `SALES` vs
 **`BST`** (**C-0063** — JIVO WELLNESS or JIVO MART as the customer). **CardCodes are per
@@ -198,6 +209,7 @@ SELECT T0."DocEntry",T0."NumAtCard",T0."DocTotal",T0."VatSum",T0."WTSum",T0."Ser
 - [ ] header `VatSum` = the bill's tax; `WTSum` **0**
 - [ ] Branch + Location match **our** bill-to address, and Dim4 matches them (C-0064)
 - [ ] Tax code derived from the transporter's GSTIN vs that branch (C-0049/C-0065), not cloned
+- [ ] Dim2 on every line = the month of **that line's** sale invoice date (C-0093), never the bilty's
 - [ ] Dim3 `SUPPLY-C`, Dim5 = destination state
 - [ ] `U_Sub_Account` right per line, `U_Remarks` = `Y`
 
@@ -217,4 +229,4 @@ Related: [[jivo-oil-freight-grpo]], [[jivo-bev-freight-grpo]], [[GRPO-Playbook]]
 **C-0059** (packaging-only), **C-0061** (a bill can span two companies), **C-0062**
 (freight + labour), **C-0063** (BST), **C-0064** (branch/location/sub-budget off our
 address), **C-0049 + C-0065** (tax from the transporter's GSTIN vs that branch),
-C-0001, C-0025, C-0026, C-0027, C-0039, C-0044.
+**C-0093** (effective month = each line's tax invoice month), **C-0095** (litres come from the tax invoice only), C-0001, C-0025, C-0026, C-0027, C-0039, C-0044.

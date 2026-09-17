@@ -77,7 +77,7 @@ all branches, both shapes. Wrong series still returns `-10`. → [[Numbering-Ser
 | `WhsCode` | 100 % | `BH-PM` 2,932 · `BH-FA` 2,514 · `DL-FA` 1,554 · `BH-GJ` 449 · `PB-ST` 261 |
 | `HsnEntry` | **100 %** | goods carry HSN. A blank is a defect here — unlike a service line **(C-0013)** |
 | Dim1 `OcrCode` | **100 %** | the variety — `CANOLA`, `OLIVE`, `MUSTARD`, `SOYABEAN`, `BST` … |
-| Dim2 `OcrCode2` | **52.3 %** | half are blank. **Set it** — the A/P invoice inherits only Dim1 **(C-0035)** |
+| Dim2 `OcrCode2` | **52.3 %** | half are blank. **Set it** = the month of the **supplier's tax invoice date** (`TaxDate`), never gate-in **(C-0093)** |
 | Dim3 `OcrCode3` | 49.8 % | `Factory` 2,341 · `BackOff` 1,315 · `FACT_COM` 214. Handwritten *Common* → `FACT_COM` **(C-0027)** |
 | Dim5 `OcrCode5` | 35.2 % | |
 | `WtLiable` | **2.3 %** (194 of 8,305) | goods are not TDS-bearing. Contrast service, §7 |
@@ -307,7 +307,7 @@ does not apply to freight.** So a dimension wrong here is wrong on the bill too.
 | | Value | Measured |
 |---|---|---|
 | Dim1 `CostingCode` | **the variety shipped** — `OLIVE`, `CANOLA`, `MUSTARD` … | off the bilty's goods description. Where a consignment is mixed it is the **dominant** variety, not a split — that reproduces the keyed value on 2,759 of 3,267 lines (84.5 %) |
-| Dim2 `CostingCode2` | **the DISPATCH month, `MM-YYYY`** — the month the goods went out, off the bilty date | **193 of 205 filled.** It is the dispatch month, not the GRPO's own month, and the two differ whenever a bilty is keyed after a month end |
+| Dim2 `CostingCode2` | **the month of THAT LINE's sale (tax) invoice date, `MM-YYYY`** — never the bilty date | **C-0093.** Where the two months differ, 223 of 242 hand-keyed lines (Jun–Aug 2026) took the invoice month. One bilty can carry two months |
 | Dim3 `CostingCode3` | Oil `Del Bkhp` · Mart `SUPPLY-C` · Bev `Del Bkhp` | 205/205. **Never `FACT_COM`** — that is the factory-bill code |
 | Dim4 `CostingCode4` | Oil: **empty**. Mart: always set | |
 | Dim5 `CostingCode5` | **the destination state** | 205/205 |
@@ -466,7 +466,7 @@ and pressing **Add**.
 | That draft | PICK & SHIP LOGISTICS `VENDA001661`, bilty `NCR-4137`, service, ₹63,100 + IGST 11,358 = **₹74,458** |
 | Its state | draft, `WddStatus '-'`, never added |
 | Read-back | clean — all 5 dimensions, all 8 UDFs, tax and total survived byte-for-byte |
-| What it cost to learn | Dim5 `BH` (a `BR` guess would have failed), Dim2 = the dispatch month, `U_UNE_LTS` ≠ gross kg, attachment = bilty not bill, service GRPOs post no journal |
+| What it cost to learn | Dim5 `BH` (a `BR` guess would have failed), Dim2 = each line's sale invoice month (C-0093; first written here as "dispatch month", which was wrong), `U_UNE_LTS` ≠ gross kg, attachment = bilty not bill, service GRPOs post no journal |
 | What we got wrong | **built the whole method around SAP's AR invoice.** Daman corrected it 2026-08-27: the bilty is the input, the signed AR-invoice photo is later proof of delivery. **C-0038** |
 
 ## Open questions

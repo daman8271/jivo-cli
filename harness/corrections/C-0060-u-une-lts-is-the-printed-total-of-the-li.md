@@ -4,7 +4,7 @@ date: 2026-08-31
 author: Daman
 area: accounts
 severity: high
-status: active
+status: superseded
 supersedes: 
 tags: [grpo]
 ---
