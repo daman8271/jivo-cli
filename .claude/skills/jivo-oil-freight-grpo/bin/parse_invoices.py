@@ -12,8 +12,65 @@ the Category / Litre column bounds.
 
 Usage:  parse_invoices.py <dir-of-pdfs> [-o invoices.json]
 """
-import subprocess, re, glob, os, json, sys, argparse
+import subprocess, re, glob, os, json, sys, argparse, hashlib, shutil, urllib.request, zipfile
 from xml.etree import ElementTree as ET
+
+# The reader needs poppler's pdftotext. Office Windows PCs do not have it (Mahak, Satnam: 2 Sept),
+# so on Windows it is fetched ONCE into <repo>/.tools/poppler — this exact release, checked by
+# SHA-256, only the 33 files pdftotext.exe loads. Nothing else is ever downloaded or run.
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..'))
+POPPLER_URL = ('https://github.com/oschwartz10612/poppler-windows/releases/download/'
+               'v26.09.0-0/Release-26.09.0-0.zip')
+POPPLER_SHA256 = '7a6f256a0ddf7536182246a5733331bf4677cbcc34f4663774947ad34556c8d0'
+POPPLER_DIR = os.path.join(ROOT, '.tools', 'poppler')
+POPPLER_FILES = ['pdftotext.exe', 'Lerc.dll', 'api-ms-win-crt-convert-l1-1-0.dll', 'api-ms-win-crt-environment-l1-1-0.dll', 'api-ms-win-crt-filesystem-l1-1-0.dll', 'api-ms-win-crt-heap-l1-1-0.dll', 'api-ms-win-crt-locale-l1-1-0.dll', 'api-ms-win-crt-math-l1-1-0.dll', 'api-ms-win-crt-runtime-l1-1-0.dll', 'api-ms-win-crt-stdio-l1-1-0.dll', 'api-ms-win-crt-string-l1-1-0.dll', 'api-ms-win-crt-time-l1-1-0.dll', 'api-ms-win-crt-utility-l1-1-0.dll', 'deflate.dll', 'freetype.dll', 'icudt78.dll', 'icuuc78.dll', 'jpeg8.dll', 'lcms2.dll', 'libcrypto-3-x64.dll', 'libcurl.dll', 'liblzma.dll', 'libpng16.dll', 'libssh2.dll', 'msvcp140.dll', 'openjp2.dll', 'poppler.dll', 'psl-5.dll', 'tiff.dll', 'vcruntime140.dll', 'vcruntime140_1.dll', 'zlib.dll', 'zstd.dll']
+_READER = None
+
+
+def _install_poppler(dest=POPPLER_DIR):
+    part = dest + '.part'
+    shutil.rmtree(part, ignore_errors=True)
+    os.makedirs(part)
+    zpath = os.path.join(part, 'poppler.zip')
+    print("one-time setup: downloading the PDF reader (poppler 26.09, 44 MB) ...", file=sys.stderr)
+    try:
+        urllib.request.urlretrieve(POPPLER_URL, zpath)
+    except Exception as e:
+        shutil.rmtree(part, ignore_errors=True)
+        raise SystemExit(f"could not download the PDF reader ({e}) — check the internet, or tell Daman.")
+    h = hashlib.sha256()
+    with open(zpath, 'rb') as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b''):
+            h.update(chunk)
+    if h.hexdigest() != POPPLER_SHA256:
+        shutil.rmtree(part, ignore_errors=True)
+        raise SystemExit("the downloaded PDF reader failed its checksum — NOT used. Tell Daman.")
+    with zipfile.ZipFile(zpath) as z:
+        for name in POPPLER_FILES:
+            with z.open('poppler-26.09.0/Library/bin/' + name) as src, \
+                    open(os.path.join(part, name), 'wb') as out:
+                shutil.copyfileobj(src, out)
+    os.remove(zpath)
+    shutil.rmtree(dest, ignore_errors=True)
+    os.replace(part, dest)
+    return os.path.join(dest, 'pdftotext.exe')
+
+
+def pdftotext():
+    global _READER
+    if _READER:
+        return _READER
+    found = shutil.which('pdftotext')
+    local = os.path.join(POPPLER_DIR, 'pdftotext.exe')
+    if found:
+        _READER = found
+    elif os.path.exists(local):
+        _READER = local
+    elif os.name == 'nt':
+        _READER = _install_poppler()
+    else:
+        raise SystemExit("pdftotext is not installed — on a Mac: brew install poppler")
+    return _READER
 
 WORD = '{http://www.w3.org/1999/xhtml}word'
 NUM  = re.compile(r'^[\d,]+\.?\d*$')
@@ -36,7 +93,7 @@ KNOWN_DIM1 = {'OLIVE', 'CANOLA', 'MUSTARD', 'SOYABEAN', 'SUNFLOWR', 'GROUNDNT',
 
 def _words(pdf):
     """Words as (xMin, yMin, xMax, yMax, text, page)."""
-    xml = subprocess.run(['pdftotext', '-bbox-layout', pdf, '-'],
+    xml = subprocess.run([pdftotext(), '-bbox-layout', pdf, '-'],
                          capture_output=True, text=True).stdout
     out = []
     for n, page in enumerate(ET.fromstring(xml).iter('{http://www.w3.org/1999/xhtml}page')):
@@ -124,13 +181,22 @@ def parse(pdf):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('dir')
+    ap.add_argument('dir', nargs='?')
     ap.add_argument('-o', '--out', default='invoices.json')
+    ap.add_argument('--check-reader', action='store_true',
+                    help='make sure the PDF reader is present (downloads it once on Windows) and exit')
     a = ap.parse_args()
+    if a.check_reader:
+        r = subprocess.run([pdftotext(), '-v'], capture_output=True, text=True)
+        print(f"PDF reader: {pdftotext()}  {(r.stderr or r.stdout).strip().splitlines()[0] if (r.stderr or r.stdout) else ''}")
+        print("PDF reader OK" if r.returncode == 0 else "PDF reader NOT working — tell Daman")
+        return r.returncode
+    if not a.dir:
+        ap.error("give the folder of invoice PDFs")
 
     res, bad = {}, 0
     for f in sorted(glob.glob(os.path.join(a.dir, '*.pdf'))):
-        text = subprocess.run(['pdftotext', '-layout', f, '-'], capture_output=True, text=True).stdout
+        text = subprocess.run([pdftotext(), '-layout', f, '-'], capture_output=True, text=True).stdout
         inside = re.search(r'Invoice (?:Number|No\.?)\s*:\s*([67]\d{8})', text)
         named = re.search(r'(?<!\d)([67]\d{8})(?!\d)', os.path.basename(f))
         if inside and named and inside.group(1) != named.group(1):
