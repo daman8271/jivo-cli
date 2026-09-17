@@ -5,18 +5,20 @@ description: Use when an operator hands over a vendor's tax invoice (PDF, photo,
 
 # A/P invoice draft from a vendor invoice (JIVO, SAP B1)
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 Internal skill for the jivo-cli toolkit. Everything here was learned on live data
 on 2026-08-21: Frystal NINV/26-27/0826 turned out to be Neetu's existing Draft 54906;
@@ -197,14 +199,14 @@ GRPO's attachment forward on copy-to-target; the Service Layer does not — so w
 as two independent lines on the draft's own `Attachments2` row. Full recipe, every
 command proven live: **`reference/attachments-upload.md`**. In short:
 
-1. `POST /Attachments2` with the operator's scan (renamed `VENDOR-REF-DATE.pdf`) → row N.
-2. Download the GRPO's file (`GET Attachments2(<grpoAE>)/$value`) and `PATCH Attachments2(N)`
-   multipart to append it as line 2.
-3. Stamp every line `U_CHK = <size KB>`, `U_CHK2 = "OK"` — JIVO guard **1120025** refuses
-   the draft pointer otherwise (`[-1116] Select "OK" in Approve Column`) — **and
-   `CopyToTargetDoc = "tYES"` on every line, every book** (C-0090; Mart: that field only).
-4. `PATCH Drafts(<DocEntry>) {"AttachmentEntry": N}` (dry-run, then `--yes`).
-5. Read back draft **and** GRPO; `TargetPath` must be the Windows UNC
+1. Download the GRPO's file (`GET Attachments2(<grpoAE>)/$value`).
+2. `sapb1 attach "VENDOR-REF-DATE.pdf" "GRPO-<DocNum>-<file>.pdf" --company <DB> --yes` → row N,
+   scan = line 1, GRPO's file = line 2. It ticks **`CopyToTargetDoc = "tYES"` on every line,
+   every book** (C-0090) and stamps `U_CHK`/`U_CHK2 "OK"` where the book has them — JIVO
+   guard **1120025** refuses the draft pointer otherwise (`[-1116] Select "OK" in Approve
+   Column`) — and exits non-zero unless every line reads back `tYES`.
+3. `PATCH Drafts(<DocEntry>) {"AttachmentEntry": N}` (dry-run, then `--yes`).
+4. Read back draft **and** GRPO; `TargetPath` must be the Windows UNC
    (`\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments`) so the client can open it.
 
 **Upload works since 2026-08-24** (hanadb CIFS mounts, `sap-b1/attachments/MOUNT-RUNBOOK.md`).

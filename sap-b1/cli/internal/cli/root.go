@@ -123,6 +123,9 @@ using anything beyond --help.`,
 	root.AddCommand(newPostCmd())
 	root.AddCommand(newPatchCmd())
 	root.AddCommand(newDeleteCmd())
+	// attach uploads a file and ticks Copy to Target Document on every line of
+	// its row (C-0090) — the tick is not a step anyone can skip.
+	root.AddCommand(newAttachCmd())
 	// add-draft is the one OData action this CLI can reach, and only for Drafts:
 	// it presses Add. Everything else — Cancel, Close, Reopen,
 	// CreateCancellationDocument, and PaymentDrafts' own SaveDraftToDocument —

@@ -23,10 +23,11 @@ import (
 // write method. This test closes that gap structurally by refusing to compile a
 // package that so much as mentions the write API.
 var forbiddenCalls = map[string]string{
-	"Create":       "client.Create issues an HTTP POST to the Service Layer",
-	"Update":       "client.Update issues an HTTP PATCH to the Service Layer",
-	"Delete":       "client.Delete issues an HTTP DELETE to the Service Layer",
-	"attemptWrite": "internal write helper",
+	"Create":           "client.Create issues an HTTP POST to the Service Layer",
+	"Update":           "client.Update issues an HTTP PATCH to the Service Layer",
+	"Delete":           "client.Delete issues an HTTP DELETE to the Service Layer",
+	"attemptWrite":     "internal write helper",
+	"UploadAttachment": "client.UploadAttachment POSTs or PATCHes a file onto an Attachments2 row",
 	// The most dangerous of the four, and the reason this list is worth keeping.
 	// client.SaveDraftToDocument presses Add on a draft: stock moves, a vendor's
 	// ledger moves, and it lands in a GST return. Every other write on this list
@@ -45,6 +46,7 @@ var knownReadOnlyMethods = map[string]bool{
 	"Query":              true,
 	"QueryAll":           true,
 	"GetEntity":          true, // a keyed GET; 404 is an answer, not a write
+	"DownloadAttachment": true, // GET Attachments2(N)/$value — reads a file back, changes nothing
 	"GetAdminInfo":       true, // General Settings; a body-less POST to a function import that changes nothing (client/admininfo.go)
 	"Login":              true,
 	"Logout":             true,

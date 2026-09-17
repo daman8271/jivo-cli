@@ -5,18 +5,20 @@ description: Use when transporter BILTY / G.R. / LR sheets or signed invoice cop
 
 # A/R invoice — completing the receiving from the bilty
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 A transporter's bilty (G.R. / LR) is the paper proof the customer received the
 goods. Completing an A/R invoice means **five** things on that invoice:
@@ -65,7 +67,7 @@ ran a day later (invoice 14/07 → bilty 15/07). Read it off the paper every tim
 | `1300014` | `U_Recv_Date` must not be earlier than `DocDate`. |
 | `1300012` | same shape for dispatch (`U_Disp_Qty` / `U_Dipatch_Date`). |
 | `1120025` | Oil only: every attachment line needs `U_CHK` (size KB) + `U_CHK2='OK'`. |
-| C-0090 | Not a guard — Daman's rule: every attachment line in every book gets `CopyToTargetDoc='tYES'`. `bin/attach_scan.py` sets it and warns if SAP refuses. |
+| C-0090 | Not a guard — Daman's rule: every attachment line in every book gets `CopyToTargetDoc='tYES'`. `bin/attach_scan.py` uploads through `sapb1 attach`, which sets it and fails the invoice unless it reads back. |
 
 ## 🔴 A wrong bilty number does NOT matter — leave it
 
@@ -143,11 +145,10 @@ Every tool previews by default and needs `--apply` to send. `receive.py` and
 - **Line numbers are not contiguous.** Invoice 626070520 has lines 0, 2, 3.
   Read the real `LineNum` from `INV1`; assuming 0..n silently skips a line and
   then trips guard 1300013.
-- **Commas in a filename break `curl -F`** — it reads them as a multi-file
-  separator and fails with error 26 before anything is sent. Quote it:
-  `-F 'files=@"/p/f.pdf";type=application/pdf;filename="626070362,363.pdf"'`
-- **`-H "Expect:"` + `--http1.1` are load-bearing** on the `Attachments2` POST —
-  without them a multi-MB scan gets `400 {"code": 206, "Bad Post content."}`.
+- **Upload through `sapb1 attach`, never `curl -F`.** (curl read the commas in
+  `626070362,363.pdf` as a multi-file separator, and needed `-H "Expect:"` +
+  `--http1.1` or a multi-MB scan got `400 {"code": 206, "Bad Post content."}`.
+  `sapb1 attach` has neither problem.)
 - **One `Attachments2` row per invoice** — never point two documents at one row,
   or a file added later shows on both. Filename = the invoice numbers covered:
   `626070362,363,364,365,370.pdf`. SAP auto-renames on collision; that is fine.

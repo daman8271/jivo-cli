@@ -5,18 +5,20 @@ description: CASH VOUCHER TYPE 1 — the voucher that HAS an existing GRPO behin
 
 # Cash voucher · TYPE 1 · the voucher WITH a GRPO
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 Daman named this type on 2026-09-12: **"cash voucher 1 GRPO"**. It is the type
 where the purchase already went through **PO → GRPO** against the cash holder's
@@ -265,8 +267,8 @@ Never point two documents at one `Attachments2` row.
 Daman, 2026-09-10: *"this front sheet — this also normally goes through it."*
 The cash sheet goes on **every** voucher's draft, in both books.
 
-Follow `jivo-ap-draft/reference/attachments-upload.md`; `-H "Expect:"` is
-load-bearing. Traps:
+Upload all three with ONE `sapb1 attach <pack> <grpo-file> <front-sheet> --yes`
+(recipe: `jivo-ap-draft/reference/attachments-upload.md`). Traps:
 
 - **`[SAP -1116] (1120026) Attachment Size Should be Less Than 1 MB`** — the cap
   is **per FILE, not per row** (761 + 115 + 463 KB on one row was accepted).
@@ -275,10 +277,10 @@ load-bearing. Traps:
   `magick out/pg-*.jpg -quality 45 pack-small.pdf` (13 pages, 4.1 MB → 738 KB).
   **Spot-check a page** — the voucher number and amount must stay readable — and
   say in the report that the attached copy is a re-render.
-- Stamp `U_CHK = <size KB>`, `U_CHK2 = 'OK'` on **every** line *before* patching
-  `AttachmentEntry`, or SAP refuses with `-1116 (1120025)` (C-0082). Oil and Bev
-  `ATC1` have both UDFs; Mart has neither. **Same PATCH: `CopyToTargetDoc = 'tYES'`
-  on every line, every book** (C-0090) — the bill must follow the document onward.
+- `sapb1 attach` stamps `U_CHK = <size KB>`, `U_CHK2 = 'OK'` on **every** line before
+  you patch `AttachmentEntry` — without it SAP refuses with `-1116 (1120025)` (C-0082) —
+  and ticks **`CopyToTargetDoc = 'tYES'` on every line, every book** (C-0090), so the bill
+  follows the document onward. Exit non-zero = not done; never hand-PATCH around it.
 - SAP **auto-renames** a filename already on the share (name + ddmmyyyy + time).
   Harmless; the file is correct.
 - A refused `AttachmentEntry` patch leaves an **orphan `Attachments2` row**. It

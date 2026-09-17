@@ -5,18 +5,20 @@ description: Use when an operator hands over a vendor tax invoice for CONSUMABLE
 
 # A/P draft for consumables and direct / indirect expenses (JIVO, SAP B1)
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 Internal skill. Named by Daman 2026-09-08 — "we call this = direct/indirect expenses …
 this are through GRPO and PO ok! get the base document from sap through grpo and PO".
@@ -257,13 +259,13 @@ GROUP BY T1."ItemCode", T1."AcctCode" ORDER BY COUNT(*) DESC'
 ## Attachments — the draft carries both papers
 
 Same recipe as `jivo-ap-draft/reference/attachments-upload.md`, and it applies here in
-all three books: upload the operator's scan (renamed `VENDOR-REF-DATE.pdf`) → append the
-GRPO's own copy of the bill as line 2 of the **same new row** → stamp every line
-`U_CHK = <size KB>`, `U_CHK2 = "OK"`, **`CopyToTargetDoc = "tYES"`** (C-0090; Mart: `CopyToTargetDoc` only)
-→ `PATCH Drafts(<DocEntry>) {"AttachmentEntry": N}`
+all three books: download the GRPO's own copy of the bill → `sapb1 attach "VENDOR-REF-DATE.pdf"
+"<grpo-file>.pdf" --yes` (scan = line 1, GRPO's copy = line 2 of the **same new row**; it stamps
+`U_CHK = <size KB>`, `U_CHK2 = "OK"` and ticks **`CopyToTargetDoc = "tYES"`** on every line,
+C-0090; Mart: the tick only) → `PATCH Drafts(<DocEntry>) {"AttachmentEntry": N}`
 → read back the draft **and** the GRPO (the GRPO must still carry its own row).
-`-H "Expect:"` on the multipart calls is load-bearing. **Beverages has `U_CHK`/`U_CHK2`
-on `ATC1` exactly like Oil** — verified 2026-09-08, so stamp there too — and enforces the
+**Beverages has `U_CHK`/`U_CHK2` on `ATC1` exactly like Oil** — verified 2026-09-08,
+`sapb1 attach` stamps there too — and enforces the
 1 MB cap of trap 7. Bev files land on `\\10.10.101.52\Attachments_Bev\JIVO_BEVERAGES\Attachments`.
 
 ## Hard stops

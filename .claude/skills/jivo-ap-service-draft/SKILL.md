@@ -5,18 +5,20 @@ description: Use when an operator hands over a vendor bill that has NO goods rec
 
 # A/P draft for a service / expense bill — no GRPO (JIVO, SAP B1)
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 Internal skill. Built from the Om Sai fuel bill 2495 → draft 55130 on 2026-08-24, and
 from Daman's corrections on it the same evening ("no place of supply, no location, no
@@ -90,9 +92,9 @@ below are through it.
    (wrong vendor, branch, series, or a total that does not match the paper) or the
    precheck told you to. Daman, 2026-09-09: *"it is not directly making the drafts
    but confirming for their confirmation — should not happen like this."*
-9. **Attach the scan** — `jivo-ap-draft/reference/attachments-upload.md` (steps 1, 4, 5,
-   6; there is no base document to copy). Stamp `U_CHK2 OK` or the pointer is refused,
-   and `CopyToTargetDoc tYES` on every line in every book (C-0090).
+9. **Attach the scan** — `sapb1 attach <scan> --yes`, per `jivo-ap-draft/reference/attachments-upload.md`
+   (steps 1, 3, 4; there is no base document to copy). It stamps `U_CHK2 OK` (without it the
+   pointer is refused) and ticks `CopyToTargetDoc tYES` on every line in every book (C-0090).
 10. **Read back:** `readback.py <DocEntry> --expect-total <net>` — its "not drawn from a
    GRPO" flags are a **false positive for this document class**; say so. Then verify by
    query: `DocTotal` exact, every line has `LocationCode`, `CostingCode3`, `U_Recvd_Qty`,

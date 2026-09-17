@@ -75,7 +75,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0087]** A/P draft: run the dry-run then --yes in the SAME turn. Never end a turn on the preview and never ask 'shall I send it?' — a draft posts nothing until a human presses Add.
 - **[C-0088]** add-draft routes to BHAWANI in ALL THREE books now (OADM.EnbApprDI=Y, 2026-09-10) and Oil 103 / Mart 48 / Bev 68 each name USER39 + USER08. Every other login still posts LIVE - never submit from one.
 - **[C-0089]** Pick and Ship Logistics (PAN AAQCP4145A: Oil VENDA001661, Mart VENDA001018, Bev VENDA001346): book WTLiable tNO, no TDS, despite master WTCode 1024 and tYES precedent - Daman, until further notice.
-- **[C-0090]** Every Attachments2 line we create, any book, any document: PATCH CopyToTargetDoc='tYES' (with U_CHK2 OK in Oil/Bev; alone in Mart) and read back tYES - API uploads land tNO.
+- **[C-0090]** Upload every attachment, any book, any document, with `sapb1 attach <file>...` (ticks CopyToTargetDoc tYES + U_CHK2 OK in Oil/Bev, reads back, fails otherwise) - never curl; API uploads land tNO.
 - **[C-0092]** 194C Rs 1L/yr aggregate: total Oil + Beverages TOGETHER (one entity, JIVO WELLNESS) and JIVO MART separately from zero. Rs 30,000 test is per bill. Mart deducts too, WTCode 1023 at 1%.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.

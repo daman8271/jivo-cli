@@ -3,13 +3,19 @@ package client
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"crypto/tls"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptrace"
+	"net/textproto"
+	"net/url"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -192,6 +198,21 @@ func sortedDeletableSets() []string {
 // request goes out and an "outcome" line after it resolves, so even a killed
 // process leaves a record of what was sent.
 func (c *Client) write(ctx context.Context, method, path string, payload []byte, extra *logExtra) (*WriteResult, error) {
+	return c.writeWith(ctx, method, path, payload, nil, extra)
+}
+
+// wireBody is what goes on the wire when it is not the logged payload itself:
+// a multipart file upload. The log records a description of the file instead,
+// because the write log is committed to the repo and a vendor's bill does not
+// belong in it.
+type wireBody struct {
+	body        []byte
+	contentType string
+}
+
+// writeWith is write with an optional wire body. wire nil = payload is sent as
+// JSON, which is every write except an attachment upload.
+func (c *Client) writeWith(ctx context.Context, method, path string, payload []byte, wire *wireBody, extra *logExtra) (*WriteResult, error) {
 	if c.b1Session == "" {
 		if !c.LoadCachedSession() {
 			if err := c.Login(ctx); err != nil {
@@ -202,7 +223,7 @@ func (c *Client) write(ctx context.Context, method, path string, payload []byte,
 		}
 	}
 
-	body, status, err := c.attemptWrite(ctx, method, path, payload, extra)
+	body, status, err := c.attemptWrite(ctx, method, path, payload, wire, extra)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +248,7 @@ func (c *Client) write(ctx context.Context, method, path string, payload []byte,
 			c.appendWriteLog(logOutcome, method, path, payload, status, "", err, extra)
 			return nil, err
 		}
-		body, status, err = c.attemptWrite(ctx, method, path, payload, extra)
+		body, status, err = c.attemptWrite(ctx, method, path, payload, wire, extra)
 		if err != nil {
 			return nil, err
 		}
@@ -269,7 +290,7 @@ var errSessionExpiredRetry = errors.New("HTTP 401 (session expired) — re-loggi
 // safe to re-run) or "may have been committed"
 // (*errs.WriteOutcomeUnknownError, do not re-run). Either way the outcome is
 // logged before returning.
-func (c *Client) attemptWrite(ctx context.Context, method, path string, payload []byte, extra *logExtra) ([]byte, int, error) {
+func (c *Client) attemptWrite(ctx context.Context, method, path string, payload []byte, wire *wireBody, extra *logExtra) ([]byte, int, error) {
 	logPath, logErr := c.appendWriteLog(logIntent, method, path, payload, 0, "", nil, extra)
 	if logErr != nil && extra != nil && extra.RequireIntent {
 		// Deliberately different from the Create/Update path, which warns and
@@ -286,7 +307,11 @@ func (c *Client) attemptWrite(ctx context.Context, method, path string, payload 
 		return nil, 0, extra.unrecordable(path, logPath, logErr)
 	}
 
-	body, status, sent, err := c.rawWrite(ctx, method, path, payload)
+	sendBytes, contentType := payload, "application/json"
+	if wire != nil {
+		sendBytes, contentType = wire.body, wire.contentType
+	}
+	body, status, sent, err := c.rawWrite(ctx, method, path, sendBytes, contentType)
 	if err != nil {
 		if sent {
 			err = c.outcomeUnknownError(method, path, "the response never arrived", err)
@@ -343,7 +368,7 @@ func queryHintFor(path string) string {
 // treats a request carrying one as replayable and will silently retry it after a
 // connection error — exactly the double-post everything else in this file works
 // to prevent. The absence of that header is load-bearing.
-func (c *Client) rawWrite(ctx context.Context, method, path string, payload []byte) ([]byte, int, bool, error) {
+func (c *Client) rawWrite(ctx context.Context, method, path string, payload []byte, contentType string) ([]byte, int, bool, error) {
 	var wrote atomic.Bool
 	trace := &httptrace.ClientTrace{
 		WroteRequest: func(info httptrace.WroteRequestInfo) {
@@ -360,7 +385,7 @@ func (c *Client) rawWrite(ctx context.Context, method, path string, payload []by
 	if len(payload) > 0 {
 		// A DELETE carries no body; sending Content-Type for zero bytes just
 		// invites a fussy proxy to have an opinion about it.
-		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("Accept", "application/json")
 	c.attachCookies(req)
@@ -426,4 +451,101 @@ func isTimeout(err error) bool {
 		return true
 	}
 	return strings.Contains(err.Error(), "Client.Timeout")
+}
+
+// UploadAttachment puts one file on an Attachments2 row, as multipart/form-data
+// under the field name "files" — the only shape the Service Layer takes a file
+// in. absEntry 0 POSTs a new row, the file becoming line 1; absEntry N PATCHes
+// row N, which adds the file as that row's next line. The path is built here
+// from the number, so nothing a caller passes becomes a path segment.
+//
+// The write log records the file's name, size and sha256, never its bytes.
+//
+// This only uploads. Copy to Target Document and the Approve stamp are a
+// separate PATCH (cli.stampAttachmentRow): an API upload lands tNO, and nothing
+// in this method changes that.
+func (c *Client) UploadAttachment(ctx context.Context, absEntry int64, fileName string, content []byte) (*WriteResult, error) {
+	if absEntry < 0 {
+		return nil, &errs.UsageError{Msg: fmt.Sprintf("Attachments2 row must be a positive number, got %d", absEntry)}
+	}
+	method, path := http.MethodPost, "Attachments2"
+	if absEntry > 0 {
+		method, path = http.MethodPatch, "Attachments2("+strconv.FormatInt(absEntry, 10)+")"
+	}
+
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="files"; filename="%s"`, multipartQuote.Replace(fileName)))
+	h.Set("Content-Type", attachmentContentType(fileName))
+	part, err := mw.CreatePart(h)
+	if err != nil {
+		return nil, fmt.Errorf("building upload of %s: %w", fileName, err)
+	}
+	if _, err := part.Write(content); err != nil {
+		return nil, fmt.Errorf("building upload of %s: %w", fileName, err)
+	}
+	if err := mw.Close(); err != nil {
+		return nil, fmt.Errorf("building upload of %s: %w", fileName, err)
+	}
+
+	sum := sha256.Sum256(content)
+	logged, err := json.Marshal(struct {
+		File   string `json:"file"`
+		Bytes  int    `json:"bytes"`
+		SHA256 string `json:"sha256"`
+	}{fileName, len(content), hex.EncodeToString(sum[:])})
+	if err != nil {
+		return nil, err
+	}
+	return c.writeWith(ctx, method, path, logged, &wireBody{buf.Bytes(), mw.FormDataContentType()}, nil)
+}
+
+// multipartQuote escapes a filename for a Content-Disposition header, the same
+// way mime/multipart does for its own CreateFormFile.
+var multipartQuote = strings.NewReplacer(`\`, `\\`, `"`, `\"`)
+
+// attachmentContentType names the file's type from its extension. Spelled out
+// for what JIVO actually attaches rather than asked of mime.TypeByExtension,
+// which on Windows reads the registry and answers differently per machine.
+func attachmentContentType(fileName string) string {
+	switch strings.ToLower(filepath.Ext(fileName)) {
+	case ".pdf":
+		return "application/pdf"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	case ".xlsx":
+		return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	case ".xls":
+		return "application/vnd.ms-excel"
+	default:
+		return "application/octet-stream"
+	}
+}
+
+// DownloadAttachment reads one file of an Attachments2 row back, as SAP serves
+// it off the share. fileName is the line's FileName + "." + FileExtension: the
+// Service Layer reaches any line but the first only by that full name, quoted
+// (plain $value returns line 1 whatever you ask for). A read — nothing changes.
+func (c *Client) DownloadAttachment(ctx context.Context, absEntry int64, fileName string) ([]byte, error) {
+	if absEntry <= 0 {
+		return nil, &errs.UsageError{Msg: fmt.Sprintf("Attachments2 row must be a positive number, got %d", absEntry)}
+	}
+	literal := "'" + strings.ReplaceAll(fileName, "'", "''") + "'"
+	path := "Attachments2(" + strconv.FormatInt(absEntry, 10) + ")/$value?filename=" +
+		strings.ReplaceAll(url.QueryEscape(literal), "+", "%20")
+	body, status, _, err := c.getWithStatus(ctx, path, map[string]string{"Accept": "*/*"})
+	if err != nil {
+		return nil, err
+	}
+	if status < 200 || status >= 300 {
+		code, msg := extractSAPErrorDetail(body)
+		if msg == "" {
+			msg = fmt.Sprintf("HTTP %d", status)
+		}
+		return nil, &errs.APIError{Code: code, Msg: msg}
+	}
+	return body, nil
 }

@@ -5,18 +5,20 @@ description: Use when a tanker of LOOSE / BULK oil arrives and the goods receipt
 
 # Oil GRPO — a tanker of bulk oil, from the supplier's invoice + the PO
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 Internal skill. Built 2026-09-09 on **ARORA AGRI `AABV/26-27/308`** — 42,200 kg
 refined soyabean against PO **220826145**, gate entry 87 — taught through by Daman
@@ -100,25 +102,15 @@ three-book search.
 ## 2 · Attach both papers first — invoice AND PO, one row, two lines
 
 Full recipe and its traps: `.claude/skills/jivo-ap-draft/reference/attachments-upload.md`.
-`-H "Expect:"` is load-bearing on multi-MB scans.
+Upload with `sapb1 attach` — it ticks Copy to Target Document on each line (C-0090), so the
+bill follows this GRPO onto the A/P invoice, and stamps `U_CHK`/`U_CHK2` or SAP refuses the
+draft with 1120025 (C-0082):
 
 ```bash
-S=<scratch>; H="https://$SAPB1_HOST:$SAPB1_PORT"
-python3 -c 'import json,os;print(json.dumps({"CompanyDB":os.environ["SAPB1_COMPANYDB"],"UserName":os.environ["SAPB1_USER"],"Password":os.environ["SAPB1_PASSWORD"]}))' > "$S/login.json"
-curl -sk -c "$S/ck" -H "Content-Type: application/json" --data-binary @"$S/login.json" "$H/b1s/v1/Login" -o /dev/null; rm "$S/login.json"
-
-curl -sk --http1.1 -H "Expect:" -b "$S/ck" -X POST  "$H/b1s/v1/Attachments2"       -F "files=@$S/AABV-26-27-308.pdf;type=application/pdf"   # 201, line 1 = the invoice
-sap-b1/cli/sapb1 query Attachments2 --orderby "AbsoluteEntry desc" --top 1 --json   # <- take AbsoluteEntry FROM HERE
-curl -sk --http1.1 -H "Expect:" -b "$S/ck" -X PATCH "$H/b1s/v1/Attachments2(<AE>)" -F "files=@$S/PO-220826145.pdf;type=application/pdf"     # 204, line 2 = the PO
-```
-
-Then stamp both lines or SAP refuses the draft with 1120025 (C-0082) — and tick Copy to
-Target Document on each (C-0090), so the bill follows this GRPO onto the A/P invoice:
-
-```bash
-sap-b1/cli/sapb1 patch "Attachments2(<AE>)" --data '{"Attachments2_Lines":[
-  {"AbsoluteEntry":<AE>,"LineNum":1,"U_CHK":<KB1>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"},
-  {"AbsoluteEntry":<AE>,"LineNum":2,"U_CHK":<KB2>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}]}' --yes
+sap-b1/cli/sapb1 attach "$S/AABV-26-27-308.pdf" "$S/PO-220826145.pdf" --dry-run
+sap-b1/cli/sapb1 attach "$S/AABV-26-27-308.pdf" "$S/PO-220826145.pdf" --yes
+# → Attachments2 row <AE> — line 1 = the invoice, line 2 = the PO, both tYES, U_CHK2 OK
+#   "AttachmentEntry": <AE>   <- put this in the draft
 ```
 
 Name the files after what they are (`AABV-26-27-308.pdf`, `PO-220826145.pdf`) — that

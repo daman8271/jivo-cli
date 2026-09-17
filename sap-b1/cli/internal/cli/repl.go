@@ -91,7 +91,7 @@ func resolveCompany(in string) string {
 
 // writeVerbs are the commands that ask for a typed confirmation on stdin.
 var writeVerbs = map[string]bool{
-	"draft": true, "post": true, "patch": true, "delete": true, "add-draft": true,
+	"draft": true, "post": true, "patch": true, "delete": true, "add-draft": true, "attach": true,
 }
 
 // splitLine is a small shell-ish splitter: single and double quotes hold a token

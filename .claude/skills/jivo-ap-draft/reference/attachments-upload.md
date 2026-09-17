@@ -1,7 +1,14 @@
-# Attaching the paper to a draft — the proven recipe (2026-08-24)
+# Attaching the paper to a draft — `sapb1 attach` (2026-09-17)
 
 Shared by `jivo-ap-draft`, `jivo-ap-service-draft` and `jivo-ap-credit-memo`.
-Every command below was run live on 2026-08-24 against drafts 55126 / 55128 / 55130.
+**Upload with `sapb1 attach`, and only with it** (C-0090, built 2026-09-17). It uploads
+every file as a line of ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`**
+on every line, sets the Approve stamp where the book has it, reads the row back and exits
+non-zero unless every line is `tYES` and every file it sent downloads back byte-identical.
+The old route — `curl -X POST …/Attachments2`, then a
+hand-written PATCH for the tick — is retired: an upload lands `tNO`, and a step in a recipe
+is a step that gets skipped. Proven live 2026-09-17: Oil 177963 (1.8 MB + a second file,
+both byte-identical on download), Mart 59373, Beverages 43331.
 
 **Daman's rule (2026-08-24): a draft carries BOTH the operator's scan AND the base
 document's file** (the GRPO's bill, the Goods Return's paper, …) — each as its own
@@ -36,95 +43,79 @@ reaches SAP — both measured on DESKTOP-EQ55Q8H, 2026-08-25:**
   (Python312 sits ahead of WindowsApps on the Machine PATH, so `python3` then
   resolves to the real interpreter everywhere).
 
-## 1. Session (never echo the password)
+## 1. Upload — the operator's scan (and the base document's file) → one row
+
+Rename first (`VENDOR-REF-DATE.pdf`) — it lands on
+`\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments` under exactly that name. SAP
+auto-renames on a collision (name + ddmmyyyy + time); that is fine.
+
+```bash
+sapb1 attach "$S/VENDOR-REF-DATE.pdf" "$S/GRPO-<DocNum>-<FileName>.pdf" --company <DB> --dry-run
+sapb1 attach "$S/VENDOR-REF-DATE.pdf" "$S/GRPO-<DocNum>-<FileName>.pdf" --company <DB> --yes
+# → Attachments2 row N in <DB> — Copy to Target Document = tYES on all 2 line(s), read back:
+#     line 1  VENDOR-REF-DATE.pdf  tYES  U_CHK2 OK
+#     line 2  GRPO-<DocNum>-<FileName>.pdf  tYES  U_CHK2 OK
+#   Point the document at it: "AttachmentEntry": N
+```
+
+The order of the files is the order of the lines. Add `--json` to get
+`{"absoluteEntry": N, "lines": [...]}` for a script.
+
+**What it sets, per book** (read off the row itself, not a company list):
+- **Every book:** `CopyToTargetDoc = "tYES"` on every line — Daman, 2026-09-16: the file
+  must follow the document when it is copied onward (GRPO → A/P, draft → posted).
+- **Oil and Beverages:** `U_CHK = <size KB>`, `U_CHK2 = "OK"` where empty.
+  `SBO_SP_TransactionNotification` refuses a draft pointing at a line whose `U_CHK2` is null
+  (1120025). **Mart** has no such columns and would refuse the whole PATCH on an unknown
+  field, so it gets the tick alone. Beverages also refuses a line over 1 MB (1120026) and a
+  row over 5 MB (1120027) — at the pointer PATCH, not at the upload — so compress first.
+
+**When it does not exit 0** — once a row exists it is never exit 5/6 ("nothing happened"):
+- **Exit 8** — the row is there but not finished (a tick did not read back, a file did not
+  come back byte-identical, or SAP refused a later file). The message names the fix, usually
+  `sapb1 attach --row N --yes` (re-tick) or `sapb1 attach --row N <file> --yes` (add the rest).
+- **Exit 7** — an answer never came back. Look first:
+  `sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`; then add only what is really
+  missing. Never re-send blind — rows cannot be deleted.
+- `--row N` reads and shows the row before you confirm, and refuses a row that does not exist.
+- Two files with the same name, or a name with a line break in it, are refused before anything is sent.
+- `-5002 Attachments folder not defined` / `404 Fail to get the LINUX mount point` — a CIFS
+  mount on hanadb dropped: `sap-b1/attachments/MOUNT-RUNBOOK.md`, not a retry.
+
+## 2. The base document's file — download it first (reads only)
+
+```bash
+sapb1 query PurchaseDeliveryNotes --filter "DocEntry eq <grpoEntry>" --select "DocEntry,DocNum,AttachmentEntry"   # or PurchaseReturns for a Goods Return
+curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(<baseAE>)"                          # lines: FileName, FileExtension, FileSize
+curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(<baseAE>)/\$value" -o "$S/GRPO-<DocNum>-<FileName>.pdf"; file "$S/GRPO-<DocNum>-<FileName>.pdf"   # must say "PDF document"
+```
+
+The session for those two GETs (never echo the password):
 
 ```bash
 python3 -c 'import json,os;print(json.dumps({"CompanyDB":os.environ.get("SAPB1_COMPANYDB","JIVO_OIL_HANADB"),"UserName":os.environ["SAPB1_USER"],"Password":os.environ["SAPB1_PASSWORD"]}))' > "$S/login.json"
 curl -sk -c "$S/ck" -H "Content-Type: application/json" --data-binary @"$S/login.json" "$H/b1s/v1/Login" -o "$S/loginresp.json"; rm "$S/login.json"
 ```
 
-## 2. The operator's scan → a new row
+**Plain `$value` returns line 1 only.** Any other line needs the file name **with its
+extension, quoted**: `…/Attachments2(N)/\$value?filename='332.pdf'` (200). Unquoted, or
+without the extension, it is a 404 whose body lands in the output file — so a following
+`cmp` "fails" for the wrong reason. Always check `file`.
 
-Rename the file first (`VENDOR-REF-DATE.pdf`) — it lands on
-`\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments` under exactly that name.
-
-```bash
-curl -sk --http1.1 -H "Expect:" -b "$S/ck" -X POST "$H/b1s/v1/Attachments2" -F "files=@$S/VENDOR-REF-DATE.pdf;type=application/pdf"
-# → HTTP 201, {"AbsoluteEntry": N, "Attachments2_Lines": [{"LineNum": 1, "FileSize": <KB>, ...}]}
-```
-
-**`-H "Expect:"` is load-bearing** (proven 2026-09-01, draft 55786 direct to
-138.252.101.222:50000): for a multi-MB file curl sends `Expect: 100-continue`
-and the SL answers `400 {"code": 206, "message": "Bad Post content."}`. Same
-command with the header suppressed → 201. (Expect the same on the line-2 PATCH
-in step 3 — same multipart path, though only the POST was tested.) Small files squeak under curl's 1 KB threshold, which is why
-the tiny test files always "worked".
-
-## 3. The base document's file(s) → extra lines on the same row
-
-```bash
-acc/_playbook/sap query PurchaseDeliveryNotes --filter "DocEntry eq <grpoEntry>" --select "DocEntry,DocNum,AttachmentEntry"   # or PurchaseReturns for a Goods Return
-curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(<baseAE>)"                     # lines: FileName, FileExtension, FileSize
-curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(<baseAE>)/\$value" -o "$S/GRPO-<DocNum>-<FileName>.pdf"; file "$S/GRPO-<DocNum>-<FileName>.pdf"   # must say "PDF document"
-curl -sk -b "$S/ck" -X PATCH "$H/b1s/v1/Attachments2(N)" -F "files=@$S/GRPO-<DocNum>-<FileName>.pdf;type=application/pdf"
-# → HTTP 204; the row now has LineNum 2
-```
-
-**The file-name selector is now proven** (2026-08-27, Mart row 56828, first multi-file
-row done by API). Plain `$value` returns **line 1** only; to reach any other line the
-name must be **quoted**:
-
-```bash
-curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(N)/\$value?filename='332.pdf'" -o "$S/rb.pdf"   # 200
-# unquoted, or with &fileextension=, returns 404 — and the 404 body is what lands in the
-# output file, so a following `cmp` "fails" for the wrong reason. Always check `file`.
-```
-
-**You do not need to rename to dodge a collision — SAP does it for you.** Re-uploading
-`3229.pdf` when that name already sat on the share came back as
-`322927082026125933812262.pdf` (name + ddmmyyyy + time), HTTP 201, original untouched.
-That is the same auto-rename visible on hand-keyed rows (Mart NCR-330 line 2). A name
-that is free keeps its clean form (`332.pdf`).
-
-## 4. Stamp every line — Approve tick (1120025) + Copy to Target Document (C-0090)
-
-**This PATCH is never skipped, in any book.** Two things go on every line:
-
-- **`CopyToTargetDoc = "tYES"` — ALL THREE books, every line, every document.**
-  Daman, 2026-09-16: whatever we attach must carry the "Copy to Target Document" tick, so
-  the file follows the document when it is copied onward (GRPO → A/P invoice, draft →
-  posted). An API upload lands **`tNO`** by default — measured: row 174394 read back `tNO`,
-  and of Oil's API-uploaded rows (`CopyToProd='Y'`) since 2026-08-20, 1,488 are `N` vs 423 `Y`.
-- **`U_CHK = <size KB>`, `U_CHK2 = "OK"` — Oil and Beverages only.** `ATC1` carries these
-  UDFs in `JIVO_OIL_HANADB` and `JIVO_BEVERAGES_HANADB` and **not in Mart**
-  (`SYS.TABLE_COLUMNS`, re-checked 2026-09-16). Sending them in Mart fails the PATCH on
-  an unknown field. `SBO_SP_TransactionNotification` refuses a draft that points at a line
-  whose `U_CHK2` is null.
-
-```bash
-# Oil / Beverages — one object per line
-acc/_playbook/sap patch "Attachments2(N)" --data '{"Attachments2_Lines":[{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB1>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"},{"AbsoluteEntry":N,"LineNum":2,"U_CHK":<KB2>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}]}' --yes
-
-# Mart — the tick alone
-acc/_playbook/sap patch "Attachments2(N)" --data '{"Attachments2_Lines":[{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"},{"AbsoluteEntry":N,"LineNum":2,"CopyToTargetDoc":"tYES"}]}' --yes
-```
-
-Proven live 2026-09-16, HTTP 204 each, stamp values kept on read-back: Oil 177767
-(tick alone) and 177765 (tick + stamp together), Mart 59273, Beverages 43223.
-
-## 5. Point the draft at the row
+## 3. Point the draft at the row
 
 ```bash
 acc/_playbook/sap patch "Drafts(<DocEntry>)" --data '{"AttachmentEntry": N}' --dry-run
 acc/_playbook/sap patch "Drafts(<DocEntry>)" --data '{"AttachmentEntry": N}' --yes      # HTTP 204
 ```
 
-## 6. Verify — the only proof
+## 4. Verify — the only proof
+
+`sapb1 attach` has already read every line back as `tYES` and every file back
+byte-identical. What is left to prove is the pointer:
 
 ```bash
-acc/_playbook/sap query Drafts --filter "DocEntry eq <DocEntry>" --select "DocEntry,NumAtCard,AttachmentEntry" --json    # → N
-curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(N)"     # every line: TargetPath = \\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments (Windows UNC → the client opens it), U_CHK2 OK, CopyToTargetDoc tYES (any tNO = not done)
-curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(N)/\$value" -o "$S/rb.pdf" -w "%{http_code}\n"; cmp "$S/rb.pdf" "$S/VENDOR-REF-DATE.pdf" && echo byte-identical
+sapb1 query Drafts --filter "DocEntry eq <DocEntry>" --select "DocEntry,NumAtCard,AttachmentEntry" --json    # → N
 # re-read the base document's AttachmentEntry: unchanged
 curl -sk -b "$S/ck" -X POST "$H/b1s/v1/Logout" -o /dev/null; rm -f "$S/ck" "$S/loginresp.json" "$S/rb.pdf"
 ```

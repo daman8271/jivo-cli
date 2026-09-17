@@ -5,18 +5,20 @@ description: The JOURNAL VOUCHER that closes the cash holder's imprest for a cas
 
 # Cash voucher · the JOURNAL VOUCHER that closes the imprest
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 Daman taught this on **2026-09-12**, having flagged it earlier the same day:
 *"We gonna close Arvinder's imprest voucher later by posting a journal voucher."*
@@ -175,9 +177,10 @@ Measured against the live metadata on 2026-09-12:
 
 **Two steps, in this order, before the POST:**
 
-1. **Put the merged PDF on the share.** `POST /Attachments2` with the file writes
-   it to `\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments` and the response's
-   `TargetPath` + `FileName` give you the exact path. (The `Attachments2` row it
+1. **Put the merged PDF on the share.** `sapb1 attach <merged.pdf> --yes` writes
+   it to `\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments`; read row N back
+   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) and its line's
+   `TargetPath` + `FileName` + `FileExtension` give you the exact path. (The `Attachments2` row it
    creates is unused and harmless — JVs do not reference rows.)
 2. **Put `<TargetPath>\<FileName>.<ext>` into `U_ATTACH_LINK`** on the
    JournalEntry, then POST.

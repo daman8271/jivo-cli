@@ -5,18 +5,20 @@ description: CASH VOUCHER TYPE 2 — the voucher whose paper is a REGISTERED VEN
 
 # Cash voucher · TYPE 2 · the voucher WITH A VENDOR'S BILL
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 Daman named this type on **2026-09-12**: **"cash voucher bill"**. It is the type
 where the cash holder paid a **registered vendor** who issued a **proper GST tax
@@ -298,13 +300,12 @@ Voucher 421: supplier Panipat (06), JIVO branch 2 Sonipat (06) → intra-state �
 The pack is **slip + bill in one PDF**; there is no GRPO file and no cash sheet to
 add. One line on the draft's own `Attachments2` row.
 
-Follow `jivo-ap-draft/reference/attachments-upload.md`. The traps that bit here:
+Upload with `sapb1 attach <pack> --yes` (recipe: `jivo-ap-draft/reference/attachments-upload.md`).
+The traps that bit here:
 
-- **`-H "Expect:"` is load-bearing** on the upload POST.
-- **Oil only:** stamp `U_CHK = <size KB>`, `U_CHK2 = 'OK'` on every attachment
-  line **before** patching `AttachmentEntry`, or SAP refuses with `-1116 (1120025)`
-  (C-0082). Mart has no such UDFs. **Every book, same PATCH: `CopyToTargetDoc = 'tYES'`
-  on every line** (C-0090) — in Mart it is the only field.
+- `sapb1 attach` ticks **`CopyToTargetDoc = 'tYES'` on every line, every book** (C-0090)
+  and, where `ATC1` has them (Oil, Bev), stamps `U_CHK = <size KB>`, `U_CHK2 = 'OK'` —
+  without that SAP refuses the `AttachmentEntry` patch with `-1116 (1120025)` (C-0082).
 - Each **file** must be under 1 MB. Voucher 421's pack was 922 KB and went as-is;
   re-render a fatter one per `cash-voucher` §8 and say the attached copy is a
   re-render.

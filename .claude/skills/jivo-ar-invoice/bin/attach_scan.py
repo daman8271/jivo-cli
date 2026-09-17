@@ -15,7 +15,7 @@ bilty page as evidence.
 mapping.json bilties need a "page" (1-based page in the scan holding that bilty).
 Each invoice gets its OWN Attachments2 row - never share a row between documents.
 """
-import argparse, json, os, subprocess, sys, tempfile
+import argparse, json, os, shutil, subprocess, sys, tempfile
 
 import sys as _sys, pathlib as _pl
 _sys.path.insert(0, str(_pl.Path(__file__).resolve().parent))
@@ -54,8 +54,6 @@ def main():
 
     m = json.load(open(a.mapping)); company = m["company"]
     env = load_env(company)
-    host, port = env["SAPB1_HOST"], env["SAPB1_PORT"]
-    H = f"https://{host}:{port}"
 
     allinv = [i for b in m["bilties"] for i in b["invoices"]]
     rows = {int(r["DocNum"]): r for r in hana(
@@ -85,18 +83,6 @@ def main():
         return
 
     tmp = tempfile.mkdtemp(prefix="bilty-")
-    ck = os.path.join(tmp, "ck")
-    login = json.dumps({"CompanyDB": company, "UserName": env["SAPB1_USER"],
-                        "Password": env["SAPB1_PASSWORD"]})
-    lf = os.path.join(tmp, "l.json"); open(lf, "w").write(login)
-    rc = subprocess.run(["curl", "-sk", "-c", ck, "-H", "Content-Type: application/json",
-                         "--data-binary", f"@{lf}", f"{H}/b1s/v1/Login",
-                         "-o", os.path.join(tmp, "lr.json"), "-w", "%{http_code}"],
-                        capture_output=True, text=True)
-    os.remove(lf)
-    if rc.stdout.strip() != "200":
-        sys.exit(f"login failed: {rc.stdout}")
-
     pages = {}
     for _, _, pg, _, _ in plan:
         if pg not in pages:
@@ -106,40 +92,30 @@ def main():
 
     ok = fail = 0
     for inv, de, pg, name, gr in plan:
-        src = pages[pg]; kb = round(os.path.getsize(src) / 1024)
-        up = os.path.join(tmp, "up.json")
-        # commas in the name break curl -F (treated as a file separator) - quote it
-        r = subprocess.run(["curl", "-sSk", "--http1.1", "-H", "Expect:", "-b", ck,
-                            "-X", "POST", f"{H}/b1s/v1/Attachments2",
-                            "-F", f'files=@"{src}";type=application/pdf;filename="{name}"',
-                            "-o", up, "-w", "%{http_code}"], capture_output=True, text=True)
-        if r.stdout.strip() != "201":
-            print(f"  FAIL  {inv} upload {r.stdout.strip()} {r.stderr.strip()[:100]}")
-            fail += 1; continue
-        ae = json.load(open(up))["AbsoluteEntry"]
-        # C-0090: Copy to Target Document on every line, every book (an API
-        # upload lands tNO). U_CHK/U_CHK2 exist in Oil and Bev only - Mart
-        # refuses the whole PATCH on an unknown field, so leave them out there.
-        line = {"AbsoluteEntry": ae, "LineNum": 1, "CopyToTargetDoc": "tYES"}
-        if "MART" not in company.upper():
-            line.update({"U_CHK": kb, "U_CHK2": "OK"})
-        s = subprocess.run([SAPB1, "patch", f"Attachments2({ae})", "--yes", "--data",
-                            json.dumps({"Attachments2_Lines": [line]})],
+        # the uploaded file name is the file's own name, so give the page its
+        # invoice-list name in a folder of its own
+        d = tempfile.mkdtemp(dir=tmp)
+        src = os.path.join(d, name)
+        shutil.copyfile(pages[pg], src)
+        # C-0090: sapb1 attach ticks Copy to Target Document on every line (and
+        # the U_CHK/U_CHK2 stamp where the book has it), reads the row back, and
+        # exits non-zero unless every line is tYES. No tick, no link.
+        u = subprocess.run([SAPB1, "attach", src, "--company", company, "--yes", "--json"],
                            capture_output=True, text=True, env=env, cwd=REPO)
-        if s.returncode != 0:
-            print(f"  WARN  {inv} row {ae}: Copy to Target / Approve stamp NOT set - "
-                  f"{(s.stderr or s.stdout).strip().splitlines()[-1][:120]}")
+        if u.returncode != 0:
+            print(f"  FAIL  {inv} attach (exit {u.returncode}): "
+                  f"{(u.stderr or u.stdout).strip().splitlines()[-1][:160]}")
+            fail += 1; continue
+        ae = json.loads(u.stdout)["absoluteEntry"]
         p = subprocess.run([SAPB1, "patch", f"Invoices({de})", "--yes", "--data",
                             json.dumps({"AttachmentEntry": ae})],
                            capture_output=True, text=True, env=env, cwd=REPO)
         if p.returncode == 0:
             print(f"  OK    {inv}  GR {gr}  -> row {ae}  ({name})"); ok += 1
         else:
-            print(f"  FAIL  {inv} link {(p.stderr or p.stdout).strip().splitlines()[-1][:120]}")
+            print(f"  FAIL  {inv} link row {ae}: {(p.stderr or p.stdout).strip().splitlines()[-1][:120]}")
             fail += 1
 
-    subprocess.run(["curl", "-sk", "-b", ck, "-X", "POST", f"{H}/b1s/v1/Logout"],
-                   capture_output=True)
     print(f"\n  {ok} attached, {fail} failed")
 
 if __name__ == "__main__":

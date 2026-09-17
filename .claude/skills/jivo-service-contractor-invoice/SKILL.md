@@ -5,18 +5,20 @@ description: Use when a LABOUR / SERVICE CONTRACTOR's monthly bill arrives and m
 
 # Labour / service contractor bill → A/P invoice draft (JIVO, all three books)
 
-> 🔴 **ATTACHMENT RULE — COPY TO TARGET DOCUMENT = YES, on every file (Daman, 16 Sept 2026 · C-0090).**
+> 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
-> every `Attachments2` line gets **`CopyToTargetDoc = "tYES"`** (the "Copy to Target Document"
-> tick). An API upload lands **`tNO`** by default, so the scan does NOT follow the document when
-> it is copied onward (GRPO → A/P, draft → posted). Set it in the SAME PATCH as the Approve stamp,
-> **in all three books**, before pointing the document at the row:
-> - Oil / Bev: `{"AbsoluteEntry":N,"LineNum":1,"U_CHK":<KB>,"U_CHK2":"OK","CopyToTargetDoc":"tYES"}`
-> - Mart (no `U_CHK` columns): `{"AbsoluteEntry":N,"LineNum":1,"CopyToTargetDoc":"tYES"}`
->
-> One object per line (line 2, 3 … too). Read back `Attachments2(N)`: every line must show
-> `"CopyToTargetDoc": "tYES"` — if any shows `tNO`, the entry is not done. Proven live 16 Sept on
-> Oil 177765/177767, Mart 59273, Bev 43223 (HTTP 204, stamp kept).
+> upload it with **`sapb1 attach <file> [<file>...] --company <DB>`** (`--dry-run` first, then `--yes`).
+> It puts all the files on ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`** on
+> every line (plus the Approve stamp `U_CHK`/`U_CHK2 OK` in Oil and Bev — Mart has no such fields),
+> reads the row back, and exits non-zero unless every line is `tYES` and every file downloads
+> back byte-identical. An upload by any other route
+> lands `tNO`, and then the scan does NOT follow the document onward (GRPO → A/P, draft → posted).
+> - It prints `"AttachmentEntry": N` — point the document at row N (in the payload, or `sapb1 patch`).
+> - Exit 8 = the row exists but is not finished — the message names the fix (usually
+>   `sapb1 attach --row N --yes`). Exit 7 = an answer never came back: look at the row
+>   (`sapb1 query Attachments2 --filter "AbsoluteEntry eq N"`) before sending any file again.
+> - Never `curl -X POST …/Attachments2` or hand-PATCH the tick any more. Proven live 17 Sept 2026:
+>   Oil 177963 (two files, byte-identical), Mart 59373, Bev 43331.
 
 Internal skill. Built from the live batch of **2026-09-08**: 19 bills off five
 scans → **16 drafts** (Oil 56568-56577, Mart 40297, Bev 16041-16045),
@@ -190,11 +192,10 @@ ACC_ENV=user07.env acc/_playbook/sap draft purchase-invoice --data-file <p.json>
 ```
 (`user07-mart.env` / `user07-bev.env` for the other books.) Then attach ONE
 page per draft — split the tray scan first — per
-`jivo-ap-draft/reference/attachments-upload.md`; `-H "Expect:"` is
-load-bearing. **`ATC1` carries `U_CHK`/`U_CHK2` in Oil AND Beverages but NOT
-in Mart** — stamp `U_CHK2 OK` in Oil/Bev, skip those two in Mart or the PATCH fails
-on an unknown field. **`CopyToTargetDoc: "tYES"` goes on every line in ALL three books** (C-0090)
-— in Mart it is the only field in that PATCH.
+`jivo-ap-draft/reference/attachments-upload.md`, with `sapb1 attach <page> --yes`.
+**`ATC1` carries `U_CHK`/`U_CHK2` in Oil AND Beverages but NOT in Mart** — `sapb1 attach`
+stamps them where they exist, and ticks **`CopyToTargetDoc: "tYES"` on every line in ALL
+three books** (C-0090).
 
 ## Then STOP unless the login is on an Always-terms template
 
