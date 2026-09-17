@@ -61,7 +61,7 @@ below are through it.
    | `Series` + `DocumentSubType` | the **flavour** (non-GST `HR_B` + `bod_None` vs GST `HR_G` + `bod_GSTTaxInvoice`); then find **this month's** number for that flavour and branch (`reference/series-and-errors.md` in jivo-ap-draft; confirm with what Aug-26 posted docs of that flavour carry) | 3324 HR_B0826 + bod_None |
    | `BPL_IDAssignedToInvoice` | the branch precedent uses. **A `[SAP -3000] … does not have permission to use this object` on `BusinessPlaces` does NOT block this bill** — some logins (USER08/Divjot) cannot open the branch *list*, and none of them need to: take the branch from the vendor's last posted invoices above, or from the operator, and pass it. Nothing has to be granted in SAP first (verified live 2026-09-04) | 2 FACTORY |
    | `GSTTransactionType` | copy | `gsttrantyp_BillOfSupply` (petrol/diesel are outside GST) |
-   | `WTLiable` / TDS | **precedent beats the master flag**; transport vendors are often 194C — check the last 3, report both, follow precedent | master `boNO`, all 3 posted TDS 0 → none |
+   | `WTLiable` / TDS | **Transporter** (vendor group TRANSPORTER): **set by `jivo-tds`** — AIR TRANS, BHARGAVE ROAD CARRIER, DELHI PUNJAB, PICK & SHIP take none; every other transporter 2% from the first rupee. **Any other service vendor:** precedent beats the master flag | master `boNO`, all 3 posted TDS 0 → none |
    | line `AccountCode` | per head: fuel-vehicles / generator / conveyance / freight … | 5650015 / 5680001 / 5690002 |
    | line `CostingCode`…`CostingCode5` | copy per vehicle/unit; **`CostingCode3` (Budget) is mandatory** — guard 1120009 "Please select Budget" rejects the POST without it | FACT_COM / Del Bkhp; `CostingCode5` HR |
    | line `LocationCode` | copy — **2 = Bhakharpur factory = the Haryana place-of-supply the client shows**; empty = empty on screen (C-0025) | 2 |
@@ -79,7 +79,9 @@ below are through it.
    follow C-0017 and say so.
 7. **Comments** (≤254): `Bill <ref> dt <date> period <a-b> | GATE ENTRY NO <n> dt <date> |
    <qty summary: Petrol 110.150 Ltr Diesel 549.689 Ltr> | <approval as written>`.
-8. **Dry-run, then `--yes` — same turn, do not stop in between:**
+8. **TDS first** (every bill, from the repo root): `python3 .claude/skills/jivo-tds/bin/tds.py apply <payload.json> --company OIL`
+   — it sets transporter TDS and leaves other service bills as you built them. Exit 2 = STOP, say why.
+   **Dry-run, then `--yes` — same turn, do not stop in between:**
    `acc/_playbook/sap draft purchase-invoice --dry-run --data-file <payload.json>` then
    `--yes`. Exit 7 = look, don't resend. A 400 with `1120009` = add `CostingCode3`; with
    `-10`/`-4002` = wrong series/subtype flavour.
@@ -118,7 +120,8 @@ below are through it.
 - [ ] Σ lines = NET TOTAL to the paisa; discount on the rows that earned it only
 - [ ] Σ `U_Recvd_Qty` = paper's qty total; every line has `LocationCode` + `CostingCode3`
 - [ ] series = **this month's** number of the precedent flavour; `DocumentSubType` matches
-- [ ] `DocDate` = gate date, `TaxDate` = bill date; `WTLiable` = precedent
+- [ ] `DocDate` = gate date, `TaxDate` = bill date; `jivo-tds apply` run (transporter TDS is its call; other vendors = precedent)
+- [ ] after sending: `jivo-tds check <DocEntry>` passed — exit 3 = do not send to Bhawani
 - [ ] **field diff against one posted precedent**: every non-null header/line field is
       in the payload or consciously omitted
 - [ ] Comments carry gate no., period, qty summary, approval
@@ -149,9 +152,9 @@ There were 433 such bills across the three books in the first five months of FY2
 **Use the GRPO-copy path with `"DocType": "dDocument_Service"`, and follow
 `sap-b1/entry-vault/04-playbooks/Transport-Bill-Playbook.md`.** In one line: find the
 GRPOs by matching the bill's bilty numbers to `OPDN.NumAtCard`, copy them, then set the
-only two things the copy cannot give you — **TDS** (`WithholdingTaxDataCollection`,
-`1024` 2 % company/firm or `1023` 1 % individual/HUF, per the vendor card) and the
-**attachment** — and `add-draft` it.
+only two things the copy cannot give you — **TDS** (run `jivo-tds apply`: AIR TRANS,
+BHARGAVE ROAD CARRIER, DELHI PUNJAB and PICK & SHIP take none; every other transporter
+2% from the first rupee) and the **attachment** — and `add-draft` it.
 
 Three ways this class differs from the fuel bill above: the posting date is the **bill**
 date not the gate date; **all five dimensions** come across from a service GRPO (C-0035 is

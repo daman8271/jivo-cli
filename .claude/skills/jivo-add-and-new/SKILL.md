@@ -107,6 +107,13 @@ SELECT t."WtmCode", t."Name" FROM "<COMPANY>".OWTM t
 2. **Attach the bill** — `.claude/skills/jivo-ap-draft/reference/attachments-upload.md`.
    Do it **before** the Add. A live A/P invoice with no attachment is refused by JIVO
    guard **180021** `Please Attach its Receiving`.
+2b. **Check the TDS** (reads SAP, sends nothing) — every draft, whoever made it:
+   ```bash
+   python3 .claude/skills/jivo-tds/bin/tds.py check <DocEntry> --company OIL   # MART / BEV
+   ```
+   **Exit 3 → do NOT add-draft that bill.** Tell the operator its message word for word
+   (usually: open the draft in SAP B1 and save it once — that applies the TDS and sends it
+   to Bhawani by itself). Exit 2 → the check could not run: do not send, say why.
 3. **Preview the Add** (reads SAP, sends nothing):
    ```bash
    # Mac:      ACC_ENV=user39-oil.env acc/_playbook/sap add-draft <DocEntry> --dry-run

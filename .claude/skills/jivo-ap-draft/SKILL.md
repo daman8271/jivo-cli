@@ -105,6 +105,14 @@ stamp; the draft carries the base document's file too).
    - **Exit 3** = it could not identify vendor / GRPO / branch / series — fix the
      inputs; never hand-edit facts it couldn't find.
    - **Exit 4** = SAP unreachable. Not a data answer. It prints the bridge fix.
+3b. **TDS — the calculator decides. Not you, not the vendor's old bills, not the operator.**
+   ```bash
+   python3 .claude/skills/jivo-tds/bin/tds.py apply /tmp/ap-draft.json --company OIL   # or MART / BEV
+   ```
+   It writes the TDS tick **and** the amount into the payload: goods pay 0.1% only on
+   the part of the bill above ₹50 lakh for the year (Oil + Bev counted together, Mart
+   alone). Tell the operator its one-line summary. **Exit 2 = STOP** — say its message
+   in plain words and do not send. Rules: `.claude/skills/jivo-tds/SKILL.md`.
 4. **Dry-run, print it, then go straight to step 5 — same turn, one action.**
    From `sap-b1/cli` with the operator's env sourced
    (`set -a; source <operator>.env; set +a`):
@@ -136,6 +144,9 @@ stamp; the draft carries the base document's file too).
    `python3 .claude/skills/jivo-ap-draft/bin/readback.py <DocEntry> --expect-total … --expect-qty …`
    Report its flags as gaps, not as success. Give the operator the draft number
    and the click-path it prints.
+   **Then check the TDS landed in SAP:** `python3 .claude/skills/jivo-tds/bin/tds.py check <DocEntry> --company OIL`.
+   **Exit 3 = SAP's TDS is wrong** — do not send this bill to Bhawani; tell the operator
+   the message word for word.
 7. **Name the lane — always, unprompted.** After Bhawani approves, this document
    either gets posted that day or sits waiting for the above-office budget
    approval in JSAP, and the operator cannot tell which. Say it:
@@ -159,11 +170,11 @@ stamp; the draft carries the base document's file too).
 | `BPL_IDAssignedToInvoice` | branch whose `FederalTaxID` = buyer GSTIN; one GSTIN sits on several Oil branches (2 FACTORY, 5 HARYANA SALES, 8 …) — **the GRPO's branch decides** | -5002 without it |
 | `Series` + `DocumentSubType` | the month's GST-tax-invoice series for that branch, e.g. Oil FACTORY Aug-26 = **3684 + `bod_GSTTaxInvoice`** | without both: `-10`/`-4002 define the numbering series` (C-0018) |
 | `DocumentLines` | one per **open GRPO line**: `BaseType 20, BaseEntry, BaseLine`, qty = line's open qty | stock is not received twice; a 5,870-pc invoice can be two lines because the GRPO merged two POs — say so to the operator |
-| `WTLiable` | **Ask the operator — precedent beats the master flag.** precheck defaults to `tYES` when the BP is TDS-liable, but show them the vendor's last 3 posted invoices first: if those are `tNO`/TDS 0, that is how JIVO books this vendor. TPAC 2026-08-22: master said 194Q 0.1% (₹214), last 3 all `tNO` → operator chose no TDS. Always check `WTAmount` on read-back | API drafts come out TDS 0 (C-0018); and once overruled, readback's "TDS is 0 but vendor is TDS-liable" flag is a false positive |
+| `WTLiable` / TDS | **Set by `jivo-tds` (step 3b).** Never by hand, never copied from the vendor's old bills, never asked of the operator | Daman + Divjot 2026-09-17: precedent-copying missed TDS on SSY, S.N. Industries, Kuber |
 | `Comments` | `Based On Goods Receipt PO <n> \| PO <n> \| GATE ENTRY NO <n> \| <paper notes>` ≤ 254 chars | how Accounts searches |
 | `LocationCode` (lines) | inherited from the GRPO line — verify it is set (Oil factory = **2**, Bhakharpur/Haryana). An empty Location shows as an empty place-of-supply in the client | C-0025 |
 | `CostingCode2` (Effective Month) | **= the DocDate's month, `MM-YYYY` (e.g. `08-2026`).** A GRPO-drawn line inherits **Dim1 only** — Dim2/3/5 come through null and must be set. Patchable after the fact without disturbing totals, base links or attachments | C-0035 |
-| `WTLiable` / TDS | 194Q deducts 0.1% only once that **seller** passes **₹50 lakh FY purchases**, and the seller is a **PAN**, not a CardCode — aggregate every card sharing `CRD7.TaxId0` first (TPAC = VENDA000937 + VENDA000939). **SAP does not enforce the threshold**; it deducts whenever `WTCode 1031` is set | C-0036, C-0037 |
+| 194Q (goods) | 0.1% only on the part above **₹50 lakh** for the year — A/P invoices minus credit notes, before GST, every card on the vendor's PAN, **Oil + Bev together, Mart alone**. SAP does not enforce it; `jivo-tds` computes it | Divjot 2026-09-17 |
 | `CostingCode3` (Budget) | **the bill's handwritten allocation note decides**: "Common" / "For oil plant Common" → `FACT_COM` (FACTORY COMMON); the GRPO's inherited `Factory` is the store's default, not Accounts' allocation. Ashok Diwan 1256 → 55165 was patched for this (2026-08-24) | C-0027 |
 | item name ≠ paper | JIVO's item code can be named nothing like the vendor's description (paper "WASH SOLUTION 1000ML" = `CG0000018 INK CARTRIDGE WASHING`). Qty/rate/tax matching the GRPO line is the proof; **say the mismatch out loud** | operator trust |
 
@@ -176,12 +187,12 @@ Rules in a table get skipped under load; this list does not. Tick every line.
 - [ ] `DocTotal` = the paper's grand total to the paisa; qty = paper qty
 - [ ] `DocDate` = GRPO/gate date, `TaxDate` = vendor's invoice date
 - [ ] `Series` is **this month's**, `DocumentSubType` set, branch = the GRPO's
-- [ ] `WTLiable` = the vendor's posted precedent (not the master flag)
+- [ ] TDS written by `jivo-tds apply` — not by hand
 - [ ] `LocationCode` on every line; `Comments` has GRPO, PO, gate no., approval note
 - [ ] **`CostingCode2` (Effective Month) set on EVERY line** = the DocDate month
 - [ ] GRPO found by its `NumAtCard`, and `CardCode` taken from that GRPO — not name-matched
 - [ ] zero-value companion lines (caps with bottles) included, and excluded from the qty check
-- [ ] TDS decided on the **PAN's** FY total against ₹50 lakh, not the CardCode's
+- [ ] after sending: `jivo-tds check` passed (exit 0)
 - [ ] every handwritten note mapped to a field (`reference/handwriting.md`) or raised with
       the operator — none filed silently as a remark; Budget = what the paper says
 - [ ] **field diff against one posted precedent for this vendor**: every non-null

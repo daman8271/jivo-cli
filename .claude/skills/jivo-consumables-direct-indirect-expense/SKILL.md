@@ -107,19 +107,22 @@ acc/_playbook/sap query PurchaseDeliveryNotes --filter "DocEntry eq <n>" --json 
    | `CostingCode3` (Budget) | the GRPO's value (`Factory`) unless the paper's handwriting reallocates it — "Common" → `FACT_COM` (C-0027) |
    | `CostingCode5` | the GRPO's value (`HR`) |
    | `LocationCode` | the GRPO's value (Bhakharpur factory = `2`); empty here is an empty place-of-supply on screen (C-0025) |
-   | `WTLiable` | the vendor's **posted precedent**, not the master flag. None of this class carried TDS on 2026-09-08 |
+   | `WTLiable` / TDS | **set by `jivo-tds`** (step 7) — goods: 0.1% only on the part above ₹50 lakh for the year, Oil + Bev together. Never copied from old bills |
    | `Comments` | `Based On Goods Receipt PO <DocNum> \| PO <DocNum> \| GATE ENTRY NO <n> \| <what it is> \| <paper notes>`, ≤254 chars |
 
    **Dim2/3/5 come through null on a GRPO-drawn line and must be set explicitly**
    (C-0035); only Dim1 inherits.
-7. **Dry-run, show the operator, then send.**
+7. **TDS, then dry-run, show the operator, then send.**
    ```bash
+   python3 .claude/skills/jivo-tds/bin/tds.py apply /tmp/ap-<vendor>.json --company OIL   # repo root; exit 2 = STOP, say why
    ./sapb1 draft purchase-invoice --dry-run --data-file /tmp/ap-<vendor>.json
    ./sapb1 draft purchase-invoice --data-file /tmp/ap-<vendor>.json --yes
    ```
 8. **Read it back and compare** — totals to the paisa, qty, both dates, every
-   `BaseType 20` link, all four dimensions and `LocationCode` populated, `WTLiable`.
-   Report the flags as gaps, not as success.
+   `BaseType 20` link, all four dimensions and `LocationCode` populated.
+   Report the flags as gaps, not as success. Then
+   `python3 .claude/skills/jivo-tds/bin/tds.py check <DocEntry> --company OIL` — **exit 3 = TDS wrong in SAP, do not
+   send to Bhawani**; tell the operator its message.
 9. **Attach both papers, then name the lane.** See below. A goods bill drawn from a
    GRPO is **POST NOW**, not a JSAP wait — say so unprompted
    (`jivo-ap-draft/bin/jsap_route.py <DocEntry> --company oil -v`).

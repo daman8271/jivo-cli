@@ -1,0 +1,36 @@
+{
+  "_about": "JIVO's TDS rules for A/P bills, dictated by Daman and Divjot (Accounts) on 2026-09-17. tds.py reads every number and name below. Amounts are rupees before GST. The rate is always read from SAP's own withholding table (OWHT) of the book; if SAP ever disagrees with the rate written here, tds.py stops instead of guessing.",
+
+  "_deductor_groups": "Books added together for a vendor's yearly total. Oil and Beverages are one legal entity; Mart counts alone.",
+  "deductor_groups": {
+    "OIL":  ["OIL", "BEV"],
+    "BEV":  ["OIL", "BEV"],
+    "MART": ["MART"]
+  },
+
+  "_transport": "Vendors in the TRANSPORTER group. A declaration on file = no TDS at all. Every other transporter pays 2% on the whole bill from the first rupee, no threshold, even if the card carries a 1% code.",
+  "transport": {
+    "vendor_group_name": "TRANSPORTER",
+    "rate_percent": 2,
+    "codes_taken_from_vendor_card": ["1024", "C194"],
+    "default_code": "1024",
+    "declaration_received_pans": {
+      "AGSPN9633Q": "AIR TRANS",
+      "BZQPP0903H": "BHARGAVE ROAD CARRIER",
+      "AANFD7642N": "DELHI PUNJAB TRANSPORT CO",
+      "AAQCP4145A": "PICK & SHIP LOGISTICS"
+    },
+    "declaration_received_card_codes": {
+      "VENDA000108": "DELHI PUNJAB CARRIER (no PAN on the card)"
+    }
+  },
+
+  "_goods": "Item bills from any vendor that is not a transporter. 0.1% only on the part of this bill that takes the vendor's yearly purchases (all books of the group, found by PAN) above Rs 50,00,000.",
+  "goods": {
+    "threshold_per_year": 5000000,
+    "rate_percent": 0.1,
+    "codes_taken_from_vendor_card": ["1031", "TDS"],
+    "default_code": "1031",
+    "no_tds_vendor_groups": ["IMPORT & EXPORT"]
+  }
+}

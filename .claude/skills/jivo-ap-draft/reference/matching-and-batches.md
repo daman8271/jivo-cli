@@ -94,6 +94,9 @@ reports about itself — one mislabelled Pioneer Pet as another slot's number.
 
 ## 6. TDS: the threshold, and the trap under it (C-0036, C-0037)
 
+> **2026-09-17: TDS is set by `jivo-tds` (`tds.py apply` before sending, `tds.py check`
+> after).** Do not patch a WT code by hand as shown below — this section is background.
+
 194Q deducts 0.1% only once purchases from that **seller** pass **₹50 lakh in the
 financial year** — and **SAP does not enforce it**: set `WTCode 1031` and SAP
 deducts regardless. The judgment is human, made before the code goes on.

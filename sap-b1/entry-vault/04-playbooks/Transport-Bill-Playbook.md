@@ -130,6 +130,12 @@ On a forward-charge bill (PICK & SHIP) the header `VatSum` **equals** the line G
 
 ## 5 · TDS — the only number the GRPO cannot give you
 
+> **2026-09-17 (Daman + Divjot) — this rule wins over everything below.** TDS on a
+> transport bill is set by `jivo-tds` (`.claude/skills/jivo-tds/bin/tds.py apply`
+> before sending, `check` after). **AIR TRANS, BHARGAVE ROAD CARRIER, DELHI PUNJAB
+> (both cards) and PICK & SHIP: no TDS** — declaration received. **Every other
+> transporter: 2% from the first rupee**, company or not. Do not pick a code by hand.
+
 **This is the whole job.** Everything else copies; this does not. → [[TDS-Withholding]]
 
 **Which code:** it is on the vendor card (`CRD4`), and it follows the **4th character of
@@ -248,7 +254,7 @@ never on the GSTIN column (C-0014). → [[Business-Partner-Master]]
 - [ ] right book, right `CardCode` **for that book**, right `BPLId` (Mart: 1 or 2)
 - [ ] this month's series, right flavour (`_G` vs `_B`)
 - [ ] tax shape read off the paper: RCM (header `VatSum` 0) vs forward charge
-- [ ] **`WithholdingTaxDataCollection` with the card's code**, `WTLiable: tYES` on the lines
+- [ ] TDS written by `jivo-tds apply`; `jivo-tds check` passed after sending
 - [ ] `DocTotal` = freight − TDS (GTA) reconciles to the bill
 - [ ] read back Dim2 per line = the **dispatch** month; Dim3 = the book's code; Dim5 = destination
 - [ ] scan attached, `U_CHK2 = OK`
