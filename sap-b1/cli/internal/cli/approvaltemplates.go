@@ -68,6 +68,24 @@ import (
 // and Bev 68 are unchanged. The Vishal and Shahrukh desks that use USER07 are
 // still drafts-only through desks.json, which refuses before this guard runs.
 //
+// 2026-09-18: MART AND BEV FINALLY GOT THE SAME FIX, so the doubling is closed in
+// all three books. Measured before touching anything — Mart 21 of 21 pending A/P
+// requests to USER03 were doubled (tpl 17 + 48), Bev 4, Oil 3 and all three of
+// those predated the Oil fix. Sent: Mart 48 +atdtApCreditMemo, Mart 17 −USER08
+// −USER39; Bev 68 +atdtApCreditMemo, Bev 1 −USER08, Bev 2 −USER08. The
+// credit-memo cover goes on 48/68 FIRST — without it, pulling the logins off
+// 17/1/2 leaves their A/P credit memos on no Bhawani template at all, which is a
+// live post, which is the whole point of this guard.
+//
+// The table below is again UNCHANGED by that: only a document type moved, the
+// originators of 48 and 68 did not, and USER07 was deliberately left off both
+// (every doubled draft was USER08's or USER39's, never his). Still open: USER07
+// is on BOTH Bev 1 and Bev 2, same overlap, never yet triggered.
+//
+// And the claim four paragraphs up — "the Service Layer Add was never the doubling
+// route" — is NOT settled. The Mart doubles raised on 2026-09-18 were under USER08.
+// Nobody has re-measured which Add route raised them. Do not repeat it as fact.
+//
 // Why the table lives here in code and not in a live read: the Service Layer
 // refuses ApprovalTemplates to an operator login ("[SAP -3000] The logged-on
 // user does not have permission to use this object" — verified under USER39 on

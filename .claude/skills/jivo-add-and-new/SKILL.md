@@ -208,7 +208,7 @@ person. Rule, accuracy and traps: **`ap-rm-pm/reference/jsap-routing.md`**.
 - **`add-draft` cannot be undone from this CLI**, and it never approves on anyone's behalf.
 - **Never write unprompted** (RULE 0). Asked = do it. Not asked = don't touch it.
 
-## The double-request side effect — FIXED in Oil 2026-09-15
+## The double-request side effect — FIXED IN ALL THREE BOOKS (Oil 09-15/16, Mart + Bev 09-18)
 
 Until 2026-09-15 an A/P invoice Added **from the SAP client** by USER39 or USER08 matched
 template 103 (Always) AND the condition-based "USER03 AP" templates (Oil 40 / 41) — all
@@ -223,8 +223,31 @@ originators from Oil 40 and 41** — so their A/P invoices and credit memos reac
 through 103 alone, from either route. Read back: 40 = 32 originators, 41 = 37, neither
 names 17 or 53. Requests that already existed stay: Bhawani approves both on those.
 
-Mart (template 17 "USER03 AP" + 48) and Beverages (1 "USER03 AP" / 2 "USER03 INVOICE"
-+ 68) had the same overlap — 20 and 2 doubled drafts on 2026-09-15 — and still do until
-the same change is made there. Check `ApprovalTemplates` before assuming.
+**Mart and Beverages carried the same overlap for three more days and were fixed
+2026-09-18** (Daman, sitting with Bhawani: "they are going through twice ... fix this
+right now"). Measured first, because the 09-15 note had gone stale: **Mart 21 of 21**
+pending A/P requests to USER03 were doubled (tpl 17 + 48, 10 raised that same day),
+**Bev 4** (1+68 / 2+68), **Oil 3** — and all three Oil ones predated the Oil fix, which
+had raised 17 fresh requests on 17–18 Sept with **zero** doubled.
+
+Sent, all HTTP 204, all read back (`queries/daman/sap-writes.jsonl`):
+Mart 48 `+atdtApCreditMemo`; Mart 17 `−USER08 −USER39` (46→44 originators);
+Bev 68 `+atdtApCreditMemo`; Bev 1 `−USER08` (36→35); Bev 2 `−USER08` (38→37).
+The credit-memo cover goes on 48/68 **first** — pulling the logins off 17/1/2 without it
+would leave their A/P credit memos with no route to Bhawani at all, i.e. a live post.
+
+**USER07 was deliberately left alone.** Every doubled draft's originator was USER08 or
+USER39, never USER07, so he stays on Mart 17 / Bev 1 / 2 and was NOT added to Mart 48 /
+Bev 68. Nobody's submit rights changed. `verifiedApprovalTemplates()` needed no edit
+(48/68 originators untouched), so no binary rebuild — and **nothing to deploy to any PC:
+approval templates live in SAP, shared by every box.**
+
+Still open, not touched: **USER07 sits on BOTH Bev 1 and Bev 2**, which both route to
+USER03 — the same trap, never yet triggered. Mart 44 (→PANKAJ) and Bev 70 (→KAMALJEET)
+name all three logins for A/P invoices: same shape, a different approver.
+
+**Doubt on the line above:** "a Service Layer Add consults only the Always template" was
+recorded 2026-09-15 but the Mart doubles raised on 18 Sept were under USER08. It has not
+been re-verified either way — do not repeat it as settled fact.
 
 Full background: `acc/ADD-AND-NEW-PLAN.md`. Correction: **C-0034**.
