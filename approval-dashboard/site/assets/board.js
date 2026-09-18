@@ -159,12 +159,12 @@
             ? '<span class="type">' + esc(r.doc_type) + "</span>" : "") +
         "</div>" +
         '<div class="l2">' +
-          '<span class="when">Rejected ' + (d ? whenLabel(d) : "—") +
-            ". Keyed by " + esc(r.who) + ".</span>" +
+          '<span class="when">Rejected ' + (d ? whenLabel(d) : "—") + ".</span>" +
           (r.reason ? '<q class="reason">' + esc(r.reason) + "</q>"
                     : '<span class="reason none">No reason given</span>') +
         "</div>" +
       "</div>" +
+      '<div class="who"><b>' + esc(r.who) + "</b><small>" + esc(r.login) + "</small></div>" +
       '<div class="amt">' + rupees(r.amount) + "</div>" +
     "</li>";
   }

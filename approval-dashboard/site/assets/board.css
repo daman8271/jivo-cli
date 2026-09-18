@@ -138,13 +138,13 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .sheet-h h2{margin:0;font-size:18px;font-weight:700;color:var(--ink)}
 .sheet-h .count{color:var(--ink-3)}
 .cap{
-  display:grid;grid-template-columns:118px 68px minmax(0,1fr) auto;column-gap:18px;
+  display:grid;grid-template-columns:118px 68px minmax(0,1fr) 124px 132px;column-gap:18px;
   padding:0 0 6px;font-size:13px;color:var(--ink-3);border-bottom:1px solid var(--rule-strong)
 }
 .cap .r{text-align:right}
 
 .row{
-  display:grid;grid-template-columns:118px 68px minmax(0,1fr) auto;column-gap:18px;
+  display:grid;grid-template-columns:118px 68px minmax(0,1fr) 124px 132px;column-gap:18px;
   padding:14px 0 13px;border-bottom:1px solid var(--rule);align-items:start
 }
 .row:hover{background:color-mix(in srgb,var(--paper-3) 45%,transparent)}
@@ -171,6 +171,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   overflow-wrap:anywhere
 }
 .reason.none{font-style:italic;font-weight:400;color:var(--ink-3);quotes:none}
+.who{padding-top:7px;line-height:1.2}
+.who b{display:block;font-size:16px;font-weight:600}
+.who small{display:block;font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.row.is-ancient .who b{color:var(--ink-2)}
 .amt{
   font:600 20px/1.2 var(--font);text-align:right;white-space:nowrap;padding-top:8px;
   font-variant-numeric:tabular-nums
@@ -197,7 +201,10 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   .book{min-width:120px}
   .book .n{font-size:34px}
   .row,.cap{grid-template-columns:82px 54px minmax(0,1fr);column-gap:10px}
-  .cap .r{display:none}
+  .cap .r,.cap .k{display:none}
+  .who{grid-column:3;padding-top:4px}
+  .who b{display:inline;font-size:15px}
+  .who small{display:inline;margin-left:6px}
   .draft{font-size:16px;padding-top:8px}
   .sheet-h{flex-wrap:wrap}
   .age b{font-size:27px}
