@@ -77,6 +77,7 @@ any default assumption. If one contradicts your instinct, the correction wins.
 - **[C-0093]** Every GRPO: Dim2 (Effective Month) = MM-YYYY of EACH LINE's tax invoice date - freight: the sale invoice in U_ARNO; tanker/goods: supplier's TaxDate. Never the bilty date.
 - **[C-0094]** Transport A/P copied from freight GRPOs: keep each line's Dim2 (Effective Month) exactly as its GRPO line has it - never overwrite with the bill/DocDate month (C-0035 is goods A/P only).
 - **[C-0095]** Freight GRPO litres: the Litre Total printed on the tax invoice (page 2's if it runs over); no litre table (CSD) = qty x bottle size, never x 'N PCS'. Never the dispatch sheet.
+- **[C-0096]** 194C: when a contractor crosses Rs 1L FY, deduct 1% on that bill, PROCEED with the draft, and FLAG the TDS owed on his earlier below-threshold bills - that catch-up is booked by a separate JV.
 - **[C-0022]** C-0017 is how to POST, not what the books contain: A/P DocDate equals its GRPO DocDate on only 51% of Oil pairs, 84% Mart, 21% Bev. Never infer a gate-in date from an existing A/P invoice.
 - **[C-0025]** Service-type A/P lines (fuel/transport/expenses): set LocationCode (2=factory/Haryana), put the paper's litres/qty in U_Recvd_Qty, and set CostingCode3 (Budget) — clone ALL populated fields from a posted precedent, not just amounts.
 - **[C-0026]** After POST /Attachments2 set each line U_CHK2='OK' and U_CHK=<size KB> before pointing a draft at it; and copy the base doc's attachment file onto the draft as a second independent line (download $value, re-upload).
