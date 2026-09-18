@@ -1,0 +1,13 @@
+[Unit]
+Description=JIVO approval board — serves state/board.json to the dashboard
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/jivo-cli/approval-dashboard
+ExecStart=/usr/bin/python3 /root/jivo-cli/approval-dashboard/publish/board_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

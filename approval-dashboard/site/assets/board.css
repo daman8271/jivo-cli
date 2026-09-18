@@ -1,0 +1,429 @@
+/* ==========================================================================
+   board.css — JIVO "Transporter-wise Details" board. The ONLY stylesheet.
+   Plain CSS: no @import, no external font, no CDN, no build step.
+   Light theme only (read in office daylight, often on a phone).
+
+   Contract classes (sibling agents write markup against these names):
+     layout : .wrap .topbar .tabs .tab .tab.is-active .kpirow .card .card-h
+              .card-b .grid2 .grid3 .section .section-h
+     table  : .tblbox .tbl .tbl th .tbl td .num .mono .wrap-anywhere
+     chips  : .chip .chip--ok .chip--short .chip--over .chip--unpaid
+              .chip--onacct .chip--je .chip--cn
+     bits   : .kpi .kpi-v .kpi-l .kpi-sub .muted .warnbox .empty .notcomputed
+              .searchbar .searchbar input .filterrow .btn .btn.is-active
+              .drawer .drawer.is-open .drawer-h .drawer-b .backdrop
+     accent : [data-co="oil"|"bev"|"mart"] on <html> or .wrap (or on a .tab)
+
+   Extras (optional, documented in the lead report):
+     .neg .pos .chip--grosspaid .chip--parttds .chip--partial .chip--other
+     .chip--warn .chip--danger .chip--neutral .card-b--flush .tblbox--free
+     .tbl--compact .col-stick .ellipsis .cell-max .kv .legend .count
+     .btn--sm .warnbox--danger .warnbox--info .tabs--line .sr-only
+   ========================================================================== */
+
+/* ---- 1. Tokens ---------------------------------------------------------- */
+:root{
+  --bg:#f6f7f9;
+  --card:#ffffff;
+  --border:#e3e6ea;
+  --hairline:#eaecf0;
+  --ink:#14181f;
+  --muted:#667085;
+  --muted-2:#98a2b3;
+  --thead:#f9fafb;
+  --hover:#f9fafb;
+  --selected:#f2f4f7;
+
+  /* semantic */
+  --ok:#067647;       --ok-bg:#ecfdf3;       --ok-bd:#abefc6;
+  --warn:#b54708;     --warn-bg:#fffaeb;     --warn-bd:#fedf89;
+  --danger:#b42318;   --danger-bg:#fef3f2;   --danger-bd:#fecdca;
+  --neutral:#475467;  --neutral-bg:#f2f4f7;  --neutral-bd:#d0d5dd;
+  --onacct:#6941c6;   --onacct-bg:#f4f3ff;   --onacct-bd:#d9d6fe;
+  --je:#175cd3;       --je-bg:#eff8ff;       --je-bd:#b2ddff;
+  --cn:#107569;       --cn-bg:#f0fdf9;       --cn-bd:#99f6e0;
+  --link:#175cd3;
+
+  /* company accents — three separate books, three separate colours */
+  --co-oil:#b45309;   --co-oil-soft:#fdf4e7;
+  --co-bev:#0e7490;   --co-bev-soft:#e6f5f8;
+  --co-mart:#6d28d9;  --co-mart-soft:#f0ebfb;
+
+  /* the active accent: header rule, active tab, KPI underline — nothing else */
+  --accent:var(--neutral);
+  --accent-soft:var(--neutral-bg);
+
+  --radius:10px;
+  --radius-sm:8px;
+  --shadow:0 1px 2px rgba(16,24,40,.06);
+  --shadow-lg:0 12px 32px rgba(16,24,40,.18);
+  --font:ui-sans-serif,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --row:34px;
+  --wrap:1280px;
+  --topbar-h:56px;
+}
+[data-co="oil"] {--accent:var(--co-oil); --accent-soft:var(--co-oil-soft)}
+[data-co="bev"] {--accent:var(--co-bev); --accent-soft:var(--co-bev-soft)}
+[data-co="mart"]{--accent:var(--co-mart);--accent-soft:var(--co-mart-soft)}
+
+/* ---- 2. Reset ----------------------------------------------------------- */
+*,*::before,*::after{box-sizing:border-box;min-width:0}
+html{
+  overflow-x:hidden;               /* propagates to the viewport: no sideways page scroll */
+  -webkit-text-size-adjust:100%;
+  scroll-padding-top:calc(var(--topbar-h) + 8px);
+}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font);
+  font-size:14px;
+  line-height:1.45;
+  font-variant-numeric:tabular-nums;   /* every figure, everywhere */
+  overflow-x:clip;                      /* clip, not hidden: keeps position:sticky alive */
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+h1,h2,h3,h4,p,figure,ul,ol,dl,dd,pre{margin:0}
+ul,ol{padding:0;list-style:none}
+img{max-width:100%;height:auto}
+svg{max-width:100%}
+table{border-collapse:separate;border-spacing:0}
+button,input,select,textarea{font:inherit;color:inherit;margin:0}
+button{cursor:pointer}
+a{color:var(--link);text-decoration:none}
+a:hover{text-decoration:underline}
+strong,b{font-weight:650}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:4px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ---- 3. Layout ---------------------------------------------------------- */
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 16px 48px}
+
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;
+  min-height:var(--topbar-h);
+  padding:8px 16px;
+  background:var(--card);
+  border-bottom:2px solid var(--accent);    /* the header rule — accent #1 */
+  box-shadow:var(--shadow);
+}
+/* either nesting order works: <header class=topbar><div class=wrap> or <div class=wrap><header class=topbar> */
+.topbar>.wrap{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;width:100%;padding:0}
+.wrap>.topbar{margin:0 -16px}
+.topbar h1{font-size:16px;font-weight:650;letter-spacing:-.01em;line-height:1.25}
+.topbar .meta,.topbar-meta{font-size:12px;color:var(--muted)}
+.topbar .tabs{margin-left:auto}
+.topbar .spacer{flex:1 1 auto}
+
+.tabs{display:flex;align-items:flex-end;gap:2px;max-width:100%;overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs--line{border-bottom:1px solid var(--hairline);margin-bottom:12px}
+.tabs--line .tab{margin-bottom:-1px}
+.tab{
+  appearance:none;-webkit-appearance:none;
+  display:inline-flex;align-items:center;gap:6px;
+  background:none;border:0;border-bottom:2px solid transparent;
+  border-radius:6px 6px 0 0;
+  padding:9px 12px 7px;
+  font-size:13px;font-weight:500;color:var(--muted);
+  white-space:nowrap;text-decoration:none;cursor:pointer;
+  transition:color .12s,background .12s,border-color .12s;
+}
+.tab:hover{color:var(--ink);background:var(--neutral-bg)}
+.tab.is-active,.tab[aria-selected="true"]{
+  color:var(--accent);                       /* active tab — accent #2 */
+  border-bottom-color:var(--accent);
+  background:var(--accent-soft);
+  font-weight:600;
+}
+.tab:focus-visible{outline-offset:-2px}
+.count{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:999px;font-size:11px;font-weight:600;line-height:1;background:var(--neutral-bg);color:var(--neutral)}
+.tab.is-active .count{background:var(--card);color:var(--accent)}
+.btn.is-active .count{background:rgba(255,255,255,.18);color:#fff}
+
+.section{margin-top:24px}
+.section-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;margin-bottom:10px}
+.section-h h2{font-size:16px;font-weight:650;letter-spacing:-.01em}
+.section-h .muted{font-size:13px}
+.section-h .right,.card-h .right{margin-left:auto}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);min-width:0}
+.card-h{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;
+  min-height:44px;padding:10px 16px;border-bottom:1px solid var(--hairline);
+}
+.card-h h2,.card-h h3{font-size:14px;font-weight:650}
+.card-h .muted{font-size:12px}
+.card-b{padding:16px}
+.card-b--flush{padding:0}
+.card-b>.warnbox:first-child{margin-top:0}
+/* a table box flush against the card edges */
+.card>.tblbox,.card-b--flush>.tblbox{border:0;border-radius:0}
+.card>.tblbox:first-child,.card-b--flush:first-child>.tblbox:first-child{border-radius:var(--radius) var(--radius) 0 0}
+.card>.tblbox:last-child,.card-b--flush:last-child>.tblbox:last-child{border-radius:0 0 var(--radius) var(--radius)}
+.card>.tblbox:only-child,.card-b--flush:only-child>.tblbox:only-child{border-radius:var(--radius)}
+
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.grid2>*,.grid3>*,.kpirow>*{min-width:0}
+
+/* ---- 4. KPIs ------------------------------------------------------------ */
+.kpirow{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:16px 0}
+.kpi{
+  display:flex;flex-direction:column;gap:4px;min-height:84px;
+  padding:12px 14px 10px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);
+}
+.kpi-l{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.kpi-v{font-size:22px;font-weight:650;line-height:1.2;letter-spacing:-.01em;color:var(--ink);white-space:nowrap}
+.kpi-v::after{content:"";display:block;width:28px;height:3px;margin-top:6px;border-radius:2px;background:var(--accent)}  /* KPI underline — accent #3 */
+.kpi-v .notcomputed{font-size:13px;font-weight:500;white-space:normal;letter-spacing:0}
+.kpi-sub{font-size:12px;color:var(--muted);line-height:1.35}
+.kpi.is-ok .kpi-v{color:var(--ok)}
+.kpi.is-warn .kpi-v{color:var(--warn)}
+.kpi.is-danger .kpi-v{color:var(--danger)}
+.kpi.is-onacct .kpi-v{color:var(--onacct)}
+.kpi.is-muted .kpi-v{color:var(--muted)}
+
+/* ---- 5. Tables ---------------------------------------------------------- */
+/* .tblbox is the ONLY thing that scrolls sideways. It also caps height so the
+   sticky header has a scroll container to stick to; .tblbox--free lifts the cap. */
+.tblbox{
+  overflow:auto;
+  max-height:min(76vh,980px);
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--card);
+  isolation:isolate;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;scrollbar-color:#c4cad3 transparent;
+}
+.tblbox--free{max-height:none}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;line-height:1.3}
+.tbl th{
+  position:sticky;top:0;z-index:2;
+  height:var(--row);padding:0 12px;
+  background:var(--thead);color:var(--muted);
+  font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+  text-align:left;white-space:nowrap;vertical-align:middle;
+  box-shadow:inset 0 -1px 0 var(--hairline);      /* a border that travels with the sticky head */
+}
+.tbl td{
+  height:var(--row);padding:6px 12px;           /* 34px single-line rows; wrapped cells keep breathing room */
+  border-bottom:1px solid var(--hairline);
+  vertical-align:middle;white-space:nowrap;
+}
+.tbl th:first-child,.tbl td:first-child{padding-left:16px}
+.tbl th:last-child,.tbl td:last-child{padding-right:16px}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover td{background:var(--hover)}
+.tbl tr.is-selected td{background:var(--selected)}
+.tbl tr.is-clickable{cursor:pointer}
+.tbl tr.is-flagged td:first-child{box-shadow:inset 3px 0 0 var(--warn)}
+.tbl tr.is-danger td:first-child{box-shadow:inset 3px 0 0 var(--danger)}
+.tbl tfoot td{
+  position:sticky;bottom:0;z-index:2;
+  background:var(--thead);font-weight:650;border-bottom:0;
+  box-shadow:inset 0 1px 0 var(--neutral-bd);
+}
+.tbl th.num,.tbl td.num{text-align:right}
+/* wrapped cells: overflow-wrap:anywhere would let auto table layout squeeze the
+   column to one character and stack the text 10 lines high — floor the width */
+.tbl .wrap-anywhere{white-space:normal}
+.tbl td.wrap-anywhere,.tbl th.wrap-anywhere{min-width:20ch}
+.tbl .notcomputed{white-space:nowrap}
+.tbl--compact{--row:30px}
+.tbl th.sortable{cursor:pointer;user-select:none}
+.tbl th.sortable:hover{color:var(--ink)}
+.tbl th[aria-sort="ascending"]::after{content:" \2191"}
+.tbl th[aria-sort="descending"]::after{content:" \2193"}
+/* optional sticky first column (vendor name) for phone reading of wide tables */
+.tbl .col-stick{position:sticky;left:0;z-index:1;background:var(--card);box-shadow:inset -1px 0 0 var(--hairline)}
+.tbl th.col-stick{z-index:3;background:var(--thead);box-shadow:inset -1px 0 0 var(--hairline),inset 0 -1px 0 var(--hairline)}
+.tbl tbody tr:hover td.col-stick{background:var(--hover)}
+.tbl tr.is-selected td.col-stick{background:var(--selected)}
+
+/* figures */
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.neg{color:var(--danger)}
+.pos{color:var(--ok)}
+.mono{font-family:var(--mono);font-size:12.5px;letter-spacing:0}
+.wrap-anywhere{overflow-wrap:anywhere;word-break:normal;white-space:normal;min-width:0}
+.ellipsis{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cell-max{display:block;min-width:28ch;max-width:48ch;white-space:normal}
+
+/* ---- 6. Chips ----------------------------------------------------------- */
+.chip{
+  display:inline-flex;align-items:center;gap:5px;
+  height:20px;padding:0 8px;border-radius:999px;
+  font-size:12px;font-weight:600;line-height:1;letter-spacing:.01em;white-space:nowrap;
+  color:var(--neutral);background:var(--neutral-bg);border:1px solid var(--neutral-bd);
+  vertical-align:middle;
+}
+.chip::before{content:"";flex:0 0 auto;width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.85}
+.chip--ok                              {color:var(--ok);    background:var(--ok-bg);    border-color:var(--ok-bd)}
+.chip--short,.chip--warn,
+.chip--grosspaid,.chip--parttds,
+.chip--partial                         {color:var(--warn);  background:var(--warn-bg);  border-color:var(--warn-bd)}
+.chip--over,.chip--danger              {color:var(--danger);background:var(--danger-bg);border-color:var(--danger-bd)}
+.chip--unpaid,.chip--neutral           {color:var(--neutral);background:var(--neutral-bg);border-color:var(--neutral-bd)}
+.chip--onacct                          {color:var(--onacct);background:var(--onacct-bg);border-color:var(--onacct-bd)}
+.chip--je                              {color:var(--je);    background:var(--je-bg);    border-color:var(--je-bd)}
+.chip--cn                              {color:var(--cn);    background:var(--cn-bg);    border-color:var(--cn-bd)}
+.chip--other                           {color:var(--neutral);background:var(--card);border-style:dashed}
+.chip--caps{text-transform:uppercase;font-size:11px;letter-spacing:.04em}
+.chip--nodot::before{display:none}
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12px;color:var(--muted)}
+
+/* ---- 7. Bits ------------------------------------------------------------ */
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.label{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+
+.warnbox{
+  display:block;                              /* block, not flex: <strong> + text must flow as one line of prose */
+  margin:12px 0;padding:10px 12px;
+  border:1px solid var(--warn-bd);border-left:3px solid var(--warn);border-radius:var(--radius-sm);
+  background:var(--warn-bg);color:#7a2e0e;
+  font-size:13px;line-height:1.45;
+}
+.warnbox strong{color:var(--warn)}
+.warnbox--danger{border-color:var(--danger-bd);border-left-color:var(--danger);background:var(--danger-bg);color:#912018}
+.warnbox--danger strong{color:var(--danger)}
+.warnbox--info{border-color:var(--je-bd);border-left-color:var(--je);background:var(--je-bg);color:#194185}
+.warnbox--info strong{color:var(--je)}
+
+.empty{padding:32px 16px;text-align:center;color:var(--muted);font-size:13px}
+.empty strong{display:block;color:var(--ink);font-weight:600;margin-bottom:2px}
+
+/* never a confident zero: this is what "not computed" looks like */
+.notcomputed{
+  color:var(--muted);font-style:italic;font-weight:400;font-variant-numeric:normal;
+  border-bottom:1px dotted var(--muted-2);white-space:normal;
+}
+.notcomputed[title]{cursor:help}
+
+.searchbar{display:flex;align-items:center;gap:8px;flex:1 1 240px;min-width:0}
+.searchbar input{
+  width:100%;height:36px;padding:0 12px;
+  border:1px solid var(--neutral-bd);border-radius:var(--radius-sm);
+  background:var(--card);font-size:14px;outline:none;
+  appearance:none;-webkit-appearance:none;
+  transition:border-color .12s,box-shadow .12s;
+}
+.searchbar input::placeholder{color:var(--muted-2)}
+.searchbar input:focus{border-color:var(--muted);box-shadow:0 0 0 3px rgba(16,24,40,.08)}
+.searchbar input::-webkit-search-decoration,
+.searchbar input::-webkit-search-cancel-button{-webkit-appearance:none}
+
+.filterrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:12px 0}
+.filterrow .label{margin-right:2px}
+.filterrow .sep{width:1px;height:20px;background:var(--hairline)}
+
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  height:32px;padding:0 12px;
+  border:1px solid var(--neutral-bd);border-radius:var(--radius-sm);
+  background:var(--card);color:var(--ink);
+  font-size:13px;font-weight:500;line-height:1;white-space:nowrap;
+  cursor:pointer;text-decoration:none;
+  transition:background .12s,border-color .12s,color .12s;
+}
+.btn:hover{background:var(--hover);border-color:#b9c0cc;text-decoration:none}
+.btn.is-active,.btn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn:disabled,.btn[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.btn--sm{height:28px;padding:0 10px;font-size:12px}
+.btn--icon{width:32px;padding:0;justify-content:center;font-size:16px;line-height:1}
+select.btn{
+  padding-right:28px;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23667085' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;
+}
+
+/* key/value block — used for the per-invoice reconciliation line in the drawer:
+   GROSS − TDS − DISCOUNT − OTHER_DEDUCTION = NET PAID */
+.kv{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 16px;align-items:baseline;font-size:13px}
+.kv dt{font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.kv dd{min-width:0}
+.kv .total{padding-top:6px;border-top:1px solid var(--neutral-bd);font-weight:650;color:var(--ink)}
+.kv--right dd{text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---- 8. Drawer ---------------------------------------------------------- */
+.backdrop{
+  position:fixed;inset:0;z-index:39;
+  background:rgba(16,24,40,.45);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s;
+}
+.backdrop.is-open,
+.backdrop.is-visible,
+body:has(.drawer.is-open) .backdrop{opacity:1;pointer-events:auto}
+.drawer{
+  position:fixed;top:0;right:0;bottom:0;z-index:40;
+  width:min(640px,100%);
+  display:flex;flex-direction:column;
+  background:var(--card);border-left:1px solid var(--border);box-shadow:var(--shadow-lg);
+  transform:translateX(100%);visibility:hidden;
+  transition:transform .22s ease,visibility 0s linear .22s;
+}
+.drawer.is-open{transform:none;visibility:visible;transition:transform .22s ease,visibility 0s}
+.drawer-h{
+  flex:0 0 auto;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:14px 16px;border-bottom:1px solid var(--hairline);background:var(--card);
+}
+.drawer-h h2,.drawer-h h3{font-size:15px;font-weight:650;line-height:1.3}
+.drawer-h .muted{font-size:12px}
+.drawer-b{flex:1 1 auto;min-height:0;overflow:auto;padding:16px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.drawer-b .tblbox{max-height:none}          /* one scroller inside the drawer, not two */
+.drawer-b .section:first-child{margin-top:0}
+html:has(.drawer.is-open){overflow:hidden}  /* lock the page behind an open drawer */
+
+/* ---- 9. Phone (<=760px) ------------------------------------------------- */
+@media (max-width:760px){
+  .wrap{padding:0 12px 32px}
+  .wrap>.topbar{margin:0 -12px}
+  .topbar{padding:8px 12px;gap:4px 10px}
+  .topbar h1{font-size:15px}
+  .topbar .tabs{margin-left:0;order:9;flex:1 0 100%}
+  .grid2,.grid3{grid-template-columns:minmax(0,1fr)}
+  .kpirow{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+  .kpi{min-height:76px;padding:10px 12px 8px}
+  .kpi-v{font-size:20px}
+  .card-h{padding:10px 12px}
+  .card-b{padding:12px}
+  .card-b--flush{padding:0}
+  .tbl th:first-child,.tbl td:first-child{padding-left:12px}
+  .tbl th:last-child,.tbl td:last-child{padding-right:12px}
+  .tblbox{max-height:min(70vh,900px)}
+  .searchbar{flex-basis:100%}
+  .drawer{width:100%;border-left:0}
+  .drawer-b{padding:12px}
+}
+@media (max-width:400px){
+  .kpirow{grid-template-columns:minmax(0,1fr)}
+}
+
+/* ---- 10. Motion & print ------------------------------------------------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+@media print{
+  html,body{background:#fff;overflow:visible}
+  .topbar{position:static;box-shadow:none}
+  .tblbox{max-height:none;overflow:visible;border-color:#ccc}
+  .tbl th{position:static;box-shadow:none;border-bottom:1px solid #ccc}
+  .tbl tfoot td{position:static}
+  .card,.kpi{box-shadow:none;break-inside:avoid}
+  .drawer,.backdrop,.searchbar,.filterrow,.btn{display:none!important}
+  a{color:inherit}
+}
+
+/* clear the fixed jivo-mark badge (top:16px, right:18px, ~185px wide) so the
+   company tabs are never underneath it; on phones dim it and let taps pass. */
+@media (min-width: 761px){ .topbar{ padding-right: 215px } }
+@media (max-width: 760px){ #jivo-mark{ opacity: .35; pointer-events: none } }

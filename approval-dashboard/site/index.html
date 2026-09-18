@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-co="oil">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>JIVO Approval Board</title>
+<link rel="stylesheet" href="assets/board.css">
+<style>
+  /* Page-only bits. Everything shared lives in assets/board.css. */
+  .banner{margin:16px 0 0}
+  .reason{color:var(--ink);font-size:12.5px}
+  .reason::before{content:"\21B3";color:var(--muted-2);margin-right:6px}
+  .noreason{color:var(--muted-2);font-style:italic}
+  .who{white-space:nowrap}
+  .when{white-space:nowrap;font-variant-numeric:tabular-nums}
+  .foot{margin-top:24px;font-size:12px;color:var(--muted);line-height:1.6}
+  .dead{color:var(--danger)}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <h1>JIVO Approval Board</h1>
+    <span class="meta" id="freshness">loading&hellip;</span>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="banner" class="banner"></div>
+  <div class="kpirow" id="kpis"></div>
+
+  <section class="card">
+    <div class="card-h">
+      <h2 id="booktitle">Rejected, still open</h2>
+      <span class="muted" id="booknote"></span>
+    </div>
+    <div class="card-b--flush">
+      <div class="tblbox tblbox--free" id="tblbox">
+        <div class="empty"><strong>Loading</strong>reading SAP&hellip;</div>
+      </div>
+    </div>
+  </section>
+
+  <p class="legend" style="margin-top:12px">
+    <span class="chip chip--neutral">under 2 days</span>
+    <span class="chip chip--warn">2&ndash;7 days</span>
+    <span class="chip chip--danger">over 7 days</span>
+    <span class="chip chip--other">over 90 days</span>
+  </p>
+
+  <p class="foot">
+    Rejected by <strong>BHAWANI</strong> and not yet re-done. A row leaves this board by itself
+    when somebody cancels the draft and keys a fresh one &mdash; there is nothing to tick off.
+    SAP keeps no approval history, so the clock on each row is kept here, not by SAP.
+    <br>Covers A/P invoices, A/P credit memos and GRPOs keyed by Harsh, Divjot, Satnam,
+    Mahak&nbsp;/&nbsp;Priya and Muqeem, across all three books. Read-only.
+  </p>
+</main>
+
+<script>window.BOARD_URL = "https://approvals-c84942f4.srv1685505.hstgr.cloud/board.json";</script>
+<script src="assets/board.js"></script>
+</body>
+</html>

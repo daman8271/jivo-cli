@@ -1,0 +1,27 @@
+# JIVO approval board data, published over HTTPS so the Vercel page can fetch it
+# every 30 seconds from the browser. Source of truth for
+# /docker/traefik/dynamic/approval-board.yml — deploy = copy there,
+# rollback = delete there. Backend is the read-only JSON server in
+# publish/board_server.py (systemd unit approval-board) on 127.0.0.1:8798.
+# The hostname token is obscurity, not a secret: the data is operational (draft
+# numbers, vendors, amounts), never credentials. Rate-limited so a scanner
+# cannot make the VPS busy.
+http:
+  routers:
+    approval-board:
+      rule: "Host(`approvals-c84942f4.srv1685505.hstgr.cloud`)"
+      entryPoints: [websecure]
+      middlewares: [approval-board-ratelimit]
+      service: approval-board
+      tls:
+        certResolver: letsencrypt
+  middlewares:
+    approval-board-ratelimit:
+      rateLimit:
+        average: 60
+        burst: 120
+  services:
+    approval-board:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8798"
