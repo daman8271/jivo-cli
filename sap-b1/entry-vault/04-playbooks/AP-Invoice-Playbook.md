@@ -27,7 +27,7 @@ confidence: high
 the mark that changed a budget code on Ashok Diwan 1256 sat on top of a rubber stamp.
 
 ```bash
-python3 .claude/skills/jivo-ap-draft/bin/zoom.py "<scan.pdf>" --dpi 300
+python3 .claude/skills/ap-rm-pm/bin/zoom.py "<scan.pdf>" --dpi 300
 ```
 
 ## 1 · Is it already in SAP?
@@ -191,7 +191,7 @@ key that finds the GRPOs. → **[[Transport-Bill-Playbook]]**
 
 ## Don't hand-roll it
 
-Use the **`jivo-ap-draft`** skill. Its pre-check finds the GRPO, branch, series and any
+Use the **`ap-rm-pm`** skill. Its pre-check finds the GRPO, branch, series and any
 existing draft before anything is sent; its read-back catches what SAP left blank. It was
 built from live mistakes on 2026-08-21 and has been corrected four times since.
 

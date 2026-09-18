@@ -34,7 +34,7 @@ def test_every_pattern_compiles():
 
 
 @pytest.mark.parametrize("prompt,skill", [
-    ("yeh bill enter karo", "jivo-ap-draft"),
+    ("yeh bill enter karo", "ap-rm-pm"),
     ("ARNAV ka payment punch kar do", "jivo-outgoing-payment"),
     ("rent invoice for kundli godown", "jivo-rent-invoice"),
     ("loading unloading bill aaya hai", "jivo-loading-unloading-ap"),
@@ -85,10 +85,10 @@ def test_silent_on_questions_and_slash(prompt):
 
 
 def test_hidden_skill_is_not_listed(tmp_path):
-    (tmp_path / "jivo-ap-draft").mkdir()
-    (tmp_path / "jivo-ap-draft" / "SKILL.md").write_text("x")
+    (tmp_path / "ap-rm-pm").mkdir()
+    (tmp_path / "ap-rm-pm" / "SKILL.md").write_text("x")
     routes = sr.present_routes(CFG, tmp_path)
-    assert [r["skill"] for r in routes] == ["jivo-ap-draft"]
+    assert [r["skill"] for r in routes] == ["ap-rm-pm"]
     out = sr.match_text("rent invoice", CFG, routes)
     assert "jivo-rent-invoice" not in out
 

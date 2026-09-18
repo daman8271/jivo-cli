@@ -48,7 +48,7 @@ the END. Entering the bill is not the job — the job ends when the approver has
 it. A draft nobody submits is invisible to her (ODRF.WddStatus='-').
 
 Pick the builder skill that matches the paper in hand:
-  - ordinary vendor tax invoice ............ jivo-ap-draft
+  - ordinary vendor tax invoice ............ ap-rm-pm
   - service bill (no GRPO behind it) ....... jivo-ap-service-draft
   - credit note / return ................... jivo-ap-credit-memo
   - transporter freight bill ............... jivo-oil-freight-grpo (Oil),

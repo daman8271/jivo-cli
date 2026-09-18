@@ -35,7 +35,7 @@ def main():
         print(p)
     print(f"\n{len(pages)} page(s). Open EVERY one with the Read tool.", file=sys.stderr)
     print("Zoom any clipped/unclear digit before trusting it:", file=sys.stderr)
-    print("  python3 .claude/skills/jivo-ap-draft/bin/zoom.py <page.png> --box L,T,R,B",
+    print("  python3 .claude/skills/ap-rm-pm/bin/zoom.py <page.png> --box L,T,R,B",
           file=sys.stderr)
 
 if __name__ == "__main__":

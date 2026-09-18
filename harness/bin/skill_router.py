@@ -111,7 +111,7 @@ def match_text(prompt: str, cfg: dict, routes: list[dict]) -> str:
         # named. A drafts-only desk has jivo-add-and-new hidden, and telling it
         # to "finish the job" would be pointing at a door that is bolted.
         if (aa and (SKILLS / aa["skill"] / "SKILL.md").exists()
-                and any(r["skill"].startswith("jivo-ap") for r in c["specific"])):
+                and any(r["skill"].startswith(("ap-", "jivo-ap")) for r in c["specific"])):
             lines += [f"After the draft: {aa['skill']} - {aa['when']}"]
         return "\n".join(lines)
     if c["attachment"] or c["generic"]:

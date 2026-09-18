@@ -248,7 +248,7 @@ Where the voucher names no vehicle and no variety: **`CANOLA`** for Oil,
 reconcile.
 
 Dim3's mark is handwritten, in a different pen, and often crossed by the Manager's
-signature — **tile-zoom the slip** (`jivo-ap-draft/bin/zoom.py --dpi 600 --box …`)
+signature — **tile-zoom the slip** (`ap-rm-pm/bin/zoom.py --dpi 600 --box …`)
 before deciding. On voucher 446 the green "Common" is clean and unmistakable.
 Confirm any code is active: `SELECT "OcrCode" FROM <DB>.OOCR WHERE "DimCode"=3 AND "Active"='Y';`
 
@@ -276,7 +276,7 @@ is over, **stop and tell the operator** — never split a voucher, never merge t
 
 The pack is the slip alone; there is no bill and no GRPO file to add. Name it
 `CASH-VCH-<no>-<dd-mm-yyyy>.pdf`, one line on the draft's own `Attachments2` row.
-Upload with `sapb1 attach <slip> --yes` (recipe: `jivo-ap-draft/reference/attachments-upload.md`)
+Upload with `sapb1 attach <slip> --yes` (recipe: `ap-rm-pm/reference/attachments-upload.md`)
 — it stamps `U_CHK`/`U_CHK2` (Oil/Bev) and ticks `CopyToTargetDoc tYES` (every book, C-0090)
 **before** you point the draft at the row. Each file under 1 MB, and `cmp` the `$value` read-back.
 

@@ -1,4 +1,4 @@
-"""apbatch — the shared engine behind `acc batch` and the jivo-ap-draft skill.
+"""apbatch — the shared engine behind `acc batch` and the ap-rm-pm skill.
 
 Nothing in here talks to SAP except through `sap.SapCli`, which shells out to
 the `sapb1` binary. That is deliberate: every safety property Accounts relies on

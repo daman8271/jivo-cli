@@ -57,7 +57,7 @@ def safe(v, what):
 
 
 def hana_command():
-    """Same resolution as jivo-ap-draft/bin/jsap_route.py binary(): one build per OS in hana-sql/."""
+    """Same resolution as ap-rm-pm/bin/jsap_route.py binary(): one build per OS in hana-sql/."""
     names = {"win32": ["hana-sql.exe", "hana-sql"], "darwin": ["hana-sql", "hana-sql.darwin"]}.get(sys.platform, ["hana-sql.linux", "hana-sql"])
     for path in (os.path.join(REPO, "hana-sql", n) for n in names):
         if os.path.exists(path):

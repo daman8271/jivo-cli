@@ -1,6 +1,6 @@
 # Which lane? POST NOW vs WAITS IN JSAP
 
-Shared by `jivo-ap-draft`, `jivo-ap-service-draft`, `jivo-ap-credit-memo`,
+Shared by `ap-rm-pm`, `jivo-ap-service-draft`, `jivo-ap-credit-memo`,
 `jivo-add-and-new`. Tool: `bin/jsap_route.py`.
 
 ## The problem this solves
@@ -108,8 +108,8 @@ for days behind a transport bill stuck in JSAP.
 lumping is the bottleneck.
 
 ```bash
-python3 .claude/skills/jivo-ap-draft/bin/daily_sort.py            # Oil
-python3 .claude/skills/jivo-ap-draft/bin/daily_sort.py --all      # all three books
+python3 .claude/skills/ap-rm-pm/bin/daily_sort.py            # Oil
+python3 .claude/skills/ap-rm-pm/bin/daily_sort.py --all      # all three books
 ```
 
 Read-only. It prints the pile as trays:
@@ -136,7 +136,7 @@ batch returns.
 ## Using it
 
 ```bash
-R=.claude/skills/jivo-ap-draft/bin/jsap_route.py
+R=.claude/skills/ap-rm-pm/bin/jsap_route.py
 
 python3 $R 55813 55906 --company oil -v      # named drafts, with reasoning
 python3 $R --pending --company oil            # the whole open pile, split in two

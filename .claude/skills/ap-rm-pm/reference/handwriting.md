@@ -1,6 +1,6 @@
 # Handwriting on a vendor bill — what it means and which field it sets
 
-Shared by `jivo-ap-draft`, `jivo-ap-service-draft`, `jivo-ap-credit-memo`.
+Shared by `ap-rm-pm`, `jivo-ap-service-draft`, `jivo-ap-credit-memo`.
 
 **Rule (Daman, 2026-08-24, C-0027): a handwritten mark on a bill is an instruction,
 not a remark.** Before anything else, list every handwritten note on the paper and map
@@ -49,10 +49,10 @@ stamp, and it read as scribble at page scale. **Render big, then read in pieces:
 
 ```bash
 # every part of the page, 3x3 overlapping tiles at 300 dpi — Read all nine
-python3 .claude/skills/jivo-ap-draft/bin/zoom.py "<scan.pdf>" --dpi 300
+python3 .claude/skills/ap-rm-pm/bin/zoom.py "<scan.pdf>" --dpi 300
 
 # one region you already care about (fractions of the page: L,T,R,B)
-python3 .claude/skills/jivo-ap-draft/bin/zoom.py "<scan.pdf>" --box 0,0.45,0.55,0.72 --dpi 600
+python3 .claude/skills/ap-rm-pm/bin/zoom.py "<scan.pdf>" --box 0,0.45,0.55,0.72 --dpi 600
 ```
 
 Where things live on a JIVO-stamped bill (starting points, verify per paper):

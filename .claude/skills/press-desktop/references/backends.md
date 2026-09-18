@@ -28,7 +28,7 @@ launch, no window, and a much better failure message when it does not work.
    which is what makes a tax invoice readable. Empty output = there is no text
    layer, i.e. it is a scan. That is information, not an error.
 2. **`pdftoppm -r 200 -png f.pdf out`** — rasterise, then read the tiles. Follow
-   `jivo-ap-draft`'s rule: read a scan in tiles, not whole pages, and compare
+   `ap-rm-pm`'s rule: read a scan in tiles, not whole pages, and compare
    digits only within one hand.
 3. **`qpdf`** for splitting and merging without re-rendering (absent here).
 

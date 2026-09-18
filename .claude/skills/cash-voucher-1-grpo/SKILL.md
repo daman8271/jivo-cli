@@ -29,7 +29,7 @@ cash sheet dated 04-09-2026 → **Oil draft 56767**, ₹5,190. Every rule below 
 correction Daman made to a draft I had already built and reported as finished.
 Follow them; do not re-derive them.
 
-RULE 0 in `CLAUDE.md` governs the write. Shared rules live in `jivo-ap-draft`.
+RULE 0 in `CLAUDE.md` governs the write. Shared rules live in `ap-rm-pm`.
 
 ---
 
@@ -268,7 +268,7 @@ Daman, 2026-09-10: *"this front sheet — this also normally goes through it."*
 The cash sheet goes on **every** voucher's draft, in both books.
 
 Upload all three with ONE `sapb1 attach <pack> <grpo-file> <front-sheet> --yes`
-(recipe: `jivo-ap-draft/reference/attachments-upload.md`). Traps:
+(recipe: `ap-rm-pm/reference/attachments-upload.md`). Traps:
 
 - **`[SAP -1116] (1120026) Attachment Size Should be Less Than 1 MB`** — the cap
   is **per FILE, not per row** (761 + 115 + 463 KB on one row was accepted).

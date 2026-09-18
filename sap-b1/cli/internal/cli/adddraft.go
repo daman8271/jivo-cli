@@ -2044,7 +2044,7 @@ func companyFlag(cfg *config.Config) string {
 // -5002 [131-102] is the one most likely to greet the first live run: the
 // approval-intercept path needs an attachments folder the Linux Service Layer
 // must be able to see, and it has already killed the adjacent POST
-// /PurchaseInvoices route once (jivo-ap-draft/reference/series-and-errors.md:47).
+// /PurchaseInvoices route once (ap-rm-pm/reference/series-and-errors.md:47).
 // It reads like a problem with the draft. It is not one, and NOTHING was posted.
 func addAPIHint(err error) error {
 	var apiErr *errs.APIError

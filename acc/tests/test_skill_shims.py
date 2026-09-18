@@ -1,7 +1,7 @@
-"""Characterization: the jivo-ap-draft skill must print the same thing after the refactor.
+"""Characterization: the ap-rm-pm skill must print the same thing after the refactor.
 
 These goldens were recorded against the ORIGINAL monolithic
-`.claude/skills/jivo-ap-draft/bin/{precheck,readback}.py`, before a line of them
+`.claude/skills/ap-rm-pm/bin/{precheck,readback}.py`, before a line of them
 moved into acc/apbatch. Every operator's Claude follows that narrative — the
 `[1]…[6]` sections, the verdict, the exit codes — so the refactor is only safe
 if the bytes are identical.
@@ -30,7 +30,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 
-SKILL_BIN = REPO / ".claude" / "skills" / "jivo-ap-draft" / "bin"
+SKILL_BIN = REPO / ".claude" / "skills" / "ap-rm-pm" / "bin"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 GOLDEN = FIXTURES / "skill_golden"
 SCENARIOS = json.loads((FIXTURES / "skill_scenarios.json").read_text(encoding="utf-8"))

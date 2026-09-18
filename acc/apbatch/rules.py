@@ -2,7 +2,7 @@
 
 Everything here is a pure function of data that was already fetched. That is
 what makes the batch reviewable: the same functions decide a single bill in the
-jivo-ap-draft skill and 50 rows in `acc batch`, and every one of them can be
+ap-rm-pm skill and 50 rows in `acc batch`, and every one of them can be
 pinned by a test without SAP being up.
 
 The two that carry the most risk are documented at length where they are
@@ -523,7 +523,7 @@ def pick_series(docs: Sequence[Mapping[str, Any]], nnm1_rows: Sequence[Sequence]
                           "NNM1 (hana-sql unreachable) — series unknown")
         return choice
     choice.problem = (f"first document of the month for branch {bpl} — series unknown "
-                      "(see .claude/skills/jivo-ap-draft/reference/series-and-errors.md)")
+                      "(see .claude/skills/ap-rm-pm/reference/series-and-errors.md)")
     return choice
 
 

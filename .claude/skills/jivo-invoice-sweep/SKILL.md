@@ -1,6 +1,6 @@
 ---
 name: jivo-invoice-sweep
-description: Use when an operator wants the invoices that arrived in a MAILBOX pulled out and saved - "check today's emails for invoices", "download all the invoices from my mail", "which mails today had a tax invoice", "aaj ki mail ke bills nikalo", "invoices from yesterday's mail", or a daily routine that files the day's invoices into Documents. Reads the mailbox read-only over IMAP, classifies every attachment on its CONTENT (not the filename), and saves tax invoices / credit notes / other bills into ~/Documents/JIVO-Invoices/<date>/. NOT for entering a bill into SAP - that is jivo-ap-draft, and this skill never touches SAP.
+description: Use when an operator wants the invoices that arrived in a MAILBOX pulled out and saved - "check today's emails for invoices", "download all the invoices from my mail", "which mails today had a tax invoice", "aaj ki mail ke bills nikalo", "invoices from yesterday's mail", or a daily routine that files the day's invoices into Documents. Reads the mailbox read-only over IMAP, classifies every attachment on its CONTENT (not the filename), and saves tax invoices / credit notes / other bills into ~/Documents/JIVO-Invoices/<date>/. NOT for entering a bill into SAP - that is ap-rm-pm, and this skill never touches SAP.
 ---
 
 # Invoice sweep of a mailbox
@@ -69,7 +69,7 @@ the operator should know about - read `INDEX.csv` and `SUMMARY.txt` for them:
   skipped and listed in INDEX.csv as `duplicate` - the count is invoices, not files.
 
 Nothing here writes to SAP or to the mailbox. If the operator then wants a bill
-**entered**, that is a new ask: hand the file to `jivo-ap-draft` (goods) or
+**entered**, that is a new ask: hand the file to `ap-rm-pm` (goods) or
 `jivo-ap-service-draft` (services) per bill.
 
 ## If the box has no OCR

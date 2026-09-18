@@ -29,7 +29,7 @@ book — SUNRISE INTERNET PVT LTD bill `26-27/103`, ₹1,180 → **Oil draft 569
 Every rule below is one Daman gave or confirmed on that voucher. Follow them; do
 not re-derive them.
 
-RULE 0 in `CLAUDE.md` governs the write. Shared rules live in `jivo-ap-draft`.
+RULE 0 in `CLAUDE.md` governs the write. Shared rules live in `ap-rm-pm`.
 
 ---
 
@@ -219,7 +219,7 @@ written on it common then we gonna take the budget as factory common."*
 The mark is **handwritten, often in a different pen, and often crossed by the
 Manager's signature.** On voucher 421 it is a green "Common" sitting in the CREDIT
 block under the signature — invisible at full-page zoom. **Read the slip in tiles**
-(`jivo-ap-draft/bin/zoom.py --dpi 600 --box …`) before deciding Dim3, and say your
+(`ap-rm-pm/bin/zoom.py --dpi 600 --box …`) before deciding Dim3, and say your
 confidence if the pen crosses it.
 
 Confirm any code is active before sending it:
@@ -300,7 +300,7 @@ Voucher 421: supplier Panipat (06), JIVO branch 2 Sonipat (06) → intra-state �
 The pack is **slip + bill in one PDF**; there is no GRPO file and no cash sheet to
 add. One line on the draft's own `Attachments2` row.
 
-Upload with `sapb1 attach <pack> --yes` (recipe: `jivo-ap-draft/reference/attachments-upload.md`).
+Upload with `sapb1 attach <pack> --yes` (recipe: `ap-rm-pm/reference/attachments-upload.md`).
 The traps that bit here:
 
 - `sapb1 attach` ticks **`CopyToTargetDoc = 'tYES'` on every line, every book** (C-0090)

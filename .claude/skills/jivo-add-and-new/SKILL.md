@@ -99,12 +99,12 @@ SELECT t."WtmCode", t."Name" FROM "<COMPANY>".OWTM t
 ## The procedure
 
 1. **Build the document exactly as its own skill says.** Do not hand-roll the payload.
-   - vendor tax invoice for goods through the gate → **`jivo-ap-draft`**
+   - vendor tax invoice for goods through the gate → **`ap-rm-pm`**
    - fuel / transport / service / expense, no GRPO → **`jivo-ap-service-draft`**
    - vendor's credit note → **`jivo-ap-credit-memo`**
    Those skills own the paper-reading, the duplicate gate, the precedent field-diff, the
    series and the branch. This skill only adds the last step.
-2. **Attach the bill** — `.claude/skills/jivo-ap-draft/reference/attachments-upload.md`.
+2. **Attach the bill** — `.claude/skills/ap-rm-pm/reference/attachments-upload.md`.
    Do it **before** the Add. A live A/P invoice with no attachment is refused by JIVO
    guard **180021** `Please Attach its Receiving`.
 2b. **Check the TDS** (reads SAP, sends nothing) — every draft, whoever made it:
@@ -162,8 +162,8 @@ above-office **budget** approval in JSAP. Operators cannot tell the two apart, s
 they hold the whole pile for the slowest bill. Name it:
 
 ```bash
-python3 .claude/skills/jivo-ap-draft/bin/jsap_route.py <DocEntry> --company oil -v
-python3 .claude/skills/jivo-ap-draft/bin/daily_sort.py --company oil   # the whole pile, in trays
+python3 .claude/skills/ap-rm-pm/bin/jsap_route.py <DocEntry> --company oil -v
+python3 .claude/skills/ap-rm-pm/bin/daily_sort.py --company oil   # the whole pile, in trays
 ```
 
 **`daily_sort.py` is the one to run when an operator asks "what can we post?"**
@@ -175,7 +175,7 @@ RM/PM drawn from a GRPO is **POST NOW** and must not be held behind the service
 bills; a `56xxxxx` expense line with a Budget dimension **WAITS IN JSAP**. Nothing
 auto-approves in JSAP right now (no FY26-27 allocation loaded — 586 of 587
 documents refused in the 30 days to 2026-09-04), so a JSAP document waits for a
-person. Rule, accuracy and traps: **`jivo-ap-draft/reference/jsap-routing.md`**.
+person. Rule, accuracy and traps: **`ap-rm-pm/reference/jsap-routing.md`**.
 
 ## Hard stops
 

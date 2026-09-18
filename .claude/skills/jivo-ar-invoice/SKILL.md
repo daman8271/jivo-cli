@@ -50,7 +50,7 @@ consolidated bill repeats the same thing as a `GR. NO. → INVOICE NO.` table.
 **Both handwritten values are often unclear** — a 2 over a 5, digits running off
 the edge of the pad. Zoom before trusting either, and never write a guess:
 
-    python3 .claude/skills/jivo-ap-draft/bin/zoom.py <page.png> --box L,T,R,B
+    python3 .claude/skills/ap-rm-pm/bin/zoom.py <page.png> --box L,T,R,B
 
 One bilty normally carries several invoices (five on one GR is common).
 The bilty date is **not** the invoice DocDate — on MAHAVIR bill 677 the bilty

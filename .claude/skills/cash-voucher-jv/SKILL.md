@@ -103,7 +103,7 @@ no flag — trust that refusal.
 `sapb1` has **no journal-voucher doctype**: `sapb1 draft` offers 14 types and none
 is a JV, and `post` only takes entity sets. The Service Layer's endpoint is an
 **action**, `JournalVouchersService_Add`, so it is called directly — the same way
-`jivo-ap-draft/reference/attachments-upload.md` already calls `Attachments2`.
+`ap-rm-pm/reference/attachments-upload.md` already calls `Attachments2`.
 
 ```bash
 curl -sk -b "$S/ck" -H "Content-Type: application/json" \

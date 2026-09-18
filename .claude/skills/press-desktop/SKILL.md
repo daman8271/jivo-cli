@@ -69,7 +69,7 @@ See [references/backends.md](references/backends.md) for the ladder per file typ
   and switch to `pdftoppm` + reading the tiles. Do not guess at the numbers.
 - **A figure read off a document is `inferred`, not `measured`,** until it is
   reconciled against the system of record. Handwriting especially — see
-  `.claude/skills/jivo-ap-draft/reference/handwriting.md` and C-0027.
+  `.claude/skills/ap-rm-pm/reference/handwriting.md` and C-0027.
 - **Never launch anything with a UI.** No `open -a`, no window, no dialog. If the
   only way to do it is with a visible app, that is a finding to report, not a
   workaround to attempt.
@@ -83,7 +83,7 @@ Ranked by how often the question actually comes up:
 | Target | Backend | Why it earns its place |
 |---|---|---|
 | **Excel / workbooks** | `openpyxl`, else `soffice --headless` | Budget files, reconciliation sheets and figure files arrive as `.xlsx` constantly. Reading one without opening it is the single most repeated desktop task here. C-0032 exists because a workbook's company scope was guessed instead of read. |
-| **Vendor bills / scans** | `pdftotext -layout`, `pdftoppm` + tiles | Every A/P entry starts as a PDF or a photo. The tile-reading rule (read scans in tiles, never a whole page) is already in `jivo-ap-draft`. |
+| **Vendor bills / scans** | `pdftotext -layout`, `pdftoppm` + tiles | Every A/P entry starts as a PDF or a photo. The tile-reading rule (read scans in tiles, never a whole page) is already in `ap-rm-pm`. |
 | **HTML → PDF** | headless Chrome | Already live as `jmail print`. Same backend prints a dashboard or a statement. |
 | **Diagrams** | `drawio -x` | Only if someone actually needs it. Do not build ahead of demand. |
 

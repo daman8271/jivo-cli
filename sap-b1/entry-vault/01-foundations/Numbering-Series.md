@@ -262,7 +262,7 @@ From the repo root:
 ./hana-sql/hana-sql -env connections/hana-office-bridge.env "<the SQL above, one line>"
 ```
 
-For an A/P bill specifically, do not hand-run this — `jivo-ap-draft`'s
+For an A/P bill specifically, do not hand-run this — `ap-rm-pm`'s
 `bin/precheck.py` already does it and cross-checks against what the branch actually used
 this month. → [[AP-Invoice]]
 
@@ -381,7 +381,7 @@ Foundations it leans on: [[Branches-and-BPLId]] · [[Posting-Periods]] ·
 
 ## How to check you got it right, afterwards
 
-1. **Read the draft back.** `jivo-ap-draft`'s `bin/readback.py` prints `branch … series … DocumentSubType` on one line. → [[AP-Invoice]]
+1. **Read the draft back.** `ap-rm-pm`'s `bin/readback.py` prints `branch … series … DocumentSubType` on one line. → [[AP-Invoice]]
 2. **Compare with the branch's other documents this month.** One SQL, and a series that no one else used this month is the signal:
    ```sql
    SELECT p."Series", n."SeriesName", COUNT(*) AS DOCS
@@ -509,5 +509,5 @@ WHERE n."ObjectCode"='18';    -- 674 defined, 455 never used
 
 Corpus files used: `_data/profile-NNM1.md`, `_data/profile-OPCH.md`, `_data/profile-OBPL.md`,
 `_data/flow-OPCH-OIL.md`, `00-index/Entry-Types-Census.md`, `acc/INVENTORY.md`,
-`.claude/skills/jivo-ap-draft/reference/series-and-errors.md`,
+`.claude/skills/ap-rm-pm/reference/series-and-errors.md`,
 `sap-b1/cli/internal/catalog/services.json`.

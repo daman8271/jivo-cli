@@ -57,7 +57,7 @@ if a draft belongs to a desk outside the five, say whose it is and stop.
 ## Run it
 
 ```bash
-python3 .claude/skills/jivo-ap-draft/bin/daily_sort.py --company oil
+python3 .claude/skills/ap-rm-pm/bin/daily_sort.py --company oil
 ```
 
 `--company mart` / `--company bev` for the other books, `--all` for all three.
@@ -104,7 +104,7 @@ ready.
 5. **Log it to the Desktop — every direct post, no exceptions.** Daman,
    2026-09-04: anything posted that was never going to JSAP gets written down.
    ```bash
-   python3 .claude/skills/jivo-ap-draft/bin/post_log.py --record <DocEntry>... --company oil
+   python3 .claude/skills/ap-rm-pm/bin/post_log.py --record <DocEntry>... --company oil
    ```
    Writes `~/Desktop/JIVO-Direct-Posts/` — a readable `YYYY-MM-DD.md` per day
    plus `YYYY-MM.csv` and an append-only `ALL-POSTS.csv`. Each row carries the
@@ -144,7 +144,7 @@ freight GRPO and they all wait in JSAP. "Is a service bill" does not mean it
 waits — job work is a service bill that posts directly.
 
 Full rule, the measured accuracy, and how to refresh it:
-**`jivo-ap-draft/reference/jsap-routing.md`**
+**`ap-rm-pm/reference/jsap-routing.md`**
 
 ## How much to trust it
 
@@ -155,7 +155,7 @@ Full rule, the measured accuracy, and how to refresh it:
   way round: it says wait on something that would have posted.
 * **Still being checked forward.** All of the above is history. Live calls are
   being recorded and graded:
-  `python3 .claude/skills/jivo-ap-draft/bin/daily_sort.py --score`
+  `python3 .claude/skills/ap-rm-pm/bin/daily_sort.py --score`
   If that ever shows a "said POST NOW but it went to JSAP", say so out loud and
   stop trusting the tray until it is explained.
 
@@ -179,7 +179,7 @@ Full rule, the measured accuracy, and how to refresh it:
   operator's call, not yours** — either `WTLiable tNO` (matching 4 of 5
   precedents) or the correct 194Q residual as the base. Show them the vendor's
   last posted invoices and let them choose, per the `WTLiable` rule in
-  `jivo-ap-draft`. **Never re-run the same add-draft hoping it sticks.**
+  `ap-rm-pm`. **Never re-run the same add-draft hoping it sticks.**
 * **The batch stops at the first failure and does not attempt the rest** — so
   after a failure, the later DocEntries are untouched, not half-done. Check the
   ones that share the same defect before retrying any of them.

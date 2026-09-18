@@ -1,6 +1,6 @@
 ---
 name: jivo-ap-service-draft
-description: Use when an operator hands over a vendor bill that has NO goods receipt (GRPO) behind it and wants it entered in SAP B1 as an A/P invoice draft — fuel / petrol pump / diesel bills, courier, electricity, water, rent, AMC, repair, professional or any service / expense bill — "book this bill", "enter this expense", "fuel bill entry". Also use when jivo-ap-draft's precheck exits 3 with "no GRPO". NOT for transporter / freight / bilty / lorry bills — those are 98% GRPO-copy jobs, see sap-b1/entry-vault/04-playbooks/Transport-Bill-Playbook.md. Not for item purchases with a GRPO (jivo-ap-draft) or vendor credit notes (jivo-ap-credit-memo).
+description: Use when an operator hands over a vendor bill that has NO goods receipt (GRPO) behind it and wants it entered in SAP B1 as an A/P invoice draft — fuel / petrol pump / diesel bills, courier, electricity, water, rent, AMC, repair, professional or any service / expense bill — "book this bill", "enter this expense", "fuel bill entry". Also use when ap-rm-pm's precheck exits 3 with "no GRPO". NOT for transporter / freight / bilty / lorry bills — those are 98% GRPO-copy jobs, see sap-b1/entry-vault/04-playbooks/Transport-Bill-Playbook.md. Not for item purchases with a GRPO (ap-rm-pm) or vendor credit notes (jivo-ap-credit-memo).
 ---
 
 # A/P draft for a service / expense bill — no GRPO (JIVO, SAP B1)
@@ -27,7 +27,7 @@ quantity" — all three were fields the paper carried and the payload dropped).
 **Core principle: with no GRPO there is nothing to draw from, so the vendor's own
 posted history is the template. Clone every populated field of a posted precedent,
 not just the ones that make the total right.** RULE 0 in `CLAUDE.md` governs the write;
-`jivo-ap-draft` holds the shared rules (dates, series discipline, duplicate gate,
+`ap-rm-pm` holds the shared rules (dates, series discipline, duplicate gate,
 hard stops, delete) — read it first, then this.
 
 Plumbing: `acc/_playbook/sap <args>` (bridge + operator login + write log). All queries
@@ -35,9 +35,9 @@ below are through it.
 
 ## The procedure
 
-1. **Read the scan in tiles first** — `jivo-ap-draft/bin/zoom.py "<scan>" --dpi 300`
+1. **Read the scan in tiles first** — `ap-rm-pm/bin/zoom.py "<scan>" --dpi 300`
    (`--box L,T,R,B --dpi 900` for a doubtful digit), then map **every handwritten
-   mark to a field** using `jivo-ap-draft/reference/handwriting.md` — "Common" →
+   mark to a field** using `ap-rm-pm/reference/handwriting.md` — "Common" →
    Budget `CostingCode3 = FACT_COM` (C-0027), and never compare a digit against a
    sample from a different hand on the same paper.
 2. **Read the paper into facts.** Vendor + GSTIN (verify against the BP master — scans
@@ -48,7 +48,7 @@ below are through it.
 3. **Duplicate gate — hard stop.** `Drafts` where `NumAtCard eq '<ref>'` (any doctype);
    sweep the vendor's drafts with `--all` (Om Sai had 94) and its posted
    `PurchaseInvoices` by `NumAtCard` **and** by `DocDate` in the bill's month. Any hit →
-   stop, report paper-vs-record, create nothing. Run `jivo-ap-draft`'s precheck anyway:
+   stop, report paper-vs-record, create nothing. Run `ap-rm-pm`'s precheck anyway:
    its ref scan is a second opinion and exit 3 confirms "no GRPO" — a GRPO comment
    mentioning the same number can be a *bilty* number on another vendor (it was).
 4. **Pull the precedent** — the vendor's last 3 posted `PurchaseInvoices` in full
@@ -58,7 +58,7 @@ below are through it.
    | Field | What precedent tells you | Om Sai (fuel) |
    |---|---|---|
    | `DocType` | `dDocument_Service` for expense bills | service |
-   | `Series` + `DocumentSubType` | the **flavour** (non-GST `HR_B` + `bod_None` vs GST `HR_G` + `bod_GSTTaxInvoice`); then find **this month's** number for that flavour and branch (`reference/series-and-errors.md` in jivo-ap-draft; confirm with what Aug-26 posted docs of that flavour carry) | 3324 HR_B0826 + bod_None |
+   | `Series` + `DocumentSubType` | the **flavour** (non-GST `HR_B` + `bod_None` vs GST `HR_G` + `bod_GSTTaxInvoice`); then find **this month's** number for that flavour and branch (`reference/series-and-errors.md` in ap-rm-pm; confirm with what Aug-26 posted docs of that flavour carry) | 3324 HR_B0826 + bod_None |
    | `BPL_IDAssignedToInvoice` | the branch precedent uses. **A `[SAP -3000] … does not have permission to use this object` on `BusinessPlaces` does NOT block this bill** — some logins (USER08/Divjot) cannot open the branch *list*, and none of them need to: take the branch from the vendor's last posted invoices above, or from the operator, and pass it. Nothing has to be granted in SAP first (verified live 2026-09-04) | 2 FACTORY |
    | `GSTTransactionType` | copy | `gsttrantyp_BillOfSupply` (petrol/diesel are outside GST) |
    | `WTLiable` / TDS | **Transporter** (vendor group TRANSPORTER): **set by `jivo-tds`** — AIR TRANS, BHARGAVE ROAD CARRIER, DELHI PUNJAB, PICK & SHIP take none; every other transporter 2% from the first rupee. **Any other service vendor:** precedent beats the master flag | master `boNO`, all 3 posted TDS 0 → none |
@@ -94,7 +94,7 @@ below are through it.
    (wrong vendor, branch, series, or a total that does not match the paper) or the
    precheck told you to. Daman, 2026-09-09: *"it is not directly making the drafts
    but confirming for their confirmation — should not happen like this."*
-9. **Attach the scan** — `sapb1 attach <scan> --yes`, per `jivo-ap-draft/reference/attachments-upload.md`
+9. **Attach the scan** — `sapb1 attach <scan> --yes`, per `ap-rm-pm/reference/attachments-upload.md`
    (steps 1, 3, 4; there is no base document to copy). It stamps `U_CHK2 OK` (without it the
    pointer is refused) and ticks `CopyToTargetDoc tYES` on every line in every book (C-0090).
 10. **Read back:** `readback.py <DocEntry> --expect-total <net>` — its "not drawn from a
@@ -104,7 +104,7 @@ below are through it.
 11. **Name the lane — always, unprompted.** Most bills entered with THIS skill go
    on to wait for the above-office budget approval in JSAP, but not all of them:
    ```bash
-   python3 .claude/skills/jivo-ap-draft/bin/jsap_route.py <DocEntry> --company oil -v
+   python3 .claude/skills/ap-rm-pm/bin/jsap_route.py <DocEntry> --company oil -v
    ```
    A `56xxxxx` expense line with a Budget dimension **WAITS IN JSAP** (freight
    outward, loading, rent, repairs, conveyance, legal…). But **job work
@@ -112,7 +112,7 @@ below are through it.
    testing `5100018` and fixed assets post directly** — being a service bill is
    *not* the test, the account is. Nothing auto-approves in JSAP at the moment
    (no FY26-27 allocation is loaded), so a JSAP document genuinely waits for a
-   person. Full rule and accuracy: **`jivo-ap-draft/reference/jsap-routing.md`**.
+   person. Full rule and accuracy: **`ap-rm-pm/reference/jsap-routing.md`**.
 
 ## Pre-flight — tick before `--yes`
 

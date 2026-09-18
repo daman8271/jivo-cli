@@ -47,7 +47,7 @@ class InrTest(unittest.TestCase):
 
 
 def _legacy_inr(n):
-    """inr() exactly as .claude/skills/jivo-ap-draft/bin/precheck.py had it."""
+    """inr() exactly as .claude/skills/ap-rm-pm/bin/precheck.py had it."""
     import re
     neg = n < 0
     n = abs(float(n))

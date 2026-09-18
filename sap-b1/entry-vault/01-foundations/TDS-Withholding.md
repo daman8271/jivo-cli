@@ -36,7 +36,7 @@ confidence: high
 4. **But the flag does not tell you the answer.** Of 231 Oil vendors that are
    flagged *and* carry a TDS code and were billed this year, 150 always had TDS
    deducted, **63 sometimes and 18 never**. The vendor's own posted precedent beats
-   the master flag — that is the `jivo-ap-draft` rule, and it is measured here.
+   the master flag — that is the `ap-rm-pm` rule, and it is measured here.
 5. **Two decisions, not one.** Tick which *lines* are in the TDS base
    (`PCH1.WtLiable`), and pick the *section code* for the document
    (`PCH5.WTCode`). Ticking lines alone produces no TDS — 67 hand-keyed Oil drafts

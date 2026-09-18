@@ -57,7 +57,7 @@ share:
     CHANCHAL-ADV-24780-MAIL-25.08.2026.pdf     <- <vendor>-<what>-<amount>-MAIL-<date>
     CHANCHAL-PO-826228022-20.08.2026.pdf       <- <vendor>-PO-<docnum>-<date>
 
-Recipe: `jivo-ap-draft/reference/attachments-upload.md`. Beverages lands on
+Recipe: `ap-rm-pm/reference/attachments-upload.md`. Beverages lands on
 `\\10.10.101.52\Attachments_Bev\JIVO_BEVERAGES\Attachments`. Stamp `U_CHK`
 (size KB), `U_CHK2` = `OK` and `CopyToTargetDoc` = `tYES` (C-0090) on **every** line (C-0026) — JIVO's 1120025
 "Select OK in Approve Column" guard refuses the Add otherwise.

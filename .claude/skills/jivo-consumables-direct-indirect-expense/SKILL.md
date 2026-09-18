@@ -1,6 +1,6 @@
 ---
 name: jivo-consumables-direct-indirect-expense
-description: Use when an operator hands over a vendor tax invoice for CONSUMABLES or a DIRECT / INDIRECT EXPENSE that came through the gate on a PO and a GRPO — ink and make-up cartridges, cleaning and treatment chemicals, housekeeping, refreshment, staff welfare, stationery, lab and testing chemicals, thinner, labels, tape, wire seal, polythene, computer hardware, building and hardware material, RMC / concrete, tank and machine installation parts. Also covers the CAPEX bills that arrive through the same door (WIP, PEB shed, tanks, lab instruments) — the G/L account decides which. Triggers: "make the draft for this expense bill", "consumable bill entry", "R&M bill", "yeh expense entry karo", or a scan with a JIVO gate stamp whose item is not RM/PM. NOT for a bill with no GRPO behind it (jivo-ap-service-draft — fuel, courier, electricity, rent, AMC, professional fees), NOT for raw or packing material purchases (jivo-ap-draft), NOT for transporter freight (jivo-*-freight-grpo), NOT for a vendor credit note (jivo-ap-credit-memo). Handles a whole BATCH of scans at once — a folder or a chat drop of many bills — by fanning out one read-only agent per bill that returns JSON; see the fan-out section.
+description: Use when an operator hands over a vendor tax invoice for CONSUMABLES or a DIRECT / INDIRECT EXPENSE that came through the gate on a PO and a GRPO — ink and make-up cartridges, cleaning and treatment chemicals, housekeeping, refreshment, staff welfare, stationery, lab and testing chemicals, thinner, labels, tape, wire seal, polythene, computer hardware, building and hardware material, RMC / concrete, tank and machine installation parts. Also covers the CAPEX bills that arrive through the same door (WIP, PEB shed, tanks, lab instruments) — the G/L account decides which. Triggers: "make the draft for this expense bill", "consumable bill entry", "R&M bill", "yeh expense entry karo", or a scan with a JIVO gate stamp whose item is not RM/PM. NOT for a bill with no GRPO behind it (jivo-ap-service-draft — fuel, courier, electricity, rent, AMC, professional fees), NOT for raw or packing material purchases (ap-rm-pm), NOT for transporter freight (jivo-*-freight-grpo), NOT for a vendor credit note (jivo-ap-credit-memo). Handles a whole BATCH of scans at once — a folder or a chat drop of many bills — by fanning out one read-only agent per bill that returns JSON; see the fan-out section.
 ---
 
 # A/P draft for consumables and direct / indirect expenses (JIVO, SAP B1)
@@ -30,7 +30,7 @@ JN ENTERPRISES 210 → **Beverages 16031**.
 The paper says cleaning chemical, ink, concrete, tea — but a PO was raised, the store
 gated it in and made an **item-type GRPO** whose line carries a P&L or asset account
 instead of a stock account. So it is a copy job, not a keying job: **find the PO, find
-the GRPO, copy the GRPO.** RULE 0 in `CLAUDE.md` governs the write. `jivo-ap-draft`
+the GRPO, copy the GRPO.** RULE 0 in `CLAUDE.md` governs the write. `ap-rm-pm`
 holds the shared rules — dates, series discipline, duplicate gate, hard stops, delete,
 handwriting, attachments — **read it first, then this.** Its `bin/` scripts are shared;
 this skill adds no scripts of its own.
@@ -55,9 +55,9 @@ acc/_playbook/sap query PurchaseDeliveryNotes --filter "DocEntry eq <n>" --json 
 
 ## The procedure
 
-1. **Read the scan in tiles** — `.claude/skills/jivo-ap-draft/bin/zoom.py "<scan>" --dpi 300`
+1. **Read the scan in tiles** — `.claude/skills/ap-rm-pm/bin/zoom.py "<scan>" --dpi 300`
    (`--box L,T,R,B --dpi 900` for one doubtful digit), then map **every handwritten mark
-   to a field** via `jivo-ap-draft/reference/handwriting.md`. On this class the marks
+   to a field** via `ap-rm-pm/reference/handwriting.md`. On this class the marks
    carry the expense's *nature*: JN 210 said **"for machinery cleaning"** in the margin,
    which is the R&M account in words, and **"GNR"** = Ganaur. A mark you cannot map is a
    question for the operator, never a silent remark.
@@ -90,7 +90,7 @@ acc/_playbook/sap query PurchaseDeliveryNotes --filter "DocEntry eq <n>" --json 
    out** — add `DocDate ge …` or `DocTotal eq …`, or use `NumAtCard eq`. A timeout is
    not "no rows"; re-run it narrowed before concluding anything.
    **No GRPO at all → this is not the skill.** Hand off to `jivo-ap-service-draft`.
-5. **Run `jivo-ap-draft`'s precheck** as the duplicate gate and the series finder.
+5. **Run `ap-rm-pm`'s precheck** as the duplicate gate and the series finder.
    Exit 2 = already in SAP → stop and report, unless the operator says draft it anyway.
 6. **Build the payload — copy the GRPO, decide only these.**
 
@@ -125,7 +125,7 @@ acc/_playbook/sap query PurchaseDeliveryNotes --filter "DocEntry eq <n>" --json 
    send to Bhawani**; tell the operator its message.
 9. **Attach both papers, then name the lane.** See below. A goods bill drawn from a
    GRPO is **POST NOW**, not a JSAP wait — say so unprompted
-   (`jivo-ap-draft/bin/jsap_route.py <DocEntry> --company oil -v`).
+   (`ap-rm-pm/bin/jsap_route.py <DocEntry> --company oil -v`).
 
 ## The traps — every one of these was met live
 
@@ -261,7 +261,7 @@ GROUP BY T1."ItemCode", T1."AcctCode" ORDER BY COUNT(*) DESC'
 
 ## Attachments — the draft carries both papers
 
-Same recipe as `jivo-ap-draft/reference/attachments-upload.md`, and it applies here in
+Same recipe as `ap-rm-pm/reference/attachments-upload.md`, and it applies here in
 all three books: download the GRPO's own copy of the bill → `sapb1 attach "VENDOR-REF-DATE.pdf"
 "<grpo-file>.pdf" --yes` (scan = line 1, GRPO's copy = line 2 of the **same new row**; it stamps
 `U_CHK = <size KB>`, `U_CHK2 = "OK"` and ticks **`CopyToTargetDoc = "tYES"`** on every line,
@@ -367,7 +367,7 @@ so the instruction is not the control; not giving it the job is.
 
 ## Reference
 
-`jivo-ap-draft/SKILL.md` — the shared rules; read it first.
-`jivo-ap-draft/reference/attachments-upload.md` · `handwriting.md` ·
+`ap-rm-pm/SKILL.md` — the shared rules; read it first.
+`ap-rm-pm/reference/attachments-upload.md` · `handwriting.md` ·
 `series-and-errors.md` · `matching-and-batches.md` · `jsap-routing.md`.
 `jivo-ap-service-draft` — the same bill shape with **no** GRPO behind it.

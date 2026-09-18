@@ -1,6 +1,6 @@
 # Attaching the paper to a draft — `sapb1 attach` (2026-09-17)
 
-Shared by `jivo-ap-draft`, `jivo-ap-service-draft` and `jivo-ap-credit-memo`.
+Shared by `ap-rm-pm`, `jivo-ap-service-draft` and `jivo-ap-credit-memo`.
 **Upload with `sapb1 attach`, and only with it** (C-0090, built 2026-09-17). It uploads
 every file as a line of ONE `Attachments2` row, ticks **Copy to Target Document = `tYES`**
 on every line, sets the Approve stamp where the book has it, reads the row back and exits

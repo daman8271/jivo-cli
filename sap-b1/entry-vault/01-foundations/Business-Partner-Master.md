@@ -130,7 +130,7 @@ on 3,411 of 3,411 Oil cards, 2,191 of 2,191 Mart and 2,964 of 2,964 Bev**, with 
 leading or trailing spaces. So the Service Layer's `contains(CardName,'…')` — which is
 case-sensitive, because `toupper()`/`tolower()` are not supported on this Service Layer —
 works as long as you upper-case your search fragment. That is exactly what
-`.claude/skills/jivo-ap-draft/bin/precheck.py` does.
+`.claude/skills/ap-rm-pm/bin/precheck.py` does.
 
 Two things still bite:
 
@@ -164,7 +164,7 @@ because both will accept your bill. All nine Oil cases, and the tiebreak:
 ### c. Then confirm against the vendor's own history
 
 The card tells you what the master *says*. The last three posted bills tell you what
-JIVO actually *does* — and where they disagree, the `jivo-ap-draft` skill's rule is
+JIVO actually *does* — and where they disagree, the `ap-rm-pm` skill's rule is
 that precedent wins (that is how a master TDS flag gets correctly overruled).
 
 ```sql
@@ -583,7 +583,7 @@ uses. → [[Chart-of-Accounts]] §2
       wrong on ~6.5 % of Oil bills.
 - [ ] **TDS: `WTLiable` *and* a `CRD4` code.** Flag without code = zero TDS, silently.
       Then check the vendor's last three posted bills — precedent beats the flag
-      ([C-0018], and the `jivo-ap-draft` skill).
+      ([C-0018], and the `ap-rm-pm` skill).
 - [ ] **Currency.** If the card is `##` or hard-set to USD/EUR, the document is not INR.
 - [ ] **The right address.** If the card has more than one bill-to GSTIN, pick the one on
       the paper — it decides IGST vs CGST+SGST.
@@ -667,7 +667,7 @@ When a field matters, check `SYS.TABLE_COLUMNS` per schema before trusting a das
   different companies with the same trading name, or a keying error on one side. 5 cards
   — worth someone eyeballing.
 - **Service Layer field names** for `DebPayAcct`, `GroupNum` and `CRD1` are quoted from
-  `jivo-ap-draft/bin/precheck.py`, which runs in production. I could not verify them live
+  `ap-rm-pm/bin/precheck.py`, which runs in production. I could not verify them live
   from this session — the Service Layer on `138.252.101.222:50000` is unreachable from
   here; only the HANA bridge is up. Treat the exact OData spellings as **unverified today**.
 - **`CRD8` (27,194 Oil rows) and `CRD12` (6,829)** are populated and I did not open them.

@@ -61,7 +61,7 @@ create documents for a living. Daman authorised this on 2026-08-22.
   registered checkout). Register yourself once with `python3 harness/bin/setup.py`
   so writes carry your name.
 - **A/P invoice from a vendor's bill (the common Accounts write): use the
-  `jivo-ap-draft` skill.** Its pre-check finds the GRPO, branch, series and any
+  `ap-rm-pm` skill.** Its pre-check finds the GRPO, branch, series and any
   existing draft before anything is sent; its read-back catches what SAP left
   blank (TDS). Built 2026-08-21 from live mistakes — don't hand-roll the payload.
 

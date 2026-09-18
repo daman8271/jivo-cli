@@ -259,7 +259,7 @@ The printed vendor tax invoice. This is the layer that decides how fast an entry
 | "Original invoice no. & date" box on a credit note | `RevRefNo` / `RevRefDate` | **(C-0024)** |
 
 **Handwritten marks are a separate vocabulary and they are instructions, not remarks.** That
-glossary lives in `.claude/skills/jivo-ap-draft/reference/handwriting.md` and grows with
+glossary lives in `.claude/skills/ap-rm-pm/reference/handwriting.md` and grows with
 every paper — a handwritten *Common* means `OcrCode3` = `FACT_COM`, not a comment. **(C-0027)**
 
 ## The four-name chain, end to end

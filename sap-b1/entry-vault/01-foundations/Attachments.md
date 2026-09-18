@@ -355,9 +355,9 @@ accepted.
 *(Steps 1–3 are inferred from `srcPath`, the UDF names and the guard text; the grid layout
 itself has not been seen. Steps 3 and 4 are measured rules.)*
 
-### From the CLI (`jivo-ap-draft` and friends)
+### From the CLI (`ap-rm-pm` and friends)
 
-Full recipe: `.claude/skills/jivo-ap-draft/reference/attachments-upload.md`. **It needs two
+Full recipe: `.claude/skills/ap-rm-pm/reference/attachments-upload.md`. **It needs two
 amendments as of today, and neither is in the file yet:**
 
 | Step | Amendment |
@@ -543,7 +543,7 @@ Also read, not re-derived: `_data/profile-ATC1.md`, `_data/profile-OATC.md`,
 `_data/sample-OPCH-OIL.md`, `_data/sample-ODRF-OIL.md`,
 `queries/USER36/sap-writes.jsonl`, `queries/manager/sap-writes.jsonl`,
 `acc/INVENTORY.md`, `acc/apbatch/batch_send.py`,
-`.claude/skills/jivo-ap-draft/reference/attachments-upload.md`.
+`.claude/skills/ap-rm-pm/reference/attachments-upload.md`.
 
 ## See also
 

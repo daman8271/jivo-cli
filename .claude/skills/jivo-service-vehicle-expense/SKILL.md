@@ -1,6 +1,6 @@
 ---
 name: jivo-service-vehicle-expense
-description: Use when an employee's expense claim or reimbursement voucher arrives for JIVO and must be entered in SAP B1 — vehicle service, repair, fuel, CNG, toll, Fastag, puncture, scooty/Activa/Bullet costs, conveyance, Rapido/parking, refreshment, staff medicine, mobile recharge, courier, stationery, nut-bolt hardware. Triggers on "Expenses <name>" sheets, "I have incurred the following expenditure" vouchers, IMPREST claims, and any handwritten expense table signed off by an approver. Also use to check whether a claim is already keyed. NOT for a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft), labour loading bills (jivo-loading-unloading-ap) or freight (Transport-Bill-Playbook).
+description: Use when an employee's expense claim or reimbursement voucher arrives for JIVO and must be entered in SAP B1 — vehicle service, repair, fuel, CNG, toll, Fastag, puncture, scooty/Activa/Bullet costs, conveyance, Rapido/parking, refreshment, staff medicine, mobile recharge, courier, stationery, nut-bolt hardware. Triggers on "Expenses <name>" sheets, "I have incurred the following expenditure" vouchers, IMPREST claims, and any handwritten expense table signed off by an approver. Also use to check whether a claim is already keyed. NOT for a vendor's own tax invoice (ap-rm-pm / jivo-ap-service-draft), labour loading bills (jivo-loading-unloading-ap) or freight (Transport-Bill-Playbook).
 ---
 
 # Employee expense claim → service A/P draft (JIVO)
@@ -23,7 +23,7 @@ description: Use when an employee's expense claim or reimbursement voucher arriv
 Internal skill. Daman named this class **"service"** and taught it over one
 long session, 2026-09-01/02, correcting five drafts line by line. Every rule
 below cost him a correction — follow it rather than re-deriving it. Shared
-rules live in `jivo-ap-draft`; RULE 0 in `CLAUDE.md` governs the write.
+rules live in `ap-rm-pm`; RULE 0 in `CLAUDE.md` governs the write.
 
 **What this class is:** a `dDocument_Service` A/P invoice against the
 employee's **IMPREST** account. No GRPO, no items, **no TDS** — it reduces
@@ -173,7 +173,7 @@ document. Each sheet carries its own signature and total.
 
 ## 7 · Attach
 
-Upload with `sapb1 attach <scan> --yes` (recipe: `jivo-ap-draft/reference/attachments-upload.md`)
+Upload with `sapb1 attach <scan> --yes` (recipe: `ap-rm-pm/reference/attachments-upload.md`)
 — it prints the row as `"AttachmentEntry": N` and ticks Copy to Target (C-0090). Two more
 traps measured live:
 

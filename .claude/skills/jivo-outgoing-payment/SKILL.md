@@ -34,7 +34,7 @@ same vendor's most recent posted payment, and deduplicated against the MONEY,
 not against a document number.** RULE 0 in `CLAUDE.md` governs the write.
 
 **Sibling skills.** This one moves money out. For the *bill* that money pays,
-see `jivo-ap-draft` (goods through the gate), `jivo-ap-service-draft`
+see `ap-rm-pm` (goods through the gate), `jivo-ap-service-draft`
 (fuel/freight/expenses), `jivo-ap-credit-memo` (vendor credit note).
 
 ---
@@ -232,7 +232,7 @@ mailbox. Use the wrapper `mail-cli/jmail-acc7` (same read-only jmail, mapped ont
 > Corroborate every figure against **two** independent sources — the vendor's
 > ledger balance and the vendor's own payment history. A vendor whose every
 > payment for 18 months sits between ₹4,910 and ₹27,470 is not being paid ₹68 lakh.
-> Scans and handwriting: use `jivo-ap-draft/bin/zoom.py` and its
+> Scans and handwriting: use `ap-rm-pm/bin/zoom.py` and its
 > `reference/handwriting.md`.
 
 ---
@@ -401,7 +401,7 @@ cd mail-cli
 `jmail print` renders the mail's own HTML part through headless Chrome, so the
 output matches the prints already on JIVO's posted payments (`Jivo Wellness Mail
 - <subject>.pdf`). It is read-only on the mailbox. Then upload and point the
-draft at it — recipe in `jivo-ap-draft/reference/attachments-upload.md`:
+draft at it — recipe in `ap-rm-pm/reference/attachments-upload.md`:
 `sapb1 attach <mail.pdf> [<po.pdf>] --yes` (stamps `U_CHK`/`U_CHK2`, ticks `CopyToTargetDoc tYES`,
 C-0090), set `AttachmentEntry`, read `$value` back.
 

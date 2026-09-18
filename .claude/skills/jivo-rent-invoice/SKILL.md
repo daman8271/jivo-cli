@@ -22,7 +22,7 @@ description: Use when a landlord's rent invoice arrives for JIVO and must be ent
 
 Internal skill. Built from the live run 2026-09-01 (USER07): three Rajouri
 Garden landlords → Mart drafts **40119 / 40120 / 40121**, cloned from posted
-precedent 8709. Shared rules live in `jivo-ap-draft`; RULE 0 in `CLAUDE.md`
+precedent 8709. Shared rules live in `ap-rm-pm`; RULE 0 in `CLAUDE.md`
 governs the write.
 
 **The class:** a `dDocument_Service` A/P invoice on account **5660002 RENT**.
@@ -94,7 +94,7 @@ separately; the landlord is paid the face amount.
 ## 5 · Attach
 
 Upload with `sapb1 attach <scan> --company <DB> --yes` (recipe:
-`jivo-ap-draft/reference/attachments-upload.md`). It ticks `CopyToTargetDoc tYES` on
+`ap-rm-pm/reference/attachments-upload.md`). It ticks `CopyToTargetDoc tYES` on
 every line in every book (C-0090) and stamps `U_CHK`/`U_CHK2` only where `ATC1` has
 them — **Mart has no such UDF**, confirmed again on 2026-09-01 against the rent
 precedent's own attachment row, so there it sends the tick alone.

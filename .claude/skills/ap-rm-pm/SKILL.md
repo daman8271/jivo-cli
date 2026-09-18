@@ -1,9 +1,41 @@
 ---
-name: jivo-ap-draft
+name: ap-rm-pm
 description: Use when an operator hands over a vendor's tax invoice (PDF, photo, scan, or typed details) and wants it entered in SAP B1 as an A/P invoice / purchase invoice / purchase bill — "make a draft of this", "enter this bill", "data entry for this invoice", "AP invoice draft". Also use when asked to check whether a vendor invoice is already in SAP, or why an A/P draft was rejected ("define the numbering series", -10, -4002, -5002 branch).
 ---
 
 # A/P invoice draft from a vendor invoice (JIVO, SAP B1)
+
+## 📋 THE DESK'S BRIEF — Muqeem, Accounts (RM/PM · 18 Sept 2026)
+
+**Read this first, every time.** It is the operator's own standing instruction for
+every RM/PM bill, in his words, given to Daman on 18 Sept 2026. Everything further
+down this file is only *how* the toolkit delivers these four points — if the two ever
+disagree, this block is what the desk expects and the rest is the bug.
+
+> For RM/PM,
+>
+> Here I am attaching PDFs of RM/PM invoice, please create AP Drafts using the AP
+> Draft Skill ( RMPM)
+>
+> Keep these points in mind when creating AP Drafts for RM/PM.
+>
+> 1. Always check for the GRPO and PO of the attached PFD.
+> 2. The value of invoice should match with the GRPO, along with Quantity and rates
+>    so it maps the base document like GRPO to the AP Draft.
+> 3. Posting date should be the gate in date stamp on invoice. Gate in stamp should
+>    always be on RM/PM invoices.
+> 4. Always check TDS applicability on RM/PM invoice vendor PAN wise, under 194Q,
+>    always check threshold limit of Rs. 50,00,000 taxable values in a financial year
+>    and then apply TDS after crossing Rs. 50,00,000 this value should be considered
+>    Net of debit note of vendor in the current financial year.
+
+**Where each point is enforced below** — 1 → step 2 (GRPO by `NumAtCard`) + precheck
+`--po`, which cross-checks the printed PO against the GRPO's base POs · 2 → step 4,
+one line per open GRPO line with `BaseType 20 / BaseEntry / BaseLine` · 3 → the
+`DocDate` = gate-in rule (C-0017) · 4 → step 3b, `jivo-tds apply`, which counts by
+**PAN** across every CardCode, net of credit notes ("debit note" on his side = the
+vendor's credit note on ours — confirmed with Muqeem, 18 Sept).
+
 
 > 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —
@@ -90,7 +122,7 @@ stamp; the draft carries the base document's file too).
    **`reference/matching-and-batches.md`**.
 3. **Run the pre-check** (read-only; it refuses to build if anything is off):
    ```bash
-   python3 .claude/skills/jivo-ap-draft/bin/precheck.py \
+   python3 .claude/skills/ap-rm-pm/bin/precheck.py \
      --ref "<invoice no>" --vendor "<name fragment or CardCode>" \
      --gstin <buyer GSTIN> --inv-date YYYY-MM-DD --gate-date YYYY-MM-DD \
      --qty <pieces> --total <grand total> --po <buyer's order no> [--grpo <DocNum>] \
@@ -141,7 +173,7 @@ stamp; the draft carries the base document's file too).
 5. **Send** the same command with `--yes`, in the same turn as step 4. Note the
    DocEntry SAP returns and give it to the operator.
 6. **Read it back and compare**:
-   `python3 .claude/skills/jivo-ap-draft/bin/readback.py <DocEntry> --expect-total … --expect-qty …`
+   `python3 .claude/skills/ap-rm-pm/bin/readback.py <DocEntry> --expect-total … --expect-qty …`
    Report its flags as gaps, not as success. Give the operator the draft number
    and the click-path it prints.
    **Then check the TDS landed in SAP:** `python3 .claude/skills/jivo-tds/bin/tds.py check <DocEntry> --company OIL`.
@@ -151,7 +183,7 @@ stamp; the draft carries the base document's file too).
    either gets posted that day or sits waiting for the above-office budget
    approval in JSAP, and the operator cannot tell which. Say it:
    ```bash
-   python3 .claude/skills/jivo-ap-draft/bin/jsap_route.py <DocEntry> --company oil -v
+   python3 .claude/skills/ap-rm-pm/bin/jsap_route.py <DocEntry> --company oil -v
    ```
    A goods bill drawn from a GRPO is **POST NOW** (RM/PM land on `2140001` GRNI —
    893 of 893 Oil drafts this FY went direct, none reached JSAP). Say "this one

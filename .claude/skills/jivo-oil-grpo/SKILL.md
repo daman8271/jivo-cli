@@ -1,6 +1,6 @@
 ---
 name: jivo-oil-grpo
-description: Use when a tanker of LOOSE / BULK oil arrives and the goods receipt must be keyed in SAP B1 — the operator hands over the supplier's tax invoice (REFINED SOYABEAN / RICE BRAN / PALM / MUSTARD OIL, quantity in KG, a gate-in stamp on it) plus the JIVO purchase order it came against. Daman calls this "oil GRPO". Entered from USER21. NOT the transporter's freight bill — that is jivo-oil-freight-grpo (a service GRPO keyed off a bilty, no PO). NOT the A/P invoice that later copies this GRPO (jivo-ap-draft).
+description: Use when a tanker of LOOSE / BULK oil arrives and the goods receipt must be keyed in SAP B1 — the operator hands over the supplier's tax invoice (REFINED SOYABEAN / RICE BRAN / PALM / MUSTARD OIL, quantity in KG, a gate-in stamp on it) plus the JIVO purchase order it came against. Daman calls this "oil GRPO". Entered from USER21. NOT the transporter's freight bill — that is jivo-oil-freight-grpo (a service GRPO keyed off a bilty, no PO). NOT the A/P invoice that later copies this GRPO (ap-rm-pm).
 ---
 
 # Oil GRPO — a tanker of bulk oil, from the supplier's invoice + the PO
@@ -101,7 +101,7 @@ three-book search.
 
 ## 2 · Attach both papers first — invoice AND PO, one row, two lines
 
-Full recipe and its traps: `.claude/skills/jivo-ap-draft/reference/attachments-upload.md`.
+Full recipe and its traps: `.claude/skills/ap-rm-pm/reference/attachments-upload.md`.
 Upload with `sapb1 attach` — it ticks Copy to Target Document on each line (C-0090), so the
 bill follows this GRPO onto the A/P invoice, and stamps `U_CHK`/`U_CHK2` or SAP refuses the
 draft with 1120025 (C-0082):
@@ -211,7 +211,7 @@ WHERE d."DocEntry" = <N>;
 `ODRF.DataSource` tells you who made it: **`I`** = keyed in the SAP B1 client,
 **`S`** = written through the Service Layer by this CLI.
 
-Then, and only then, the A/P invoice against this GRPO is a separate job — `jivo-ap-draft`.
+Then, and only then, the A/P invoice against this GRPO is a separate job — `ap-rm-pm`.
 
 ---
 

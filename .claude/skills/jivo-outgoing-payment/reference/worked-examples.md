@@ -204,7 +204,7 @@ $value read-back: HTTP 200, byte-identical to the source PDF
 
 POST the mail (201, creates the row), PATCH the PO onto it (204, LineNum 2),
 stamp both lines, then PATCH `PaymentDrafts(296).AttachmentEntry`. See
-`approval-mail.md` and `jivo-ap-draft/reference/attachments-upload.md`.
+`approval-mail.md` and `ap-rm-pm/reference/attachments-upload.md`.
 
 ### The one that got redone
 

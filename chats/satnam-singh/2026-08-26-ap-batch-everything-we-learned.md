@@ -5,7 +5,7 @@
 what is left, every technical trap, every process problem, and the honest cost.
 
 Companion files: `HANDOVER-2026-08-26-AP-BATCH.md` (the job list) ·
-`.claude/skills/jivo-ap-draft/reference/matching-and-batches.md` (the rules, in the
+`.claude/skills/ap-rm-pm/reference/matching-and-batches.md` (the rules, in the
 skill where they fire) · corrections **C-0035, C-0036, C-0037**.
 
 ---
@@ -163,7 +163,7 @@ meant to propagate, grep the delivered file on the destination for its id.**
    (5 digits), not a GRPO DocNum (10), and **not** a bare gate-entry suffix — I queried
    `GE-2026-7901` and `GE-2026-7529`, zero hits. **Somebody in Accounts knows what it
    is in one second.** When you find out, add it to
-   `.claude/skills/jivo-ap-draft/reference/handwriting.md`.
+   `.claude/skills/ap-rm-pm/reference/handwriting.md`.
 
 ---
 

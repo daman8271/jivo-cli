@@ -52,7 +52,7 @@ Everything below is measured from the live books on 2026-08-24 unless it says *i
 journal** — `JDT1.ProfitCode`, not `OcrCode` — which is why a ledger query written
 against `OcrCode` silently returns nothing for Variety. The Service Layer / CLI names
 are the `CostingCode*` family (*measured* from the working payloads in
-[[jivo-ap-draft]] / `.claude/skills/jivo-ap-draft/`).
+[[ap-rm-pm]] / `.claude/skills/ap-rm-pm/`).
 
 `OPRC` also carries `ValidFrom` / `ValidTo` / `Active` / `Locked`. Five rows —
 `Centr_z`, `Centr_z2` … `Centr_z5`, "General Center *n*" — are SAP's own placeholders,
@@ -420,7 +420,7 @@ Before you type anything:
 2. **Is the line an expense line?** Account starts with `5`. If not, none of the
    dimensions are compulsory — do not invent values to fill them.
 3. **Read the handwritten allocation note before opening SAP.** →
-   `.claude/skills/jivo-ap-draft/reference/handwriting.md`, [[jivo-ap-draft]]
+   `.claude/skills/ap-rm-pm/reference/handwriting.md`, [[ap-rm-pm]]
 4. Then fill, in this order:
 
 | # | Dimension | Where the value comes from |
@@ -648,5 +648,5 @@ the Variety code), C-0016 (a blank is not a defect until you know where the valu
 
 Related: [[AP-Invoice]] · [[GRPO]] · [[Journal-Entry]] · [[Journal-Voucher]] ·
 [[Approval-Workflow]] · [[Numbering-Series]] · [[Branches-and-Business-Places]] · [[Chart-of-Accounts]] ·
-[[Company-Selection]] · [[jivo-ap-draft]] · [[Budget-vs-Actual-Reporting]] ·
+[[Company-Selection]] · [[ap-rm-pm]] · [[Budget-vs-Actual-Reporting]] ·
 [[Document-Status-and-Cancellation]]

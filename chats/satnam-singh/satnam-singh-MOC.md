@@ -25,5 +25,5 @@ Part of the shared journal — see [[Chats-MOC]] for the whole team.
   that day: `NumAtCard` on the GRPO is the exact paper key, never name-match a vendor,
   Dim2 does not inherit, ₹0 cap lines, and the two-pass duplicate gate.
   Job list: [[../../HANDOVER-2026-08-26-AP-BATCH]] · rules now in the skill:
-  `.claude/skills/jivo-ap-draft/reference/matching-and-batches.md` ·
+  `.claude/skills/ap-rm-pm/reference/matching-and-batches.md` ·
   corrections **C-0035**, **C-0036**, **C-0037**.

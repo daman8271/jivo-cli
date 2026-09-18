@@ -8,7 +8,7 @@ tick the rows you want. It then creates those drafts in SAP.
 B1 → Document Drafts, looks at it, and presses **Add**. Until somebody does
 that, no stock moves and no ledger entry exists.
 
-One bill in your hand right now? Use the `jivo-ap-draft` skill instead — ask
+One bill in your hand right now? Use the `ap-rm-pm` skill instead — ask
 Claude to "make a draft of this invoice" and hand it the PDF.
 
 ---
@@ -92,7 +92,7 @@ locked, because those rows cannot be sent whatever you type in them.
 | `READY` | a draft can be built. Approve it and it will be sent. |
 | `DUPLICATE` | already in SAP — a posted invoice, or an open draft on this GRPO or this reference. The reason names the DocEntry, the user and whether it is waiting for approval. **Never send.** |
 | `REF-COLLISION` | two rows of **this batch** carry the same vendor reference: one bill received twice. Both are held. Find out which goods receipt it belongs to. |
-| `NEEDS-REF` | the GRPO has no vendor reference. Fix the GRPO, or do that one bill with the `jivo-ap-draft` skill. |
+| `NEEDS-REF` | the GRPO has no vendor reference. Fix the GRPO, or do that one bill with the `ap-rm-pm` skill. |
 | `SERVICE-HOLD` | a service GRPO (transporters). That draft shape has not been proved on live SAP yet, so the batch will not build one. |
 | `CANNOT-BUILD` | see the Reason column. Frozen vendor, closed period, unknown numbering series, no open lines. |
 

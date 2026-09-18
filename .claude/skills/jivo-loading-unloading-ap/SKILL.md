@@ -24,7 +24,7 @@ Internal skill. Built from the live maiden runs 2026-09-01: BHORIA oil bill
 90059 → Oil draft 55786 (cloned from posted 49636/49170; later deleted on
 Daman's order) and water bill 48634 → **Bev draft 15816** (cloned from Bev
 posted 13670). Daman named this its own category that day. Shared rules
-(dates, duplicate gate, hard stops, delete) live in `jivo-ap-draft`; RULE 0
+(dates, duplicate gate, hard stops, delete) live in `ap-rm-pm`; RULE 0
 in `CLAUDE.md` governs the write.
 
 ## ⚠️ C-0066 — the DESCRIPTION line is the switch, never the letterhead
@@ -116,7 +116,7 @@ show the operator, then `--yes`.
 ## Attach, then stop or submit
 
 Attach the **whole scan** — bill page plus every dispatch-register page — per
-`jivo-ap-draft/reference/attachments-upload.md` (no base document: scan
+`ap-rm-pm/reference/attachments-upload.md` (no base document: scan
 alone), with `sapb1 attach <scan> --yes`: it stamps `U_CHK`/`U_CHK2 OK` and ticks
 `CopyToTargetDoc tYES` (C-0090). Then PATCH the draft's `AttachmentEntry` and verify a
 byte-identical read-back. (The maiden run's curl upload needed `-H "Expect:"` or it got

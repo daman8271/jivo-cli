@@ -1,6 +1,6 @@
 ---
 name: jivo-service-contractor-invoice
-description: Use when a LABOUR / SERVICE CONTRACTOR's monthly bill arrives and must be entered in SAP B1 as an A/P invoice draft — "labour supply", "casual labour", "packing of Canola/Blowing/Wheat Grass/Jivo Mart", "12 hours labour", "X days @ rate", a contractor's own letterhead or handwritten slip with PAN and no GSTIN, cold-store / space rent, or a month-end tray of many such bills at once. Triggers: "make the draft for this contractor", "contractor entry", "labour bill entry", "yeh contractor ki entry karo". The DESCRIPTION line routes the book — oil/canola/blowing → Oil, wheat grass/water → Beverages, "Jivo Mart" → Mart. NOT for a bill with a GRPO behind it (jivo-ap-draft / jivo-consumables-direct-indirect-expense), NOT for transporter freight (jivo-*-freight-grpo), NOT for fuel or petrol-pump bills (jivo-ap-service-draft), NOT for employee reimbursements (jivo-service-vehicle-expense).
+description: Use when a LABOUR / SERVICE CONTRACTOR's monthly bill arrives and must be entered in SAP B1 as an A/P invoice draft — "labour supply", "casual labour", "packing of Canola/Blowing/Wheat Grass/Jivo Mart", "12 hours labour", "X days @ rate", a contractor's own letterhead or handwritten slip with PAN and no GSTIN, cold-store / space rent, or a month-end tray of many such bills at once. Triggers: "make the draft for this contractor", "contractor entry", "labour bill entry", "yeh contractor ki entry karo". The DESCRIPTION line routes the book — oil/canola/blowing → Oil, wheat grass/water → Beverages, "Jivo Mart" → Mart. NOT for a bill with a GRPO behind it (ap-rm-pm / jivo-consumables-direct-indirect-expense), NOT for transporter freight (jivo-*-freight-grpo), NOT for fuel or petrol-pump bills (jivo-ap-service-draft), NOT for employee reimbursements (jivo-service-vehicle-expense).
 ---
 
 # Labour / service contractor bill → A/P invoice draft (JIVO, all three books)
@@ -28,7 +28,7 @@ entry … fetch data from SAP of latest last invoice and pick up GL from them
 along with budget, variety and effective month, and routed as per unit-wise".
 
 Shared rules (dates, duplicate gate, hard stops, delete) live in
-`jivo-ap-draft`. The GL-entry spine and the "book the full billed amount"
+`ap-rm-pm`. The GL-entry spine and the "book the full billed amount"
 rule live in `jivo-loading-unloading-ap` — **read that one first**; this
 skill is its generalisation to every contractor on the tray.
 
@@ -192,7 +192,7 @@ ACC_ENV=user07.env acc/_playbook/sap draft purchase-invoice --data-file <p.json>
 ```
 (`user07-mart.env` / `user07-bev.env` for the other books.) Then attach ONE
 page per draft — split the tray scan first — per
-`jivo-ap-draft/reference/attachments-upload.md`, with `sapb1 attach <page> --yes`.
+`ap-rm-pm/reference/attachments-upload.md`, with `sapb1 attach <page> --yes`.
 **`ATC1` carries `U_CHK`/`U_CHK2` in Oil AND Beverages but NOT in Mart** — `sapb1 attach`
 stamps them where they exist, and ticks **`CopyToTargetDoc: "tYES"` on every line in ALL
 three books** (C-0090).

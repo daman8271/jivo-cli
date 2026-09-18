@@ -4,7 +4,7 @@
 capture the exact steps while doing it, and turn each one into a skill any
 JIVO operator's Claude can run.
 
-Yesterday produced one: `jivo-ap-draft` (A/P invoice from a vendor bill).
+Yesterday produced one: `ap-rm-pm` (A/P invoice from a vendor bill).
 This folder is where the rest get built.
 
 ## How a session works
@@ -39,7 +39,7 @@ source acc/_playbook/connect.sh navdeep-user36.env
 
 | # | Document / task | Skill | Status |
 |---|---|---|---|
-| 1 | A/P invoice from a vendor bill | `jivo-ap-draft` | ✅ shipped 08-21 |
+| 1 | A/P invoice from a vendor bill | `ap-rm-pm` | ✅ shipped 08-21 |
 | 2 | A/P invoice drafts in bulk from open GRPOs (Excel review round trip) | `acc batch` — see [BATCH.md](BATCH.md) | 🚧 built 08-24; scan + send live-verified read-only, first supervised send pending Daman's go |
 | 3 | _(to be chosen with the operator)_ | — | — |
 

@@ -1,6 +1,6 @@
 ---
 name: jivo-ap-credit-memo
-description: Use when an operator hands over a CREDIT NOTE (or debit note) that a VENDOR issued to JIVO — "credit note from <vendor>", "CN", "vendor gave us credit", rate difference, short quantity, rejected / returned goods, price correction, invoice reversal — and wants it in SAP B1 as an A/P Credit Memo draft (draft purchase-credit-note). Also use to check whether a vendor CN is already in SAP. Not for JIVO's own sales credit notes to customers (A/R) and not for vendor invoices (jivo-ap-draft / jivo-ap-service-draft).
+description: Use when an operator hands over a CREDIT NOTE (or debit note) that a VENDOR issued to JIVO — "credit note from <vendor>", "CN", "vendor gave us credit", rate difference, short quantity, rejected / returned goods, price correction, invoice reversal — and wants it in SAP B1 as an A/P Credit Memo draft (draft purchase-credit-note). Also use to check whether a vendor CN is already in SAP. Not for JIVO's own sales credit notes to customers (A/R) and not for vendor invoices (ap-rm-pm / jivo-ap-service-draft).
 ---
 
 # A/P Credit Memo draft from a vendor's credit note (JIVO, SAP B1)
@@ -26,14 +26,14 @@ Daman's correction on it ("you never put the original reference number and date"
 **Core principle: a vendor CN is a correction to something already in the books.
 Find what it corrects — the invoice, and the Goods Return if stock went back — and
 base the credit memo on that; then carry the CN's own statutory reference fields.**
-`jivo-ap-draft` holds the shared rules (duplicate gate, series discipline, dates,
+`ap-rm-pm` holds the shared rules (duplicate gate, series discipline, dates,
 hard stops, delete); read it first. Plumbing: `acc/_playbook/sap <args>`.
 
 ## The procedure
 
-1. **Read the scan in tiles first** — `jivo-ap-draft/bin/zoom.py "<scan>" --dpi 300`
+1. **Read the scan in tiles first** — `ap-rm-pm/bin/zoom.py "<scan>" --dpi 300`
    (`--box L,T,R,B --dpi 900` for a doubtful digit), then map **every handwritten
-   mark to a field** using `jivo-ap-draft/reference/handwriting.md` — "Common" →
+   mark to a field** using `ap-rm-pm/reference/handwriting.md` — "Common" →
    Budget `CostingCode3 = FACT_COM` (C-0027), and never compare a digit against a
    sample from a different hand on the same paper.
 2. **Read the paper into facts.** Vendor + GSTIN · **Credit Note No.** → `NumAtCard` ·
@@ -89,7 +89,7 @@ hard stops, delete); read it first. Plumbing: `acc/_playbook/sap <args>`.
    — it is not a gate on the operator (RULE 0). A draft posts nothing until a human
    presses Add in the SAP B1 client. Stop only for a real fault the preview shows,
    or when the precheck told you to. Daman, 2026-09-09.
-10. **Attach** — `jivo-ap-draft/reference/attachments-upload.md`: the operator's scan, plus
+10. **Attach** — `ap-rm-pm/reference/attachments-upload.md`: the operator's scan, plus
    the Goods Return's / invoice's file if the base document has one (55128's return had
    none). Upload with `sapb1 attach` — it stamps `U_CHK2 OK` (without it the pointer is
    refused) and ticks `CopyToTargetDoc tYES` on every line in every book (C-0090).

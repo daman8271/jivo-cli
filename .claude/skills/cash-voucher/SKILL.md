@@ -1,6 +1,6 @@
 ---
 name: cash-voucher
-description: PARENT skill for JIVO cash vouchers — routes to the right TYPE. Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Routes each voucher to its type, then GROUPS the plain ones onto one A/P invoice against the holder's FACTORY IMPREST card - many vouchers per document, one line per expense head each voucher touches, no document over Rs 10,000 and never spanning a month. A voucher with a GRPO behind it, or one made out to its own vendor, keeps its own draft. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (jivo-ap-draft / jivo-ap-service-draft).
+description: PARENT skill for JIVO cash vouchers — routes to the right TYPE. Use when a CASH SHEET of numbered cash vouchers arrives, or a pile of JIVO WELLNESS voucher slips with their bills — a "Cash sheet (<name> sir)" Zoho table with Voucher no / Date / Details / Amount / Unit columns, "cash voucher entry", "cash sheet ki entry", a DocScanner pack of voucher slips. Routes each voucher to its type, then GROUPS the plain ones onto one A/P invoice against the holder's FACTORY IMPREST card - many vouchers per document, one line per expense head each voucher touches, no document over Rs 10,000 and never spanning a month. A voucher with a GRPO behind it, or one made out to its own vendor, keeps its own draft. Also use to check what a cash sheet was booked as, or which voucher numbers are already keyed. NOT an employee's own reimbursement claim (jivo-service-vehicle-expense), NOT a vendor's own tax invoice (ap-rm-pm / jivo-ap-service-draft).
 ---
 
 # Cash voucher → one A/P draft per voucher, copied from its GRPO
@@ -25,7 +25,7 @@ sir's cash sheet dated 04-09-2026. **Every rule below is a correction he made to
 a draft I had already built.** Follow them; do not re-derive them — the section
 "What I got wrong" at the end records what re-deriving costs.
 
-Shared rules live in `jivo-ap-draft`; RULE 0 in `CLAUDE.md` governs the write.
+Shared rules live in `ap-rm-pm`; RULE 0 in `CLAUDE.md` governs the write.
 
 **What this class is:** a factory cash holder (Arvinder) pays dozens of small
 things in cash out of a ₹5-lakh float and writes a numbered voucher slip for
@@ -577,7 +577,7 @@ Daman, 2026-09-10: *"this front sheet — this also normally goes through it."*
 The cash sheet goes on **every** voucher's draft, in both books.
 
 Upload all three with ONE `sapb1 attach <pack> <grpo-file> <front-sheet> --yes`
-(recipe: `jivo-ap-draft/reference/attachments-upload.md`). Class-specific traps:
+(recipe: `ap-rm-pm/reference/attachments-upload.md`). Class-specific traps:
 
 - **`[SAP -1116] (1120026) Attachment Size Should be Less Than 1 MB`** — the cap
   is **per FILE, not per row** (761 + 115 + 463 KB on one row was accepted).

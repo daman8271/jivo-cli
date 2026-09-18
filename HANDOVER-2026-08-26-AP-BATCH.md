@@ -1,7 +1,7 @@
 # Handover — 22-scan A/P batch, Oil, 2026-08-26
 
 **For Satnam.** Read this first, then
-`.claude/skills/jivo-ap-draft/reference/matching-and-batches.md`.
+`.claude/skills/ap-rm-pm/reference/matching-and-batches.md`.
 
 ## What is already done — do NOT redo any of it
 

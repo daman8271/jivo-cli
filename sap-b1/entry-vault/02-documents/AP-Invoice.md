@@ -447,7 +447,7 @@ Draft only. Never `post` a document-shaped entity.
 ```bash
 # 1. Pre-check first — the skill's precheck finds the GRPO, branch, series and any
 #    existing draft before anything is sent.
-#    Use the jivo-ap-draft skill; do not hand-roll the payload.
+#    Use the ap-rm-pm skill; do not hand-roll the payload.
 
 # 2. What the payload must carry (beyond the obvious):
 #    Series                -> from NNM1 for (ObjType 18, branch, month)
@@ -461,7 +461,7 @@ Draft only. Never `post` a document-shaped entity.
 ```
 
 Then **read it back**. SAP silently leaves things blank — `WTAmount` for TDS is the known
-one. → [[AP-Invoice-Playbook]], and the `jivo-ap-draft` skill, which was built from live
+one. → [[AP-Invoice-Playbook]], and the `ap-rm-pm` skill, which was built from live
 mistakes on 2026-08-21.
 
 ## Verify after saving
