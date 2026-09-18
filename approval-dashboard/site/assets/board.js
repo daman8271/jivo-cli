@@ -150,9 +150,9 @@
     var cls = ms == null ? "" : band(ms);
     return '<li class="row ' + cls + '" data-at="' + esc(r.rejected_at) + '">' +
       '<div class="age"><b>' + sitting(ms) + "</b></div>" +
+      '<div class="draft">' + r.doc_entry + "</div>" +
       '<div class="body">' +
         '<div class="l1">' +
-          '<span class="draft">' + r.doc_entry + "</span>" +
           '<span class="vendor">' + esc(r.vendor) + "</span>" +
           (r.bill_no ? '<span class="bill">' + esc(r.bill_no) + "</span>" : "") +
           (r.doc_type && r.doc_type !== "A/P Invoice"
