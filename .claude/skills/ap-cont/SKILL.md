@@ -1,9 +1,64 @@
 ---
-name: jivo-service-contractor-invoice
+name: ap-cont
 description: Use when a LABOUR / SERVICE CONTRACTOR's monthly bill arrives and must be entered in SAP B1 as an A/P invoice draft — "labour supply", "casual labour", "packing of Canola/Blowing/Wheat Grass/Jivo Mart", "12 hours labour", "X days @ rate", a contractor's own letterhead or handwritten slip with PAN and no GSTIN, cold-store / space rent, or a month-end tray of many such bills at once. Triggers: "make the draft for this contractor", "contractor entry", "labour bill entry", "yeh contractor ki entry karo". The DESCRIPTION line routes the book — oil/canola/blowing → Oil, wheat grass/water → Beverages, "Jivo Mart" → Mart. NOT for a bill with a GRPO behind it (ap-rm-pm / jivo-consumables-direct-indirect-expense), NOT for transporter freight (jivo-*-freight-grpo), NOT for fuel or petrol-pump bills (jivo-ap-service-draft), NOT for employee reimbursements (jivo-service-vehicle-expense).
 ---
 
 # Labour / service contractor bill → A/P invoice draft (JIVO, all three books)
+
+## 📋 THE DESK'S BRIEF — Muqeem, Accounts (Contractor · 18 Sept 2026)
+
+**Read this first, every time.** It is the operator's own standing instruction for
+every contractor bill, in his words, given to Daman on 18 Sept 2026. Everything
+further down this file is only *how* the toolkit delivers these four points — if the
+two ever disagree, this block is what the desk expects and the rest is the bug.
+
+> For Contractors.
+>
+> Here I am attaching PDFs of contractor's invoice, please create AP Drafts using the
+> AP Draft Skill (Contactor)
+>
+> 1. Effective month should be the date of month in invoice. (for example, if date is
+>    25-aug-2026 then effective month will be 08-2026)
+> 2. GL should be Casual labour or if anything not predetermined then check the last
+>    saved entry in SAP for the reference.
+> 3. Budget should be factory or if anything not predetermined then check the last
+>    saved entry in SAP for the reference.
+> 4. Always check TDS applicability on Contractor's invoice vendor PAN wise, under
+>    19CQ, always check threshold limit of Rs. 30,000 of a single invoice taxable
+>    values or a consolidated Rs 1,00,000 in a financial year and then apply TDS and
+>    considered Net of debit note of vendor in the current financial year. When the
+>    consolidated threshold limit is crossed then TDS will be deducted on whole value
+>    in a financial year (unlike 194Q which is only after the value is crossed in FY).
+
+**Notes on his point 4** — "19CQ" is **194C**. The rate and code are already settled
+by **C-0092** (Divjot, 12 Sept 2026): **WTCode 1023 at 1%**, the Rs 1,00,000 yearly
+aggregate counted **per deductor** — Oil + Beverages TOTALLED TOGETHER (one legal
+entity, JIVO WELLNESS) and **JIVO MART separately from zero** — with the Rs 30,000
+test applied **per bill** in whichever book it lands. Mart deducts too. "Debit note"
+on his side = the vendor's credit note on ours.
+
+**🔴 THE CATCH-UP ON HIS EARLIER BILLS — never stop for it, always say it (C-0096, Daman 18 Sept 2026).**
+His point 4 is right that the **whole** FY value bears 194C. But the crossing bill
+only carries 1% of **itself** on the A/P invoice — the TDS owed on the contractor's
+**earlier, below-threshold bills** is a shortfall, and JIVO books that through a
+**separate Journal Voucher**, not on this document. So when a bill takes a PAN past
+Rs 1,00,000:
+
+1. Build and send the draft as normal, with 1% on this bill. **Never hold the entry
+   over the catch-up** — it does not belong on this invoice.
+2. Work out the shortfall: `1% x (FY total incl. this bill) - (TDS already deducted
+   this FY, incl. this bill)`.
+3. **Tell the operator the number, unprompted**, in one line — e.g. *"this bill takes
+   NAHIM past Rs 1L; Rs 125 of TDS on his earlier bills still has to go through a JV."*
+   A catch-up nobody is told about is a short deduction that surfaces at assessment.
+
+Worked example (C-0092's own live figures): NAHIM, Oil VENDA001714 — 13-Jun Rs 12,500
+TDS 0, 01-Jul Rs 1,13,500 TDS Rs 1,135. 1% of the Rs 1,26,000 aggregate is Rs 1,260,
+so **Rs 125 is the JV catch-up**.
+
+**Point 1 is the effective-month rule: the INVOICE's month, not the gate-in month.**
+`CostingCode2` = the month of the invoice date (25-Aug-2026 → `08-2026`).
+
 
 > 🔴 **ATTACHMENT RULE — every file goes up with `sapb1 attach`, never by hand (Daman, 16 Sept 2026 · C-0090).**
 > Whatever this skill attaches — to a draft, GRPO, A/P, credit memo, payment, JV, A/R, anything —

@@ -41,7 +41,7 @@ route; the SAP-client Add is.
       57138  2026-08-01  USER08  SUSHIL KUMAR SINGH IT 20000 IMPRES  Rs     3,024.00  
       total Rs 2,083,083.00
 
-Skills updated: jivo-add-and-new (side-effect section rewritten), jivo-service-contractor-invoice (USER08 on the Always templates). CLI: comment in approvaltemplates.go.
+Skills updated: jivo-add-and-new (side-effect section rewritten), ap-cont (USER08 on the Always templates). CLI: comment in approvaltemplates.go.
 
 ## 2026-09-16 — "do it for Harsh also"
 

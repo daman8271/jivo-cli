@@ -12,7 +12,7 @@ tags: [tds, 194c, ap-draft]
 # 194C Rs 1 lakh yearly threshold: Oil + Beverages count together, Mart counts alone
 
 ## Wrong
-Treated the 194C Rs 1,00,000-a-year aggregate as ambiguous between per-company-book and per-PAN-across-all-three-books, and took jivo-service-contractor-invoice's table at face value where it says Mart carries no TDS at all (WTSum 0, WTLiable tNO).
+Treated the 194C Rs 1,00,000-a-year aggregate as ambiguous between per-company-book and per-PAN-across-all-three-books, and took ap-cont's table at face value where it says Mart carries no TDS at all (WTSum 0, WTLiable tNO).
 
 ## Right
 The Rs 1,00,000 yearly aggregate is counted per DEDUCTOR, and JIVO has two: Oil and Beverages are one legal entity (JIVO WELLNESS (P) LIMITED, GSTIN 06AACCJ4223F1Z0) so their purchases from one PAN are TOTALLED TOGETHER, and JIVO MART PVT LTD stands alone with its own count from zero. The Rs 30,000 single-bill test stays per bill in whichever book it lands. Mart DOES deduct: WTCode 1023 at 1 percent, same code as Oil.
