@@ -4,60 +4,59 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
-<meta name="color-scheme" content="light">
-<title>JIVO Approval Board</title>
+<meta name="color-scheme" content="light dark">
+<title>Approval Board</title>
+<script>
+  /* Pick the theme before first paint so dark mode never flashes white. */
+  (function(){try{var q=/[?&]theme=(dark|light)/.exec(location.search),t=q&&q[1];
+    if(t)localStorage.setItem("approvals:theme",t);else t=localStorage.getItem("approvals:theme");
+    if(!t&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches)t="dark";
+    if(t)document.documentElement.setAttribute("data-theme",t);}catch(e){}})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans+Extra+Condensed:wght@600;700&family=Sofia+Sans+Semi+Condensed:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/board.css">
-<style>
-  /* Page-only bits. Everything shared lives in assets/board.css. */
-  .banner{margin:16px 0 0}
-  .reason{color:var(--ink);font-size:12.5px}
-  .reason::before{content:"\21B3";color:var(--muted-2);margin-right:6px}
-  .noreason{color:var(--muted-2);font-style:italic}
-  .who{white-space:nowrap}
-  .when{white-space:nowrap;font-variant-numeric:tabular-nums}
-  .foot{margin-top:24px;font-size:12px;color:var(--muted);line-height:1.6}
-  .dead{color:var(--danger)}
-</style>
 </head>
 <body>
-<header class="topbar">
+<header class="mast">
   <div class="wrap">
-    <h1>JIVO Approval Board</h1>
-    <span class="meta" id="freshness">loading&hellip;</span>
-    <nav class="tabs" id="tabs" role="tablist"></nav>
+    <div class="mast-top">
+      <h1>Approval Board</h1>
+      <p class="sub">Entries Bhawani sent back that nobody has re-done yet.</p>
+      <div class="mast-right">
+        <span class="live" id="live">connecting</span>
+        <button class="theme" id="theme" type="button" aria-pressed="false">Dark</button>
+      </div>
+    </div>
+    <nav class="books" id="books" aria-label="Company books"></nav>
   </div>
 </header>
 
 <main class="wrap">
-  <div id="banner" class="banner"></div>
-  <div class="kpirow" id="kpis"></div>
+  <div class="bands" id="bands" aria-live="polite"></div>
 
-  <section class="card">
-    <div class="card-h">
-      <h2 id="booktitle">Rejected, still open</h2>
-      <span class="muted" id="booknote"></span>
-    </div>
-    <div class="card-b--flush">
-      <div class="tblbox tblbox--free" id="tblbox">
-        <div class="empty"><strong>Loading</strong>reading SAP&hellip;</div>
-      </div>
-    </div>
-  </section>
+  <div class="sheet-h">
+    <h2 id="sheet-title">Oil</h2>
+    <span id="sheet-note"></span>
+    <span class="count" id="sheet-count"></span>
+  </div>
+  <div class="cap" aria-hidden="true"><span>Sitting for</span><span>Entry, newest first</span><span class="r">Amount</span></div>
+  <ol class="sheet" id="sheet">
+    <li class="empty"><strong>Reading SAP</strong>The first read takes a moment.</li>
+  </ol>
 
-  <p class="legend" style="margin-top:12px">
-    <span class="chip chip--neutral">under 2 days</span>
-    <span class="chip chip--warn">2&ndash;7 days</span>
-    <span class="chip chip--danger">over 7 days</span>
-    <span class="chip chip--other">over 90 days</span>
-  </p>
+  <ul class="key" aria-label="What the colours mean">
+    <li>under 2 days</li>
+    <li class="k-warn">2 to 7 days</li>
+    <li class="k-late">over 7 days</li>
+    <li class="k-old">over 90 days, probably forgotten</li>
+  </ul>
 
-  <p class="foot">
-    Rejected by <strong>BHAWANI</strong> and not yet re-done. A row leaves this board by itself
-    when somebody cancels the draft and keys a fresh one &mdash; there is nothing to tick off.
-    SAP keeps no approval history, so the clock on each row is kept here, not by SAP.
-    <br>Covers A/P invoices, A/P credit memos and GRPOs keyed by Harsh, Divjot, Satnam,
-    Mahak&nbsp;/&nbsp;Priya and Muqeem, across all three books. Read-only.
-  </p>
+  <div class="foot">
+    <p>A row leaves this board on its own when somebody cancels the rejected draft and keys a fresh one. There is nothing to tick off here.</p>
+    <p>SAP reads every minute; the clocks run in your browser. Covers A/P invoices, credit memos and GRPOs keyed by Harsh, Divjot, Satnam, Mahak, Priya and Muqeem in all three books. Reads only, never writes.</p>
+  </div>
 </main>
 
 <script>window.BOARD_URL = "https://approvals-c84942f4.srv1685505.hstgr.cloud/board.json";</script>
