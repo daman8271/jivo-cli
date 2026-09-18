@@ -227,37 +227,61 @@ Rules in a table get skipped under load; this list does not. Tick every line.
 - [ ] after sending: `jivo-tds check` passed (exit 0)
 - [ ] every handwritten note mapped to a field (`reference/handwriting.md`) or raised with
       the operator — none filed silently as a remark; Budget = what the paper says
+- [ ] the scan carries **Chopra sir's green signature**, and the GRPO's unsigned factory
+      file is **not** on the draft — one line on the row, the signed scan
 - [ ] **field diff against one posted precedent for this vendor**: every non-null
       field on its header and lines is either present in the payload or consciously
       omitted — this is what caught C-0024/25/26
 
-After sending: read-back clean, `AttachmentEntry` set, both files listed, GRPO unchanged.
+After sending: read-back clean, `AttachmentEntry` set, **one** file listed (the signed
+scan), GRPO unchanged and still holding its own file.
 
-## Attachments — the draft must carry the paper (both papers)
+## Attachments — the draft carries the SIGNED scan, and only that
 
-An API-created draft comes out with `AttachmentEntry: null`. The B1 client copies the
-GRPO's attachment forward on copy-to-target; the Service Layer does not — so we do it.
+An API-created draft comes out with `AttachmentEntry: null`, so we attach.
 
-**Rule (Daman, 2026-08-24): the draft carries the operator's scan AND the GRPO's file**,
-as two independent lines on the draft's own `Attachments2` row. Full recipe, every
-command proven live: **`reference/attachments-upload.md`**. In short:
+> 🔴 **Rule (Daman, 18 Sept 2026) — the A/P draft carries the operator's scan, the copy
+> CHOPRA SIR HAS SIGNED. The factory's file off the GRPO does NOT go on it.**
+>
+> This **reverses the 2026-08-24 "both papers" rule** for RM/PM. The factory attaches the
+> bill to the GRPO at gate-in, **before anyone has signed it**. Copying that file onto the
+> A/P draft puts an UNSIGNED bill in front of Bhawani — which is what she is getting today:
+> Oil draft **57424** (AG POLY PACKS), row **178287**, line 2 = `GRPO-2026096699-2460_v3.pdf`,
+> unsigned. Bhawani approves against the signed paper; the unsigned one is noise at best and
+> the wrong document at worst.
 
-1. Download the GRPO's file (`GET Attachments2(<grpoAE>)/$value`).
-2. `sapb1 attach "VENDOR-REF-DATE.pdf" "GRPO-<DocNum>-<file>.pdf" --company <DB> --yes` → row N,
-   scan = line 1, GRPO's file = line 2. It ticks **`CopyToTargetDoc = "tYES"` on every line,
-   every book** (C-0090) and stamps `U_CHK`/`U_CHK2 "OK"` where the book has them — JIVO
-   guard **1120025** refuses the draft pointer otherwise (`[-1116] Select "OK" in Approve
-   Column`) — and exits non-zero unless every line reads back `tYES`.
-3. `PATCH Drafts(<DocEntry>) {"AttachmentEntry": N}` (dry-run, then `--yes`).
-4. Read back draft **and** GRPO; `TargetPath` must be the Windows UNC
+**Chopra sir signs in GREEN ink — always.** Green pen on the bill = signed = the copy that
+goes to SAP. That is the test, and it is the operator's own (Daman, 18 Sept: *"trust me they
+are always green"*).
+
+- **Find the green signature on the scan before you attach.** The page is already read in
+  step 1; `bin/zoom.py "<scan>" --dpi 300` tiles it if the sign is small or the page is dense.
+- **No green sign on the paper → do not attach, do not `add-draft`.** Say it plainly: the
+  bill has not been signed yet. Build the draft and leave it, or leave it unbuilt — the
+  operator decides. A draft can wait; a bill already sitting in Bhawani's queue cannot be
+  un-sent.
+- **A green sign on the GRPO's copy is not a sign on ours.** The one that counts is on the
+  paper the operator handed over.
+
+1. `sapb1 attach "VENDOR-REF-DATE.pdf" --company <DB> --dry-run` then `--yes` → row N.
+   **One file, one line.** It ticks **`CopyToTargetDoc = "tYES"`** on every line, every book
+   (C-0090), stamps `U_CHK`/`U_CHK2 "OK"` where the book has them — JIVO guard **1120025**
+   refuses the draft pointer otherwise (`[-1116] Select "OK" in Approve Column`) — and exits
+   non-zero unless every line reads back `tYES`.
+2. `PATCH Drafts(<DocEntry>) {"AttachmentEntry": N}` (dry-run, then `--yes`).
+3. Read back the draft **and** the GRPO. The draft's row must hold **exactly one line**, the
+   signed scan. `TargetPath` must be the Windows UNC
    (`\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments`) so the client can open it.
+   The GRPO keeps its own file and its own `AttachmentEntry`, untouched.
+
+Full recipe: **`reference/attachments-upload.md`**.
 
 **Upload works since 2026-08-24** (hanadb CIFS mounts, `sap-b1/attachments/MOUNT-RUNBOOK.md`).
-Before that, `POST /Attachments2` → `-5002 Attachments folder not defined` and `$value` →
-`404 LINUX mount point`. If either error returns, a mount is down — fix per the runbook, never
-retry blindly. Do **not** point the draft at the GRPO's own row (`AttachmentEntry = <grpoAE>`):
-it works (proven on 54983) but the two documents then share one record — a file added later
-on either shows on both.
+If `POST /Attachments2` → `-5002 Attachments folder not defined` or `$value` → `404 LINUX
+mount point` returns, a mount is down — fix per the runbook, never retry blindly. Do **not**
+point the draft at the GRPO's own row (`AttachmentEntry = <grpoAE>`): it works (proven on
+54983) but the two documents then share one record — a file added later on either shows on
+both, and the GRPO's unsigned copy would be back on the draft by the side door.
 
 ## Hard stops
 

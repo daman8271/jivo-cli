@@ -10,10 +10,17 @@ hand-written PATCH for the tick — is retired: an upload lands `tNO`, and a ste
 is a step that gets skipped. Proven live 2026-09-17: Oil 177963 (1.8 MB + a second file,
 both byte-identical on download), Mart 59373, Beverages 43331.
 
-**Daman's rule (2026-08-24): a draft carries BOTH the operator's scan AND the base
-document's file** (the GRPO's bill, the Goods Return's paper, …) — each as its own
-line on the draft's OWN `Attachments2` row. Never point two documents at one
-`Attachments2` row (a file added later on one then shows on both).
+🔴 **Daman's rule (18 Sept 2026) — supersedes the 2026-08-24 "both papers" rule for any
+A/P drawn from a GRPO: the draft carries the operator's SIGNED scan, and NOT the base
+document's file.** The factory attaches the bill to the GRPO at gate-in, before anyone
+signs it; copying that file forward sends Bhawani an UNSIGNED bill (live: Oil draft 57424,
+row 178287, line 2 `GRPO-2026096699-2460_v3.pdf`). **Chopra sir signs in GREEN ink, always
+— green pen is the test for which copy goes.** No green sign → do not attach and do not
+submit; the bill is not signed yet. Never point two documents at one `Attachments2` row
+either (a file added later on one then shows on both).
+
+The base document keeps its own file and its own `AttachmentEntry`, untouched — section 2
+below is now a **read-only check**, not a copy step.
 
 Upload works because hanadb now CIFS-mounts the attachment shares
 (`sap-b1/attachments/MOUNT-RUNBOOK.md`, applied 2026-08-24, fstab-persistent). If a
@@ -43,19 +50,19 @@ reaches SAP — both measured on DESKTOP-EQ55Q8H, 2026-08-25:**
   (Python312 sits ahead of WindowsApps on the Machine PATH, so `python3` then
   resolves to the real interpreter everywhere).
 
-## 1. Upload — the operator's scan (and the base document's file) → one row
+## 1. Upload — the operator's SIGNED scan → one row, one line
 
 Rename first (`VENDOR-REF-DATE.pdf`) — it lands on
 `\\10.10.101.52\Attachments_Oil\JIVO_OIL\Attachments` under exactly that name. SAP
 auto-renames on a collision (name + ddmmyyyy + time); that is fine.
 
 ```bash
-sapb1 attach "$S/VENDOR-REF-DATE.pdf" "$S/GRPO-<DocNum>-<FileName>.pdf" --company <DB> --dry-run
-sapb1 attach "$S/VENDOR-REF-DATE.pdf" "$S/GRPO-<DocNum>-<FileName>.pdf" --company <DB> --yes
-# → Attachments2 row N in <DB> — Copy to Target Document = tYES on all 2 line(s), read back:
+sapb1 attach "$S/VENDOR-REF-DATE.pdf" --company <DB> --dry-run
+sapb1 attach "$S/VENDOR-REF-DATE.pdf" --company <DB> --yes
+# → Attachments2 row N in <DB> — Copy to Target Document = tYES on all 1 line(s), read back:
 #     line 1  VENDOR-REF-DATE.pdf  tYES  U_CHK2 OK
-#     line 2  GRPO-<DocNum>-<FileName>.pdf  tYES  U_CHK2 OK
 #   Point the document at it: "AttachmentEntry": N
+# Check the green signature is on that page BEFORE this command, not after.
 ```
 
 The order of the files is the order of the lines. Add `--json` to get
@@ -82,11 +89,13 @@ The order of the files is the order of the lines. Add `--json` to get
 - `-5002 Attachments folder not defined` / `404 Fail to get the LINUX mount point` — a CIFS
   mount on hanadb dropped: `sap-b1/attachments/MOUNT-RUNBOOK.md`, not a retry.
 
-## 2. The base document's file — download it first (reads only)
+## 2. The base document's file — LOOK, do not copy (reads only)
 
 ```bash
 sapb1 query PurchaseDeliveryNotes --filter "DocEntry eq <grpoEntry>" --select "DocEntry,DocNum,AttachmentEntry"   # or PurchaseReturns for a Goods Return
 curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(<baseAE>)"                          # lines: FileName, FileExtension, FileSize
+# Download it ONLY to read it (e.g. to compare qty/rate against the signed bill).
+# It does NOT go on the A/P draft — it is the factory's unsigned copy.
 curl -sk -b "$S/ck" "$H/b1s/v1/Attachments2(<baseAE>)/\$value" -o "$S/GRPO-<DocNum>-<FileName>.pdf"; file "$S/GRPO-<DocNum>-<FileName>.pdf"   # must say "PDF document"
 ```
 
@@ -137,5 +146,6 @@ curl -sk -b "$S/ck" -X POST "$H/b1s/v1/Logout" -o /dev/null; rm -f "$S/ck" "$S/l
   Do not go delete the file off the CIFS share to "finish the job" either: the SAP row
   stays and would then point at a missing file, which is worse than the orphan. An
   unreferenced row costs nothing but disk.
-- For a bill with no base document (fuel, expenses, services) the draft simply gets
-  the scan alone — there is nothing to copy.
+- For a bill with no base document (fuel, expenses, services) the draft gets the scan
+  alone — there was never anything to copy. Since 18 Sept a GRPO-drawn A/P is the same
+  shape: **one line, the signed scan.**
