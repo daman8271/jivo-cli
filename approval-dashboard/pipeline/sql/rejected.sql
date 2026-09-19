@@ -5,6 +5,11 @@
 -- Three traps, all measured live on 2026-09-18 — do not "simplify" them away:
 --   * WDD1."AuthUpdDat" is NULL on 100% of rows. The decision time is
 --     "UpdateDate" + "UpdateTime" (SMALLINT HHMM).
+--   * FLOOR() on the hour is NOT optional. HANA's / is DECIMAL division, so
+--     1057/100 = 10.57 and the row lands MM*36 seconds late — up to 35 minutes.
+--     Shipped wrong 2026-09-18, caught 09-19: SAP said SSY CONTAINERS 56841 was
+--     rejected 10:57, the board said 11:31. The tell was that every computed
+--     second was 00/12/24/36/48, i.e. (36*MM) mod 60.
 --   * One draft can carry MORE THAN ONE approval request (the double-request
 --     bug closed in 5584f319), so the OWDD join multiplies rows. GROUP BY the
 --     draft and take MAX() of the decision, or every count inflates.
@@ -22,7 +27,7 @@ SELECT
     U."USER_CODE"                                 AS CREATOR,
     TO_VARCHAR(
       MAX(ADD_SECONDS(L."UpdateDate",
-          (L."UpdateTime"/100)*3600 + MOD(L."UpdateTime",100)*60)),
+          FLOOR(L."UpdateTime"/100)*3600 + MOD(L."UpdateTime",100)*60)),
       'YYYY-MM-DD"T"HH24:MI:SS')                  AS REJECTED_AT,
     MAX(L."Remarks")                              AS REASON
 FROM        {{SCHEMA}}.ODRF D

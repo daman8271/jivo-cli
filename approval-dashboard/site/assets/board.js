@@ -134,12 +134,18 @@
         ".</strong> Everything below is from then, not now.</div>");
     }
 
-    var late = board.totals.late_alarmable || 0;
+    // One number, everywhere. The tabs, this band and the tab title all count
+    // the same thing: entries past 2 days. What the pre-launch backlog changes
+    // is the WORDING and the colour, never the count — two different totals on
+    // one screen is how a board stops being believed.
+    var late = board.totals.late || 0, fresh = board.totals.late_alarmable || 0;
     if (late > 0) {
-      bits.push('<div class="band is-late"><strong>' + late + " " +
+      bits.push('<div class="band' + (fresh ? " is-late" : "") + '"><strong>' + late + " " +
         plural(late, "entry has", "entries have") + " been sitting more than 2 days.</strong> " +
-        "Bhawani sent " + plural(late, "it", "them") + " back and " +
-        plural(late, "it has", "they have") + " not been re-done.</div>");
+        (fresh
+          ? fresh + " of " + plural(fresh, "them came", "them came") + " back since this board started; the rest were already late when it went live."
+          : "All of them were already late when this board went live. Nothing new has crossed 2 days.") +
+        "</div>");
     }
     el.innerHTML = bits.join("");
     document.title = (late ? "(" + late + ") " : "") + "Approval Board";
