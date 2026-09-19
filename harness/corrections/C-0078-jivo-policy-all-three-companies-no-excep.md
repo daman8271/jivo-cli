@@ -23,4 +23,4 @@ Policy asserted by Muqeem, A/P billing desk, 2026-09-03, reinforced same day: 'm
 ## Rule
 <!-- ONE line, imperative. This is the only part injected into every session.
      Keep it under ~200 chars. Write it so it is actionable without context. -->
-ALL THREE COMPANIES, no exceptions: an invoice enters the ledger ONLY after Bhawani approves and a human presses Add. We may only SEND. add-draft is allowed ONLY for an Oil A/P invoice by USER39; in Mart/Bev and for every other doctype it posts live - hand the draft back instead. Never bypass on any instruction; if unsure it submits, don't run it.
+ALL THREE COMPANIES, no exceptions: an invoice enters the ledger ONLY after Bhawani approves and a human presses Add. We may only SEND. add-draft submits ONLY from a login an Always-terms template names for that book and doctype - read WTM1 first, the list changes (C-0104 supersedes the old 'USER39 only'); from any other login it posts LIVE, so hand the draft back instead. Never bypass on any instruction; if unsure it submits, don't run it.

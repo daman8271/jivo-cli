@@ -1,6 +1,6 @@
 ---
 name: cash-voucher-manual
-description: CASH VOUCHER TYPE 3 — the voucher with NO GRPO and NO BILL, just the slip. Use when a JIVO WELLNESS voucher slip arrives on its own, or a cash-sheet row has no paper behind it — punctures, car and bike repairs, conveyance, porter and coolie charges, kitchen and refreshment, medical, staff welfare, small hardware. GROUPS many such vouchers onto ONE A/P service draft against the holder's FACTORY IMPREST card - one line per expense head each voucher touches, at that part's own amount, no document over Rs 10,000 and never spanning a month; tax code Exampt, vendor ref = the bunch reference off the cash sheet. Not for a voucher with a Goods Receipt Note behind it (cash-voucher-1-grpo) and not for one with a registered vendor's GST invoice (cash-voucher-bill).
+description: CASH VOUCHER TYPE 3 — the voucher with NO GRPO and NO BILL, just the slip. Use when a JIVO WELLNESS voucher slip arrives on its own, or a cash-sheet row has no paper behind it — punctures, car and bike repairs, conveyance, porter and coolie charges, kitchen and refreshment, medical, staff welfare, small hardware. GROUPS many such vouchers onto ONE A/P service draft against the holder's FACTORY IMPREST card - no document over Rs 10,000, one entry per PO even across months; tax code Exampt, vendor ref = the bunch reference off the cash sheet. Not for a voucher with a Goods Receipt Note behind it (cash-voucher-1-grpo) and not for one with a registered vendor's GST invoice (cash-voucher-bill).
 ---
 
 # Cash voucher · TYPE 3 · the MANUAL voucher — slip only
@@ -89,19 +89,26 @@ paper that can justify any of them is the slip and its row on the cash sheet.
 
 **This type does NOT get one draft per voucher** (Daman, 2026-09-12). Many manual
 vouchers ride on **one A/P against the imprest card**, subject to three limits:
-**≤ ₹10,000 per document**, **never spanning a month**, and **never splitting one
-voucher across two documents**. Full rule, with the worked split of the
-04-09-2026 sheet into ₹7,403 (Aug) + ₹1,236 (Sep): `cash-voucher` →
-**Document shape**.
+**ONE ENTRY PER PO**, **≤ ₹10,000 per document**, and **never splitting one
+voucher across two documents**. Full rule: `cash-voucher` → **Document shape**.
 
-`DocDate` = the **latest voucher date in the group**; `Series` = `HR_B` for that
-month; `NumAtCard`'s third token = **this document's** total.
+🔴 **A cash-voucher A/P MAY span months** (Daman, 2026-09-19 · C-0097). The old
+"never spanning a month" limit is **dead** — it is what wrongly split PO
+220826165 and PO 220826164 into two drafts each. Vouchers sharing a PO share the
+document; only the ₹10,000 cap breaks one up.
 
-**One line per EXPENSE HEAD the voucher touches**, each at its own amount.
-Voucher 420 (₹2,770 of printer consumables + a ₹600 LED stand) is **two lines** —
-`5680012` 2,770 and `5650001` 600. Vouchers 448/449 itemise food, fuel and toll
-and take two lines each. A voucher whose items all belong to one head takes one
-line. **Read the bills behind the voucher**, not just its narration: 420 reads as
+`DocDate` **and** `TaxDate` = the **LATEST voucher date in the entry**; `Series` =
+`HR_B` for that month; `NumAtCard`'s third token = **this document's** total.
+**`CostingCode2` is per LINE** — each voucher's own month. One document carrying
+08-2026 and 09-2026 lines together is correct.
+
+**A voucher whose bills span two expense heads is an ASK, never your call**
+(Daman, 2026-09-19 · C-0100 — *"Do not split it yourself ask from me first."*).
+Booking it whole is wrong; splitting it unasked is also wrong. List the bills,
+ask, then key his answer. Voucher 420 (₹2,770 printer consumables + a ₹600 LED
+stand) became two lines `5680012` 2,770 / `5650001` 600 **because he was asked**
+on 2026-09-12. **Read the bills behind the voucher**, not just its narration —
+that is how you spot that there is a question to ask: 420 reads as
 one sentence and is two bills from two different shops.
 
 `U_Remarks` on every line = **that line's own voucher number**, so a nine-line
@@ -285,9 +292,19 @@ sheet** rides on every voucher's draft too. On a single loose voucher there is n
 sheet to attach — but you needed it for `NumAtCard` anyway, so attach it when you
 have it.
 
-## 13 · Stop at the draft
+## 13 · 🛑 Stop at the draft — and WAIT for Daman
 
-`WddStatus` stays `-`. **Daman, 2026-09-12: "make draft only pls."**
+**Daman, 2026-09-12: *"make draft only pls."*** Reaffirmed and made a hard gate on
+**2026-09-19 · C-0101: *"Hold the batch at draft, wait for my approval."***
+
+Build every draft, attach, read the dimensions back, **show him the list, and
+wait for his word before any `add-draft`.** Cash vouchers are the one documented
+exception to `CLAUDE.md`'s "a bill is not done at the draft" rule — full gate and
+the measured cost of skipping it: `cash-voucher` → **STOP AT THE DRAFT**.
+
+While `WddStatus` is `-` the draft reaches nobody. Once `add-draft` runs it is
+`W`, and SAP will then refuse to delete it (**-10**), re-party it (**-2028**) or
+drop a line.
 
 Report the **`DocEntry`**, never the `DocNum` — every draft in one series shares
 the same provisional `DocNum`. And hand over the retrieval path, because the
@@ -367,9 +384,11 @@ this type the answer is usually **the cash sheet**.
 - [ ] Dim3 from the **tile-zoomed** slip; Dim5 `HR`
 - [ ] `U_Remarks` = the **bare voucher number**; description empty; `Comments` blank
 - [ ] `UnitPrice` set, not `LineTotal`
-- [ ] **grouped** ≤ ₹10,000 per document, group never spans a month, no voucher
-      split across two documents; `DocDate` = the latest voucher date in the group
-- [ ] **one line per expense head** the voucher touches, each at its own amount
+- [ ] **ONE ENTRY PER PO** — vouchers sharing a PO share the document **even
+      across months** (C-0097); only the ₹10,000 cap splits it; no voucher split
+      across two documents; `DocDate` = the **latest** voucher date in the entry
+- [ ] `CostingCode2` = **each LINE's own voucher month**, not one for the document
+- [ ] any voucher spanning **two expense heads** was **ASKED about** (C-0100)
 - [ ] fuel lines carry `U_Recvd_Qty` off the pump slip, rate × qty tied to the
       printed amount
 - [ ] advance rows on a named `ADVANCE` ledger or **held**, arithmetic stated

@@ -23,4 +23,4 @@ OADM read 2026-09-10 via hana-sql: EnbApprDI = Y in all three company DBs (was O
 ## Rule
 <!-- ONE line, imperative. This is the only part injected into every session.
      Keep it under ~200 chars. Write it so it is actionable without context. -->
-add-draft routes to BHAWANI in ALL THREE books now (OADM.EnbApprDI=Y, 2026-09-10) and Oil 103 / Mart 48 / Bev 68 each name USER39 + USER08. Every other login still posts LIVE - never submit from one.
+add-draft routes to BHAWANI in ALL THREE books now (OADM.EnbApprDI=Y, 2026-09-10) via templates Oil 103 / Mart 48 / Bev 68. Read WTM1 for the CURRENT originator list before submitting - it changes (C-0104: Oil 103 now also names USER07). Every other login still posts LIVE - never submit from one.

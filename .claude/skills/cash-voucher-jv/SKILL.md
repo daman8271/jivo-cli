@@ -23,6 +23,12 @@ description: The JOURNAL VOUCHER that closes the cash holder's imprest for a cas
 Daman taught this on **2026-09-12**, having flagged it earlier the same day:
 *"We gonna close Arvinder's imprest voucher later by posting a journal voucher."*
 
+> 🛑 **Batch discipline.** A JV belongs to the cash-voucher batch it closes, so it
+> follows the same gate: build it, attach it, put it on the list you show Daman,
+> and let a **person** post it in the SAP B1 client. A JV needs no `add-draft` —
+> it is unposted by nature — but it is not "done" until it is on that list.
+> `cash-voucher` → **STOP AT THE DRAFT**.
+
 RULE 0 in `CLAUDE.md` governs the write.
 
 ---
@@ -31,12 +37,30 @@ RULE 0 in `CLAUDE.md` governs the write.
 
 | Voucher type | A/P goes to | Does the float move? |
 |---|---|---|
-| **1 · GRPO** and **3 · MANUAL** | the **imprest card** | **yes** — the A/P credits the holder, the float comes down |
+| **1 · GRPO** whose GRPO is on the **imprest** card, and **3 · MANUAL** | the **imprest card** | **yes** — the A/P credits the holder, the float comes down |
 | **2 · BILL** (`cash-voucher-bill`) | the **real vendor** — the input credit has to land on that vendor's GSTIN | **no** — the holder paid cash and nothing on his account reflects it |
+| **1 · GRPO whose GRPO sits on the VENDOR's own card** (C-0098) | **that vendor**, as a GRPO copy | **no** — same gap |
 
-So every type-2 voucher leaves two loose ends: a payable to a vendor the holder
-has already settled in cash, and a float that never came down. **The JV closes
-both in one entry.**
+So **two** shapes leave loose ends: a payable to a vendor the holder has already
+settled in cash, and a float that never came down. **The JV closes both in one
+entry.**
+
+### 🔴 The second shape — added 2026-09-19 · C-0098
+
+**Daman: *"Enter it to the vendor and raise a JV to take it off his float."***
+
+When a cash voucher's GRPO was raised on the **supplier's own** card rather than
+the imprest card, the A/P is a **copy of that GRPO on that vendor** — so the
+GRPO closes — and this JV then moves it off the holder's float. **Do not retype
+it as a hand-keyed line on the imprest card**; that leaves the GRPO open forever.
+
+**One JV per voucher, never combined.** On the 2026-09-19 sheet that is four
+separate journal vouchers: **472 ₹1,716 · 473 ₹400 · 475 ₹1,716 · 467 ₹590**.
+
+If the A/P is **already posted** on the vendor, you owe only the JV — voucher 463
+was OPCH 51358 H M PLASTICS ₹2,596, closed by JV 6881. Daman: *"There is already
+an entry in H M Plastic, u just have to pass JV in Arvinder sir. For future
+reference, book the invoice and pass JV."*
 
 ## 🔴 THE RULE — debit the party, credit the imprest
 
@@ -236,7 +260,8 @@ are different sentences, and only one of them was true.
 
 ## Pre-flight
 
-- [ ] the voucher really is **type 2** — its A/P is on a vendor, not the imprest card
+- [ ] the voucher's A/P really is **on a vendor**, not the imprest card — either
+      a type-2 bill, or a type-1 whose GRPO sat on the vendor's card (C-0098)
 - [ ] **Dr the vendor, Cr the imprest card** — not the other way round
 - [ ] **one JV per VOUCHER** — never one JV for two vouchers, even same party,
       same date and same bunch

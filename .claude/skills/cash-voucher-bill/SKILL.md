@@ -342,12 +342,21 @@ provisional `DocNum`.
 
 `WddStatus` stays `-`.
 
-**🟡 OPEN — Daman said "only drafts" for voucher 421 on 2026-09-12**, in the middle
-of a deliberate duplicate. Whether this type is submitted to BHAWANI as a matter of
-course, like every other A/P bill, **has not been settled.** Until he says: build
-the draft, attach the bill, tell the operator the `DocEntry` and where to find it,
-and **ask before running `sapb1 add-draft`.** A draft nobody submits costs nothing;
-a duplicate approval request costs Bhawani her afternoon.
+**🛑 SETTLED 2026-09-19 · C-0101 — a cash-voucher batch STOPS AT THE DRAFT.**
+
+Daman, asked directly whether to hold the batch: *"Hold the batch at draft, wait
+for my approval."* Build the draft, attach the bill, add it to the list, and
+**wait for his word on that list** before `sapb1 add-draft`.
+
+Cash vouchers are the **one documented exception** to `CLAUDE.md`'s rule that a
+bill is not finished until the approver has it — every other bill still goes
+draft → attach → submit the same day.
+
+Why: once a draft is in the approval queue SAP refuses to delete it (**-10**),
+refuses to change its party (**-2028**) and cannot drop a line. On 2026-09-19 ten
+drafts were submitted in nine seconds, problems surfaced 33 minutes later, and
+four of them are still stuck waiting for Bhawani to reject them. Held at the
+draft it would have been one clean delete-and-rebuild.
 
 ---
 

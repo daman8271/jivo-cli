@@ -1,6 +1,6 @@
 ---
 name: cash-voucher-1-grpo
-description: CASH VOUCHER TYPE 1 — the voucher that HAS an existing GRPO behind it. Use when a JIVO WELLNESS cash voucher slip arrives with a supplier's bill and a SAP "Goods Receipt Note" printout, or when a cash-sheet row's amount matches an open GRPO on the holder's FACTORY IMPREST card. Builds ONE A/P invoice draft per voucher as a COPY of that GRPO, so the G/L account comes from the GRPO's item and never from the wording of the voucher. Posting date = the slip, document date = the bill, Dim2 and Dim3 set by hand. For a voucher with NO GRPO behind it, that is a different type — see the parent skill `cash-voucher`.
+description: CASH VOUCHER TYPE 1 — the voucher that HAS an existing GRPO behind it. Use when a JIVO WELLNESS cash voucher slip arrives with a supplier's bill and a SAP "Goods Receipt Note" printout, or when a cash-sheet row matches an open GRPO on ANY card in any of the three books - the GRPO is often raised on the supplier's own card, not the imprest card. Builds the A/P as a COPY of that GRPO, so the G/L comes from the GRPO's item and never from the wording of the voucher; where the GRPO sits on the vendor's own card the A/P goes to that vendor plus a JV off the holder's float. Posting date = the slip, document date = the bill, Dim2 and Dim3 set by hand. For a voucher with NO GRPO behind it, that is a different type — see the parent skill `cash-voucher`.
 ---
 
 # Cash voucher · TYPE 1 · the voucher WITH a GRPO
@@ -36,17 +36,34 @@ RULE 0 in `CLAUDE.md` governs the write. Shared rules live in `ap-rm-pm`.
 ## How to know it is TYPE 1
 
 You have a **GRPO printout** in the pack (SAP "Goods Receipt Note", `GRPO No.`,
-`Reff. Po No.`, vendor = the IMPREST card), **or** the cash-sheet row's amount
-matches an **open** GRPO on that card:
+`Reff. Po No.`), **or** the cash-sheet row matches an **open** GRPO.
+
+🔴 **Search EVERY card, not just the imprest one, in ALL THREE books**
+(C-0102). The old query here filtered `CardCode = '<imprest card>'` and **that is
+why four GRPOs were missed** on 2026-09-19: 26731/26732/26733 sat on
+**VENDA001090 ASHOK KITAB GHAR** and 26734 on **VENDA001182 BAJAJ ELECTRICAL**.
+Vouchers 467/472/473/475 were reported "no GRPO" and retyped by hand.
 
 ```sql
-SELECT h."DocEntry", h."DocNum", h."DocDate", h."NumAtCard", h."DocTotal",
+-- no CardCode filter. Run it in Oil, Mart AND Beverages (C-0073).
+SELECT h."DocEntry", h."DocNum", h."DocDate", h."CardCode", h."CardName",
+       h."NumAtCard", h."DocTotal",
        l."ItemCode", l."Dscription", l."AcctCode", l."OcrCode", l."OcrCode3"
 FROM   <DB>.OPDN h JOIN <DB>.PDN1 l ON l."DocEntry" = h."DocEntry"
-WHERE  h."CardCode" = '<imprest card>' AND h."CANCELED" = 'N'
-  AND  h."DocStatus" = 'O' AND l."LineNum" = 0
+WHERE  h."CANCELED" = 'N' AND h."DocStatus" = 'O' AND l."LineNum" = 0
+  AND (h."NumAtCard" LIKE '%<bill no>%' OR h."DocTotal" = <amount>)
 ORDER  BY h."DocDate";
 ```
+
+**Match on the bill number in `NumAtCard` — it is exact.** Never on the
+handwritten gate number off a phone scan: `634` was misread as `684`, `675` as
+`678`.
+
+🔴 **Whose card the GRPO sits on changes the document** (C-0098). On the
+**imprest** card → copy it there, the float comes down by itself. On the
+**vendor's own** card → the A/P is a GRPO copy **on that vendor**, plus a **JV**
+(Dr vendor / Cr FACTORY IMPREST) — `cash-voucher-jv`. One JV per voucher, never
+combined. **Never retype a vendor-card GRPO by hand on the imprest card.**
 
 Open GRPOs on the card carry `NumAtCard` = **`<amount>/<dd-mm-yy>`**
 (`5190/31-08-26`) — the supplier's bill reference. Match on the amount, then
@@ -306,8 +323,10 @@ Upload all three with ONE `sapb1 attach <pack> <grpo-file> <front-sheet> --yes`
 ## 9 · ₹10,000 cap
 
 **Daman: "10k is the hard limit."** No cash-voucher document may exceed
-**₹10,000**. A GRPO voucher is still its own draft, so this rarely bites here — but it is the live constraint on the grouped type-3 documents. **If a single
-voucher is over, stop and tell the operator** — do not split the voucher and do
+**₹10,000**. Since 2026-09-19 GRPO vouchers are **grouped by PO** like every
+other type (C-0097), so the cap is the live constraint here too — it is the only
+thing allowed to split one PO into two documents, and it splits at voucher
+boundaries. **If a single voucher is over, stop and tell the operator** — do not split the voucher and do
 not merge vouchers. Context, not a lecture: s.40A(3) disallows cash expenditure
 over ₹10,000 to one person in one day.
 
@@ -320,9 +339,16 @@ range that covers the posting date** (a September filter will not show an
 August-posted draft). `ODRF.OwnerCode` is NULL, so anyone can Add it once the
 User dropdown is changed.
 
-`sapb1 add-draft` is only for a login an Always-terms template names (Oil 103 /
-Mart 48 / Bev 68 → USER39, USER08). From USER07 or any other login it refuses,
-and that refusal is correct — `jivo-add-and-new`, C-0078.
+🛑 **A cash-voucher batch STOPS HERE until Daman has seen the list** (C-0101).
+Build every draft, attach every pack, print the list, and **wait for his word**.
+Cash vouchers are the one documented exception to `CLAUDE.md`'s "a bill is not
+done at the draft" rule. Once a draft is in the approval queue SAP will not let
+you delete it (**-10**), change its party (**-2028**) or drop a line — on
+2026-09-19 ten drafts went in nine seconds and four of them are still stuck.
+
+`sapb1 add-draft` also needs a login an Always-terms template names. Oil 103 now
+lists **USER08, USER39 and USER07** (C-0104 — check `WTM1`, the list changes).
+From a login no template names it posts **LIVE** — `jivo-add-and-new`.
 
 ---
 
@@ -364,10 +390,16 @@ reported it as finished.
 
 | # | Field | I had | Correct | Root cause |
 |---|---|---|---|---|
-| 1 | Document shape | one draft per book, grouped to fill the ₹10k cap | **one draft per voucher** | invented a grouping rule from posted history instead of asking |
+| 1 | Document shape | one draft per book, grouped to fill the ₹10k cap | one draft per voucher ⚠️ **SUPERSEDED — see below** | invented a grouping rule from posted history instead of asking |
 | 2 | G/L | hand-picked from the row's wording | **from the GRPO's item** | never looked for a GRPO; assumed the class was service-only |
 | 3 | Dim3 budget | inherited the GRPO's `Factory` | **`FACT_COM`** from the slip's "Common" | treated a GRPO copy as authoritative for *everything* (C-0027 was in context and ignored) |
 | 4 | Dim2 costing | inherited the GRPO's `08-2026` | **`09-2026`** from the slip's date | same |
+
+> ⚠️ **Row 1 is history, not the live rule.** "One draft per voucher" was right
+> on 2026-09-10. It was superseded on 09-12 (grouping) and again on **2026-09-19**
+> by **ONE ENTRY PER PO** (C-0097). Live proof: drafts **57454** (vouchers 454 +
+> 459), **57456** (466 + 468) and **57457** (469 + 470) each carry two or more
+> GRPO-copy vouchers on one document. The rest of the rows still stand.
 | 5 | Vendor ref bunch | `49097` (both tables added) | **`39940`** (that table's own Total) | trusted an inference from history over the sheet in hand |
 | 6 | Posting date | 31-08-2026 | **01-09-2026** (the slip's date) | mapped SAP's screen label "Document Date" to `DocDate` instead of `TaxDate` |
 
@@ -381,7 +413,9 @@ none of them is clear, **ask** — do not infer from history.
 ## Pre-flight — tick before `--yes`
 
 - [ ] a real **open** GRPO found, matched on amount **and** `G.No.`, `TargetType = -1`
-- [ ] **one draft per voucher** — never grouped, never split
+- [ ] **ONE ENTRY PER PO** (C-0097) — vouchers sharing a PO share the document,
+      **even across months**; only the ₹10,000 cap splits a PO, at voucher
+      boundaries; never split one voucher across two documents
 - [ ] lines sent as a **copy** (`BaseType 20`); no G/L, item, tax, HSN, Dim1 or
       Dim5 set by hand
 - [ ] FACTORY IMPREST `ORGV…` for **this book** — not the plain twin, not another
