@@ -110,6 +110,7 @@ using anything beyond --help.`,
 	root.AddCommand(newItemsCmd())
 	root.AddCommand(newPartnersCmd())
 	root.AddCommand(newQueryCmd())
+	root.AddCommand(newFIFOLayersCmd())
 
 	// Writes. Nothing here runs unless an operator explicitly types the command:
 	// each one previews the request, requires a confirmation (or --yes), and is

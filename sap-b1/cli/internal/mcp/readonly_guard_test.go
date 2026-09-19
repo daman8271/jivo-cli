@@ -48,6 +48,7 @@ var knownReadOnlyMethods = map[string]bool{
 	"GetEntity":          true, // a keyed GET; 404 is an answer, not a write
 	"DownloadAttachment": true, // GET Attachments2(N)/$value — reads a file back, changes nothing
 	"GetAdminInfo":       true, // General Settings; a body-less POST to a function import that changes nothing (client/admininfo.go)
+	"CallReadService":    true, // POST to a service operation, but refused unless it is on client.readServiceAllowlist — today that allowlist holds exactly one entry, MaterialRevaluationFIFOService_GetMaterialRevaluationFIFO, which only reads the FIFO layers. Cancel/Close/SaveDraftToDocument are NOT on it and stay refused by validateWriteEntitySet (client/readservice.go)
 	"Login":              true,
 	"Logout":             true,
 	"HasSession":         true,
