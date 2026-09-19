@@ -18,7 +18,7 @@ func TestPostRefusesEveryLivePostingDocument(t *testing.T) {
 		"JournalEntries",
 		"InventoryGenEntries", "InventoryGenExits", "StockTransfers",
 		"InventoryTransferRequests", "InventoryCountings",
-		"InventoryPostings", "InventoryOpeningBalances", "MaterialRevaluation", "LandedCosts",
+		"InventoryPostings", "InventoryOpeningBalances", "LandedCosts",
 		"CorrectionInvoice", "CorrectionInvoiceReversal",
 		"CorrectionPurchaseInvoice", "CorrectionPurchaseInvoiceReversal",
 		"SelfInvoices", "SelfCreditMemos", "PurchaseTaxInvoices", "SalesTaxInvoices",
@@ -103,7 +103,11 @@ func TestGRPOIsThePostableException(t *testing.T) {
 			t.Errorf("post %q must still pass the company-blind check (the carve-out is closed per company, by refuseLivePostInMart); got: %v", spelling, err)
 		}
 	}
-	if len(postableLive) != 1 {
+	// Two carve-outs, both on Daman's explicit word: GRPO (2026-09-04) and
+	// MaterialRevaluation (2026-09-19). The count is pinned on purpose — a
+	// third one must be a deliberate edit to this line, with a reason written
+	// next to it in postableLive, not something a refactor slides in.
+	if len(postableLive) != 2 {
 		t.Errorf("postableLive has grown to %d entries (%v) — every addition reopens a live ledger route and needs Daman's word, not a refactor", len(postableLive), postableLive)
 	}
 	for _, set := range []string{"PurchaseInvoices", "Invoices", "CreditNotes", "JournalEntries", "VendorPayments"} {
@@ -177,5 +181,37 @@ func TestPostCommandRefusesLiveGRPOInMart(t *testing.T) {
 	if _, _, err := execWrite(t, "", "post", "PurchaseDeliveryNotes", "--company", "JIVO_OIL_HANADB", "--dry-run",
 		"--data", `{"CardCode":"VENDA000001"}`); err != nil {
 		t.Errorf("post PurchaseDeliveryNotes --dry-run in Oil was refused; the Mart rule leaked: %v", err)
+	}
+}
+
+
+// MaterialRevaluation was opened on Daman's instruction, 2026-09-19. It is the
+// one posting document with no draft form in SAP, so the usual "use the draft
+// instead" is not an option for it. These two tests pin what was opened and
+// what was deliberately left shut, so neither drifts by accident.
+func TestPostAllowsMaterialRevaluationOutsideMart(t *testing.T) {
+	for _, spelling := range []string{"MaterialRevaluation", "materialrevaluation", "MATERIALREVALUATION"} {
+		if _, err := validateWriteEntitySet(spelling, "POST"); err != nil {
+			t.Errorf("post %q was refused, but the revaluation carve-out is open: %v", spelling, err)
+		}
+	}
+}
+
+func TestMartStillRefusesMaterialRevaluation(t *testing.T) {
+	for _, company := range []string{"JIVO_MART_HANADB", "jivo_mart_hanadb", " JIVO_MART_HANADB "} {
+		err := refuseLivePostInMart("MaterialRevaluation", "POST", company)
+		if err == nil {
+			t.Errorf("Mart accepted a live revaluation in %q — nothing in Mart posts straight to the ledger", company)
+			continue
+		}
+		if !strings.Contains(err.Error(), "DRAFT") {
+			t.Errorf("Mart refusal does not point at the draft route:\n%s", err)
+		}
+	}
+	// ...and the other two books are not caught by the Mart rule.
+	for _, company := range []string{"JIVO_OIL_HANADB", "JIVO_BEVERAGES_HANADB"} {
+		if err := refuseLivePostInMart("MaterialRevaluation", "POST", company); err != nil {
+			t.Errorf("%s was refused by the Mart rule: %v", company, err)
+		}
 	}
 }

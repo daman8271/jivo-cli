@@ -82,6 +82,25 @@ type postingDocTarget struct {
 // for that company — including any entry added here later.
 var postableLive = map[string]string{
 	"purchasedeliverynotes": "GRPO — opened for USER19's Mart desk (-6006 on drafts), Daman 2026-09-04; closed in Mart 2026-09-16",
+
+	// Inventory Revaluation — opened on Daman's explicit instruction,
+	// 2026-09-19, for the Beverages FIFO correction.
+	//
+	// This one is NOT the GRPO case. A GRPO receipts against a PO that already
+	// exists and was already approved; a revaluation re-prices stock straight
+	// into the ledger off numbers somebody typed. It is opened here only
+	// because SAP leaves no other route from this CLI: `MaterialRevaluation`
+	// has no draft form at all — the Drafts object holds marketing documents
+	// only — so unlike every other entry on the refuse list, "use the draft
+	// instead" is not advice that can be followed. The choice is this or the
+	// SAP B1 client, and Daman chose this, with the 2026-08-26 incident in
+	// view and after being told a posted revaluation cannot be undone from
+	// here.
+	//
+	// It stays as narrow as it can be. Mart is still closed, automatically, by
+	// refuseLivePostInMart below. The preview, the typed `yes` and the shared
+	// write log all still apply — they are what makes a wrong one findable.
+	"materialrevaluation": "Inventory Revaluation — no draft form exists in SAP, so it is this or the B1 client; opened on Daman's instruction 2026-09-19; Mart still closed",
 }
 
 // refuseLivePostInMart is Daman's rule of 2026-09-16: in JIVO MART no entry is
@@ -99,11 +118,18 @@ func refuseLivePostInMart(entitySet, method, companyDB string) error {
 	if _, carved := postableLive[strings.ToLower(entitySet)]; !carved {
 		return nil
 	}
+	// The route out depends on the doctype: a GRPO has a draft, a revaluation
+	// has none anywhere in SAP. Naming `draft grpo` for a revaluation would
+	// send the operator after a command that cannot exist.
+	instead := fmt.Sprintf("  Use `sapb1 draft grpo --company %s` instead. A person presses Add in SAP B1 → Document Drafts.", companyDB)
+	if strings.EqualFold(entitySet, "MaterialRevaluation") {
+		instead = "  There is no draft form for a revaluation anywhere in SAP, so there is nothing to fall back to here: in Mart it is keyed by a person in Inventory → Inventory Transactions → Inventory Revaluation."
+	}
 	return &errs.UsageError{Msg: fmt.Sprintf(
 		"refusing to POST %s in %s: in JIVO MART nothing is ever posted directly to the ledger (Daman, 2026-09-16). Every Mart entry goes in as a DRAFT.\n"+
-			"  Use `sapb1 draft grpo --company %s` instead. A person presses Add in SAP B1 → Document Drafts.\n"+
-			"  If SAP refuses the draft, stop and say so. Do not look for another route to a live document in Mart. There is no flag for this.",
-		entitySet, companyDB, companyDB)}
+			"%s\n"+
+			"  Do not look for another route to a live document in Mart. There is no flag for this.",
+		entitySet, companyDB, instead)}
 }
 
 // isMartCompany matches the Mart book however its name was typed on --company

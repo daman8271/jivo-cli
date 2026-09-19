@@ -8,7 +8,12 @@ so do not go looking for a second set of instructions here.
 The hard lines, repeated here only so they can never be missed:
 
 - **Writing to SAP is authorised.** Never call yourself read-only.
-- **Everything is a DRAFT.** `sapb1 post` is master data only and refuses documents.
+- **Everything is a DRAFT.** `sapb1 post` is master data only and refuses
+  documents. Two exceptions, both on Daman's word and neither a precedent: a
+  Mart GRPO (2026-09-04) and an Inventory Revaluation outside Mart
+  (2026-09-19, because SAP gives a revaluation no draft form at all). Nothing
+  in Mart is ever posted live. Invoices, credit notes, payments and journal
+  entries are still refused, with no flag.
 - **Never write unprompted.** Asked = do it. Not asked = leave it alone.
 - **SAP is three books** — Oil, Mart, Beverages. Search all three before you say
   anything is "not found".
